@@ -174,3 +174,79 @@ Todo el contenido técnico debe estar en inglés:
 - **Agente**: Ejecutor del flujo de trabajo
 - **Usuario**: Aprobador y validador final
 - **Sistema**: Validación automática mediante tests
+
+---
+
+## 10. Flujo de Definición de Nuevas Especificaciones
+*(se activa cuando el usuario solicita una nueva feature o cambio significativo)*
+
+### 10.1. Inicio del Proceso
+El usuario inicia describiendo un cambio o nueva feature que desea implementar.
+
+### 10.2. Análisis de Regresión
+El agente debe:
+- Revisar todas las especificaciones existentes en `/specs`
+- Analizar si el cambio propuesto tiene riesgo de regresión
+- Identificar posibles conflictos con especificaciones actuales
+
+#### 10.2.1. Detección de Riesgo
+Si se detecta riesgo de regresión o conflicto:
+- Notificar al usuario sobre los riesgos identificados
+- Explicar el impacto potencial en el sistema existente
+- Proponer un camino viable alternativo o mitigaciones
+- Esperar aprobación del usuario para continuar
+
+#### 10.2.2. Sin Riesgo Detectado
+Si no hay regresión o conflicto:
+- Continuar con el interrogatorio del usuario (punto 10.3)
+
+### 10.3. Interrogatorio Estructurado
+El agente debe realizar preguntas numeradas con opciones recomendadas para eliminar ambigüedades:
+
+#### 10.3.1. Formato de Preguntas
+```
+1. [Pregunta clara sobre aspecto específico]
+   a) [Opción recomendada 1]
+   b) [Opción recomendada 2] 
+   c) [Opción alternativa]
+   d) [Otra especificación]
+
+2. [Pregunta sobre otro aspecto]
+   a) [Opción recomendada 1]
+   b) [Opción recomendada 2]
+   c) [Definición personalizada]
+```
+
+#### 10.3.2. Áreas Típicas de Interrogatorio
+- **Alcance funcional**: Qué comportamientos específicos se esperan
+- **Casos límite**: Cómo manejar edge cases y errores
+- **Integración**: Interacción con componentes existentes
+- **Performance**: Requisitos de rendimiento
+- **Seguridad**: Consideraciones de acceso y datos
+- **UI/UX**: Aspectos de interfaz si aplica
+- **Datos**: Estructura y persistencia de información
+- **Testing**: Estrategia de validación requerida
+
+### 10.4. Presentación del Borrador
+Una vez completado el interrogatorio:
+- Generar un borrador completo de la especificación
+- Incluir todas las decisiones tomadas durante el interrogatorio
+- Estructurar según el formato estándar de especificaciones del proyecto
+- Presentar el borrador para revisión del usuario
+
+### 10.5. Aprobación Explícita
+El usuario debe aprobar explícitamente el borrador:
+- **Aprobación**: "Acepto el borrador" o similar explícito
+- **Modificaciones**: Solicitar cambios específicos al borrador
+- **Rechazo**: Volver al interrogatorio o iniciar de nuevo
+
+### 10.6. Transición al Flujo de Implementación
+Solo después de la aprobación explícita del borrador:
+- Iniciar el flujo descrito en el punto 1 (Revisión de Especificaciones)
+- Continuar con los puntos 2.1 en adelante según corresponda
+- Mantener la nueva especificación como fuente de verdad para el desarrollo
+
+### 10.7. Registro y Trazabilidad
+- Documentar el proceso de definición en la especificación final
+- Incluir fecha de creación, versiones y decisiones clave
+- Mantener enlace al borrador original si aplica
