@@ -1,3 +1,9 @@
+import { config } from 'dotenv';
+
+// Load environment variables from .env.local
+config({ path: '.env.local' });
+
+// Setup for Vitest tests
 import '@testing-library/jest-dom';
 
 // Mock Next.js headers

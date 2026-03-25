@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: rpm-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: rpm_dev
+      POSTGRES_USER: rpm_user
+      POSTGRES_PASSWORD: rpm_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rpm_user -d rpm_dev"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  postgres_data:
