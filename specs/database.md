@@ -157,8 +157,6 @@ datasource db {
 
 // Tables will be added here as needed
 // Example: When implementing auth.md, add User and Session models
-// Example: When implementing products.md, add Product model
-// Example: When implementing orders.md, add Order and OrderItem models
 ```
 
 ### Tab Strategy
@@ -393,14 +391,10 @@ docker exec -i rpm-postgres psql -U rpm_user rpm_dev < backup.sql
 
 ### Especificaciones Relacionadas
 - `/specs/auth.md` - Agregará tablas `User` y `Session`
-- `/specs/products.md` - Agregará tabla `Product`
-- `/specs/orders.md` - Agregará tablas `Order` y `OrderItem`
 
 ### Flujo de Trabajo
 1. **database.md** - Configuración base ✅
 2. **auth.md** - Agrega tablas de autenticación
-3. **products.md** - Agrega tablas de productos
-4. **orders.md** - Agrega tablas de pedidos
 
 ## Tests y Documentación Relacionados
 

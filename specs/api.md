@@ -2,7 +2,7 @@
 
 ## Overview
 
-Arquitectura de API REST con Next.js App Router, validaciones exhaustivas con Zod, manejo estandarizado de errores y protección de rutas basada en roles.
+Arquitectura de API REST con Next.js App Router, validaciones exhaustivas con Zod, manejo estandarizado de errores y protección de rutas basada en autenticación.
 
 ## Stack Tecnológico
 
@@ -10,7 +10,7 @@ Arquitectura de API REST con Next.js App Router, validaciones exhaustivas con Zo
 - **Framework**: Next.js 13+ App Router API Routes
 - **Validation**: Zod v3 schemas
 - **Error Handling**: Centralizado con custom errors
-- **Security**: Role-based access control
+- **Security**: Authentication-based access control
 - **Documentation**: OpenAPI/Swagger (opcional)
 
 ### Development Tools
@@ -25,16 +25,12 @@ Arquitectura de API REST con Next.js App Router, validaciones exhaustivas con Zo
 ```
 app/api/
 ├── auth/
-│   ├── [...nextauth]/          # NextAuth.js routes
+│   ├── [...all]/               # Better Auth routes
 │   ├── session/               # Session management
 │   └── callback/              # OAuth callbacks
 ├── admin/
-│   ├── users/                 # User management (admin only)
-│   ├── products/              # Product management
-│   ├── orders/                # Order management
 │   └── dashboard/             # Dashboard data
 ├── public/
-│   ├── products/              # Public product catalog
 │   └── health/                # Health check
 └── socket/
     └── io/                    # Socket.io endpoint
@@ -96,72 +92,27 @@ export const SearchSchema = z.object({
 ```typescript
 // schemas/auth.ts
 import { z } from 'zod';
-import { UserRole } from '@/lib/auth/roles';
 
-export const UserRoleSchema = z.enum(['USER', 'STAFF', 'ADMIN']);
-
-export const UserProfileSchema = z.object({
-  id: z.string().cuid(),
-  email: z.string().email(),
-  name: z.string().min(1).max(100),
-  image: z.string().url().optional(),
-  role: UserRoleSchema,
-  createdAt: z.date(),
-  updatedAt: z.date(),
-});
-
-export const UserUpdateSchema = z.object({
-  name: z.string().min(1).max(100).optional(),
-  role: UserRoleSchema.optional(),
-});
-
-export const UserCreateSchema = z.object({
-  email: z.string().email('Invalid email format'),
-  name: z.string().min(1, 'Name is required').max(100),
-  role: UserRoleSchema.default('USER'),
+export const SessionSchema = z.object({
+  user: z.object({
+    id: z.string().cuid(),
+    email: z.string().email(),
+    name: z.string().min(1).max(100),
+    image: z.string().url().optional(),
+  }),
+  expiresAt: z.date(),
 });
 ```
 
-### Product Schemas
+### Dashboard Schemas
 ```typescript
-// schemas/product.ts
+// schemas/dashboard.ts
 import { z } from 'zod';
 
-export const ProductCreateSchema = z.object({
-  name: z.string().min(1, 'Product name is required').max(200),
-  description: z.string().max(1000).optional(),
-  price: z.number().min(0, 'Price must be positive').max(999999.99),
-  category: z.string().max(50).optional(),
-  imageUrl: z.string().url('Invalid image URL').optional(),
-  stock: z.number().min(0, 'Stock must be non-negative').default(0),
-  isActive: z.boolean().default(true),
-});
-
-export const ProductUpdateSchema = ProductCreateSchema.partial();
-
-export const ProductQuerySchema = z.object({
-  category: z.string().optional(),
-  active: z.coerce.boolean().default(true),
-  minPrice: z.number().min(0).optional(),
-  maxPrice: z.number().min(0).optional(),
-  ...PaginationSchema.shape,
-});
-
-export const ProductResponseSchema = z.object({
-  id: z.string().cuid(),
-  name: z.string(),
-  description: z.string().nullable(),
-  price: z.number(),
-  category: z.string().nullable(),
-  imageUrl: z.string().nullable(),
-  stock: z.number(),
-  isActive: z.boolean(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-  createdBy: z.string().cuid(),
-  updatedBy: z.string().cuid().nullable(),
-  creator: UserProfileSchema.optional(),
-  updater: UserProfileSchema.nullable().optional(),
+export const DashboardStatsSchema = z.object({
+  totalSessions: z.number().min(0),
+  systemHealth: z.enum(['healthy', 'degraded', 'down']),
+  lastUpdated: z.date(),
 });
 ```
 
@@ -175,60 +126,67 @@ import { ZodSchema } from 'zod';
 import { ApiResponse } from './types';
 import { ApiError } from './errors';
 
+export interface ApiHandlerOptions<T = any> {
+  schema?: ZodSchema;
+  auth?: {
+    required: boolean;
+    roles?: string[];
+  };
+  handler: (data: T, context: { user?: any; session?: any }) => Promise<ApiResponse>;
+}
+
 export class ApiHandler {
-  static async handle<T>(
+  static async handle<T = any>(
     request: NextRequest,
-    options: {
-      schema?: ZodSchema;
-      handler: (data: T, context: RequestContext) => Promise<ApiResponse<T>>;
-      auth?: {
-        required?: boolean;
-        roles?: string[];
-      };
-    }
-  ): Promise<NextResponse<ApiResponse<T>>> {
+    options: ApiHandlerOptions<T>
+  ): Promise<NextResponse<ApiResponse>> {
     try {
-      // Parse and validate request body
+      // Parse request body/query
       let data: T = {} as T;
-      if (options.schema && request.method !== 'GET') {
+      
+      if (request.method !== 'GET') {
         const body = await request.json();
-        data = options.schema.parse(body);
+        data = options.schema ? options.schema.parse(body) : body;
+      } else {
+        const { searchParams } = new URL(request.url);
+        const query = Object.fromEntries(searchParams);
+        data = options.schema ? options.schema.parse(query) : query;
       }
 
-      // Handle authentication
-      const context = await this.buildContext(request, options.auth);
+      // Authentication check
+      const context = await this.authenticate(options.auth);
 
       // Execute handler
       const result = await options.handler(data, context);
 
-      return NextResponse.json(result, { status: 200 });
-
+      return NextResponse.json(result);
     } catch (error) {
       return this.handleError(error);
     }
   }
 
-  private static async buildContext(
-    request: NextRequest,
-    authOptions?: { required?: boolean; roles?: string[] }
-  ): Promise<RequestContext> {
-    const session = await getServerSession(authOptions);
+  private static async authenticate(authOptions?: ApiHandlerOptions['auth']) {
+    if (!authOptions?.required) {
+      return {};
+    }
+
+    // Implement authentication logic here
+    // This would integrate with Better Auth
+    const session = await this.getSession();
     
-    if (authOptions?.required && !session) {
+    if (!session) {
       throw new ApiError('UNAUTHORIZED', 'Authentication required', 401);
     }
 
-    if (authOptions?.roles && session) {
-      const hasRole = authOptions.roles.includes(session.user.role);
-      if (!hasRole) {
-        throw new ApiError('FORBIDDEN', 'Insufficient permissions', 403);
-      }
-    }
-
     return {
-      user: session?.user || null,
-      session: session || null,
+      user: session.user,
+      session,
     };
+  }
+
+  private static async getSession() {
+    // Implement Better Auth session retrieval
+    return null;
   }
 
   private static handleError(error: unknown): NextResponse<ApiResponse> {
@@ -262,7 +220,6 @@ export class ApiHandler {
       );
     }
 
-    // Unknown error
     return NextResponse.json(
       {
         success: false,
@@ -292,15 +249,15 @@ export class ApiError extends Error {
   }
 }
 
-export class ValidationError extends ApiError {
-  constructor(message: string, details?: any) {
-    super('VALIDATION_ERROR', message, 400, details);
-  }
-}
-
 export class NotFoundError extends ApiError {
   constructor(resource: string) {
     super('NOT_FOUND', `${resource} not found`, 404);
+  }
+}
+
+export class ValidationError extends ApiError {
+  constructor(message: string, details?: any) {
+    super('VALIDATION_ERROR', message, 400, details);
   }
 }
 
@@ -317,255 +274,84 @@ export class ForbiddenError extends ApiError {
 }
 ```
 
-### Product API Example
+### Dashboard API Example
 ```typescript
-// app/api/admin/products/route.ts
+// app/api/admin/dashboard/route.ts
 import { NextRequest } from 'next/server';
-import { PrismaService } from '@/lib/prisma-with-error';
 import { ApiHandler } from '@/lib/api/handler';
-import { ProductCreateSchema, ProductQuerySchema } from '@/schemas/product';
-import { UserRole } from '@/lib/auth/roles';
+import { DashboardStatsSchema } from '@/schemas/dashboard';
 
-// GET /api/admin/products - List products
 export async function GET(request: NextRequest) {
   return ApiHandler.handle(request, {
-    schema: ProductQuerySchema,
-    auth: { required: true, roles: [UserRole.STAFF, UserRole.ADMIN] },
-    handler: async (query, context) => {
-      const { page, limit, category, active, minPrice, maxPrice, sortBy, sortOrder } = query;
-      
-      const skip = (page - 1) * limit;
-      
-          const where = {
-        isActive: active,
-        ...(category && { category }),
-        ...(minPrice && maxPrice && {
-          price: { gte: minPrice, lte: maxPrice }
-        }),
-      };
-
-      const [products, total] = await Promise.all([
-        PrismaService.getProducts({
-          skip,
-          take: limit,
-          category,
-          active,
-        }),
-        PrismaService.getProductsCount(category),
-      ]);
-
-      return {
-        success: true,
-        data: products,
-        meta: {
-          pagination: {
-            page,
-            limit,
-            total,
-            totalPages: Math.ceil(total / limit),
-          },
-          timestamp: Date.now(),
-        },
-      };
-    },
-  });
-}
-
-// POST /api/admin/products - Create product
-export async function POST(request: NextRequest) {
-  return ApiHandler.handle(request, {
-    schema: ProductCreateSchema,
-    auth: { required: true, roles: [UserRole.STAFF, UserRole.ADMIN] },
-    handler: async (data, context) => {
-      const product = await PrismaService.createProduct({
-        ...data,
-        createdBy: context.user!.id,
-      });
-
-      return {
-        success: true,
-        data: product,
-      };
-    },
-  });
-}
-```
-
-### Single Product API
-```typescript
-// app/api/admin/products/[id]/route.ts
-import { NextRequest } from 'next/server';
-import { PrismaService } from '@/lib/prisma-with-error';
-import { ApiHandler } from '@/lib/api/handler';
-import { ProductUpdateSchema, IdSchema } from '@/schemas/product';
-import { UserRole } from '@/lib/auth/roles';
-
-// GET /api/admin/products/[id] - Get single product
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  return ApiHandler.handle(request, {
-    schema: IdSchema,
-    auth: { required: true, roles: [UserRole.STAFF, UserRole.ADMIN] },
-    handler: async ({ id }) => {
-      const product = await PrismaService.getProductWithDetails(id);
-      
-      if (!product) {
-        throw new NotFoundError('Product');
-      }
-
-      return {
-        success: true,
-        data: product,
-      };
-    },
-  });
-}
-
-// PUT /api/admin/products/[id] - Update product
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  return ApiHandler.handle(request, {
-    schema: ProductUpdateSchema,
-    auth: { required: true, roles: [UserRole.STAFF, UserRole.ADMIN] },
-    handler: async (data, context) => {
-      const product = await PrismaService.updateProduct(params.id, {
-        ...data,
-        updatedBy: context.user!.id,
-      });
-
-      return {
-        success: true,
-        data: product,
-      };
-    },
-  });
-}
-
-// DELETE /api/admin/products/[id] - Delete product
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  return ApiHandler.handle(request, {
-    auth: { required: true, roles: [UserRole.ADMIN] },
+    auth: { required: true },
     handler: async () => {
-      await PrismaService.deleteProduct(params.id);
+      // Get dashboard statistics
+      const stats = {
+        totalSessions: 42,
+        systemHealth: 'healthy',
+        lastUpdated: new Date(),
+      };
 
       return {
         success: true,
-        data: { id: params.id },
+        data: DashboardStatsSchema.parse(stats),
       };
     },
   });
 }
 ```
 
-## Middleware Implementation
-
-### Rate Limiting
+### Health Check API
 ```typescript
-// middleware/rateLimit.ts
+// app/api/health/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 
-interface RateLimitStore {
-  [key: string]: {
-    count: number;
-    resetTime: number;
-  };
-}
+export async function GET(request: NextRequest) {
+  try {
+    // Check database connection
+    const dbStatus = await checkDatabase();
+    
+    // Check system health
+    const systemStatus = {
+      status: dbStatus ? 'healthy' : 'degraded',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      memory: process.memoryUsage(),
+    };
 
-const store: RateLimitStore = {};
-
-export function rateLimit({
-  windowMs = 15 * 60 * 1000, // 15 minutes
-  maxRequests = 100,
-}: {
-  windowMs?: number;
-  maxRequests?: number;
-} = {}) {
-  return function (request: NextRequest, response: NextResponse) {
-    const clientId = request.ip || 'anonymous';
-    const now = Date.now();
-    
-    // Clean up expired entries
-    if (store[clientId] && store[clientId].resetTime < now) {
-      delete store[clientId];
-    }
-    
-    // Initialize or update counter
-    if (!store[clientId]) {
-      store[clientId] = {
-        count: 1,
-        resetTime: now + windowMs,
-      };
-    } else {
-      store[clientId].count++;
-    }
-    
-    // Check if limit exceeded
-    if (store[clientId].count > maxRequests) {
-      return NextResponse.json(
-        { error: 'Too many requests' },
-        { status: 429 }
-      );
-    }
-    
-    // Add rate limit headers
-    response.headers.set('X-RateLimit-Limit', maxRequests.toString());
-    response.headers.set('X-RateLimit-Remaining', 
-      Math.max(0, maxRequests - store[clientId].count).toString()
+    return NextResponse.json({
+      success: true,
+      data: systemStatus,
+    });
+  } catch (error) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: {
+          code: 'HEALTH_CHECK_FAILED',
+          message: 'Health check failed',
+        },
+      },
+      { status: 500 }
     );
-    response.headers.set('X-RateLimit-Reset', 
-      store[clientId].resetTime.toString()
-    );
-    
-    return response;
-  };
-}
-```
-
-### CORS Middleware
-```typescript
-// middleware/cors.ts
-import { NextRequest, NextResponse } from 'next/server';
-
-export function cors(request: NextRequest) {
-  const origin = request.headers.get('origin');
-  const allowedOrigins = [
-    'https://rpm-wheat.vercel.app',
-    'http://localhost:3000',
-  ];
-
-  if (allowedOrigins.includes(origin || '')) {
-    const response = NextResponse.next();
-    
-    response.headers.set('Access-Control-Allow-Origin', origin || '');
-    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    response.headers.set('Access-Control-Allow-Credentials', 'true');
-    
-    return response;
   }
+}
 
-  return NextResponse.next();
+async function checkDatabase(): boolean {
+  // Implement database health check
+  return true;
 }
 ```
 
-## Client API Integration
+## Client-Side API Integration
 
 ### API Client
 ```typescript
 // lib/api/client.ts
-import { ApiResponse } from './types';
-
-export class ApiClient {
+class ApiClient {
   private baseUrl: string;
 
-  constructor(baseUrl: string = '/api') {
+  constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
   }
 
@@ -583,7 +369,7 @@ export class ApiClient {
       ...options,
     });
 
-    const data = await response.json();
+    const data: ApiResponse<T> = await response.json();
 
     if (!response.ok) {
       throw new Error(data.error?.message || 'Request failed');
@@ -593,10 +379,8 @@ export class ApiClient {
   }
 
   async get<T>(endpoint: string, params?: Record<string, any>): Promise<ApiResponse<T>> {
-    const searchParams = params ? new URLSearchParams(params).toString() : '';
-    const url = searchParams ? `${endpoint}?${searchParams}` : endpoint;
-    
-    return this.request<T>(url, { method: 'GET' });
+    const search = params ? `?${new URLSearchParams(params)}` : '';
+    return this.request<T>(`${endpoint}${search}`);
   }
 
   async post<T>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
@@ -614,233 +398,193 @@ export class ApiClient {
   }
 
   async delete<T>(endpoint: string): Promise<ApiResponse<T>> {
-    return this.request<T>(endpoint, { method: 'DELETE' });
+    return this.request<T>(endpoint, {
+      method: 'DELETE',
+    });
   }
 }
 
-export const apiClient = new ApiClient();
+export const apiClient = new ApiClient(
+  process.env.NEXT_PUBLIC_API_URL || '/api'
+);
 ```
 
-### React Query Integration
+### React Hooks
 ```typescript
-// hooks/useApi.ts
+// hooks/use-api.ts
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api/client';
 
-// Products hooks
-export function useProducts(params?: ProductQueryParams) {
+// Dashboard hooks
+export function useDashboardStats() {
   return useQuery({
-    queryKey: ['products', params],
-    queryFn: () => apiClient.get('/admin/products', params),
+    queryKey: ['dashboard-stats'],
+    queryFn: () => apiClient.get('/admin/dashboard'),
     staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchInterval: 60 * 1000, // 1 minute
   });
 }
 
-export function useCreateProduct() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (data: ProductCreate) => apiClient.post('/admin/products', data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-    },
-  });
-}
-
-export function useUpdateProduct() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: ProductUpdate }) =>
-      apiClient.put(`/admin/products/${id}`, data),
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-      queryClient.invalidateQueries({ queryKey: ['product', id] });
-    },
+// Health check hook
+export function useHealthCheck() {
+  return useQuery({
+    queryKey: ['health'],
+    queryFn: () => apiClient.get('/health'),
+    staleTime: 30 * 1000, // 30 seconds
+    refetchInterval: 30 * 1000, // 30 seconds
   });
 }
 ```
 
-## Testing Strategy
+## Testing
 
 ### Unit Tests
 ```typescript
-// tests/api.test.ts
-import { GET, POST } from '@/app/api/admin/products/route';
-import { createMockRequest } from '@/lib/test-utils';
+// __tests__/api/dashboard.test.ts
+import { GET } from '@/app/api/admin/dashboard/route';
+import { NextRequest } from 'next/server';
 
-describe('Products API', () => {
-  test('GET returns products list', async () => {
-    const request = createMockRequest('GET', '/api/admin/products');
+describe('/api/admin/dashboard', () => {
+  it('should return dashboard stats', async () => {
+    const request = new NextRequest('http://localhost:3000/api/admin/dashboard');
     const response = await GET(request);
-    
-    expect(response.status).toBe(200);
     const data = await response.json();
+
+    expect(response.status).toBe(200);
     expect(data.success).toBe(true);
-    expect(Array.isArray(data.data)).toBe(true);
+    expect(data.data).toHaveProperty('totalSessions');
+    expect(data.data).toHaveProperty('systemHealth');
   });
 
-  test('POST creates new product', async () => {
-    const productData = {
-      name: 'Test Product',
-      price: 99.99,
-      category: 'Test',
-    };
-
-    const request = createMockRequest('POST', '/api/admin/products', productData);
-    const response = await POST(request);
-    
-    expect(response.status).toBe(200);
-    const data = await response.json();
-    expect(data.success).toBe(true);
-    expect(data.data.name).toBe(productData.name);
-  });
-
-  test('POST validates required fields', async () => {
-    const invalidData = { price: -10 }; // Missing name and invalid price
-
-    const request = createMockRequest('POST', '/api/admin/products', invalidData);
-    const response = await POST(request);
-    
-    expect(response.status).toBe(400);
-    const data = await response.json();
-    expect(data.success).toBe(false);
-    expect(data.error.code).toBe('VALIDATION_ERROR');
+  it('should require authentication', async () => {
+    // Test authentication requirement
+    // This would need to be implemented with proper auth mocking
   });
 });
 ```
 
 ### Integration Tests
 ```typescript
-// tests/api.integration.test.ts
-describe('API Integration', () => {
-  test('Full product CRUD workflow', async () => {
-    // Create
-    const createResponse = await apiClient.post('/admin/products', {
-      name: 'Integration Test Product',
-      price: 199.99,
-    });
-    expect(createResponse.success).toBe(true);
+// __tests__/api/health.test.ts
+import { GET } from '@/app/api/health/route';
 
-    const productId = createResponse.data.id;
+describe('/api/health', () => {
+  it('should return health status', async () => {
+    const request = new NextRequest('http://localhost:3000/api/health');
+    const response = await GET(request);
+    const data = await response.json();
 
-    // Read
-    const getResponse = await apiClient.get(`/admin/products/${productId}`);
-    expect(getResponse.success).toBe(true);
-    expect(getResponse.data.name).toBe('Integration Test Product');
-
-    // Update
-    const updateResponse = await apiClient.put(`/admin/products/${productId}`, {
-      price: 299.99,
-    });
-    expect(updateResponse.success).toBe(true);
-    expect(updateResponse.data.price).toBe(299.99);
-
-    // Delete
-    const deleteResponse = await apiClient.delete(`/admin/products/${productId}`);
-    expect(deleteResponse.success).toBe(true);
+    expect(response.status).toBe(200);
+    expect(data.success).toBe(true);
+    expect(data.data).toHaveProperty('status');
+    expect(data.data).toHaveProperty('timestamp');
   });
 });
+```
+
+## Security Considerations
+
+### Rate Limiting
+```typescript
+// middleware/rate-limit.ts
+import { NextRequest, NextResponse } from 'next/server';
+
+const rateLimitMap = new Map();
+
+export function rateLimit(request: NextRequest, limit: number = 100, window: number = 60000) {
+  const ip = request.ip || 'unknown';
+  const now = Date.now();
+  const windowStart = now - window;
+
+  if (!rateLimitMap.has(ip)) {
+    rateLimitMap.set(ip, []);
+  }
+
+  const requests = rateLimitMap.get(ip);
+  const validRequests = requests.filter((timestamp: number) => timestamp > windowStart);
+
+  if (validRequests.length >= limit) {
+    return NextResponse.json(
+      { error: 'Too many requests' },
+      { status: 429 }
+    );
+  }
+
+  validRequests.push(now);
+  rateLimitMap.set(ip, validRequests);
+
+  return null;
+}
+```
+
+### CORS Configuration
+```typescript
+// middleware.ts
+import { NextRequest, NextResponse } from 'next/server';
+import { rateLimit } from './middleware/rate-limit';
+
+export function middleware(request: NextRequest) {
+  // Apply rate limiting
+  const rateLimitResponse = rateLimit(request);
+  if (rateLimitResponse) return rateLimitResponse;
+
+  // CORS headers
+  const response = NextResponse.next();
+  
+  response.headers.set('Access-Control-Allow-Origin', '*');
+  response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  return response;
+}
+
+export const config = {
+  matcher: '/api/:path*',
+};
 ```
 
 ## Documentation
 
 ### OpenAPI Specification
 ```typescript
-// lib/api/openapi.ts
+// Generate OpenAPI spec from Zod schemas
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
+
 export const openApiSpec = {
   openapi: '3.0.0',
   info: {
-    title: 'RPM Accesorios API',
+    title: 'RPM API',
     version: '1.0.0',
-    description: 'API for RPM Accesorios management system',
+    description: 'API for RPM Accesorios administration',
   },
   paths: {
-    '/api/admin/products': {
+    '/api/admin/dashboard': {
       get: {
-        summary: 'List products',
-        tags: ['Products'],
-        parameters: [
-          {
-            name: 'page',
-            in: 'query',
-            schema: { type: 'integer', minimum: 1, default: 1 },
-          },
-          {
-            name: 'limit',
-            in: 'query',
-            schema: { type: 'integer', minimum: 1, maximum: 100, default: 20 },
-          },
-        ],
+        summary: 'Get dashboard statistics',
         responses: {
           200: {
-            description: 'Products list',
-            content: {
-              'application/json': {
-                schema: { $ref: '#/components/schemas/ProductsResponse' },
-              },
-            },
+            description: 'Dashboard stats',
+            schema: DashboardStatsSchema,
           },
         },
       },
-      // ... other endpoints
     },
-  },
-  components: {
-    schemas: {
-      Product: {
-        type: 'object',
-        properties: {
-          id: { type: 'string' },
-          name: { type: 'string' },
-          price: { type: 'number' },
-          // ... other properties
+    '/api/health': {
+      get: {
+        summary: 'Health check',
+        responses: {
+          200: {
+            description: 'Health status',
+          },
         },
       },
-      // ... other schemas
     },
   },
 };
 ```
 
-## Vinculación con Otras Especificaciones
+---
 
-### Dependencias
-- **core.md**: Requiere configuración de Next.js API routes
-- **auth.md**: Utiliza middleware de autenticación
-- **database.md**: Integra con PrismaService
-- **realtime.md**: Emite eventos desde API handlers
-
-### Especificaciones Relacionadas
-- `/specs/SYSTEM_SPEC.md` - Configuración de Vercel
-- `/specs/vercel-deployment.md` - Environment variables
-
-## Tests y Documentación Relacionados
-
-### Tests Unitarios
-- `api.test.ts` - Tests de endpoints básicos
-- `validation.test.ts` - Tests de schemas Zod
-- `middleware.test.ts` - Tests de middleware
-
-### Documentación Técnica
-- `docs/api-reference.md` - Referencia completa de API
-- `docs/validation-guide.md` - Guía de validaciones
-- `docs/error-handling.md` - Manejo de errores
-
-### Vinculación Activa
-- **Última actualización**: 2025-03-25
-- **Estado tests**: 🟢 Todos pasando
-- **Cobertura**: 90% (objetivo >95%)
-
-## Maintenance
-
-### Regular Tasks
-- **Schema Updates**: Mantener schemas Zod sincronizados
-- **API Versioning**: Estrategia para cambios breaking
-- **Documentation**: Actualizar OpenAPI specs
-- **Security**: Revisión de permisos y validaciones
-
-### Monitoring
-- **Request Logs**: Tracking de errores y performance
-- **Rate Limits**: Monitoreo de límites de uso
-- **Security Events**: Intentos de acceso no autorizado
+**Last Updated:** 2026-03-25  
+**Status:** ✅ Core API architecture defined

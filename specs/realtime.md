@@ -2,7 +2,7 @@
 
 ## Overview
 
-Sistema de actualizaciones en tiempo real basado en Socket.io para mantener sincronizadas todas las interfaces de usuario cuando ocurren cambios en el backend, permitiendo colaboración en tiempo real entre staff y actualizaciones automáticas para clientes.
+Sistema de actualizaciones en tiempo real basado en Socket.io para mantener sincronizadas todas las interfaces de usuario cuando ocurren cambios en el backend, permitiendo colaboración en tiempo real entre staff y actualizaciones automáticas.
 
 ## Stack Tecnológico
 
@@ -55,83 +55,42 @@ export const SocketHandler = (res: ResponseWithSocket) => {
 
   res.socket.server.io = io;
   console.log('Socket.io server initialized');
+  return io;
 };
 ```
 
-### API Route Handler
-```typescript
-// pages/api/socket/io.ts
-import { NextApiRequest } from 'next';
-import { SocketHandler } from '@/lib/socket';
-
-export default function SocketIOHandler(req: NextApiRequest, res: any) {
-  SocketHandler(res);
-  res.end();
-}
-
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
-```
-
-## Event Architecture
-
-### Event Types Definition
+### Socket Events
 ```typescript
 // lib/socket/events.ts
 export enum SocketEvents {
-  // Product Events
-  PRODUCT_CREATED = 'product:created',
-  PRODUCT_UPDATED = 'product:updated',
-  PRODUCT_DELETED = 'product:deleted',
-  
-  // User Events
-  USER_UPDATED = 'user:updated',
-  USER_ROLE_CHANGED = 'user:role-changed',
-  
-  // Order Events
-  ORDER_CREATED = 'order:created',
-  ORDER_UPDATED = 'order:updated',
+  // System Events
+  SYSTEM_NOTIFICATION = 'system:notification',
+  SESSION_CONNECTED = 'session:connected',
+  SESSION_DISCONNECTED = 'session:disconnected',
   
   // Cache Events
   CACHE_INVALIDATE = 'cache:invalidate',
-  CACHE_REFRESH = 'cache:refresh',
   
-  // System Events
-  SYSTEM_NOTIFICATION = 'system:notification',
-  USER_CONNECTED = 'user:connected',
-  USER_DISCONNECTED = 'user:disconnected',
+  // Health Events
+  HEALTH_STATUS_CHANGED = 'health:status-changed',
 }
 
 export interface SocketEventData {
-  [SocketEvents.PRODUCT_CREATED]: {
-    productId: string;
-    productData: any;
-    createdBy: string;
-    timestamp: number;
-  };
-  
-  [SocketEvents.PRODUCT_UPDATED]: {
-    productId: string;
-    changes: Partial<any>;
-    updatedBy: string;
-    timestamp: number;
+  [SocketEvents.SYSTEM_NOTIFICATION]: {
+    title: string;
+    message: string;
+    type?: 'info' | 'success' | 'warning' | 'error';
+    duration?: number;
   };
   
   [SocketEvents.CACHE_INVALIDATE]: {
     keys: string[];
-    scope: 'user' | 'global' | 'role';
-    affectedUsers?: string[];
+    scope: 'global' | 'session';
   };
   
-  [SocketEvents.SYSTEM_NOTIFICATION]: {
-    type: 'info' | 'success' | 'warning' | 'error';
-    title: string;
-    message: string;
-    duration?: number;
-    targetUsers?: string[];
+  [SocketEvents.HEALTH_STATUS_CHANGED]: {
+    status: 'healthy' | 'degraded' | 'down';
+    timestamp: number;
   };
 }
 ```
@@ -141,24 +100,16 @@ export interface SocketEventData {
 // hooks/useSocket.ts
 import { useEffect, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { useSession } from 'next-auth/react';
 import { useQueryClient } from '@tanstack/react-query';
 
 export function useSocket() {
-  const { data: session } = useSession();
   const queryClient = useQueryClient();
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
-    if (!session?.user) return;
-
     // Initialize socket connection
     socketRef.current = io({
       path: '/api/socket/io',
-      auth: {
-        token: session.user.id,
-        role: session.user.role,
-      },
     });
 
     const socket = socketRef.current;
@@ -166,157 +117,115 @@ export function useSocket() {
     // Connection events
     socket.on('connect', () => {
       console.log('Socket connected:', socket.id);
-      socket.emit('user:connected', {
-        userId: session.user.id,
-        role: session.user.role,
-      });
+      socket.emit('session:connected');
     });
 
     socket.on('disconnect', () => {
       console.log('Socket disconnected');
     });
 
-    // Product events
-    socket.on('product:updated', (data) => {
-      // Invalidate product queries
-      queryClient.invalidateQueries(['products']);
-      queryClient.invalidateQueries(['product', data.productId]);
-      
-      // Show notification
-      showToast('Product updated', 'info');
-    });
-
-    socket.on('product:created', (data) => {
-      queryClient.invalidateQueries(['products']);
-      showToast('New product created', 'success');
-    });
-
     // Cache events
     socket.on('cache:invalidate', (data) => {
-      if (data.scope === 'global' || 
-          (data.scope === 'role' && data.roles?.includes(session.user.role)) ||
-          (data.scope === 'user' && data.affectedUsers?.includes(session.user.id))) {
-        
-        data.keys.forEach(key => {
-          queryClient.invalidateQueries([key]);
-        });
-      }
+      data.keys.forEach(key => {
+        queryClient.invalidateQueries([key]);
+      });
     });
 
     // System notifications
     socket.on('system:notification', (data) => {
-      if (!data.targetUsers || data.targetUsers.includes(session.user.id)) {
-        showToast(data.message, data.type, data.duration);
+      showToast(data.message, data.type, data.duration);
+    });
+
+    // Health status changes
+    socket.on('health:status-changed', (data) => {
+      queryClient.invalidateQueries(['health']);
+      if (data.status !== 'healthy') {
+        showToast(`System status: ${data.status}`, 'warning');
       }
     });
 
     return () => {
       socket.disconnect();
     };
-  }, [session, queryClient]);
+  }, [queryClient]);
 
   return socketRef.current;
 }
-```
 
-## Backend Event Emission
+function showToast(message: string, type: string, duration?: number) {
+  // Implement toast notification
+  console.log(`[${type.toUpperCase()}] ${message}`);
+}
+```
 
 ### Service Integration
 ```typescript
-// services/productService.ts
-import { getServerSession } from 'next-auth';
+// services/healthService.ts
 import { socketIO } from '@/lib/socket';
 import { SocketEvents } from '@/lib/socket/events';
 
-export async function updateProduct(id: string, data: ProductUpdate) {
-  const session = await getServerSession();
-  
-  if (!session) {
-    throw new Error('Unauthorized');
-  }
-
-  // Update product in database
-  const product = await prisma.product.update({
-    where: { id },
-    data: {
-      ...data,
+export async function updateHealthStatus(status: 'healthy' | 'degraded' | 'down') {
+  // Update health status in database
+  await prisma.systemHealth.update({
+    where: { id: 'system' },
+    data: { 
+      status,
       updatedAt: new Date(),
-      updatedBy: session.user.id,
     },
   });
 
   // Emit real-time event
-  socketIO?.emit(SocketEvents.PRODUCT_UPDATED, {
-    productId: product.id,
-    changes: data,
-    updatedBy: session.user.id,
+  socketIO?.emit(SocketEvents.HEALTH_STATUS_CHANGED, {
+    status,
     timestamp: Date.now(),
   });
-
-  return product;
 }
 
-export async function createProduct(data: ProductCreate) {
-  const session = await getServerSession();
-  
-  const product = await prisma.product.create({
-    data: {
-      ...data,
-      createdBy: session.user.id,
-      createdAt: new Date(),
-    },
-  });
-
-  // Emit creation event
-  socketIO?.emit(SocketEvents.PRODUCT_CREATED, {
-    productId: product.id,
-    productData: product,
-    createdBy: session.user.id,
+export async function invalidateCache(keys: string[], scope: 'global' | 'session' = 'global') {
+  // Emit cache invalidation event
+  socketIO?.emit(SocketEvents.CACHE_INVALIDATE, {
+    keys,
+    scope,
     timestamp: Date.now(),
   });
-
-  return product;
 }
 ```
 
-### Cache Invalidation Service
+## Cache Management
+
+### React Query Integration
 ```typescript
-// services/cacheService.ts
-import { socketIO } from '@/lib/socket';
-import { SocketEvents } from '@/lib/socket/events';
+// lib/queryClient.ts
+import { QueryClient } from '@tanstack/react-query';
 
-export class CacheInvalidationService {
-  static invalidateGlobal(keys: string[]) {
-    socketIO?.emit(SocketEvents.CACHE_INVALIDATE, {
-      keys,
-      scope: 'global',
-      timestamp: Date.now(),
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
+// Cache invalidation utilities
+export class CacheManager {
+  static invalidate(keys: string[]) {
+    keys.forEach(key => {
+      queryClient.invalidateQueries([key]);
     });
   }
 
-  static invalidateForRole(keys: string[], roles: string[]) {
-    socketIO?.emit(SocketEvents.CACHE_INVALIDATE, {
-      keys,
-      scope: 'role',
-      roles,
-      timestamp: Date.now(),
+  static invalidatePattern(pattern: string) {
+    const cache = queryClient.getQueryCache();
+    cache.getAll().forEach(query => {
+      if (query.queryKey[0]?.toString().includes(pattern)) {
+        queryClient.invalidateQueries(query.queryKey);
+      }
     });
   }
 
-  static invalidateForUsers(keys: string[], userIds: string[]) {
-    socketIO?.emit(SocketEvents.CACHE_INVALIDATE, {
-      keys,
-      scope: 'user',
-      affectedUsers: userIds,
-      timestamp: Date.now(),
-    });
-  }
-
-  static refreshCache(keys: string[]) {
-    socketIO?.emit(SocketEvents.CACHE_REFRESH, {
-      keys,
-      timestamp: Date.now(),
-    });
+  static clear() {
+    queryClient.clear();
   }
 }
 ```
@@ -325,126 +234,129 @@ export class CacheInvalidationService {
 
 ### Event Throttling
 ```typescript
-// lib/socket/throttling.ts
-class EventThrottler {
-  private static instance: EventThrottler;
-  private eventQueue: Map<string, any[]> = new Map();
-  private timers: Map<string, NodeJS.Timeout> = new Map();
+// lib/socket/throttler.ts
+export class EventThrottler {
+  private static timers: Map<string, NodeJS.Timeout> = new Map();
 
-  static getInstance(): EventThrottler {
-    if (!EventThrottler.instance) {
-      EventThrottler.instance = new EventThrottler();
-    }
-    return EventThrottler.instance;
-  }
-
-  throttle<T>(event: string, data: T, delay: number = 100) {
-    if (!this.eventQueue.has(event)) {
-      this.eventQueue.set(event, []);
+  static throttle(event: string, callback: () => void, delay: number = 1000) {
+    const existingTimer = this.timers.get(event);
+    if (existingTimer) {
+      clearTimeout(existingTimer);
     }
 
-    this.eventQueue.get(event)!.push(data);
-
-    if (this.timers.has(event)) {
-      return; // Already scheduled
-    }
-
-    this.timers.set(event, setTimeout(() => {
-      const events = this.eventQueue.get(event)!;
-      if (events.length > 0) {
-        // Batch events or send latest
-        socketIO?.emit(event, events[events.length - 1]);
-      }
-      
-      this.eventQueue.delete(event);
+    const timer = setTimeout(() => {
+      callback();
       this.timers.delete(event);
-    }, delay));
+    }, delay);
+
+    this.timers.set(event, timer);
+  }
+
+  static cancel(event: string) {
+    const timer = this.timers.get(event);
+    if (timer) {
+      clearTimeout(timer);
+      this.timers.delete(event);
+    }
   }
 }
-
-export const eventThrottler = EventThrottler.getInstance();
 ```
 
-### Connection Management
+### Event Batching
 ```typescript
-// lib/socket/connectionManager.ts
-export class ConnectionManager {
-  private static connectedUsers: Map<string, Set<string>> = new Map();
-  private static userSockets: Map<string, string> = new Map();
+// lib/socket/batcher.ts
+export class EventBatcher {
+  private static batches: Map<string, any[]> = new Map();
+  private static timers: Map<string, NodeJS.Timeout> = new Map();
 
-  static addUser(userId: string, socketId: string) {
-    if (!this.connectedUsers.has(userId)) {
-      this.connectedUsers.set(userId, new Set());
+  static batch<T>(event: string, data: T, delay: number = 100) {
+    if (!this.batches.has(event)) {
+      this.batches.set(event, []);
     }
-    this.connectedUsers.get(userId)!.add(socketId);
-    this.userSockets.set(socketId, userId);
-  }
 
-  static removeUser(socketId: string) {
-    const userId = this.userSockets.get(socketId);
-    if (userId) {
-      this.connectedUsers.get(userId)?.delete(socketId);
-      if (this.connectedUsers.get(userId)?.size === 0) {
-        this.connectedUsers.delete(userId);
-      }
+    this.batches.get(event)!.push(data);
+
+    if (!this.timers.has(event)) {
+      const timer = setTimeout(() => {
+        const batch = this.batches.get(event) || [];
+        this.emitBatch(event, batch);
+        this.batches.delete(event);
+        this.timers.delete(event);
+      }, delay);
+
+      this.timers.set(event, timer);
     }
-    this.userSockets.delete(socketId);
   }
 
-  static getConnectedUsers(): string[] {
-    return Array.from(this.connectedUsers.keys());
-  }
-
-  static isUserConnected(userId: string): boolean {
-    return this.connectedUsers.has(userId);
-  }
-
-  static getUserSocketIds(userId: string): string[] {
-    return Array.from(this.connectedUsers.get(userId) || []);
+  private static emitBatch(event: string, batch: any[]) {
+    // Emit batched event
+    console.log(`Batching ${batch.length} events for ${event}`);
   }
 }
 ```
 
-## Error Handling & Recovery
+## Error Handling
 
 ### Reconnection Strategy
 ```typescript
-// hooks/useSocketReconnection.ts
-export function useSocketReconnection() {
-  const [reconnectionAttempts, setReconnectionAttempts] = useState(0);
-  const [isReconnecting, setIsReconnecting] = useState(false);
+// hooks/useSocket.ts (enhanced)
+export function useSocket() {
+  // ... existing code ...
 
-  const handleReconnection = useCallback(() => {
-    setIsReconnecting(true);
-    setReconnectionAttempts(prev => prev + 1);
+  useEffect(() => {
+    const socket = io({
+      path: '/api/socket/io',
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+    });
 
-    // Exponential backoff
-    const delay = Math.min(1000 * Math.pow(2, reconnectionAttempts), 30000);
-    
-    setTimeout(() => {
-      setIsReconnecting(false);
-    }, delay);
-  }, [reconnectionAttempts]);
+    socket.on('connect_error', (error) => {
+      console.error('Socket connection error:', error);
+    });
 
-  return { reconnectionAttempts, isReconnecting, handleReconnection };
+    socket.on('reconnect', (attemptNumber) => {
+      console.log(`Socket reconnected after ${attemptNumber} attempts`);
+      // Refresh data on reconnect
+      queryClient.invalidateQueries();
+    });
+
+    socket.on('reconnect_failed', () => {
+      console.error('Failed to reconnect to socket');
+      showToast('Connection lost. Please refresh the page.', 'error');
+    });
+
+    // ... rest of the code ...
+  }, [queryClient]);
 }
 ```
 
 ### Error Boundary
 ```typescript
 // components/SocketErrorBoundary.tsx
-export class SocketErrorBoundary extends Component {
-  constructor(props) {
+import { Component, ReactNode } from 'react';
+
+interface Props {
+  children: ReactNode;
+}
+
+interface State {
+  hasError: boolean;
+}
+
+export class SocketErrorBoundary extends Component<Props, State> {
+  constructor(props: Props) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = { hasError: false };
   }
 
-  static getDerivedStateFromError(error) {
-    return { hasError: true, error };
+  static getDerivedStateFromError(_: Error): State {
+    return { hasError: true };
   }
 
-  componentDidCatch(error, errorInfo) {
-    console.error('Socket error:', error, errorInfo);
+  componentDidCatch(error: Error, errorInfo: any) {
+    console.error('Socket error boundary caught:', error, errorInfo);
   }
 
   render() {
@@ -455,6 +367,12 @@ export class SocketErrorBoundary extends Component {
           <p className="text-red-600">
             Real-time features are temporarily unavailable.
           </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+          >
+            Reload Page
+          </button>
         </div>
       );
     }
@@ -464,121 +382,211 @@ export class SocketErrorBoundary extends Component {
 }
 ```
 
-## Testing Strategy
+## Testing
 
-### Unit Tests
+### Socket Events Testing
 ```typescript
-// tests/socket.test.ts
+// __tests__/socket/events.test.ts
 import { SocketEvents } from '@/lib/socket/events';
 
 describe('Socket Events', () => {
-  test('Emits product:updated event', async () => {
+  test('Emits health status change event', async () => {
     const mockSocket = { emit: jest.fn() };
     
-    await updateProduct('123', { name: 'Updated Product' });
+    await updateHealthStatus('degraded');
     
     expect(mockSocket.emit).toHaveBeenCalledWith(
-      SocketEvents.PRODUCT_UPDATED,
+      SocketEvents.HEALTH_STATUS_CHANGED,
       expect.objectContaining({
-        productId: '123',
-        updatedBy: expect.any(String),
+        status: 'degraded',
         timestamp: expect.any(Number),
       })
     );
   });
 
-  test('Throttles rapid events', () => {
-    const throttler = EventThrottler.getInstance();
+  test('Invalidates cache correctly', async () => {
     const mockSocket = { emit: jest.fn() };
     
-    // Emit multiple rapid events
-    for (let i = 0; i < 10; i++) {
-      throttler.throttle('test:event', { id: i });
-    }
+    await invalidateCache(['dashboard', 'health']);
     
-    // Should only emit once after delay
-    setTimeout(() => {
-      expect(mockSocket.emit).toHaveBeenCalledTimes(1);
-    }, 150);
+    expect(mockSocket.emit).toHaveBeenCalledWith(
+      SocketEvents.CACHE_INVALIDATE,
+      expect.objectContaining({
+        keys: ['dashboard', 'health'],
+        scope: 'global',
+      })
+    );
   });
 });
 ```
 
-### Integration Tests
+### Integration Testing
 ```typescript
-// tests/socket.integration.test.ts
+// __tests__/socket/integration.test.ts
+import { io as ClientIO } from 'socket.io-client';
+import { setupServer } from 'socket.io-testing';
+
 describe('Socket Integration', () => {
-  test('Client receives real-time updates', async () => {
-    const client = io();
-    const server = getServer();
-    
+  let server: any;
+  let client: any;
+
+  beforeAll(async () => {
+    server = setupServer();
+    await server.start();
+  });
+
+  afterAll(async () => {
+    await server.stop();
+  });
+
+  beforeEach(() => {
+    client = ClientIO(server.url);
+  });
+
+  afterEach(() => {
+    client.close();
+  });
+
+  test('Client connects and receives events', async () => {
     const promise = new Promise((resolve) => {
-      client.on('product:updated', resolve);
+      client.on('health:status-changed', resolve);
     });
     
     // Trigger server event
-    await updateProduct('123', { name: 'Test' });
+    await updateHealthStatus('healthy');
     
     const result = await promise;
-    expect(result.productId).toBe('123');
+    expect(result).toHaveProperty('status', 'healthy');
   });
 });
 ```
 
-## Vinculación con Otras Especificaciones
+## Monitoring
 
-### Dependencias
-- **core.md**: Requiere configuración de Next.js API routes
-- **auth.md**: Utiliza sesión para autenticación de socket
-- **database.md**: Emite eventos basados en cambios DB
-- **api.md**: Integra con API routes para eventos
-
-### Especificaciones Relacionadas
-- `/specs/SYSTEM_SPEC.md` - Configuración de Vercel
-- `/specs/components.md` - Componentes real-time UI
-
-## Tests y Documentación Relacionados
-
-### Tests Unitarios
-- `socket.test.ts` - Validación de eventos y throttling
-- `socket.integration.test.ts` - Tests de conexión cliente-servidor
-- `cache.test.ts` - Validación de invalidación
-
-### Documentación Técnica
-- `docs/socket-setup.md` - Guía de configuración
-- `docs/realtime-patterns.md` - Patrones de implementación
-
-### Vinculación Activa
-- **Última actualización**: 2025-03-25
-- **Estado tests**: 🟢 Todos pasando
-- **Cobertura**: 85% (objetivo >90%)
-
-## Monitoring & Maintenance
-
-### Metrics to Track
-- **Connection Count**: Usuarios conectados en tiempo real
-- **Event Rate**: Frecuencia de eventos por tipo
-- **Latency**: Tiempo de entrega de eventos
-- **Error Rate**: Fallas en conexión o eventos
-
-### Health Checks
+### Connection Metrics
 ```typescript
-// api/socket/health/route.ts
-export async function GET() {
-  const connectedUsers = ConnectionManager.getConnectedUsers().length;
-  const uptime = process.uptime();
-  
-  return Response.json({
-    status: 'healthy',
-    connectedUsers,
-    uptime,
-    timestamp: Date.now(),
-  });
+// lib/socket/metrics.ts
+export class SocketMetrics {
+  private static connections: number = 0;
+  private static disconnections: number = 0;
+  private static errors: number = 0;
+
+  static incrementConnections() {
+    this.connections++;
+    this.reportMetric('connections', this.connections);
+  }
+
+  static incrementDisconnections() {
+    this.disconnections++;
+    this.reportMetric('disconnections', this.disconnections);
+  }
+
+  static incrementErrors() {
+    this.errors++;
+    this.reportMetric('errors', this.errors);
+  }
+
+  private static reportMetric(name: string, value: number) {
+    console.log(`Socket Metric: ${name} = ${value}`);
+    // Send to monitoring service
+  }
+
+  static getMetrics() {
+    return {
+      connections: this.connections,
+      disconnections: this.disconnections,
+      errors: this.errors,
+      activeConnections: this.connections - this.disconnections,
+    };
+  }
 }
 ```
 
-### Regular Maintenance
-- **Connection Cleanup**: Limpiar conexiones inactivas
-- **Event Monitoring**: Revisión de patrones anómalos
-- **Performance**: Optimización de frecuencia de eventos
-- **Security**: Validación de autenticación en cada evento
+## Security
+
+### Authentication
+```typescript
+// lib/socket/auth.ts
+export function authenticateSocket(socket: any, next: any) {
+  const token = socket.handshake.auth.token;
+  
+  if (!token) {
+    return next(new Error('Authentication token required'));
+  }
+
+  // Validate token with Better Auth
+  validateToken(token)
+    .then(session => {
+      socket.session = session;
+      next();
+    })
+    .catch(error => {
+      next(new Error('Invalid authentication token'));
+    });
+}
+
+async function validateToken(token: string) {
+  // Implement token validation
+  return { user: { id: '123', email: 'test@example.com' } };
+}
+```
+
+### Rate Limiting
+```typescript
+// lib/socket/rateLimit.ts
+export class SocketRateLimit {
+  private static requests: Map<string, number[]> = new Map();
+
+  static check(socketId: string, limit: number = 100, window: number = 60000): boolean {
+    const now = Date.now();
+    const windowStart = now - window;
+
+    if (!this.requests.has(socketId)) {
+      this.requests.set(socketId, []);
+    }
+
+    const requests = this.requests.get(socketId)!;
+    const validRequests = requests.filter(timestamp => timestamp > windowStart);
+
+    if (validRequests.length >= limit) {
+      return false;
+    }
+
+    validRequests.push(now);
+    this.requests.set(socketId, validRequests);
+    return true;
+  }
+}
+```
+
+## Configuration
+
+### Environment Variables
+```bash
+# .env.local
+SOCKET_ENABLED=true
+SOCKET_CORS_ORIGIN=http://localhost:3000
+SOCKET_RECONNECTION_ATTEMPTS=5
+SOCKET_RECONNECTION_DELAY=1000
+```
+
+### Socket Options
+```typescript
+// lib/socket/config.ts
+export const socketConfig = {
+  enabled: process.env.SOCKET_ENABLED === 'true',
+  cors: {
+    origin: process.env.SOCKET_CORS_ORIGIN?.split(',') || ['http://localhost:3000'],
+    methods: ['GET', 'POST'],
+  },
+  reconnection: {
+    attempts: parseInt(process.env.SOCKET_RECONNECTION_ATTEMPTS || '5'),
+    delay: parseInt(process.env.SOCKET_RECONNECTION_DELAY || '1000'),
+  },
+};
+```
+
+---
+
+**Last Updated:** 2026-03-25  
+**Status:** ✅ Real-time architecture defined
