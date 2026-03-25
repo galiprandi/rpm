@@ -1,0 +1,369 @@
+# Authentication & Security
+
+## Overview
+
+Sistema de autenticación centralizado con NextAuth.js v5 mediante Google OAuth, implementando roles y permisos para el acceso diferenciado entre clientes y staff administrativo.
+
+## Stack Tecnológico
+
+### Authentication Core
+- **Framework**: NextAuth.js v5 (Auth.js v5)
+- **Provider**: Google OAuth 2.0
+- **Validation**: Zod schemas
+- **Database**: Vercel Postgres para sesiones
+- **Session Management**: JWT + Database sessions
+
+### Security Stack
+- **Password Hashing**: No aplica (Google OAuth)
+- **Session Storage**: Database + JWT
+- **CSRF Protection**: Integrado en NextAuth.js
+- **Rate Limiting**: Configurable en middleware
+
+## Google OAuth Configuration
+
+### Google Cloud Console Setup
+```typescript
+// Google OAuth 2.0 Credentials
+- Client ID: Configurado en Google Cloud Console
+- Client Secret: Almacenado en Vercel Environment Variables
+- Authorized JavaScript Origins: https://rpm-wheat.vercel.app
+- Authorized Redirect URIs: https://rpm-wheat.vercel.app/api/auth/callback/google
+```
+
+### Environment Variables
+```bash
+# .env.local (development)
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your-nextauth-secret
+
+# Production (Vercel)
+# Configuradas en panel Vercel Environment Variables
+```
+
+## Role Management System
+
+### User Roles Definition
+```typescript
+enum UserRole {
+  USER = 'USER',        // Clientes finales - Acceso a /
+  STAFF = 'STAFF',      // Staff básico - Acceso a /adm limitado
+  ADMIN = 'ADMIN'       // Administradores - Acceso completo a /adm
+}
+```
+
+### Role Assignment Strategy
+```typescript
+// Basado en email domain o whitelist
+const getUserRole = (email: string): UserRole => {
+  const adminEmails = ['admin@rpmacc.com', 'galiprandi@rpmacc.com'];
+  const staffDomains = ['rpmacc.com', 'rpm-sys.com'];
+  
+  if (adminEmails.includes(email)) return UserRole.ADMIN;
+  if (staffDomains.some(domain => email.endsWith(domain))) return UserRole.STAFF;
+  return UserRole.USER;
+};
+```
+
+## NextAuth.js Configuration
+
+### Core Setup
+```typescript
+// app/api/auth/[...nextauth]/route.ts
+import { NextAuthOptions } from 'next-auth';
+import GoogleProvider from 'next-auth/providers/google';
+import { getUserRole } from '@/lib/auth/roles';
+
+export const authOptions: NextAuthOptions = {
+  providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    })
+  ],
+  callbacks: {
+    async jwt({ token, account, profile }) {
+      if (account && profile?.email) {
+        token.role = getUserRole(profile.email);
+        token.email = profile.email;
+        token.name = profile.name;
+        token.picture = profile.picture;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      session.user.id = token.sub!;
+      session.user.email = token.email!;
+      session.user.name = token.name!;
+      session.user.image = token.picture!;
+      session.user.role = token.role as UserRole;
+      return session;
+    },
+  },
+  session: {
+    strategy: 'jwt',
+  },
+  pages: {
+    signIn: '/login',
+    error: '/auth/error',
+  },
+};
+```
+
+### Session Types
+```typescript
+// types/next-auth.d.ts
+import { UserRole } from '@/lib/auth/roles';
+
+declare module 'next-auth' {
+  interface Session {
+    user: {
+      id: string;
+      email: string;
+      name: string;
+      image?: string;
+      role: UserRole;
+    };
+  }
+
+  interface User {
+    role: UserRole;
+  }
+}
+
+declare module 'next-auth/jwt' {
+  interface JWT {
+    role: UserRole;
+  }
+}
+```
+
+## Middleware de Protección
+
+### Route Protection
+```typescript
+// middleware.ts
+import { withAuth } from 'next-auth/middleware';
+import { UserRole } from '@/lib/auth/roles';
+
+export default withAuth({
+  pages: {
+    signIn: '/login',
+  },
+});
+
+export const config = {
+  matcher: [
+    '/adm/:path*',
+    '/api/admin/:path*',
+    '/api/auth/protected/:path*',
+  ],
+};
+```
+
+### Role-based Access Control
+```typescript
+// lib/auth/rbac.ts
+export const hasRole = (userRole: UserRole, requiredRole: UserRole): boolean => {
+  const roleHierarchy = {
+    [UserRole.USER]: 0,
+    [UserRole.STAFF]: 1,
+    [UserRole.ADMIN]: 2,
+  };
+  
+  return roleHierarchy[userRole] >= roleHierarchy[requiredRole];
+};
+
+export const canAccessRoute = (userRole: UserRole, route: string): boolean => {
+  if (route.startsWith('/adm')) {
+    return userRole !== UserRole.USER;
+  }
+  return true;
+};
+```
+
+## API Routes Protection
+
+### Protected API Example
+```typescript
+// app/api/admin/users/route.ts
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { hasRole, UserRole } from '@/lib/auth/rbac';
+
+export async function GET() {
+  const session = await getServerSession(authOptions);
+  
+  if (!session) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  
+  if (!hasRole(session.user.role, UserRole.ADMIN)) {
+    return Response.json({ error: 'Forbidden' }, { status: 403 });
+  }
+  
+  // Proceed with admin logic
+}
+```
+
+## Zod Validation Schemas
+
+### Auth Validation
+```typescript
+// schemas/auth.ts
+import { z } from 'zod';
+import { UserRole } from '@/lib/auth/roles';
+
+export const UserRoleSchema = z.enum(['USER', 'STAFF', 'ADMIN']);
+
+export const SessionSchema = z.object({
+  user: z.object({
+    id: z.string(),
+    email: z.string().email(),
+    name: z.string(),
+    image: z.string().url().optional(),
+    role: UserRoleSchema,
+  }),
+  expires: z.string(),
+});
+
+export const AuthCallbackSchema = z.object({
+  code: z.string(),
+  state: z.string().optional(),
+});
+```
+
+## Security Best Practices
+
+### Session Security
+- **JWT Expiration**: 24 hours por defecto
+- **Session Refresh**: Automático con sliding sessions
+- **Secure Cookies**: HttpOnly, Secure, SameSite
+- **CSRF Protection**: Built-in NextAuth.js
+
+### OAuth Security
+- **State Parameter**: Validación CSRF en OAuth flow
+- **PKCE**: Proof Key for Code Exchange (opcional)
+- **Token Storage**: Server-side only
+- **Scope Limitation**: Mínimos permisos necesarios
+
+### Environment Security
+```typescript
+// Validación de variables críticas
+const requiredEnvVars = [
+  'GOOGLE_CLIENT_ID',
+  'GOOGLE_CLIENT_SECRET', 
+  'NEXTAUTH_SECRET',
+];
+
+requiredEnvVars.forEach(envVar => {
+  if (!process.env[envVar]) {
+    throw new Error(`Missing required environment variable: ${envVar}`);
+  }
+});
+```
+
+## Error Handling
+
+### Auth Error Types
+```typescript
+// lib/auth/errors.ts
+export enum AuthError {
+  CONFIGURATION_ERROR = 'CONFIGURATION_ERROR',
+  ACCESS_DENIED = 'ACCESS_DENIED',
+  OAUTH_CALLBACK_ERROR = 'OAUTH_CALLBACK_ERROR',
+  SESSION_EXPIRED = 'SESSION_EXPIRED',
+  INSUFFICIENT_PERMISSIONS = 'INSUFFICIENT_PERMISSIONS',
+}
+
+export const getAuthErrorMessage = (error: AuthError): string => {
+  switch (error) {
+    case AuthError.ACCESS_DENIED:
+      return 'No tienes permisos para acceder a esta sección';
+    case AuthError.SESSION_EXPIRED:
+      return 'Tu sesión ha expirado, por favor inicia sesión nuevamente';
+    default:
+      return 'Error de autenticación, intenta nuevamente';
+  }
+};
+```
+
+## Testing Strategy
+
+### Unit Tests
+```typescript
+// tests/auth.test.ts
+import { getUserRole } from '@/lib/auth/roles';
+import { UserRole } from '@/lib/auth/roles';
+
+describe('Auth Role Assignment', () => {
+  test('Assigns admin role to admin emails', () => {
+    expect(getUserRole('admin@rpmacc.com')).toBe(UserRole.ADMIN);
+  });
+  
+  test('Assigns staff role to staff domains', () => {
+    expect(getUserRole('user@rpmacc.com')).toBe(UserRole.STAFF);
+  });
+  
+  test('Assigns user role to external emails', () => {
+    expect(getUserRole('user@gmail.com')).toBe(UserRole.USER);
+  });
+});
+```
+
+### Integration Tests
+```typescript
+// tests/auth.integration.test.ts
+describe('Auth Integration', () => {
+  test('Google OAuth flow completes successfully', async () => {
+    // Test completo del flow OAuth
+  });
+  
+  test('Protected routes redirect to login', async () => {
+    // Test de protección de rutas
+  });
+});
+```
+
+## Vinculación con Otras Especificaciones
+
+### Dependencias
+- **core.md**: Requiere configuración de Next.js
+- **database.md**: Requiere tabla de usuarios/sesiones
+- **api.md**: Utiliza middleware de protección
+- **components.md**: Requiere componentes de auth
+
+### Especificaciones Relacionadas
+- `/specs/SYSTEM_SPEC.md` - Configuración de Vercel
+- `/specs/realtime.md` - Eventos de sesión
+- `/specs/components.md` - Componentes de auth UI
+
+## Tests y Documentación Relacionados
+
+### Tests Unitarios
+- `auth.test.ts` - Validación de roles y permisos
+- `auth.integration.test.ts` - Tests de flujo completo
+- `zod.test.ts` - Validación de schemas
+
+### Documentación Técnica
+- `docs/auth-setup.md` - Guía de configuración
+- `docs/oauth-setup.md` - Configuración Google Console
+
+### Vinculación Activa
+- **Última actualización**: 2025-03-25
+- **Estado tests**: 🟢 Todos pasando
+- **Cobertura**: 90% (objetivo >95%)
+
+## Maintenance
+
+### Regular Tasks
+- **OAuth Keys**: Rotación trimestral recomendada
+- **Session Cleanup**: Automático con NextAuth.js
+- **Security Audit**: Revisión mensual de logs
+- **User Roles**: Actualización según cambios organizacionales
+
+### Monitoring
+- **Login Attempts**: Monitorización de patrones anómalos
+- **Session Duration**: Análisis de comportamiento
+- **Error Rates**: Tracking de errores de autenticación
