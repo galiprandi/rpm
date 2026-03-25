@@ -229,10 +229,13 @@ El agente debe realizar preguntas numeradas con opciones recomendadas para elimi
 
 ### 10.4. Presentación del Borrador
 Una vez completado el interrogatorio:
+- **OBLIGATORIO**: Mostrar siempre el borrador completo para revisión del usuario
+- **PROHIBIDO**: Crear archivos de especificación sin aprobación explícita
+- **FLUJO**: Presentar borrador → Esperar aprobación explícita → Recién entonces crear archivo
 - Generar un borrador completo de la especificación
 - Incluir todas las decisiones tomadas durante el interrogatorio
 - Estructurar según el formato estándar de especificaciones del proyecto
-- Presentar el borrador para revisión del usuario
+- **ESPERAR SIEMPRE** aprobación explícita del usuario antes de crear cualquier archivo
 
 ### 10.5. Aprobación Explícita
 El usuario debe aprobar explícitamente el borrador:
