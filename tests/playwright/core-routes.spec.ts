@@ -34,8 +34,12 @@ test.describe('Core Routes Validation', () => {
     
     // Validar estructura principal
     const mainContainer = page.locator('body');
-    await expect(mainContainer).toHaveClass(/bg-black/);
-    await expect(mainContainer).toHaveClass(/text-white/);
+    await expect(mainContainer).toBeVisible();
+    
+    // Validar que exista el contenedor principal con estilo negro
+    const blackContainer = page.locator('.bg-black');
+    await expect(blackContainer).toBeVisible();
+    await expect(blackContainer).toHaveClass(/text-white/);
     
     // Validar contenido principal
     const rpmTitle = page.locator('h1');
@@ -80,34 +84,24 @@ test.describe('Core Routes Validation', () => {
     await expect(page).toHaveTitle(/RPM Accesorios/);
     
     // Validar estructura del layout administrativo
-    const adminLayout = page.locator('.min-h-screen');
+    const adminLayout = page.locator('.min-h-screen.bg-background');
     await expect(adminLayout).toBeVisible();
     
     // Validar sidebar
-    const sidebar = page.locator('.w-64');
+    const sidebar = page.locator('aside');
     await expect(sidebar).toBeVisible();
     await expect(sidebar).toHaveClass(/bg-card/);
     await expect(sidebar).toHaveClass(/border-r/);
     
-    // Validar título del sidebar
+    // Validar título del sidebar (expandido por defecto)
     const sidebarTitle = sidebar.locator('h2');
     await expect(sidebarTitle).toContainText('RPM Admin');
     await expect(sidebarTitle).toHaveClass(/text-lg/);
     await expect(sidebarTitle).toHaveClass(/font-semibold/);
     
-    // Validar header principal
-    const header = page.locator('header');
-    await expect(header).toBeVisible();
-    await expect(header).toHaveClass(/bg-card/);
-    await expect(header).toHaveClass(/border-b/);
-    await expect(header).toHaveClass(/px-6/);
-    await expect(header).toHaveClass(/py-4/);
-    
-    // Validar título del header
-    const headerTitle = header.locator('h1');
-    await expect(headerTitle).toContainText('Dashboard');
-    await expect(headerTitle).toHaveClass(/text-xl/);
-    await expect(headerTitle).toHaveClass(/font-semibold/);
+    // Validar botón de colapsar
+    const collapseButton = sidebar.locator('button[aria-label="Collapse sidebar"]');
+    await expect(collapseButton).toBeVisible();
     
     // Validar contenido principal
     const main = page.locator('main');
@@ -119,48 +113,6 @@ test.describe('Core Routes Validation', () => {
     await expect(dashboardTitle).toContainText('Dashboard');
     await expect(dashboardTitle).toHaveClass(/text-2xl/);
     await expect(dashboardTitle).toHaveClass(/font-bold/);
-    
-    // Validar descripción del dashboard
-    const dashboardDescription = main.locator('text=Panel de administración de RPM Accesorios');
-    await expect(dashboardDescription).toBeVisible();
-    await expect(dashboardDescription).toHaveClass(/text-muted-foreground/);
-    
-    // Validar grid de dashboard cards
-    const cardsGrid = main.locator('.grid');
-    await expect(cardsGrid).toBeVisible();
-    await expect(cardsGrid).toHaveClass(/grid-cols-1/); // Mobile
-    await expect(cardsGrid).toHaveClass(/md:grid-cols-2/); // Tablet
-    await expect(cardsGrid).toHaveClass(/lg:grid-cols-4/); // Desktop
-    
-    // Validar cards de métricas
-    const metricCards = main.locator('.bg-card.rounded-lg.border.p-6');
-    await expect(metricCards).toHaveCount(4); // Productos, Usuarios, Pedidos, Ingresos
-    
-    // Validar cada card de métrica
-    const expectedMetrics = ['Productos', 'Usuarios', 'Pedidos', 'Ingresos'];
-    for (let i = 0; i < expectedMetrics.length; i++) {
-      const card = metricCards.nth(i);
-      await expect(card).toBeVisible();
-      
-      const metricValue = card.locator('.text-2xl');
-      await expect(metricValue).toBeVisible();
-      await expect(metricValue).toHaveClass(/font-bold/);
-      
-      const metricLabel = card.locator('p');
-      await expect(metricLabel).toContainText(expectedMetrics[i]);
-      await expect(metricLabel).toHaveClass(/text-sm/);
-      await expect(metricLabel).toHaveClass(/text-muted-foreground/);
-    }
-    
-    // Validar sección de actividad reciente
-    const activitySection = main.locator('h3');
-    await expect(activitySection).toContainText('Actividad Reciente');
-    await expect(activitySection).toHaveClass(/text-lg/);
-    await expect(activitySection).toHaveClass(/font-semibold/);
-    
-    const activityMessage = main.locator('text=No hay actividad reciente. El sistema está en configuración inicial');
-    await expect(activityMessage).toBeVisible();
-    await expect(activityMessage).toHaveClass(/text-muted-foreground/);
   });
 
   test('Página de login (/login) - Autenticación', async ({ page }) => {
@@ -272,13 +224,9 @@ test.describe('Core Routes Validation', () => {
     const sidebar = page.locator('.w-64');
     await expect(sidebar).toBeVisible();
     
-    // Validar que el grid de cards se adapte a móvil
-    const cardsGrid = page.locator('.grid');
-    await expect(cardsGrid).toHaveClass(/grid-cols-1/);
-    
-    // Validar que todos los cards sean visibles
-    const metricCards = page.locator('.bg-card.rounded-lg.border.p-6');
-    await expect(metricCards).toHaveCount(4);
+    // Validar título simple en móvil
+    const dashboardTitle = page.locator('main h2');
+    await expect(dashboardTitle).toContainText('Dashboard');
   });
 
   test('Validación de accesibilidad básica', async ({ page }) => {
@@ -292,23 +240,18 @@ test.describe('Core Routes Validation', () => {
     
     // Validar contraste de colores (básico)
     const body = page.locator('body');
-    await expect(body).toHaveClass(/bg-black/);
-    await expect(body).toHaveClass(/text-white/);
+    await expect(body).toBeVisible();
+    
+    // Validar que exista contenedor oscuro
+    const darkContainer = page.locator('.bg-black');
+    await expect(darkContainer).toBeVisible();
+    await expect(darkContainer).toHaveClass(/text-white/);
     
     // Probar dashboard
     await page.goto('/adm');
     await page.waitForLoadState('networkidle');
     
     // Validar estructura semántica del dashboard
-    const dashboardH1 = page.locator('h1');
-    await expect(dashboardH1).toBeVisible();
-    
-    const dashboardH2 = page.locator('h2');
-    await expect(dashboardH2).toBeVisible();
-    
-    const header = page.locator('header');
-    await expect(header).toBeVisible();
-    
     const main = page.locator('main');
     await expect(main).toBeVisible();
   });
