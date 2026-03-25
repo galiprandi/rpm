@@ -121,17 +121,42 @@ rpm/
 
 ### Tests Unitarios
 - `health.test.ts` - Validación de funcionalidad principal del health check API
-- `yy.test.ts` - Tests de integración (por implementar)
+  - Cobertura: 80% 
+  - Tests: 5/5 pasando
+  - Performance: <100ms de respuesta
+  - Especificaciones: `/specs/core.md#testing-estrategy`
+
+### Tests E2E
+- `core-routes.spec.ts` - Validación completa de rutas principales
+  - Cobertura: >90% de rutas críticas
+  - Performance: <3s de carga por ruta
+  - Especificaciones: `/specs/core.md#routes-validation`
+  - Browser testing: Chromium, Firefox, Safari, Mobile
+
+### Tests de Integración
+- `Deploy Tests`: Validación de despliegue automático
+- `Health Tests`: Validación de health checks
+- `Performance Tests`: Métricas de rendimiento y Core Web Vitals
+- `CI/CD Tests`: Validación de pipeline de GitHub Actions
+
+### CI/CD Pipeline
+- **Quick-check**: Lint, TypeScript, Unit Tests, Build (PRs)
+- **Full CI**: Todo lo anterior + E2E Tests, Security, Deploy (Main)
+- **Estrategia**: Testing separado para optimizar tiempo de feedback
+- **Protección**: Production nunca se rompe por tests fallidos
 
 ### Documentación Técnica
 - `docs/deployment.md` - Especificación de API y despliegue
 - `docs/architecture.md` - Diagramas de arquitectura (por implementar)
-- `docs/monitoring.md` - Guía de monitorización y salud del sistema
+- `docs/ci-cd.md` - Configuración y estrategia de CI/CD (por crear)
+- `docs/routing.md` - Estructura y validación de rutas (por crear)
 
 ### Vinculación Activa
-- Última actualización: 2025-03-25
-- Estado tests: 🟢 Todos pasando (5/5)
-- Cobertura: 80% (objetivo >90%)
+- **Última actualización**: 2025-03-25
+- **Estado tests**: 🟢 E2E configurados, Unitarios 5/5 pasando
+- **Cobertura**: E2E >90%, Unitarios 80% (objetivo >95%)
+- **CI/CD**: ✅ Pipeline completo con protección de producción
+- **Automatización**: Deploy automático validado por tests
 
 ## Procedimientos de Emergencia
 

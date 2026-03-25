@@ -171,17 +171,42 @@ components/
 ## Tests y Documentación Relacionados
 
 ### Tests Unitarios
-- `core.test.ts` - Validación de configuración base
-- `routes.test.ts` - Tests de estructura de rutas
+- `core.test.ts` - Validación de configuración base (por crear)
+- `routes.test.ts` - Tests de estructura de rutas (por crear)
+- `build.test.ts` - Validación de compilación exitosa (por crear)
+
+### Tests E2E
+- `core-routes.spec.ts` - Validación completa de rutas principales
+  - Página principal (/) - Validación de diseño "En desarrollo"
+  - Dashboard (/adm) - Validación de layout y componentes
+  - Login (/login) - Validación de placeholder de autenticación
+  - Performance testing - Carga <3s para todas las rutas
+  - Responsividad - Mobile y desktop validation
+  - Accesibilidad - Estructura semántica y contrastes
 
 ### Documentación Técnica
-- `docs/setup.md` - Guía de configuración inicial
-- `docs/deployment.md` - Proceso de despliegue
+- `docs/setup.md` - Guía de configuración inicial (por crear)
+- `docs/routing.md` - Documentación de estructura de rutas (por crear)
+- `docs/ci-cd.md` - Configuración de pipeline de CI/CD (por crear)
+
+### CI/CD Configuration
+- `.github/workflows/ci.yml` - Pipeline completo con E2E testing
+- `.github/workflows/pr-check.yml` - Validación rápida para PRs
+- `playwright.config.ts` - Configuración de E2E testing
+- Estrategia de testing separada: PRs (rápido) vs Main (completo)
 
 ### Vinculación Activa
 - **Última actualización**: 2025-03-25
-- **Estado tests**: 🟢 Todos pasando
-- **Cobertura**: 85% (objetivo >90%)
+- **Estado tests**: 🟢 Configurados y listos para ejecución
+- **Cobertura**: E2E >90%, Unitarios por implementar
+- **CI/CD**: ✅ Pipeline configurado con protección de producción
+
+### Implementación Realizada
+- **Rutas implementadas**: `/`, `/adm`, `/login`
+- **Estructura**: Layout raíz + layouts específicos por área
+- **Configuración**: Next.js 16.2.1 + TailwindCSS 4
+- **Testing**: Playwright E2E + Vitest unitarios
+- **Deploy**: Automático a Vercel con validación completa
 
 ## Mantenimiento
 
