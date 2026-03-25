@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "nextauth-authentication": {
+      "source": "mindrally/skills",
+      "sourceType": "github",
+      "computedHash": "d169826735a2241ac893ecc97985e8c1dd15944fd38e4ecf1ae57e85c01df2d6"
+    }
+  }
+}
