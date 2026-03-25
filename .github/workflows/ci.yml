@@ -7,21 +7,17 @@ on:
     branches: [ main ]
 
 jobs:
-  test:
+  quick-check:
     runs-on: ubuntu-latest
-    
-    strategy:
-      matrix:
-        node-version: [24.x]
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Setup Node.js ${{ matrix.node-version }}
+    - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: ${{ matrix.node-version }}
+        node-version: '24.x'
         cache: 'npm'
         
     - name: Install pnpm
@@ -36,16 +32,51 @@ jobs:
       run: pnpm lint
       
     - name: Type check
-      run: pnpm run type-check || npx tsc --noEmit
+      run: pnpm run type-check
+      
+    - name: Run unit tests
+      run: pnpm run test:run
       
     - name: Build
       run: pnpm build
+
+  e2e-test:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: quick-check
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
       
-    - name: Health check test
-      run: |
-        curl -f http://localhost:3000/api/health || true
-      # Skip if server not running in CI
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '24.x'
+        cache: 'npm'
+        
+    - name: Install pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 8
+        
+    - name: Install dependencies
+      run: pnpm install --frozen-lockfile
       
+    - name: Install Playwright browsers
+      run: npx playwright install --with-deps
+      
+    - name: Run E2E tests
+      run: pnpm run test:e2e:ci
+      
+    - name: Upload Playwright report
+      uses: actions/upload-artifact@v4
+      if: ${{ !cancelled() }}
+      with:
+        name: playwright-report
+        path: playwright-report/
+        retention-days: 30
+
   security:
     runs-on: ubuntu-latest
     steps:
@@ -62,3 +93,20 @@ jobs:
         path: ./
         base: main
         head: HEAD
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [quick-check, e2e-test, security]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Deploy to Vercel
+      uses: amondnet/vercel-action@v25
+      with:
+        vercel-token: ${{ secrets.VERCEL_TOKEN }}
+        vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+        vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+        vercel-args: '--prod'

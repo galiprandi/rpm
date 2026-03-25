@@ -1,0 +1,44 @@
+name: PR Check
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '24.x'
+        cache: 'npm'
+        
+    - name: Install pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 8
+        
+    - name: Install dependencies
+      run: pnpm install --frozen-lockfile
+      
+    - name: Lint
+      run: pnpm lint
+      
+    - name: Type check
+      run: pnpm run type-check
+      
+    - name: Run unit tests
+      run: pnpm run test:run
+      
+    - name: Build
+      run: pnpm build
+      
+    - name: Check build size
+      run: |
+        du -sh .next/*
+        echo "Build completed successfully"
