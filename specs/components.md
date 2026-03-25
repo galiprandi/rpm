@@ -29,15 +29,13 @@ components/
 │   ├── layout/             # Layouts públicos
 │   ├── sections/           # Secciones del home
 │   └── ui/                 # UI específicos públicos
-├── admin/                  # Componentes para ruta /adm
+├── adm/                     # Componentes para ruta /adm (antes admin)
 │   ├── layout/             # Layouts admin
 │   ├── dashboard/          # Dashboard components
 │   ├── forms/              # Formularios admin
 │   └── ui/                 # UI específicos admin
-├── shared/                 # Componentes comunes
-│   ├── ui/                 # Componentes base (shadcn/ui)
-│   ├── forms/              # Form components genéricos
-│   ├── feedback/           # Toasts, modals, etc.
+├── shared/                 # Componentes comunes (minimalista - solo los necesarios)
+│   ├── ui/                 # Componentes base (shadcn/ui: button, card, input, dialog)
 │   └── providers/          # Context providers
 └── lib/                    # Utilidades y configuración
     ├── ui/                 # Configuración UI base
@@ -48,13 +46,13 @@ components/
 ```typescript
 // Estricta separación por área
 // ✅ Correcto
-import { PublicHeader } from '@/components/public/layout';
-import { AdminSidebar } from '@/components/admin/layout';
-import { Button } from '@/components/shared/ui';
+import { PublicHeader } from '@/public/layout';
+import { AdminSidebar } from '@/admin/layout';
+import { Button } from '@/components/ui';  // shadcn/ui components
 
 // ❌ Incorrecto - mezclar áreas
-import { AdminButton } from '@/components/admin/ui'; // en componente público
-import { PublicCard } from '@/components/public/ui';   // en componente admin
+import { AdminButton } from '@/admin/ui'; // en componente público
+import { PublicCard } from '@/public/ui';   // en componente admin
 ```
 
 ## TailwindCSS Configuration
@@ -344,7 +342,7 @@ export function DevelopmentMessage() {
 
 ### Admin Dashboard Layout
 ```typescript
-// components/admin/layout/AdminLayout.tsx
+// components/adm/layout/AdminLayout.tsx
 import { ReactNode } from 'react';
 import { AdminSidebar } from './AdminSidebar';
 import { AdminHeader } from './AdminHeader';
@@ -372,7 +370,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
 ### Admin Sidebar
 ```typescript
-// components/admin/layout/AdminSidebar.tsx
+// components/adm/layout/AdminSidebar.tsx
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -436,10 +434,10 @@ export function AdminSidebar() {
 }
 ```
 
-### Admin Dashboard Cards
+### Admin Dashboard Cards (Minimalista)
 ```typescript
-// components/admin/dashboard/DashboardCard.tsx
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/shared/ui/card';
+// components/adm/dashboard/DashboardCard.tsx - ✅ IMPLEMENTADO CUANDO SEA NECESARIO
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LucideIcon } from 'lucide-react';
 
 interface DashboardCardProps {
@@ -447,19 +445,9 @@ interface DashboardCardProps {
   value: string | number;
   description?: string;
   icon: LucideIcon;
-  trend?: {
-    value: number;
-    isPositive: boolean;
-  };
 }
 
-export function DashboardCard({ 
-  title, 
-  value, 
-  description, 
-  icon: Icon, 
-  trend 
-}: DashboardCardProps) {
+export function DashboardCard({ title, value, description, icon: Icon }: DashboardCardProps) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -471,20 +459,7 @@ export function DashboardCard({
       <CardContent>
         <div className="text-2xl font-bold">{value}</div>
         {description && (
-          <p className="text-xs text-muted-foreground mt-1">
-            {description}
-          </p>
-        )}
-        {trend && (
-          <div className="flex items-center space-x-1 mt-2">
-            <span className={cn(
-              'text-xs font-medium',
-              trend.isPositive ? 'text-green-600' : 'text-red-600'
-            )}>
-              {trend.isPositive ? '+' : ''}{trend.value}%
-            </span>
-            <span className="text-xs text-muted-foreground">vs último mes</span>
-          </div>
+          <p className="text-xs text-muted-foreground mt-1">{description}</p>
         )}
       </CardContent>
     </Card>
@@ -492,45 +467,24 @@ export function DashboardCard({
 }
 ```
 
-## Shared Components
+## Shared Components (Minimalista)
 
-### Toast Provider
+### shadcn/ui Components
 ```typescript
-// components/shared/feedback/ToastProvider.tsx
-import { Toaster } from '@/components/shared/ui/toaster';
-
-export function ToastProvider() {
-  return <Toaster />;
-}
+// components/ui/button.tsx - ✅ INSTALADO
+// components/ui/card.tsx - ✅ INSTALADO  
+// components/ui/input.tsx - ✅ INSTALADO
+// components/ui/dialog.tsx - ✅ INSTALADO
 ```
 
-### Loading Spinner
+### Usage Examples
 ```typescript
-// components/shared/ui/loading-spinner.tsx
-import { cn } from '@/lib/utils';
-
-interface LoadingSpinnerProps {
-  className?: string;
-  size?: 'sm' | 'md' | 'lg';
-}
-
-export function LoadingSpinner({ className, size = 'md' }: LoadingSpinnerProps) {
-  const sizeClasses = {
-    sm: 'h-4 w-4',
-    md: 'h-6 w-6',
-    lg: 'h-8 w-8',
-  };
-
-  return (
-    <div
-      className={cn(
-        'animate-spin rounded-full border-2 border-current border-t-transparent',
-        sizeClasses[size],
-        className
-      )}
-    />
-  );
-}
+// Usar directamente desde components/ui
+import { Button } from '@/components/ui';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
+import { Input } from '@/components/ui';
+import { Dialog, DialogContent, DialogHeader } from '@/components/ui';
+```
 ```
 
 ## Storybook Configuration

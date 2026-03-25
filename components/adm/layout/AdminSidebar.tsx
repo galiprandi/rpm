@@ -16,7 +16,7 @@ const navigation = [
   { name: 'Configuración', href: '/adm/settings', icon: Settings },
 ];
 
-export function AdminSidebar() {
+export function AdminSidebar({ onSignOut }: { onSignOut: () => void }) {
   const pathname = usePathname();
 
   return (
@@ -51,7 +51,10 @@ export function AdminSidebar() {
       </nav>
       
       <div className="absolute bottom-4 left-4 right-4">
-        <button className="flex items-center space-x-3 w-full px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors">
+        <button
+          onClick={onSignOut}
+          className="flex items-center space-x-3 w-full px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+        >
           <LogOut className="h-5 w-5" />
           <span>Cerrar sesión</span>
         </button>

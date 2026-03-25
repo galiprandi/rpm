@@ -19,7 +19,10 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@/admin/*": ["./components/adm/*"],
+      "@/adm/*": ["./components/adm/*"],
+      "@/public/*": ["./components/public/*"]
     }
   },
   "include": [
@@ -29,7 +32,8 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "**/*.mts",
-    "types/**/*.d.ts"
+    "types/**/*.d.ts",
+    ".storybook/**/*"
   ],
   "exclude": ["node_modules"]
 }

@@ -31,9 +31,11 @@ export default defineConfig({
 
   // Configurar servidor web para los tests
   webServer: {
-    command: 'pnpm run dev',
+    command: 'NODE_ENV=production pnpm run dev',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
+    stdout: 'ignore',
+    stderr: 'ignore',
   },
 });

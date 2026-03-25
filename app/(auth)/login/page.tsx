@@ -23,9 +23,19 @@ export default function LoginPage() {
         </div>
         
         <div className="bg-card rounded-lg border p-6 space-y-4">
+          <div className="text-center space-y-4">
+            <p className="text-sm text-muted-foreground">
+              El sistema de autenticación estará disponible próximamente
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Se implementará con Google OAuth según la especificación
+            </p>
+          </div>
+          
           <button
             onClick={handleGoogleSignIn}
-            className="w-full flex items-center justify-center gap-3 bg-white hover:bg-gray-50 text-gray-900 font-medium py-3 px-4 rounded-lg border border-gray-300 transition-colors"
+            disabled
+            className="w-full flex items-center justify-center gap-3 bg-white hover:bg-gray-50 text-gray-900 font-medium py-3 px-4 rounded-lg border border-gray-300 transition-colors opacity-50 cursor-not-allowed"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path

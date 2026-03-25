@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { authClient } from '@/lib/auth-client';
-import Sidebar from '@/components/sidebar';
+import { AdminSidebar } from '@/adm/layout/AdminSidebar';
 
 export default function AdminLayout({
   children,
@@ -53,7 +53,7 @@ export default function AdminLayout({
           
           {!isSidebarCollapsed && (
             <div className="flex-1 flex items-end">
-              <Sidebar onSignOut={handleSignOut} />
+              <AdminSidebar onSignOut={handleSignOut} />
             </div>
           )}
         </div>

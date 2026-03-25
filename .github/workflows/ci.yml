@@ -18,12 +18,24 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '24.x'
-        cache: 'npm'
+        cache: 'pnpm'
         
     - name: Install pnpm
       uses: pnpm/action-setup@v2
       with:
         version: 8
+        
+    - name: Get pnpm store directory
+      shell: bash
+      run: |
+        echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+        
+    - name: Setup pnpm cache
+      uses: actions/cache@v4
+      with:
+        path: ${{ env.STORE_PATH }}
+        key: pnpm-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+        restore-keys: pnpm-${{ runner.os }}-
         
     - name: Install dependencies
       run: pnpm install --frozen-lockfile
@@ -35,7 +47,7 @@ jobs:
       run: pnpm run type-check
       
     - name: Run unit tests
-      run: pnpm run test:run
+      run: pnpm run test:unit
       
     - name: Build
       run: pnpm build
@@ -53,12 +65,24 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '24.x'
-        cache: 'npm'
+        cache: 'pnpm'
         
     - name: Install pnpm
       uses: pnpm/action-setup@v2
       with:
         version: 8
+        
+    - name: Get pnpm store directory
+      shell: bash
+      run: |
+        echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+        
+    - name: Setup pnpm cache
+      uses: actions/cache@v4
+      with:
+        path: ${{ env.STORE_PATH }}
+        key: pnpm-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+        restore-keys: pnpm-${{ runner.os }}-
         
     - name: Install dependencies
       run: pnpm install --frozen-lockfile
@@ -67,7 +91,7 @@ jobs:
       run: npx playwright install --with-deps
       
     - name: Run E2E tests
-      run: pnpm run test:e2e:ci
+      run: pnpm run test:e2e
       
     - name: Upload Playwright report
       uses: actions/upload-artifact@v4
@@ -76,6 +100,53 @@ jobs:
         name: playwright-report
         path: playwright-report/
         retention-days: 30
+
+  visual-test:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    needs: quick-check
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '24.x'
+        cache: 'pnpm'
+        
+    - name: Install pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 8
+        
+    - name: Get pnpm store directory
+      shell: bash
+      run: |
+        echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+        
+    - name: Setup pnpm cache
+      uses: actions/cache@v4
+      with:
+        path: ${{ env.STORE_PATH }}
+        key: pnpm-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+        restore-keys: pnpm-${{ runner.os }}-
+        
+    - name: Install dependencies
+      run: pnpm install --frozen-lockfile
+      
+    - name: Build Storybook
+      run: pnpm build-storybook
+      
+    - name: Run Chromatic
+      uses: chromaui/action@v1
+      with:
+        projectToken: ${{ secrets.CHROMATIC_PROJECT_TOKEN }}
+        buildScriptName: build-storybook
+        exitZeroOnChanges: true
 
   security:
     runs-on: ubuntu-latest
@@ -96,7 +167,7 @@ jobs:
 
   deploy:
     runs-on: ubuntu-latest
-    needs: [quick-check, e2e-test, security]
+    needs: [quick-check, e2e-test, security, visual-test]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     
     steps:

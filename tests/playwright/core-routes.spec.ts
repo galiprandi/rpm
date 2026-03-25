@@ -221,7 +221,7 @@ test.describe('Core Routes Validation', () => {
     await page.waitForLoadState('networkidle');
     
     // Validar que el sidebar sea visible en móvil (desktop-first)
-    const sidebar = page.locator('.w-64');
+    const sidebar = page.locator('aside.w-64');
     await expect(sidebar).toBeVisible();
     
     // Validar título simple en móvil
