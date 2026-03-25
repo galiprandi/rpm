@@ -7,17 +7,19 @@ Base de datos relacional PostgreSQL gestionada por Vercel con Prisma ORM para ac
 ## Stack Tecnológico
 
 ### Database Core
-- **Database**: Vercel Postgres (PostgreSQL)
+- **Production**: Vercel Postgres (PostgreSQL)
+- **Development**: Docker PostgreSQL 15
 - **ORM**: Prisma v5
-- **Connection Pooling**: Automático Vercel
+- **Connection Pooling**: Automático Vercel / Local Docker
 - **Migrations**: Prisma Migrate
 - **Seeding**: Prisma Seed scripts
 
 ### Development Tools
+- **Containerization**: Docker & Docker Compose
 - **Studio**: Prisma Studio para visualización
 - **Client Generation**: Automática TypeScript types
 - **Query Optimization**: Prisma Query Engine
-- **Backup**: Automático Vercel
+- **Backup**: Automático Vercel / Manual Docker
 
 ## Vercel Postgres Configuration
 
@@ -33,14 +35,92 @@ Base de datos relacional PostgreSQL gestionada por Vercel con Prisma ORM para ac
 
 ### Environment Variables
 ```bash
-# .env.local (development)
-DATABASE_URL="postgresql://user:password@localhost:5432/rpm?schema=public"
-POSTGRES_URL="postgresql://user:password@localhost:5432/rpm?schema=public"
-POSTGRES_PRISMA_URL="postgresql://user:password@localhost:5432/rpm?schema=public"
-POSTGRES_URL_NON_POOLING="postgresql://user:password@localhost:5432/rpm?schema=public"
+# .env.local (development) - Docker PostgreSQL
+DATABASE_URL="postgresql://rpm_user:rpm_password@localhost:5432/rpm_dev?schema=public"
+POSTGRES_URL="postgresql://rpm_user:rpm_password@localhost:5432/rpm_dev?schema=public"
+POSTGRES_PRISMA_URL="postgresql://rpm_user:rpm_password@localhost:5432/rpm_dev?schema=public"
+POSTGRES_URL_NON_POOLING="postgresql://rpm_user:rpm_password@localhost:5432/rpm_dev?schema=public"
 
 # Production (Vercel)
 # Configuradas automáticamente por Vercel Postgres
+```
+
+### Docker Development Setup
+
+#### Docker Compose Configuration
+```yaml
+# docker-compose.yml
+version: '3.8'
+services:
+  postgres:
+    image: postgres:15
+    container_name: rpm-postgres
+    environment:
+      POSTGRES_DB: rpm_dev
+      POSTGRES_USER: rpm_user
+      POSTGRES_PASSWORD: rpm_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rpm_user -d rpm_dev"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  postgres_data:
+```
+
+#### Database Initialization Script
+```sql
+-- scripts/init-db.sql
+-- Create extensions needed for development
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- Create development-specific indexes if needed
+-- These will be available in local development only
+
+-- Grant permissions
+GRANT ALL PRIVILEGES ON DATABASE rpm_dev TO rpm_user;
+```
+
+#### Development Scripts
+```json
+{
+  "scripts": {
+    "db:dev": "docker-compose up -d postgres",
+    "db:stop": "docker-compose down",
+    "db:reset": "docker-compose down -v && npm run db:dev && sleep 5 && npm run db:migrate && npm run db:seed",
+    "db:logs": "docker-compose logs -f postgres",
+    "db:shell": "docker exec -it rpm-postgres psql -U rpm_user -d rpm_dev",
+    "db:backup": "docker exec rpm-postgres pg_dump -U rpm_user rpm_dev > backup.sql",
+    "db:restore": "docker exec -i rpm-postgres psql -U rpm_user rpm_dev < backup.sql"
+  }
+}
+```
+
+#### Development Workflow
+```bash
+# 1. Iniciar base de datos local
+npm run db:dev
+
+# 2. Esperar a que esté lista (health check)
+docker logs rpm-postgres
+
+# 3. Ejecutar migrations
+npx prisma migrate dev --name init
+
+# 4. Seed data de desarrollo
+npm run db:seed
+
+# 5. Iniciar desarrollo
+npm run dev
+
+# 6. Detener cuando termine
+npm run db:stop
 ```
 
 ## Prisma Schema Definition
@@ -415,7 +495,14 @@ main()
     "db:reset": "npx prisma migrate reset --force && npm run db:seed",
     "db:studio": "npx prisma studio",
     "db:migrate": "npx prisma migrate dev",
-    "db:generate": "npx prisma generate"
+    "db:generate": "npx prisma generate",
+    "db:dev": "docker-compose up -d postgres",
+    "db:stop": "docker-compose down",
+    "db:logs": "docker-compose logs -f postgres",
+    "db:shell": "docker exec -it rpm-postgres psql -U rpm_user -d rpm_dev",
+    "db:backup": "docker exec rpm-postgres pg_dump -U rpm_user rpm_dev > backup.sql",
+    "db:restore": "docker exec -i rpm-postgres psql -U rpm_user rpm_dev < backup.sql",
+    "db:full-reset": "docker-compose down -v && npm run db:dev && sleep 5 && npm run db:migrate && npm run db:seed"
   }
 }
 ```

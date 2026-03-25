@@ -49,11 +49,33 @@ Esto garantiza:
 ### 2.5. Implementar Cambio
 Implementar el cambio de código alineado con las especificaciones actualizadas.
 
+### 2.5.1. Validación Proactiva Durante la Implementación
+Durante el proceso de implementación, el agente debe realizar validaciones continuas:
+- **Validación en tiempo real**: Verificar cada componente/función inmediatamente después de implementarlo
+- **Testing incremental**: Ejecutar tests relacionados con cada cambio específico
+- **Verificación de integración**: Asegurar que el nuevo código se integra correctamente con el existente
+- **Testing visual**: Verificar UI/UX en diferentes viewports y dispositivos
+- **Testing de datos**: Validar operaciones de base de datos y migraciones
+- **Testing de seguridad**: Verificar que no se introducen vulnerabilidades
+- **Performance checks**: Monitorear impacto en rendimiento y métricas
+- **Cross-browser testing**: Validar funcionamiento en diferentes navegadores
+- **Accessibility testing**: Verificar cumplimiento de estándares WCAG
+- **Regression testing**: Probar funcionalidades existentes para detectar regresiones
+
+El agente debe reportar proactivamente cualquier issue, bug o desviación detectada durante estas validaciones, sin esperar a que el usuario lo solicite.
+
 ### 2.6. Validación Post-Implementación
-- Ejecutar suite completa de tests
-- Verificar cobertura de código
-- Confirmar que todos los tests pasen (🟢)
-- Documentar cualquier desviación
+- **Ejecutar suite completa de tests**
+- **Verificar cobertura de código**
+- **Confirmar que todos los tests pasen (🟢)**
+- **Validación proactiva integral de la implementación**
+- **Verificación de base de datos y migraciones**
+- **Validación de UI/UX en diferentes viewports**
+- **Testing manual de flujos críticos**
+- **Chequeo de regresiones en funcionalidades existentes**
+- **Verificación de performance y métricas**
+- **Revisión de seguridad y accesos**
+- **Documentar cualquier desviación o issue encontrado**
 
 ### 2.7. Estándares de Tests
 Los archivos de test deben seguir estas convenciones:
