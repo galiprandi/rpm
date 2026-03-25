@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { authClient } from '@/lib/auth-client';
+import Sidebar from '@/components/sidebar';
 
 export default function AdminLayout({
   children,
@@ -9,19 +11,24 @@ export default function AdminLayout({
 }) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
+  const handleSignOut = async () => {
+    await authClient.signOut();
+    window.location.href = '/login';
+  };
+
   return (
     <div className="min-h-screen bg-background flex">
-      {/* Sidebar colapsable estilo Jira */}
+      {/* Sidebar colapsable */}
       <aside 
         className={`bg-card border-r transition-all duration-300 ${
           isSidebarCollapsed ? 'w-16' : 'w-64'
         }`}
       >
-        <div className="p-4">
+        <div className="p-4 h-full flex flex-col">
           <div className="flex items-center justify-between">
             {!isSidebarCollapsed && (
               <h2 className="text-lg font-semibold text-foreground">
-                RPM Admin
+                Admin
               </h2>
             )}
             <button
@@ -43,10 +50,16 @@ export default function AdminLayout({
               </svg>
             </button>
           </div>
+          
+          {!isSidebarCollapsed && (
+            <div className="flex-1 flex items-end">
+              <Sidebar onSignOut={handleSignOut} />
+            </div>
+          )}
         </div>
       </aside>
       
-      {/* Main content sin header */}
+      {/* Main content */}
       <main className="flex-1 p-6">
         {children}
       </main>

@@ -275,3 +275,197 @@ Solo después de la aprobación explícita del borrador:
 - Documentar el proceso de definición en la especificación final
 - Incluir fecha de creación, versiones y decisiones clave
 - Mantener enlace al borrador original si aplica
+
+---
+
+## 11. Manejo Seguro de Variables de Entorno (Non-Interactive)
+
+### 11.1. Principios de Seguridad
+- **NUNCA** hardcodear credenciales en código
+- **SIEMPRE** usar variables de entorno
+- **NUNCA** commitear archivos .env con datos reales
+- **SIEMPRE** validar que .gitignore proteja archivos sensibles
+
+### 11.2. Método No-Interactivo Seguro para Vercel
+
+#### 11.2.1. Flujo Recomendado
+```bash
+# 1. Verificar estado actual
+vercel env ls
+curl https://rpm-wheat.vercel.app/api/health/db
+
+# 2. Obtener credenciales de forma segura (fuente externa)
+# Opción A: Desde Vercel Dashboard manualmente
+# Opción B: Desde variable de entorno local temporal
+# Opción C: Desde gestor de secretos (1Password, AWS Secrets Manager, etc.)
+
+# 3. Configurar variable temporalmente
+export POSTGRES_URL="postgres://user:password@host:port/db?sslmode=require"
+
+# 4. Ejecutar script seguro (lee de variable de entorno)
+./scripts/setup-db-env.sh
+
+# 5. Limpiar variable temporal
+unset POSTGRES_URL
+
+# 6. Validar configuración
+vercel env ls
+pnpm run deploy
+curl https://rpm-wheat.vercel.app/api/health/db
+```
+
+#### 11.2.2. Script de Configuración Segura
+```bash
+#!/bin/bash
+# scripts/setup-db-env.sh - EJEMPLO SEGURO
+
+# SECURITY: Never hardcode credentials in scripts
+# Always read from environment variables
+
+# Validate required environment variable
+if [ -z "$POSTGRES_URL" ]; then
+  echo "❌ Error: POSTGRES_URL environment variable is required"
+  echo "💡 Set it with: export POSTGRES_URL='postgres://user:password@host:port/db'"
+  exit 1
+fi
+
+# Use environment variable (NEVER hardcode)
+echo "$POSTGRES_URL" > /tmp/postgres_url.txt
+
+# Configure in Vercel
+vercel env add POSTGRES_URL production < /tmp/postgres_url.txt
+
+# Clean up
+rm -f /tmp/postgres_url.txt
+unset POSTGRES_URL
+```
+
+#### 11.2.3. Validación de Seguridad
+```bash
+# Verificar que no hay credenciales hardcodeadas
+grep -r "postgres://.*:.*@" . --exclude-dir=.git --exclude-dir=node_modules || echo "✅ No hardcoded credentials"
+
+# Verificar .gitignore
+grep -E "\.env" .gitignore
+
+# Verificar variables en Vercel
+vercel env ls
+```
+
+### 11.3. Fuentes de Credenciales Seguras
+
+#### 11.3.1. Vercel Dashboard (Recomendado)
+```bash
+# 1. Abrir dashboard
+vercel open
+
+# 2. Navegar: Storage → Postgres → rpm-db → Connect
+# 3. Vercel crea automáticamente las variables
+# 4. Verificar con: vercel env ls
+```
+
+#### 11.3.2. Variable de Entorno Temporal
+```bash
+# Setear temporalmente (nunca en scripts)
+export POSTGRES_URL="postgres://user:password@host:port/db?sslmode=require"
+
+# Usar inmediatamente
+./scripts/setup-db-env.sh
+
+# Limpiar inmediatamente
+unset POSTGRES_URL
+```
+
+#### 11.3.3. Gestor de Secretos
+```bash
+# Ejemplo con 1Password CLI
+op read "op://Database/Production/postgres-url" > /tmp/db_url.txt
+export POSTGRES_URL=$(cat /tmp/db_url.txt)
+./scripts/setup-db-env.sh
+rm -f /tmp/db_url.txt
+unset POSTGRES_URL
+```
+
+### 11.4. Comandos de Validación Obligatorios
+
+#### 11.4.1. Antes de Deploy
+```bash
+# Verificar seguridad
+grep -r "postgres://.*:.*@" . --exclude-dir=.git --exclude-dir=node_modules || echo "✅ Security check passed"
+
+# Verificar variables
+vercel env ls
+
+# Verificar health check local
+curl http://localhost:3000/api/health/db
+```
+
+#### 11.4.2. Después de Deploy
+```bash
+# Verificar producción
+curl https://rpm-wheat.vercel.app/api/health/db
+
+# Verificar variables de producción
+curl https://rpm-wheat.vercel.app/api/debug/env
+```
+
+### 11.5. Prohibiciones Estrictas
+
+#### 11.5.1. NUNCA Hacer
+```bash
+# ❌ NUNCA hardcodear credenciales
+echo "postgres://real_user:real_pass@host:port/db" > script.sh
+
+# ❌ NUNCA commitear .env con datos reales
+git add .env.production  # PROHIBIDO
+
+# ❌ NUNCA poner credenciales en código
+const dbUrl = "postgres://user:password@host:port/db"  # PROHIBIDO
+```
+
+#### 11.5.2. SIEMPRE Hacer
+```bash
+# ✅ SIEMPRE usar variables de entorno
+export POSTGRES_URL="postgres://user:password@host:port/db"
+
+# ✅ SIEMPRE limpiar después de usar
+unset POSTGRES_URL
+
+# ✅ SIEMPRE validar .gitignore
+echo ".env.production" >> .gitignore
+
+# ✅ SIEMPRE verificar seguridad
+grep -r "postgres://.*:.*@" . --exclude-dir=.git || echo "✅ Secure"
+```
+
+### 11.6. Flujo de Emergencia (Si se exponen credenciales)
+
+#### 11.6.1. Acciones Inmediatas
+```bash
+# 1. Revocar credenciales expuestas
+vercel open  # → Storage → Postgres → rpm-db → Reset credentials
+
+# 2. Eliminar archivos con credenciales
+rm .env.production
+git add .gitignore
+git commit -m "security: Add .env.production to .gitignore"
+
+# 3. Limpiar historial (si necesario)
+git filter-branch --force --index-filter \
+'git rm --cached --ignore-unmatch script_with_credentials.sh' --prune-empty --tag-name-filter cat -- --all
+
+# 4. Forzar push
+git push origin main --force-with-lease
+```
+
+#### 11.6.2. Verificación Post-Emergencia
+```bash
+# Verificar que no queden credenciales
+grep -r "postgres://.*:.*@" . --exclude-dir=.git --exclude-dir=node_modules
+
+# Verificar health check con nuevas credenciales
+curl https://rpm-wheat.vercel.app/api/health/db
+
+# Verificar que variables estén actualizadas
+vercel env ls
+```

@@ -1,0 +1,56 @@
+/**
+ * Better Auth Configuration for RPM Accesorios
+ * 
+ * Modern authentication system with Google OAuth and role-based access control
+ * Built specifically for Next.js App Router
+ */
+
+import { betterAuth } from 'better-auth';
+import { prismaAdapter } from 'better-auth/adapters/prisma';
+import { prisma } from './prisma';
+import { getUserRole } from './auth/roles';
+
+/**
+ * Better Auth configuration
+ * 
+ * Features:
+ * - Google OAuth 2.0 authentication
+ * - Prisma database adapter
+ * - Role-based access control
+ * - Session management
+ * - TypeScript-first approach
+ */
+export const auth = betterAuth({
+  database: prismaAdapter(prisma, {
+    provider: 'postgresql',
+  }),
+  
+  emailAndPassword: {
+    enabled: false, // Solo Google OAuth
+  },
+  
+  socialProviders: {
+    google: {
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      enabled: true,
+    },
+  },
+  
+  session: {
+    expiresIn: 60 * 60 * 24, // 24 hours
+    updateAge: 60 * 60 * 24, // 24 hours
+    cookieCache: {
+      enabled: true,
+      maxAge: 5 * 60, // 5 minutes
+    },
+  },
+  
+  account: {
+    accountLinking: {
+      enabled: false,
+    },
+  },
+});
+
+export type Session = typeof auth.$Infer.Session;
