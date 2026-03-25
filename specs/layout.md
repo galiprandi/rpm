@@ -71,6 +71,40 @@ AdminLayout (app/adm/layout.tsx)
 
 **No layout logic** - Only content rendering.
 
+## Database and Migrations
+
+### Automatic Migrations
+
+**Build Process:**
+```json
+"build": "npx prisma migrate deploy && next build"
+```
+
+**Migration Flow:**
+1. **Deploy triggered** → Vercel runs build
+2. **Prisma migrate deploy** → Applies pending migrations
+3. **Next build** → Builds application
+4. **No pending migrations** → Skips automatically
+
+### Migration Files
+
+**Location:** `prisma/migrations/001_init_auth_tables/migration.sql`
+
+**Tables Created:**
+- `user` - User accounts with email verification
+- `account` - OAuth provider accounts
+- `session` - User sessions with tokens
+- `verification` - Email verification tokens
+
+### Creating New Migrations
+
+**For schema changes:**
+```bash
+npx prisma migrate dev --name new_feature
+```
+
+**Migration automatically applies in production on next deploy.**
+
 ## Styling Guidelines
 
 ### Theme
@@ -98,6 +132,11 @@ flex items-center justify-center gap-2
 1. Layout handles session validation
 2. Dashboard manages loading/error states
 3. Sidebar receives logout handler as prop
+
+### Database Integration
+- Better Auth uses Prisma adapter
+- Tables created via migrations
+- Automatic schema updates on deploy
 
 ### Responsive Behavior
 - Sidebar collapses to icon-only mode
@@ -131,6 +170,12 @@ const handleSignOut = () => { /* duplicate logic */ };
 </div>
 ```
 
+### ❌ Don't Manual Database Setup
+```bash
+# WRONG - Don't run manual SQL scripts
+psql $DATABASE_URL -f setup.sql
+```
+
 ### ✅ Correct Patterns
 ```tsx
 // Layout handles structure
@@ -147,6 +192,14 @@ export default function AdminLayout({ children }) {
 export default function Dashboard() {
   return <div>Dashboard content</div>;
 }
+```
+
+```bash
+# ✅ Use Prisma migrations for database changes
+npx prisma migrate dev --name new_feature
+git add prisma/migrations/
+git commit -m "feat: add new table"
+git push # Auto-applies in production
 ```
 
 ## CSS Considerations
@@ -185,6 +238,10 @@ export default function Dashboard() {
 - Reusable sidebar component
 - No layout dependencies
 
+**Migrations:** `prisma/migrations/`
+- Database schema changes
+- Auto-applied on deploy
+
 ## Testing Notes
 
 ### Layout Testing
@@ -197,11 +254,18 @@ export default function Dashboard() {
 - Loading states
 - Error handling
 
+### Database Testing
+- Migration application
+- Table creation
+- Foreign key constraints
+
 ## Dependencies
 
 ### Required
 - `@/lib/auth-client` - Authentication
 - `react` - Hooks and components
+- `@prisma/client` - Database client
+- `prisma` - Migration tool
 
 ### Optional
 - No UI libraries required
@@ -209,13 +273,41 @@ export default function Dashboard() {
 
 ## Migration Notes
 
-When adding new admin pages:
-1. Create page in `app/adm/[page].tsx`
-2. No layout code needed
-3. Use existing authentication patterns
-4. Follow content-only approach
+### Production Deployment
+- **Automatic:** Migrations run during build
+- **Safe:** Only applies pending migrations
+- **Versioned:** Each change tracked
+
+### Development Workflow
+1. **Modify schema.prisma**
+2. **Create migration:** `npx prisma migrate dev --name feature`
+3. **Test locally**
+4. **Commit and push** - Auto-applies in production
+
+### Migration Best Practices
+- **Descriptive names** - Explain what changes
+- **Review SQL** - Check generated migration
+- **Test locally** - Verify before deploy
+- **Backup database** - For production safety
+
+## Troubleshooting
+
+### Migration Issues
+- **Error:** Table already exists
+- **Fix:** Mark migration as applied manually
+- **Command:** `npx prisma migrate resolve --applied migration_name`
+
+### Build Failures
+- **Error:** Migration syntax
+- **Fix:** Review migration SQL
+- **Test:** Run locally first
+
+### Authentication Issues
+- **Error:** Tables don't exist
+- **Fix:** Ensure migrations ran
+- **Check:** `npx prisma migrate deploy`
 
 ---
 
 **Last Updated:** 2026-03-25  
-**Status:** ✅ Implemented and tested
+**Status:** ✅ Implemented with automatic migrations
