@@ -8,7 +8,7 @@ Object.defineProperty(global, 'Headers', {
 
 // Mock NextResponse
 const mockNextResponse = {
-  json: (data: any, init?: ResponseInit) => ({
+  json: (data: unknown, init?: ResponseInit) => ({
     status: init?.status || 200,
     json: async () => data,
   }),

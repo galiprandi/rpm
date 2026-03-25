@@ -21,8 +21,8 @@ import { GET } from './route';
 describe('Health Check API', () => {
   beforeEach(() => {
     // Mockear variables de entorno
-    process.env.NODE_ENV = 'test';
-    process.env.VERCEL_ENV = 'preview';
+    vi.stubEnv('NODE_ENV', 'test');
+    vi.stubEnv('VERCEL_ENV', 'preview');
   });
 
   it('should return healthy status', async () => {
@@ -61,7 +61,7 @@ describe('Health Check API', () => {
     global.process = {
       ...originalProcess,
       env: {},
-    } as any;
+    } as NodeJS.Process & { env: Record<string, string | undefined> };
 
     const response = await GET();
     const data = await response.json();

@@ -32,4 +32,7 @@ export default defineConfig({
       '@': resolve(__dirname, './'),
     },
   },
+  define: {
+    'process.env.NODE_ENV': '"test"',
+  },
 });
