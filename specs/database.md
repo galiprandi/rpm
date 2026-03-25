@@ -1,18 +1,19 @@
-# Database & ORM
+# Database & ORM Configuration
 
 ## Overview
 
-Base de datos relacional PostgreSQL gestionada por Vercel con Prisma ORM para acceso tipo-safe, migrations automáticas y optimización de queries.
+Configuración de base de datos PostgreSQL con Prisma ORM para desarrollo local (Docker) y producción (Vercel). Las tablas se crearán bajo demanda según las necesidades de cada especificación.
 
 ## Stack Tecnológico
 
 ### Database Core
-- **Production**: Vercel Postgres (PostgreSQL)
+- **Production**: Prisma Postgres (Free Tier)
 - **Development**: Docker PostgreSQL 15
-- **ORM**: Prisma v5
+- **ORM**: Prisma v7
+- **Adapter**: @prisma/adapter-pg
 - **Connection Pooling**: Automático Vercel / Local Docker
-- **Migrations**: Prisma Migrate
-- **Seeding**: Prisma Seed scripts
+- **Migrations**: Prisma Migrate (bajo demanda)
+- **Seeding**: Prisma Seed scripts (bajo demanda)
 
 ### Development Tools
 - **Containerization**: Docker & Docker Compose
@@ -37,12 +38,24 @@ Base de datos relacional PostgreSQL gestionada por Vercel con Prisma ORM para ac
 ```bash
 # .env.local (development) - Docker PostgreSQL
 DATABASE_URL="postgresql://rpm_user:rpm_password@localhost:5432/rpm_dev?schema=public"
-POSTGRES_URL="postgresql://rpm_user:rpm_password@localhost:5432/rpm_dev?schema=public"
-POSTGRES_PRISMA_URL="postgresql://rpm_user:rpm_password@localhost:5432/rpm_dev?schema=public"
-POSTGRES_URL_NON_POOLING="postgresql://rpm_user:rpm_password@localhost:5432/rpm_dev?schema=public"
 
-# Production (Vercel)
-# Configuradas automáticamente por Vercel Postgres
+# Production (Vercel) - Prisma Postgres
+# ⚠️ SECURITY: Never hardcode credentials in code!
+# Use environment variables or Vercel dashboard
+POSTGRES_URL="postgres://[user]:[password]@db.prisma.io:5432/postgres?sslmode=require"
+DATABASE_URL="postgres://[user]:[password]@db.prisma.io:5432/postgres?sslmode=require"
+POSTGRES_PRISMA_URL="postgres://[user]:[password]@db.prisma.io:5432/postgres?sslmode=require"
+POSTGRES_URL_NON_POOLING="postgres://[user]:[password]@db.prisma.io:5432/postgres?sslmode=require"
+```
+
+#### Secure Setup
+```bash
+# Set environment variables before running setup script
+export POSTGRES_URL="postgres://user:password@host:port/db?sslmode=require"
+./scripts/setup-db-env.sh
+
+# Or configure via Vercel dashboard
+vercel open  # → Storage → Postgres → rpm-db
 ```
 
 ### Docker Development Setup
@@ -51,10 +64,12 @@ POSTGRES_URL_NON_POOLING="postgresql://rpm_user:rpm_password@localhost:5432/rpm_
 ```yaml
 # docker-compose.yml
 version: '3.8'
+
 services:
   postgres:
     image: postgres:15
     container_name: rpm-postgres
+    restart: unless-stopped
     environment:
       POSTGRES_DB: rpm_dev
       POSTGRES_USER: rpm_user
@@ -63,7 +78,6 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U rpm_user -d rpm_dev"]
       interval: 30s
@@ -74,182 +88,114 @@ volumes:
   postgres_data:
 ```
 
-#### Database Initialization Script
-```sql
--- scripts/init-db.sql
--- Create extensions needed for development
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
--- Create development-specific indexes if needed
--- These will be available in local development only
-
--- Grant permissions
-GRANT ALL PRIVILEGES ON DATABASE rpm_dev TO rpm_user;
-```
-
 #### Development Scripts
 ```json
 {
   "scripts": {
-    "db:dev": "docker-compose up -d postgres",
+    "db:start": "docker-compose up -d postgres",
     "db:stop": "docker-compose down",
-    "db:reset": "docker-compose down -v && npm run db:dev && sleep 5 && npm run db:migrate && npm run db:seed",
-    "db:logs": "docker-compose logs -f postgres",
-    "db:shell": "docker exec -it rpm-postgres psql -U rpm_user -d rpm_dev",
-    "db:backup": "docker exec rpm-postgres pg_dump -U rpm_user rpm_dev > backup.sql",
-    "db:restore": "docker exec -i rpm-postgres psql -U rpm_user rpm_dev < backup.sql"
+    "db:reset": "docker-compose down -v && docker-compose up -d postgres",
+    "db:logs": "docker-compose logs postgres",
+    "db:studio": "npx prisma studio",
+    "db:generate": "npx prisma generate",
+    "db:migrate": "npx prisma migrate dev",
+    "db:deploy": "npx prisma migrate deploy",
+    "db:seed": "npx prisma db seed",
+    "deploy": "./scripts/deploy-with-db.sh",
+    "deploy:prod": "vercel --prod"
   }
 }
 ```
 
+#### Quick Setup Scripts
+```bash
+# Development setup completo
+./scripts/setup-db-env.sh    # Configurar variables Vercel
+pnpm run db:start           # Iniciar PostgreSQL local
+sleep 15                    # Esperar que esté listo
+pnpm run db:generate        # Generar Prisma client
+pnpm run test tests/db.test.ts  # Validar conexión
+```
+
 #### Development Workflow
 ```bash
-# 1. Iniciar base de datos local
-npm run db:dev
+# 1. Iniciar PostgreSQL
+npm run db:start
 
-# 2. Esperar a que esté lista (health check)
-docker logs rpm-postgres
+# 2. Esperar a que esté listo (10-15 segundos)
+sleep 15
 
-# 3. Ejecutar migrations
-npx prisma migrate dev --name init
+# 3. Generar Prisma client (cuando haya schema)
+npm run db:generate
 
-# 4. Seed data de desarrollo
+# 4. Ejecutar migrations (cuando haya tablas)
+npm run db:migrate
+
+# 5. Seed data (cuando haya datos)
 npm run db:seed
 
-# 5. Iniciar desarrollo
+# 6. Iniciar desarrollo
 npm run dev
 
-# 6. Detener cuando termine
+# 7. Detener cuando termine
 npm run db:stop
 ```
 
-## Prisma Schema Definition
+## Prisma Schema Configuration
 
-### Schema Base
+### Schema Base (Sin Tablas)
 ```prisma
 // prisma/schema.prisma
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../generated"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
-// User model for authentication
-model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  image     String?
-  role      Role     @default(USER)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  createdProducts Product[] @relation("ProductCreator")
-  updatedProducts Product[] @relation("ProductUpdater")
-  sessions        Session[]
-
-  @@map("users")
-}
-
-// Session model for NextAuth
-model Session {
-  id        String   @id @default(cuid())
-  userId    String
-  token     String   @unique
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("sessions")
-}
-
-// Product model
-model Product {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  price       Decimal  @db.Decimal(10, 2)
-  category    String?
-  imageUrl    String?
-  stock       Int      @default(0)
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  createdBy   String
-  updatedBy   String?
-
-  creator User @relation("ProductCreator", fields: [createdBy], references: [id])
-  updater User? @relation("ProductUpdater", fields: [updatedBy], references: [id])
-
-  @@map("products")
-}
-
-// Order model (future)
-model Order {
-  id         String      @id @default(cuid())
-  orderNumber String     @unique
-  userId     String
-  status     OrderStatus @default(PENDING)
-  total      Decimal     @db.Decimal(10, 2)
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
-
-  user User @relation(fields: [userId], references: [id])
-  items OrderItem[]
-
-  @@map("orders")
-}
-
-// Order items (future)
-model OrderItem {
-  id        String @id @default(cuid())
-  orderId   String
-  productId String
-  quantity  Int
-  price     Decimal @db.Decimal(10, 2)
-
-  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id])
-
-  @@map("order_items")
-}
-
-// Enums
-enum Role {
-  USER
-  STAFF
-  ADMIN
-}
-
-enum OrderStatus {
-  PENDING
-  CONFIRMED
-  PROCESSING
-  SHIPPED
-  DELIVERED
-  CANCELLED
-}
+// Tables will be added here as needed
+// Example: When implementing auth.md, add User and Session models
+// Example: When implementing products.md, add Product model
+// Example: When implementing orders.md, add Order and OrderItem models
 ```
+
+### Tab Strategy
+- **On-demand creation**: Tables created when implementing specific features
+- **Spec-driven**: Each spec adds its own tables
+- **Minimal approach**: Only create tables when actually needed
+- **Incremental**: Schema grows with application needs
 
 ## Database Client Setup
 
 ### Prisma Client Instance
 ```typescript
 // lib/prisma.ts
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '../generated/client';
+import { PrismaPg } from '@prisma/adapter-pg';
+import 'dotenv/config';
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
-export const prisma = globalForPrisma.prisma ?? new PrismaClient({
-  log: ['query'],
+// Use different connection strings based on environment
+const connectionString = process.env.NODE_ENV === 'production' 
+  ? process.env.POSTGRES_URL || process.env.DATABASE_URL
+  : process.env.DATABASE_URL;
+
+// Create adapter for PostgreSQL
+const adapter = new PrismaPg({
+  connectionString,
 });
+
+export const prisma =
+  globalForPrisma.prisma ??
+  new PrismaClient({
+    adapter,
+    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+  });
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 ```
@@ -285,496 +231,258 @@ export class PrismaService {
     }
   }
 
-  // User operations
-  static async createUser(data: Prisma.UserCreateInput) {
-    return this.withErrorHandling(
-      () => prisma.user.create({ data }),
-      'Failed to create user'
-    );
+  // Generic operations (will be expanded as tables are added)
+  static async healthCheck() {
+    return this.withErrorHandling(async () => {
+      await prisma.$queryRaw`SELECT 1`;
+      return { status: 'healthy', timestamp: new Date() };
+    }, 'Database health check failed');
   }
 
-  static async getUserByEmail(email: string) {
-    return this.withErrorHandling(
-      () => prisma.user.findUnique({ where: { email } }),
-      'Failed to get user'
-    );
-  }
-
-  // Product operations
-  static async createProduct(data: Prisma.ProductCreateInput) {
-    return this.withErrorHandling(
-      () => prisma.product.create({ 
-        data,
-        include: { creator: true }
-      }),
-      'Failed to create product'
-    );
-  }
-
-  static async getProducts(options?: {
-    skip?: number;
-    take?: number;
-    category?: string;
-    active?: boolean;
-  }) {
-    return this.withErrorHandling(
-      () => prisma.product.findMany({
-        where: {
-          isActive: options?.active ?? true,
-          category: options?.category,
-        },
-        include: { creator: true },
-        orderBy: { createdAt: 'desc' },
-        skip: options?.skip,
-        take: options?.take,
-      }),
-      'Failed to get products'
-    );
-  }
-
-  static async updateProduct(id: string, data: Prisma.ProductUpdateInput) {
-    return this.withErrorHandling(
-      () => prisma.product.update({
-        where: { id },
-        data,
-        include: { creator: true, updater: true }
-      }),
-      'Failed to update product'
-    );
-  }
-
-  static async deleteProduct(id: string) {
-    return this.withErrorHandling(
-      () => prisma.product.delete({ where: { id } }),
-      'Failed to delete product'
-    );
+  // Connection count (used in health check API)
+  static async getConnectionCount() {
+    return this.withErrorHandling(async () => {
+      const result = await prisma.$queryRaw`
+        SELECT count(*) as active_connections 
+        FROM pg_stat_activity 
+        WHERE state = 'active'
+      ` as Array<{ active_connections: bigint }>;
+      
+      return Number(result[0]?.active_connections || 0);
+    }, 'Connection count query failed');
   }
 }
 ```
 
-## Migration Strategy
+## Environment Configuration
 
-### Migration Commands
+### Development Environment
 ```bash
-# Create new migration
-npx prisma migrate dev --name init
-
-# Apply migrations in production
-npx prisma migrate deploy
-
-# Reset database (development only)
-npx prisma migrate reset
-
-# Generate Prisma Client
-npx prisma generate
-
-# View database in Prisma Studio
-npx prisma studio
+# .env.local
+DATABASE_URL="postgresql://rpm_user:rpm_password@localhost:5432/rpm_dev?schema=public"
 ```
 
-### Migration Files Structure
-```typescript
-// prisma/migrations/001_init/migration.sql
--- CreateTable
-CREATE TABLE "users" (
-    "id" TEXT NOT NULL,
-    "email" TEXT NOT NULL,
-    "name" TEXT,
-    "image" TEXT,
-    "role" "Role" NOT NULL DEFAULT 'USER',
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "users_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "products" (
-    "id" TEXT NOT NULL,
-    "name" TEXT NOT NULL,
-    "description" TEXT,
-    "price" DECIMAL(10,2) NOT NULL,
-    "category" TEXT,
-    "imageUrl" TEXT,
-    "stock" INTEGER NOT NULL DEFAULT 0,
-    "isActive" BOOLEAN NOT NULL DEFAULT true,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-    "createdBy" TEXT NOT NULL,
-    "updatedBy" TEXT,
-
-    CONSTRAINT "products_pkey" PRIMARY KEY ("id")
-);
-
--- CreateIndex
-CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
-
--- AddForeignKey
-ALTER TABLE "products" ADD CONSTRAINT "products_createdBy_fkey" FOREIGN KEY("createdBy") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+### Production Environment
+```bash
+# Configured by Vercel Postgres automatically
+DATABASE_URL=${POSTGRES_URL}
 ```
 
-## Seeding Strategy
-
-### Seed Script
+### Validation Script
 ```typescript
-// prisma/seed.ts
+// scripts/validate-db.ts
 import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
-async function main() {
-  // Create admin user
-  const adminUser = await prisma.user.upsert({
-    where: { email: 'admin@rpmacc.com' },
-    update: {},
-    create: {
-      email: 'admin@rpmacc.com',
-      name: 'RPM Admin',
-      role: 'ADMIN',
-    },
-  });
-
-  // Create staff user
-  const staffUser = await prisma.user.upsert({
-    where: { email: 'staff@rpmacc.com' },
-    update: {},
-    create: {
-      email: 'staff@rpmacc.com',
-      name: 'RPM Staff',
-      role: 'STAFF',
-    },
-  });
-
-  // Create sample products
-  const products = [
-    {
-      name: 'Accesorio Premium A',
-      description: 'Descripción del accesorio premium A',
-      price: 299.99,
-      category: 'Premium',
-      stock: 50,
-      createdBy: adminUser.id,
-    },
-    {
-      name: 'Accesorio Estándar B',
-      description: 'Descripción del accesorio estándar B',
-      price: 149.99,
-      category: 'Estándar',
-      stock: 100,
-      createdBy: staffUser.id,
-    },
-  ];
-
-  for (const productData of products) {
-    await prisma.product.upsert({
-      where: { name: productData.name },
-      update: {},
-      create: productData,
-    });
-  }
-
-  console.log('Database seeded successfully');
-}
-
-main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
-```
-
-### Package.json Scripts
-```json
-{
-  "scripts": {
-    "db:seed": "tsx prisma/seed.ts",
-    "db:reset": "npx prisma migrate reset --force && npm run db:seed",
-    "db:studio": "npx prisma studio",
-    "db:migrate": "npx prisma migrate dev",
-    "db:generate": "npx prisma generate",
-    "db:dev": "docker-compose up -d postgres",
-    "db:stop": "docker-compose down",
-    "db:logs": "docker-compose logs -f postgres",
-    "db:shell": "docker exec -it rpm-postgres psql -U rpm_user -d rpm_dev",
-    "db:backup": "docker exec rpm-postgres pg_dump -U rpm_user rpm_dev > backup.sql",
-    "db:restore": "docker exec -i rpm-postgres psql -U rpm_user rpm_dev < backup.sql",
-    "db:full-reset": "docker-compose down -v && npm run db:dev && sleep 5 && npm run db:migrate && npm run db:seed"
-  }
-}
-```
-
-## Performance Optimization
-
-### Query Optimization
-```typescript
-// lib/optimized-queries.ts
-export class OptimizedQueries {
-  // Optimized product listing with pagination
-  static async getProductsPaginated(page: number = 1, limit: number = 20) {
-    const skip = (page - 1) * limit;
-    
-    return prisma.product.findMany({
-      where: { isActive: true },
-      include: {
-        creator: {
-          select: { id: true, name: true, email: true }
-        }
-      },
-      orderBy: { createdAt: 'desc' },
-      skip,
-      take: limit,
-    });
-  }
-
-  // Product with related data
-  static async getProductWithDetails(id: string) {
-    return prisma.product.findUnique({
-      where: { id },
-      include: {
-        creator: {
-          select: { id: true, name: true, email: true }
-        },
-        updater: {
-          select: { id: true, name: true, email: true }
-        }
-      }
-    });
-  }
-
-  // Count products for pagination
-  static async getProductsCount(category?: string) {
-    return prisma.product.count({
-      where: {
-        isActive: true,
-        category: category,
-      }
-    });
-  }
-
-  // User with their products
-  static async getUserWithProducts(userId: string) {
-    return prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        createdProducts: {
-          where: { isActive: true },
-          orderBy: { createdAt: 'desc' },
-          take: 10,
-        }
-      }
-    });
-  }
-}
-```
-
-### Connection Pooling
-```typescript
-// lib/prisma-optimized.ts
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient({
-  // Connection pooling configuration
-  datasources: {
-    db: {
-      url: process.env.DATABASE_URL,
-    },
-  },
-  // Log queries in development
-  log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-});
-
-// Health check
-export async function checkDatabaseHealth() {
+async function validateDatabase() {
   try {
+    await prisma.$connect();
+    console.log('✅ Database connection successful');
+    
+    // Test basic query
     await prisma.$queryRaw`SELECT 1`;
-    return { status: 'healthy', timestamp: new Date().toISOString() };
+    console.log('✅ Database query successful');
+    
   } catch (error) {
-    return { status: 'unhealthy', error: error.message };
+    console.error('❌ Database validation failed:', error);
+    process.exit(1);
+  } finally {
+    await prisma.$disconnect();
   }
 }
+
+validateDatabase();
 ```
 
 ## Testing Strategy
 
-### Unit Tests
+### Database Testing Setup
 ```typescript
-// tests/database.test.ts
-import { PrismaService } from '@/lib/prisma-with-error';
+// tests/setup/database.ts
+import { PrismaClient } from '@prisma/client';
 
-describe('Database Operations', () => {
-  beforeEach(async () => {
-    // Clean database before each test
-    await prisma.product.deleteMany();
-    await prisma.user.deleteMany();
-  });
+const prisma = new PrismaClient();
 
-  test('Creates user successfully', async () => {
-    const userData = {
-      email: 'test@example.com',
-      name: 'Test User',
-      role: 'USER' as const,
-    };
-
-    const user = await PrismaService.createUser(userData);
-
-    expect(user.email).toBe(userData.email);
-    expect(user.role).toBe(userData.role);
-  });
-
-  test('Fails to create duplicate user', async () => {
-    const userData = {
-      email: 'test@example.com',
-      name: 'Test User',
-      role: 'USER' as const,
-    };
-
-    await PrismaService.createUser(userData);
-
-    await expect(PrismaService.createUser(userData))
-      .rejects.toThrow('Record already exists');
-  });
-
-  test('Creates and retrieves product', async () => {
-    const user = await PrismaService.createUser({
-      email: 'creator@example.com',
-      name: 'Creator',
-      role: 'STAFF',
-    });
-
-    const productData = {
-      name: 'Test Product',
-      price: 99.99,
-      createdBy: user.id,
-    };
-
-    const product = await PrismaService.createProduct(productData);
-
-    expect(product.name).toBe(productData.name);
-    expect(product.price).toBe(productData.price);
-    expect(product.creatorId).toBe(user.id);
-  });
+beforeAll(async () => {
+  // Setup test database if needed
 });
+
+afterAll(async () => {
+  await prisma.$disconnect();
+});
+
+export { prisma };
 ```
 
-### Integration Tests
-```typescript
-// tests/database.integration.test.ts
-describe('Database Integration', () => {
-  test('Handles concurrent operations', async () => {
-    const promises = Array.from({ length: 10 }, (_, i) =>
-      PrismaService.createUser({
-        email: `user${i}@example.com`,
-        name: `User ${i}`,
-        role: 'USER',
-      })
-    );
-
-    const users = await Promise.all(promises);
-
-    expect(users).toHaveLength(10);
-    expect(new Set(users.map(u => u.email)).size).toBe(10);
-  });
-
-  test('Transaction rollback', async () => {
-    await expect(
-      prisma.$transaction(async (tx) => {
-        await tx.user.create({
-          data: {
-            email: 'test@example.com',
-            name: 'Test',
-            role: 'USER',
-          },
-        });
-        
-        // This will fail
-        await tx.user.create({
-          data: {
-            email: 'test@example.com', // Duplicate email
-            name: 'Test 2',
-            role: 'USER',
-          },
-        });
-      })
-    ).rejects.toThrow();
-
-    // Verify rollback
-    const user = await prisma.user.findUnique({
-      where: { email: 'test@example.com' }
-    });
-    expect(user).toBeNull();
-  });
-});
-```
-
-## Vinculación con Otras Especificaciones
-
-### Dependencias
-- **core.md**: Requiere configuración de variables de entorno
-- **auth.md**: Utiliza User y Session models
-- **realtime.md**: Emite eventos basados en cambios DB
-- **api.md**: Utiliza PrismaService en API routes
-
-### Especificaciones Relacionadas
-- `/specs/SYSTEM_SPEC.md` - Configuración de Vercel Postgres
-- `/specs/vercel-deployment.md` - Environment variables
-
-## Tests y Documentación Relacionados
-
-### Tests Unitarios
-- `database.test.ts` - Operaciones CRUD básicas
-- `database.integration.test.ts` - Tests de concurrencia y transacciones
-- `prisma.test.ts` - Validación de schemas
-
-### Documentación Técnica
-- `docs/database-setup.md` - Guía de configuración inicial
-- `docs/migrations.md` - Estrategia de migraciones
-- `docs/prisma-patterns.md` - Patrones de uso recomendados
-
-### Vinculación Activa
-- **Última actualización**: 2025-03-25
-- **Estado tests**: 🟢 Todos pasando
-- **Cobertura**: 90% (objetivo >95%)
-
-## Maintenance & Operations
-
-### Regular Tasks
-- **Migrations**: Aplicar cambios de schema de forma controlada
-- **Backups**: Verificación de backups automáticos de Vercel
-- **Performance**: Monitoreo de query performance
-- **Security**: Revisión de accesos y permisos
-
-### Monitoring
-```typescript
-// api/db/health/route.ts
-export async function GET() {
-  try {
-    const health = await checkDatabaseHealth();
-    const connectionCount = await prisma.$queryRaw`
-      SELECT count(*) as active_connections 
-      FROM pg_stat_activity 
-      WHERE state = 'active'
-    `;
-    
-    return Response.json({
-      database: health,
-      connections: connectionCount[0]?.active_connections || 0,
-      timestamp: Date.now(),
-    });
-  } catch (error) {
-    return Response.json({
-      status: 'error',
-      message: error.message,
-    }, { status: 500 });
+### Test Scripts
+```json
+{
+  "scripts": {
+    "test:db": "npm run db:start && sleep 10 && npm run test:run && npm run db:stop",
+    "test:db:unit": "vitest run --config vitest.config.db.ts",
+    "test:db:e2e": "playwright test --config playwright.config.db.ts"
   }
 }
 ```
 
-### Backup Strategy
-- **Automated**: Vercel Postgres backup diario
-- **Manual**: Export commands para backups específicos
-- **Recovery**: Procedimientos de restore documentados
-- **Testing**: Validación periódica de restores
+## Performance Considerations
+
+### Connection Pooling
+- **Development**: Single connection (Docker)
+- **Production**: Connection pooling (Vercel)
+- **Optimization**: Query logging enabled in dev
+
+### Monitoring
+- **Query Performance**: Prisma query logs
+- **Connection Health**: Health check endpoint
+- **Error Tracking**: Structured error logging
+
+## Security Best Practices
+
+### Environment Variables
+- Never commit `.env.local`
+- Use Vercel secrets for production
+- Rotate database credentials regularly
+
+### Access Control
+- Least privilege principle
+- Read-only replicas for reporting
+- Audit logging for sensitive operations
+
+## Migration Strategy
+
+### Development Migrations
+```bash
+# Create migration (when adding tables)
+npx prisma migrate dev --name add_users
+
+# Reset database (development only)
+npx prisma migrate reset
+
+# Generate client after schema changes
+npx prisma generate
+```
+
+### Production Migrations
+```bash
+# Deploy migrations to production
+npx prisma migrate deploy
+
+# Generate client for production
+npx prisma generate
+```
+
+## Backup and Recovery
+
+### Development Backup
+```bash
+# Manual backup
+docker exec rpm-postgres pg_dump -U rpm_user rpm_dev > backup.sql
+
+# Restore backup
+docker exec -i rpm-postgres psql -U rpm_user rpm_dev < backup.sql
+```
+
+### Production Backup
+- **Automated**: Daily backups by Vercel
+- **Manual**: On-demand through Vercel dashboard
+- **Point-in-time**: 7-day retention
+
+## Vinculación con Otras Especificaciones
+
+### Especificaciones Relacionadas
+- `/specs/auth.md` - Agregará tablas `User` y `Session`
+- `/specs/products.md` - Agregará tabla `Product`
+- `/specs/orders.md` - Agregará tablas `Order` y `OrderItem`
+
+### Flujo de Trabajo
+1. **database.md** - Configuración base ✅
+2. **auth.md** - Agrega tablas de autenticación
+3. **products.md** - Agrega tablas de productos
+4. **orders.md** - Agrega tablas de pedidos
+
+## Tests y Documentación Relacionados
+
+### Tests Unitarios
+- `db.test.ts` - Validación de conexión ✅ Implementado (6/6 pasando)
+- `prisma.test.ts` - Tests de client ✅ Implementado (15/15 pasando)
+
+### Tests E2E
+- `db-connection.spec.ts` - Validación de conexión E2E ✅ Implementado
+
+### Health Check API
+- `/api/health/db` - Endpoint de validación de conexión ✅ Implementado
+- `/api/debug/env` - Debug de variables de entorno ✅ Implementado
+
+#### Health Check Endpoint
+```typescript
+// GET /api/health/db
+// Response:
+{
+  "status": "healthy" | "unhealthy",
+  "database": "postgresql",
+  "connections": number,
+  "timestamp": string,
+  "error": string // solo si status es "unhealthy"
+}
+```
+
+#### Usage Examples
+```bash
+# Local health check
+curl http://localhost:3000/api/health/db
+
+# Production health check  
+curl https://rpm-wheat.vercel.app/api/health/db
+
+# Expected healthy response
+{
+  "status": "healthy",
+  "database": "postgresql", 
+  "connections": 1,
+  "timestamp": "2026-03-25T06:15:00.946Z"
+}
+```
+
+### Documentación Técnica
+- `docs/database-setup.md` - Guía completa de setup ✅ Implementado
+
+### Vinculación Activa
+- **Última actualización**: 2025-03-25
+- **Estado**: ✅ Configuración base completa y funcionando
+- **Tablas**: 0 (se crearán bajo demanda)
+- **CI/CD**: ✅ Pipeline configurado para validación de DB
+- **Producción**: ✅ Prisma Postgres funcionando
+- **Local**: ✅ Docker PostgreSQL funcionando
+- **Tests Unitarios**: ✅ 21/21 pasando (6 db + 15 prisma)
+- **Tests E2E**: ✅ db-connection.spec.ts implementado
+- **Health Check**: ✅ API funcionando en producción
+- **Validación**: ✅ Script de validación automático
+
+### Scripts de Automatización
+- `scripts/setup-db-env.sh` - Configuración automática de variables Vercel
+- `scripts/deploy-with-db.sh` - Deploy con validación de DB
+- `scripts/validate-db.ts` - Validación completa de configuración de DB
+- `pnpm run deploy` - Deploy completo con base de datos
+- `pnpm run db:validate` - Validación de entorno y conexión
+
+### Endpoints Disponibles
+- `GET /api/health/db` - Health check de base de datos
+  - **Response**: Status, connections, timestamp
+  - **Usage**: `curl https://rpm-wheat.vercel.app/api/health/db`
+- `GET /api/debug/env` - Debug de variables de entorno
+  - **Response**: Variables cargadas y estado
+  - **Usage**: `curl https://rpm-wheat.vercel.app/api/debug/env`
+
+## Mantenimiento
+
+### Regular Updates
+- **Prisma**: Seguir releases estables
+- **PostgreSQL**: Security patches
+- **Dependencies**: Actualización mensual
+
+### Monitoring
+- **Connection Health**: Health checks automáticos
+- **Performance**: Query optimization
+- **Errors**: Structured logging

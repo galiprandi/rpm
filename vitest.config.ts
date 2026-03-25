@@ -3,22 +3,10 @@ import { resolve } from 'path';
 
 export default defineConfig({
   test: {
-    globals: true,
     environment: 'jsdom',
     setupFiles: ['./vitest.setup.ts'],
+    globals: true,
     include: ['**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
-    exclude: [
-      'node_modules/',
-      '.next/',
-      '.vercel/',
-      '**/*.d.ts',
-      '**/*.config.*',
-      '**/coverage/**',
-      '**/tests/playwright/**',
-      '**/test-results/**',
-      '**/playwright-report/**',
-      '**/playwright/**',
-    ],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],

@@ -1,0 +1,16 @@
+// Prisma Schema - Base Configuration
+// Tables will be added on-demand by each specification
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Tables will be added here as needed
+// Example: When implementing auth.md, add User and Session models
+// Example: When implementing products.md, add Product model
+// Example: When implementing orders.md, add Order and OrderItem models
