@@ -22,7 +22,14 @@ export async function POST(request: NextRequest) {
 
     // Create tables manually
     await prisma.$executeRaw`
-      CREATE TABLE IF NOT EXISTS "user" (
+      DROP TABLE IF EXISTS verification CASCADE;
+      DROP TABLE IF EXISTS session CASCADE;
+      DROP TABLE IF EXISTS account CASCADE;
+      DROP TABLE IF EXISTS "user" CASCADE;
+    `;
+
+    await prisma.$executeRaw`
+      CREATE TABLE "user" (
         id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
         email TEXT NOT NULL,
@@ -34,11 +41,11 @@ export async function POST(request: NextRequest) {
     `;
 
     await prisma.$executeRaw`
-      CREATE UNIQUE INDEX IF NOT EXISTS "user_email_idx" ON "user"(email);
+      CREATE UNIQUE INDEX "user_email_idx" ON "user"(email);
     `;
 
     await prisma.$executeRaw`
-      CREATE TABLE IF NOT EXISTS account (
+      CREATE TABLE account (
         id TEXT PRIMARY KEY,
         "accountId" TEXT NOT NULL,
         "providerId" TEXT NOT NULL,
@@ -56,11 +63,11 @@ export async function POST(request: NextRequest) {
     `;
 
     await prisma.$executeRaw`
-      CREATE INDEX IF NOT EXISTS "account_userId_idx" ON account("userId");
+      CREATE INDEX "account_userId_idx" ON account("userId");
     `;
 
     await prisma.$executeRaw`
-      CREATE TABLE IF NOT EXISTS session (
+      CREATE TABLE session (
         id TEXT PRIMARY KEY,
         "expiresAt" TIMESTAMP NOT NULL,
         token TEXT NOT NULL,
@@ -73,15 +80,15 @@ export async function POST(request: NextRequest) {
     `;
 
     await prisma.$executeRaw`
-      CREATE UNIQUE INDEX IF NOT EXISTS "session_token_idx" ON session(token);
+      CREATE UNIQUE INDEX "session_token_idx" ON session(token);
     `;
 
     await prisma.$executeRaw`
-      CREATE INDEX IF NOT EXISTS "session_userId_idx" ON session("userId");
+      CREATE INDEX "session_userId_idx" ON session("userId");
     `;
 
     await prisma.$executeRaw`
-      CREATE TABLE IF NOT EXISTS verification (
+      CREATE TABLE verification (
         id TEXT PRIMARY KEY,
         identifier TEXT NOT NULL,
         value TEXT NOT NULL,
@@ -92,17 +99,17 @@ export async function POST(request: NextRequest) {
     `;
 
     await prisma.$executeRaw`
-      CREATE INDEX IF NOT EXISTS "verification_identifier_idx" ON verification(identifier);
+      CREATE INDEX "verification_identifier_idx" ON verification(identifier);
     `;
 
     // Add foreign keys
     await prisma.$executeRaw`
-      ALTER TABLE account ADD CONSTRAINT IF NOT EXISTS "account_userId_fkey"
+      ALTER TABLE account ADD CONSTRAINT "account_userId_fkey"
       FOREIGN KEY ("userId") REFERENCES "user"(id) ON DELETE CASCADE;
     `;
 
     await prisma.$executeRaw`
-      ALTER TABLE session ADD CONSTRAINT IF NOT EXISTS "session_userId_fkey"
+      ALTER TABLE session ADD CONSTRAINT "session_userId_fkey"
       FOREIGN KEY ("userId") REFERENCES "user"(id) ON DELETE CASCADE;
     `;
 
