@@ -125,6 +125,51 @@ Los nuevos comportamientos, restricciones y reglas operativas introducidas en el
 
 ---
 
+## 7. Boy Scout Rule - Leave It Better
+Cada vez que se modifica un archivo, el agente debe dejarlo en un estado mejor que cuando lo encontró:
+
+### 7.1. Mejoras Permitidas
+- Mejorar legibilidad del código sin cambiar funcionalidad
+- Optimizar estructura y organización
+- Actualizar comentarios obsoletos
+- Corregir errores de formato o estilo
+- Mejorar nombres de variables o funciones
+
+### 7.2. Mejoras de Documentación
+Si la documentación o especificación relacionada está desactualizada o no existe:
+- Revisar y actualizar specs relacionadas
+- Mejorar documentación técnica
+- Agregar ejemplos o aclaraciones
+- Mantener sincronización código-documentación
+
+### 7.3. Restricciones Importantes
+- **Sin introducir bugs**: Los cambios no deben afectar la funcionalidad existente
+- **Consentimiento del usuario**: Obtener aprobación antes de mejoras significativas
+- **Alcance razonable**: Las mejoras deben ser proporcionales al cambio original
+
+---
+
+## 8. Estándar de Idioma - Inglés Obligatorio
+Todo el contenido técnico debe estar en inglés:
+
+### 8.1. Código y Comentarios
+- Variables, funciones, clases en inglés
+- Comentarios de código en inglés
+- Nombres de archivos en inglés
+- Mensajes de error y logs en inglés
+
+### 8.2. Comunicación Técnica
+- Mensajes de commit en inglés
+- Nombres de ramas en inglés
+- Pull requests y revisiones en inglés
+- Documentación técnica en inglés
+
+### 8.3. Excepciones
+- Documentación para usuarios finales (idioma del público objetivo)
+- Comentarios internos del equipo cuando sea justificado
+
+---
+
 ## 9. Definición de Roles
 - **Agente**: Ejecutor del flujo de trabajo
 - **Usuario**: Aprobador y validador final
