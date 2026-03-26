@@ -7,7 +7,6 @@
 | Workflow | Trigger | Propósito | Duración |
 |----------|---------|-----------|----------|
 | **ci.yml** | Push/PR a main | Pipeline principal completo | ~3min |
-| **visual-testing.yml** | Pull Request | Tests visuales con Chromatic | ~30s |
 
 ## 🎯 **ESTRATEGIA POR ETAPA**
 
@@ -18,9 +17,6 @@
 - Type check
 - Build validation
 - Lint
-
-⚠️ Tests recomendados (visual-testing.yml):
-- Visual regression (Chromatic)
 ```
 
 ### **2. Merge to Main**
@@ -47,7 +43,6 @@
 ### **Variables de Entorno Requeridas**
 ```bash
 # Repository Secrets
-CHROMATIC_PROJECT_TOKEN=chromatic-project-token
 VERCEL_TOKEN=vercel-deploy-token
 VERCEL_ORG_ID=vercel-org-id
 VERCEL_PROJECT_ID=vercel-project-id
@@ -60,7 +55,6 @@ VERCEL_PROJECT_ID=vercel-project-id
   - quick-check (unit + build)
   - e2e-test (solo main)
   - security
-  - visual-test (PRs)
 
 ✅ Require PR review
 ✅ Require up-to-date branches
@@ -73,7 +67,6 @@ VERCEL_PROJECT_ID=vercel-project-id
 |--------------|----|------|--------|-----------|
 | **Unit Tests** | ✅ Obligatorio | ✅ Obligatorio | ✅ Obligatorio | Cada commit |
 | **E2E Tests** | ❌ Omitido | ✅ Obligatorio | ✅ Obligatorio | Solo main |
-| **Visual Tests** | ⚠️ Recomendado | ⚠️ Recomendado | ❌ Omitido | Cada PR |
 | **Security** | ❌ Omitido | ✅ Obligatorio | ✅ Obligatorio | Cada push |
 
 ## 🚀 **OPTIMIZACIONES**
@@ -90,7 +83,6 @@ restore-keys: pnpm-${{ runner.os }}-
 # Jobs en paralelo
 - quick-check (unit + build)
 - e2e-test (solo main)
-- visual-test (solo PRs)
 - security (todos)
 ```
 
@@ -99,32 +91,6 @@ restore-keys: pnpm-${{ runner.os }}-
 # Jobs con dependencias
 needs: [quick-check] # E2E solo si unit tests pasan
 needs: [quick-check, e2e-test, security] # Deploy solo si todo pasa
-```
-
-## 🎨 **VISUAL TESTING**
-
-### **Chromatic Integration**
-```yaml
-# Configuración optimizada para PRs
-exitZeroOnChanges: true
-autoAcceptChanges: main
-buildScriptName: build-storybook
-```
-
-### **Coverage Thresholds**
-```json
-{
-  "coverage": {
-    "thresholds": {
-      "global": {
-        "branches": 80,
-        "functions": 80,
-        "lines": 80,
-        "statements": 80
-      }
-    }
-  }
-}
 ```
 
 ## 📈 **MÉTRICAS DE ÉXITO**
