@@ -1,4 +1,4 @@
-# Core Application Architecture
+🟢 # Core Application Architecture
 
 ## Overview
 

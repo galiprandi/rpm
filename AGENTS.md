@@ -865,3 +865,69 @@ curl http://localhost:6006 || echo "Por favor, inicia Storybook con: pnpm storyb
 # Verificar MCP funcionando
 curl http://localhost:6006/mcp
 ```
+
+---
+
+# 📋 Specification File Rules - Semáforo de Implementación
+
+## REGLA FUNDAMENTAL: Toda SPEC debe incluir semáforo
+
+**OBLIGATORIO**: Cada archivo en `/specs/` debe incluir un semáforo en la primera línea que indique el estado de implementación.
+
+### 🚦 Convención de Semáforos
+
+```markdown
+🟢 = Completamente implementado (100%)
+🟡 = Parcialmente implementado (en progreso)
+🔴 = No iniciado (0%)
+```
+
+### 📍 Ubicación y Formato
+
+**SIEMPRE** en la primera línea del archivo, antes del título:
+
+```markdown
+🟢 # System Specification
+
+## Overview
+...
+```
+
+### ✅ Checklist de Implementación
+
+Al crear o modificar una spec, verificar:
+- [ ] Semáforo en primera línea
+- [ ] Indica estado correcto (🟢🟡🔴)
+- [ ] Estado actualizado si hay cambios
+- [ ] Título H1 después del semáforo
+
+### 📝 Ejemplos
+
+**Spec completamente implementada:**
+```markdown
+🟢 # Components Architecture
+
+## Overview
+Sistema de componentes modular...
+```
+
+**Spec en progreso:**
+```markdown
+🟡 # Real-time Architecture
+
+## Overview
+Sistema de actualizaciones en tiempo real...
+```
+
+**Spec no iniciada:**
+```markdown
+🔴 # Advanced Analytics
+
+## Overview
+Sistema de análisis de datos...
+```
+
+### ⚠️ Consecuencias
+
+Specs sin semáforo serán rechazadas en PR review.
+

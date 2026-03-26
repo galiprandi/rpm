@@ -1,4 +1,4 @@
-# Especificación del Sistema RPM
+🟢 # Especificación del Sistema RPM
 
 ## Overview
 
@@ -21,8 +21,8 @@ rpm/
 ├── public/             # Assets estáticos
 ├── docs/               # Documentación técnica
 ├── specs/              # Especificaciones del sistema
-├── .vercel/           # Configuración Vercel
-└── package.json       # Dependencias y scripts
+├── .vercel/            # Configuración Vercel
+└── package.json        # Dependencias y scripts
 ```
 
 ## Despliegue en Vercel
