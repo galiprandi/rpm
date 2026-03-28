@@ -21,7 +21,7 @@
 ### Duración: 4-6 semanas | Objetivo: Reemplazar sistema actual
 
 #### Semana 1-2: Fundamentos
-- [ ] Setup proyecto, base de datos, auth con roles JWT
+- [x] Setup proyecto, base de datos, auth con roles JWT
 - [ ] CRUD Productos y Categorías (ADMIN: full, SELLER: view)
 - [ ] Control stock simple
 - [ ] Seed datos iniciales

@@ -4,6 +4,36 @@
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
 
+---
+
+# 🌐 Política de Idioma
+
+## Excepción Especial para Este Proyecto
+
+A diferencia de la regla general de usar inglés para todo contenido técnico, **este proyecto permite y usa español en:**
+
+- **`@[AGENTS.md]`** - Documentación de reglas para agentes
+- **`@[specs]`** - Especificaciones del sistema
+
+### ¿Por qué esta excepción?
+
+- El equipo de RPM opera principalmente en español
+- Las especificaciones de negocio deben ser claras para stakeholders
+- Las reglas de agentes necesitan ser precisas en el idioma del equipo
+
+### Reglas Aplicables
+
+| Tipo de Archivo | Idioma Permitido | Ejemplo |
+|-----------------|------------------|---------|
+| `AGENTS.md` | 🇪🇸 Español | Esta documentación |
+| `specs/*.md` | 🇪🇸 Español | Requisitos de negocio |
+| Código fuente | 🇬🇧 Inglés | Variables, funciones, comentarios |
+| Tests | 🇬🇧 Inglés | Descripciones de test |
+| Commits | 🇬🇧 Inglés | Mensajes de git |
+| Docs técnicas | 🇬🇧 Inglés | `docs/*.md` |
+
+---
+
 # Storybook Integration - OBLIGATORIO
 
 ## REGLA FUNDAMENTAL: Storybook SIEMPRE Actualizado
@@ -265,7 +295,7 @@ const testResults = await run-story-tests();
 ### 5. Integración con AGENTS.md
 
 #### 5.1. Instrucciones para Agentes
-**CUANDO trabajes en componentes UI, siempre usa las `rpm-sb-mcp` MCP tools para acceder al conocimiento y documentación de Storybook antes de responder o tomar cualquier acción.**
+**CUANDO trabajes en componentes UI, siempre usa las `shadcn` MCP tools para acceder al conocimiento y documentación de Storybook antes de responder o tomar cualquier acción.**
 
 - **CRÍTICO: Nunca alucines propiedades de componentes!** Antes de usar CUALQUIER propiedad en un componente de un sistema de diseño (incluyendo propiedades de apariencia común como `shadow`, etc.), DEBES usar las MCP tools para verificar si la propiedad está realmente documentada para ese componente.
 - Query `list-all-documentation` para obtener una lista de todos los componentes
@@ -519,28 +549,7 @@ Si la documentación o especificación relacionada está desactualizada o no exi
 
 ---
 
-## 8. Estándar de Idioma - Inglés Obligatorio
-Todo el contenido técnico debe estar en inglés:
-
-### 8.1. Código y Comentarios
-- Variables, funciones, clases en inglés
-- Comentarios de código en inglés
-- Nombres de archivos en inglés
-- Mensajes de error y logs en inglés
-
-### 8.2. Comunicación Técnica
-- Mensajes de commit en inglés
-- Nombres de ramas en inglés
-- Pull requests y revisiones en inglés
-- Documentación técnica en inglés
-
-### 8.3. Excepciones
-- Documentación para usuarios finales (idioma del público objetivo)
-- Comentarios internos del equipo cuando sea justificado
-
----
-
-## 9. Definición de Roles
+## 8. Definición de Roles
 - **Agente**: Ejecutor del flujo de trabajo
 - **Usuario**: Aprobador y validador final
 - **Sistema**: Validación automática mediante tests
@@ -549,13 +558,13 @@ Todo el contenido técnico debe estar en inglés:
 
 ---
 
-## 10. Flujo de Definición de Nuevas Especificaciones
+## 9. Flujo de Definición de Nuevas Especificaciones
 *(se activa cuando el usuario solicita una nueva feature o cambio significativo)*
 
-### 10.1. Inicio del Proceso
+### 9.1. Inicio del Proceso
 El usuario inicia describiendo un cambio o nueva feature que desea implementar.
 
-### 10.2. Análisis de Regresión
+### 9.2. Análisis de Regresión
 El agente debe:
 - Revisar todas las especificaciones existentes en `/specs`
 - Analizar si el cambio propuesto tiene riesgo de regresión
@@ -563,7 +572,7 @@ El agente debe:
 - Verificar impacto en stories de Storybook existentes
 - **Usar MCP** para validar componentes UI afectados
 
-#### 10.2.1. Detección de Riesgo
+#### 9.2.1. Detección de Riesgo
 Si se detecta riesgo de regresión o conflicto:
 - Notificar al usuario sobre los riesgos identificados
 - Explicar el impacto potencial en el sistema existente
@@ -572,14 +581,14 @@ Si se detecta riesgo de regresión o conflicto:
 - Proponer un camino viable alternativo o mitigaciones
 - Esperar aprobación del usuario para continuar
 
-#### 10.2.2. Sin Riesgo Detectado
+#### 9.2.2. Sin Riesgo Detectado
 Si no hay regresión o conflicto:
-- Continuar con el interrogatorio del usuario (punto 10.3)
+- Continuar con el interrogatorio del usuario (punto 9.3)
 
-### 10.3. Interrogatorio Estructurado
+### 9.3. Interrogatorio Estructurado
 El agente debe realizar preguntas numeradas con opciones recomendadas para eliminar ambigüedades:
 
-#### 10.3.1. Formato de Preguntas
+#### 9.3.1. Formato de Preguntas
 ```
 1. [Pregunta clara sobre aspecto específico]
    a) [Opción recomendada 1]
@@ -593,7 +602,7 @@ El agente debe realizar preguntas numeradas con opciones recomendadas para elimi
    c) [Definición personalizada]
 ```
 
-#### 10.3.2. Áreas Típicas de Interrogatorio
+#### 9.3.2. Áreas Típicas de Interrogatorio
 - **Alcance funcional**: Qué comportamientos específicos se esperan
 - **Casos límite**: Cómo manejar edge cases y errores
 - **Integración**: Interacción con componentes existentes
@@ -605,7 +614,7 @@ El agente debe realizar preguntas numeradas con opciones recomendadas para elimi
 - **Storybook**: Requisitos de documentación visual
 - **MCP**: Validación de componentes UI
 
-### 10.4. Presentación del Borrador
+### 9.4. Presentación del Borrador
 Una vez completado el interrogatorio:
 - **OBLIGATORIO**: Mostrar siempre el borrador completo para revisión del usuario
 - **PROHIBIDO**: Crear archivos de especificación sin aprobación explícita
@@ -615,13 +624,13 @@ Una vez completado el interrogatorio:
 - Estructurar según el formato estándar de especificaciones del proyecto
 - **ESPERAR SIEMPRE** aprobación explícita del usuario antes de crear cualquier archivo
 
-### 10.5. Aprobación Explícita
+### 9.5. Aprobación Explícita
 El usuario debe aprobar explícitamente el borrador:
 - **Aprobación**: "Acepto el borrador" o similar explícito
 - **Modificaciones**: Solicitar cambios específicos al borrador
 - **Rechazo**: Volver al interrogatorio o iniciar de nuevo
 
-### 10.6. Transición al Flujo de Implementación
+### 9.6. Transición al Flujo de Implementación
 Solo después de la aprobación explícita del borrador:
 - Iniciar el flujo descrito en el punto 1 (Revisión de Especificaciones)
 - Continuar con los puntos 2.1 en adelante según corresponda
@@ -629,7 +638,7 @@ Solo después de la aprobación explícita del borrador:
 - Crear o actualizar stories de Storybook
 - **Validar componentes con MCP**
 
-### 10.7. Registro y Trazabilidad
+### 9.7. Registro y Trazabilidad
 - Documentar el proceso de definición en la especificación final
 - Incluir fecha de creación, versiones y decisiones clave
 - Mantener enlace al borrador original si aplica
@@ -638,17 +647,17 @@ Solo después de la aprobación explícita del borrador:
 
 ---
 
-## 11. Manejo Seguro de Variables de Entorno (Non-Interactive)
+## 10. Manejo Seguro de Variables de Entorno (Non-Interactive)
 
-### 11.1. Principios de Seguridad
+### 10.1. Principios de Seguridad
 - **NUNCA** hardcodear credenciales en código
 - **SIEMPRE** usar variables de entorno
 - **NUNCA** commitear archivos .env con datos reales
 - **SIEMPRE** validar que .gitignore proteja archivos sensibles
 
-### 11.2. Método No-Interactivo Seguro para Vercel
+### 10.2. Método No-Interactivo Seguro para Vercel
 
-#### 11.2.1. Flujo Recomendado
+#### 10.2.1. Flujo Recomendado
 ```bash
 # 1. Verificar estado actual
 vercel env ls
@@ -674,7 +683,7 @@ pnpm run deploy
 curl https://rpm-wheat.vercel.app/api/health/db
 ```
 
-#### 11.2.2. Script de Configuración Segura
+#### 10.2.2. Script de Configuración Segura
 ```bash
 #!/bin/bash
 # scripts/setup-db-env.sh - EJEMPLO SEGURO
@@ -700,7 +709,7 @@ rm -f /tmp/postgres_url.txt
 unset POSTGRES_URL
 ```
 
-#### 11.2.3. Validación de Seguridad
+#### 10.2.3. Validación de Seguridad
 ```bash
 # Verificar que no hay credenciales hardcodeadas
 grep -r "postgres://.*:.*@" . --exclude-dir=.git --exclude-dir=node_modules || echo "✅ No hardcoded credentials"
@@ -718,9 +727,9 @@ curl http://localhost:6006/mcp
 curl http://localhost:6006 || echo "Por favor, inicia Storybook con: pnpm storybook"
 ```
 
-### 11.3. Fuentes de Credenciales Seguras
+### 10.3. Fuentes de Credenciales Seguras
 
-#### 11.3.1. Vercel Dashboard (Recomendado)
+#### 10.3.1. Vercel Dashboard (Recomendado)
 ```bash
 # 1. Abrir dashboard
 vercel open
@@ -730,7 +739,7 @@ vercel open
 # 4. Verificar con: vercel env ls
 ```
 
-#### 11.3.2. Variable de Entorno Temporal
+#### 10.3.2. Variable de Entorno Temporal
 ```bash
 # Setear temporalmente (nunca en scripts)
 export POSTGRES_URL="postgres://user:password@host:port/db?sslmode=require"
@@ -742,7 +751,7 @@ export POSTGRES_URL="postgres://user:password@host:port/db?sslmode=require"
 unset POSTGRES_URL
 ```
 
-#### 11.3.3. Gestor de Secretos
+#### 10.3.3. Gestor de Secretos
 ```bash
 # Ejemplo con 1Password CLI
 op read "op://Database/Production/postgres-url" > /tmp/db_url.txt
@@ -752,9 +761,9 @@ rm -f /tmp/db_url.txt
 unset POSTGRES_URL
 ```
 
-### 11.4. Comandos de Validación Obligatorios
+### 10.4. Comandos de Validación Obligatorios
 
-#### 11.4.1. Antes de Deploy
+#### 10.4.1. Antes de Deploy
 ```bash
 # Verificar seguridad
 grep -r "postgres://.*:.*@" . --exclude-dir=.git --exclude-dir=node_modules || echo "✅ Security check passed"
@@ -772,7 +781,7 @@ curl http://localhost:6006 || echo "Por favor, inicia Storybook con: pnpm storyb
 curl http://localhost:6006/mcp
 ```
 
-#### 11.4.2. Después de Deploy
+#### 10.4.2. Después de Deploy
 ```bash
 # Verificar producción
 curl https://rpm-wheat.vercel.app/api/health/db
@@ -787,9 +796,9 @@ curl https://storybook-url.example.com
 curl https://storybook-url.example.com/mcp
 ```
 
-### 11.5. Prohibiciones Estrictas
+### 10.5. Prohibiciones Estrictas
 
-#### 11.5.1. NUNCA Hacer
+#### 10.5.1. NUNCA Hacer
 ```bash
 # ❌ NUNCA hardcodear credenciales
 echo "postgres://real_user:real_pass@host:port/db" > script.sh
@@ -807,7 +816,7 @@ git commit -m "update component"  # SIN actualizar story  # PROHIBIDO
 componentProps.shadow = true;  # SIN verificar con MCP  # PROHIBIDO
 ```
 
-#### 11.5.2. SIEMPRE Hacer
+#### 10.5.2. SIEMPRE Hacer
 ```bash
 # ✅ SIEMPRE usar variables de entorno
 export POSTGRES_URL="postgres://user:password@host:port/db"
@@ -828,9 +837,9 @@ curl http://localhost:6006 || echo "Por favor, inicia Storybook con: pnpm storyb
 const docs = await get-documentation({ component: 'Button' });
 ```
 
-### 11.6. Flujo de Emergencia (Si se exponen credenciales)
+### 10.6. Flujo de Emergencia (Si se exponen credenciales)
 
-#### 11.6.1. Acciones Inmediatas
+#### 10.6.1. Acciones Inmediatas
 ```bash
 # 1. Revocar credenciales expuestas
 vercel open  # → Storage → Postgres → rpm-db → Reset credentials
@@ -848,7 +857,7 @@ git filter-branch --force --index-filter \
 git push origin main --force-with-lease
 ```
 
-#### 11.6.2. Verificación Post-Emergencia
+#### 10.6.2. Verificación Post-Emergencia
 ```bash
 # Verificar que no queden credenciales
 grep -r "postgres://.*:.*@" . --exclude-dir=.git --exclude-dir=node_modules
@@ -887,7 +896,7 @@ curl http://localhost:6006/mcp
 **SIEMPRE** en la primera línea del archivo, antes del título:
 
 ```markdown
-🟢 # System Specification
+# 🟢 System Specification
 
 ## Overview
 ...
@@ -905,7 +914,7 @@ Al crear o modificar una spec, verificar:
 
 **Spec completamente implementada:**
 ```markdown
-🟢 # Components Architecture
+# 🟢 Components Architecture
 
 ## Overview
 Sistema de componentes modular...
@@ -913,7 +922,7 @@ Sistema de componentes modular...
 
 **Spec en progreso:**
 ```markdown
-🟡 # Real-time Architecture
+# 🟡 Real-time Architecture
 
 ## Overview
 Sistema de actualizaciones en tiempo real...
@@ -921,7 +930,7 @@ Sistema de actualizaciones en tiempo real...
 
 **Spec no iniciada:**
 ```markdown
-🔴 # Advanced Analytics
+# 🔴 Advanced Analytics
 
 ## Overview
 Sistema de análisis de datos...
@@ -931,3 +940,95 @@ Sistema de análisis de datos...
 
 Specs sin semáforo serán rechazadas en PR review.
 
+---
+
+# 🚀 Metodología de Ejecución del Roadmap
+
+**Trigger**: Usuario dice *"continuemos con la implementacion del roadmap"*
+
+## Fase 1: Análisis + División Inteligente (Autónoma)
+
+```yaml
+1. Git Check:
+   - Verificar: git branch --show-current
+   - Si !main → git checkout main && git pull origin main
+
+2. Scope Analysis:
+   - Leer roadmap: identificar siguiente [ ] pendiente
+   - Análisis de complejidad:
+     ├── Archivos/modules a modificar (objetivo: ≤5)
+     ├── Riesgos técnicos (qué puede fallar)
+     ├── Complejidad de validación (happy path + edge cases)
+     └── Tiempo estimado (objetivo: 10-30 min)
+   
+3. Si scope amplio → División automática (rol Product Lead):
+   - Fraccionar en pasos de ≤5 archivos
+   - Cada paso: testeable y validable aisladamente
+   - Actualizar roadmap con sub-tareas
+   - Presentar división al usuario antes de proceder
+```
+
+## Fase 2: Propuesta Técnica (Resumen Conciso)
+
+Formato (1-2 minutos de lectura):
+```yaml
+├── 🎯 Paso: [Nombre conciso]
+├── 📋 Archivos: [lista de X archivos/modules a tocar]
+├── ⚠️ Riesgos: [qué puede fallar y cómo lo mitigo]
+├── 🏗️ Cambios clave: [2-3 líneas por archivo]
+└── ⏱️ Tiempo estimado: [X minutos]
+
+Esperar explícitamente: "ok" | "procede" | "adelante"
+```
+
+## Fase 3: Implementación (Autónoma)
+
+- Ejecuto sin interrupciones
+- Commits atómicos descriptivos
+- Tests con cobertura ≥80% (incluidos en el cambio)
+
+## Fase 4: Modo QA (Automático + Exhaustivo)
+
+**Herramientas disponibles**:
+- **DB**: `.env.local` (DATABASE_URL) para queries antes/después
+- **E2E**: Puppeteer MCP para validación UI completa
+
+```yaml
+Validación Rápida pero Completa:
+
+□ Tests: npm test (≥80% cobertura)
+□ Type check: npx tsc --noEmit
+□ DB (queries antes/después con evidencia):
+   - Query registros pre-acción
+   - Ejecutar operación
+   - Query registros post-acción
+   - Verificar integridad referencial
+□ UI/E2E (Puppeteer):
+   - Screenshot estado inicial
+   - Ejecutar flujo completo
+   - Screenshot estados intermedios
+   - Screenshot estado final
+   - Validar responsive (mobile/desktop)
+   - Verificar consola: 0 errores/warnings
+□ Edge cases identificados en análisis
+
+Evidencia mínima requerida:
+├── 📸 3-5 screenshots clave
+├── 🗃️ 2 queries DB (before/after)
+├── ✅ Cobertura tests: X%
+└── 📝 Consola: errores=0
+```
+
+**Resultado QA**:
+- ✅ **PASS**: Informe con evidencia → Listo para siguiente
+- ❌ **FAIL**: Fixes inmediatos → Re-ejecución QA
+
+## Principios
+
+1. **Autonomía**: Yo ejecuto, tú solo das "ok" inicial
+2. **Velocidad**: Pasos de minutos, no días
+3. **Contención**: ≤5 archivos, riesgos analizados previamente
+4. **Evidencia**: QA meticuloso con capturas y logs
+5. **División inteligente**: Si el scope es amplio, actúo como Product Lead y propongo división
+
+---
