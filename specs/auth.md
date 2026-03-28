@@ -46,25 +46,142 @@ NEXTAUTH_SECRET=your-nextauth-secret
 
 ### User Roles Definition
 ```typescript
-enum UserRole {
-  USER = 'USER',        // Clientes finales - Acceso a /
-  STAFF = 'STAFF',      // Staff básico - Acceso a /adm limitado
-  ADMIN = 'ADMIN'       // Administradores - Acceso completo a /adm
+type UserRole = 'ADMIN' | 'SELLER' | 'TECHNICIAN' | 'CASHIER' | 'WAREHOUSE' | 'USER';
+```
+
+### Role Assignment Strategy (DB + Prisma Studio)
+
+**Enfoque**: Roles almacenados en base de datos, gestionables vía Prisma Studio como CRUD temporal.
+
+```typescript
+// lib/auth/roles.ts
+import { prisma } from '@/lib/prisma';
+
+export type UserRole = 'ADMIN' | 'SELLER' | 'TECHNICIAN' | 'CASHIER' | 'USER';
+
+// Obtener rol desde DB
+export async function getUserRole(email: string): Promise<UserRole> {
+  const userRole = await prisma.userRole.findUnique({
+    where: { email: email.toLowerCase() },
+  });
+  
+  return (userRole?.role as UserRole) || 'USER';
+}
+
+// Verificar si email tiene acceso a /adm
+export async function canAccessAdm(email: string): Promise<boolean> {
+  const role = await getUserRole(email);
+  return role !== 'USER';
 }
 ```
 
-### Role Assignment Strategy
-```typescript
-// Basado en email domain o whitelist
-const getUserRole = (email: string): UserRole => {
-  const adminEmails = ['admin@rpmacc.com', 'galiprandi@rpmacc.com'];
-  const staffDomains = ['rpmacc.com', 'rpm-sys.com'];
+### Modelo de Datos UserRole
+
+```prisma
+// prisma/schema.prisma
+model UserRole {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  role      String   // ADMIN, SELLER, TECHNICIAN, CASHIER, USER
+  name      String?  // Nombre para identificar quién es
+  notes     String?  // Observaciones (ej: "Dueño", "Vendedor turno mañana")
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
   
-  if (adminEmails.includes(email)) return UserRole.ADMIN;
-  if (staffDomains.some(domain => email.endsWith(domain))) return UserRole.STAFF;
-  return UserRole.USER;
-};
+  @@index([email])
+  @@index([role])
+}
 ```
+
+### Gestión vía Prisma Studio
+
+```bash
+# Iniciar Prisma Studio (CRUD temporal)
+npx prisma studio
+```
+
+**URL**: `http://localhost:5555` → Tabla `UserRole`
+
+**Operaciones disponibles**:
+- ✅ Agregar nuevo usuario con rol
+- ✅ Cambiar rol de usuario existente
+- ✅ Desactivar usuario (isActive = false)
+- ✅ Ver todos los usuarios por rol
+
+**Ejemplo de seed inicial**:
+
+```typescript
+// prisma/seed-roles.ts
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
+
+async function main() {
+  const roles = [
+    { email: 'admin@rpmacc.com', role: 'ADMIN', name: 'Administrador' },
+    { email: 'galiprandi@gmail.com', role: 'ADMIN', name: 'Germán' },
+    { email: 'vendedor1@rpmacc.com', role: 'SELLER', name: 'Vendedor Mañana' },
+  ];
+  
+  for (const userRole of roles) {
+    await prisma.userRole.upsert({
+      where: { email: userRole.email },
+      update: userRole,
+      create: userRole,
+    });
+  }
+  
+  console.log('Roles seed completado');
+}
+
+main();
+```
+
+### Ventajas de esta estrategia
+
+| Ventaja | Descripción |
+|---------|-------------|
+| **Sin deploys** | Agregar usuario = 30 seg en Prisma Studio |
+| **Audit trail** | `createdAt`, `updatedAt` trazan cambios |
+| **Flexible** | Desactivar sin borrar, notas por usuario |
+| **Reutilizable** | Mismo patrón para otros configs (ver abajo) |
+| **Zero UI dev** | No necesitas crear pantalla de admin en Fase 1 |
+
+### Otras aplicaciones del patrón DB + Prisma Studio
+
+Este patrón puede reutilizarse para:
+
+```typescript
+// Configuraciones del sistema (sin UI inicial)
+model AppConfig {
+  id        String   @id @default(uuid())
+  key       String   @unique // "afip_point_of_sale", "business_hours"
+  value     String     // JSON string
+  category  String     // "afip", "business", "notifications"
+  updatedAt DateTime   @updatedAt
+}
+
+// Categorías de productos (dinámicas)
+model Category {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  margin      Float    @default(30) // Margen sugerido %
+  description String?
+  isActive    Boolean  @default(true)
+}
+
+// Servicios de instalación (Fase 2)
+model Service {
+  id          String   @id @default(uuid())
+  code        String   @unique // "POL-S", "LED-4F"
+  name        String
+  basePrice   Float    // Precio base
+  vehicleSize String   // "chico", "mediano", "grande", "todos"
+}
+```
+
+**Todas gestionables vía Prisma Studio hasta que se desarrolle UI específica.**
 
 ## NextAuth.js Configuration
 
@@ -85,7 +202,7 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, account, profile }) {
       if (account && profile?.email) {
-        token.role = getUserRole(profile.email);
+        token.role = await getUserRole(profile.email); // ← Ahora async
         token.email = profile.email;
         token.name = profile.name;
         token.picture = profile.picture;
@@ -164,22 +281,21 @@ export const config = {
 
 ### Role-based Access Control
 ```typescript
-// lib/auth/rbac.ts
-export const hasRole = (userRole: UserRole, requiredRole: UserRole): boolean => {
-  const roleHierarchy = {
-    [UserRole.USER]: 0,
-    [UserRole.STAFF]: 1,
-    [UserRole.ADMIN]: 2,
+// lib/auth/rbac.ts - SIMPLIFICADO FASE 1
+export const hasRole = (userRole: string, requiredRole: string): boolean => {
+  const roleHierarchy: Record<string, number> = {
+    'USER': 0,
+    'SELLER': 1,
+    'TECHNICIAN': 2,
+    'CASHIER': 3,
+    'ADMIN': 4,
   };
   
   return roleHierarchy[userRole] >= roleHierarchy[requiredRole];
 };
 
-export const canAccessRoute = (userRole: UserRole, route: string): boolean => {
-  if (route.startsWith('/adm')) {
-    return userRole !== UserRole.USER;
-  }
-  return true;
+export const canAccessAdm = (userRole: string): boolean => {
+  return userRole !== 'USER';
 };
 ```
 
@@ -215,7 +331,7 @@ export async function GET() {
 import { z } from 'zod';
 import { UserRole } from '@/lib/auth/roles';
 
-export const UserRoleSchema = z.enum(['USER', 'STAFF', 'ADMIN']);
+export const UserRoleSchema = z.enum(['USER', 'SELLER', 'TECHNICIAN', 'CASHIER', 'ADMIN']);
 
 export const SessionSchema = z.object({
   user: z.object({
@@ -298,16 +414,25 @@ import { getUserRole } from '@/lib/auth/roles';
 import { UserRole } from '@/lib/auth/roles';
 
 describe('Auth Role Assignment', () => {
-  test('Assigns admin role to admin emails', () => {
-    expect(getUserRole('admin@rpmacc.com')).toBe(UserRole.ADMIN);
+  test('Assigns admin role to admin emails', async () => {
+    await prisma.userRole.create({
+      data: { email: 'admin@rpmacc.com', role: 'ADMIN', name: 'Admin' }
+    });
+    const role = await getUserRole('admin@rpmacc.com');
+    expect(role).toBe('ADMIN');
   });
   
-  test('Assigns staff role to staff domains', () => {
-    expect(getUserRole('user@rpmacc.com')).toBe(UserRole.STAFF);
+  test('Assigns seller role to seller emails', async () => {
+    await prisma.userRole.create({
+      data: { email: 'vendedor@rpmacc.com', role: 'SELLER', name: 'Vendedor' }
+    });
+    const role = await getUserRole('vendedor@rpmacc.com');
+    expect(role).toBe('SELLER');
   });
   
-  test('Assigns user role to external emails', () => {
-    expect(getUserRole('user@gmail.com')).toBe(UserRole.USER);
+  test('Assigns user role to external emails', async () => {
+    const role = await getUserRole('cliente@gmail.com');
+    expect(role).toBe('USER');
   });
 });
 ```
@@ -361,7 +486,7 @@ describe('Auth Integration', () => {
 - **OAuth Keys**: Rotación trimestral recomendada
 - **Session Cleanup**: Automático con NextAuth.js
 - **Security Audit**: Revisión mensual de logs
-- **User Roles**: Actualización según cambios organizacionales
+- **User Roles**: Gestionar vía Prisma Studio o migraciones
 
 ### Monitoring
 - **Login Attempts**: Monitorización de patrones anómalos

@@ -586,5 +586,37 @@ export const openApiSpec = {
 
 ---
 
-**Last Updated:** 2026-03-25  
-**Status:** ✅ Core API architecture defined
+## Organización de Endpoints
+
+Los endpoints específicos de cada dominio están documentados en las specs correspondientes:
+
+| Dominio | Spec | Fase |
+|---------|------|------|
+| **Productos, Categorías, Facturación, Cierre de Caja** | `/specs/inventory-sales.md` | 1 |
+| **Clientes, Vehículos, OTs, Presupuestos** | `/specs/workshop.md` | 2 |
+| **Turnos web, Consulta patente** | `/specs/public-web.md` | 3 |
+| **AFIP/Arca** | `/specs/afip-integration.md` | 1 (básico), 2+ (completo) |
+
+Esta spec (`api.md`) define la **arquitectura general**, convenciones y utilidades compartidas.
+
+### Convenciones de Rutas
+
+```
+/api/
+├── auth/          # Autenticación (Better Auth / NextAuth)
+├── products/      # Productos y stock
+├── categories/    # Categorías
+├── invoices/      # Facturación AFIP
+├── cash-register/ # Cierre de caja
+├── customers/     # Clientes
+├── vehicles/      # Vehículos
+├── services/      # Servicios de instalación
+├── quotes/        # Presupuestos
+├── work-orders/   # Órdenes de trabajo
+├── appointments/  # Turnos online (público)
+├── public/        # APIs públicas sin auth
+└── admin/         # APIs administrativas
+```
+
+**Last Updated:** 2026-03-28  
+**Status:** ✅ Core API architecture defined, endpoints moved to domain specs

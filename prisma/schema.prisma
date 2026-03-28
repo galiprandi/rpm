@@ -78,3 +78,19 @@ model Verification {
   @@index([identifier])
   @@map("verification")
 }
+
+// Role Management - Gestión de roles vía Prisma Studio
+model UserRole {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  role      String   // ADMIN, SELLER, TECHNICIAN, CASHIER, USER
+  name      String?  // Nombre para identificar quién es
+  notes     String?  // Observaciones (ej: "Dueño", "Vendedor turno mañana")
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@index([role])
+  @@map("user_role")
+}
