@@ -983,9 +983,21 @@ Esperar explícitamente: "ok" | "procede" | "adelante"
 
 ## Fase 3: Implementación (Autónoma)
 
-- Ejecuto sin interrupciones
-- Commits atómicos descriptivos
-- Tests con cobertura ≥80% (incluidos en el cambio)
+```yaml
+Flujo Git:
+1. Crear feature branch: git checkout -b feature/[nombre-del-paso]
+2. Implementar cambios
+3. Commits atómicos descriptivos
+4. Tests con cobertura ≥80% (incluidos)
+5. Verificar en rama feature:
+   - npm test
+   - npx tsc --noEmit
+6. Merge a main:
+   - git checkout main
+   - git pull origin main
+   - git merge feature/[nombre-del-paso]
+   - git push origin main
+```
 
 ## Fase 4: Modo QA (Automático + Exhaustivo)
 
