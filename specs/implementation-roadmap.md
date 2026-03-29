@@ -57,7 +57,34 @@
 
 ---
 
-## FASE 2: Gestión de Taller
+## 🚀 PRÓXIMO PASO INMEDIATO: Gestión de Órdenes de Trabajo (OTs)
+### Duración: 2-3 semanas | Prioridad: ALTA | Branch: `feature/work-orders`
+
+**Objetivo**: Implementar el sistema completo de órdenes de trabajo para digitalizar la operación del taller.
+
+### Semana 1: Fundamentos OT
+- [ ] Setup modelos de datos (Customer, Vehicle, WorkOrder)
+- [ ] API endpoints base CRUD
+- [ ] Estados de OT: `PENDING` → `CONFIRMED` → `IN_PROGRESS` → `READY` → `DELIVERED`
+- [ ] UI Kanban básica
+
+### Semana 2: Funcionalidad Core
+- [ ] Crear OT desde presupuesto
+- [ ] Crear OT directa (sin presupuesto)
+- [ ] Asignación de técnicos
+- [ ] Vista detalle de OT
+
+### Semana 3: Checklists y Fotos
+- [ ] Checklist de ingreso
+- [ ] Checklist de calidad salida
+- [ ] Registro fotográfico (antes/después)
+- [ ] Integración con Bot (tools básicas)
+
+**Spec**: `/specs/workshop.md`
+
+---
+
+## FASE 2: Gestión de Taller (Extendida)
 ### Duración: 6-8 semanas | Dependencia: FASE 1 estable
 
 #### Semana 1-2: Clientes y Vehículos
