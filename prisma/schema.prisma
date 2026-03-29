@@ -154,10 +154,10 @@ model Product {
 
   // Relations
   categoryId String
-  category   Category @relation(fields: [categoryId], references: [id])
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   
   supplierId String?
-  supplier   Supplier? @relation(fields: [supplierId], references: [id])
+  supplier   Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
 
   @@index([categoryId])
   @@index([supplierId])
