@@ -91,9 +91,9 @@ const isMotorVehicle = (category: VehicleCategory): boolean => {
   return ['CAR', 'TRUCK', 'SUV', 'PICKUP', 'MOTORCYCLE'].includes(category);
 };
 
-// Helper para determinar si usa patente
-const requiresPatent = (category: VehicleCategory): boolean => {
-  return ['CAR', 'TRUCK', 'SUV', 'PICKUP', 'TRAILER'].includes(category);
+// Helper para determinar si tiene odómetro (solo vehículos motorizados)
+const hasOdometer = (category: VehicleCategory): boolean => {
+  return ['CAR', 'TRUCK', 'SUV', 'PICKUP', 'MOTORCYCLE'].includes(category);
 };
 ```
 
@@ -189,33 +189,36 @@ const defaultServices = [
 ];
 ```
 
-### 4. Presupuestos
+### 4. Presupuestos (Futuro - Post MVP)
+
+> **Nota**: Para el MVP inicial solo implementaremos flujo express (OT directa). Los presupuestos se agregarán en iteración posterior.
 
 | Feature | Prioridad | Descripción |
 |---------|-----------|-------------|
-| **Generar presupuesto** | P0 | Productos + servicios |
-| **Vencimiento** | P1 | Válido por N días (default 7) |
-| **Aprobación cliente** | P0 | Confirmación explícita |
-| **Rechazo/contraoferta** | P2 | Motivo del rechazo |
+| **Generar presupuesto** | P2 | Productos + servicios |
+| **Vencimiento** | P2 | Válido por N días (default 7) |
+| **Aprobación cliente** | P2 | Confirmación explícita |
+| **Rechazo/contraoferta** | P3 | Motivo del rechazo |
 
-#### Estados Presupuesto:
+#### Estados Presupuesto (Futuro):
 ```
 PENDIENTE → APROBADO → OT GENERADA
         ↘ RECHAZADO
         ↘ VENCIDO (auto después de N días)
 ```
 
-### 5. Órdenes de Trabajo (OT)
+### 5. Órdenes de Trabajo (OT) - MVP
 
 | Feature | Prioridad | Descripción |
 |---------|-----------|-------------|
-| **Creación desde presupuesto** | P0 | O desde cero (emergencias) |
+| **Creación directa (express)** | P0 | Sin presupuesto previo |
 | **Kanban estados** | P0 | Visual del flujo |
 | **Asignación técnico** | P0 | Quién hace el trabajo |
-| **Checklist ingreso** | P1 | Estado del vehículo al recibir |
+| **Checklist ingreso** | P1 | Estado del activo al recibir (odómetro solo vehículos) |
 | **Consumo stock** | P0 | Productos usados |
 | **Registro fotográfico** | P1 | Antes/después |
 | **Checklist calidad** | P1 | Verificación antes entrega |
+| **Cierre con pago** | P0 | Total y forma de pago (efectivo/transferencia/QR) |
 
 #### Estados OT (Kanban):
 ```
@@ -224,10 +227,10 @@ PENDIENTE → APROBADO → OT GENERADA
 │  (agendada) │   │ (en taller) │   │ (trabajando)│   │ (revisión)  │
 └─────────────┘   └─────────────┘   └─────────────┘   └──────┬──────┘
                                                             │
-┌─────────────┐   ┌─────────────┐                           │
-│  ENTREGADA  │◄──│    LISTO    │◄─────────────────────────┘
-│  (cerrada)  │   │ (para retiro│
-└─────────────┘   └─────────────┘
+┌─────────────┐   ┌─────────────┐   ┌─────────────┐           │
+│  ENTREGADA  │◄──│   PAGADA    │◄──│    LISTO    │◄──────────┘
+│  (cerrada)  │   │ (cierre)    │   │ (para retiro)│
+└─────────────┘   └─────────────┘   └─────────────┘
 ```
 
 #### Campos OT:
@@ -239,14 +242,11 @@ interface WorkOrder {
   vehicleId: string;
   technicianId?: string;         // Asignado
   
-  // Presupuesto vinculado (opcional)
-  quoteId?: string;
-  
   // Items
   items: WorkOrderItem[];        // Productos + servicios
   
   // Checklists
-  entryChecklist?: Checklist;    // Ingreso
+  entryChecklist?: Checklist;    // Ingreso (odómetro solo si aplica)
   exitChecklist?: Checklist;     // Control calidad
   
   // Fotos
@@ -259,8 +259,15 @@ interface WorkOrder {
   completedAt?: Date;
   deliveredAt?: Date;
   
-  // Facturación
-  invoiceId?: string;            // Factura emitida
+  // Pago (MVP - sin facturación AFIP aún)
+  payment?: {
+    total: number;               // Total cobrado
+    method: 'CASH' | 'TRANSFER' | 'QR' | 'CARD' | 'OTHER';  // Forma de pago
+    notes?: string;              // Referencia transferencia, etc.
+  };
+  
+  // Facturación (futuro - cuando se implemente AFIP)
+  invoiceId?: string;            // Factura emitida (opcional)
   
   // Totales
   totalProducts: number;
@@ -271,6 +278,32 @@ interface WorkOrder {
   createdAt: Date;
   updatedAt: Date;
 }
+```
+
+#### Checklist de Ingreso (Condicional):
+
+```typescript
+// Items base para todos los activos
+const baseEntryChecklist = [
+  { id: 'keys', label: 'Llaves/Control recibido', required: true },
+  { id: 'visual', label: 'Estado visual general documentado', required: true },
+  { id: 'accessories', label: 'Accesorios guardados', required: false },
+];
+
+// Items solo para vehículos motorizados
+const vehicleEntryChecklist = [
+  { id: 'odometer', label: 'Odómetro registrado', required: true },
+  { id: 'fuel', label: 'Nivel de combustible', required: false },
+];
+
+// Generar checklist según categoría
+const generateEntryChecklist = (category: VehicleCategory) => {
+  const items = [...baseEntryChecklist];
+  if (hasOdometer(category)) {
+    items.push(...vehicleEntryChecklist);
+  }
+  return items;
+};
 ```
 
 ### 6. Gestión de Técnicos
@@ -291,56 +324,153 @@ interface WorkOrder {
 
 ---
 
-## Flujos de Usuario
+## Flujos de Usuario (MVP - Flujo Express)
 
-### Flujo 1: Cliente nuevo con presupuesto
-
-```
-┌─────────────┐   ┌─────────────┐   ┌─────────────┐   ┌─────────────┐
-│Cliente      │──▶│Registra     │──▶│Registra     │──▶│Genera       │
-│llega        │   │cliente      │   │vehículo     │   │presupuesto  │
-└─────────────┘   └─────────────┘   └─────────────┘   └──────┬──────┘
-                                                             │
-┌─────────────┐   ┌─────────────┐   ┌─────────────┐          │
-│Entrega      │◄──│Trabajo y    │◄──│Presupuesto  │◄─────────┘
-│vehículo     │   │facturación  │   │aprobado     │
-└─────────────┘   └─────────────┘   └─────────────┘
-```
-
-### Flujo 2: Instalación express (sin presupuesto previo)
+### Flujo Principal: Instalación Express (MVP)
 
 ```
 ┌─────────────┐   ┌─────────────┐   ┌─────────────┐   ┌─────────────┐
-│Cliente      │──▶│Busca cliente│──▶│Selecciona   │──▶│Crea OT      │
-│solicita     │   │o vehículo   │   │servicio     │   │directa      │
-│instalación  │   │por patente  │   │estándar     │   │             │
+│Cliente      │──▶│Busca cliente│──▶│Registra     │──▶│Crea OT      │
+│solicita     │   │o activo     │   │activo       │   │directa      │
+│instalación  │   │por identif. │   │(si no existe)│   │             │
 └─────────────┘   └─────────────┘   └─────────────┘   └──────┬──────┘
                                                            │
 ┌─────────────┐   ┌─────────────┐   ┌─────────────┐        │
-│Entrega      │◄──│Factura desde│◄──│Completa     │◄───────┘
-│vehículo     │   │OT           │   │trabajo      │
+│Entrega      │◄──│Registra     │◄──│Completa     │◄───────┘
+│activo       │   │pago         │   │trabajo      │
 └─────────────┘   └─────────────┘   └─────────────┘
 ```
+
+### Flujo Alternativo: Cliente Nuevo + OT Directa
+
+```
+┌─────────────┐   ┌─────────────┐   ┌─────────────┐   ┌─────────────┐
+│Cliente      │──▶│Registra     │──▶│Registra     │──▶│Crea OT      │
+│nuevo        │   │cliente      │   │activo       │   │directa      │
+└─────────────┘   └─────────────┘   └─────────────┘   └─────────────┘
+```
+
+> **Nota**: El flujo con presupuestos se implementará en iteración posterior (ver sección Presupuestos).
 
 ---
 
 ## Modelo de Datos FASE 2
 
+### DB de Assets Normalizada (Marcas/Modelos)
+
+Para evitar duplicados y construir una base de conocimiento:
+
+```typescript
+// Modelo de Marcas (normalizado)
+interface VehicleMake {
+  id: string;
+  name: string;              // "Toyota", "Ford", "Sony" (capitalizado)
+  normalizedName: string;    // "toyota", "ford", "sony" (para búsqueda)
+  category: VehicleCategory[]; // [CAR, SUV, PICKUP] o [AUDIO_EQUIPMENT]
+  isActive: boolean;
+  createdAt: Date;
+}
+
+// Modelo de Modelos (normalizado)
+interface VehicleModel {
+  id: string;
+  makeId: string;            // Relación con marca
+  name: string;              // "Hilux", "Ranger", "GTK-XB90"
+  normalizedName: string;    // "hilux", "ranger", "gtk-xb90"
+  years: number[];           // [2020, 2021, 2022, 2023, 2024]
+  isActive: boolean;
+  createdAt: Date;
+}
+
+// Helper para normalizar (trim + lowercase)
+const normalizeText = (text: string): string => {
+  return text.trim().toLowerCase();
+};
+
+// Helper para capitalizar
+const capitalizeText = (text: string): string => {
+  return text.trim().replace(/\b\w/g, (char) => char.toUpperCase());
+};
 ```
-┌─────────────────┐       ┌─────────────────────────────────┐       ┌─────────────────┐
-│    CUSTOMER     │       │           VEHICLE               │       │   WORK_ORDER    │
-├─────────────────┤       │        (Activo Genérico)        │       ├─────────────────┤
-│ id              │◄────┤ id                              │◄────┤ id (OT-XXXX)    │
-│ fullName        │       │ identifier (patente/serie)      │       │ status          │
-│ phone           │       │ category                        │       │ customerId      │
-│ documentType    │       │ brand? (vehículos)              │       │ vehicleId       │
-│ documentNumber  │       │ model? (vehículos)              │       │ technicianId    │
-│ address         │       │ year? (vehículos)               │       │ quoteId         │
-│ notes           │       │ equipmentName? (equipos)        │       │ scheduledDate   │
-└─────────────────┘       │ equipmentType? (equipos)        │       │ total           │
-                          │ description? (equipos)          │       │ invoiceId       │
-                          │ customerId                      │       └─────────────────┘
-                          └─────────────────────────────────┘              │
+
+### UI para Selección/Creación de Marca/Modelo:
+
+```typescript
+// Componente de selección con autocreación
+const MakeModelSelector = ({ category, onChange }) => {
+  const [makes, setMakes] = useState<VehicleMake[]>([]);
+  const [models, setModels] = useState<VehicleModel[]>([]);
+  
+  return (
+    <div>
+      {/* Selector de Marca con búsqueda */}
+      <CreatableSelect
+        label="Marca"
+        placeholder="Toyota, Ford, Sony..."
+        options={makes}
+        onCreateOption={async (input) => {
+          // Crear nueva marca normalizada
+          const newMake = await createMake({
+            name: capitalizeText(input),
+            category: [category],
+          });
+          return newMake;
+        }}
+        formatOptionLabel={(option) => option.name}
+      />
+      
+      {/* Selector de Modelo con búsqueda */}
+      <CreatableSelect
+        label="Modelo"
+        placeholder="Hilux, Ranger..."
+        options={models}
+        isDisabled={!selectedMake}
+        onCreateOption={async (input) => {
+          // Crear nuevo modelo normalizado
+          const newModel = await createModel({
+            makeId: selectedMake.id,
+            name: capitalizeText(input),
+          });
+          return newModel;
+        }}
+      />
+      
+      {/* Selector de Año */}
+      <Select
+        label="Año"
+        options={availableYears}
+        placeholder="2024"
+      />
+    </div>
+  );
+};
+```
+
+```
+┌─────────────────┐       ┌──────────────────────────────────────────┐       ┌─────────────────┐
+│  VEHICLE_MAKE   │       │              VEHICLE                     │       │   WORK_ORDER    │
+├─────────────────┤       │          (Activo Genérico)               │       ├─────────────────┤
+│ id              │◄────┤ id                                       │◄────┤ id (OT-XXXX)    │
+│ name            │       │ identifier (patente/serie)               │       │ status          │
+│ normalizedName  │       │ category                                 │       │ customerId      │
+│ category[]      │       │ makeId? (vehículos)  ─────────────────►  │       │ vehicleId       │
+│ isActive        │       │ modelId? (vehículos) ───────────────┐    │       │ technicianId    │
+└─────────────────┘       │ year? (vehículos)                      │   │       │ payment?        │
+                          │ equipmentName? (equipos)               │   │       │ invoiceId?      │
+                          │ equipmentType? (equipos)               │   │       │ scheduledDate   │
+                          │ description? (equipos)                   │   │       │ total           │
+                          │ customerId                               │   │       └─────────────────┘
+                          └──────────────────────────────────────────┘   │
+┌─────────────────┐                                                      │
+│ VEHICLE_MODEL   │◄─────────────────────────────────────────────────────┘
+├─────────────────┤
+│ id              │
+│ makeId          │
+│ name            │
+│ normalizedName  │
+│ years[]         │
+│ isActive        │
+└─────────────────┘
 ┌─────────────────┐       ┌─────────────────┐       └─────────────────┘
 │     QUOTE       │       │  WORK_ORDER_ITEM│              │
 ├─────────────────┤       ├─────────────────┤              │
@@ -390,7 +520,7 @@ interface WorkOrder {
 | `/api/customers/:id` | PUT | Actualizar cliente | SELLER, ADMIN |
 | `/api/customers/search` | GET | Buscar por nombre/tel/patente | SELLER, TECHNICIAN, ADMIN |
 
-### Activos/Vehículos
+### Activos/Vehículos (DB Normalizada)
 | Endpoint | Método | Descripción | Roles |
 |----------|--------|-------------|-------|
 | `/api/vehicles` | GET | Listar activos | SELLER, TECHNICIAN, ADMIN |
@@ -400,6 +530,14 @@ interface WorkOrder {
 | `/api/vehicles/by-identifier/:identifier` | GET | Buscar por patente o n° serie | SELLER, TECHNICIAN, ADMIN |
 | `/api/vehicles/:id/history` | GET | Historial de OTs del activo | SELLER, TECHNICIAN, ADMIN |
 
+### Marcas/Modelos (Normalización)
+| Endpoint | Método | Descripción | Roles |
+|----------|--------|-------------|-------|
+| `/api/vehicle-makes` | GET | Listar marcas | Todos |
+| `/api/vehicle-makes` | POST | Crear marca (autocreación) | SELLER, ADMIN |
+| `/api/vehicle-models` | GET | Listar modelos por marca | Todos |
+| `/api/vehicle-models` | POST | Crear modelo (autocreación) | SELLER, ADMIN |
+
 ### Servicios
 | Endpoint | Método | Descripción | Roles |
 |----------|--------|-------------|-------|
@@ -408,7 +546,7 @@ interface WorkOrder {
 | `/api/services/:id` | GET | Obtener servicio | Todos |
 | `/api/services/:id/cost` | GET | Calcular costo por vehículo | SELLER, ADMIN |
 
-### Presupuestos
+### Presupuestos (Futuro)
 | Endpoint | Método | Descripción | Roles |
 |----------|--------|-------------|-------|
 | `/api/quotes` | GET | Listar presupuestos | SELLER, ADMIN |
@@ -417,6 +555,8 @@ interface WorkOrder {
 | `/api/quotes/:id/approve` | POST | Aprobar presupuesto | SELLER, ADMIN |
 | `/api/quotes/:id/reject` | POST | Rechazar presupuesto | SELLER, ADMIN |
 | `/api/quotes/:id/convert` | POST | Convertir a OT | SELLER, ADMIN |
+
+> **Nota**: Presupuestos se implementarán post-MVP
 
 ### Órdenes de Trabajo
 | Endpoint | Método | Descripción | Roles |
@@ -446,24 +586,26 @@ interface WorkOrder {
 
 ---
 
-## UI/UX Nuevas Pantallas
+## UI/UX Nuevas Pantallas (MVP)
 
 1. **Ficha Cliente** - Datos + activos (vehículos/equipos) + historial
-2. **Ficha Activo** - Datos según categoría + historial OTs
-3. **Nuevo Presupuesto** - Buscador productos/servicios + preview
+2. **Ficha Activo** - Datos según categoría + selector marca/modelo normalizado + historial OTs
+3. **Nueva OT (Express)** - Creación directa sin presupuesto
 4. **Kanban OTs** - Vista columnas por estado
-5. **Detalle OT** - Todo el proceso en una pantalla
+5. **Detalle OT** - Todo el proceso + cierre con pago
 6. **Agenda** - Calendario semanal con turnos
 7. **Asignación Técnicos** - Quién hace qué y cuándo
 
+> **Nota**: Pantalla de Presupuestos se agregará en iteración posterior
+
 ---
 
-## Criterios de Éxito FASE 2
+## Criterios de Éxito MVP OTs
 
 | Métrica | Objetivo | Medición |
 |---------|----------|----------|
 | **Tiempo promedio OT** | < tiempo estimado | 80% cumple estimación |
 | **Tasa re-trabajos** | < 5% | OTs con garantía / Total |
-| **Conversión presupuestos** | > 60% | Aprobados / Emitidos |
 | **Ocupación técnicos** | > 75% | Horas trabajadas / Disponibles |
 | **Tiempo entrega** | < 48h desde ingreso | Promedio días OT |
+| **Precisión datos** | > 95% | Marcas/modelos normalizados vs duplicados |
