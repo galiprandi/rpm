@@ -44,11 +44,11 @@ export function Modal({
         aria-hidden="true"
       />
 
-      {/* Modal Container */}
+      {/* Modal Container - solo light mode para consistencia */}
       <div
         className={cn(
-          'relative z-50 w-full mx-4 bg-white dark:bg-slate-900 rounded-xl shadow-2xl',
-          'border border-slate-200 dark:border-slate-700',
+          'relative z-50 w-full mx-4 bg-white rounded-xl shadow-2xl',
+          'border border-slate-200',
           'transform transition-all duration-200 scale-100',
           sizeClasses[size]
         )}
@@ -57,16 +57,16 @@ export function Modal({
         aria-labelledby="modal-title"
       >
         {/* Header */}
-        <div className="flex items-start justify-between p-6 pb-4 border-b border-slate-100 dark:border-slate-800">
+        <div className="flex items-start justify-between p-6 pb-4 border-b border-slate-100">
           <div>
             <h3
               id="modal-title"
-              className="text-lg font-semibold text-slate-900 dark:text-slate-100"
+              className="text-lg font-semibold text-slate-900"
             >
               {title}
             </h3>
             {description && (
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+              <p className="mt-1 text-sm text-slate-500">
                 {description}
               </p>
             )}
@@ -76,7 +76,7 @@ export function Modal({
               variant="ghost"
               size="icon"
               onClick={onClose}
-              className="h-8 w-8 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
+              className="h-8 w-8 rounded-full hover:bg-slate-100"
             >
               <X className="h-4 w-4" />
               <span className="sr-only">Cerrar</span>
@@ -91,7 +91,7 @@ export function Modal({
 
         {/* Footer */}
         {footer && (
-          <div className="flex items-center justify-end gap-3 p-6 pt-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 rounded-b-xl">
+          <div className="flex items-center justify-end gap-3 p-6 pt-4 border-t border-slate-100 bg-slate-50/50 rounded-b-xl">
             {footer}
           </div>
         )}
