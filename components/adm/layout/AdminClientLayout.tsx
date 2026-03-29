@@ -55,28 +55,28 @@ export function AdminClientLayout({ children, user }: AdminClientLayoutProps) {
     }
   };
 
-  if (!mounted) {
-    return (
-      <div className="min-h-screen bg-background">
-        <div className="flex">
-          <aside className="w-64 bg-sidebar h-screen" />
-          <main className="flex-1 p-6">{children}</main>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <SidebarProvider defaultOpen={defaultOpen}>
-      <AppSidebar user={user} onSignOut={handleSignOut} />
-      <SidebarInset>
-        <main className="flex-1 p-6">
-          <div className="md:hidden flex items-center -mt-4 -mx-2 mb-2">
-            <SidebarTrigger />
+      {!mounted ? (
+        <div className="min-h-screen bg-background">
+          <div className="flex">
+            <aside className="w-64 bg-sidebar h-screen" />
+            <main className="flex-1 p-6">{children}</main>
           </div>
-          {children}
-        </main>
-      </SidebarInset>
+        </div>
+      ) : (
+        <>
+          <AppSidebar user={user} onSignOut={handleSignOut} />
+          <SidebarInset>
+            <main className="flex-1 p-6">
+              <div className="md:hidden flex items-center -mt-4 -mx-2 mb-2">
+                <SidebarTrigger />
+              </div>
+              {children}
+            </main>
+          </SidebarInset>
+        </>
+      )}
     </SidebarProvider>
   );
 }

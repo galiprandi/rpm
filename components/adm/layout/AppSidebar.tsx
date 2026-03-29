@@ -75,6 +75,7 @@ export function AppSidebar({ user, onSignOut }: AppSidebarProps) {
                   asChild
                   isActive={isActive}
                   tooltip={item.name}
+                  className="hover:bg-transparent hover:text-sidebar-foreground data-active:bg-transparent data-active:text-sidebar-foreground"
                 >
                   <Link href={item.href}>
                     <Icon className="size-5" />
@@ -94,6 +95,7 @@ export function AppSidebar({ user, onSignOut }: AppSidebarProps) {
             <SidebarMenuButton
               onClick={toggleSidebar}
               tooltip={isCollapsed ? 'Expandir menú' : 'Colapsar menú'}
+              className="hover:bg-transparent hover:text-sidebar-foreground"
             >
               {isCollapsed ? (
                 <PanelRight className="size-5" />
@@ -111,6 +113,7 @@ export function AppSidebar({ user, onSignOut }: AppSidebarProps) {
               asChild
               isActive={pathname === '/adm/settings'}
               tooltip="Configuración"
+              className="hover:bg-transparent hover:text-sidebar-foreground data-active:bg-transparent data-active:text-sidebar-foreground"
             >
               <Link href="/adm/settings">
                 <Settings className="size-5" />
@@ -126,7 +129,7 @@ export function AppSidebar({ user, onSignOut }: AppSidebarProps) {
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton
                   size="lg"
-                  className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                  className="data-[state=open]:bg-transparent data-[state=open]:text-sidebar-foreground hover:bg-transparent hover:text-sidebar-foreground"
                 >
                   <Avatar className="h-8 w-8 rounded-lg">
                     <AvatarImage src={user.image || undefined} alt={user.name} />
