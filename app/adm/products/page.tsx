@@ -239,7 +239,7 @@ export default function ProductsPage() {
         </div>
         <Button 
           onClick={openCreateDialog}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-md hover:shadow-lg transition-all"
+          className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-md hover:shadow-lg transition-all"
         >
           <Plus className="h-5 w-5 mr-2" />
           Nuevo Producto
