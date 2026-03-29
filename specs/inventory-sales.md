@@ -133,9 +133,96 @@ Categorías iniciales sugeridas:
 - Atajos de teclado
 - Búsqueda predictiva
 
+### 5. Auditoría de Stock (Traza)
+
+| Feature | Prioridad | Descripción |
+|---------|-----------|-------------|
+| **Historial movimientos** | P1 | Tabla con traza completa del producto |
+| **Ajustes manuales con comentario** | P1 | Solo ADMIN puede ajustar, obligatorio motivo desde select |
+| **Registro automático** | P0 | Ventas, recepciones y ajustes generan movimiento automático |
+| **Filtros por fecha** | P2 | Rango de fechas, tipo de movimiento |
+| **Exportar CSV** | P2 | Exportar historial del producto |
+
+#### Vista: Traza de Producto
+
+**Ubicación**: Lista de productos (`adm/products`) → Botón "📋 Historial" en cada fila → Modal/Drawer con tabla de movimientos.
+
+**Formato de fila:**
+```
+25/03/2026 15:22 | Germán Aliprandi (avatar) | Salida | -2 | 15→13
+```
+
+**UI:**
+- Botón `History` (icono reloj o lista) en columna Acciones de la tabla de productos
+- Modal lateral (drawer) o Dialog centrado con:
+  - Header: Nombre del producto + stock actual
+  - Tabla con scroll infinito (paginado)
+  - Filtros rápidos: "Todas" | "Entradas" | "Salidas" | "Ajustes"
+  - Botón "Exportar CSV"
+
+**Columnas:**
+| Columna | Descripción | Ejemplo |
+|---------|-------------|---------|
+| **Fecha/Hora** | `DD/MM/YYYY HH:MM` | `25/03/2026 15:22` |
+| **Usuario** | Nombre + avatar | `Germán Aliprandi` |
+| **Tipo** | Badge color | `Entrada` / `Salida` / `Ajuste` |
+| **Cantidad** | Número con signo | `+10` / `-2` |
+| **Stock** | Antes → Después | `5→15` |
+| **Motivo** | Razón del movimiento | `Venta #45` / `Recepción proveedor` |
+
+**Tipos de movimiento:**
+- `Entrada` (verde): Recepción de mercadería, devoluciones
+- `Salida` (rojo): Ventas, mermas
+- `Ajuste` (amarillo): Correcciones de inventario físico, carga inicial
+
+**Motivos predefinidos (UI dropdown):**
+```typescript
+const MOVEMENT_REASONS = [
+  { value: 'VENTA', label: 'Venta', editable: false },           // Auto
+  { value: 'RECEPCION', label: 'Recepción proveedor' },
+  { value: 'AJUSTE_INVENTARIO', label: 'Ajuste inventario físico' },
+  { value: 'MERMA', label: 'Merma / Daño' },
+  { value: 'DEVOLUCION', label: 'Devolución cliente' },
+  { value: 'CARGA_INICIAL', label: 'Carga inicial' },
+] as const;
+```
+
+**Reglas de negocio:**
+- Todo cambio de stock debe generar un `StockMovement`
+- Editar stock desde formulario de producto = ajuste automático con motivo `AJUSTE_INVENTARIO`
+- Motivos `VENTA` solo generados automáticamente por el sistema
+- Movimientos son **inmutables** (no editar/eliminar)
+
+#### Permisos
+
+| Acción | Roles | Notas |
+|--------|-------|-------|
+| Ver traza | SELLER, ADMIN | Solo lectura para ambos roles |
+| Crear ajuste manual | ADMIN | Obligatorio motivo desde select |
+| Editar/eliminar movimiento | Ninguno | Auditoría inmutable |
+
 ---
 
-## Flujos de Usuario MVP
+#### API Endpoint
+```
+GET /api/products/:id/movements
+Response: {
+  movements: [
+    {
+      id: string,
+      date: "2026-03-25T15:22:00Z",
+      user: { name: "Germán Aliprandi", avatar: "..." },
+      type: "OUT" | "IN" | "ADJUSTMENT",
+      quantity: -2,
+      previousStock: 15,
+      newStock: 13,
+      reason: "Venta #45"
+    }
+  ]
+}
+```
+
+---
 
 ### Flujo 1: Venta en Mostrador (caso más frecuente)
 
@@ -235,6 +322,8 @@ Tiempo objetivo: < 2 minutos desde búsqueda hasta factura.
 | `/api/products/:id` | PUT | Actualizar producto | ADMIN |
 | `/api/products/:id` | DELETE | Desactivar producto | ADMIN |
 | `/api/products/low-stock` | GET | Productos bajo stock mínimo | SELLER, ADMIN |
+| `/api/products/:id/movements` | GET | Historial de movimientos del producto | SELLER, ADMIN |
+| `/api/products/obsoletes` | GET | Productos críticos sin ventas 90 días (para eliminar) | ADMIN |
 
 ### Categorías
 | Endpoint | Método | Descripción | Roles |
@@ -274,7 +363,40 @@ Tiempo objetivo: < 2 minutos desde búsqueda hasta factura.
 ### Pantallas Obligatorias
 
 1. **Login** - Simple, rápido
-2. **Dashboard** - Resumen del día: ventas, alertas stock
+2. **Dashboard** - Resumen del día: ventas, alertas stock, **productos obsoletos**
+
+#### Card: Productos Obsoletos (Dashboard)
+
+**Ubicación**: Dashboard ADMIN - Card destacada en color naranja/amarillo.
+
+**Criterio**: Productos con:
+- Stock actual > 0 (tienen inventario ocupando espacio)
+- Stock actual ≤ stock mínimo (están en nivel crítico)
+- Última venta hace > 90 días (no rotan)
+
+**Formato card:**
+```
+┌─────────────────────────────────────────┐
+│ ⚠️ Productos Obsoletos       [Ver →]    │
+│                                         │
+│ 12 productos sin ventas en 90 días      │
+│ Ocupando $45,000 en stock crítico       │
+└─────────────────────────────────────────┘
+```
+
+**Click en card → Vista tabla:**
+| Producto | Stock | Stock Min | Última Venta | Valor Stock | Acción |
+|----------|-------|-----------|--------------|-------------|--------|
+| Barra LED 20" | 3 | 5 | 15/01/2026 | $45,000 | [Eliminar] |
+| Polarizado 3M | 2 | 3 | 10/12/2025 | $32,000 | [Eliminar] |
+
+**Acciones:**
+- Eliminar producto (desactivar)
+- Ver traza completa
+- Exportar lista CSV
+
+---
+
 3. **Venta Rápida** - Buscador + carrito + facturación
 4. **Productos** - Lista con filtros, edición inline
 5. **Stock** - Vista de alertas, ajustes simples
