@@ -1596,7 +1596,52 @@ Extraer a archivo propio cuando:
 
 ---
 
-## Propósito
+## Documentación de Decisiones de Diseño UI
+
+### ✅ OBLIGATORIO: Documentar en specs/ui-architecture.md
+
+**Todas las decisiones de diseño UI deben documentarse en `@[specs/ui-architecture.md]`.**
+
+Esto incluye:
+- Cambios en campos de formularios (obligatorios vs opcionales)
+- Reorganización de layouts
+- Cambios en validaciones
+- Nuevos patrones de UX
+- Decisiones de color, tipografía, espaciado
+- Cambios en flujos de usuario
+
+### 🔍 CONSULTAR CONSTANTEMENTE la especificación
+
+**Antes de crear o modificar cualquier componente UI, revisar `@[specs/ui-architecture.md]`:**
+
+```
+FLUJO OBLIGATORIO:
+1. Leer specs/ui-architecture.md antes de empezar
+2. Verificar reglas existentes
+3. Implementar siguiendo las reglas
+4. Actualizar specs si hay nuevas decisiones
+5. Commit con referencia a la spec actualizada
+```
+
+### ❌ PROHIBIDO: Implementar sin consultar specs
+
+**Nunca crear o modificar UI sin antes revisar la especificación.** Esto evita:
+- Inconsistencias con decisiones previas
+- Regresiones en UX
+- Duplicación de reglas contradictorias
+- Desviaciones de los estándares del proyecto
+
+### Ejemplos de Decisiones a Documentar
+
+| Tipo de Cambio | Qué Documentar |
+|----------------|----------------|
+| **Formulario** | Campos obligatorios, validaciones, orden de campos |
+| **Layout** | Estructura, responsive behavior, breakpoints |
+| **Componente** | Props, comportamiento, casos de uso |
+| **Flujo** | Pasos, estados, transiciones, errores |
+| **Estilos** | Colores, tipografía, espaciado, temas |
+
+---
 
 El **Debug Mode** permite a los agentes de IA y desarrolladores validar la UI sin necesidad de autenticación, facilitando:
 - QA automatizado con Puppeteer MCP
