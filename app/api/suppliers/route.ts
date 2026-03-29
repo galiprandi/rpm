@@ -4,8 +4,7 @@
  * Spec: /specs/suppliers.md
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { nanoid } from '@/lib/utils';
+import { getSuppliers, createSupplier, getSupplierByName } from '@/lib/services/supplierService';
 
 // GET /api/suppliers - Listar proveedores
 export async function GET(request: NextRequest) {
@@ -13,23 +12,9 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const includeInactive = searchParams.get('includeInactive') === 'true';
 
-    const suppliers = await prisma.supplier.findMany({
-      where: includeInactive ? {} : { isActive: true },
-      orderBy: { name: 'asc' },
-      include: {
-        _count: {
-          select: { products: true },
-        },
-      },
-    });
+    const result = await getSuppliers(includeInactive);
 
-    const suppliersWithCount = suppliers.map(s => ({
-      ...s,
-      productCount: s._count.products,
-      _count: undefined,
-    }));
-
-    return NextResponse.json({ suppliers: suppliersWithCount });
+    return NextResponse.json({ suppliers: result.suppliers });
   } catch (error) {
     console.error('Error fetching suppliers:', error);
     return NextResponse.json(
@@ -53,9 +38,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar nombre único
-    const existing = await prisma.supplier.findUnique({
-      where: { name: body.name },
-    });
+    const existing = await getSupplierByName(body.name);
 
     if (existing) {
       return NextResponse.json(
@@ -64,17 +47,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supplier = await prisma.supplier.create({
-      data: {
-        id: nanoid(),
-        name: body.name,
-        contactName: body.contactName || null,
-        phone: body.phone || null,
-        email: body.email || null,
-        address: body.address || null,
-        notes: body.notes || null,
-        isActive: true,
-      },
+    const supplier = await createSupplier({
+      name: body.name,
+      contactName: body.contactName,
+      phone: body.phone,
+      email: body.email,
+      address: body.address,
+      notes: body.notes,
     });
 
     return NextResponse.json({ supplier }, { status: 201 });

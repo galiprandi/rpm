@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -33,6 +33,7 @@ export default function CategoriesPage() {
   const [newCategoryName, setNewCategoryName] = useState('');
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editForm, setEditForm] = useState({
     name: '',
     description: '',
@@ -147,29 +148,15 @@ export default function CategoriesPage() {
             Gestiona las categorías de productos
           </p>
         </div>
+        <Button 
+          onClick={() => setIsCreateDialogOpen(true)}
+          variant="default"
+          className="bg-slate-900 text-white hover:bg-slate-800 border border-slate-900 shadow-lg hover:shadow-xl transition-all font-semibold px-4 py-2"
+        >
+          <Plus className="h-5 w-5 mr-2" />
+          Nueva Categoría
+        </Button>
       </div>
-
-      {/* Create Category Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Nueva Categoría</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-4">
-            <Input
-              placeholder="Nombre de la categoría..."
-              value={newCategoryName}
-              onChange={(e) => setNewCategoryName(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleCreateCategory()}
-              className="flex-1 max-w-md"
-            />
-            <Button onClick={handleCreateCategory}>
-              <Plus className="h-4 w-4 mr-2" />
-              Crear Categoría
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Categories Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -233,7 +220,7 @@ export default function CategoriesPage() {
           <CardContent className="p-8 text-center">
             <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
             <p className="text-muted-foreground">
-              No hay categorías creadas. Crea la primera arriba.
+              No hay categorías creadas. Haz clic en &quot;Nueva Categoría&quot; para crear la primera.
             </p>
           </CardContent>
         </Card>
@@ -256,9 +243,9 @@ export default function CategoriesPage() {
       >
         <form onSubmit={handleEditSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Nombre *</Label>
+            <Label htmlFor="edit-name">Nombre *</Label>
             <Input
-              id="name"
+              id="edit-name"
               value={editForm.name}
               onChange={(e) => setEditForm({...editForm, name: e.target.value})}
               placeholder="Nombre de la categoría"
@@ -267,9 +254,9 @@ export default function CategoriesPage() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Descripción</Label>
+            <Label htmlFor="edit-description">Descripción</Label>
             <Textarea
-              id="description"
+              id="edit-description"
               value={editForm.description}
               onChange={(e) => setEditForm({...editForm, description: e.target.value})}
               placeholder="Descripción de la categoría..."
@@ -279,9 +266,9 @@ export default function CategoriesPage() {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="defaultMarginPercent">Margen Sugerido (%)</Label>
+              <Label htmlFor="edit-defaultMarginPercent">Margen Sugerido (%)</Label>
               <Input
-                id="defaultMarginPercent"
+                id="edit-defaultMarginPercent"
                 type="number"
                 min="0"
                 max="100"
@@ -292,14 +279,43 @@ export default function CategoriesPage() {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="color">Color</Label>
+              <Label htmlFor="edit-color">Color</Label>
               <Input
-                id="color"
+                id="edit-color"
                 type="color"
                 value={editForm.color || '#e5e7eb'}
                 onChange={(e) => setEditForm({...editForm, color: e.target.value})}
               />
             </div>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Create Category Modal */}
+      <Modal
+        isOpen={isCreateDialogOpen}
+        onClose={() => setIsCreateDialogOpen(false)}
+        title="Nueva Categoría"
+        description="Completa los datos para crear una nueva categoría."
+        size="md"
+        footer={
+          <ModalFooter
+            onCancel={() => setIsCreateDialogOpen(false)}
+            onSave={handleCreateCategory}
+            saveText="Crear Categoría"
+          />
+        }
+      >
+        <form onSubmit={(e) => { e.preventDefault(); handleCreateCategory(); }} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="create-name">Nombre *</Label>
+            <Input
+              id="create-name"
+              value={newCategoryName}
+              onChange={(e) => setNewCategoryName(e.target.value)}
+              placeholder="Nombre de la categoría"
+              required
+            />
           </div>
         </form>
       </Modal>

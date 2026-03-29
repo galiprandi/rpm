@@ -447,6 +447,51 @@ export const useUI = () => useContext(UIContext);
 
 ## Botones Admin
 
+### ✅ NORMA: Ubicación Consistente del Botón "+" (Crear/Nuevo)
+
+**En todos los CRUDs de Admin, el botón de crear/nuevo debe estar ubicado SIEMPRE en el mismo lugar:**
+
+```
+Header de página (flex justify-between items-start)
+├── Izquierda: Título + descripción
+└── Derecha: Botón [+ Nuevo/Crear] (primary, dark)
+```
+
+**❌ PROHIBIDO: Botón de crear en cards separadas, tablas, o ubicaciones inconsistentes**
+
+```typescript
+// ❌ MAL: Botón en card debajo del header
+<Card>
+  <CardHeader><CardTitle>Nueva Categoría</CardTitle></CardHeader>
+  <CardContent>
+    <Button>Crear</Button>  // ← NO: Está en el lugar equivocado
+  </CardContent>
+</Card>
+
+// ✅ BIEN: Botón en header alineado con título
+<div className="flex justify-between items-start">
+  <div>
+    <h1 className="text-3xl font-bold">Categorías</h1>
+    <p className="text-muted-foreground">Gestiona las categorías</p>
+  </div>
+  <Button 
+    variant="default"
+    className="bg-slate-900 text-white hover:bg-slate-800 border border-slate-900 shadow-lg hover:shadow-xl transition-all font-semibold px-4 py-2"
+  >
+    <Plus className="h-5 w-5 mr-2" />
+    Nueva Categoría
+  </Button>
+</div>
+```
+
+**Páginas que deben seguir esta norma:**
+- `/adm/products` → Botón "Nuevo Producto" ✅
+- `/adm/categories` → Botón "Nueva Categoría" ✅
+- `/adm/suppliers` → Botón "Nuevo Proveedor" ✅
+- Futuros CRUDs → Mismo patrón
+
+---
+
 ### Botón CTA Principal (Nuevo/Crear)
 
 ```typescript

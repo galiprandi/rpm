@@ -26,6 +26,7 @@ export {
 export {
   getCategories,
   getCategoryById,
+  getCategoryByName,
   createCategory,
   updateCategory,
   deleteCategory,
@@ -34,3 +35,18 @@ export {
   type UpdateCategoryInput,
   type CategoryListResult,
 } from './categoryService';
+
+// Supplier Service
+export {
+  getSuppliers,
+  getSupplierById,
+  getSupplierByName,
+  createSupplier,
+  updateSupplier,
+  deactivateSupplier,
+  hasAssociatedProducts,
+  type Supplier,
+  type CreateSupplierInput,
+  type UpdateSupplierInput,
+  type SupplierListResult,
+} from './supplierService';

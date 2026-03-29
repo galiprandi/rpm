@@ -72,6 +72,11 @@ export type UserRole = Prisma.UserRoleModel
  */
 export type Category = Prisma.CategoryModel
 /**
+ * Model Supplier
+ * 
+ */
+export type Supplier = Prisma.SupplierModel
+/**
  * Model Product
  * 
  */

@@ -4,8 +4,7 @@
  * Spec: /specs/inventory-sales.md
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { nanoid } from '@/lib/utils';
+import { getCategories, createCategory, getCategoryByName } from '@/lib/services/categoryService';
 
 // GET /api/categories - Listar categorías
 export async function GET(request: NextRequest) {
@@ -13,23 +12,9 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const includeInactive = searchParams.get('includeInactive') === 'true';
 
-    const categories = await prisma.category.findMany({
-      where: includeInactive ? {} : { isActive: true },
-      orderBy: { sortOrder: 'asc' },
-      include: {
-        _count: {
-          select: { products: true },
-        },
-      },
-    });
+    const result = await getCategories(includeInactive);
 
-    const categoriesWithCount = categories.map(c => ({
-      ...c,
-      productCount: c._count.products,
-      _count: undefined,
-    }));
-
-    return NextResponse.json({ categories: categoriesWithCount });
+    return NextResponse.json({ categories: result.categories });
   } catch (error) {
     console.error('Error fetching categories:', error);
     return NextResponse.json(
@@ -53,9 +38,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar nombre único
-    const existing = await prisma.category.findUnique({
-      where: { name: body.name },
-    });
+    const existing = await getCategoryByName(body.name);
 
     if (existing) {
       return NextResponse.json(
@@ -64,21 +47,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Obtener el máximo sortOrder para poner la nueva al final
-    const lastCategory = await prisma.category.findFirst({
-      orderBy: { sortOrder: 'desc' },
-    });
-
-    const category = await prisma.category.create({
-      data: {
-        id: nanoid(),
-        name: body.name,
-        description: body.description || null,
-        defaultMarginPercent: body.defaultMarginPercent || 40,
-        color: body.color || null,
-        sortOrder: lastCategory ? lastCategory.sortOrder + 1 : 1,
-        isActive: true,
-      },
+    const category = await createCategory({
+      name: body.name,
+      description: body.description,
+      color: body.color,
+      defaultMarginPercent: body.defaultMarginPercent,
     });
 
     return NextResponse.json({ category }, { status: 201 });

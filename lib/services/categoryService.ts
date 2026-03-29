@@ -38,8 +38,9 @@ export interface CategoryListResult {
 /**
  * Get all categories with product count
  */
-export async function getCategories(): Promise<CategoryListResult> {
+export async function getCategories(includeInactive: boolean = false): Promise<CategoryListResult> {
   const categories = await prisma.category.findMany({
+    where: includeInactive ? {} : { isActive: true },
     include: {
       _count: {
         select: { products: true },
@@ -63,6 +64,27 @@ export async function getCategories(): Promise<CategoryListResult> {
 export async function getCategoryById(id: string): Promise<Category | null> {
   const category = await prisma.category.findUnique({
     where: { id },
+    include: {
+      _count: {
+        select: { products: true },
+      },
+    },
+  });
+
+  if (!category) return null;
+
+  return {
+    ...category,
+    productCount: category._count.products,
+  };
+}
+
+/**
+ * Get a single category by name
+ */
+export async function getCategoryByName(name: string): Promise<Category | null> {
+  const category = await prisma.category.findUnique({
+    where: { name },
     include: {
       _count: {
         select: { products: true },
