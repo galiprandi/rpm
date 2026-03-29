@@ -10,7 +10,6 @@ import { getSession, hasRole } from '@/lib/auth-server';
 import { UserRole } from '@/lib/auth/roles';
 import { AdminClientLayout } from '@/components/adm/layout/AdminClientLayout';
 import { prisma } from '@/lib/prisma';
-import { getUserRole as determineUserRole } from '@/lib/auth/roles';
 
 export default async function AdminLayout({
   children,
@@ -32,23 +31,19 @@ export default async function AdminLayout({
     redirect('/');
   }
 
-  // Sync UserRole record for admin management
-  // This ensures the user appears in the users table
+  // Sync UserRole record for ALL authenticated users
+  // This ensures every user appears in the users table
   if (session.user.email) {
     const existingUserRole = await prisma.userRole.findUnique({
       where: { email: session.user.email },
     });
 
     if (!existingUserRole) {
-      // Determine role from domain
-      const role = await determineUserRole(session.user.email);
-      const roleToStore = role === UserRole.ADMIN ? 'ADMIN' : 
-                         role === UserRole.STAFF ? 'SELLER' : 'USER';
-      
+      // Create with USER role by default
       await prisma.userRole.create({
         data: {
           email: session.user.email,
-          role: roleToStore,
+          role: 'USER',
           name: session.user.name || session.user.email.split('@')[0],
           isActive: true,
         },
