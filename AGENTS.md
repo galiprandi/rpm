@@ -1487,7 +1487,114 @@ export const productTools = {
 
 ---
 
-# 🐛 Debug Mode - Bypass de Autenticación para QA
+# 🧩 Arquitectura de Componentes - UI
+
+## Principio Fundamental: Separación para Testabilidad
+
+**La razón principal de separar componentes es poder TESTEARLOS aisladamente.**
+
+### ❌ PROHIBIDO: Componentes inline en páginas
+
+```typescript
+// ❌ MAL: Formulario de 150 líneas inline en page.tsx
+export default function ProductsPage() {
+  const [formData, setFormData] = useState({...});
+  // ... 150 líneas más de lógica y JSX
+  return (
+    <form>
+      {/* Campos, validaciones, handlers todo mezclado */}
+    </form>
+  );
+}
+```
+
+**Problemas:**
+- No se puede testear unitariamente el formulario
+- La página tiene múltiples responsabilidades (data fetching + UI + form logic)
+- Duplicación de código si el mismo formulario se necesita en otro lugar
+- Tests E2E son la única opción (lentos y frágiles)
+
+### ✅ OBLIGATORIO: Componentes separados y testeables
+
+```typescript
+// ✅ BIEN: Componente separado en components/products/ProductForm.tsx
+export interface ProductFormProps {
+  formData: ProductFormData;
+  setFormData: (data: ProductFormData) => void;
+  categories: Category[];
+  onSubmit?: (e: FormEvent) => void;
+}
+
+export function ProductForm({ formData, setFormData, categories, onSubmit }: ProductFormProps) {
+  return (
+    <form onSubmit={onSubmit}>
+      {/* JSX puro, sin lógica de negocio */}
+    </form>
+  );
+}
+
+// ✅ BIEN: Página simple que importa y usa el componente
+import { ProductForm } from '@/components/products/ProductForm';
+
+export default function ProductsPage() {
+  // Solo responsabilidad: data fetching y composition
+  return (
+    <ProductForm 
+      formData={formData}
+      setFormData={setFormData}
+      categories={categories}
+      onSubmit={handleSubmit}
+    />
+  );
+}
+```
+
+**Beneficios:**
+- ✅ Tests unitarios rápidos para ProductForm
+- ✅ Tests de integración para ProductsPage
+- ✅ Reutilización en otras páginas
+- ✅ Responsabilidad única clara
+
+### Reglas de Organización
+
+| Tipo | Ubicación | Test Strategy |
+|------|-----------|---------------|
+| **UI Components** | `components/ui/*.tsx` | Unit tests + Storybook |
+| **Feature Components** | `components/[feature]/*.tsx` | Unit tests + Integration |
+| **Page Components** | `app/**/page.tsx` | Integration/E2E tests |
+| **Layout Components** | `components/layout/*.tsx` | Visual regression |
+
+### Criterios para Extraer Componente
+
+Extraer a archivo propio cuando:
+- ✅ **Testabilidad**: Necesita tests unitarios aislados
+- ✅ **Complejidad**: Más de 20 líneas de JSX o lógica de estado
+- ✅ **Reutilización**: Se usa en más de una página
+- ✅ **Responsabilidad única**: Hace una sola cosa bien definida
+
+### Límites de Complejidad
+
+| Métrica | Page | Feature Component |
+|---------|------|-------------------|
+| Líneas de código | ≤150 | ≤300 |
+| Props | ≤5 | ≤15 |
+| Hooks (useState/useEffect) | ≤3 | ≤8 |
+| Nesting JSX | ≤2 niveles | ≤4 niveles |
+
+### Testing Strategy por Tipo
+
+```typescript
+// UI Component (Button, Input, etc.)
+// → Unit tests + Storybook stories
+
+// Feature Component (ProductForm, CategoryList, etc.)  
+// → Unit tests con mocks + Integration tests
+
+// Page Component (ProductsPage, CategoriesPage, etc.)
+// → Integration tests + E2E tests críticos
+```
+
+---
 
 ## Propósito
 
