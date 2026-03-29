@@ -5,6 +5,8 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { adjustStock, updateProduct } from '@/lib/services/productService';
+import { auth } from '@/lib/auth';
 
 interface Params {
   params: Promise<{ id: string }>;
@@ -60,6 +62,9 @@ export async function PUT(request: NextRequest, { params }: Params) {
     const { id } = await params;
     const body = await request.json();
 
+    // Get user session for audit trail
+    const session = await auth.api.getSession({ headers: request.headers });
+
     // Verificar que el producto existe
     const existing = await prisma.product.findUnique({
       where: { id },
@@ -99,28 +104,32 @@ export async function PUT(request: NextRequest, { params }: Params) {
       );
     }
 
-    const product = await prisma.product.update({
-      where: { id },
-      data: {
-        sku: body.sku,
-        name: body.name,
-        description: body.description,
-        costPrice: body.costPrice,
-        salePrice: body.salePrice,
-        stock: body.stock,
-        minStock: body.minStock,
-        supplier: body.supplier,
-        barcode: body.barcode,
-        location: body.location,
-        categoryId: body.categoryId,
-        isActive: body.isActive,
-      },
-      include: {
-        category: {
-          select: { id: true, name: true, color: true },
-        },
-      },
-    });
+    // Check if stock is being modified
+    const stockChanged = body.stock !== undefined && body.stock !== existing.stock;
+
+    let product;
+    if (stockChanged) {
+      // Use adjustStock for stock changes (includes audit trail)
+      product = await adjustStock(
+        id,
+        'set',
+        body.stock,
+        session?.user?.id,
+        session?.user?.name || session?.user?.email || 'Sistema',
+        'AJUSTE_INVENTARIO',
+        `Ajuste manual de stock: ${existing.stock} → ${body.stock}`
+      );
+      
+      // Update other fields separately if needed
+      const otherFields = { ...body };
+      delete otherFields.stock;
+      if (Object.keys(otherFields).length > 0) {
+        product = await updateProduct(id, otherFields);
+      }
+    } else {
+      // No stock change - just update other fields
+      product = await updateProduct(id, body);
+    }
 
     return NextResponse.json({ product });
   } catch (error) {

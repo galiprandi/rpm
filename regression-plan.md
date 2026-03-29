@@ -77,12 +77,19 @@ Realizar una regresión profunda del sistema verificando flujos completos de cre
 5. Verificar en lista
 6. Ver historial de movimientos (modal ya reparado)
 7. Editar producto
+8. MODIFICAR STOCK: Cambiar stock del producto
+9. Verificar que el registro de cambio de stock se agrega al historial
 ```
 
 **Validaciones**:
 - Selectores de categoría y proveedor funcionan
 - Campos numéricos (stock, precios) correctos
 - Modal de movimientos con fondo correcto
+- **NUEVO**: Cambio de stock genera registro en historial con:
+  - Tipo de movimiento (entrada/salida/ajuste)
+  - Cantidad modificada
+  - Fecha y hora del registro
+  - Usuario que realizó el cambio
 
 ### Fase 5: Cambio de Tema Claro/Oscuro
 **Herramienta**: Playwright MCP + Evaluación JavaScript
@@ -210,19 +217,60 @@ document.documentElement.classList.contains('dark');  // true/false
 document.querySelector('[elemento]').className;
 ```
 
-## Entregables
+### Verificar registro en historial de stock:
+```javascript
+// Después de modificar stock, abrir modal de historial y verificar
+const historyRows = document.querySelectorAll('[data-testid="movement-history-row"]');
+const lastMovement = historyRows[historyRows.length - 1];
+console.log('Último movimiento:', {
+  type: lastMovement.querySelector('[data-testid="movement-type"]')?.textContent,
+  quantity: lastMovement.querySelector('[data-testid="movement-quantity"]')?.textContent,
+  date: lastMovement.querySelector('[data-testid="movement-date"]')?.textContent,
+  user: lastMovement.querySelector('[data-testid="movement-user"]')?.textContent
+});
+```
 
-1. **Reporte de regresión** con todos los issues encontrados
-2. **Fixes aplicados** con archivos modificados
-3. **Screenshots de validación** (antes/después)
-4. **Checklist firmada** de todos los puntos verificados
+## Issues Encontrados y Fixes Aplicados
 
-## Tiempo Estimado
+### Issue #1: Items del sidebar tenían fondo gris innecesario
+**Severidad**: Media
+**Ubicación**: `/components/ui/sidebar.tsx`
+**Descripción**: Los items del sidebar (`SidebarMenuButton`) tenían un fondo gris (`rgb(219, 230, 240)` en tema claro, `rgb(30, 41, 59)` en tema oscuro) aplicado por defecto, cuando solo deberían tener fondo en hover o cuando están activos.
 
-- Fases 1-2: 15 minutos
-- Fases 3-4: 20 minutos
-- Fase 5: 15 minutos
-- Fases 6-7: 15 minutos
-- Documentación: 10 minutos
+**Causa raíz**: 
+1. La clase `active:bg-sidebar-accent` aplicaba fondo cuando el elemento estaba siendo presionado (pseudo-estado CSS :active)
+2. El atributo `data-active` se estaba aplicando como string `"false"` en lugar de no aplicarse, y la clase `data-active:bg-sidebar-accent` se activaba por la presencia del atributo (sin importar su valor)
 
-**Total**: ~75 minutos
+**Fix aplicado**:
+- Archivo: `/components/ui/sidebar.tsx`
+- Cambios:
+  1. Remover `active:bg-sidebar-accent active:text-sidebar-accent-foreground` de la clase base (línea 468)
+  2. Cambiar `data-active={isActive}` a `data-active={isActive || undefined}` (línea 510) para que el atributo solo exista cuando es true
+
+**Validación**:
+- ✅ Tema claro: items tienen fondo transparente `rgba(0, 0, 0, 0)`
+- ✅ Tema oscuro: items tienen fondo transparente `rgba(0, 0, 0, 0)`
+- ✅ Solo el item activo muestra el fondo de acento
+
+---
+
+## Resumen de Regresión
+
+### Resultados por Fase
+
+| Fase | Estado | Notas |
+|------|--------|-------|
+| Tema Claro - Categorías | ✅ PASS | Modal fondo blanco correcto |
+| Tema Claro - Proveedores | ✅ PASS | Modal fondo blanco correcto |
+| Tema Claro - Productos | ✅ PASS | Modal fondo blanco correcto |
+| Tema Oscuro - Categorías | ✅ PASS | Modal fondo oscuro correcto |
+| Tema Oscuro - Proveedores | ✅ PASS | Modal fondo oscuro correcto |
+| Tema Oscuro - Productos | ✅ PASS | Modal fondo oscuro correcto |
+| Sidebar - Fondos | ✅ FIXED | Items ahora transparentes |
+
+### Archivos Modificados
+1. `/components/ui/sidebar.tsx` - Fix de fondos en items del sidebar
+2. `/app/globals.css` - Reorden de CSS para Tailwind v4 (previo a esta sesión)
+
+### Screenshots de Validación
+- Ver directorio de screenshots de Playwright para evidencia visual

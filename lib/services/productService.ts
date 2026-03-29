@@ -250,8 +250,88 @@ export async function deleteProduct(id: string): Promise<void> {
   });
 }
 
+// ============================================
+// Stock Types
+// ============================================
+
+export type MovementType = 'IN' | 'OUT' | 'ADJUSTMENT';
+export type MovementReason = 'VENTA' | 'RECEPCION' | 'AJUSTE_INVENTARIO' | 'MERMA' | 'DEVOLUCION' | 'CARGA_INICIAL';
+
 /**
- * Update stock quantity
+ * Adjust stock with audit trail - ONLY use this function for stock changes
+ * This is the centralized and mandatory entry point for all stock modifications
+ */
+export async function adjustStock(
+  id: string,
+  operation: 'add' | 'subtract' | 'set',
+  quantity: number,
+  userId?: string,
+  userName?: string,
+  reason: MovementReason = 'AJUSTE_INVENTARIO',
+  reasonDetails?: string
+): Promise<Product> {
+  // Get current stock
+  const existing = await prisma.product.findUnique({
+    where: { id },
+    include: { category: true },
+  });
+
+  if (!existing) {
+    throw new Error('Product not found');
+  }
+
+  const previousStock = existing.stock;
+  let newStock: number;
+
+  switch (operation) {
+    case 'add':
+      newStock = previousStock + quantity;
+      break;
+    case 'subtract':
+      newStock = previousStock - quantity;
+      break;
+    case 'set':
+      newStock = quantity;
+      break;
+    default:
+      throw new Error(`Invalid operation: ${operation}`);
+  }
+
+  // Ensure stock doesn't go negative
+  if (newStock < 0) {
+    throw new Error('Stock cannot be negative');
+  }
+
+  // Update product stock
+  const product = await prisma.product.update({
+    where: { id },
+    data: { stock: newStock },
+    include: { category: true },
+  });
+
+  // Calculate movement type and quantity
+  const quantityChange = newStock - previousStock;
+  const type: MovementType = quantityChange > 0 ? 'IN' : quantityChange < 0 ? 'OUT' : 'ADJUSTMENT';
+
+  // Create movement record (mandatory audit trail)
+  await createStockMovement({
+    productId: id,
+    userId,
+    userName: userName || 'Sistema',
+    type,
+    quantity: quantityChange,
+    previousStock,
+    newStock,
+    reason,
+    reasonDetails: reasonDetails || `Ajuste de stock: ${previousStock} → ${newStock}`,
+  });
+
+  return transformProduct(product);
+}
+
+/**
+ * @internal - Do not use directly. Use adjustStock() instead.
+ * Raw stock update without audit trail.
  */
 export async function updateStock(
   id: string,
@@ -286,9 +366,6 @@ export async function updateStock(
 // ============================================
 // Stock Audit Trail Functions
 // ============================================
-
-export type MovementType = 'IN' | 'OUT' | 'ADJUSTMENT';
-export type MovementReason = 'VENTA' | 'RECEPCION' | 'AJUSTE_INVENTARIO' | 'MERMA' | 'DEVOLUCION' | 'CARGA_INICIAL';
 
 export interface StockMovement {
   id: string;

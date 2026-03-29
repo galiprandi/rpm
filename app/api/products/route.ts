@@ -7,6 +7,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { nanoid } from '@/lib/utils';
 import { Prisma } from '@/generated/client';
+import { createStockMovement } from '@/lib/services/productService';
+import { auth } from '@/lib/auth';
 
 // GET /api/products - Listar productos
 export async function GET(request: NextRequest) {
@@ -77,6 +79,9 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     
+    // Get user session for audit trail
+    const session = await auth.api.getSession({ headers: request.headers });
+    
     // Validaciones básicas
     if (!body.name || !body.categoryId) {
       return NextResponse.json(
@@ -136,6 +141,22 @@ export async function POST(request: NextRequest) {
         },
       },
     });
+
+    // Create stock movement record if initial stock > 0
+    const initialStock = body.stock || 0;
+    if (initialStock > 0) {
+      await createStockMovement({
+        productId: product.id,
+        userId: session?.user?.id,
+        userName: session?.user?.name || session?.user?.email || 'Sistema',
+        type: 'IN',
+        quantity: initialStock,
+        previousStock: 0,
+        newStock: initialStock,
+        reason: 'CARGA_INICIAL',
+        reasonDetails: 'Stock inicial al crear producto',
+      });
+    }
 
     return NextResponse.json({ product }, { status: 201 });
   } catch (error) {
