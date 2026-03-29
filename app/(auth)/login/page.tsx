@@ -34,8 +34,7 @@ export default function LoginPage() {
           
           <button
             onClick={handleGoogleSignIn}
-            disabled
-            className="w-full flex items-center justify-center gap-3 bg-white hover:bg-gray-50 text-gray-900 font-medium py-3 px-4 rounded-lg border border-gray-300 transition-colors opacity-50 cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-3 bg-white hover:bg-gray-50 text-gray-900 font-medium py-3 px-4 rounded-lg border border-gray-300 transition-colors"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path
