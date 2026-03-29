@@ -96,11 +96,19 @@ export function UserTable({
                   <span className="text-sm font-medium text-slate-600">{initials}</span>
                 )}
               </div>
-              <div>
-                <div className="font-medium">{user.name}</div>
-                <div className="text-xs text-muted-foreground">{user.email}</div>
-              </div>
+              <div className="font-medium">{user.name}</div>
             </div>
+          );
+        },
+      },
+      {
+        accessorKey: 'email',
+        header: 'Email',
+        cell: ({ row }) => {
+          return (
+            <span className="text-sm text-muted-foreground">
+              {row.original.email}
+            </span>
           );
         },
       },
