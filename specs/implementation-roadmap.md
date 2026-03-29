@@ -22,9 +22,9 @@
 
 #### Semana 1-2: Fundamentos
 - [x] Setup proyecto, base de datos, auth con roles JWT
-- [ ] CRUD Productos y Categorías (ADMIN: full, SELLER: view)
+- [x] CRUD Productos, Categorías y Proveedores (ADMIN: full, SELLER: view)
 - [ ] Control stock simple
-- [ ] Seed datos iniciales
+- [x] Seed datos iniciales
 
 **Roles Fase 1**: `ADMIN` (configuración, productos), `SELLER` (ventas, facturación)
 
