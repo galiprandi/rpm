@@ -7,6 +7,7 @@ import { useUI } from '@/components/ui/UIProvider';
 import {
   SidebarProvider,
   SidebarInset,
+  SidebarTrigger,
 } from '@/components/ui/sidebar';
 
 interface AdminClientLayoutProps {
@@ -70,6 +71,9 @@ export function AdminClientLayout({ children, user }: AdminClientLayoutProps) {
       <AppSidebar user={user} onSignOut={handleSignOut} />
       <SidebarInset>
         <main className="flex-1 p-6">
+          <div className="md:hidden flex items-center -mt-4 -mx-2 mb-2">
+            <SidebarTrigger />
+          </div>
           {children}
         </main>
       </SidebarInset>

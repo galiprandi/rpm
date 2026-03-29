@@ -79,9 +79,14 @@ export async function getUsers(includeInactive: boolean = false): Promise<UserLi
     })
   );
 
+  // Sort by most recently created first
+  const sortedUsers = usersWithRoles.sort((a, b) => 
+    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+
   return {
-    users: usersWithRoles,
-    total: usersWithRoles.length,
+    users: sortedUsers,
+    total: sortedUsers.length,
   };
 }
 
