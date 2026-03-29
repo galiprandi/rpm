@@ -1,355 +1,133 @@
-# 📱 Arquitectura de UI: Desktop vs Mobile
+# � Índice de Arquitectura UI
 
-## Principio Fundamental
+## 🎯 Antes de Crear o Modificar UI
 
-**Desktop = Administración compleja | Mobile = Acciones rápidas**
+**SIEMPRE consultar la especificación correspondiente:**
 
-El sistema tiene dos modalidades de interfaz distintas, cada una optimizada para su contexto de uso.
+| Área | Archivo | Descripción |
+|------|---------|-------------|
+| **Admin** | `@[specs/ui-architecture-adm.md]` | Interfaz de administración (`/adm/*`) |
+| **Público** | `@[specs/ui-architecture-public.md]` | Sitio web público (`/`, catálogo, landing) |
 
 ---
 
-## Reglas de Arquitectura de Componentes
+## 📁 Estructura de Specs UI
 
-### Separación de Responsabilidades
-
-**❌ PROHIBIDO:** Definir componentes complejos inline en archivos de página.
-
-**✅ OBLIGATORIO:** Los componentes deben estar definidos en sus propios archivos y ser reutilizables siempre que sea posible.
-
-```typescript
-// ❌ MAL: Componente inline en page.tsx
-export default function ProductsPage() {
-  const [formData, setFormData] = useState({...});
-  
-  return (
-    <form>
-      {/* 50+ líneas de formulario inline */}
-    </form>
-  );
-}
-
-// ✅ BIEN: Componente separado e importado
-// components/products/ProductForm.tsx
-export function ProductForm({ ... }) {
-  return (
-    <form>
-      {/* Formulario encapsulado */}
-    </form>
-  );
-}
-
-// app/adm/products/page.tsx
-import { ProductForm } from '@/components/products/ProductForm';
-
-export default function ProductsPage() {
-  return (
-    <ProductForm onSubmit={...} />
-  );
-}
+```
+specs/
+├── ui-architecture.md           ← ESTE ARCHIVO (índice)
+├── ui-architecture-adm.md      → Diseño de interfaz admin
+└── ui-architecture-public.md    → Diseño de sitio público
 ```
 
-### Reglas de Organización
-
-| Tipo | Ubicación | Ejemplo |
-|------|-----------|---------|
-| **Page Components** | `app/**/page.tsx` | `app/adm/products/page.tsx` |
-| **UI Components** | `components/ui/*.tsx` | `components/ui/button.tsx` |
-| **Feature Components** | `components/[feature]/*.tsx` | `components/products/ProductForm.tsx` |
-| **Layout Components** | `components/layout/*.tsx` | `components/layout/AdminSidebar.tsx` |
-
-### Criterios para Extraer Componentes
-
-Extraer a componente separado cuando:
-- ✅ Más de 20 líneas de JSX
-- ✅ Lógica de estado propia (useState, useEffect)
-- ✅ Reutilizable en otras páginas
-- ✅ Responsabilidad única clara
-- ✅ Necesita testing unitario
-
-### Límites de Complejidad
-
-| Métrica | Page Component | Feature Component |
-|---------|------|-------------------|
-| Líneas de código | 150 | 300 |
-| Props | 5 | 15 |
-| Hooks (useState/useEffect) | ≤3 | ≤8 |
-| JSX anidado | ≤2 niveles | ≤4 niveles |
-
 ---
 
-## Validación de Formularios
+## 🖥️ Admin (`/app/adm/**`)
 
-### Reglas de Campos Requeridos
-
-**Todos los formularios deben validar campos obligatorios tanto en UI como en backend.**
-
-#### Producto - Campos Obligatorios
-
-| Campo | UI (required) | Backend (Prisma) | Descripción |
-|-------|---------------|------------------|-------------|
-| **EAN/Barcode** | ❌ No | `String?` (opcional) | Código de barras - opcional en UI y DB |
-| **SKU** | ❌ No | `String @unique` | Código interno opcional en UI y DB |
-| **Nombre** | ✅ Sí | `String` | Nombre descriptivo del producto (obligatorio) |
-| **Categoría** | ✅ Sí | `categoryId String` | ID de categoría asignada (obligatorio) |
-| **Proveedor** | ✅ Sí | `String?` (opcional en DB, requerido en UI) | Nombre del proveedor (obligatorio en UI) |
-| **Costo** | ✅ Sí | `Decimal` | Precio de costo (obligatorio) |
-| **Venta** | ✅ Sí | `Decimal` | Precio de venta (obligatorio) |
-| **Stock** | ✅ Sí | `Int` | Stock actual (obligatorio) |
-| **Mínimo** | ✅ Sí | `Int` | Stock mínimo para alertas (obligatorio) |
-
-#### UX para Campos Requeridos
-
-1. **Marcado visual**: Campos obligatorios deben tener asterisco (*) en el label
-2. **CTA deshabilitado**: El botón de guardar debe estar deshabilitado hasta completar todos los campos obligatorios
-3. **Validación inline**: Mostrar errores al salir del campo (onBlur) o al intentar submit
-4. **Helper text**: Placeholder debe indicar formato esperado o "(opcional)" si aplica
-
-```typescript
-// Ejemplo: Deshabilitar CTA hasta completar campos obligatorios
-const isFormValid = () => {
-  return (
-    formData.name.trim() !== '' &&
-    formData.categoryId !== '' &&
-    formData.supplier.trim() !== '' &&
-    formData.costPrice.trim() !== '' &&
-    formData.salePrice.trim() !== '' &&
-    formData.stock.trim() !== '' &&
-    formData.minStock.trim() !== ''
-  );
-};
-
-// En el componente
-<ModalFooter
-  onCancel={() => setIsDialogOpen(false)}
-  onSave={handleSubmit}
-  disabled={!isFormValid()}  // ← CTA deshabilitado hasta completar campos
-/>
-```
-
-### Errores Comunes a Evitar
-
-| ❌ Problema | ✅ Solución |
-|-------------|-------------|
-| SKU marcado como requerido en UI | SKU debe ser opcional en UI (sin asterisco, sin required) |
-| CTA habilitado con campos vacíos | Deshabilitar CTA hasta completar todos los campos obligatorios |
-| Solo validar en backend | Validar en UI (feedback inmediato) y backend (seguridad) |
-| Mensajes de error genéricos | Mostrar qué campos específicos faltan |
-
----
-
-## Desktop (Escritorio)
-
-### Contexto de Uso
-- **Ubicación**: Mostrador, oficina, área administrativa
-- **Dispositivo**: PC/Laptop con pantalla grande
-- **Sesión**: Prolongada (turno completo)
-- **Interacción**: Teclado + mouse, multitarea
+**Consultar:** `@[specs/ui-architecture-adm.md]`
 
 ### Características
-| Aspecto | Implementación |
-|---------|----------------|
-| **Layout** | Sidebar + Main Content, múltiples columnas |
-| **Navegación** | Menú persistente, breadcrumbs |
-| **Formularios** | Completos, todos los campos visibles |
-| **Tablas** | Datos densos, filtros avanzados, exportación |
-| **Acciones** | Botones visibles, tooltips, atajos de teclado |
-| **Feedback** | Notificaciones, modales, confirmaciones |
+- **Usuarios**: Staff interno (ADMIN, SELLER, TECHNICIAN)
+- **Foco**: Funcionalidad, datos densos, formularios completos
+- **Layout**: Sidebar + Main Content
+- **Colores**: Esquema claro profesional, bordes `ring-slate-300` (gris 50%)
+- **Componentes**: Tablas densas, modales, formularios completos
 
-### Pantallas Desktop
-
-#### Fase 1 - Stock & Ventas
+### Rutas Admin
 ```
-/adm                    → Dashboard resumen día
-├── /products           → CRUD completo productos
-├── /categories         → CRUD categorías
-├── /inventory          → Stock, alertas, ajustes
-├── /sales/quick        → Venta rápida (mostrador)
-├── /invoices           → Historial facturas, libro IVA
-├── /cash-register      → Apertura/cierre caja
-└── /reports            → Ventas, stock, simples
-```
-
-#### Fase 2 - Taller (Desktop)
-```
-/adm/workshop
-├── /customers          → Fichas clientes completas
-├── /quotes             → Presupuestos con preview
-├── /work-orders        → Kanban + lista detallada
-├── /schedule           → Calendario semanal grande
-└── /technicians        → Asignación, carga trabajo
+/adm/products       → CRUD productos
+/adm/categories     → CRUD categorías
+/adm/inventory      → Stock y alertas
+/adm/sales/quick    → Venta rápida
+/adm/invoices       → Facturas
+/adm/reports        → Reportes
 ```
 
 ---
 
-## Mobile (Móvil / PWA)
+## 🌐 Público (`/app/(public)/**`)
 
-### Contexto de Uso
-- **Ubicación**: Área de taller, moviéndose, sin escritorio
-- **Dispositivo**: Smartphone personal del staff
-- **Sesión**: Intermitente (check rápidos entre trabajos)
-- **Interacción**: Touch, una mano, voz/chat
+**Consultar:** `@[specs/ui-architecture-public.md]`
 
 ### Características
-| Aspecto | Implementación |
-|---------|----------------|
-| **Layout** | Single column, scroll vertical, bottom nav |
-| **Navegación** | Tabs inferiores, swipe entre vistas |
-| **Formularios** | Paso a paso, campos esenciales |
-| **Acciones** | Botones grandes, gestos (swipe, pull-to-refresh) |
-| **Input** | Voice-to-text优先, cámara para fotos |
-| **Feedback** | Haptics, toast simples, notificaciones push |
-| **Offline** | Cache local, sincronización cuando hay wifi |
+- **Usuarios**: Clientes potenciales, visitantes
+- **Foco**: Marketing, conversión, catálogo visual
+- **Layout**: Single column, hero sections
+- **Colores**: Esquema vibrante, CTAs contrastantes
+- **Componentes**: Cards visuales, grids de productos, landing sections
 
-### Acceso Mobile
-
+### Rutas Públicas
 ```
-/m            → App Mobile (PWA instalable)
-├── /login    → Auth simplificado
-├── /tasks    → Mis tareas/OTs asignadas
-├── /scan     → Escanear QR de OT
-├── /chat     → RPM Bot (interfaz principal)
-└── /quick    → Acciones rápidas (checklist, fotos)
+/                   → Home / Landing
+/productos          → Catálogo
+/servicios          → Servicios de instalación
+/taller            → Info taller (Fase 2)
+/nosotros          → Quiénes somos
+/contacto          → Formulario contacto
 ```
 
 ---
 
-## Matriz de Vistas por Rol y Dispositivo
+## 📱 Mobile App (`/app/m/**`)
 
-| Rol | Desktop | Mobile | Vistas Principales |
-|-----|---------|--------|-------------------|
-| **ADMIN** | ✅ Full | ✅ Supervisión | Todo (desktop), Dashboard mobile |
-| **SELLER** | ✅ Full | ✅ Consulta | Ventas, productos, clientes |
-| **TECHNICIAN** | ⚠️ Solo lectura | ✅ **Principal** | Mis OTs, checklists, fotos, chatbot |
+**Nota:** El módulo mobile está documentado en las specs correspondientes según el tipo:
 
-> **Nota**: Los técnicos usarán principalmente **Mobile + RPM Bot**
+- **Mobile Admin**: Ver `@[specs/ui-architecture-adm.md]` (sección Mobile)
+- **Mobile Público**: Ver `@[specs/ui-architecture-public.md]` (sección Mobile)
 
 ---
 
-## Componentes Mobile Específicos
+## ⚡ Flujo de Trabajo Obligatorio
 
-### 1. Bottom Navigation (Fixed)
-```typescript
-// m/layout.tsx
-<BottomNav>
-  <NavItem icon="task" label="Mis Tareas" href="/m/tasks" />
-  <NavItem icon="scan" label="Escanear" href="/m/scan" />
-  <NavItem icon="bot" label="RPM Bot" href="/m/chat" primary />
-  <NavItem icon="flash" label="Rápido" href="/m/quick" />
-</BottomNav>
-```
+### Antes de Empezar
 
-### 2. Tarjeta OT Compacta
-```typescript
-// Componente para lista de OTs en mobile
-<WorkOrderCard>
-  <Header>
-    <Badge color="status">En Progreso</Badge>
-    <Text strong>#OT-1245</Text>
-  </Header>
-  <Body>
-    <VehicleInfo plate="AB123CD" model="Toyota Hilux" />
-    <ServiceTag>Instalación LED</ServiceTag>
-  </Body>
-  <Actions>
-    <ActionButton>Ver Detalle</ActionButton>
-    <ActionButton primary>Completar Checklist</ActionButton>
-  </Actions>
-</WorkOrderCard>
-```
+1. **Identificar el área**: ¿Es admin (`/adm`) o público (`/`)?
+2. **Consultar la spec**: Leer el archivo correspondiente
+3. **Verificar reglas existentes**: No reinventar, seguir estándares
 
-### 3. Botón Flotante Principal (FAB)
-```typescript
-// Acceso rápido al bot o acciones comunes
-<FloatingActionButton>
-  <MenuItem icon="camera" label="Foto OT" />
-  <MenuItem icon="check" label="Checklist" />
-  <MenuItem icon="message" label="RPM Bot" />
-</FloatingActionButton>
-```
+### Durante el Desarrollo
+
+4. **Seguir las reglas**: Layout, colores, componentes según spec
+5. **Mantener consistencia**: No mezclar patrones de admin en público o viceversa
+
+### Al Finalizar
+
+6. **Documentar cambios**: Si hay nuevas decisiones, agregar a la spec
+7. **Commit con referencia**: Mencionar qué spec se actualizó
 
 ---
 
-## PWA (Progressive Web App)
+## 🎨 Diferencias Clave
 
-### Configuración
-```typescript
-// app/m/layout.tsx - viewport PWA
-export const viewport = {
-  width: 'device-width',
-  initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
-  themeColor: '#1a1a1a',
-}
-
-// manifest.json
-{
-  "name": "RPM Accesorios",
-  "short_name": "RPM",
-  "start_url": "/m",
-  "display": "standalone",
-  "background_color": "#1a1a1a",
-  "theme_color": "#3b82f6",
-  "icons": [...]
-}
-```
-
-### Capacidades Nativas
-- ✅ Notificaciones push (nueva OT asignada)
-- ✅ Acceso cámara (fotos de trabajos)
-- ✅ Instalación homescreen
-- ✅ Offline cache (ver OTs sin conexión)
-- ✅ Voz (speech-to-text para bot)
+| Aspecto | Admin | Público |
+|---------|-------|---------|
+| **Foco** | Funcionalidad | Conversión |
+| **Colores** | Neutros profesionales | Vibrantes de marca |
+| **Bordes** | `ring-slate-300` | Según diseño de marca |
+| **Formularios** | Completos, validación compleja | Mínimos, simples |
+| **Tablas** | Sí, densas | No (cards visuales) |
+| **Sidebar** | Sí | No |
+| **CTAs** | Acción secundaria | Conversión primaria |
 
 ---
 
-## Flujo Típico: Técnico en Taller
+## 🔗 Vinculación con Otras Specs
 
-### Escenario: Juan, técnico, usando mobile
-
-```
-1. Juan abre app en su teléfono (notificación push: "Nueva OT asignada")
-   ↓
-2. Ve resumen en /m/tasks → "Toyota Hilux - Instalación LED"
-   ↓
-3. Toca "RPM Bot" (bottom nav, centro)
-   ↓
-4. Bot: "¡Hola Juan! Tienes 2 OTs pendientes. ¿Qué necesitas?"
-   ↓
-5. Juan (voice): "Dame la primera"
-   ↓
-6. Bot: "OT #1245 - Hilux AB123CD - Instalación barra LED"
-        "¿Querés completar el checklist o subir fotos?"
-   ↓
-7. Juan: "Checklist ingreso"
-   ↓
-8. Bot muestra checklist paso a paso → Juan marca items
-   ↓
-9. Juan: "Listo, empezar trabajo"
-   ↓
-10. Bot: "¿Confirmás cambio de estado a 'En Progreso'?"
-    Juan: "Sí" → Estado actualizado
-```
+- `@[specs/ui-architecture-adm.md]` - Diseño de interfaz admin
+- `@[specs/ui-architecture-public.md]` - Diseño de sitio público
+- `@[specs/inventory-sales.md]` - Reglas de negocio stock/ventas
+- `@[specs/workshop.md]` - Reglas de negocio taller
+- `@[AGENTS.md]` - Reglas de arquitectura de componentes
 
 ---
 
-## Comparativa de Implementación
+## ✅ Checklist Pre-Implementación
 
-| Aspecto | Desktop | Mobile |
-|---------|---------|--------|
-| **Framework UI** | shadcn/ui, tables completas | Componentes touch-optimized |
-| **Forms** | react-hook-form, validación completa | Formularios paso a paso |
-| **Navegación** | Next.js Link, sidebar | Tabs, swipe gestures |
-| **Estado** | Zustand complejo | React Query, cache local |
-| **API** | REST completo | REST + WebSocket (tiempo real) |
-
----
-
-## Vinculación con Otras Specs
-
-- `/specs/bot.md` - Interfaz principal mobile
-- `/specs/workshop.md` - OTs accesibles desde mobile
-- `/specs/core.md` - Configuración PWA
+- [ ] Identifiqué el área (admin vs público)
+- [ ] Leí la spec correspondiente
+- [ ] Verifiqué reglas de componentes existentes
+- [ ] Confirmé colores y estilos según área
+- [ ] Revisé límites de complejidad
 
 ---
 

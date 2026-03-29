@@ -1598,11 +1598,17 @@ Extraer a archivo propio cuando:
 
 ## Documentación de Decisiones de Diseño UI
 
-### ✅ OBLIGATORIO: Documentar en specs/ui-architecture.md
+### ✅ OBLIGATORIO: Documentar en specs correspondientes
 
-**Todas las decisiones de diseño UI deben documentarse en `@[specs/ui-architecture.md]`.**
+**Todas las decisiones de diseño UI deben documentarse según el área:**
 
-Esto incluye:
+| Área | Archivo Spec | Qué Documentar |
+|------|--------------|----------------|
+| **Admin** | `@[specs/ui-architecture-adm.md]` | Formularios admin, tablas, modales, layout `/adm` |
+| **Público** | `@[specs/ui-architecture-public.md]` | Landing pages, catálogo, marketing, sitio web |
+| **Ambos** | `@[specs/ui-architecture.md]` | Decisiones generales, índice de referencia |
+
+**Incluir siempre:**
 - Cambios en campos de formularios (obligatorios vs opcionales)
 - Reorganización de layouts
 - Cambios en validaciones
@@ -1612,34 +1618,40 @@ Esto incluye:
 
 ### 🔍 CONSULTAR CONSTANTEMENTE la especificación
 
-**Antes de crear o modificar cualquier componente UI, revisar `@[specs/ui-architecture.md]`:**
+**Antes de crear o modificar UI, revisar la spec correspondiente:**
+
+- **¿Es admin (`/adm`)?** → Leer `@[specs/ui-architecture-adm.md]`
+- **¿Es público (`/`)?** → Leer `@[specs/ui-architecture-public.md]`
+- **¿No estás seguro?** → Empezar con `@[specs/ui-architecture.md]` (índice)
 
 ```
 FLUJO OBLIGATORIO:
-1. Leer specs/ui-architecture.md antes de empezar
-2. Verificar reglas existentes
-3. Implementar siguiendo las reglas
-4. Actualizar specs si hay nuevas decisiones
-5. Commit con referencia a la spec actualizada
+1. Identificar área (admin vs público)
+2. Consultar `@[specs/ui-architecture.md]` para confirmar qué spec leer
+3. Leer la spec específica (adm.md o public.md)
+4. Implementar siguiendo las reglas documentadas
+5. Actualizar la spec si hay nuevas decisiones
+6. Commit con referencia a la spec actualizada
 ```
 
 ### ❌ PROHIBIDO: Implementar sin consultar specs
 
-**Nunca crear o modificar UI sin antes revisar la especificación.** Esto evita:
+**Nunca crear o modificar UI sin antes revisar la especificación correcta.** Esto evita:
 - Inconsistencias con decisiones previas
 - Regresiones en UX
+- Mezclar patrones de admin en público o viceversa
 - Duplicación de reglas contradictorias
 - Desviaciones de los estándares del proyecto
 
 ### Ejemplos de Decisiones a Documentar
 
-| Tipo de Cambio | Qué Documentar |
-|----------------|----------------|
-| **Formulario** | Campos obligatorios, validaciones, orden de campos |
-| **Layout** | Estructura, responsive behavior, breakpoints |
-| **Componente** | Props, comportamiento, casos de uso |
-| **Flujo** | Pasos, estados, transiciones, errores |
-| **Estilos** | Colores, tipografía, espaciado, temas |
+| Tipo de Cambio | Área | Qué Documentar | Dónde |
+|----------------|------|------------------|-------|
+| **Formulario Admin** | Admin | Campos obligatorios, validaciones, orden | `ui-architecture-adm.md` |
+| **Layout Público** | Público | Hero sections, grids, CTAs | `ui-architecture-public.md` |
+| **Color Cards** | Admin | `ring-slate-300` para bordes | `ui-architecture-adm.md` |
+| **Catálogo** | Público | Estructura cards, filtros, imágenes | `ui-architecture-public.md` |
+| **Componente Reusable** | Ambos | Props, comportamiento, casos de uso | `ui-architecture.md` |
 
 ---
 
