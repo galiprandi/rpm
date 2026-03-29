@@ -179,7 +179,6 @@ export default function ProductsPage() {
   // Validación: CTA deshabilitado hasta completar campos obligatorios
   const isFormValid = () => {
     return (
-      formData.barcode.trim() !== '' &&
       formData.name.trim() !== '' &&
       formData.categoryId !== '' &&
       formData.supplier.trim() !== '' &&

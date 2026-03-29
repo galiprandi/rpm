@@ -56,13 +56,12 @@ export function ProductForm({
       {/* Fila 1: EAN | SKU */}
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="barcode">Código de Barras (EAN) *</Label>
+          <Label htmlFor="barcode">Código de Barras (EAN)</Label>
           <Input
             id="barcode"
             value={formData.barcode}
             onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
-            placeholder="1234567890123"
-            required
+            placeholder="1234567890123 (opcional)"
           />
         </div>
 

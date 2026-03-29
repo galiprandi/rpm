@@ -87,15 +87,15 @@ Extraer a componente separado cuando:
 
 | Campo | UI (required) | Backend (Prisma) | Descripción |
 |-------|---------------|------------------|-------------|
-| **EAN/Barcode** | ✅ Sí | `String?` (opcional en DB, pero requerido en UI) | Código de barras - identificador principal |
-| **Nombre** | ✅ Sí | `String` | Nombre descriptivo del producto |
-| **SKU** | ❌ No | `String @unique` | Código interno opcional en UI |
-| **Categoría** | ✅ Sí | `categoryId String` | ID de categoría asignada |
-| **Proveedor** | ✅ Sí | `String?` (opcional en DB, pero requerido en UI) | Nombre del proveedor |
-| **Costo** | ✅ Sí | `Decimal` | Precio de costo |
-| **Venta** | ✅ Sí | `Decimal` | Precio de venta |
-| **Stock** | ✅ Sí | `Int` | Stock actual |
-| **Mínimo** | ✅ Sí | `Int` | Stock mínimo para alertas |
+| **EAN/Barcode** | ❌ No | `String?` (opcional) | Código de barras - opcional en UI y DB |
+| **SKU** | ❌ No | `String @unique` | Código interno opcional en UI y DB |
+| **Nombre** | ✅ Sí | `String` | Nombre descriptivo del producto (obligatorio) |
+| **Categoría** | ✅ Sí | `categoryId String` | ID de categoría asignada (obligatorio) |
+| **Proveedor** | ✅ Sí | `String?` (opcional en DB, requerido en UI) | Nombre del proveedor (obligatorio en UI) |
+| **Costo** | ✅ Sí | `Decimal` | Precio de costo (obligatorio) |
+| **Venta** | ✅ Sí | `Decimal` | Precio de venta (obligatorio) |
+| **Stock** | ✅ Sí | `Int` | Stock actual (obligatorio) |
+| **Mínimo** | ✅ Sí | `Int` | Stock mínimo para alertas (obligatorio) |
 
 #### UX para Campos Requeridos
 
@@ -108,7 +108,6 @@ Extraer a componente separado cuando:
 // Ejemplo: Deshabilitar CTA hasta completar campos obligatorios
 const isFormValid = () => {
   return (
-    formData.barcode.trim() !== '' &&
     formData.name.trim() !== '' &&
     formData.categoryId !== '' &&
     formData.supplier.trim() !== '' &&
