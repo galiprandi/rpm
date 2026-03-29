@@ -231,7 +231,8 @@ export default function ProductsPage() {
         </div>
         <Button 
           onClick={openCreateDialog}
-          className="bg-cta text-cta-foreground hover:bg-cta/90 shadow-md hover:shadow-lg transition-all"
+          variant="default"
+          className="bg-slate-900 text-white hover:bg-slate-800 border border-slate-900 shadow-lg hover:shadow-xl transition-all font-semibold px-4 py-2"
         >
           <Plus className="h-5 w-5 mr-2" />
           Nuevo Producto
