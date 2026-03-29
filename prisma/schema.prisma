@@ -85,6 +85,7 @@ model UserRole {
   email     String   @unique
   role      String   // ADMIN, SELLER, TECHNICIAN, CASHIER, USER
   name      String?  // Nombre para identificar quién es
+  image     String?  // Foto de perfil del usuario (Google OAuth)
   notes     String?  // Observaciones (ej: "Dueño", "Vendedor turno mañana")
   isActive  Boolean  @default(true)
   lastLogin DateTime? // Último login del usuario

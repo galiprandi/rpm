@@ -46,6 +46,7 @@ model UserRole {
   email     String   @unique
   role      String   // ADMIN, SELLER, TECHNICIAN, CASHIER, USER
   name      String?  // Nombre para identificar quién es
+  image     String?  // Foto de perfil del usuario (Google OAuth)
   notes     String?  // Observaciones (ej: "Dueño", "Vendedor turno mañana")
   isActive  Boolean  @default(true)
   lastLogin DateTime? // Último login del usuario
@@ -513,7 +514,7 @@ export async function POST(request: Request) {
 
 ### Sincronización Automática con UserSyncServer
 
-El componente `UserSyncServer` es un Server Component que se ejecuta en el **root layout** (`app/layout.tsx`) en cada request. Esto garantiza que todo usuario autenticado se sincronice automáticamente con la tabla `UserRole`.
+El componente `UserSyncServer` es un Server Component que se ejecuta en el **root layout** (`app/layout.tsx`) en cada request. Esto garantiza que todo usuario autenticado se sincronice automáticamente con la tabla `UserRole`, manteniendo los datos actualizados (nombre, foto de perfil, último login) en cada visita.
 
 ```typescript
 // components/users/UserSyncServer.tsx
@@ -521,24 +522,25 @@ export async function UserSyncServer() {
   const session = await getSession();
   
   if (session?.user?.email) {
-    const existing = await prisma.userRole.findUnique({
+    await prisma.userRole.upsert({
       where: { email: session.user.email },
+      create: {
+        email: session.user.email,
+        role: 'USER',
+        name: session.user.name || session.user.email.split('@')[0],
+        image: session.user.image || null,
+        isActive: true,
+        lastLogin: new Date(),
+      },
+      update: {
+        lastLogin: new Date(),
+        name: session.user.name || undefined,
+        image: session.user.image || undefined,
+      },
     });
-    
-    if (!existing) {
-      await prisma.userRole.create({
-        data: {
-          email: session.user.email,
-          role: 'USER',
-          name: session.user.name || session.user.email.split('@')[0],
-          isActive: true,
-          lastLogin: new Date(),
-        },
-      });
-    }
   }
   
-  return null; // No renderiza nada
+  return null;
 }
 ```
 
@@ -565,18 +567,23 @@ export default function RootLayout({ children }) {
 1. Usuario autentica con Google OAuth
 2. Better Auth crea registro en `User`
 3. Al cargar cualquier página, `UserSyncServer` ejecuta en el servidor
-4. Si no existe `UserRole` para ese email, lo crea automáticamente con:
+4. Crea o actualiza `UserRole` automáticamente con:
    - `role: 'USER'`
    - `isActive: true`
    - `lastLogin: new Date()`
-5. Usuario aparece inmediatamente en la tabla de usuarios
+   - `name: displayName de Google`
+   - `image: foto de perfil de Google`
+5. Usuario aparece inmediatamente en la tabla de usuarios con datos actualizados
 
 ### Escenario 2: Usuario existente hace login
 
 1. Usuario autentica (ya existe en `User` y `UserRole`)
-2. `UserSyncServer` verifica la sesión
-3. No crea nuevo registro (ya existe)
-4. El usuario aparece en la tabla con sus datos actuales
+2. `UserSyncServer` ejecuta en cada request
+3. Actualiza automáticamente:
+   - `lastLogin` a fecha actual
+   - `name` si cambió en Google
+   - `image` si cambió la foto de perfil
+4. El usuario aparece en la tabla con datos siempre actualizados
 
 ### Escenario 3: ADMIN crea usuario manualmente (antes del primer login)
 
@@ -588,7 +595,7 @@ export default function RootLayout({ children }) {
    - Better Auth crea `User`
    - `UserSyncServer` encuentra el registro previo en `UserRole`
    - No sobreescribe el rol predefinido por el ADMIN
-   - Solo actualiza `lastLogin`
+   - Actualiza `lastLogin`, `name` e `image` desde Google
 
 ```typescript
 // Flujo de creación manual

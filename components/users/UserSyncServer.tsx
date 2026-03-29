@@ -3,6 +3,7 @@
  * 
  * Sincroniza automáticamente el usuario autenticado con UserRole
  * Se ejecuta en cada request del root layout (una sola vez)
+ * Actualiza: lastLogin, name, image
  * No renderiza nada visual
  */
 import { getSession } from '@/lib/auth-server';
@@ -14,21 +15,24 @@ export async function UserSyncServer() {
   // Only sync if user is authenticated
   if (session?.user?.email) {
     try {
-      // Upsert: create if not exists, always update lastLogin
+      // Upsert: create if not exists, always update fields
       await prisma.userRole.upsert({
         where: { email: session.user.email },
         create: {
           email: session.user.email,
           role: 'USER',
           name: session.user.name || session.user.email.split('@')[0],
+          image: session.user.image || null,
           isActive: true,
           lastLogin: new Date(),
         },
         update: {
-          // Always update lastLogin on every request
+          // Always update on every request to keep data fresh
           lastLogin: new Date(),
-          // Update name if changed
+          // Update name if provided by Better Auth
           name: session.user.name || undefined,
+          // Update image if provided by Better Auth
+          image: session.user.image || undefined,
         },
       });
     } catch (err) {
