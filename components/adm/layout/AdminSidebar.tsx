@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { 
   LayoutDashboard, 
   Package, 
+  Folder,
   Users, 
   Settings,
   LogOut 
@@ -12,6 +13,7 @@ import {
 const navigation = [
   { name: 'Dashboard', href: '/adm', icon: LayoutDashboard },
   { name: 'Productos', href: '/adm/products', icon: Package },
+  { name: 'Categorías', href: '/adm/categories', icon: Folder },
   { name: 'Usuarios', href: '/adm/users', icon: Users },
   { name: 'Configuración', href: '/adm/settings', icon: Settings },
 ];
