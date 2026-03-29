@@ -24,15 +24,7 @@ export function AdminSidebar({ onSignOut, collapsed = false }: { onSignOut?: () 
   const pathname = usePathname();
 
   return (
-    <div className={`${collapsed ? 'w-16' : 'w-64'} bg-card border-r min-h-screen transition-all duration-300`}>
-      {!collapsed && (
-        <div className="p-6">
-          <h2 className="text-lg font-semibold text-foreground">
-            RPM Admin
-          </h2>
-        </div>
-      )}
-      
+    <div className={`${collapsed ? 'w-16' : 'w-64'} bg-card h-full flex flex-col transition-all duration-300`}>
       <nav className={`${collapsed ? 'px-2' : 'px-4'} space-y-2 pt-4`}>
         {navigation.map((item) => {
           const isActive = pathname === item.href;
@@ -58,7 +50,8 @@ export function AdminSidebar({ onSignOut, collapsed = false }: { onSignOut?: () 
         })}
       </nav>
       
-      <div className={`absolute bottom-4 ${collapsed ? 'left-2 right-2' : 'left-4 right-4'}`}>
+      {/* Logout button - fixed at bottom */}
+      <div className={`mt-auto pt-4 ${collapsed ? 'px-2' : 'px-4'}`}>
         <button
           onClick={onSignOut}
           className={cn(

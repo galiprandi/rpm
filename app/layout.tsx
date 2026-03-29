@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { UIProvider } from "@/components/ui/UIProvider";
 import { UserSyncServer } from "@/components/users/UserSyncServer";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,10 +31,12 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <UIProvider>
-          <UserSyncServer />
-          {children}
-        </UIProvider>
+        <TooltipProvider>
+          <UIProvider>
+            <UserSyncServer />
+            {children}
+          </UIProvider>
+        </TooltipProvider>
       </body>
     </html>
   );
