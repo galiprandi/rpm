@@ -10,7 +10,7 @@ const defaultCategory = {
   name: 'Sin categoría',
   description: 'Categoría por defecto para productos sin categoría específica',
   defaultMarginPercent: 30,
-  color: '#6B7280',
+  color: '#6b7280',
   sortOrder: 0,
 };
 
