@@ -30,6 +30,7 @@ const adminUser = {
   email: 'galiprandi@gmail.com',
   emailVerified: true,
   image: null,
+  role: 'ADMIN',
 };
 
 const adminRole = {

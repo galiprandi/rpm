@@ -51,6 +51,36 @@ export const auth = betterAuth({
       enabled: false,
     },
   },
+
+  /**
+   * Database hooks for role assignment
+   * Automatically assigns roles based on email when users are created
+   */
+  databaseHooks: {
+    user: {
+      create: {
+        before: async (user) => {
+          const role = await getUserRole(user.email);
+          return {
+            data: {
+              ...user,
+              role,
+            },
+          };
+        },
+      },
+    },
+  },
+
+  /**
+   * Session callback to include role in session
+   */
+  callbacks: {
+    session: async (session: { user: { role?: string } }) => {
+      // Role is already in the database and included via Prisma adapter
+      return session;
+    },
+  },
 });
 
 export type Session = typeof auth.$Infer.Session;

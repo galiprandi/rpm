@@ -1,9 +1,10 @@
 /**
  * Role management system for RPM Accesorios
  * 
- * Defines user roles and provides role assignment logic
- * based on email domains and specific admin whitelist
+ * Fetches roles from database. Falls back to domain-based assignment for new users.
  */
+
+import { prisma } from '../prisma';
 
 export enum UserRole {
   USER = 'USER',        // Clientes finales - Acceso a /
@@ -11,33 +12,58 @@ export enum UserRole {
   ADMIN = 'ADMIN'       // Administradores - Acceso completo a /adm
 }
 
+// Domains that automatically get STAFF role if no explicit role in DB
+const STAFF_DOMAINS = ['rpmacc.com', 'rpm-sys.com'];
+
 /**
- * Assigns user role based on email address
+ * Assigns user role based on database lookup or email domain fallback
  * 
- * Strategy:
- * - Admin emails: Specific whitelist for full access
- * - Staff domains: Company domains for staff access
- * - All others: Regular users
+ * Priority:
+ * 1. Check UserRole table for explicit role assignment
+ * 2. Fall back to domain-based assignment (STAFF for company domains)
+ * 3. Default to USER
  * 
  * @param email - User email address
  * @returns UserRole assigned to the user
  */
-export const getUserRole = (email: string): UserRole => {
-  const adminEmails = [
-    'admin@rpmacc.com', 
-    'galiprandi@rpmacc.com',
-    'it@rpmacc.com'
-  ];
-  const staffDomains = ['rpmacc.com', 'rpm-sys.com'];
-  
-  if (adminEmails.includes(email)) {
-    return UserRole.ADMIN;
+export const getUserRole = async (email: string): Promise<UserRole> => {
+  // First: check database for explicit role
+  const userRoleRecord = await prisma.userRole.findUnique({
+    where: { email },
+  });
+
+  if (userRoleRecord?.isActive) {
+    // Map database role to enum (handles both old and new role names)
+    const role = userRoleRecord.role.toUpperCase();
+    if (role === 'ADMIN' || role === 'SELLER' || role === 'TECHNICIAN' || role === 'CASHIER') {
+      return UserRole.ADMIN;
+    }
+    if (role === 'STAFF') {
+      return UserRole.STAFF;
+    }
+    return UserRole.USER;
   }
-  
-  if (staffDomains.some(domain => email.endsWith(domain))) {
+
+  // Second: domain-based fallback for company emails
+  if (STAFF_DOMAINS.some(domain => email.endsWith(`@${domain}`))) {
     return UserRole.STAFF;
   }
-  
+
+  // Default: regular user
+  return UserRole.USER;
+};
+
+/**
+ * Synchronous version for use in contexts where DB can't be accessed
+ * Uses only domain-based logic (no DB lookup)
+ * 
+ * @param email - User email address
+ * @returns UserRole assigned to the user
+ */
+export const getUserRoleSync = (email: string): UserRole => {
+  if (STAFF_DOMAINS.some(domain => email.endsWith(`@${domain}`))) {
+    return UserRole.STAFF;
+  }
   return UserRole.USER;
 };
 
@@ -53,16 +79,19 @@ export const isValidEmailForRole = (email: string): boolean => {
 };
 
 /**
- * Gets all admin emails for configuration purposes
+ * Gets all admin emails from database
  * 
  * @returns Array of admin email addresses
  */
-export const getAdminEmails = (): string[] => {
-  return [
-    'admin@rpmacc.com', 
-    'galiprandi@rpmacc.com',
-    'it@rpmacc.com'
-  ];
+export const getAdminEmails = async (): Promise<string[]> => {
+  const admins = await prisma.userRole.findMany({
+    where: {
+      role: { in: ['ADMIN', 'SELLER', 'TECHNICIAN', 'CASHIER'] },
+      isActive: true,
+    },
+    select: { email: true },
+  });
+  return admins.map(a => a.email);
 };
 
 /**
@@ -71,5 +100,37 @@ export const getAdminEmails = (): string[] => {
  * @returns Array of staff domain strings
  */
 export const getStaffDomains = (): string[] => {
-  return ['rpmacc.com', 'rpm-sys.com'];
+  return [...STAFF_DOMAINS];
+};
+
+/**
+ * Create or update a user role in the database
+ * 
+ * @param email - User email
+ * @param role - Role to assign
+ * @param name - Optional name for identification
+ * @param notes - Optional notes
+ */
+export const setUserRole = async (
+  email: string,
+  role: UserRole,
+  name?: string,
+  notes?: string
+): Promise<void> => {
+  await prisma.userRole.upsert({
+    where: { email },
+    update: {
+      role,
+      name: name ?? null,
+      notes: notes ?? null,
+      isActive: true,
+    },
+    create: {
+      email,
+      role,
+      name: name ?? null,
+      notes: notes ?? null,
+      isActive: true,
+    },
+  });
 };
