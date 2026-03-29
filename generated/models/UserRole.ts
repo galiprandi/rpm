@@ -29,6 +29,7 @@ export type UserRoleMinAggregateOutputType = {
   email: string | null
   role: string | null
   name: string | null
+  image: string | null
   notes: string | null
   isActive: boolean | null
   lastLogin: Date | null
@@ -41,6 +42,7 @@ export type UserRoleMaxAggregateOutputType = {
   email: string | null
   role: string | null
   name: string | null
+  image: string | null
   notes: string | null
   isActive: boolean | null
   lastLogin: Date | null
@@ -53,6 +55,7 @@ export type UserRoleCountAggregateOutputType = {
   email: number
   role: number
   name: number
+  image: number
   notes: number
   isActive: number
   lastLogin: number
@@ -67,6 +70,7 @@ export type UserRoleMinAggregateInputType = {
   email?: true
   role?: true
   name?: true
+  image?: true
   notes?: true
   isActive?: true
   lastLogin?: true
@@ -79,6 +83,7 @@ export type UserRoleMaxAggregateInputType = {
   email?: true
   role?: true
   name?: true
+  image?: true
   notes?: true
   isActive?: true
   lastLogin?: true
@@ -91,6 +96,7 @@ export type UserRoleCountAggregateInputType = {
   email?: true
   role?: true
   name?: true
+  image?: true
   notes?: true
   isActive?: true
   lastLogin?: true
@@ -176,6 +182,7 @@ export type UserRoleGroupByOutputType = {
   email: string
   role: string
   name: string | null
+  image: string | null
   notes: string | null
   isActive: boolean
   lastLogin: Date | null
@@ -209,6 +216,7 @@ export type UserRoleWhereInput = {
   email?: Prisma.StringFilter<"UserRole"> | string
   role?: Prisma.StringFilter<"UserRole"> | string
   name?: Prisma.StringNullableFilter<"UserRole"> | string | null
+  image?: Prisma.StringNullableFilter<"UserRole"> | string | null
   notes?: Prisma.StringNullableFilter<"UserRole"> | string | null
   isActive?: Prisma.BoolFilter<"UserRole"> | boolean
   lastLogin?: Prisma.DateTimeNullableFilter<"UserRole"> | Date | string | null
@@ -221,6 +229,7 @@ export type UserRoleOrderByWithRelationInput = {
   email?: Prisma.SortOrder
   role?: Prisma.SortOrder
   name?: Prisma.SortOrderInput | Prisma.SortOrder
+  image?: Prisma.SortOrderInput | Prisma.SortOrder
   notes?: Prisma.SortOrderInput | Prisma.SortOrder
   isActive?: Prisma.SortOrder
   lastLogin?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -236,6 +245,7 @@ export type UserRoleWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.UserRoleWhereInput | Prisma.UserRoleWhereInput[]
   role?: Prisma.StringFilter<"UserRole"> | string
   name?: Prisma.StringNullableFilter<"UserRole"> | string | null
+  image?: Prisma.StringNullableFilter<"UserRole"> | string | null
   notes?: Prisma.StringNullableFilter<"UserRole"> | string | null
   isActive?: Prisma.BoolFilter<"UserRole"> | boolean
   lastLogin?: Prisma.DateTimeNullableFilter<"UserRole"> | Date | string | null
@@ -248,6 +258,7 @@ export type UserRoleOrderByWithAggregationInput = {
   email?: Prisma.SortOrder
   role?: Prisma.SortOrder
   name?: Prisma.SortOrderInput | Prisma.SortOrder
+  image?: Prisma.SortOrderInput | Prisma.SortOrder
   notes?: Prisma.SortOrderInput | Prisma.SortOrder
   isActive?: Prisma.SortOrder
   lastLogin?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -266,6 +277,7 @@ export type UserRoleScalarWhereWithAggregatesInput = {
   email?: Prisma.StringWithAggregatesFilter<"UserRole"> | string
   role?: Prisma.StringWithAggregatesFilter<"UserRole"> | string
   name?: Prisma.StringNullableWithAggregatesFilter<"UserRole"> | string | null
+  image?: Prisma.StringNullableWithAggregatesFilter<"UserRole"> | string | null
   notes?: Prisma.StringNullableWithAggregatesFilter<"UserRole"> | string | null
   isActive?: Prisma.BoolWithAggregatesFilter<"UserRole"> | boolean
   lastLogin?: Prisma.DateTimeNullableWithAggregatesFilter<"UserRole"> | Date | string | null
@@ -278,6 +290,7 @@ export type UserRoleCreateInput = {
   email: string
   role: string
   name?: string | null
+  image?: string | null
   notes?: string | null
   isActive?: boolean
   lastLogin?: Date | string | null
@@ -290,6 +303,7 @@ export type UserRoleUncheckedCreateInput = {
   email: string
   role: string
   name?: string | null
+  image?: string | null
   notes?: string | null
   isActive?: boolean
   lastLogin?: Date | string | null
@@ -302,6 +316,7 @@ export type UserRoleUpdateInput = {
   email?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -314,6 +329,7 @@ export type UserRoleUncheckedUpdateInput = {
   email?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -326,6 +342,7 @@ export type UserRoleCreateManyInput = {
   email: string
   role: string
   name?: string | null
+  image?: string | null
   notes?: string | null
   isActive?: boolean
   lastLogin?: Date | string | null
@@ -338,6 +355,7 @@ export type UserRoleUpdateManyMutationInput = {
   email?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -350,6 +368,7 @@ export type UserRoleUncheckedUpdateManyInput = {
   email?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -362,6 +381,7 @@ export type UserRoleCountOrderByAggregateInput = {
   email?: Prisma.SortOrder
   role?: Prisma.SortOrder
   name?: Prisma.SortOrder
+  image?: Prisma.SortOrder
   notes?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
   lastLogin?: Prisma.SortOrder
@@ -374,6 +394,7 @@ export type UserRoleMaxOrderByAggregateInput = {
   email?: Prisma.SortOrder
   role?: Prisma.SortOrder
   name?: Prisma.SortOrder
+  image?: Prisma.SortOrder
   notes?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
   lastLogin?: Prisma.SortOrder
@@ -386,6 +407,7 @@ export type UserRoleMinOrderByAggregateInput = {
   email?: Prisma.SortOrder
   role?: Prisma.SortOrder
   name?: Prisma.SortOrder
+  image?: Prisma.SortOrder
   notes?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
   lastLogin?: Prisma.SortOrder
@@ -400,6 +422,7 @@ export type UserRoleSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   email?: boolean
   role?: boolean
   name?: boolean
+  image?: boolean
   notes?: boolean
   isActive?: boolean
   lastLogin?: boolean
@@ -412,6 +435,7 @@ export type UserRoleSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exte
   email?: boolean
   role?: boolean
   name?: boolean
+  image?: boolean
   notes?: boolean
   isActive?: boolean
   lastLogin?: boolean
@@ -424,6 +448,7 @@ export type UserRoleSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exte
   email?: boolean
   role?: boolean
   name?: boolean
+  image?: boolean
   notes?: boolean
   isActive?: boolean
   lastLogin?: boolean
@@ -436,6 +461,7 @@ export type UserRoleSelectScalar = {
   email?: boolean
   role?: boolean
   name?: boolean
+  image?: boolean
   notes?: boolean
   isActive?: boolean
   lastLogin?: boolean
@@ -443,7 +469,7 @@ export type UserRoleSelectScalar = {
   updatedAt?: boolean
 }
 
-export type UserRoleOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "email" | "role" | "name" | "notes" | "isActive" | "lastLogin" | "createdAt" | "updatedAt", ExtArgs["result"]["userRole"]>
+export type UserRoleOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "email" | "role" | "name" | "image" | "notes" | "isActive" | "lastLogin" | "createdAt" | "updatedAt", ExtArgs["result"]["userRole"]>
 
 export type $UserRolePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "UserRole"
@@ -453,6 +479,7 @@ export type $UserRolePayload<ExtArgs extends runtime.Types.Extensions.InternalAr
     email: string
     role: string
     name: string | null
+    image: string | null
     notes: string | null
     isActive: boolean
     lastLogin: Date | null
@@ -885,6 +912,7 @@ export interface UserRoleFieldRefs {
   readonly email: Prisma.FieldRef<"UserRole", 'String'>
   readonly role: Prisma.FieldRef<"UserRole", 'String'>
   readonly name: Prisma.FieldRef<"UserRole", 'String'>
+  readonly image: Prisma.FieldRef<"UserRole", 'String'>
   readonly notes: Prisma.FieldRef<"UserRole", 'String'>
   readonly isActive: Prisma.FieldRef<"UserRole", 'Boolean'>
   readonly lastLogin: Prisma.FieldRef<"UserRole", 'DateTime'>

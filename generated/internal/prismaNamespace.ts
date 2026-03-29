@@ -1106,6 +1106,7 @@ export const UserRoleScalarFieldEnum = {
   email: 'email',
   role: 'role',
   name: 'name',
+  image: 'image',
   notes: 'notes',
   isActive: 'isActive',
   lastLogin: 'lastLogin',
