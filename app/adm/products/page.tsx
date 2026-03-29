@@ -237,8 +237,11 @@ export default function ProductsPage() {
             Gestiona el inventario de productos y servicios
           </p>
         </div>
-        <Button onClick={openCreateDialog}>
-          <Plus className="h-4 w-4 mr-2" />
+        <Button 
+          onClick={openCreateDialog}
+          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-md hover:shadow-lg transition-all"
+        >
+          <Plus className="h-5 w-5 mr-2" />
           Nuevo Producto
         </Button>
       </div>
