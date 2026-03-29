@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { authClient } from '@/lib/auth-client';
 import { AdminSidebar } from './AdminSidebar';
 import { UIProvider } from '@/components/ui/UIProvider';
+import { SignOutDialog } from './SignOutDialog';
 
 interface AdminClientLayoutProps {
   children: React.ReactNode;
@@ -18,8 +19,13 @@ interface AdminClientLayoutProps {
 
 export function AdminClientLayout({ children, user }: AdminClientLayoutProps) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isSignOutDialogOpen, setIsSignOutDialogOpen] = useState(false);
 
   const handleSignOut = async () => {
+    setIsSignOutDialogOpen(true);
+  };
+
+  const confirmSignOut = async () => {
     await authClient.signOut();
     window.location.href = '/login';
   };
@@ -76,6 +82,13 @@ export function AdminClientLayout({ children, user }: AdminClientLayoutProps) {
           {children}
         </main>
       </div>
+      
+      <SignOutDialog
+        isOpen={isSignOutDialogOpen}
+        onClose={() => setIsSignOutDialogOpen(false)}
+        onConfirm={confirmSignOut}
+        userName={user.name}
+      />
     </UIProvider>
   );
 }
