@@ -3,12 +3,10 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { useUI } from '@/components/ui/UIProvider';
+import { SupplierForm, type SupplierFormData } from '@/components/suppliers/SupplierForm';
 import { 
   Truck, 
   Plus, 
@@ -35,11 +33,18 @@ export default function SuppliersPage() {
   const { alert, confirm } = useUI();
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
-  const [newSupplierName, setNewSupplierName] = useState('');
+  const [createForm, setCreateForm] = useState<SupplierFormData>({
+    name: '',
+    contactName: '',
+    phone: '',
+    email: '',
+    address: '',
+    notes: '',
+  });
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [editForm, setEditForm] = useState({
+  const [editForm, setEditForm] = useState<SupplierFormData>({
     name: '',
     contactName: '',
     phone: '',
@@ -67,17 +72,24 @@ export default function SuppliersPage() {
   };
 
   const handleCreateSupplier = async () => {
-    if (!newSupplierName.trim()) return;
+    if (!createForm.name.trim()) return;
 
     try {
       const response = await fetch('/api/suppliers', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newSupplierName }),
+        body: JSON.stringify(createForm),
       });
 
       if (response.ok) {
-        setNewSupplierName('');
+        setCreateForm({
+          name: '',
+          contactName: '',
+          phone: '',
+          email: '',
+          address: '',
+          notes: '',
+        });
         fetchSuppliers();
       }
     } catch (error) {
@@ -198,18 +210,11 @@ export default function SuppliersPage() {
           />
         }
       >
-        <form onSubmit={(e) => { e.preventDefault(); handleCreateSupplier(); }} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="create-name">Nombre *</Label>
-            <Input
-              id="create-name"
-              value={newSupplierName}
-              onChange={(e) => setNewSupplierName(e.target.value)}
-              placeholder="Nombre del proveedor"
-              required
-            />
-          </div>
-        </form>
+        <SupplierForm
+          formData={createForm}
+          setFormData={setCreateForm}
+          onSubmit={(e) => { e.preventDefault(); handleCreateSupplier(); }}
+        />
       </Modal>
 
       {/* Suppliers Grid */}
@@ -313,72 +318,11 @@ export default function SuppliersPage() {
           />
         }
       >
-        <form onSubmit={handleEditSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Nombre *</Label>
-            <Input
-              id="name"
-              value={editForm.name}
-              onChange={(e) => setEditForm({...editForm, name: e.target.value})}
-              placeholder="Nombre del proveedor"
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="contactName">Nombre de Contacto</Label>
-            <Input
-              id="contactName"
-              value={editForm.contactName}
-              onChange={(e) => setEditForm({...editForm, contactName: e.target.value})}
-              placeholder="Persona de contacto"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="phone">Teléfono</Label>
-              <Input
-                id="phone"
-                value={editForm.phone}
-                onChange={(e) => setEditForm({...editForm, phone: e.target.value})}
-                placeholder="+54 11 1234-5678"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={editForm.email}
-                onChange={(e) => setEditForm({...editForm, email: e.target.value})}
-                placeholder="proveedor@email.com"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="address">Dirección</Label>
-            <Input
-              id="address"
-              value={editForm.address}
-              onChange={(e) => setEditForm({...editForm, address: e.target.value})}
-              placeholder="Dirección del proveedor"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notas</Label>
-            <Textarea
-              id="notes"
-              value={editForm.notes}
-              onChange={(e) => setEditForm({...editForm, notes: e.target.value})}
-              placeholder="Notas adicionales..."
-              rows={2}
-            />
-          </div>
-        </form>
+        <SupplierForm
+          formData={editForm}
+          setFormData={setEditForm}
+          onSubmit={handleEditSubmit}
+        />
       </Modal>
     </div>
   );

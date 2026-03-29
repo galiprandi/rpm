@@ -3,12 +3,10 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { useUI } from '@/components/ui/UIProvider';
+import { CategoryForm, type CategoryFormData } from '@/components/categories/CategoryForm';
 import { 
   Folder, 
   Plus, 
@@ -32,11 +30,16 @@ export default function CategoriesPage() {
   const { alert, confirm } = useUI();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
-  const [newCategoryName, setNewCategoryName] = useState('');
+  const [createForm, setCreateForm] = useState<CategoryFormData>({
+    name: '',
+    description: '',
+    defaultMarginPercent: 40,
+    color: '',
+  });
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [editForm, setEditForm] = useState({
+  const [editForm, setEditForm] = useState<CategoryFormData>({
     name: '',
     description: '',
     defaultMarginPercent: 40,
@@ -62,17 +65,22 @@ export default function CategoriesPage() {
   };
 
   const handleCreateCategory = async () => {
-    if (!newCategoryName.trim()) return;
+    if (!createForm.name.trim()) return;
 
     try {
       const response = await fetch('/api/categories', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newCategoryName }),
+        body: JSON.stringify(createForm),
       });
 
       if (response.ok) {
-        setNewCategoryName('');
+        setCreateForm({
+          name: '',
+          description: '',
+          defaultMarginPercent: 40,
+          color: '',
+        });
         fetchCategories();
       }
     } catch (error) {
@@ -259,54 +267,11 @@ export default function CategoriesPage() {
           />
         }
       >
-        <form onSubmit={handleEditSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="edit-name">Nombre *</Label>
-            <Input
-              id="edit-name"
-              value={editForm.name}
-              onChange={(e) => setEditForm({...editForm, name: e.target.value})}
-              placeholder="Nombre de la categoría"
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="edit-description">Descripción</Label>
-            <Textarea
-              id="edit-description"
-              value={editForm.description}
-              onChange={(e) => setEditForm({...editForm, description: e.target.value})}
-              placeholder="Descripción de la categoría..."
-              rows={2}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="edit-defaultMarginPercent">Margen Sugerido (%)</Label>
-              <Input
-                id="edit-defaultMarginPercent"
-                type="number"
-                min="0"
-                max="100"
-                value={editForm.defaultMarginPercent}
-                onChange={(e) => setEditForm({...editForm, defaultMarginPercent: parseInt(e.target.value) || 0})}
-                placeholder="40"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="edit-color">Color</Label>
-              <Input
-                id="edit-color"
-                type="color"
-                value={editForm.color || '#e5e7eb'}
-                onChange={(e) => setEditForm({...editForm, color: e.target.value})}
-              />
-            </div>
-          </div>
-        </form>
+        <CategoryForm
+          formData={editForm}
+          setFormData={setEditForm}
+          onSubmit={handleEditSubmit}
+        />
       </Modal>
 
       {/* Create Category Modal */}
@@ -324,18 +289,11 @@ export default function CategoriesPage() {
           />
         }
       >
-        <form onSubmit={(e) => { e.preventDefault(); handleCreateCategory(); }} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="create-name">Nombre *</Label>
-            <Input
-              id="create-name"
-              value={newCategoryName}
-              onChange={(e) => setNewCategoryName(e.target.value)}
-              placeholder="Nombre de la categoría"
-              required
-            />
-          </div>
-        </form>
+        <CategoryForm
+          formData={createForm}
+          setFormData={setCreateForm}
+          onSubmit={(e) => { e.preventDefault(); handleCreateCategory(); }}
+        />
       </Modal>
     </div>
   );

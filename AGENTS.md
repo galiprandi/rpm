@@ -1643,6 +1643,124 @@ export const productTools = {
 
 ---
 
+# 📚 Especificaciones del Sistema - Guía de Referencia
+
+## Tabla de Especificaciones Disponibles
+
+| Especificación | Archivo | Cuándo Leer ANTES de Modificar/Crear | Casos de Uso Principales |
+|----------------|---------|--------------------------------------|--------------------------|
+| **Especificación del Sistema** | `SYSTEM_SPEC.md` | 🚨 **SIEMPRE** - Antes de CUALQUIER cambio | Arquitectura general, principios, dominio de negocio |
+| **API y Endpoints** | `api.md` | 📡 **Endpoints nuevos/modificados** | Contratos HTTP, validaciones, responses |
+| **UI Architecture Admin** | `ui-architecture-adm.md` | 🎨 **Componentes admin (`/adm`)** | Formularios, tablas, modales, layout admin |
+| **UI Architecture Público** | `ui-architecture-public.md` | 🌐 **Componentes públicos (`/`)** | Landing pages, catálogo, marketing |
+| **UI Architecture General** | `ui-architecture.md` | 🧩 **Componentes reutilizables** | Decisiones generales, índice de referencia |
+| **Base de Datos** | `database.md` | 🗄️ **Cambios en datos/migraciones** | Schema, relaciones, migraciones Prisma |
+| **Arquitectura de Datos** | `data-architecture.md` | 📊 **Flujo de datos** | ETL, caching, sincronización |
+| **Autenticación** | `auth.md` | 🔐 **Login/permisos** | Usuarios, roles, sesiones, OAuth |
+| **Componentes UI** | `components.md` | 🧩 **Nuevos componentes** | Creación, estandarización, testing |
+| **Business Domain** | `business-domain.md` | 💼 **Lógica de negocio** | Reglas, procesos, entidades del dominio |
+| **Core Architecture** | `core.md` | 🏗️ **Arquitectura central** | Patrones, principios, decisiones técnicas |
+| **Layout** | `layout.md` | 📐 **Estructura visual** | Grids, responsive, composición |
+| **Scalability** | `scalability.md` | 📈 **Performance/carga** | Optimización, arquitectura escalable |
+| **Vercel Deployment** | `vercel-deployment.md` | 🚀 **Deploy/producción** | Configuración, variables, CI/CD |
+| **Checklist CRUD** | `checklist-crud-implementation.md` | ✅ **CRUD operations** | Validación completa de implementaciones CRUD |
+| **AFIP Integration** | `afip-integration.md` | 🏛️ **Facturación electrónica** | Conexión AFIP, facturas, comprobantes |
+| **Bot Architecture** | `bot.md` | 🤖 **RPM Bot/Agentes** | Tools, LLM, automatización |
+| **GER Formatting** | `ger-formatting.md` | 📄 **Formato de facturas** | Plantillas GER, diseño de facturas |
+| **Inventory & Sales** | `inventory-sales.md` | 📦 **Gestión de stock** | Movimientos, inventario, ventas |
+| **Public Web** | `public-web.md` | 🌍 **Sitio web público** | Marketing, SEO, contenido |
+| **Suppliers** | `suppliers.md` | 🏪 **Gestión de proveedores** | CRUD, relaciones, integración |
+| **Workshop** | `workshop.md` | 👥 **Workshops/onboarding** | Guías de aprendizaje, training |
+| **Implementation Roadmap** | `implementation-roadmap.md` | 🗺️ **Plan de implementación** | Prioridades, fases, roadmap |
+| **PLAN** | `PLAN.md` | 📋 **Planificación general** | Objetivos, estrategia, timeline |
+
+## 🔍 Flujo Obligatorio de Consulta de Specs
+
+### Antes de CUALQUIER Modificación/Creación
+
+1. **Identificar el tipo de cambio** que vas a realizar
+2. **Consultar la tabla** para encontrar la spec relevante
+3. **LEER la spec completa** ANTES de escribir código
+4. **Seguir las reglas documentadas** en la spec
+5. **Actualizar la spec** si introduces nuevos patrones
+
+### Ejemplos Prácticos
+
+#### 🎨 Crear nuevo componente admin
+```
+1. Cambio: Nuevo formulario de productos
+2. Spec a leer: ui-architecture-adm.md
+3. Verificar: Reglas de formularios, validaciones, NativeSelect
+4. Implementar: Siguiendo patrones documentados
+5. Actualizar: Si introduces nuevos campos o validaciones
+```
+
+#### 📡 Crear nuevo endpoint API
+```
+1. Cambio: POST /api/invoices
+2. Spec a leer: api.md
+3. Verificar: Contratos HTTP, status codes, responses
+4. Implementar: Siguiendo estándares de la spec
+5. Actualizar: Documentar nuevo endpoint
+```
+
+#### 🗄️ Modificar schema de DB
+```
+1. Cambio: Agregar tabla customers
+2. Spec a leer: database.md
+3. Verificar: Convenciones de naming, relaciones
+4. Implementar: Crear migración según spec
+5. Actualizar: Actualizar schema documentation
+```
+
+#### 🧩 Componente reutilizable
+```
+1. Cambio: Nuevo DataTable component
+2. Spec a leer: ui-architecture.md + components.md
+3. Verificar: Props, testing, Storybook
+4. Implementar: Componente genérico
+5. Actualizar: Documentar nuevo componente
+```
+
+## ⚠️ REGLAS CRÍTICAS
+
+### 🚨 PROHIBIDO Implementar Sin Leer Specs
+
+- **❌** Crear componentes sin revisar `ui-architecture-*.md`
+- **❌** Modificar API sin leer `api.md`
+- **❌** Cambiar DB sin consultar `database.md`
+- **❌** Implementar auth sin revisar `auth.md`
+- **❌** Añadir nuevas features sin leer `business-domain.md`
+
+### ✅ OBLIGATORIO Seguir Este Flujo
+
+1. **Identificar** → **Consultar tabla** → **Leer spec** → **Implementar** → **Actualizar spec**
+
+2. **Si no existe spec relevante** → Crearla PRIMERO → Luego implementar
+
+3. **Si la spec está desactualizada** → Actualizarla PRIMERO → Luego implementar
+
+4. **Si hay conflicto entre specs** → Consultar `SYSTEM_SPEC.md` → Aclarar con usuario
+
+## 🔄 Mantenimiento de Especificaciones
+
+### Actualización Automática
+
+Cuando implementes algo nuevo:
+- **Actualiza la spec correspondiente** inmediatamente
+- **Agrega nuevos patrones** discovered durante la implementación
+- **Documenta decisiones** de diseño tomadas
+- **Mantén sincronización** entre código y documentación
+
+### Validación Cruzada
+
+- **Verifica que tu implementación** siga TODAS las reglas de la spec
+- **Asegura consistencia** con componentes existentes
+- **Confirma que no violas** principios de `SYSTEM_SPEC.md`
+- **Valida integración** con specs relacionadas
+
+---
+
 # 🧩 Arquitectura de Componentes - UI
 
 ## Principio Fundamental: Separación para Testabilidad

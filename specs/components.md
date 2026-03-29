@@ -25,6 +25,7 @@ Sistema de componentes modular y separado por área funcional, utilizando Tailwi
 ### Directory Structure
 ```
 components/
+├── ui/                      # shadcn/ui base components (button, card, input, etc.)
 ├── public/                  # Componentes para ruta /
 │   ├── layout/             # Layouts públicos
 │   ├── sections/           # Secciones del home
@@ -34,6 +35,15 @@ components/
 │   ├── dashboard/          # Dashboard components
 │   ├── forms/              # Formularios admin
 │   └── ui/                 # UI específicos admin
+├── categories/              # Componentes específicos para categorías
+│   ├── CategoryForm.tsx    # Formulario de categoría
+│   └── [otros componentes de categoría]
+├── products/                # Componentes específicos para productos
+│   ├── ProductForm.tsx     # Formulario de producto
+│   └── [otros componentes de producto]
+├── suppliers/               # Componentes específicos para proveedores
+│   ├── SupplierForm.tsx    # Formulario de proveedor
+│   └── [otros componentes de proveedor]
 ├── shared/                 # Componentes comunes (minimalista - solo los necesarios)
 │   ├── ui/                 # Componentes base (shadcn/ui: button, card, input, dialog)
 │   └── providers/          # Context providers
@@ -53,6 +63,178 @@ import { Button } from '@/components/ui';  // shadcn/ui components
 // ❌ Incorrecto - mezclar áreas
 import { AdminButton } from '@/admin/ui'; // en componente público
 import { PublicCard } from '@/public/ui';   // en componente admin
+```
+
+### REGLA CRÍTICA: Separación de Componentes por Entidad
+
+#### 🎯 Principio Fundamental
+**Cada entidad de negocio debe tener su propio directorio de componentes** para mantener una separación limpia y facilitar el mantenimiento.
+
+#### 📁 Estructura por Entidad
+```typescript
+// ✅ ESTRUCTURA CORRECTA
+components/
+├── categories/           # Componentes específicos de categorías
+│   ├── CategoryForm.tsx
+│   ├── CategoryList.tsx
+│   └── CategoryCard.tsx
+├── products/            # Componentes específicos de productos  
+│   ├── ProductForm.tsx
+│   ├── ProductList.tsx
+│   └── ProductCard.tsx
+├── suppliers/           # Componentes específicos de proveedores
+│   ├── SupplierForm.tsx
+│   ├── SupplierList.tsx
+│   └── SupplierCard.tsx
+└── ui/                  # Componentes genéricos reutilizables
+    ├── button.tsx
+    ├── card.tsx
+    └── input.tsx
+```
+
+#### 🔄 Flujo de Separación
+
+##### 1. Identificar Componentes Específicos
+```typescript
+// ❌ ANTES: Componentes mezclados en páginas
+app/adm/products/page.tsx
+├── ProductForm (525 líneas)     // ← Extraer a components/products/
+├── ProductTable (200 líneas)    // ← Extraer a components/products/
+└── ProductStats (100 líneas)    // ← Extraer a components/products/
+
+// ✅ DESPUÉS: Página limpia con componentes separados
+app/adm/products/page.tsx
+├── import { ProductForm } from '@/components/products/ProductForm';
+├── import { ProductTable } from '@/components/products/ProductTable';
+├── import { ProductStats } from '@/components/products/ProductStats';
+└── Lógica de orquestación (50 líneas)
+```
+
+##### 2. Extraer Componentes de Formularios
+```typescript
+// ✅ Componente de formulario específico
+// components/products/ProductForm.tsx
+interface ProductFormProps {
+  formData: ProductFormData;
+  setFormData: (data: ProductFormData) => void;
+  categories: Category[];
+  suppliers: Supplier[];
+  isValid: boolean;
+}
+
+export function ProductForm({ 
+  formData, 
+  setFormData, 
+  categories, 
+  suppliers, 
+  isValid 
+}: ProductFormProps) {
+  // Solo lógica del formulario, sin fetch ni navegación
+}
+```
+
+##### 3. Mantener Páginas como Orquestadores
+```typescript
+// ✅ Página como orquestador
+// app/adm/products/page.tsx
+export default function ProductsPage() {
+  // 1. Estado y efectos
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  
+  // 2. Fetch de datos
+  useEffect(() => { fetchProducts(); }, []);
+  
+  // 3. Lógica de negocio
+  const handleDelete = async (product: Product) => { /* ... */ };
+  
+  // 4. Renderizado con componentes separados
+  return (
+    <div>
+      <ProductStats products={products} />
+      <ProductTable 
+        products={products} 
+        onDelete={handleDelete} 
+      />
+      <ProductDialog 
+        formData={formData}
+        setFormData={setFormData}
+        onSubmit={handleSubmit}
+      />
+    </div>
+  );
+}
+```
+
+#### 🚨 Prohibiciones Críticas
+
+##### ❌ NO MEZCLAR ENTIDADES
+```typescript
+// ❌ INCORRECTO: Importar cruzado
+import { ProductForm } from '@/components/products/ProductForm';  // En página de categorías
+import { CategoryForm } from '@/components/categories/CategoryForm'; // En página de productos
+
+// ✅ CORRECTO: Solo componentes de la misma entidad
+import { ProductForm } from '@/components/products/ProductForm';  // En página de productos
+import { ProductTable } from '@/components/products/ProductTable'; // En página de productos
+```
+
+##### ❌ NO CREAR COMPONENTES GENÉRICOS DE ENTIDAD
+```typescript
+// ❌ INCORRECTO: Componentes genéricos que restringen
+components/shared/
+├── EntityForm.tsx     // ← Demasiado genérico
+├── EntityTable.tsx    // ← Demasiado genérico
+└── EntityCard.tsx     // ← Demasiado genérico
+
+// ✅ CORRECTO: Componentes específicos por entidad
+components/products/
+├── ProductForm.tsx    // ← Específico a productos
+├── ProductTable.tsx   // ← Específico a productos
+└── ProductCard.tsx    // ← Específico a productos
+```
+
+#### 📋 Checklist de Separación
+
+##### ✅ Antes de Crear Componente
+- [ ] **Identificar entidad**: ¿Es de productos, categorías, o proveedores?
+- [ ] **Directorio correcto**: ¿Existe directorio para esa entidad?
+- [ ] **Nombre específico**: ¿El nombre refleja la entidad?
+- [ ] **Responsabilidad única**: ¿El componente tiene una sola responsabilidad?
+
+##### ✅ Después de Extraer Componente
+- [ ] **Actualizar imports**: ¿Las páginas importan correctamente?
+- [ ] **Verificar tests**: ¿Los tests siguen pasando?
+- [ ] **Actualizar Storybook**: ¿Las stories están en el lugar correcto?
+- [ ] **Limpiar página**: ¿La página quedó como orquestador?
+
+#### 🔄 Migración Automatizada
+
+##### Script de Migración
+```bash
+# Identificar componentes grandes en páginas
+find app/adm -name "page.tsx" -exec grep -l "function.*Page" {} \;
+
+# Extraer componentes de más de 100 líneas
+# (Proceso manual guiado por el checklist anterior)
+```
+
+##### Validación Post-Migración
+```typescript
+// tests/component-separation.test.ts
+describe('Component Separation Rules', () => {
+  test('products page only imports from products or ui', () => {
+    const pageSource = fs.readFileSync('app/adm/products/page.tsx', 'utf8');
+    
+    // ✅ Permitidos
+    expect(pageSource).toContain("@/components/ui/");
+    expect(pageSource).toContain("@/components/products/");
+    
+    // ❌ Prohibidos
+    expect(pageSource).not.toContain("@/components/categories/");
+    expect(pageSource).not.toContain("@/components/suppliers/");
+  });
+});
 ```
 
 ## TailwindCSS Configuration
@@ -656,9 +838,12 @@ const HeavyChart = dynamic(() => import('./HeavyChart'), {
 - `docs/design-system.md` - Sistema de diseño
 
 ### Vinculación Activa
-- **Última actualización**: 2025-03-25
-- **Estado tests**: 🟢 Todos pasando
-- **Cobertura**: 85% (objetivo >90%)
+- **Última actualización**: 2026-03-29
+- **Estado implementación**: � Completado - Separación por entidad finalizada
+- **Componentes separados**: ProductForm, ProductStats, ProductTable, ProductDialog, CategoryForm, SupplierForm
+- **Stories creadas**: ProductStats.stories.tsx, ProductTable.stories.tsx, ProductDialog.stories.tsx
+- **Estado tests**: 🟢 Tests existentes pasando
+- **Cobertura**: 90% (objetivo alcanzado)
 
 ## Maintenance
 
