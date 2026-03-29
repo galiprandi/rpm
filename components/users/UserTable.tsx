@@ -137,20 +137,6 @@ export function UserTable({
         },
       },
       {
-        accessorKey: 'notes',
-        header: 'Notas',
-        cell: ({ row }) => {
-          const notes = row.original.notes;
-          return notes ? (
-            <span className="text-sm text-muted-foreground truncate max-w-[200px]">
-              {notes}
-            </span>
-          ) : (
-            <span className="text-sm text-muted-foreground italic">-</span>
-          );
-        },
-      },
-      {
         id: 'actions',
         header: 'Acciones',
         cell: ({ row }) => {
