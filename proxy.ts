@@ -23,10 +23,11 @@ export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   
   // Debug mode - bypass authentication for testing
-  const isDebugMode = process.env.DEBUG_AUTH === 'true' || 
-                      request.nextUrl.searchParams.get('debug') === 'true';
+  // ONLY via environment variable - NEVER via query param (security risk)
+  const isDebugMode = process.env.DEBUG_AUTH === 'true';
   
   if (isDebugMode) {
+    console.log('[DEBUG] Auth bypass enabled via DEBUG_AUTH env var');
     return NextResponse.next();
   }
   

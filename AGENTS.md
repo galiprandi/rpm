@@ -1499,25 +1499,14 @@ El **Debug Mode** permite a los agentes de IA y desarrolladores validar la UI si
 
 ## Métodos de Activación
 
-### 1. Variable de Entorno (Recomendado)
+### Variable de Entorno (Requerido)
 
 ```bash
 # .env.local
 DEBUG_AUTH="true"
 ```
 
-Aplica a **todas las requests** del servidor.
-
-### 2. Query Parameter (Puntual)
-
-```
-http://localhost:3000/adm/products?debug=true
-```
-
-Aplica solo a la request actual. Útil para:
-- Links de prueba en navegador
-- Scripts de QA puntuales
-- Validación rápida sin reiniciar servidor
+⚠️ **NUNCA usar query parameters** - Solo variable de entorno por seguridad.
 
 ## Implementación en Código
 
@@ -1528,10 +1517,11 @@ export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   
   // Debug mode - bypass authentication for testing
-  const isDebugMode = process.env.DEBUG_AUTH === 'true' || 
-                      request.nextUrl.searchParams.get('debug') === 'true';
+  // ONLY via environment variable - NEVER via query param (security risk)
+  const isDebugMode = process.env.DEBUG_AUTH === 'true';
   
   if (isDebugMode) {
+    console.log('[DEBUG] Auth bypass enabled via DEBUG_AUTH env var');
     return NextResponse.next();
   }
   
@@ -1586,10 +1576,9 @@ unset DEBUG_AUTH
 
 ## Variables Relacionadas
 
-| Variable | Valor | Uso |
-|----------|-------|-----|
-| `DEBUG_AUTH` | `"true"` | Bypass auth en todas las requests |
-| `?debug=true` | URL param | Bypass auth en request puntual |
+| Variable | Valor | Uso | Seguridad |
+|----------|-------|-----|-----------|
+| `DEBUG_AUTH` | `"true"` | Bypass auth en desarrollo local | ⚠️ Solo `.env.local`, NUNCA en producción |
 
 ---
 
