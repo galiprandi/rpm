@@ -393,57 +393,250 @@ const capitalizeText = (text: string): string => {
 };
 ```
 
-### UI para Selección/Creación de Marca/Modelo:
+### UI para Selección/Creación de Marca/Modelo (Search-as-you-type):
 
 ```typescript
-// Componente de selección con autocreación
-const MakeModelSelector = ({ category, onChange }) => {
-  const [makes, setMakes] = useState<VehicleMake[]>([]);
-  const [models, setModels] = useState<VehicleModel[]>([]);
+// Componente de búsqueda inteligente con fuentes múltiples
+const ModelSearchField = ({ makeId, category, onSelect }) => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [suggestions, setSuggestions] = useState([]);
+  const [loading, setLoading] = useState(false);
+  
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchTerm.length >= 2) {
+        searchModels(searchTerm);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+  
+  const searchModels = async (term: string) => {
+    setLoading(true);
+    
+    // Backend busca en ambas fuentes
+    const response = await fetch(`/api/vehicle-models/search?q=${encodeURIComponent(term)}&makeId=${makeId}`);
+    const results = await response.json();
+    
+    // Results contiene: { local: [...], external: [...] }
+    // local = DB propia, external = NHTSA
+    setSuggestions([
+      ...results.local.map(r => ({ ...r, source: 'local' })),
+      ...results.external.map(r => ({ ...r, source: 'nhtsa', id: null })) // NHTSA items sin ID
+    ]);
+    setLoading(false);
+  };
   
   return (
     <div>
-      {/* Selector de Marca con búsqueda */}
-      <CreatableSelect
-        label="Marca"
-        placeholder="Toyota, Ford, Sony..."
-        options={makes}
-        onCreateOption={async (input) => {
-          // Crear nueva marca normalizada
-          const newMake = await createMake({
-            name: capitalizeText(input),
-            category: [category],
-          });
-          return newMake;
-        }}
-        formatOptionLabel={(option) => option.name}
-      />
-      
-      {/* Selector de Modelo con búsqueda */}
-      <CreatableSelect
+      <Input
         label="Modelo"
-        placeholder="Hilux, Ranger..."
-        options={models}
-        isDisabled={!selectedMake}
-        onCreateOption={async (input) => {
-          // Crear nuevo modelo normalizado
-          const newModel = await createModel({
-            makeId: selectedMake.id,
-            name: capitalizeText(input),
-          });
-          return newModel;
-        }}
+        placeholder="Escribe para buscar (ej: Hilux, Cronos)..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
       />
       
-      {/* Selector de Año */}
-      <Select
-        label="Año"
-        options={availableYears}
-        placeholder="2024"
-      />
+      {loading && <Spinner size="sm" />}
+      
+      {suggestions.length > 0 && (
+        <Dropdown>
+          {suggestions.map((item) => (
+            <DropdownItem
+              key={`${item.source}-${item.name}`}
+              onClick={() => {
+                onSelect({
+                  id: item.id,        // null si viene de NHTSA
+                  name: item.name,    // "Cronos", "Hilux"
+                  year: item.year,    // [2020, 2021, 2022...]
+                  source: item.source // 'local' | 'nhtsa'
+                });
+                setSearchTerm(item.name);
+                setSuggestions([]);
+              }}
+            >
+              <div className="flex items-center justify-between">
+                <span>{item.name}</span>
+                <Badge variant={item.source === 'local' ? 'default' : 'secondary'}>
+                  {item.source === 'local' ? 'Existente' : 'NHTSA'}
+                </Badge>
+              </div>
+              {item.years && (
+                <span className="text-xs text-muted-foreground">
+                  Años: {item.years.slice(0, 5).join(', ')}
+                  {item.years.length > 5 && '...'}
+                </span>
+              )}
+            </DropdownItem>
+          ))}
+          
+          {/* Opción para crear nuevo si no existe */}
+          {!suggestions.some(s => s.name.toLowerCase() === searchTerm.toLowerCase()) && (
+            <DropdownItem
+              onClick={() => {
+                onSelect({
+                  id: null,
+                  name: searchTerm,
+                  year: [],
+                  source: 'new'
+                });
+                setSuggestions([]);
+              }}
+            >
+              <span className="text-primary">
+                + Crear "{searchTerm}"
+              </span>
+            </DropdownItem>
+          )}
+        </Dropdown>
+      )}
     </div>
   );
 };
+```
+
+### Backend - Búsqueda Unificada:
+
+```typescript
+// app/api/vehicle-models/search/route.ts
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const query = searchParams.get('q');
+  const makeId = searchParams.get('makeId');
+  
+  // 1. Buscar en DB local
+  const localModels = await prisma.vehicleModel.findMany({
+    where: {
+      makeId,
+      normalizedName: { contains: normalizeText(query) }
+    },
+    take: 10
+  });
+  
+  // 2. Si hay menos de 5 resultados locales, buscar en NHTSA
+  let externalModels = [];
+  if (localModels.length < 5) {
+    const nhtsaResponse = await fetch(
+      `https://vpic.nhtsa.dot.gov/api/vehicles/getmodelsformakeid/${makeId}?format=json`
+    );
+    const nhtsaData = await nhtsaResponse.json();
+    
+    // Filtrar por query
+    externalModels = nhtsaData.Results
+      .filter(m => normalizeText(m.Model_Name).includes(normalizeText(query)))
+      .slice(0, 5);
+  }
+  
+  return Response.json({
+    local: localModels,
+    external: externalModels
+  });
+}
+```
+
+### Backend - Creación de OT (Manejo de Vinculación):
+
+```typescript
+// app/api/work-orders/route.ts - POST
+export async function POST(request: Request) {
+  const body = await request.json();
+  
+  // El frontend envía solo texto, el backend resuelve IDs
+  const { vehicleData } = body; // { identifier, category, makeName, modelName, year }
+  
+  // 1. Buscar o crear Marca
+  let make = await prisma.vehicleMake.findFirst({
+    where: { normalizedName: normalizeText(vehicleData.makeName) }
+  });
+  
+  if (!make) {
+    make = await prisma.vehicleMake.create({
+      data: {
+        name: capitalizeText(vehicleData.makeName),
+        normalizedName: normalizeText(vehicleData.makeName),
+        category: [vehicleData.category]
+      }
+    });
+  }
+  
+  // 2. Buscar o crear Modelo
+  let model = await prisma.vehicleModel.findFirst({
+    where: {
+      makeId: make.id,
+      normalizedName: normalizeText(vehicleData.modelName)
+    }
+  });
+  
+  if (!model) {
+    model = await prisma.vehicleModel.create({
+      data: {
+        makeId: make.id,
+        name: capitalizeText(vehicleData.modelName),
+        normalizedName: normalizeText(vehicleData.modelName),
+        years: vehicleData.year ? [vehicleData.year] : []
+      }
+    });
+  } else if (vehicleData.year && !model.years.includes(vehicleData.year)) {
+    // Agregar año si no existe
+    await prisma.vehicleModel.update({
+      where: { id: model.id },
+      data: { years: { push: vehicleData.year } }
+    });
+  }
+  
+  // 3. Buscar o crear Vehicle (Activo)
+  let vehicle = await prisma.vehicle.findFirst({
+    where: {
+      identifier: vehicleData.identifier.toUpperCase(), // Patente
+      customerId: body.customerId
+    }
+  });
+  
+  if (!vehicle) {
+    vehicle = await prisma.vehicle.create({
+      data: {
+        identifier: vehicleData.identifier.toUpperCase(),
+        category: vehicleData.category,
+        makeId: make.id,
+        modelId: model.id,
+        year: vehicleData.year,
+        customerId: body.customerId
+      }
+    });
+  }
+  
+  // 4. Crear la OT vinculada al vehicle.id
+  const workOrder = await prisma.workOrder.create({
+    data: {
+      ...body,
+      vehicleId: vehicle.id
+    }
+  });
+  
+  return Response.json(workOrder, { status: 201 });
+}
+```
+
+### Resumen del Flujo:
+
+```
+┌─────────────┐     ┌──────────────────────────────────────────┐     ┌─────────────┐
+│   FRONT     │────▶│              BACKEND                     │────▶│    DB/NHTSA │
+├─────────────┤     ├──────────────────────────────────────────┤     ├─────────────┤
+│             │     │  GET /api/vehicle-models/search?q=cor  │     │             │
+│ User escribe│     │    1. Busca en DB local                  │────▶│  DB local   │
+│ "cronos"    │     │    2. Si faltan, busca en NHTSA          │     │             │
+│             │     │    3. Devuelve combinado                 │     │             │
+│             │◄────│       {local: [...], external: [...]}    │◄────│  NHTSA API  │
+│ Muestra     │     │                                          │     │             │
+│ opciones    │     │                                          │     │             │
+│             │     │  POST /api/work-orders                   │     │             │
+│ User elige  │     │    1. Recibe: makeName, modelName, etc   │     │             │
+│ o crea      │     │    2. Busca/crea Marca (por texto)         │────▶│  Crea si no │
+│             │     │    3. Busca/crea Modelo (por texto)        │     │  existe     │
+│             │     │    4. Busca/crea Vehicle (por patente)     │     │             │
+│             │     │    5. Crea OT vinculada                    │────▶│  Crea OT    │
+└─────────────┘     └──────────────────────────────────────────┘     └─────────────┘
 ```
 
 ```
