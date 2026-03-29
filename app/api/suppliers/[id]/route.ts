@@ -6,13 +6,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+interface Params {
+  params: Promise<{ id: string }>;
+}
+
 // PUT /api/suppliers/[id] - Actualizar proveedor
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: Params
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
 
     // Verificar que el proveedor existe
@@ -66,10 +70,10 @@ export async function PUT(
 // DELETE /api/suppliers/[id] - Desactivar proveedor (soft delete)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: Params
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     // Verificar que el proveedor existe
     const existing = await prisma.supplier.findUnique({
