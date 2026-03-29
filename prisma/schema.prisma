@@ -87,6 +87,7 @@ model UserRole {
   name      String?  // Nombre para identificar quién es
   notes     String?  // Observaciones (ej: "Dueño", "Vendedor turno mañana")
   isActive  Boolean  @default(true)
+  lastLogin DateTime? // Último login del usuario
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

@@ -6,6 +6,7 @@
 - **Schema Prisma**: `prisma/schema.prisma` → `model User` | `model UserRole`
 - **Servicio**: `lib/services/userService.ts`
 - **Roles**: `lib/auth/roles.ts`
+- **Sync Component**: `components/users/UserSyncServer.tsx` - Server Component para sincronización automática
 
 ---
 
@@ -47,6 +48,7 @@ model UserRole {
   name      String?  // Nombre para identificar quién es
   notes     String?  // Observaciones (ej: "Dueño", "Vendedor turno mañana")
   isActive  Boolean  @default(true)
+  lastLogin DateTime? // Último login del usuario
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -77,6 +79,7 @@ model UserRole {
 - **Grid de cards**: Visualización tipo tarjetas de usuario
 - **Cada card muestra**: Avatar, nombre, email, rol actual, badge de estado
 - **Acciones**: Editar (cambiar rol), Desactivar/Activar, Eliminar
+- **Tabla de usuarios**: Columnas - Usuario, Email, Rol, Estado, Acciones
 
 ### Componentes
 
@@ -508,26 +511,84 @@ export async function POST(request: Request) {
 
 ## Flujo: Crear Usuario Después del Login
 
+### Sincronización Automática con UserSyncServer
+
+El componente `UserSyncServer` es un Server Component que se ejecuta en el **root layout** (`app/layout.tsx`) en cada request. Esto garantiza que todo usuario autenticado se sincronice automáticamente con la tabla `UserRole`.
+
+```typescript
+// components/users/UserSyncServer.tsx
+export async function UserSyncServer() {
+  const session = await getSession();
+  
+  if (session?.user?.email) {
+    const existing = await prisma.userRole.findUnique({
+      where: { email: session.user.email },
+    });
+    
+    if (!existing) {
+      await prisma.userRole.create({
+        data: {
+          email: session.user.email,
+          role: 'USER',
+          name: session.user.name || session.user.email.split('@')[0],
+          isActive: true,
+          lastLogin: new Date(),
+        },
+      });
+    }
+  }
+  
+  return null; // No renderiza nada
+}
+```
+
+### Uso en Root Layout
+
+```tsx
+// app/layout.tsx
+import { UserSyncServer } from '@/components/users/UserSyncServer';
+
+export default function RootLayout({ children }) {
+  return (
+    <html>
+      <body>
+        <UserSyncServer /> {/* Se ejecuta en cada request */}
+        {children}
+      </body>
+    </html>
+  );
+}
+```
+
 ### Escenario 1: Usuario hace login por primera vez
 
 1. Usuario autentica con Google OAuth
-2. NextAuth.js crea automáticamente registro en `User`
-3. `getUserRole()` verifica si existe en `UserRole`:
-   - Si existe: Usa ese rol
-   - Si no existe y es dominio staff: Asigna STAFF
-   - Si no existe y es otro dominio: Asigna USER
-4. Se crea entrada en `UserRole` con el rol determinado
+2. Better Auth crea registro en `User`
+3. Al cargar cualquier página, `UserSyncServer` ejecuta en el servidor
+4. Si no existe `UserRole` para ese email, lo crea automáticamente con:
+   - `role: 'USER'`
+   - `isActive: true`
+   - `lastLogin: new Date()`
+5. Usuario aparece inmediatamente en la tabla de usuarios
 
-### Escenario 2: ADMIN crea usuario manualmente (antes del primer login)
+### Escenario 2: Usuario existente hace login
+
+1. Usuario autentica (ya existe en `User` y `UserRole`)
+2. `UserSyncServer` verifica la sesión
+3. No crea nuevo registro (ya existe)
+4. El usuario aparece en la tabla con sus datos actuales
+
+### Escenario 3: ADMIN crea usuario manualmente (antes del primer login)
 
 1. ADMIN va a `/adm/users`
 2. Clica "Nuevo Usuario"
 3. Completa email, nombre, rol, notas
-4. Sistema crea registro en `UserRole`
+4. Sistema crea registro en `UserRole` con el rol especificado
 5. Cuando ese usuario hace login por primera vez:
-   - NextAuth.js crea `User`
-   - `getUserRole()` encuentra el registro previo en `UserRole`
-   - Se asigna el rol predefinido por el ADMIN
+   - Better Auth crea `User`
+   - `UserSyncServer` encuentra el registro previo en `UserRole`
+   - No sobreescribe el rol predefinido por el ADMIN
+   - Solo actualiza `lastLogin`
 
 ```typescript
 // Flujo de creación manual
@@ -615,6 +676,6 @@ async function validateAdminCount(
 
 ---
 
-**Estado**: 🟡 Por implementar  
+**Estado**: ✅ Implementado  
 **Dependencias**: ✅ Auth implementado, ✅ UI components listos  
 **Última actualización**: 2026-03-29

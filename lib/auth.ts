@@ -60,38 +60,6 @@ export const auth = betterAuth({
       enabled: false,
     },
   },
-
-  /**
-   * Session callback - creates UserRole on first session
-   */
-  callbacks: {
-    session: async (session: { user: { id?: string; email?: string; name?: string; role?: string } }) => {
-      // Create UserRole if user exists and has email
-      if (session.user?.email && session.user?.id) {
-        try {
-          const existing = await prisma.userRole.findUnique({
-            where: { email: session.user.email },
-          });
-
-          if (!existing) {
-            // Create UserRole with USER role by default
-            await prisma.userRole.create({
-              data: {
-                email: session.user.email,
-                role: 'USER',
-                name: session.user.name || session.user.email.split('@')[0],
-                isActive: true,
-              },
-            });
-          }
-        } catch (err) {
-          console.error('Error creating UserRole in session callback:', err);
-        }
-      }
-      
-      return session;
-    },
-  },
 });
 
 export type Session = typeof auth.$Infer.Session;
