@@ -5,6 +5,7 @@ import {
   LayoutDashboard, 
   Package, 
   Folder,
+  Truck,
   Users, 
   Settings,
   LogOut 
@@ -14,6 +15,7 @@ const navigation = [
   { name: 'Dashboard', href: '/adm', icon: LayoutDashboard },
   { name: 'Productos', href: '/adm/products', icon: Package },
   { name: 'Categorías', href: '/adm/categories', icon: Folder },
+  { name: 'Proveedores', href: '/adm/suppliers', icon: Truck },
   { name: 'Usuarios', href: '/adm/users', icon: Users },
   { name: 'Configuración', href: '/adm/settings', icon: Settings },
 ];

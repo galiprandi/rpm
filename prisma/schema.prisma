@@ -117,18 +117,37 @@ model Category {
   @@map("category")
 }
 
+model Supplier {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  contactName String?
+  phone       String?
+  email       String?
+  address     String?
+  notes       String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  products Product[]
+
+  @@index([name])
+  @@index([isActive])
+  @@map("supplier")
+}
+
 model Product {
   id          String   @id @default(uuid())
-  sku         String   @unique  // SKU único (ej: LED-001, PPF-CAPOT)
+  sku         String   @unique
   name        String
   description String?
-  costPrice   Decimal  @db.Decimal(10, 2)  // Precio de costo
-  salePrice   Decimal  @db.Decimal(10, 2)  // Precio de venta
+  costPrice   Decimal  @db.Decimal(10, 2)
+  salePrice   Decimal  @db.Decimal(10, 2)
   stock       Int      @default(0)
-  minStock    Int      @default(0)  // Stock mínimo para alerta
-  supplier    String?
-  barcode     String?  // Código de barras EAN/UPC
-  location    String?  // Ubicación en depósito
+  minStock    Int      @default(0)
+  barcode     String?
+  location    String?
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -136,11 +155,15 @@ model Product {
   // Relations
   categoryId String
   category   Category @relation(fields: [categoryId], references: [id])
+  
+  supplierId String?
+  supplier   Supplier? @relation(fields: [supplierId], references: [id])
 
   @@index([categoryId])
+  @@index([supplierId])
   @@index([sku])
   @@index([name])
   @@index([isActive])
-  @@index([stock, minStock])  // Para alertas de stock bajo
+  @@index([stock, minStock])
   @@map("product")
 }

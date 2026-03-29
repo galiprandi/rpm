@@ -17,7 +17,7 @@ export interface ProductFormData {
   sku: string;
   name: string;
   categoryId: string;
-  supplier: string;
+  supplierId: string;
   location: string;
   costPrice: string;
   salePrice: string;
@@ -31,10 +31,16 @@ interface Category {
   name: string;
 }
 
+interface Supplier {
+  id: string;
+  name: string;
+}
+
 interface ProductFormProps {
   formData: ProductFormData;
   setFormData: (data: ProductFormData) => void;
   categories: Category[];
+  suppliers: Supplier[];
   onSubmit?: (e: React.FormEvent) => void;
   isValid?: boolean;
 }
@@ -43,8 +49,8 @@ export function ProductForm({
   formData,
   setFormData,
   categories,
+  suppliers,
   onSubmit,
-  isValid,
 }: ProductFormProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -112,14 +118,22 @@ export function ProductForm({
       {/* Fila 3: Proveedor | Ubicación */}
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="supplier">Proveedor *</Label>
-          <Input
-            id="supplier"
-            value={formData.supplier}
-            onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
-            placeholder="Nombre del proveedor"
-            required
-          />
+          <Label htmlFor="supplierId">Proveedor *</Label>
+          <Select
+            value={formData.supplierId}
+            onValueChange={(value) => setFormData({ ...formData, supplierId: value })}
+          >
+            <SelectTrigger id="supplierId">
+              <SelectValue placeholder="Selecciona proveedor" />
+            </SelectTrigger>
+            <SelectContent position="popper" className="z-50 max-h-60">
+              {suppliers.map((sup) => (
+                <SelectItem key={sup.id} value={sup.id}>
+                  {sup.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="space-y-2">

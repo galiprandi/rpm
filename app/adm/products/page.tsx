@@ -26,7 +26,11 @@ interface Product {
   salePrice: number;
   stock: number;
   minStock: number;
-  supplier: string | null;
+  supplierId: string | null;
+  supplier: {
+    id: string;
+    name: string;
+  } | null;
   barcode: string | null;
   location: string | null;
   isActive: boolean;
@@ -46,9 +50,15 @@ interface Category {
   color: string | null;
 }
 
+interface Supplier {
+  id: string;
+  name: string;
+}
+
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [showLowStockOnly, setShowLowStockOnly] = useState(false);
@@ -57,7 +67,20 @@ export default function ProductsPage() {
   useEffect(() => {
     fetchProducts();
     fetchCategories();
+    fetchSuppliers();
   }, []);
+
+  const fetchSuppliers = async () => {
+    try {
+      const response = await fetch('/api/suppliers');
+      const data = await response.json();
+      if (data.suppliers) {
+        setSuppliers(data.suppliers);
+      }
+    } catch (error) {
+      console.error('Error fetching suppliers:', error);
+    }
+  };
 
   const fetchProducts = async () => {
     try {
@@ -96,7 +119,7 @@ export default function ProductsPage() {
     stock: '',
     minStock: '',
     categoryId: '',
-    supplier: '',
+    supplierId: '',
     barcode: '',
     location: '',
   });
@@ -111,7 +134,7 @@ export default function ProductsPage() {
       stock: '',
       minStock: '',
       categoryId: '',
-      supplier: '',
+      supplierId: '',
       barcode: '',
       location: '',
     });
@@ -134,7 +157,7 @@ export default function ProductsPage() {
       stock: product.stock.toString(),
       minStock: product.minStock.toString(),
       categoryId: product.categoryId,
-      supplier: product.supplier || '',
+      supplierId: product.supplierId || '',
       barcode: product.barcode || '',
       location: product.location || '',
     });
@@ -181,7 +204,7 @@ export default function ProductsPage() {
     return (
       formData.name.trim() !== '' &&
       formData.categoryId !== '' &&
-      formData.supplier.trim() !== '' &&
+      formData.supplierId !== '' &&
       formData.costPrice.trim() !== '' &&
       formData.salePrice.trim() !== '' &&
       formData.stock.trim() !== '' &&
@@ -459,6 +482,7 @@ export default function ProductsPage() {
           formData={formData}
           setFormData={setFormData}
           categories={categories}
+          suppliers={suppliers}
           isValid={formValid}
         />
       </Modal>
