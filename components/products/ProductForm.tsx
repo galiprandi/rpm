@@ -4,13 +4,7 @@ import * as React from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
 
 export interface ProductFormData {
   barcode: string;
@@ -97,21 +91,20 @@ export function ProductForm({
 
         <div className="space-y-2">
           <Label htmlFor="categoryId">Categoría *</Label>
-          <Select
+          <NativeSelect
+            id="categoryId"
             value={formData.categoryId}
-            onValueChange={(value) => setFormData({ ...formData, categoryId: value })}
+            onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
+            className="w-full"
+            required
           >
-            <SelectTrigger id="categoryId">
-              <SelectValue placeholder="Selecciona categoría" />
-            </SelectTrigger>
-            <SelectContent position="popper" className="z-50 max-h-60">
-              {categories.map((cat) => (
-                <SelectItem key={cat.id} value={cat.id}>
-                  {cat.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            <NativeSelectOption value="">Selecciona categoría</NativeSelectOption>
+            {categories.map((cat) => (
+              <NativeSelectOption key={cat.id} value={cat.id}>
+                {cat.name}
+              </NativeSelectOption>
+            ))}
+          </NativeSelect>
         </div>
       </div>
 
@@ -119,21 +112,20 @@ export function ProductForm({
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="supplierId">Proveedor *</Label>
-          <Select
+          <NativeSelect
+            id="supplierId"
             value={formData.supplierId}
-            onValueChange={(value) => setFormData({ ...formData, supplierId: value })}
+            onChange={(e) => setFormData({ ...formData, supplierId: e.target.value })}
+            className="w-full"
+            required
           >
-            <SelectTrigger id="supplierId">
-              <SelectValue placeholder="Selecciona proveedor" />
-            </SelectTrigger>
-            <SelectContent position="popper" className="z-50 max-h-60">
-              {suppliers.map((sup) => (
-                <SelectItem key={sup.id} value={sup.id}>
-                  {sup.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            <NativeSelectOption value="">Selecciona proveedor</NativeSelectOption>
+            {suppliers.map((sup) => (
+              <NativeSelectOption key={sup.id} value={sup.id}>
+                {sup.name}
+              </NativeSelectOption>
+            ))}
+          </NativeSelect>
         </div>
 
         <div className="space-y-2">

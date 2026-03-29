@@ -7,6 +7,9 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { ProductForm } from '@/components/products/ProductForm';
+import { useUI } from '@/components/ui/UIProvider';
+import { PriceDisplay } from '@/components/ui/price-display';
+import { StockDisplay } from '@/components/ui/stock-display';
 import {
   Package,
   Search,
@@ -56,6 +59,7 @@ interface Supplier {
 }
 
 export default function ProductsPage() {
+  const { alert, confirm } = useUI();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -167,6 +171,25 @@ export default function ProductsPage() {
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
     
+    // Validate before submitting
+    const missingFields: string[] = [];
+    if (!formData.name.trim()) missingFields.push('Nombre');
+    if (!formData.categoryId) missingFields.push('Categoría');
+    if (!formData.supplierId) missingFields.push('Proveedor');
+    if (!formData.costPrice.trim()) missingFields.push('Costo');
+    if (!formData.salePrice.trim()) missingFields.push('Venta');
+    if (!formData.stock.trim()) missingFields.push('Stock');
+    if (!formData.minStock.trim()) missingFields.push('Mínimo');
+    
+    if (missingFields.length > 0) {
+      await alert({
+        title: 'Error',
+        description: `Campos obligatorios faltantes: ${missingFields.join(', ')}`,
+        variant: 'error',
+      });
+      return;
+    }
+    
     const payload = {
       ...formData,
       costPrice: parseFloat(formData.costPrice) || 0,
@@ -191,11 +214,19 @@ export default function ProductsPage() {
         fetchProducts();
       } else {
         const error = await response.json();
-        alert(error.error || 'Error al guardar producto');
+        await alert({
+          title: 'Error',
+          description: error.error || 'Error al guardar producto',
+          variant: 'error',
+        });
       }
     } catch (error) {
       console.error('Error saving product:', error);
-      alert('Error al guardar producto');
+      await alert({
+        title: 'Error',
+        description: 'Error al guardar producto',
+        variant: 'error',
+      });
     }
   };
 
@@ -215,7 +246,15 @@ export default function ProductsPage() {
   const formValid = isFormValid();
 
   const handleDelete = async (product: Product) => {
-    if (!confirm(`¿Estás seguro de desactivar "${product.name}"?`)) return;
+    const confirmed = await confirm({
+      title: 'Desactivar Producto',
+      description: `¿Estás seguro de desactivar "${product.name}"?`,
+      confirmText: 'Desactivar',
+      cancelText: 'Cancelar',
+      variant: 'destructive',
+    });
+    
+    if (!confirmed) return;
 
     try {
       const response = await fetch(`/api/products/${product.id}`, {
@@ -226,11 +265,19 @@ export default function ProductsPage() {
         fetchProducts();
       } else {
         const error = await response.json();
-        alert(error.error || 'Error al desactivar producto');
+        await alert({
+          title: 'Error',
+          description: error.error || 'Error al desactivar producto',
+          variant: 'error',
+        });
       }
     } catch (error) {
       console.error('Error deleting product:', error);
-      alert('Error al desactivar producto');
+      await alert({
+        title: 'Error',
+        description: 'Error al desactivar producto',
+        variant: 'error',
+      });
     }
   };
 
@@ -326,7 +373,7 @@ export default function ProductsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              ${products.reduce((acc, p) => acc + (p.costPrice * p.stock), 0).toLocaleString()}
+              <PriceDisplay value={products.reduce((acc, p) => acc + (p.costPrice * p.stock), 0)} />
             </div>
           </CardContent>
         </Card>
@@ -380,7 +427,6 @@ export default function ProductsPage() {
                 <tr>
                   <th className="text-left py-3 px-4 font-medium">EAN/Código</th>
                   <th className="text-left py-3 px-4 font-medium">Producto</th>
-                  <th className="text-left py-3 px-4 font-medium">SKU</th>
                   <th className="text-left py-3 px-4 font-medium">Categoría</th>
                   <th className="text-right py-3 px-4 font-medium">Stock</th>
                   <th className="text-right py-3 px-4 font-medium">Precio Venta</th>
@@ -390,7 +436,7 @@ export default function ProductsPage() {
               <tbody>
                 {filteredProducts.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-8 text-center text-muted-foreground">
+                    <td colSpan={6} className="py-8 text-center text-muted-foreground">
                       No se encontraron productos
                     </td>
                   </tr>
@@ -399,7 +445,7 @@ export default function ProductsPage() {
                     <tr key={product.id} className="border-b hover:bg-muted/50">
                       <td className="py-3 px-4">
                         {product.barcode ? (
-                          <span className="font-mono text-xs bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">
+                          <span className="font-mono text-xs">
                             {product.barcode}
                           </span>
                         ) : (
@@ -416,9 +462,6 @@ export default function ProductsPage() {
                           </div>
                         )}
                       </td>
-                      <td className="py-3 px-4 font-mono text-xs text-muted-foreground">
-                        {product.sku}
-                      </td>
                       <td className="py-3 px-4">
                         {product.category && (
                           <Badge 
@@ -430,17 +473,10 @@ export default function ProductsPage() {
                         )}
                       </td>
                       <td className="py-3 px-4 text-right">
-                        <span className={product.isLowStock ? 'text-orange-600 font-medium' : ''}>
-                          {product.stock}
-                        </span>
-                        {product.isLowStock && (
-                          <span className="text-xs text-orange-600 block">
-                            Mín: {product.minStock}
-                          </span>
-                        )}
+                        <StockDisplay stock={product.stock} minStock={product.minStock} />
                       </td>
                       <td className="py-3 px-4 text-right font-medium">
-                        ${product.salePrice.toLocaleString()}
+                        <PriceDisplay value={product.salePrice} />
                       </td>
                       <td className="py-3 px-4 text-center">
                         <div className="flex justify-center space-x-2">

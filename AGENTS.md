@@ -63,6 +63,49 @@ export async function GET(request: NextRequest) {
 
 ---
 
+# ⚠️ REGLA CRÍTICA: Prisma ORM v7 y Variables de Entorno
+
+## Cambio Breaking en Prisma v7
+
+En **Prisma ORM 7.0.0**, las variables de entorno **NO se cargan automáticamente** por defecto. A diferencia de versiones anteriores, el CLI de Prisma ya no lee automáticamente archivos `.env`.
+
+### Solución Obligatoria
+
+**SIEMPRE** incluir `import "dotenv/config"` al inicio de `prisma.config.ts`:
+
+```typescript
+// ✅ CORRECTO: Cargar variables de entorno explícitamente
+import "dotenv/config";
+import { defineConfig, env } from "prisma/config";
+
+export default defineConfig({
+  schema: "prisma/schema.prisma",
+  datasource: {
+    url: env("DATABASE_URL"),
+  },
+});
+```
+
+### ❌ PROHIBIDO
+
+```typescript
+// ❌ INCORRECTO: No cargar dotenv
+import { defineConfig, env } from "prisma/config";
+
+export default defineConfig({
+  schema: "prisma/schema.prisma",
+  datasource: {
+    url: env("DATABASE_URL"),  // ← Error: DATABASE_URL no definida
+  },
+});
+```
+
+### Nota para Bun
+
+Si usás Bun, no es necesario el `import "dotenv/config"` porque Bun carga automáticamente archivos `.env`.
+
+---
+
 # Storybook Integration - OBLIGATORIO
 
 ## REGLA FUNDAMENTAL: Storybook SIEMPRE Actualizado

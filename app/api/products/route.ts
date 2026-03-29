@@ -78,12 +78,15 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     
     // Validaciones básicas
-    if (!body.sku || !body.name || !body.categoryId) {
+    if (!body.name || !body.categoryId) {
       return NextResponse.json(
-        { error: 'SKU, nombre y categoría son requeridos' },
+        { error: 'Nombre y categoría son requeridos' },
         { status: 400 }
       );
     }
+
+    // Generar SKU automático si no se proporciona
+    const sku = body.sku || nanoid(8);
 
     if (body.costPrice < 0 || body.salePrice < 0) {
       return NextResponse.json(
@@ -114,14 +117,14 @@ export async function POST(request: NextRequest) {
     const product = await prisma.product.create({
       data: {
         id: nanoid(),
-        sku: body.sku,
+        sku: sku,
         name: body.name,
         description: body.description || null,
         costPrice: body.costPrice || 0,
         salePrice: body.salePrice || 0,
         stock: body.stock || 0,
         minStock: body.minStock || 0,
-        supplier: body.supplier || null,
+        supplierId: body.supplierId || null,
         barcode: body.barcode || null,
         location: body.location || null,
         categoryId: body.categoryId,

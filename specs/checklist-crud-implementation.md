@@ -84,6 +84,18 @@
 
 ### 2. Botón "+ Nuevo" - Ubicación y Estilo
 
+**Definición CTA Primario:**
+> **CTA Primario**: Botón de acción principal que ejecuta la acción más importante de la interfaz (crear, guardar, confirmar). Debe destacar visualmente con fondo oscuro (`bg-slate-900`), sombra y alto contraste.
+
+**Características del CTA Primario:**
+- Fondo: `bg-slate-900` (slate oscuro)
+- Texto: Blanco (`text-white`)
+- Hover: `hover:bg-slate-800`
+- Borde: `border-slate-900`
+- Sombra: `shadow-lg` con `hover:shadow-xl`
+- Tipografía: `font-semibold`
+- Transición: `transition-all`
+
 **❌ PROHIBIDO: Botón en card separada debajo del header**
 ```typescript
 <Card>
@@ -229,28 +241,31 @@ if (confirmed) {
 />
 ```
 
-**✅ OBLIGATORIO: Select dropdown para relaciones**
+**✅ OBLIGATORIO: NativeSelect para dropdowns dentro de modales**
 ```typescript
-// SÍ: Select dropdown
+// SÍ: NativeSelect - funciona perfecto en modales, sin problemas de z-index
+import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
+
 <div className="space-y-2">
   <Label htmlFor="supplierId">Proveedor *</Label>
-  <Select
+  <NativeSelect
+    id="supplierId"
     value={formData.supplierId}
-    onValueChange={(value) => setFormData({ ...formData, supplierId: value })}
+    onChange={(e) => setFormData({ ...formData, supplierId: e.target.value })}
+    className="w-full"
   >
-    <SelectTrigger id="supplierId">
-      <SelectValue placeholder="Selecciona proveedor" />
-    </SelectTrigger>
-    <SelectContent position="popper" className="z-50 max-h-60">
-      {suppliers.map((sup) => (
-        <SelectItem key={sup.id} value={sup.id}>
-          {sup.name}
-        </SelectItem>
-      ))}
-    </SelectContent>
-  </Select>
+    <NativeSelectOption value="">Selecciona proveedor</NativeSelectOption>
+    {suppliers.map((sup) => (
+      <NativeSelectOption key={sup.id} value={sup.id}>
+        {sup.name}
+      </NativeSelectOption>
+    ))}
+  </NativeSelect>
 </div>
 ```
+
+**⚠️ NOTA**: El componente `Select` de Radix tiene problemas de z-index dentro de modales. 
+**Siempre usar `NativeSelect` cuando el select esté dentro de un modal.**
 
 ### 7. Cards de Entidades - Diseño Estándar
 
@@ -340,7 +355,8 @@ Antes de implementar cualquier CRUD, verificar:
 - [ ] ¿Las acciones de crear/editar usan modales (no forms inline)?
 - [ ] ¿El botón "Guardar Cambios" en modales es primary?
 - [ ] ¿Se usa useUI() para alerts/confirms (no nativos)?
-- [ ] ¿Las relaciones usan Select dropdown (no input libre)?
+- [ ] ¿Las relaciones usan NativeSelect (no Radix Select) dentro de modales?
+- [ ] ¿Los modales NO tienen overflow-y-auto?
 - [ ] ¿Los mensajes técnicos están en inglés?
 - [ ] ¿Los mensajes al usuario están en español?
 - [ ] ¿Las cards tienen diseño consistente (icono, info, acciones)?

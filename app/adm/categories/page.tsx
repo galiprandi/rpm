@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Modal, ModalFooter } from '@/components/ui/modal';
+import { useUI } from '@/components/ui/UIProvider';
 import { 
   Folder, 
   Plus, 
@@ -28,6 +29,7 @@ interface Category {
 }
 
 export default function CategoriesPage() {
+  const { alert, confirm } = useUI();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -78,8 +80,16 @@ export default function CategoriesPage() {
     }
   };
 
-  const handleDeleteCategory = async (id: string) => {
-    if (!confirm('¿Estás seguro de desactivar esta categoría?')) return;
+  const handleDeleteCategory = async (id: string, name: string) => {
+    const confirmed = await confirm({
+      title: 'Desactivar Categoría',
+      description: `¿Estás seguro de desactivar "${name}"?`,
+      confirmText: 'Desactivar',
+      cancelText: 'Cancelar',
+      variant: 'destructive',
+    });
+    
+    if (!confirmed) return;
 
     try {
       const response = await fetch(`/api/categories/${id}`, {
@@ -122,11 +132,19 @@ export default function CategoriesPage() {
         fetchCategories();
       } else {
         const error = await response.json();
-        alert(error.error || 'Error al actualizar categoría');
+        await alert({
+          title: 'Error',
+          description: error.error || 'Error al actualizar categoría',
+          variant: 'error',
+        });
       }
     } catch (error) {
       console.error('Error updating category:', error);
-      alert('Error al actualizar categoría');
+      await alert({
+        title: 'Error',
+        description: 'Error al actualizar categoría',
+        variant: 'error',
+      });
     }
   };
 
@@ -186,7 +204,7 @@ export default function CategoriesPage() {
                     variant="ghost" 
                     size="sm" 
                     className="text-red-600"
-                    onClick={() => handleDeleteCategory(category.id)}
+                    onClick={() => handleDeleteCategory(category.id, category.name)}
                     disabled={category.productCount > 0}
                   >
                     <Trash2 className="h-4 w-4" />

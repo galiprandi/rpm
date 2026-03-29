@@ -105,6 +105,84 @@ export default function ProductsPage() {
 
 ---
 
+### ⚠️ REGLA CRÍTICA: Select en Modales
+
+**Siempre usar `NativeSelect` en formularios dentro de modales.**
+
+El componente `Select` de Radix tiene problemas de z-index cuando se usa dentro de contenedores con `overflow` o modales. El dropdown se corta o superpone incorrectamente.
+
+**❌ PROHIBIDO: Select de Radix dentro de modales**
+```typescript
+// ❌ MAL: Select de Radix en modal - tiene problemas de z-index
+<Modal>
+  <Select>
+    <SelectTrigger />
+    <SelectContent position="popper">  // ← Se corta/superpone mal
+      <SelectItem>...</SelectItem>
+    </SelectContent>
+  </Select>
+</Modal>
+```
+
+**✅ OBLIGATORIO: NativeSelect dentro de modales**
+```typescript
+// ✅ BIEN: NativeSelect renderiza dropdown nativo del SO
+import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
+
+<Modal>
+  <NativeSelect
+    value={formData.categoryId}
+    onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
+  >
+    <NativeSelectOption value="">Selecciona...</NativeSelectOption>
+    {items.map((item) => (
+      <NativeSelectOption key={item.id} value={item.id}>
+        {item.name}
+      </NativeSelectOption>
+    ))}
+  </NativeSelect>
+</Modal>
+```
+
+**Ventajas de NativeSelect:**
+- Dropdown nativo del sistema operativo (siempre visible, sin z-index issues)
+- Mejor accesibilidad y UX en móvil
+- Menos código, más performante
+- Funciona perfectamente dentro de modales
+
+---
+
+### ⚠️ REGLA CRÍTICA: Modales sin overflow
+
+**Los modales NO deben tener `overflow-y-auto` en el contenedor de contenido.**
+
+Esto causa que los dropdowns (incluso los portales) se corten o rendericen mal.
+
+**❌ PROHIBIDO: overflow en modal**
+```typescript
+// ❌ MAL: overflow corta los dropdowns
+<div className="p-6 max-h-[60vh] overflow-y-auto">
+  {children}  // ← Selects aquí se cortarán
+</div>
+```
+
+**✅ OBLIGATORIO: Sin overflow, o scroll en contenido interno**
+```typescript
+// ✅ BIEN: Sin overflow
+<div className="p-6">
+  {children}
+</div>
+
+// O si necesitas scroll, hazlo en el contenido interno
+<div className="p-6">
+  <ScrollArea className="max-h-[60vh]">
+    {children}
+  </ScrollArea>
+</div>
+```
+
+---
+
 ## Validación de Formularios Admin
 
 ### Campos Obligatorios - Producto

@@ -85,7 +85,7 @@ export function Modal({
         </div>
 
         {/* Content */}
-        <div className="p-6 max-h-[60vh] overflow-y-auto">
+        <div className="p-6">
           {children}
         </div>
 
@@ -123,7 +123,11 @@ export function ModalFooter({
       <Button variant="outline" onClick={onCancel} disabled={isLoading}>
         {cancelText}
       </Button>
-      <Button onClick={onSave} disabled={isLoading || disabled}>
+      <Button 
+        onClick={disabled ? undefined : onSave}
+        disabled={isLoading || disabled}
+        className="bg-slate-900 text-white hover:bg-slate-800 border border-slate-900 shadow-lg hover:shadow-xl transition-all font-semibold"
+      >
         {isLoading ? 'Guardando...' : saveText}
       </Button>
     </>

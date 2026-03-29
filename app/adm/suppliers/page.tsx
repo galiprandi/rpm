@@ -1,19 +1,19 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Modal, ModalFooter } from '@/components/ui/modal';
+import { useUI } from '@/components/ui/UIProvider';
 import { 
   Truck, 
   Plus, 
   Edit2,
   Trash2,
-  Package,
   Phone,
   Mail,
   MapPin
@@ -32,11 +32,13 @@ interface Supplier {
 }
 
 export default function SuppliersPage() {
+  const { alert, confirm } = useUI();
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
   const [newSupplierName, setNewSupplierName] = useState('');
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editForm, setEditForm] = useState({
     name: '',
     contactName: '',
@@ -83,8 +85,16 @@ export default function SuppliersPage() {
     }
   };
 
-  const handleDeleteSupplier = async (id: string) => {
-    if (!confirm('¿Estás seguro de desactivar este proveedor?')) return;
+  const handleDeleteSupplier = async (id: string, name: string) => {
+    const confirmed = await confirm({
+      title: 'Desactivar Proveedor',
+      description: `¿Estás seguro de desactivar "${name}"?`,
+      confirmText: 'Desactivar',
+      cancelText: 'Cancelar',
+      variant: 'destructive',
+    });
+    
+    if (!confirmed) return;
 
     try {
       const response = await fetch(`/api/suppliers/${id}`, {
@@ -129,11 +139,19 @@ export default function SuppliersPage() {
         fetchSuppliers();
       } else {
         const error = await response.json();
-        alert(error.error || 'Error al actualizar proveedor');
+        await alert({
+          title: 'Error',
+          description: error.error || 'Error al actualizar proveedor',
+          variant: 'error',
+        });
       }
     } catch (error) {
       console.error('Error updating supplier:', error);
-      alert('Error al actualizar proveedor');
+      await alert({
+        title: 'Error',
+        description: 'Error al actualizar proveedor',
+        variant: 'error',
+      });
     }
   };
 
@@ -155,29 +173,44 @@ export default function SuppliersPage() {
             Gestiona los proveedores de productos
           </p>
         </div>
+        <Button 
+          onClick={() => setIsCreateDialogOpen(true)}
+          variant="default"
+          className="bg-slate-900 text-white hover:bg-slate-800 border border-slate-900 shadow-lg hover:shadow-xl transition-all font-semibold px-4 py-2"
+        >
+          <Plus className="h-5 w-5 mr-2" />
+          Nuevo Proveedor
+        </Button>
       </div>
 
-      {/* Create Supplier Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Nuevo Proveedor</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-4">
+      {/* Create Supplier Modal */}
+      <Modal
+        isOpen={isCreateDialogOpen}
+        onClose={() => setIsCreateDialogOpen(false)}
+        title="Nuevo Proveedor"
+        description="Completa los datos para crear un nuevo proveedor."
+        size="md"
+        footer={
+          <ModalFooter
+            onCancel={() => setIsCreateDialogOpen(false)}
+            onSave={handleCreateSupplier}
+            saveText="Crear Proveedor"
+          />
+        }
+      >
+        <form onSubmit={(e) => { e.preventDefault(); handleCreateSupplier(); }} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="create-name">Nombre *</Label>
             <Input
-              placeholder="Nombre del proveedor..."
+              id="create-name"
               value={newSupplierName}
               onChange={(e) => setNewSupplierName(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleCreateSupplier()}
-              className="flex-1 max-w-md"
+              placeholder="Nombre del proveedor"
+              required
             />
-            <Button onClick={handleCreateSupplier}>
-              <Plus className="h-4 w-4 mr-2" />
-              Crear Proveedor
-            </Button>
           </div>
-        </CardContent>
-      </Card>
+        </form>
+      </Modal>
 
       {/* Suppliers Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -204,7 +237,7 @@ export default function SuppliersPage() {
                     variant="ghost" 
                     size="sm" 
                     className="text-red-600"
-                    onClick={() => handleDeleteSupplier(supplier.id)}
+                    onClick={() => handleDeleteSupplier(supplier.id, supplier.name)}
                     disabled={supplier.productCount > 0}
                   >
                     <Trash2 className="h-4 w-4" />
