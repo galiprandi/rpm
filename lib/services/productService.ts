@@ -48,7 +48,7 @@ export interface CreateProductInput {
   name: string;
   description?: string;
   barcode?: string;
-  categoryId?: string;
+  categoryId: string; // Required by Prisma schema
   costPrice: number;
   salePrice: number;
   stock: number;
@@ -86,7 +86,9 @@ function isLowStock(stock: number, minStock: number): boolean {
 }
 
 // Helper: Transform Prisma product to Product type
-function transformProduct(product: any): Product {
+type PrismaProductWithCategory = Prisma.ProductGetPayload<{ include: { category: true } }>;
+
+function transformProduct(product: PrismaProductWithCategory): Product {
   const cost = product.costPrice?.toNumber ? product.costPrice.toNumber() : Number(product.costPrice) || 0;
   const sale = product.salePrice?.toNumber ? product.salePrice.toNumber() : Number(product.salePrice) || 0;
   return {
@@ -177,7 +179,7 @@ export async function createProduct(input: CreateProductInput): Promise<Product>
       name: input.name,
       description: input.description || null,
       barcode: input.barcode || null,
-      categoryId: input.categoryId || null,
+      categoryId: input.categoryId,
       costPrice: new Prisma.Decimal(input.costPrice),
       salePrice: new Prisma.Decimal(input.salePrice),
       stock: input.stock,
@@ -201,7 +203,9 @@ export async function updateProduct(id: string, input: UpdateProductInput): Prom
   if (input.name !== undefined) data.name = input.name;
   if (input.description !== undefined) data.description = input.description || null;
   if (input.barcode !== undefined) data.barcode = input.barcode ?? null;
-  if (input.categoryId !== undefined) data.category = input.categoryId ? { connect: { id: input.categoryId } } : { disconnect: true };
+  if (input.categoryId !== undefined) {
+    data.category = { connect: { id: input.categoryId } };
+  }
   if (input.costPrice !== undefined) data.costPrice = new Prisma.Decimal(input.costPrice);
   if (input.salePrice !== undefined) data.salePrice = new Prisma.Decimal(input.salePrice);
   if (input.stock !== undefined) data.stock = input.stock;

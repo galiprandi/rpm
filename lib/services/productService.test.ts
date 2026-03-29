@@ -248,6 +248,7 @@ describe('ProductService', () => {
       const input = {
         sku: 'MIN-001',
         name: 'Minimal Product',
+        categoryId: 'cat1', // Required field
         costPrice: 10,
         salePrice: 15,
         stock: 100,
@@ -259,16 +260,18 @@ describe('ProductService', () => {
         id: 'min-id',
         costPrice: { toNumber: () => 10 },
         salePrice: { toNumber: () => 15 },
-        category: null,
+        category: { id: 'cat1', name: 'Category', color: null },
       });
 
       await createProduct(input);
 
       expect(mockFns.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
+          sku: 'MIN-001',
+          name: 'Minimal Product',
+          categoryId: 'cat1',
           description: null,
           barcode: null,
-          categoryId: null,
           supplier: null,
           location: null,
         }),
