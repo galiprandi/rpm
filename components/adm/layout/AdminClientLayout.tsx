@@ -3,8 +3,7 @@
 import { useState } from 'react';
 import { authClient } from '@/lib/auth-client';
 import { AdminSidebar } from './AdminSidebar';
-import { UIProvider } from '@/components/ui/UIProvider';
-import { SignOutDialog } from './SignOutDialog';
+import { useUI } from '@/components/ui/UIProvider';
 
 interface AdminClientLayoutProps {
   children: React.ReactNode;
@@ -19,20 +18,25 @@ interface AdminClientLayoutProps {
 
 export function AdminClientLayout({ children, user }: AdminClientLayoutProps) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [isSignOutDialogOpen, setIsSignOutDialogOpen] = useState(false);
+  const { confirm } = useUI();
 
   const handleSignOut = async () => {
-    setIsSignOutDialogOpen(true);
-  };
+    const confirmed = await confirm({
+      title: 'Cerrar sesión',
+      description: `¿Está seguro de cerrar la sesión del usuario "${user.name}"?`,
+      confirmText: 'Cerrar sesión',
+      cancelText: 'Cancelar',
+      variant: 'destructive',
+    });
 
-  const confirmSignOut = async () => {
-    await authClient.signOut();
-    window.location.href = '/login';
+    if (confirmed) {
+      await authClient.signOut();
+      window.location.href = '/login';
+    }
   };
 
   return (
-    <UIProvider>
-      <div className="min-h-screen bg-background flex">
+    <div className="min-h-screen bg-background flex">
         {/* Sidebar colapsable */}
         <aside 
           className={`bg-card border-r transition-all duration-300 ${
@@ -82,13 +86,5 @@ export function AdminClientLayout({ children, user }: AdminClientLayoutProps) {
           {children}
         </main>
       </div>
-      
-      <SignOutDialog
-        isOpen={isSignOutDialogOpen}
-        onClose={() => setIsSignOutDialogOpen(false)}
-        onConfirm={confirmSignOut}
-        userName={user.name}
-      />
-    </UIProvider>
   );
 }

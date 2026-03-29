@@ -25,6 +25,15 @@ export const auth = betterAuth({
     provider: 'postgresql',
   }),
   
+  user: {
+    additionalFields: {
+      role: {
+        type: 'string',
+        defaultValue: 'USER',
+      },
+    },
+  },
+  
   emailAndPassword: {
     enabled: false, // Solo Google OAuth
   },
@@ -43,6 +52,7 @@ export const auth = betterAuth({
     cookieCache: {
       enabled: true,
       maxAge: 5 * 60, // 5 minutes
+      version: 'v2', // Increment to invalidate old sessions with wrong role
     },
   },
   

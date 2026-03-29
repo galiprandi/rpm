@@ -7,6 +7,8 @@
 
 import { redirect } from 'next/navigation';
 import { getSession } from '@/lib/auth-server';
+import { hasRole } from '@/lib/auth-server';
+import { UserRole } from '@/lib/auth/roles';
 import { AdminClientLayout } from '@/components/adm/layout/AdminClientLayout';
 
 export default async function AdminLayout({
@@ -20,6 +22,13 @@ export default async function AdminLayout({
   if (!session?.user) {
     // Redirect to login if not authenticated
     redirect('/login?callbackUrl=/adm');
+  }
+
+  // Check if user has at least STAFF role
+  const isAuthorized = await hasRole(UserRole.STAFF);
+  if (!isAuthorized) {
+    // Redirect to home if not authorized
+    redirect('/');
   }
 
   // Pass user data to client component
