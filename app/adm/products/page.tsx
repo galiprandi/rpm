@@ -447,14 +447,15 @@ export default function ProductsPage() {
         }
       >
         <form id="product-form" onSubmit={handleSubmit} className="space-y-4">
+          {/* Primera fila: EAN (obligatorio) y Nombre */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="sku">SKU *</Label>
+              <Label htmlFor="barcode">Código de Barras (EAN) *</Label>
               <Input
-                id="sku"
-                value={formData.sku}
-                onChange={(e) => setFormData({...formData, sku: e.target.value})}
-                placeholder="LED-001"
+                id="barcode"
+                value={formData.barcode}
+                onChange={(e) => setFormData({...formData, barcode: e.target.value})}
+                placeholder="1234567890123"
                 required
               />
             </div>
@@ -471,48 +472,51 @@ export default function ProductsPage() {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="description">Descripción</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => setFormData({...formData, description: e.target.value})}
-              placeholder="Descripción del producto..."
-              rows={2}
-            />
-          </div>
-
+          {/* Segunda fila: SKU (opcional) y Proveedor (obligatorio) */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="categoryId">Categoría *</Label>
-              <Select
-                value={formData.categoryId}
-                onValueChange={(value) => setFormData({...formData, categoryId: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecciona categoría" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label htmlFor="sku">SKU</Label>
+              <Input
+                id="sku"
+                value={formData.sku}
+                onChange={(e) => setFormData({...formData, sku: e.target.value})}
+                placeholder="LED-001 (opcional)"
+              />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="supplier">Proveedor</Label>
+              <Label htmlFor="supplier">Proveedor *</Label>
               <Input
                 id="supplier"
                 value={formData.supplier}
                 onChange={(e) => setFormData({...formData, supplier: e.target.value})}
                 placeholder="Nombre del proveedor"
+                required
               />
             </div>
           </div>
 
+          {/* Tercera fila: Categoría (ocupa toda la fila para evitar solapamiento) */}
+          <div className="space-y-2">
+            <Label htmlFor="categoryId">Categoría *</Label>
+            <Select
+              value={formData.categoryId}
+              onValueChange={(value) => setFormData({...formData, categoryId: value})}
+            >
+              <SelectTrigger id="categoryId">
+                <SelectValue placeholder="Selecciona categoría" />
+              </SelectTrigger>
+              <SelectContent position="popper" className="z-50 max-h-60">
+                {categories.map((cat) => (
+                  <SelectItem key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Cuarta fila: Precios y Stock */}
           <div className="grid grid-cols-4 gap-4">
             <div className="space-y-2">
               <Label htmlFor="costPrice">Precio Costo *</Label>
@@ -569,26 +573,27 @@ export default function ProductsPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="barcode">Código de Barras</Label>
-              <Input
-                id="barcode"
-                value={formData.barcode}
-                onChange={(e) => setFormData({...formData, barcode: e.target.value})}
-                placeholder="EAN/UPC"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="location">Ubicación</Label>
-              <Input
-                id="location"
-                value={formData.location}
-                onChange={(e) => setFormData({...formData, location: e.target.value})}
-                placeholder="Estante A-3"
-              />
-            </div>
+          {/* Quinta fila: Descripción */}
+          <div className="space-y-2">
+            <Label htmlFor="description">Descripción</Label>
+            <Textarea
+              id="description"
+              value={formData.description}
+              onChange={(e) => setFormData({...formData, description: e.target.value})}
+              placeholder="Descripción del producto..."
+              rows={2}
+            />
+          </div>
+
+          {/* Sexta fila: Ubicación */}
+          <div className="space-y-2">
+            <Label htmlFor="location">Ubicación</Label>
+            <Input
+              id="location"
+              value={formData.location}
+              onChange={(e) => setFormData({...formData, location: e.target.value})}
+              placeholder="Estante A-3"
+            />
           </div>
         </form>
       </Modal>

@@ -37,6 +37,9 @@ const products = [
   { sku: 'OFF-001', name: 'Snorkel Toyota Hilux 2016-2022', categoryId: 'cat-5', costPrice: 38000, salePrice: 65000, stock: 5, minStock: 2, supplier: 'Safari Snorkels' },
   { sku: 'OFF-002', name: 'Winch 12V 9500lbs', categoryId: 'cat-5', costPrice: 95000, salePrice: 165000, stock: 4, minStock: 2, supplier: 'Warn Winches' },
   { sku: 'OFF-003', name: 'Defensa delantera Bull Bar', categoryId: 'cat-5', costPrice: 75000, salePrice: 120000, stock: 3, minStock: 1, supplier: 'ARB Argentina' },
+  
+  // Producto con proveedor "No especificado" para permitir crear productos sin proveedor específico
+  { sku: 'MISC-001', name: 'Producto de prueba - Sin proveedor específico', categoryId: 'cat-5', costPrice: 10000, salePrice: 15000, stock: 5, minStock: 2, supplier: 'No especificado' },
 ];
 
 async function seed() {
