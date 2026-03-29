@@ -21,23 +21,19 @@ interface AdminClientLayoutProps {
   };
 }
 
-function getSidebarCookie(): boolean {
-  if (typeof document === 'undefined') return true;
-  const match = document.cookie.match(/sidebar_state=([^;]+)/);
-  return match ? match[1] === 'true' : true;
-}
-
 export function AdminClientLayout({ children, user }: AdminClientLayoutProps) {
   const { confirm } = useUI();
   const [mounted, setMounted] = useState(false);
-  const [defaultOpen, setDefaultOpen] = useState<boolean>(() => {
+  const [defaultOpen] = useState<boolean>(() => {
     if (typeof document === 'undefined') return true;
     const match = document.cookie.match(/sidebar_state=([^;]+)/);
     return match ? match[1] === 'true' : true;
   });
 
   useEffect(() => {
-    setMounted(true);
+    // Set mounted state after component mounts to avoid hydration mismatch
+    const timer = setTimeout(() => setMounted(true), 0);
+    return () => clearTimeout(timer);
   }, []);
 
   const handleSignOut = async () => {

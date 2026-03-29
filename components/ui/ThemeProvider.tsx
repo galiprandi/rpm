@@ -74,11 +74,7 @@ export function ThemeProvider({
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, [theme, mounted]);
 
-  // Prevent flash during SSR
-  if (!mounted) {
-    return <>{children}</>;
-  }
-
+  // Always provide the context, but handle resolved theme internally
   return (
     <ThemeContext.Provider value={{ theme, setTheme, resolvedTheme }}>
       {children}
@@ -89,7 +85,12 @@ export function ThemeProvider({
 export function useTheme() {
   const context = React.useContext(ThemeContext);
   if (context === undefined) {
-    throw new Error('useTheme must be used within a ThemeProvider');
+    // For SSR or when context is not available, provide default values
+    return {
+      theme: 'system' as const,
+      setTheme: () => {},
+      resolvedTheme: 'light' as const,
+    };
   }
   return context;
 }
