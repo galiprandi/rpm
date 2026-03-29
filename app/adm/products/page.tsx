@@ -1,13 +1,15 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { ProductStats } from '@/components/products/ProductStats';
-import { ProductTable } from '@/components/products/ProductTable';
+import { Badge } from '@/components/ui/badge';
 import { ProductDialog } from '@/components/products/ProductDialog';
 import { useUI } from '@/components/ui/UIProvider';
-import { Plus } from 'lucide-react';
+import { CrudAdmin, StatItem } from '@/components/adm';
+import { Package, Edit2, Trash2, AlertTriangle, DollarSign, Boxes } from 'lucide-react';
+import { PriceDisplay } from '@/components/ui/price-display';
+import { StockDisplay } from '@/components/ui/stock-display';
+import { type ColumnDef } from '@tanstack/react-table';
 
 import { type Product, type Category, type Supplier, type ProductFormData } from '@/components/products/types';
 
@@ -17,7 +19,6 @@ export default function ProductsPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
 
   useEffect(() => {
     fetchProducts();
@@ -204,7 +205,7 @@ export default function ProductsPage() {
       cancelText: 'Cancelar',
       variant: 'destructive',
     });
-    
+
     if (!confirmed) return;
 
     try {
@@ -232,23 +233,117 @@ export default function ProductsPage() {
     }
   }, [alert, confirm]);
 
-  const filteredProducts = products.filter(p => {
-    const searchLower = search.toLowerCase();
-    return !search || 
-      p.barcode?.toLowerCase().includes(searchLower) ||
-      p.name.toLowerCase().includes(searchLower) ||
-      p.sku.toLowerCase().includes(searchLower);
-  });
+  const lowStockCount = products.filter((p) => p.isLowStock).length;
+  const totalInventoryValue = products.reduce(
+    (acc, p) => acc + p.costPrice * (p.stock || 0),
+    0
+  );
 
-  const handleEditProduct = (product: Product) => {
-    openEditDialog(product);
-  };
+  const stats: StatItem[] = [
+    {
+      label: 'Total',
+      value: products.length,
+      icon: Boxes,
+    },
+    {
+      label: 'Stock bajo',
+      value: lowStockCount,
+      icon: AlertTriangle,
+      iconColor: lowStockCount > 0 ? '#ea580c' : undefined,
+    },
+    {
+      label: 'Valor inventario',
+      value: <PriceDisplay value={totalInventoryValue} />,
+      icon: DollarSign,
+    },
+  ];
 
-  const handleDeleteProduct = (product: Product) => {
-    handleDelete(product);
-  };
-
-
+  const columns = useMemo<ColumnDef<Product>[]>(
+    () => [
+      {
+        accessorKey: 'sku',
+        header: 'SKU',
+        cell: ({ row }) => (
+          <span className="font-mono text-xs text-muted-foreground">{row.original.sku}</span>
+        ),
+      },
+      {
+        accessorKey: 'name',
+        header: 'Producto',
+        cell: ({ row }) => (
+          <div>
+            <div className="font-medium">{row.original.name}</div>
+            {row.original.description && (
+              <div className="text-xs text-muted-foreground truncate max-w-[200px]">
+                {row.original.description}
+              </div>
+            )}
+          </div>
+        ),
+      },
+      {
+        accessorKey: 'category.name',
+        header: 'Categoría',
+        cell: ({ row }) =>
+          row.original.category ? (
+            <Badge
+              variant="secondary"
+              style={{ backgroundColor: row.original.category.color || undefined }}
+            >
+              {row.original.category.name}
+            </Badge>
+          ) : (
+            '-'
+          ),
+      },
+      {
+        accessorKey: 'stock',
+        header: 'Stock',
+        cell: ({ row }) => (
+          <StockDisplay stock={row.original.stock} minStock={row.original.minStock} />
+        ),
+      },
+      {
+        accessorKey: 'salePrice',
+        header: 'Precio',
+        cell: ({ row }) => (
+          <span className="font-medium">
+            <PriceDisplay value={row.original.salePrice} />
+          </span>
+        ),
+      },
+      {
+        accessorKey: 'isActive',
+        header: 'Estado',
+        cell: ({ row }) =>
+          row.original.isActive ? (
+            <Badge variant="default">Activo</Badge>
+          ) : (
+            <Badge variant="destructive">Inactivo</Badge>
+          ),
+      },
+      {
+        id: 'actions',
+        header: 'Acciones',
+        cell: ({ row }) => (
+          <div className="flex gap-1">
+            <Button variant="ghost" size="sm" onClick={() => openEditDialog(row.original)}>
+              <Edit2 className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-red-600"
+              onClick={() => handleDelete(row.original)}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        ),
+      },
+    ],
+    []
+  );
 
   if (loading) {
     return (
@@ -259,43 +354,22 @@ export default function ProductsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Productos</h1>
-          <p className="text-muted-foreground">
-            Gestiona el inventario de productos y servicios
-          </p>
-        </div>
-        <Button 
-          onClick={openCreateDialog}
-          variant="default"
-          className="bg-slate-900 text-white hover:bg-slate-800 border border-slate-900 shadow-lg hover:shadow-xl transition-all font-semibold px-4 py-2"
-        >
-          <Plus className="h-5 w-5 mr-2" />
-          Nuevo Producto
-        </Button>
-      </div>
+    <>
+      <CrudAdmin
+        title="Productos"
+        description="Gestiona el inventario de productos y servicios"
+        items={products}
+        loading={loading}
+        onCreate={openCreateDialog}
+        columns={columns}
+        stats={stats}
+        emptyIcon={<Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />}
+        emptyMessage="No hay productos creados. Haz clic en 'Nuevo Producto' para crear el primero."
+        createButtonText="Nuevo Producto"
+        tableTitle="Listado de Productos"
+        searchPlaceholder="Buscar por SKU, nombre..."
+      />
 
-      {/* Stats Cards */}
-      <ProductStats products={products} categories={categories} />
-
-      {/* Products Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Listado de Productos</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ProductTable
-            products={filteredProducts}
-            search={search}
-            onSearchChange={setSearch}
-            onEdit={handleEditProduct}
-            onDelete={handleDeleteProduct}
-          />
-        </CardContent>
-      </Card>
       {/* Product Modal */}
       <ProductDialog
         isOpen={isDialogOpen}
@@ -308,6 +382,6 @@ export default function ProductsPage() {
         suppliers={suppliers}
         isValid={formValid}
       />
-    </div>
+    </>
   );
 }
