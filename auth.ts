@@ -8,6 +8,15 @@ import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { prisma } from './lib/prisma';
 
+// Google OAuth profile type
+interface GoogleProfile {
+  sub: string;
+  name: string;
+  email: string;
+  picture?: string;
+  email_verified?: boolean;
+}
+
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: 'postgresql',
@@ -27,6 +36,16 @@ export const auth = betterAuth({
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      // Map profile fields from Google OAuth response
+      mapProfile: (profile: GoogleProfile) => {
+        return {
+          id: profile.sub,
+          name: profile.name,
+          email: profile.email,
+          image: profile.picture,
+          emailVerified: profile.email_verified,
+        };
+      },
     },
   },
   
