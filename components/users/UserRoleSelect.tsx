@@ -1,14 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
+import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
 
 export interface RoleOption {
   value: string;
@@ -43,33 +36,32 @@ export function UserRoleSelect({ value, onChange, disabled }: UserRoleSelectProp
 
   if (loading) {
     return (
-      <Select disabled>
-        <SelectTrigger>
-          <SelectValue placeholder="Cargando roles..." />
-        </SelectTrigger>
-      </Select>
+      <NativeSelect disabled value="">
+        <NativeSelectOption value="">Cargando roles...</NativeSelectOption>
+      </NativeSelect>
     );
   }
 
   return (
-    <Select value={value} onValueChange={onChange} disabled={disabled}>
-      <SelectTrigger>
-        <SelectValue placeholder="Selecciona un rol" />
-      </SelectTrigger>
-      <SelectContent className="min-w-[300px]">
+    <div className="space-y-2">
+      <NativeSelect
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        disabled={disabled}
+        className="w-full"
+      >
+        <NativeSelectOption value="">Selecciona un rol</NativeSelectOption>
         {roles.map((role) => (
-          <SelectItem key={role.value} value={role.value}>
-            <div className="flex flex-col gap-1 py-1">
-              <div className="flex items-center gap-2">
-                <Badge variant={role.badgeVariant}>{role.label}</Badge>
-              </div>
-              <span className="text-xs text-muted-foreground max-w-[250px] leading-relaxed">
-                {role.description}
-              </span>
-            </div>
-          </SelectItem>
+          <NativeSelectOption key={role.value} value={role.value}>
+            {role.label}
+          </NativeSelectOption>
         ))}
-      </SelectContent>
-    </Select>
+      </NativeSelect>
+      {value && (
+        <p className="text-xs text-muted-foreground">
+          {roles.find((r) => r.value === value)?.description}
+        </p>
+      )}
+    </div>
   );
 }
