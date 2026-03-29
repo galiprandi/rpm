@@ -8,7 +8,7 @@
 import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { prisma } from './prisma';
-import { getUserRole } from './auth/roles';
+import { getUserRole, UserRole } from './auth/roles';
 
 /**
  * Better Auth configuration
@@ -65,12 +65,52 @@ export const auth = betterAuth({
   /**
    * Database hooks for role assignment
    * Automatically assigns roles based on email when users are created
+   * Also creates UserRole record for admin management
    */
   databaseHooks: {
     user: {
       create: {
         before: async (user) => {
+          // Check if UserRole record already exists
+          const existingUserRole = await prisma.userRole.findUnique({
+            where: { email: user.email },
+          });
+
+          if (existingUserRole) {
+            // Use existing role from UserRole table
+            const role = existingUserRole.role.toUpperCase();
+            let mappedRole: UserRole;
+            if (role === 'ADMIN' || role === 'SELLER' || role === 'TECHNICIAN' || role === 'CASHIER') {
+              mappedRole = UserRole.ADMIN;
+            } else if (role === 'STAFF') {
+              mappedRole = UserRole.STAFF;
+            } else {
+              mappedRole = UserRole.USER;
+            }
+            return {
+              data: {
+                ...user,
+                role: mappedRole,
+              },
+            };
+          }
+
+          // No existing UserRole - determine role from domain
           const role = await getUserRole(user.email);
+          
+          // Create UserRole record for future admin management
+          const roleToStore = role === UserRole.ADMIN ? 'ADMIN' : 
+                             role === UserRole.STAFF ? 'SELLER' : 'USER';
+          
+          await prisma.userRole.create({
+            data: {
+              email: user.email,
+              role: roleToStore,
+              name: user.name,
+              isActive: true,
+            },
+          });
+          
           return {
             data: {
               ...user,

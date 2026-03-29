@@ -1,13 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { useEffect, useState, useCallback } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useUI } from '@/components/ui/UIProvider';
-import { UserCard } from '@/components/users/UserCard';
+import { UserTable } from '@/components/users/UserTable';
 import { UserDialog } from '@/components/users/UserDialog';
 import { UserFormData } from '@/components/users/UserForm';
+import { useUI } from '@/components/ui/UIProvider';
 import { Plus, Users } from 'lucide-react';
+import { authClient } from '@/lib/auth-client';
 
 interface User {
   id: string;
@@ -22,9 +23,11 @@ interface User {
 }
 
 export default function UsersPage() {
+  const { data: session } = authClient.useSession();
   const { alert, confirm } = useUI();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -80,7 +83,7 @@ export default function UsersPage() {
     setIsDialogOpen(true);
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     if (!formData.name.trim() || !formData.email.trim() || !formData.role) {
       await alert({
         title: 'Campos requeridos',
@@ -148,9 +151,9 @@ export default function UsersPage() {
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [formData, editingUser, alert]);
 
-  const handleToggleActive = async (user: User) => {
+  const handleToggleActive = useCallback(async (user: User) => {
     const action = user.isActive ? 'desactivar' : 'activar';
     const confirmed = await confirm({
       title: `${action.charAt(0).toUpperCase() + action.slice(1)} Usuario`,
@@ -185,10 +188,17 @@ export default function UsersPage() {
         variant: 'error',
       });
     }
-  };
+  }, [confirm, alert]);
+  const isFormValid = !!(formData.name.trim() && formData.email.trim() && formData.role);
 
-  const isFormValid =
-    formData.name.trim() && formData.email.trim() && formData.role;
+  const filteredUsers = users.filter((u) => {
+    const searchLower = search.toLowerCase();
+    return (
+      !search ||
+      u.name.toLowerCase().includes(searchLower) ||
+      u.email.toLowerCase().includes(searchLower)
+    );
+  });
 
   if (loading) {
     return (
@@ -218,29 +228,68 @@ export default function UsersPage() {
         </Button>
       </div>
 
-      {/* Users Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {users.map((user) => (
-          <UserCard
-            key={user.id}
-            user={user}
-            onEdit={() => openEditDialog(user)}
-            onToggleActive={() => handleToggleActive(user)}
-            canToggle={true}
-          />
-        ))}
-      </div>
-
-      {users.length === 0 && (
+      {/* Stats Cards */}
+      <div className="grid gap-4 md:grid-cols-4">
         <Card>
-          <CardContent className="p-8 text-center">
-            <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">
-              No hay usuarios creados. Crea el primero arriba.
-            </p>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Usuarios</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{users.length}</div>
           </CardContent>
         </Card>
-      )}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Activos</CardTitle>
+            <Users className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {users.filter((u) => u.isActive).length}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Admins</CardTitle>
+            <Users className="h-4 w-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {users.filter((u) => u.role === 'ADMIN').length}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Staff</CardTitle>
+            <Users className="h-4 w-4 text-orange-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {users.filter((u) => u.role !== 'USER').length}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Users Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Listado de Usuarios</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <UserTable
+            users={filteredUsers}
+            search={search}
+            onSearchChange={setSearch}
+            onEdit={openEditDialog}
+            onToggleActive={handleToggleActive}
+            currentUserEmail={session?.user?.email || ''}
+          />
+        </CardContent>
+      </Card>
 
       {/* User Dialog */}
       <UserDialog
