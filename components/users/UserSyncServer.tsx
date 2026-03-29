@@ -14,23 +14,23 @@ export async function UserSyncServer() {
   // Only sync if user is authenticated
   if (session?.user?.email) {
     try {
-      // Check if UserRole exists
-      const existing = await prisma.userRole.findUnique({
+      // Upsert: create if not exists, always update lastLogin
+      await prisma.userRole.upsert({
         where: { email: session.user.email },
+        create: {
+          email: session.user.email,
+          role: 'USER',
+          name: session.user.name || session.user.email.split('@')[0],
+          isActive: true,
+          lastLogin: new Date(),
+        },
+        update: {
+          // Always update lastLogin on every request
+          lastLogin: new Date(),
+          // Update name if changed
+          name: session.user.name || undefined,
+        },
       });
-      
-      // Create if not exists
-      if (!existing) {
-        await prisma.userRole.create({
-          data: {
-            email: session.user.email,
-            role: 'USER',
-            name: session.user.name || session.user.email.split('@')[0],
-            isActive: true,
-            lastLogin: new Date(),
-          },
-        });
-      }
     } catch (err) {
       // Silent fail - don't break the app if sync fails
       console.error('Error syncing UserRole in server component:', err);
