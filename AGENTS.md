@@ -1206,7 +1206,91 @@ npx prisma migrate deploy
 
 # 🏗️ Arquitectura de Servicios - BFF & Agent Tools
 
-## Principio Fundamental: Servicios como Funciones Puras
+## ✅ REGLA FUNDAMENTAL: Servicios como Funciones Puras Reutilizables
+
+**Todos los servicios de negocio deben implementarse como funciones TypeScript puras en `lib/services/`, diseñadas para ser reutilizables por:**
+
+- **Controllers de API** (Next.js API Routes)
+- **Tools del Agente IA** (RPM Bot / LLM Tools)
+
+**❌ PROHIBIDO: Lógica de negocio directamente en API routes o controllers**
+
+```typescript
+// ❌ MAL: Lógica de negocio inline en API route
+export async function POST(request: Request) {
+  const body = await request.json();
+  
+  // ❌ Esto es lógica de negocio que debería estar en un servicio
+  const result = await prisma.supplier.create({...}); 
+  
+  return Response.json(result);
+}
+
+// ✅ BIEN: Controller delega a servicio
+import { createSupplier, getSupplierByName } from '@/lib/services/supplierService';
+
+export async function POST(request: Request) {
+  const body = await request.json();
+  
+  // ✅ El controller solo valida y delega
+  if (!body.name) return Response.json({ error: 'Nombre requerido' }, { status: 400 });
+  
+  const existing = await getSupplierByName(body.name);
+  if (existing) return Response.json({ error: 'Ya existe' }, { status: 409 });
+  
+  const supplier = await createSupplier(body);
+  return Response.json({ supplier }, { status: 201 });
+}
+```
+
+**📋 Estructura de un Servicio Reutilizable:**
+
+```typescript
+// lib/services/supplierService.ts
+import { prisma } from '@/lib/prisma';
+
+// Input tipado
+export interface CreateSupplierInput {
+  name: string;
+  contactName?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  notes?: string;
+}
+
+// Servicio como función pura - reutilizable por API y Tools
+export async function createSupplier(input: CreateSupplierInput): Promise<Supplier> {
+  const supplier = await prisma.supplier.create({
+    data: {
+      id: nanoid(),
+      name: input.name,
+      contactName: input.contactName || null,
+      phone: input.phone || null,
+      email: input.email || null,
+      address: input.address || null,
+      notes: input.notes || null,
+      isActive: true,
+    },
+    include: { _count: { select: { products: true } } },
+  });
+
+  return { ...supplier, productCount: supplier._count.products };
+}
+```
+
+**⚠️ REGLAS OBLIGATORIAS:**
+
+1. **SIEMPRE** usar funciones puras con params y output tipados
+2. **SIEMPRE** colocar servicios en `lib/services/` (nunca en controllers)
+3. **NUNCA** acoplar servicios a objetos HTTP (Request/Response)
+4. **SIEMPRE** mantener servicios sin estado (stateless)
+5. **SIEMPRE** documentar params y output con JSDoc
+6. **NUNCA** duplicar lógica de negocio entre controllers y tools
+
+---
+
+## Estructura de Directorios
 
 Todos los servicios de negocio deben implementarse como **funciones TypeScript con responsabilidad única**, diseñadas para ser reutilizables tanto en:
 - **Controllers de API** (Next.js API Routes)
