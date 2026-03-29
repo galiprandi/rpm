@@ -176,6 +176,22 @@ export default function ProductsPage() {
     }
   };
 
+  // Validación: CTA deshabilitado hasta completar campos obligatorios
+  const isFormValid = () => {
+    return (
+      formData.barcode.trim() !== '' &&
+      formData.name.trim() !== '' &&
+      formData.categoryId !== '' &&
+      formData.supplier.trim() !== '' &&
+      formData.costPrice.trim() !== '' &&
+      formData.salePrice.trim() !== '' &&
+      formData.stock.trim() !== '' &&
+      formData.minStock.trim() !== ''
+    );
+  };
+
+  const formValid = isFormValid();
+
   const handleDelete = async (product: Product) => {
     if (!confirm(`¿Estás seguro de desactivar "${product.name}"?`)) return;
 
@@ -436,6 +452,7 @@ export default function ProductsPage() {
             onCancel={() => setIsDialogOpen(false)}
             onSave={handleSubmit}
             saveText={editingProduct ? 'Guardar Cambios' : 'Crear Producto'}
+            disabled={!formValid}
           />
         }
       >
@@ -443,6 +460,7 @@ export default function ProductsPage() {
           formData={formData}
           setFormData={setFormData}
           categories={categories}
+          isValid={formValid}
         />
       </Modal>
     </div>

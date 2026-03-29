@@ -36,6 +36,7 @@ interface ProductFormProps {
   setFormData: (data: ProductFormData) => void;
   categories: Category[];
   onSubmit?: (e: React.FormEvent) => void;
+  isValid?: boolean;
 }
 
 export function ProductForm({
@@ -43,6 +44,7 @@ export function ProductForm({
   setFormData,
   categories,
   onSubmit,
+  isValid,
 }: ProductFormProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

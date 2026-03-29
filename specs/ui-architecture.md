@@ -68,12 +68,73 @@ Extraer a componente separado cuando:
 
 ### Límites de Complejidad
 
-| Máximo | Page Component | Feature Component |
-|--------|----------------|-------------------|
+| Métrica | Page Component | Feature Component |
+|---------|------|-------------------|
 | Líneas de código | 150 | 300 |
 | Props | 5 | 15 |
-| Hooks | 3 | 8 |
-| JSX anidado | 2 niveles | 4 niveles |
+| Hooks (useState/useEffect) | ≤3 | ≤8 |
+| JSX anidado | ≤2 niveles | ≤4 niveles |
+
+---
+
+## Validación de Formularios
+
+### Reglas de Campos Requeridos
+
+**Todos los formularios deben validar campos obligatorios tanto en UI como en backend.**
+
+#### Producto - Campos Obligatorios
+
+| Campo | UI (required) | Backend (Prisma) | Descripción |
+|-------|---------------|------------------|-------------|
+| **EAN/Barcode** | ✅ Sí | `String?` (opcional en DB, pero requerido en UI) | Código de barras - identificador principal |
+| **Nombre** | ✅ Sí | `String` | Nombre descriptivo del producto |
+| **SKU** | ❌ No | `String @unique` | Código interno opcional en UI |
+| **Categoría** | ✅ Sí | `categoryId String` | ID de categoría asignada |
+| **Proveedor** | ✅ Sí | `String?` (opcional en DB, pero requerido en UI) | Nombre del proveedor |
+| **Costo** | ✅ Sí | `Decimal` | Precio de costo |
+| **Venta** | ✅ Sí | `Decimal` | Precio de venta |
+| **Stock** | ✅ Sí | `Int` | Stock actual |
+| **Mínimo** | ✅ Sí | `Int` | Stock mínimo para alertas |
+
+#### UX para Campos Requeridos
+
+1. **Marcado visual**: Campos obligatorios deben tener asterisco (*) en el label
+2. **CTA deshabilitado**: El botón de guardar debe estar deshabilitado hasta completar todos los campos obligatorios
+3. **Validación inline**: Mostrar errores al salir del campo (onBlur) o al intentar submit
+4. **Helper text**: Placeholder debe indicar formato esperado o "(opcional)" si aplica
+
+```typescript
+// Ejemplo: Deshabilitar CTA hasta completar campos obligatorios
+const isFormValid = () => {
+  return (
+    formData.barcode.trim() !== '' &&
+    formData.name.trim() !== '' &&
+    formData.categoryId !== '' &&
+    formData.supplier.trim() !== '' &&
+    formData.costPrice.trim() !== '' &&
+    formData.salePrice.trim() !== '' &&
+    formData.stock.trim() !== '' &&
+    formData.minStock.trim() !== ''
+  );
+};
+
+// En el componente
+<ModalFooter
+  onCancel={() => setIsDialogOpen(false)}
+  onSave={handleSubmit}
+  disabled={!isFormValid()}  // ← CTA deshabilitado hasta completar campos
+/>
+```
+
+### Errores Comunes a Evitar
+
+| ❌ Problema | ✅ Solución |
+|-------------|-------------|
+| SKU marcado como requerido en UI | SKU debe ser opcional en UI (sin asterisco, sin required) |
+| CTA habilitado con campos vacíos | Deshabilitar CTA hasta completar todos los campos obligatorios |
+| Solo validar en backend | Validar en UI (feedback inmediato) y backend (seguridad) |
+| Mensajes de error genéricos | Mostrar qué campos específicos faltan |
 
 ---
 

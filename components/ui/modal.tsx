@@ -107,6 +107,7 @@ interface ModalFooterProps {
   cancelText?: string;
   saveText?: string;
   isLoading?: boolean;
+  disabled?: boolean;
 }
 
 export function ModalFooter({
@@ -115,13 +116,14 @@ export function ModalFooter({
   cancelText = 'Cancelar',
   saveText = 'Guardar',
   isLoading = false,
+  disabled = false,
 }: ModalFooterProps) {
   return (
     <>
       <Button variant="outline" onClick={onCancel} disabled={isLoading}>
         {cancelText}
       </Button>
-      <Button onClick={onSave} disabled={isLoading}>
+      <Button onClick={onSave} disabled={isLoading || disabled}>
         {isLoading ? 'Guardando...' : saveText}
       </Button>
     </>
