@@ -35,28 +35,135 @@ interface Customer {
 }
 ```
 
-### 2. Gestión de Vehículos
+### 2. Gestión de Vehículos / Activos
 
 | Feature | Prioridad | Descripción |
 |---------|-----------|-------------|
-| **Ficha vehículo** | P0 | Datos por patente |
-| **Historial vinculado** | P0 | Todas las intervenciones |
-| **Clasificación** | P1 | Compacto/Sedán/SUV/Pickup/4x4 |
+| **Ficha activo** | P0 | Datos por identificador (patente o n° serie) |
+| **Categorización flexible** | P0 | Vehículos, trailers, equipos de audio, otros |
+| **Historial vinculado** | P0 | Todas las intervenciones por activo |
 | **Fotos** | P1 | Antes/después de cada OT |
 
-#### Campos Vehículo:
+#### Modelo Vehicle (Activo Genérico):
+
+El modelo `Vehicle` soporta tanto vehículos como equipos genéricos (trailers, audio, etc.):
+
 ```typescript
+// Categorías disponibles
+enum VehicleCategory {
+  CAR = 'CAR',                    // Auto/Camioneta
+  TRUCK = 'TRUCK',              // Camión
+  SUV = 'SUV',                  // SUV/4x4
+  PICKUP = 'PICKUP',            // Pickup
+  MOTORCYCLE = 'MOTORCYCLE',    // Moto
+  TRAILER = 'TRAILER',          // Trailer/Acoplado
+  AUDIO_EQUIPMENT = 'AUDIO_EQUIPMENT',  // Equipos de audio
+  ELECTRIC_SCOOTER = 'ELECTRIC_SCOOTER', // Monopatín eléctrico
+  OTHER = 'OTHER',              // Otro equipo
+}
+
 interface Vehicle {
   id: string;
-  licensePlate: string;    // Patente - ÚNICA
-  brand: string;           // Marca
-  model: string;           // Modelo
-  year: number;
-  type: VehicleType;       // Clasificación para factor
-  color?: string;
+  identifier: string;          // Patente (vehículos) o N° Serie/Código (equipos) - ÚNICO
+  
+  category: VehicleCategory;   // Determina qué campos mostrar y validar
+  
+  // Campos para vehículos (opcionales, requeridos si es vehículo)
+  brand?: string;              // Toyota, Ford
+  model?: string;              // Hilux, Ranger
+  year?: number;               // 2024
+  color?: string;              // Rojo
+  
+  // Campos para equipos genéricos (opcionales, usados si no es vehículo)
+  equipmentName?: string;      // "Parlante Sony GTK-XB90"
+  equipmentType?: string;      // "Equipo de audio", "Monopatín eléctrico"
+  description?: string;        // Detalles adicionales del equipo
+  
+  // Común
   notes?: string;
   customerId: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
+
+// Helper para determinar si es vehículo motorizado
+const isMotorVehicle = (category: VehicleCategory): boolean => {
+  return ['CAR', 'TRUCK', 'SUV', 'PICKUP', 'MOTORCYCLE'].includes(category);
+};
+
+// Helper para determinar si usa patente
+const requiresPatent = (category: VehicleCategory): boolean => {
+  return ['CAR', 'TRUCK', 'SUV', 'PICKUP', 'TRAILER'].includes(category);
+};
+```
+
+#### UI Adaptativa por Categoría:
+
+```typescript
+// Formulario condicional según categoría
+const VehicleForm = ({ category }) => {
+  const isVehicle = isMotorVehicle(category);
+  const needsPatent = requiresPatent(category);
+  
+  return (
+    <form>
+      {/* Siempre visible */}
+      <SelectCategory 
+        value={category}
+        options={[
+          { value: 'CAR', label: 'Auto/Camioneta 🚗' },
+          { value: 'SUV', label: 'SUV/4x4 🚙' },
+          { value: 'PICKUP', label: 'Pickup 🛻' },
+          { value: 'TRUCK', label: 'Camión 🚚' },
+          { value: 'MOTORCYCLE', label: 'Moto 🏍️' },
+          { value: 'TRAILER', label: 'Trailer/Acoplado 🚛' },
+          { value: 'AUDIO_EQUIPMENT', label: 'Equipo de Audio 🔊' },
+          { value: 'ELECTRIC_SCOOTER', label: 'Monopatín Eléctrico 🛴' },
+          { value: 'OTHER', label: 'Otro Equipo 📦' },
+        ]}
+      />
+      
+      <Input 
+        label={needsPatent ? 'Patente' : 'Código/N° Serie'} 
+        placeholder={needsPatent ? 'AB123CD' : 'SN-12345'}
+        required
+      />
+      
+      {/* Campos condicionales: solo vehículos */}
+      {isVehicle && (
+        <>
+          <Input label="Marca" placeholder="Toyota" required />
+          <Input label="Modelo" placeholder="Hilux" required />
+          <Input label="Año" type="number" placeholder="2024" />
+          <Input label="Color" placeholder="Blanco" />
+        </>
+      )}
+      
+      {/* Campos condicionales: solo equipos */}
+      {!isVehicle && (
+        <>
+          <Input 
+            label="Nombre del Equipo" 
+            placeholder="Parlante Sony GTK-XB90"
+            required 
+          />
+          <Input 
+            label="Tipo de Equipo" 
+            placeholder="Equipo de audio portátil"
+            required 
+          />
+          <Textarea 
+            label="Descripción" 
+            placeholder="Detalles adicionales del equipo..."
+            rows={3}
+          />
+        </>
+      )}
+      
+      <Textarea label="Notas" placeholder="Observaciones..." />
+    </form>
+  );
+};
 ```
 
 ### 3. Servicios (Catálogo de Trabajos)
@@ -220,18 +327,20 @@ interface WorkOrder {
 ## Modelo de Datos FASE 2
 
 ```
-┌─────────────────┐       ┌─────────────────┐       ┌─────────────────┐
-│    CUSTOMER     │       │    VEHICLE      │       │   WORK_ORDER    │
-├─────────────────┤       ├─────────────────┤       ├─────────────────┤
-│ id              │◄────┤ id              │◄────┤ id (OT-XXXX)    │
-│ fullName        │       │ licensePlate    │       │ status          │
-│ phone           │       │ brand           │       │ customerId      │
-│ documentType    │       │ model           │       │ vehicleId       │
-│ documentNumber  │       │ year            │       │ technicianId    │
-│ address         │       │ type (factor)   │       │ quoteId         │
-│ notes           │       │ customerId      │       │ scheduledDate   │
-└─────────────────┘       └─────────────────┘       │ total           │
-                                                    │ invoiceId       │
+┌─────────────────┐       ┌─────────────────────────────────┐       ┌─────────────────┐
+│    CUSTOMER     │       │           VEHICLE               │       │   WORK_ORDER    │
+├─────────────────┤       │        (Activo Genérico)        │       ├─────────────────┤
+│ id              │◄────┤ id                              │◄────┤ id (OT-XXXX)    │
+│ fullName        │       │ identifier (patente/serie)      │       │ status          │
+│ phone           │       │ category                        │       │ customerId      │
+│ documentType    │       │ brand? (vehículos)              │       │ vehicleId       │
+│ documentNumber  │       │ model? (vehículos)              │       │ technicianId    │
+│ address         │       │ year? (vehículos)               │       │ quoteId         │
+│ notes           │       │ equipmentName? (equipos)        │       │ scheduledDate   │
+└─────────────────┘       │ equipmentType? (equipos)        │       │ total           │
+                          │ description? (equipos)          │       │ invoiceId       │
+                          │ customerId                      │       └─────────────────┘
+                          └─────────────────────────────────┘              │
 ┌─────────────────┐       ┌─────────────────┐       └─────────────────┘
 │     QUOTE       │       │  WORK_ORDER_ITEM│              │
 ├─────────────────┤       ├─────────────────┤              │
@@ -281,15 +390,15 @@ interface WorkOrder {
 | `/api/customers/:id` | PUT | Actualizar cliente | SELLER, ADMIN |
 | `/api/customers/search` | GET | Buscar por nombre/tel/patente | SELLER, TECHNICIAN, ADMIN |
 
-### Vehículos
+### Activos/Vehículos
 | Endpoint | Método | Descripción | Roles |
 |----------|--------|-------------|-------|
-| `/api/vehicles` | GET | Listar vehículos | SELLER, TECHNICIAN, ADMIN |
-| `/api/vehicles` | POST | Crear vehículo | SELLER, ADMIN |
-| `/api/vehicles/:id` | GET | Obtener vehículo | SELLER, TECHNICIAN, ADMIN |
-| `/api/vehicles/:id` | PUT | Actualizar vehículo | SELLER, ADMIN |
-| `/api/vehicles/by-plate/:plate` | GET | Buscar por patente | SELLER, TECHNICIAN, ADMIN |
-| `/api/vehicles/:id/history` | GET | Historial de OTs | SELLER, TECHNICIAN, ADMIN |
+| `/api/vehicles` | GET | Listar activos | SELLER, TECHNICIAN, ADMIN |
+| `/api/vehicles` | POST | Crear activo | SELLER, ADMIN |
+| `/api/vehicles/:id` | GET | Obtener activo | SELLER, TECHNICIAN, ADMIN |
+| `/api/vehicles/:id` | PUT | Actualizar activo | SELLER, ADMIN |
+| `/api/vehicles/by-identifier/:identifier` | GET | Buscar por patente o n° serie | SELLER, TECHNICIAN, ADMIN |
+| `/api/vehicles/:id/history` | GET | Historial de OTs del activo | SELLER, TECHNICIAN, ADMIN |
 
 ### Servicios
 | Endpoint | Método | Descripción | Roles |
@@ -339,8 +448,8 @@ interface WorkOrder {
 
 ## UI/UX Nuevas Pantallas
 
-1. **Ficha Cliente** - Datos + vehículos + historial
-2. **Ficha Vehículo** - Datos + historial OTs
+1. **Ficha Cliente** - Datos + activos (vehículos/equipos) + historial
+2. **Ficha Activo** - Datos según categoría + historial OTs
 3. **Nuevo Presupuesto** - Buscador productos/servicios + preview
 4. **Kanban OTs** - Vista columnas por estado
 5. **Detalle OT** - Todo el proceso en una pantalla
