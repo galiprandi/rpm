@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { LayoutDashboard, Package, Users, Settings, LogOut } from 'lucide-react';
 
 const meta: Meta = {

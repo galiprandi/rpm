@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { ProductTable } from './ProductTable';
 
 const meta: Meta<typeof ProductTable> = {

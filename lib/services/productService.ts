@@ -38,7 +38,7 @@ export interface Product {
   minStock: number;
   isLowStock: boolean;
   margin: number;
-  supplier: string | null;
+  supplierId: string | null;
   location: string | null;
   isActive: boolean;
 }
@@ -53,7 +53,7 @@ export interface CreateProductInput {
   salePrice: number;
   stock: number;
   minStock: number;
-  supplier?: string;
+  supplierId?: string;
   location?: string;
 }
 
@@ -97,6 +97,7 @@ function transformProduct(product: PrismaProductWithCategory): Product {
     salePrice: sale,
     margin: calculateMargin(cost, sale),
     isLowStock: isLowStock(product.stock, product.minStock),
+    supplierId: product.supplierId,
   };
 }
 
@@ -184,7 +185,7 @@ export async function createProduct(input: CreateProductInput): Promise<Product>
       salePrice: new Prisma.Decimal(input.salePrice),
       stock: input.stock,
       minStock: input.minStock,
-      supplier: input.supplier || null,
+      supplierId: input.supplierId || null,
       location: input.location || null,
     },
     include: { category: true },
@@ -210,7 +211,11 @@ export async function updateProduct(id: string, input: UpdateProductInput): Prom
   if (input.salePrice !== undefined) data.salePrice = new Prisma.Decimal(input.salePrice);
   if (input.stock !== undefined) data.stock = input.stock;
   if (input.minStock !== undefined) data.minStock = input.minStock;
-  if (input.supplier !== undefined) data.supplier = input.supplier || null;
+  if (input.supplierId !== undefined) {
+    data.supplier = input.supplierId 
+      ? { connect: { id: input.supplierId } }
+      : { disconnect: true };
+  }
   if (input.location !== undefined) data.location = input.location || null;
   if (input.isActive !== undefined) data.isActive = input.isActive;
 

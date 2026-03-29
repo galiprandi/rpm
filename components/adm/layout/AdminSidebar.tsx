@@ -20,7 +20,7 @@ const navigation = [
   { name: 'Configuración', href: '/adm/settings', icon: Settings },
 ];
 
-export function AdminSidebar({ onSignOut, collapsed = false }: { onSignOut: () => void; collapsed?: boolean }) {
+export function AdminSidebar({ onSignOut, collapsed = false }: { onSignOut?: () => void; collapsed?: boolean }) {
   const pathname = usePathname();
 
   return (
