@@ -58,7 +58,8 @@ export const ModelName = {
   UserRole: 'UserRole',
   Category: 'Category',
   Supplier: 'Supplier',
-  Product: 'Product'
+  Product: 'Product',
+  StockMovement: 'StockMovement'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -194,6 +195,7 @@ export const ProductScalarFieldEnum = {
   minStock: 'minStock',
   barcode: 'barcode',
   location: 'location',
+  lastMovementAt: 'lastMovementAt',
   isActive: 'isActive',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
@@ -202,6 +204,24 @@ export const ProductScalarFieldEnum = {
 } as const
 
 export type ProductScalarFieldEnum = (typeof ProductScalarFieldEnum)[keyof typeof ProductScalarFieldEnum]
+
+
+export const StockMovementScalarFieldEnum = {
+  id: 'id',
+  productId: 'productId',
+  userId: 'userId',
+  userName: 'userName',
+  type: 'type',
+  quantity: 'quantity',
+  previousStock: 'previousStock',
+  newStock: 'newStock',
+  reason: 'reason',
+  reasonDetails: 'reasonDetails',
+  salePrice: 'salePrice',
+  createdAt: 'createdAt'
+} as const
+
+export type StockMovementScalarFieldEnum = (typeof StockMovementScalarFieldEnum)[keyof typeof StockMovementScalarFieldEnum]
 
 
 export const SortOrder = {

@@ -4,9 +4,10 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ProductDialog } from '@/components/products/ProductDialog';
+import { ProductMovementsModal } from '@/components/products/ProductMovementsModal';
 import { useUI } from '@/components/ui/UIProvider';
 import { CrudAdmin, StatItem } from '@/components/adm';
-import { Package, Edit2, Trash2, AlertTriangle, DollarSign, Boxes } from 'lucide-react';
+import { Package, Edit2, Trash2, AlertTriangle, DollarSign, Boxes, History } from 'lucide-react';
 import { PriceDisplay } from '@/components/ui/price-display';
 import { StockDisplay } from '@/components/ui/stock-display';
 import { type ColumnDef } from '@tanstack/react-table';
@@ -79,6 +80,47 @@ export default function ProductsPage() {
     barcode: '',
     location: '',
   });
+
+  // Movements modal state
+  const [movementsModalOpen, setMovementsModalOpen] = useState(false);
+  const [selectedProductForMovements, setSelectedProductForMovements] = useState<Product | null>(null);
+  const [movements, setMovements] = useState<Array<{
+    id: string;
+    type: string;
+    quantity: number;
+    previousStock: number;
+    newStock: number;
+    reason: string;
+    reasonDetails: string | null;
+    userName: string | null;
+    createdAt: string;
+  }>>([]);
+  const [movementsLoading, setMovementsLoading] = useState(false);
+
+  const openMovementsModal = async (product: Product) => {
+    setSelectedProductForMovements(product);
+    setMovementsModalOpen(true);
+    setMovementsLoading(true);
+    setMovements([]); // Clear previous movements
+    try {
+      const response = await fetch(`/api/products/${product.id}/movements`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      setMovements(data.movements || []);
+    } catch (error) {
+      console.error('Error fetching movements:', error);
+      setMovements([]);
+      await alert({
+        title: 'Error',
+        description: 'No se pudieron cargar los movimientos del producto',
+        variant: 'error',
+      });
+    } finally {
+      setMovementsLoading(false);
+    }
+  };
 
   const resetForm = () => {
     setFormData({
@@ -327,6 +369,14 @@ export default function ProductsPage() {
         header: 'Acciones',
         cell: ({ row }) => (
           <div className="flex gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => openMovementsModal(row.original)}
+              title="Ver historial"
+            >
+              <History className="h-4 w-4" />
+            </Button>
             <Button variant="ghost" size="sm" onClick={() => openEditDialog(row.original)}>
               <Edit2 className="h-4 w-4" />
             </Button>
@@ -381,6 +431,15 @@ export default function ProductsPage() {
         categories={categories}
         suppliers={suppliers}
         isValid={formValid}
+      />
+
+      {/* Movements Modal */}
+      <ProductMovementsModal
+        isOpen={movementsModalOpen}
+        onClose={() => setMovementsModalOpen(false)}
+        product={selectedProductForMovements}
+        movements={movements}
+        loading={movementsLoading}
       />
     </>
   );

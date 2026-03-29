@@ -1,6 +1,6 @@
 'use client';
 
-import { Modal, ModalFooter } from '@/components/ui/modal';
+import { ModalBase, ModalBaseFooter } from '@/components/ui/ModalBase';
 import { ProductForm } from './ProductForm';
 
 import { type Product, type Category, type Supplier, type ProductFormData } from './types';
@@ -29,16 +29,16 @@ export function ProductDialog({
   isValid,
 }: ProductDialogProps) {
   return (
-    <Modal
+    <ModalBase
       isOpen={isOpen}
       onClose={onClose}
       title={editingProduct ? 'Editar Producto' : 'Nuevo Producto'}
       description={editingProduct 
         ? 'Modifica los datos del producto existente.' 
         : 'Completa los datos para crear un nuevo producto.'}
-      size="lg"
+      maxWidth="lg"
       footer={
-        <ModalFooter
+        <ModalBaseFooter
           onCancel={onClose}
           onSave={onSubmit}
           saveText={editingProduct ? 'Guardar Cambios' : 'Crear Producto'}
@@ -53,6 +53,6 @@ export function ProductDialog({
         suppliers={suppliers}
         isValid={isValid}
       />
-    </Modal>
+    </ModalBase>
   );
 }

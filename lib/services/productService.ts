@@ -22,7 +22,7 @@ import { Prisma } from '@/generated/client';
 // Types
 export interface Product {
   id: string;
-  sku: string;
+  sku: string | null;  // SKU opcional
   name: string;
   description: string | null;
   barcode: string | null;
@@ -40,15 +40,16 @@ export interface Product {
   margin: number;
   supplierId: string | null;
   location: string | null;
+  lastMovementAt: Date | null;
   isActive: boolean;
 }
 
 export interface CreateProductInput {
-  sku: string;
+  sku?: string;  // SKU opcional
   name: string;
   description?: string;
   barcode?: string;
-  categoryId: string; // Required by Prisma schema
+  categoryId: string;
   costPrice: number;
   salePrice: number;
   stock: number;
@@ -98,6 +99,8 @@ function transformProduct(product: PrismaProductWithCategory): Product {
     margin: calculateMargin(cost, sale),
     isLowStock: isLowStock(product.stock, product.minStock),
     supplierId: product.supplierId,
+    sku: product.sku,
+    lastMovementAt: product.lastMovementAt,
   };
 }
 
@@ -278,4 +281,119 @@ export async function updateStock(
   });
 
   return transformProduct(product);
+}
+
+// ============================================
+// Stock Audit Trail Functions
+// ============================================
+
+export type MovementType = 'IN' | 'OUT' | 'ADJUSTMENT';
+export type MovementReason = 'VENTA' | 'RECEPCION' | 'AJUSTE_INVENTARIO' | 'MERMA' | 'DEVOLUCION' | 'CARGA_INICIAL';
+
+export interface StockMovement {
+  id: string;
+  productId: string;
+  userId: string | null;
+  userName: string | null;
+  type: MovementType;
+  quantity: number;
+  previousStock: number;
+  newStock: number;
+  reason: MovementReason;
+  reasonDetails: string | null;
+  salePrice: number | null;
+  createdAt: Date;
+}
+
+export interface CreateMovementInput {
+  productId: string;
+  userId?: string;
+  userName?: string;
+  type: MovementType;
+  quantity: number;
+  previousStock: number;
+  newStock: number;
+  reason: MovementReason;
+  reasonDetails?: string;
+  salePrice?: number;
+}
+
+/**
+ * Create a stock movement record (audit trail)
+ */
+export async function createStockMovement(input: CreateMovementInput): Promise<StockMovement> {
+  const movement = await prisma.stockMovement.create({
+    data: {
+      productId: input.productId,
+      userId: input.userId || null,
+      userName: input.userName || null,
+      type: input.type,
+      quantity: input.quantity,
+      previousStock: input.previousStock,
+      newStock: input.newStock,
+      reason: input.reason,
+      reasonDetails: input.reasonDetails || null,
+      salePrice: input.salePrice ? new Prisma.Decimal(input.salePrice) : null,
+    },
+  });
+
+  // Update lastMovementAt on the product
+  await prisma.product.update({
+    where: { id: input.productId },
+    data: { lastMovementAt: new Date() },
+  });
+
+  return {
+    ...movement,
+    type: movement.type as MovementType,
+    reason: movement.reason as MovementReason,
+    salePrice: movement.salePrice ? Number(movement.salePrice) : null,
+  };
+}
+
+/**
+ * Get all movements for a product
+ */
+export async function getProductMovements(productId: string): Promise<StockMovement[]> {
+  console.log('[Service] getProductMovements called with productId:', productId);
+  try {
+    const movements = await prisma.stockMovement.findMany({
+      where: { productId },
+      orderBy: { createdAt: 'desc' },
+    });
+    console.log('[Service] Movements found:', movements.length);
+
+    return movements.map(m => ({
+      ...m,
+      type: m.type as MovementType,
+      reason: m.reason as MovementReason,
+      salePrice: m.salePrice ? Number(m.salePrice) : null,
+    }));
+  } catch (error) {
+    console.error('[Service] Error in getProductMovements:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get obsolete products (stock > 0, stock <= minStock, no movement in 90 days)
+ */
+export async function getObsoleteProducts(): Promise<Product[]> {
+  const ninetyDaysAgo = new Date();
+  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+
+  const products = await prisma.product.findMany({
+    where: {
+      isActive: true,
+      stock: { gt: 0, lte: prisma.product.fields.minStock },
+      OR: [
+        { lastMovementAt: { lt: ninetyDaysAgo } },
+        { lastMovementAt: null },
+      ],
+    },
+    include: { category: true },
+    orderBy: { stock: 'desc' },
+  });
+
+  return products.map(transformProduct);
 }

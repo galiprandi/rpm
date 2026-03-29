@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Modal, ModalFooter } from '@/components/ui/modal';
+import { ModalBase, ModalBaseFooter } from '@/components/ui/ModalBase';
 import { useUI } from '@/components/ui/UIProvider';
 import { CategoryForm, type CategoryFormData } from '@/components/categories/CategoryForm';
 import { CrudAdmin, StatItem } from '@/components/adm';
@@ -261,14 +261,14 @@ export default function CategoriesPage() {
       />
 
       {/* Edit Category Modal */}
-      <Modal
+      <ModalBase
         isOpen={isDialogOpen}
         onClose={() => setIsDialogOpen(false)}
         title="Editar Categoría"
         description="Modifica los datos de la categoría."
-        size="md"
+        maxWidth="md"
         footer={
-          <ModalFooter
+          <ModalBaseFooter
             onCancel={() => setIsDialogOpen(false)}
             onSave={() => handleEditSubmit({ preventDefault: () => {} } as React.FormEvent)}
             saveText="Guardar Cambios"
@@ -276,17 +276,17 @@ export default function CategoriesPage() {
         }
       >
         <CategoryForm formData={editForm} setFormData={setEditForm} onSubmit={handleEditSubmit} />
-      </Modal>
+      </ModalBase>
 
       {/* Create Category Modal */}
-      <Modal
+      <ModalBase
         isOpen={isCreateDialogOpen}
         onClose={() => setIsCreateDialogOpen(false)}
         title="Nueva Categoría"
         description="Completa los datos para crear una nueva categoría."
-        size="md"
+        maxWidth="md"
         footer={
-          <ModalFooter
+          <ModalBaseFooter
             onCancel={() => setIsCreateDialogOpen(false)}
             onSave={handleCreateCategory}
             saveText="Crear Categoría"
@@ -301,7 +301,7 @@ export default function CategoriesPage() {
             handleCreateCategory();
           }}
         />
-      </Modal>
+      </ModalBase>
     </>
   );
 }

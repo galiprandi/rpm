@@ -25,9 +25,9 @@ interface DataTableProps<TData> {
   emptyMessage?: string;
   externalGlobalFilter?: string;
   onExternalGlobalFilterChange?: (value: string) => void;
+  footerPlaceholder?: React.ReactNode;
   pageSize?: number;
 }
-
 export function DataTable<TData>({
   data,
   columns,
@@ -36,6 +36,7 @@ export function DataTable<TData>({
   emptyMessage = 'No se encontraron registros',
   externalGlobalFilter,
   onExternalGlobalFilterChange,
+  footerPlaceholder,
   pageSize = 20,
 }: DataTableProps<TData>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -128,7 +129,7 @@ export function DataTable<TData>({
               table.getRowModel().rows.map((row, index) => (
                 <tr
                   key={row.id}
-                  className={index % 2 === 0 ? 'bg-white' : 'bg-muted/20'}
+                  className={index % 2 === 0 ? 'bg-background' : 'bg-muted/30'}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <td key={cell.id} className="py-3 px-4">
@@ -152,45 +153,47 @@ export function DataTable<TData>({
       </div>
 
       <div className="flex items-center justify-between px-2">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span>
-            Página {table.getState().pagination.pageIndex + 1} de{' '}
-            {table.getPageCount()} | {table.getFilteredRowModel().rows.length} registros
-          </span>
+        <div className="text-sm text-muted-foreground">
+          {footerPlaceholder}
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.setPageIndex(0)}
-            disabled={!table.getCanPreviousPage()}
-          >
-            <ChevronsLeft className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-            disabled={!table.getCanNextPage()}
-          >
-            <ChevronsRight className="h-4 w-4" />
-          </Button>
+        <div className="flex items-center gap-4">
+          <span className="text-sm text-muted-foreground">
+            {table.getState().pagination.pageIndex + 1}/{table.getPageCount()} · {table.getFilteredRowModel().rows.length} items
+          </span>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.setPageIndex(0)}
+              disabled={!table.getCanPreviousPage()}
+            >
+              <ChevronsLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+              disabled={!table.getCanNextPage()}
+            >
+              <ChevronsRight className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
     </div>

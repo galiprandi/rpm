@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { UIProvider } from "@/components/ui/UIProvider";
+import { ThemeProvider } from "@/components/ui/ThemeProvider";
 import { UserSyncServer } from "@/components/users/UserSyncServer";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
@@ -29,14 +30,17 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">
-        <TooltipProvider>
-          <UIProvider>
-            <UserSyncServer />
-            {children}
-          </UIProvider>
-        </TooltipProvider>
+        <ThemeProvider>
+          <TooltipProvider>
+            <UIProvider>
+              <UserSyncServer />
+              {children}
+            </UIProvider>
+          </TooltipProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Modal, ModalFooter } from '@/components/ui/modal';
+import { ModalBase, ModalBaseFooter } from '@/components/ui/ModalBase';
 import { useUI } from '@/components/ui/UIProvider';
 import { SupplierForm, type SupplierFormData } from '@/components/suppliers/SupplierForm';
 import { CrudAdmin, StatItem } from '@/components/adm';
@@ -297,14 +297,14 @@ export default function SuppliersPage() {
       />
 
       {/* Create Supplier Modal */}
-      <Modal
+      <ModalBase
         isOpen={isCreateDialogOpen}
         onClose={() => setIsCreateDialogOpen(false)}
         title="Nuevo Proveedor"
         description="Completa los datos para crear un nuevo proveedor."
-        size="md"
+        maxWidth="md"
         footer={
-          <ModalFooter
+          <ModalBaseFooter
             onCancel={() => setIsCreateDialogOpen(false)}
             onSave={handleCreateSupplier}
             saveText="Crear Proveedor"
@@ -316,17 +316,17 @@ export default function SuppliersPage() {
           setFormData={setCreateForm}
           onSubmit={(e) => { e.preventDefault(); handleCreateSupplier(); }}
         />
-      </Modal>
+      </ModalBase>
 
       {/* Edit Supplier Modal */}
-      <Modal
+      <ModalBase
         isOpen={isDialogOpen}
         onClose={() => setIsDialogOpen(false)}
         title="Editar Proveedor"
         description="Modifica los datos del proveedor."
-        size="md"
+        maxWidth="md"
         footer={
-          <ModalFooter
+          <ModalBaseFooter
             onCancel={() => setIsDialogOpen(false)}
             onSave={() => handleEditSubmit({ preventDefault: () => {} } as React.FormEvent)}
             saveText="Guardar Cambios"
@@ -334,7 +334,7 @@ export default function SuppliersPage() {
         }
       >
         <SupplierForm formData={editForm} setFormData={setEditForm} onSubmit={handleEditSubmit} />
-      </Modal>
+      </ModalBase>
     </>
   );
 }

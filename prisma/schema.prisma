@@ -142,15 +142,16 @@ model Supplier {
 
 model Product {
   id          String   @id @default(uuid())
-  sku         String   @unique
+  sku         String?  @unique  // SKU opcional según spec
   name        String
   description String?
   costPrice   Decimal  @db.Decimal(10, 2)
   salePrice   Decimal  @db.Decimal(10, 2)
   stock       Int      @default(0)
   minStock    Int      @default(0)
-  barcode     String?
+  barcode     String?  // EAN opcional
   location    String?
+  lastMovementAt DateTime? // Último movimiento de stock (para detectar obsoletos)
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -162,11 +163,42 @@ model Product {
   supplierId String?
   supplier   Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
 
+  // Audit trail
+  movements StockMovement[]
+
   @@index([categoryId])
   @@index([supplierId])
   @@index([sku])
   @@index([name])
   @@index([isActive])
   @@index([stock, minStock])
+  @@index([lastMovementAt]) // Para queries de obsoletos (productos sin movimientos)
   @@map("product")
+}
+
+// ============================================
+// Stock Audit Trail - Traza de movimientos
+// ============================================
+
+model StockMovement {
+  id            String   @id @default(uuid())
+  productId     String
+  userId        String?  // Email del usuario que hizo el movimiento
+  userName      String?  // Nombre del usuario (denormalizado para historial)
+  type          String   // IN (entrada), OUT (salida), ADJUSTMENT (ajuste)
+  quantity      Int      // Cantidad movida (positivo o negativo)
+  previousStock Int      // Stock antes del movimiento
+  newStock      Int      // Stock después del movimiento
+  reason        String   // Motivo del movimiento (enum como string)
+  reasonDetails String?  // Detalles adicionales (ej: "Venta #123")
+  salePrice     Decimal? @db.Decimal(10, 2) // Precio de venta al momento (para auditoría)
+  createdAt     DateTime @default(now())
+
+  // Relations
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@index([createdAt])
+  @@index([type])
+  @@map("stock_movement")
 }

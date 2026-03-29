@@ -334,17 +334,42 @@ const isFormValid = () => {
 
 ## Modales Admin
 
-### Modal con Formulario
+### ✅ OBLIGATORIO: Usar ModalBase para todos los modales
 
+**Todos los modales de Admin deben usar el componente `ModalBase` de `@/components/ui/ModalBase`.**
+
+Este componente garantiza:
+- Estilos consistentes (respeta tema claro/oscuro)
+- Fondo: `bg-background` / Texto: `text-foreground`
+- Header con border-bottom sutil
+- Footer con border-top y `bg-muted/50`
+- Tamaños predefinidos: sm, md, lg, xl, 2xl, 3xl
+
+**❌ PROHIBIDO: Usar Modal viejo o Dialog inline**
 ```typescript
-<Modal
+// ❌ MAL: Modal viejo (hardcodeado a light mode)
+import { Modal, ModalFooter } from '@/components/ui/modal';
+
+// ❌ MAL: Dialog inline con estilos custom
+<Dialog>
+  <DialogContent className="bg-white text-slate-900">
+    ...
+  </DialogContent>
+</Dialog>
+```
+
+**✅ OBLIGATORIO: ModalBase con ModalBaseFooter**
+```typescript
+import { ModalBase, ModalBaseFooter } from '@/components/ui/ModalBase';
+
+<ModalBase
   isOpen={isDialogOpen}
   onClose={() => setIsDialogOpen(false)}
   title={editingItem ? 'Editar' : 'Nuevo'}
   description="Descripción del modal"
-  size="lg"
+  maxWidth="lg"
   footer={
-    <ModalFooter
+    <ModalBaseFooter
       onCancel={() => setIsDialogOpen(false)}
       onSave={handleSubmit}
       saveText={editingItem ? 'Guardar Cambios' : 'Crear'}
@@ -357,8 +382,41 @@ const isFormValid = () => {
     setFormData={setFormData}
     categories={categories}
   />
-</Modal>
+</ModalBase>
 ```
+
+### API de ModalBase
+
+| Prop | Tipo | Descripción |
+|------|------|-------------|
+| `isOpen` | boolean | Estado de visibilidad |
+| `onClose` | () => void | Callback al cerrar |
+| `title` | ReactNode | Título del modal |
+| `description` | string | Subtítulo descriptivo |
+| `maxWidth` | 'sm' \| 'md' \| 'lg' \| 'xl' \| '2xl' \| '3xl' | Ancho máximo |
+| `maxHeight` | string | Altura máxima (ej: 'max-h-[80vh]') |
+| `footer` | ReactNode | Contenido del footer |
+| `showCloseButton` | boolean | Mostrar X en esquina |
+
+### API de ModalBaseFooter
+
+| Prop | Tipo | Default | Descripción |
+|------|------|---------|-------------|
+| `onCancel` | () => void | - | Callback botón cancelar |
+| `onSave` | () => void | - | Callback botón guardar |
+| `cancelText` | string | 'Cancelar' | Texto botón cancelar |
+| `saveText` | string | 'Guardar' | Texto botón guardar |
+| `isLoading` | boolean | false | Estado de carga |
+| `disabled` | boolean | false | Deshabilitar botón guardar |
+
+### Migración desde Modal viejo
+
+| Antes (Modal) | Después (ModalBase) |
+|---------------|---------------------|
+| `size="md"` | `maxWidth="md"` |
+| `size="lg"` | `maxWidth="lg"` |
+| `ModalFooter` | `ModalBaseFooter` |
+| `bg-white` | `bg-background` (automático) |
 
 ---
 
