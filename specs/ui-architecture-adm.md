@@ -445,6 +445,87 @@ export const useUI = () => useContext(UIContext);
 
 ---
 
+## Layout CRUD Admin
+
+### ✅ Estructura Vertical Estándar
+
+**Todas las páginas CRUD de Admin deben seguir este orden de arriba a abajo:**
+
+```
+1. HEADER (flex justify-between items-start)
+   ├── Izquierda: Título (text-3xl font-bold)
+   └── Derecha: Botón [+ Nuevo] (primary, dark)
+
+2. SUBTÍTULO (text-muted-foreground)
+   └── Descripción breve de la página
+
+3. STATS CARDS (solo Productos y CRUDs importantes)
+   └── Grid de 4 cards máximo (Total, Alertas, etc.)
+
+4. FILTROS (flex gap-4)
+   ├── Buscador (flex-1, con icono Search)
+   └── Filtros opcionales (select, badges, etc.)
+
+5. TABLA DE DATOS
+   └── Table con headers, rows, acciones
+```
+
+### Ejemplo Completo: Productos
+
+```typescript
+<div className="space-y-6">
+  {/* 1. HEADER + CTA */}
+  <div className="flex justify-between items-start">
+    <div>
+      <h1 className="text-3xl font-bold">Productos</h1>
+      <p className="text-muted-foreground">
+        Gestiona el inventario
+      </p>
+    </div>
+    <Button className="bg-slate-900 text-white...">
+      <Plus className="h-5 w-5 mr-2" />
+      Nuevo Producto
+    </Button>
+  </div>
+
+  {/* 2. STATS CARDS (solo para productos/importantes) */}
+  <div className="grid gap-4 md:grid-cols-4">
+    <Card><CardContent>Total: {count}</CardContent></Card>
+    <Card><CardContent>Stock Bajo: {lowStock}</CardContent></Card>
+    ...
+  </div>
+
+  {/* 3. FILTROS */}
+  <Card>
+    <CardContent className="p-4">
+      <div className="flex gap-4">
+        <Input placeholder="Buscar..." className="flex-1" />
+        <Select><option>Filtro 1</option></Select>
+        <Button variant="outline">Stock Bajo</Button>
+      </div>
+    </CardContent>
+  </Card>
+
+  {/* 4. TABLA */}
+  <Card>
+    <CardHeader><CardTitle>Listado</CardTitle></CardHeader>
+    <CardContent>
+      <table>...</table>
+    </CardContent>
+  </Card>
+</div>
+```
+
+### Reglas por Tipo de CRUD
+
+| Tipo | Stats Cards | Ejemplos |
+|------|-------------|----------|
+| **Importante** | ✅ Sí (4 máx) | Productos, Ventas, Clientes |
+| **Catalogo** | ❌ No | Categorías, Proveedores |
+| **Config** | ❌ No | Usuarios, Settings |
+
+---
+
 ## Botones Admin
 
 ### ✅ NORMA: Ubicación Consistente del Botón "+" (Crear/Nuevo)
