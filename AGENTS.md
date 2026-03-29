@@ -32,6 +32,35 @@ A diferencia de la regla general de usar inglés para todo contenido técnico, *
 | Commits | 🇬🇧 Inglés | Mensajes de git |
 | Docs técnicas | 🇬🇧 Inglés | `docs/*.md` |
 
+### ⚠️ REGLA CRÍTICA: Comentarios en Código
+
+**Todo el código fuente (incluyendo comentarios y JSDoc) debe estar en INGLÉS.**
+
+```typescript
+// ✅ BIEN: Comentario en inglés
+// GET /api/categories - List categories
+export async function GET(request: NextRequest) {
+  // Check unique name
+  const existing = await getCategoryByName(body.name);
+}
+
+// ❌ MAL: Comentario en español
+// GET /api/categories - Listar categorías
+export async function GET(request: NextRequest) {
+  // Verificar nombre único
+  const existing = await getCategoryByName(body.name);
+}
+```
+
+**Esta regla aplica a:**
+- Comentarios inline (`//`)
+- Comentarios de bloque (`/* */`)
+- JSDoc (`/** */`)
+- Nombres de variables y funciones
+- Mensajes de error técnicos (no de negocio)
+
+**Excepción:** Los mensajes de error de negocio (que ve el usuario final) pueden estar en español si el producto es para mercado hispanohablante.
+
 ---
 
 # Storybook Integration - OBLIGATORIO

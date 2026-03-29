@@ -1,12 +1,12 @@
 /**
  * API Route: /api/categories
- * Métodos: GET, POST
+ * Methods: GET, POST
  * Spec: /specs/inventory-sales.md
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { getCategories, createCategory, getCategoryByName } from '@/lib/services/categoryService';
 
-// GET /api/categories - Listar categorías
+// GET /api/categories - List categories
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -18,31 +18,31 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error fetching categories:', error);
     return NextResponse.json(
-      { error: 'Error al obtener categorías' },
+      { error: 'Error fetching categories' },
       { status: 500 }
     );
   }
 }
 
-// POST /api/categories - Crear categoría
+// POST /api/categories - Create category
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    // Validaciones
+    // Validations
     if (!body.name) {
       return NextResponse.json(
-        { error: 'El nombre de la categoría es requerido' },
+        { error: 'Category name is required' },
         { status: 400 }
       );
     }
 
-    // Verificar nombre único
+    // Check unique name
     const existing = await getCategoryByName(body.name);
 
     if (existing) {
       return NextResponse.json(
-        { error: 'Ya existe una categoría con ese nombre' },
+        { error: 'A category with that name already exists' },
         { status: 409 }
       );
     }
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error creating category:', error);
     return NextResponse.json(
-      { error: 'Error al crear categoría' },
+      { error: 'Error creating category' },
       { status: 500 }
     );
   }
