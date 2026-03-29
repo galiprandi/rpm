@@ -23,6 +23,7 @@
 #### Semana 1-2: Fundamentos
 - [x] Setup proyecto, base de datos, auth con roles JWT
 - [x] CRUD Productos, Categorías y Proveedores (ADMIN: full, SELLER: view)
+- [x] CRUD Usuarios con gestión de roles (solo ADMIN) ⭐ NUEVO
 - [ ] Control stock simple
 - [x] Seed datos iniciales
 
