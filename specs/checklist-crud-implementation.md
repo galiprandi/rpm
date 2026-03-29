@@ -52,6 +52,303 @@
 
 ---
 
+## 🎨 UX/UI Standards - Reglas Definidas en Sesión
+
+### 1. Layout CRUD Admin - Estructura Vertical Estándar
+
+**Todas las páginas CRUD deben seguir este orden de arriba a abajo:**
+
+```
+1. HEADER (flex justify-between items-start)
+   ├── Izquierda: Título (text-3xl font-bold) + Subtítulo (text-muted-foreground)
+   └── Derecha: Botón [+ Nuevo] (primary, dark, shadow)
+
+2. STATS CARDS (solo Productos y CRUDs importantes - máx 4 cards)
+   └── Grid de cards con métricas clave
+
+3. FILTROS (flex gap-4)
+   ├── Buscador (flex-1, con icono Search)
+   └── Filtros opcionales (select, badges, etc.)
+
+4. TABLA DE DATOS / GRID DE CARDS
+   └── Table con headers, rows, acciones | o Cards grid
+```
+
+**Reglas por Tipo de CRUD:**
+
+| Tipo | Stats Cards | Ejemplos |
+|------|-------------|----------|
+| **Importante** | ✅ Sí (4 máx) | Productos, Ventas, Clientes |
+| **Catalogo** | ❌ No | Categorías, Proveedores |
+| **Config** | ❌ No | Usuarios, Settings |
+
+### 2. Botón "+ Nuevo" - Ubicación y Estilo
+
+**❌ PROHIBIDO: Botón en card separada debajo del header**
+```typescript
+<Card>
+  <CardHeader><CardTitle>Nueva Categoría</CardTitle></CardHeader>
+  <CardContent>
+    <Button>Crear</Button>  // ← NO: Está en el lugar equivocado
+  </CardContent>
+</Card>
+```
+
+**✅ OBLIGATORIO: Botón en header alineado con título**
+```typescript
+<div className="flex justify-between items-start">
+  <div>
+    <h1 className="text-3xl font-bold">Categorías</h1>
+    <p className="text-muted-foreground">Gestiona las categorías</p>
+  </div>
+  <Button 
+    variant="default"
+    className="bg-slate-900 text-white hover:bg-slate-800 border border-slate-900 shadow-lg hover:shadow-xl transition-all font-semibold px-4 py-2"
+  >
+    <Plus className="h-5 w-5 mr-2" />
+    Nueva Categoría
+  </Button>
+</div>
+```
+
+**Estilo del Botón CTA Principal:**
+```typescript
+<Button 
+  variant="default"
+  className="bg-slate-900 text-white hover:bg-slate-800 border border-slate-900 shadow-lg hover:shadow-xl transition-all font-semibold px-4 py-2"
+>
+  <Plus className="h-5 w-5 mr-2" />
+  Nuevo Producto
+</Button>
+```
+
+### 3. Modales vs Forms Inline
+
+**❌ PROHIBIDO: Form inline en la página**
+```typescript
+// NO: Form inline en page
+{isCreating && (
+  <Card>
+    <CardContent>
+      <Input ... />
+      <Button>Crear</Button>
+    </CardContent>
+  </Card>
+)}
+```
+
+**✅ OBLIGATORIO: Modal con form**
+```typescript
+// SÍ: Modal con form
+const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+
+<Button onClick={() => setIsCreateDialogOpen(true)}>Nuevo</Button>
+
+<Modal
+  isOpen={isCreateDialogOpen}
+  onClose={() => setIsCreateDialogOpen(false)}
+  title="Nueva Entidad"
+  description="Completa los datos..."
+  size="md"
+  footer={
+    <ModalFooter
+      onCancel={() => setIsCreateDialogOpen(false)}
+      onSave={handleCreate}
+      saveText="Crear Entidad"
+    />
+  }
+>
+  <form className="space-y-4">
+    <div className="space-y-2">
+      <Label htmlFor="name">Nombre *</Label>
+      <Input id="name" ... />
+    </div>
+  </form>
+</Modal>
+```
+
+### 4. Botón "Guardar Cambios" en Modales de Edición
+
+**El botón de guardar dentro de los modales debe ser PRIMARY:**
+```typescript
+<Modal
+  footer={
+    <ModalFooter
+      onCancel={() => setIsDialogOpen(false)}
+      onSave={handleEditSubmit}
+      saveText="Guardar Cambios"  // ← Primary button
+    />
+  }
+>
+```
+
+### 5. Alerts y Confirms - UIProvider (NO Nativos)
+
+**❌ PROHIBIDO: alert() y confirm() nativos**
+```typescript
+// NO: Nativos
+alert('Mensaje');
+if (confirm('¿Seguro?')) { ... }
+```
+
+**✅ OBLIGATORIO: useUI() hook**
+```typescript
+// SÍ: UIProvider
+const { alert, confirm } = useUI();
+
+// Alert
+await alert({
+  title: 'Éxito',
+  description: 'Entidad creada correctamente',
+  variant: 'success',
+});
+
+// Confirm
+const confirmed = await confirm({
+  title: 'Eliminar Entidad',
+  description: `¿Estás seguro de eliminar "${entity.name}"?`,
+  confirmText: 'Eliminar',
+  cancelText: 'Cancelar',
+  variant: 'destructive',
+});
+
+if (confirmed) {
+  // Proceder con eliminación
+}
+```
+
+### 6. Select Dropdowns vs Input de Texto Libre
+
+**❌ PROHIBIDO: Input de texto libre para relaciones**
+```typescript
+// NO: Input libre para proveedor
+<Input 
+  placeholder="Nombre del proveedor..."
+  value={formData.supplier}
+  onChange={(e) => setFormData({...formData, supplier: e.target.value})}
+/>
+```
+
+**✅ OBLIGATORIO: Select dropdown para relaciones**
+```typescript
+// SÍ: Select dropdown
+<div className="space-y-2">
+  <Label htmlFor="supplierId">Proveedor *</Label>
+  <Select
+    value={formData.supplierId}
+    onValueChange={(value) => setFormData({ ...formData, supplierId: value })}
+  >
+    <SelectTrigger id="supplierId">
+      <SelectValue placeholder="Selecciona proveedor" />
+    </SelectTrigger>
+    <SelectContent position="popper" className="z-50 max-h-60">
+      {suppliers.map((sup) => (
+        <SelectItem key={sup.id} value={sup.id}>
+          {sup.name}
+        </SelectItem>
+      ))}
+    </SelectContent>
+  </Select>
+</div>
+```
+
+### 7. Cards de Entidades - Diseño Estándar
+
+**Estructura de Card para Catálogos (Categorías, Proveedores):**
+```typescript
+<Card key={entity.id} className={!entity.isActive ? 'opacity-60' : ''}>
+  <CardContent className="p-6">
+    <div className="flex items-start justify-between">
+      {/* Info principal */}
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center">
+          <Icon className="h-5 w-5 text-slate-600" />
+        </div>
+        <div>
+          <h3 className="font-semibold">{entity.name}</h3>
+          <p className="text-sm text-muted-foreground">
+            {entity.productCount} productos
+          </p>
+        </div>
+      </div>
+      
+      {/* Acciones */}
+      <div className="flex gap-1">
+        <Button variant="ghost" size="sm" onClick={() => openEditDialog(entity)}>
+          <Edit2 className="h-4 w-4" />
+        </Button>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="text-red-600"
+          onClick={() => handleDelete(entity)}
+          disabled={entity.productCount > 0}
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+    
+    {/* Info adicional (para proveedores) */}
+    <div className="mt-4 space-y-2 text-sm">
+      {entity.contactName && (
+        <p className="text-muted-foreground">Contacto: {entity.contactName}</p>
+      )}
+      {entity.phone && (
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Phone className="h-4 w-4" />
+          {entity.phone}
+        </div>
+      )}
+    </div>
+    
+    {/* Badges de estado */}
+    <div className="flex items-center gap-2 pt-2">
+      {!entity.isActive && <Badge variant="destructive">Inactivo</Badge>}
+      {entity.isDefault && <Badge variant="secondary">Default</Badge>}
+    </div>
+  </CardContent>
+</Card>
+```
+
+### 8. Mensajes de Error
+
+**Error técnico (logs, API): EN INGLÉS**
+```typescript
+console.error('Error creating entity:', error);
+return NextResponse.json(
+  { error: 'Error creating entity' },  // ← Inglés
+  { status: 500 }
+);
+```
+
+**Error de negocio (usuario final): PUEDE SER ESPAÑOL**
+```typescript
+await alert({
+  title: 'Error',
+  description: 'El nombre es obligatorio',  // ← Español (usuario final)
+  variant: 'error',
+});
+```
+
+### 9. Checklist UX/UI Pre-Implementación
+
+Antes de implementar cualquier CRUD, verificar:
+
+- [ ] ¿Es un CRUD Importante, Catálogo o Config? (define si lleva Stats Cards)
+- [ ] ¿El botón "+ Nuevo" va en el header con estilo bg-slate-900?
+- [ ] ¿Las acciones de crear/editar usan modales (no forms inline)?
+- [ ] ¿El botón "Guardar Cambios" en modales es primary?
+- [ ] ¿Se usa useUI() para alerts/confirms (no nativos)?
+- [ ] ¿Las relaciones usan Select dropdown (no input libre)?
+- [ ] ¿Los mensajes técnicos están en inglés?
+- [ ] ¿Los mensajes al usuario están en español?
+- [ ] ¿Las cards tienen diseño consistente (icono, info, acciones)?
+- [ ] ¿Items inactivos tienen opacity-60?
+- [ ] ¿Las acciones de delete están deshabilitadas si hay dependencias?
+
+---
+
 ## ✅ Checklist por Archivo
 
 ### 1. Prisma Schema (`prisma/schema.prisma`)
