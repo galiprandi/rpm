@@ -8,6 +8,75 @@ El sistema tiene dos modalidades de interfaz distintas, cada una optimizada para
 
 ---
 
+## Reglas de Arquitectura de Componentes
+
+### Separación de Responsabilidades
+
+**❌ PROHIBIDO:** Definir componentes complejos inline en archivos de página.
+
+**✅ OBLIGATORIO:** Los componentes deben estar definidos en sus propios archivos y ser reutilizables siempre que sea posible.
+
+```typescript
+// ❌ MAL: Componente inline en page.tsx
+export default function ProductsPage() {
+  const [formData, setFormData] = useState({...});
+  
+  return (
+    <form>
+      {/* 50+ líneas de formulario inline */}
+    </form>
+  );
+}
+
+// ✅ BIEN: Componente separado e importado
+// components/products/ProductForm.tsx
+export function ProductForm({ ... }) {
+  return (
+    <form>
+      {/* Formulario encapsulado */}
+    </form>
+  );
+}
+
+// app/adm/products/page.tsx
+import { ProductForm } from '@/components/products/ProductForm';
+
+export default function ProductsPage() {
+  return (
+    <ProductForm onSubmit={...} />
+  );
+}
+```
+
+### Reglas de Organización
+
+| Tipo | Ubicación | Ejemplo |
+|------|-----------|---------|
+| **Page Components** | `app/**/page.tsx` | `app/adm/products/page.tsx` |
+| **UI Components** | `components/ui/*.tsx` | `components/ui/button.tsx` |
+| **Feature Components** | `components/[feature]/*.tsx` | `components/products/ProductForm.tsx` |
+| **Layout Components** | `components/layout/*.tsx` | `components/layout/AdminSidebar.tsx` |
+
+### Criterios para Extraer Componentes
+
+Extraer a componente separado cuando:
+- ✅ Más de 20 líneas de JSX
+- ✅ Lógica de estado propia (useState, useEffect)
+- ✅ Reutilizable en otras páginas
+- ✅ Responsabilidad única clara
+- ✅ Necesita testing unitario
+
+### Límites de Complejidad
+
+| Máximo | Page Component | Feature Component |
+|--------|----------------|-------------------|
+| Líneas de código | 150 | 300 |
+| Props | 5 | 15 |
+| Hooks | 3 | 8 |
+| JSX anidado | 2 niveles | 4 niveles |
+
+---
+
 ## Desktop (Escritorio)
 
 ### Contexto de Uso
