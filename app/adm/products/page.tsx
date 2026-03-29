@@ -447,7 +447,7 @@ export default function ProductsPage() {
         }
       >
         <form id="product-form" onSubmit={handleSubmit} className="space-y-4">
-          {/* Primera fila: EAN (obligatorio) y Nombre */}
+          {/* Fila 1: EAN | SKU */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="barcode">Código de Barras (EAN) *</Label>
@@ -461,20 +461,6 @@ export default function ProductsPage() {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="name">Nombre *</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
-                placeholder="Barra LED 20 pulgadas"
-                required
-              />
-            </div>
-          </div>
-
-          {/* Segunda fila: SKU (opcional) y Proveedor (obligatorio) */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
               <Label htmlFor="sku">SKU</Label>
               <Input
                 id="sku"
@@ -483,7 +469,43 @@ export default function ProductsPage() {
                 placeholder="LED-001 (opcional)"
               />
             </div>
+          </div>
+
+          {/* Fila 2: Producto | Categoría */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Producto *</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                placeholder="Barra LED 20 pulgadas"
+                required
+              />
+            </div>
             
+            <div className="space-y-2">
+              <Label htmlFor="categoryId">Categoría *</Label>
+              <Select
+                value={formData.categoryId}
+                onValueChange={(value) => setFormData({...formData, categoryId: value})}
+              >
+                <SelectTrigger id="categoryId">
+                  <SelectValue placeholder="Selecciona categoría" />
+                </SelectTrigger>
+                <SelectContent position="popper" className="z-50 max-h-60">
+                  {categories.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Fila 3: Proveedor | Ubicación */}
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="supplier">Proveedor *</Label>
               <Input
@@ -494,32 +516,22 @@ export default function ProductsPage() {
                 required
               />
             </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="location">Ubicación</Label>
+              <Input
+                id="location"
+                value={formData.location}
+                onChange={(e) => setFormData({...formData, location: e.target.value})}
+                placeholder="Estante A-3"
+              />
+            </div>
           </div>
 
-          {/* Tercera fila: Categoría (ocupa toda la fila para evitar solapamiento) */}
-          <div className="space-y-2">
-            <Label htmlFor="categoryId">Categoría *</Label>
-            <Select
-              value={formData.categoryId}
-              onValueChange={(value) => setFormData({...formData, categoryId: value})}
-            >
-              <SelectTrigger id="categoryId">
-                <SelectValue placeholder="Selecciona categoría" />
-              </SelectTrigger>
-              <SelectContent position="popper" className="z-50 max-h-60">
-                {categories.map((cat) => (
-                  <SelectItem key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Cuarta fila: Precios y Stock */}
+          {/* Fila 4: Costo | Venta | Stock | Mínimo */}
           <div className="grid grid-cols-4 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="costPrice">Precio Costo *</Label>
+              <Label htmlFor="costPrice">Costo *</Label>
               <Input
                 id="costPrice"
                 type="number"
@@ -533,7 +545,7 @@ export default function ProductsPage() {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="salePrice">Precio Venta *</Label>
+              <Label htmlFor="salePrice">Venta *</Label>
               <Input
                 id="salePrice"
                 type="number"
@@ -547,7 +559,7 @@ export default function ProductsPage() {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="stock">Stock Actual *</Label>
+              <Label htmlFor="stock">Stock *</Label>
               <Input
                 id="stock"
                 type="number"
@@ -560,7 +572,7 @@ export default function ProductsPage() {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="minStock">Stock Mínimo *</Label>
+              <Label htmlFor="minStock">Mínimo *</Label>
               <Input
                 id="minStock"
                 type="number"
@@ -573,7 +585,7 @@ export default function ProductsPage() {
             </div>
           </div>
 
-          {/* Quinta fila: Descripción */}
+          {/* Fila 5: Descripción */}
           <div className="space-y-2">
             <Label htmlFor="description">Descripción</Label>
             <Textarea
@@ -582,17 +594,6 @@ export default function ProductsPage() {
               onChange={(e) => setFormData({...formData, description: e.target.value})}
               placeholder="Descripción del producto..."
               rows={2}
-            />
-          </div>
-
-          {/* Sexta fila: Ubicación */}
-          <div className="space-y-2">
-            <Label htmlFor="location">Ubicación</Label>
-            <Input
-              id="location"
-              value={formData.location}
-              onChange={(e) => setFormData({...formData, location: e.target.value})}
-              placeholder="Estante A-3"
             />
           </div>
         </form>
