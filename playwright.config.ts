@@ -15,7 +15,7 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: 'line',
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: 'http://localhost:3333',
     trace: process.env.CI ? 'on-first-retry' : 'retain-on-failure',
     screenshot: process.env.CI ? 'only-on-failure' : 'only-on-failure',
     video: process.env.CI ? 'retain-on-failure' : 'retain-on-failure',
@@ -31,9 +31,9 @@ export default defineConfig({
 
   // Configurar servidor web para los tests
   webServer: {
-    command: 'NODE_ENV=production pnpm run dev',
-    url: 'http://localhost:3000',
-    reuseExistingServer: !process.env.CI,
+    command: 'DEBUG_AUTH=true pnpm run start:debug',
+    url: 'http://localhost:3333',
+    reuseExistingServer: true,
     timeout: 120 * 1000,
     stdout: 'ignore',
     stderr: 'ignore',

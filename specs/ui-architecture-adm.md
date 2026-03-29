@@ -284,6 +284,167 @@ const isFormValid = () => {
 
 ---
 
+## Alertas y Confirmaciones (Alert/Confirm)
+
+### ✅ OBLIGATORIO: Componentes reusables vía UIProvider
+
+**Las alertas y confirmaciones deben ser gestionadas centralmente mediante `UIProvider` y lanzadas mediante el hook `useUI()`.**
+
+#### ❌ PROHIBIDO: Alert/Confirm inline o nativos
+
+```typescript
+// ❌ MAL: Alert nativo del browser
+alert('Producto guardado');
+
+// ❌ MAL: Confirm nativo del browser  
+if (confirm('¿Estás seguro?')) { ... }
+
+// ❌ MAL: Componente inline en cada página
+{showAlert && <AlertDialog ... />}
+```
+
+#### ✅ OBLIGATORIO: Usar UIProvider + useUI()
+
+```typescript
+// 1. UIProvider envuelve la aplicación (layout.tsx)
+// 2. Usar useUI() en cualquier componente para lanzar alertas/confirm
+
+import { useUI } from '@/components/ui/UIProvider';
+
+export function ProductsPage() {
+  const { alert, confirm } = useUI();
+
+  const handleSave = async () => {
+    await saveProduct();
+    
+    // ✅ Alert simple
+    await alert({
+      title: 'Éxito',
+      description: 'Producto guardado correctamente',
+      variant: 'success', // 'success' | 'error' | 'warning' | 'info'
+    });
+  };
+
+  const handleDelete = async (product: Product) => {
+    // ✅ Confirm con retorno booleano
+    const confirmed = await confirm({
+      title: 'Eliminar Producto',
+      description: `¿Estás seguro de eliminar "${product.name}"?`,
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar',
+      variant: 'destructive',
+    });
+
+    if (confirmed) {
+      await deleteProduct(product.id);
+    }
+  };
+}
+```
+
+### API de useUI()
+
+| Método | Retorno | Props |
+|--------|---------|-------|
+| `alert(options)` | `Promise<void>` | title, description, variant?, action? |
+| `confirm(options)` | `Promise<boolean>` | title, description, confirmText, cancelText, variant? |
+
+### Variantes Visuales
+
+```typescript
+variant: 'success'  // Verde, check icon
+variant: 'error'    // Rojo, X icon
+variant: 'warning'  // Naranja, triangle icon
+variant: 'info'     // Azul, info icon
+default: 'info'
+```
+
+### Ejemplos de Uso
+
+#### Alert de éxito
+```typescript
+await alert({
+  title: 'Categoría creada',
+  description: 'La categoría "Iluminación LED" fue creada exitosamente.',
+  variant: 'success',
+});
+```
+
+#### Confirm destructivo
+```typescript
+const shouldDelete = await confirm({
+  title: 'Eliminar Proveedor',
+  description: 'Este proveedor tiene 5 productos asociados. ¿Eliminar de todos modos?',
+  confirmText: 'Sí, eliminar',
+  cancelText: 'Cancelar',
+  variant: 'destructive',
+});
+```
+
+#### Alert con acción
+```typescript
+await alert({
+  title: 'Stock bajo',
+  description: 'El producto "Barra LED" está por debajo del mínimo.',
+  variant: 'warning',
+  action: {
+    label: 'Ver producto',
+    onClick: () => router.push('/adm/products/123'),
+  },
+});
+```
+
+### Implementación del Provider
+
+```typescript
+// components/ui/UIProvider.tsx
+interface UIContextType {
+  alert: (options: AlertOptions) => Promise<void>;
+  confirm: (options: ConfirmOptions) => Promise<boolean>;
+}
+
+export function UIProvider({ children }: { children: React.ReactNode }) {
+  const [alertState, setAlertState] = useState<AlertState | null>(null);
+  const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
+
+  const alert = useCallback((options: AlertOptions): Promise<void> => {
+    return new Promise((resolve) => {
+      setAlertState({ ...options, onClose: resolve });
+    });
+  }, []);
+
+  const confirm = useCallback((options: ConfirmOptions): Promise<boolean> => {
+    return new Promise((resolve) => {
+      setConfirmState({
+        ...options,
+        onConfirm: () => resolve(true),
+        onCancel: () => resolve(false),
+      });
+    });
+  }, []);
+
+  return (
+    <UIContext.Provider value={{ alert, confirm }}>
+      {children}
+      {alertState && <AlertDialog {...alertState} />}
+      {confirmState && <ConfirmDialog {...confirmState} />}
+    </UIContext.Provider>
+  );
+}
+
+export const useUI = () => useContext(UIContext);
+```
+
+### Reglas Importantes
+
+1. **Siempre usar `await`**: Las alertas/confirms son asíncronas
+2. **Nunca mezclar con alert()/confirm() nativos**: Mantener consistencia UI
+3. **Variante correcta**: Usar 'destructive' para acciones irreversibles
+4. **Texto descriptivo**: Título y descripción claros
+5. **Acciones opcionales**: Pueden incluir botón de acción secundaria
+
+---
+
 ## Botones Admin
 
 ### Botón CTA Principal (Nuevo/Crear)

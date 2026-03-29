@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "npx prisma migrate deploy && next build",
     "start": "next start",
+    "start:debug": "DEBUG_AUTH=true next dev --port 3333",
     "storybook": "npx storybook dev --port 6006",
     "build-storybook": "npx storybook build",
     "lint": "eslint",
@@ -80,6 +81,7 @@
     "jsdom": "^29.0.1",
     "tailwindcss": "^4",
     "tailwindcss-animate": "^1.0.7",
+    "tsx": "^4.21.0",
     "typescript": "^5",
     "vitest": "^4.1.1"
   }
