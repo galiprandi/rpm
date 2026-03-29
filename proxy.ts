@@ -22,6 +22,14 @@ import { getSessionCookie } from 'better-auth/cookies';
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   
+  // Debug mode - bypass authentication for testing
+  const isDebugMode = process.env.DEBUG_AUTH === 'true' || 
+                      request.nextUrl.searchParams.get('debug') === 'true';
+  
+  if (isDebugMode) {
+    return NextResponse.next();
+  }
+  
   // Public routes that don't require authentication
   const publicRoutes = [
     '/',

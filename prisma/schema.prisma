@@ -8,7 +8,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 // Tables will be added here as needed
@@ -93,4 +92,55 @@ model UserRole {
   @@index([email])
   @@index([role])
   @@map("user_role")
+}
+
+// ============================================
+// FASE 1: MVP Stock & Ventas
+// Modelos Product y Category
+// ============================================
+
+model Category {
+  id                 String    @id @default(uuid())
+  name               String    @unique
+  description        String?
+  defaultMarginPercent Float   @default(40)  // Margen sugerido por defecto
+  color              String?   // Color para UI (hex)
+  sortOrder          Int       @default(0)
+  isActive           Boolean   @default(true)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  // Relations
+  products Product[]
+
+  @@index([sortOrder])
+  @@map("category")
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  sku         String   @unique  // SKU único (ej: LED-001, PPF-CAPOT)
+  name        String
+  description String?
+  costPrice   Decimal  @db.Decimal(10, 2)  // Precio de costo
+  salePrice   Decimal  @db.Decimal(10, 2)  // Precio de venta
+  stock       Int      @default(0)
+  minStock    Int      @default(0)  // Stock mínimo para alerta
+  supplier    String?
+  barcode     String?  // Código de barras EAN/UPC
+  location    String?  // Ubicación en depósito
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  @@index([categoryId])
+  @@index([sku])
+  @@index([name])
+  @@index([isActive])
+  @@index([stock, minStock])  // Para alertas de stock bajo
+  @@map("product")
 }

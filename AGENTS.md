@@ -1044,3 +1044,557 @@ Evidencia mínima requerida:
 5. **División inteligente**: Si el scope es amplio, actúo como Product Lead y propongo división
 
 ---
+
+# 🗄️ Estrategia Prisma v7 - Migraciones y Database
+
+## CONFIGURACIÓN OFICIAL PRISMA v7
+
+Prisma v7 requiere `prisma.config.ts` en la raíz del proyecto usando `defineConfig` desde `prisma/config`.
+
+### 1. Estructura de Archivos
+
+```
+prisma.config.ts              # ← RAÍZ del proyecto (obligatorio)
+prisma/
+├── schema.prisma             # Sin 'url' en datasource
+├── seed.ts                   # Seed oficial de Prisma
+└── migrations/
+    ├── 001_init_auth_tables/
+    │   └── migration.sql
+    └── 002_add_products_and_categories/
+        └── migration.sql
+```
+
+### 2. Configuración prisma.config.ts (RAÍZ)
+
+```typescript
+import "dotenv/config";
+import { defineConfig, env } from "prisma/config";
+
+export default defineConfig({
+  schema: "prisma/schema.prisma",
+  migrations: {
+    path: "prisma/migrations",
+    seed: "tsx prisma/seed.ts",
+  },
+  datasource: {
+    url: env("DATABASE_URL"),
+  },
+});
+```
+
+### 3. schema.prisma
+
+```prisma
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated"
+}
+```
+
+### 4. lib/prisma.ts - Cliente con Adapter
+
+```typescript
+import { PrismaPg } from '@prisma/adapter-pg';
+import { PrismaClient } from '../generated/client';
+
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL,
+});
+
+export const prisma = new PrismaClient({ adapter });
+```
+
+### 5. Flujo Local (Desarrollo Docker)
+
+```bash
+# 1. Verificar PostgreSQL corriendo
+docker-compose up -d postgres
+
+# 2. Asegurar .env existe con DATABASE_URL
+cat .env | grep DATABASE_URL
+
+# 3. Generar Prisma Client
+npx prisma generate
+
+# 4. Aplicar migraciones
+npx prisma migrate deploy
+
+# 5. Ejecutar seed
+npx prisma db seed
+
+# 6. Iniciar desarrollo
+pnpm dev
+```
+
+**⚠️ IMPORTANTE:** Prisma v7 lee automáticamente `.env`. Asegúrate de tener DATABASE_URL configurado.
+
+### 6. Flujo Vercel (Producción)
+
+**Build Command:**
+```bash
+npx prisma migrate deploy && next build
+```
+
+**Variables de Entorno:**
+- `DATABASE_URL` - URL de PostgreSQL (Vercel Postgres)
+
+### 7. Crear Nueva Migración (Prisma CLI)
+
+```bash
+# Crear migración vacía para completar manualmente
+mkdir prisma/migrations/003_add_customers
+
+# Escribir migration.sql
+cat > prisma/migrations/003_add_customers/migration.sql << 'EOF'
+-- CreateTable
+CREATE TABLE "customer" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    CONSTRAINT "customer_pkey" PRIMARY KEY ("id")
+);
+EOF
+
+# Aplicar migración (asegúrate de tener .env con DATABASE_URL)
+npx prisma migrate deploy
+```
+
+### 8. Variables de Entorno
+
+**Template:**
+- `/.env.sample` - Plantilla con todas las variables necesarias
+
+**Desarrollo:**
+1. Copiar `.env.sample` a `.env`:
+   ```bash
+   cp .env.sample .env
+   ```
+2. Ajustar valores según tu configuración local
+
+**Vercel (Producción):**
+- Configurar `DATABASE_URL` en el panel de Variables de Entorno de Vercel
+
+### 9. Comandos Prisma CLI
+
+| Comando | Descripción |
+|---------|-------------|
+| `npx prisma generate` | Generar cliente TypeScript |
+| `npx prisma migrate deploy` | Aplicar migraciones pendientes |
+| `npx prisma migrate status` | Ver estado de migraciones |
+| `npx prisma db seed` | Ejecutar seed.ts |
+| `npx prisma studio` | Abrir Prisma Studio |
+
+## ⚠️ REGLAS OBLIGATORIAS
+
+1. **SIEMPRE** colocar `prisma.config.ts` en la RAÍZ del proyecto
+2. **NUNCA** agregar `url` al `datasource` en `schema.prisma`
+3. **SIEMPRE** usar `npx prisma migrate deploy` para aplicar migraciones
+4. **SIEMPRE** usar `npx prisma db seed` para el seed
+5. **NUNCA** usar scripts manuales de migración
+
+## Referencias
+
+- [Prisma v7 Upgrade Guide](https://www.prisma.io/docs/guides/upgrade-prisma-orm/v7)
+- `prisma.config.ts` - Configuración oficial
+- `prisma/seed.ts` - Seed nativo de Prisma
+
+# 🏗️ Arquitectura de Servicios - BFF & Agent Tools
+
+## Principio Fundamental: Servicios como Funciones Puras
+
+Todos los servicios de negocio deben implementarse como **funciones TypeScript con responsabilidad única**, diseñadas para ser reutilizables tanto en:
+- **Controllers de API** (Next.js API Routes)
+- **Tools del Agente IA** (RPM Bot / LLM Tools)
+
+### Estructura de un Servicio
+
+```typescript
+// lib/services/productService.ts
+import { prisma } from '@/lib/prisma';
+
+// Input tipado
+interface GetProductsParams {
+  categoryId?: string;
+  isActive?: boolean;
+  lowStock?: boolean;
+  search?: string;
+}
+
+// Output tipado
+interface GetProductsOutput {
+  products: Product[];
+  total: number;
+  lowStockCount: number;
+}
+
+// Servicio como función pura
+export async function getProducts(params: GetProductsParams): Promise<GetProductsOutput> {
+  const where: Prisma.ProductWhereInput = {};
+  
+  if (params.categoryId) where.categoryId = params.categoryId;
+  if (params.isActive !== undefined) where.isActive = params.isActive;
+  if (params.lowStock) where.stock = { lte: { minStock: true } };
+  if (params.search) {
+    where.OR = [
+      { name: { contains: params.search, mode: 'insensitive' } },
+      { sku: { contains: params.search, mode: 'insensitive' } },
+    ];
+  }
+  
+  const [products, total, lowStockCount] = await Promise.all([
+    prisma.product.findMany({ where, include: { category: true } }),
+    prisma.product.count({ where }),
+    prisma.product.count({ where: { stock: { lte: { minStock: true } } } }),
+  ]);
+  
+  return { products, total, lowStockCount };
+}
+```
+
+### Uso en API Controller
+
+```typescript
+// app/api/products/route.ts
+import { getProducts } from '@/lib/services/productService';
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  
+  const result = await getProducts({
+    categoryId: searchParams.get('categoryId') || undefined,
+    search: searchParams.get('search') || undefined,
+    lowStock: searchParams.get('lowStock') === 'true',
+  });
+  
+  return Response.json(result);
+}
+```
+
+### Uso en Agent Tool
+
+```typescript
+// lib/agent-tools/productTools.ts
+import { getProducts } from '@/lib/services/productService';
+import { z } from 'zod';
+
+export const productTools = {
+  get_products: {
+    description: 'Obtiene lista de productos del inventario',
+    parameters: z.object({
+      categoryId: z.string().optional().describe('Filtrar por categoría'),
+      search: z.string().optional().describe('Buscar por nombre o SKU'),
+      lowStock: z.boolean().optional().describe('Solo productos con stock bajo'),
+    }),
+    execute: async (params) => {
+      const result = await getProducts(params);
+      return {
+        content: result.products.map(p => ({
+          id: p.id,
+          name: p.name,
+          stock: p.stock,
+          price: p.salePrice,
+          category: p.category?.name,
+        })),
+      };
+    },
+  },
+};
+```
+
+## Reglas de Diseño
+
+### 1. **Single Responsibility**
+```typescript
+// ✅ BIEN: Una función, una responsabilidad
+export async function createProduct(params: CreateProductParams): Promise<Product>
+export async function updateProductStock(params: UpdateStockParams): Promise<Product>
+export async function deactivateProduct(id: string): Promise<void>
+
+// ❌ MAL: Múltiples responsabilidades
+export async function manageProduct(action: string, data: any) // No tipado, no reusable
+```
+
+### 2. **Input/Output Tipado Estricto**
+```typescript
+// ✅ BIEN: Interfaces explícitas
+interface UpdateStockParams {
+  productId: string;
+  quantity: number;
+  operation: 'add' | 'subtract' | 'set';
+  reason?: string;
+}
+
+interface UpdateStockOutput {
+  product: Product;
+  previousStock: number;
+  newStock: number;
+}
+
+// ❌ MAL: any o tipos implícitos
+async function updateStock(data: any) // No reusable
+```
+
+### 3. **Sin Dependencia de HTTP/Request**
+```typescript
+// ✅ BIEN: Servicio puro, sin acoplamiento a HTTP
+export async function createInvoice(params: CreateInvoiceParams): Promise<Invoice>
+
+// ❌ MAL: Acoplado a Request
+export async function createInvoice(req: NextRequest) // No reusable en Agent
+```
+
+### 4. **Manejo de Errores Consistente**
+```typescript
+// ✅ BIEN: Errores tipados y predecibles
+export class ServiceError extends Error {
+  constructor(
+    message: string,
+    public code: string,
+    public statusCode: number
+  ) {
+    super(message);
+  }
+}
+
+// Uso
+if (!product) {
+  throw new ServiceError('Producto no encontrado', 'NOT_FOUND', 404);
+}
+```
+
+## Directorio de Servicios
+
+```
+lib/
+├── services/
+│   ├── productService.ts      # CRUD productos + stock
+│   ├── categoryService.ts     # CRUD categorías
+│   ├── invoiceService.ts       # Facturación AFIP
+│   ├── customerService.ts      # Clientes (Fase 2)
+│   ├── workOrderService.ts     # Órdenes de trabajo (Fase 2)
+│   └── index.ts               # Re-exports
+├── agent-tools/
+│   ├── productTools.ts        # Tools para LLM
+│   ├── invoiceTools.ts
+│   └── index.ts
+└── api/
+    └── controllers/           # Usan los mismos servicios
+```
+
+## Ejemplo: Flujo Completo
+
+**Caso: Consultar stock y actualizar**
+
+```typescript
+// 1. Servicio reutilizable
+// lib/services/productService.ts
+export async function checkAndUpdateStock(
+  params: CheckStockParams
+): Promise<StockCheckResult> {
+  const product = await prisma.product.findUnique({
+    where: { id: params.productId },
+  });
+  
+  if (!product) throw new ServiceError('Producto no encontrado', 'NOT_FOUND', 404);
+  
+  const hasStock = product.stock >= params.requiredQuantity;
+  
+  if (hasStock && params.reserve) {
+    await prisma.product.update({
+      where: { id: params.productId },
+      data: { stock: { decrement: params.requiredQuantity } },
+    });
+  }
+  
+  return {
+    productId: product.id,
+    available: product.stock,
+    requested: params.requiredQuantity,
+    canFulfill: hasStock,
+    reserved: hasStock && params.reserve,
+  };
+}
+
+// 2. Uso en API (Venta desde mostrador)
+// app/api/sales/route.ts
+export async function POST(req: Request) {
+  const { items } = await req.json();
+  
+  for (const item of items) {
+    const stockCheck = await checkAndUpdateStock({
+      productId: item.productId,
+      requiredQuantity: item.quantity,
+      reserve: true, // Reservar stock
+    });
+    
+    if (!stockCheck.canFulfill) {
+      return Response.json({ 
+        error: `Stock insuficiente para ${item.productId}` 
+      }, { status: 400 });
+    }
+  }
+  
+  // Continuar con la venta...
+}
+
+// 3. Uso en Agent Tool (Bot verifica disponibilidad)
+// lib/agent-tools/productTools.ts
+export const productTools = {
+  check_stock_availability: {
+    description: 'Verifica si hay stock disponible para un producto',
+    parameters: z.object({
+      productId: z.string(),
+      quantity: z.number().positive(),
+    }),
+    execute: async (params) => {
+      const result = await checkAndUpdateStock({
+        productId: params.productId,
+        requiredQuantity: params.quantity,
+        reserve: false, // Solo consultar, no reservar
+      });
+      
+      return {
+        content: result.canFulfill 
+          ? `✅ Hay ${result.available} unidades disponibles`
+          : `❌ Stock insuficiente. Solo ${result.available} unidades disponibles, se necesitan ${result.requested}`,
+      };
+    },
+  },
+};
+```
+
+## ⚠️ REGLAS OBLIGATORIAS
+
+1. **SIEMPRE** usar funciones puras con params y output tipados
+2. **SIEMPRE** colocar servicios en `lib/services/`
+3. **NUNCA** acoplar servicios a objetos HTTP (Request/Response)
+4. **SIEMPRE** mantener servicios sin estado (stateless)
+5. **SIEMPRE** documentar params y output con JSDoc
+
+---
+
+## Referencias
+
+- `lib/services/` - Directorio de servicios de negocio
+- `lib/agent-tools/` - Tools para LLM que reutilizan servicios
+- `/specs/bot.md` - Arquitectura del RPM Bot (Fase 2)
+
+---
+
+# 🐛 Debug Mode - Bypass de Autenticación para QA
+
+## Propósito
+
+El **Debug Mode** permite a los agentes de IA y desarrolladores validar la UI sin necesidad de autenticación, facilitando:
+- QA automatizado con Puppeteer MCP
+- Testing visual de componentes
+- Validación de flujos E2E
+- Desarrollo rápido sin configurar OAuth
+
+## Métodos de Activación
+
+### 1. Variable de Entorno (Recomendado)
+
+```bash
+# .env.local
+DEBUG_AUTH="true"
+```
+
+Aplica a **todas las requests** del servidor.
+
+### 2. Query Parameter (Puntual)
+
+```
+http://localhost:3000/adm/products?debug=true
+```
+
+Aplica solo a la request actual. Útil para:
+- Links de prueba en navegador
+- Scripts de QA puntuales
+- Validación rápida sin reiniciar servidor
+
+## Implementación en Código
+
+Ubicación: `proxy.ts` (reemplaza middleware.ts en Next.js 16+)
+
+```typescript
+export async function proxy(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+  
+  // Debug mode - bypass authentication for testing
+  const isDebugMode = process.env.DEBUG_AUTH === 'true' || 
+                      request.nextUrl.searchParams.get('debug') === 'true';
+  
+  if (isDebugMode) {
+    return NextResponse.next();
+  }
+  
+  // ... resto de la lógica de auth
+}
+```
+
+## ⚠️ Seguridad Crítica
+
+### NUNCA en Producción
+
+```bash
+# ❌ PROHIBIDO en Vercel/Producción
+vercel env add DEBUG_AUTH production  # NO HACER
+```
+
+### Solo Local/Desarrollo
+
+```bash
+# ✅ Permitido solo en desarrollo local
+DEBUG_AUTH="true"  # .env.local only
+```
+
+### Verificación Automática
+
+```bash
+# Pre-commit hook recomendado
+if grep -q 'DEBUG_AUTH="true"' .env.production 2>/dev/null; then
+  echo "❌ DEBUG_AUTH no debe estar en producción"
+  exit 1
+fi
+```
+
+## Flujo de QA con Debug Mode
+
+```bash
+# 1. Iniciar servidor con debug
+DEBUG_AUTH="true" pnpm dev
+
+# 2. Validar con Puppeteer MCP
+# Navegar a: http://localhost:3000/adm/products?debug=true
+
+# 3. Ejecutar flujo completo
+# - Screenshot inicial
+# - CRUD operations
+# - Validación visual
+# - Screenshot final
+
+# 4. Desactivar debug para tests normales
+unset DEBUG_AUTH
+```
+
+## Variables Relacionadas
+
+| Variable | Valor | Uso |
+|----------|-------|-----|
+| `DEBUG_AUTH` | `"true"` | Bypass auth en todas las requests |
+| `?debug=true` | URL param | Bypass auth en request puntual |
+
+---
+
+## Referencias
+
+- `proxy.ts` - Implementación del debug mode
+- `.env.sample` - Template con variable DEBUG_AUTH
+- Puppeteer MCP - Validación UI automatizada

@@ -51,11 +51,9 @@ export default function AdminLayout({
             </button>
           </div>
           
-          {!isSidebarCollapsed && (
-            <div className="flex-1 flex items-end">
-              <AdminSidebar onSignOut={handleSignOut} />
-            </div>
-          )}
+          <div className="flex-1 flex flex-col pt-4">
+            <AdminSidebar onSignOut={handleSignOut} collapsed={isSidebarCollapsed} />
+          </div>
         </div>
       </aside>
       
