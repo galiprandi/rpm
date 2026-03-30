@@ -31,8 +31,8 @@ export * from "./enums"
  * const prisma = new PrismaClient({
  *   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL })
  * })
- * // Fetch zero or more Users
- * const users = await prisma.user.findMany()
+ * // Fetch zero or more Customers
+ * const customers = await prisma.customer.findMany()
  * ```
  * 
  * Read more in our [docs](https://pris.ly/d/client).
@@ -41,6 +41,46 @@ export const PrismaClient = $Class.getPrismaClientClass()
 export type PrismaClient<LogOpts extends Prisma.LogLevel = never, OmitOpts extends Prisma.PrismaClientOptions["omit"] = Prisma.PrismaClientOptions["omit"], ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = $Class.PrismaClient<LogOpts, OmitOpts, ExtArgs>
 export { Prisma }
 
+/**
+ * Model Customer
+ * 
+ */
+export type Customer = Prisma.CustomerModel
+/**
+ * Model VehicleMake
+ * 
+ */
+export type VehicleMake = Prisma.VehicleMakeModel
+/**
+ * Model VehicleModel
+ * 
+ */
+export type VehicleModel = Prisma.VehicleModelModel
+/**
+ * Model Vehicle
+ * 
+ */
+export type Vehicle = Prisma.VehicleModel
+/**
+ * Model Service
+ * 
+ */
+export type Service = Prisma.ServiceModel
+/**
+ * Model WorkOrder
+ * 
+ */
+export type WorkOrder = Prisma.WorkOrderModel
+/**
+ * Model WorkOrderItem
+ * 
+ */
+export type WorkOrderItem = Prisma.WorkOrderItemModel
+/**
+ * Model Photo
+ * 
+ */
+export type Photo = Prisma.PhotoModel
 /**
  * Model User
  * 

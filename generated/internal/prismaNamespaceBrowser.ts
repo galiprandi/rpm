@@ -51,6 +51,14 @@ export const AnyNull = runtime.AnyNull
 
 
 export const ModelName = {
+  Customer: 'Customer',
+  VehicleMake: 'VehicleMake',
+  VehicleModel: 'VehicleModel',
+  Vehicle: 'Vehicle',
+  Service: 'Service',
+  WorkOrder: 'WorkOrder',
+  WorkOrderItem: 'WorkOrderItem',
+  Photo: 'Photo',
   User: 'User',
   Session: 'Session',
   Account: 'Account',
@@ -76,6 +84,137 @@ export const TransactionIsolationLevel = runtime.makeStrictEnum({
 } as const)
 
 export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof typeof TransactionIsolationLevel]
+
+
+export const CustomerScalarFieldEnum = {
+  id: 'id',
+  fullName: 'fullName',
+  phone: 'phone',
+  phoneAlt: 'phoneAlt',
+  email: 'email',
+  documentType: 'documentType',
+  documentNumber: 'documentNumber',
+  address: 'address',
+  notes: 'notes',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type CustomerScalarFieldEnum = (typeof CustomerScalarFieldEnum)[keyof typeof CustomerScalarFieldEnum]
+
+
+export const VehicleMakeScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  normalizedName: 'normalizedName',
+  category: 'category',
+  isActive: 'isActive',
+  createdAt: 'createdAt'
+} as const
+
+export type VehicleMakeScalarFieldEnum = (typeof VehicleMakeScalarFieldEnum)[keyof typeof VehicleMakeScalarFieldEnum]
+
+
+export const VehicleModelScalarFieldEnum = {
+  id: 'id',
+  makeId: 'makeId',
+  name: 'name',
+  normalizedName: 'normalizedName',
+  years: 'years',
+  isActive: 'isActive',
+  createdAt: 'createdAt'
+} as const
+
+export type VehicleModelScalarFieldEnum = (typeof VehicleModelScalarFieldEnum)[keyof typeof VehicleModelScalarFieldEnum]
+
+
+export const VehicleScalarFieldEnum = {
+  id: 'id',
+  identifier: 'identifier',
+  category: 'category',
+  makeId: 'makeId',
+  modelId: 'modelId',
+  year: 'year',
+  color: 'color',
+  equipmentName: 'equipmentName',
+  equipmentType: 'equipmentType',
+  description: 'description',
+  notes: 'notes',
+  customerId: 'customerId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type VehicleScalarFieldEnum = (typeof VehicleScalarFieldEnum)[keyof typeof VehicleScalarFieldEnum]
+
+
+export const ServiceScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  description: 'description',
+  baseCost: 'baseCost',
+  timeMinutes: 'timeMinutes',
+  vehicleFactor: 'vehicleFactor',
+  isActive: 'isActive',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ServiceScalarFieldEnum = (typeof ServiceScalarFieldEnum)[keyof typeof ServiceScalarFieldEnum]
+
+
+export const WorkOrderScalarFieldEnum = {
+  id: 'id',
+  status: 'status',
+  customerId: 'customerId',
+  vehicleId: 'vehicleId',
+  technicianId: 'technicianId',
+  entryChecklist: 'entryChecklist',
+  exitChecklist: 'exitChecklist',
+  entryPhotos: 'entryPhotos',
+  exitPhotos: 'exitPhotos',
+  scheduledDate: 'scheduledDate',
+  startedAt: 'startedAt',
+  completedAt: 'completedAt',
+  deliveredAt: 'deliveredAt',
+  paymentMethod: 'paymentMethod',
+  paymentNotes: 'paymentNotes',
+  total: 'total',
+  totalProducts: 'totalProducts',
+  totalServices: 'totalServices',
+  invoiceId: 'invoiceId',
+  notes: 'notes',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type WorkOrderScalarFieldEnum = (typeof WorkOrderScalarFieldEnum)[keyof typeof WorkOrderScalarFieldEnum]
+
+
+export const WorkOrderItemScalarFieldEnum = {
+  id: 'id',
+  workOrderId: 'workOrderId',
+  type: 'type',
+  productId: 'productId',
+  serviceId: 'serviceId',
+  quantity: 'quantity',
+  unitPrice: 'unitPrice',
+  subtotal: 'subtotal'
+} as const
+
+export type WorkOrderItemScalarFieldEnum = (typeof WorkOrderItemScalarFieldEnum)[keyof typeof WorkOrderItemScalarFieldEnum]
+
+
+export const PhotoScalarFieldEnum = {
+  id: 'id',
+  workOrderId: 'workOrderId',
+  type: 'type',
+  url: 'url',
+  description: 'description',
+  createdAt: 'createdAt'
+} as const
+
+export type PhotoScalarFieldEnum = (typeof PhotoScalarFieldEnum)[keyof typeof PhotoScalarFieldEnum]
 
 
 export const UserScalarFieldEnum = {
@@ -232,6 +371,14 @@ export const SortOrder = {
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
 
 
+export const NullableJsonNullValueInput = {
+  DbNull: DbNull,
+  JsonNull: JsonNull
+} as const
+
+export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
+
+
 export const QueryMode = {
   default: 'default',
   insensitive: 'insensitive'
@@ -246,4 +393,13 @@ export const NullsOrder = {
 } as const
 
 export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
+
+
+export const JsonNullValueFilter = {
+  DbNull: DbNull,
+  JsonNull: JsonNull,
+  AnyNull: AnyNull
+} as const
+
+export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
 

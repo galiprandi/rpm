@@ -10,10 +10,227 @@ datasource db {
   provider = "postgresql"
 }
 
-// Tables will be added here as needed
-// Example: When implementing auth.md, add User and Session models
-// Example: When implementing products.md, add Product model
-// Example: When implementing orders.md, add Order and OrderItem models
+// ============================================
+// FASE 2: Workshop Management (Gestión de Taller)
+// Models: Customer, Vehicle, WorkOrder, Service, etc.
+// ============================================
+
+// Customer - Ficha de cliente
+model Customer {
+  id             String    @id @default(uuid())
+  fullName       String
+  phone          String    // Principal
+  phoneAlt       String?   // Alternativo (WhatsApp)
+  email          String?
+  documentType   String    // 'DNI' | 'CUIT' | 'CUIL'
+  documentNumber String
+  address        String?
+  notes          String?   // Observaciones
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  // Relations
+  vehicles   Vehicle[]
+  workOrders WorkOrder[]
+
+  @@index([phone])
+  @@index([documentNumber])
+  @@index([fullName])
+  @@map("customer")
+}
+
+// VehicleMake - Marcas normalizadas (Toyota, Ford, Sony)
+model VehicleMake {
+  id             String   @id @default(uuid())
+  name           String   // "Toyota", "Ford", "Sony" (capitalizado)
+  normalizedName String   // "toyota", "ford", "sony" (para búsqueda)
+  category       String[] // [CAR, SUV, PICKUP] o [AUDIO_EQUIPMENT]
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+
+  // Relations
+  models VehicleModel[]
+  vehicles Vehicle[]
+
+  @@unique([normalizedName])
+  @@index([normalizedName])
+  @@map("vehicle_make")
+}
+
+// VehicleModel - Modelos normalizados (Hilux, Ranger, GTK-XB90)
+model VehicleModel {
+  id             String   @id @default(uuid())
+  makeId         String
+  name           String   // "Hilux", "Ranger", "GTK-XB90"
+  normalizedName String   // "hilux", "ranger", "gtk-xb90"
+  years          Int[]    // [2020, 2021, 2022, 2023, 2024]
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+
+  // Relations
+  make     VehicleMake @relation(fields: [makeId], references: [id], onDelete: Cascade)
+  vehicles Vehicle[]
+
+  @@unique([makeId, normalizedName])
+  @@index([makeId])
+  @@index([normalizedName])
+  @@map("vehicle_model")
+}
+
+// Vehicle - Activo genérico (vehículos o equipos)
+model Vehicle {
+  id       String @id @default(uuid())
+  identifier String // Patente (vehículos) o N° Serie/Código (equipos) - ÚNICO por cliente
+
+  // Categoría determina qué campos usar
+  category String
+  // CAR, TRUCK, SUV, PICKUP, MOTORCYCLE, TRAILER, AUDIO_EQUIPMENT, ELECTRIC_SCOOTER, OTHER
+
+  // Campos para vehículos motorizados (opcionales)
+  makeId  String?
+  modelId String?
+  year    Int?
+  color   String?
+
+  // Campos para equipos genéricos (opcionales)
+  equipmentName String? // "Parlante Sony GTK-XB90"
+  equipmentType String? // "Equipo de audio", "Monopatín eléctrico"
+  description   String? // Detalles adicionales del equipo
+
+  // Común
+  notes      String?
+  customerId String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Relations
+  customer   Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  make       VehicleMake?  @relation(fields: [makeId], references: [id], onDelete: SetNull)
+  model      VehicleModel? @relation(fields: [modelId], references: [id], onDelete: SetNull)
+  workOrders WorkOrder[]
+
+  @@unique([identifier, customerId])
+  @@index([customerId])
+  @@index([identifier])
+  @@index([category])
+  @@map("vehicle")
+}
+
+// Service - Catálogo de trabajos/servicios
+model Service {
+  id            String  @id @default(uuid())
+  name          String  @unique
+  description   String?
+  baseCost      Decimal @db.Decimal(10, 2) // Precio referencia
+  timeMinutes   Int     @default(60) // Tiempo estimado para agendamiento
+  vehicleFactor Decimal @default(1.0) @db.Decimal(3, 2) // Factor de ajuste por tipo de vehículo
+  isActive      Boolean @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  workOrderItems WorkOrderItem[]
+
+  @@index([isActive])
+  @@map("service")
+}
+
+// WorkOrder - Orden de Trabajo (OT)
+model WorkOrder {
+  id         String @id @default(uuid()) // OT-2024-0001 format
+  status     String // CONFIRMED | WAITING | IN_PROGRESS | QC_CHECK | READY | PAID | DELIVERED
+
+  // Relations
+  customerId    String
+  customer      Customer    @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  vehicleId     String
+  vehicle       Vehicle     @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  technicianId  String?     // User ID of assigned technician
+
+  // Items (productos + servicios)
+  items WorkOrderItem[]
+
+  // Checklists
+  entryChecklist Json? // Checklist de ingreso
+  exitChecklist  Json? // Checklist de calidad salida
+
+  // Fotos
+  entryPhotos String[] // URLs fotos ingreso
+  exitPhotos  String[] // URLs fotos egreso
+
+  // Tiempos
+  scheduledDate DateTime? // Turno agendado
+  startedAt     DateTime? // Inicio del trabajo
+  completedAt   DateTime? // Trabajo completado
+  deliveredAt   DateTime? // Entregado al cliente
+
+  // Pago (MVP - sin facturación AFIP aún)
+  paymentMethod String? // CASH | TRANSFER | QR | CARD | OTHER
+  paymentNotes  String? // Referencia transferencia, etc.
+  total         Decimal @db.Decimal(10, 2)
+  totalProducts Decimal @db.Decimal(10, 2)
+  totalServices Decimal @db.Decimal(10, 2)
+
+  // Facturación (futuro - cuando se implemente AFIP)
+  invoiceId String?
+
+  notes     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  photos Photo[]
+
+  @@index([customerId])
+  @@index([vehicleId])
+  @@index([technicianId])
+  @@index([status])
+  @@index([scheduledDate])
+  @@index([createdAt])
+  @@map("work_order")
+}
+
+// WorkOrderItem - Items de una OT (productos o servicios)
+model WorkOrderItem {
+  id          String  @id @default(uuid())
+  workOrderId String
+  workOrder   WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+
+  type String // PRODUCT | SERVICE
+
+  // Para productos
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  // Para servicios
+  serviceId String?
+  service   Service? @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+
+  quantity  Int
+  unitPrice Decimal @db.Decimal(10, 2)
+  subtotal  Decimal @db.Decimal(10, 2)
+
+  @@index([workOrderId])
+  @@index([productId])
+  @@index([serviceId])
+  @@map("work_order_item")
+}
+
+// Photo - Fotos de una OT (antes/después)
+model Photo {
+  id          String   @id @default(uuid())
+  workOrderId String
+  workOrder   WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+
+  type        String // ENTRY | EXIT
+  url         String
+  description String?
+  createdAt   DateTime @default(now())
+
+  @@index([workOrderId])
+  @@index([type])
+  @@map("photo")
+}
 
 model User {
   id            String    @id
@@ -165,6 +382,7 @@ model Product {
 
   // Audit trail
   movements StockMovement[]
+  workOrderItems WorkOrderItem[]
 
   @@index([categoryId])
   @@index([supplierId])

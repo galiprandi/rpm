@@ -13,6 +13,8 @@ import {
   ChevronsUpDown,
   PanelLeft,
   PanelRight,
+  UserCircle,
+  Wrench,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -40,6 +42,8 @@ import {
 
 const navigation = [
   { name: 'Dashboard', href: '/adm', icon: LayoutDashboard },
+  { name: 'Órdenes de Trabajo', href: '/adm/work-orders', icon: Wrench },
+  { name: 'Clientes', href: '/adm/customers', icon: UserCircle },
   { name: 'Productos', href: '/adm/products', icon: Package },
   { name: 'Categorías', href: '/adm/categories', icon: Folder },
   { name: 'Proveedores', href: '/adm/suppliers', icon: Truck },

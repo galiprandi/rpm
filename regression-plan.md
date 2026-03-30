@@ -155,7 +155,154 @@ Validar todos con:
 - Layout consistente
 ```
 
-## Checklist de Errores Comunes a Detectar
+---
+
+## FASE 8: Módulo Taller (Workshop) - CORE MODULE ⭐
+
+**Importancia**: Este módulo es CORE para el negocio. Validación exhaustiva requerida.
+
+### Fase 8.1: CRUD Clientes
+**Herramienta**: Playwright MCP
+```
+1. Navegar a /adm/customers
+2. Verificar que "Clientes" aparece segundo en el menú sidebar
+3. Click "Nuevo Cliente"
+4. Validar formulario completo:
+   - Nombre completo (requerido)
+   - Teléfono principal (requerido)
+   - Teléfono alternativo (WhatsApp)
+   - Email
+   - Tipo documento (DNI/CUIT/CUIL)
+   - Número documento (requerido)
+   - Dirección
+   - Notas
+5. Crear cliente de prueba
+6. Verificar en lista con conteo de vehículos y OTs
+7. Click "Ver" para ir a ficha de cliente
+8. Validar tabs: Vehículos e Historial OTs
+9. Editar cliente
+10. Volver a lista y verificar cambios
+```
+
+**Validaciones**:
+- Screenshot del formulario de cliente
+- Búsqueda funciona (por nombre, teléfono, documento)
+- Conteo de vehículos y OTs correcto
+- Navegación "Nueva OT" desde lista de clientes
+
+### Fase 8.2: CRUD Vehículos/Activos
+**Herramienta**: Playwright MCP
+```
+1. Desde ficha de cliente, click "Agregar Vehículo"
+2. Validar selector de categorías:
+   - Auto/Camioneta 🚗
+   - SUV/4x4 🚙
+   - Pickup 🛻
+   - Camión 🚚
+   - Moto 🏍️
+   - Trailer/Acoplado 🚛
+   - Equipo de Audio 🔊
+   - Monopatín Eléctrico 🛴
+   - Otro Equipo 📦
+3. Probar flujo VEHÍCULO:
+   - Seleccionar "Auto/Camioneta"
+   - Campos: Patente, Marca, Modelo, Año, Color
+   - Guardar
+4. Probar flujo EQUIPO:
+   - Seleccionar "Equipo de Audio"
+   - Campos: Código/Serie, Nombre del Equipo, Tipo, Descripción
+   - Guardar
+5. Verificar en lista de vehículos del cliente
+6. Buscar vehículo por identificador (patente/código)
+```
+
+**Validaciones**:
+- Campos condicionales según categoría
+- Normalización de marcas/modelos
+- Identificador único por cliente
+
+### Fase 8.3: Creación de Órdenes de Trabajo (OT)
+**Herramienta**: Playwright MCP
+```
+1. Navegar a /adm/work-orders
+2. Verificar menú "Órdenes de Trabajo" en sidebar
+3. Verificar vista Kanban con 7 columnas:
+   - Confirmada, En Espera, En Proceso, Control QC, Listo, Pagada, Entregada
+4. Click "Nueva OT"
+5. Wizard paso 1 - Buscar/Seleccionar Cliente:
+   - Buscar cliente existente
+   - Verificar resultados de búsqueda
+   - Seleccionar cliente
+6. Wizard paso 2 - Vehículo:
+   - Verificar vehículos del cliente listados
+   - O crear nuevo vehículo en el momento
+   - Seleccionar categoría y completar datos
+7. Wizard paso 3 - Items:
+   - Agregar servicios del catálogo
+   - Agregar productos
+   - Verificar cálculo de totales (productos + servicios)
+   - Modificar cantidades
+   - Eliminar items
+8. Wizard paso 4 - Checklist y Finalizar:
+   - Checklist de ingreso (checkboxes)
+   - Fecha agendada opcional
+   - Notas
+   - Verificar total estimado
+   - Crear OT
+```
+
+**Validaciones**:
+- Wizard de 4 pasos funciona correctamente
+- Totales calculados en tiempo real
+- Checklist de ingreso guardado
+
+### Fase 8.4: Kanban de OTs y Cambio de Estados
+**Herramienta**: Playwright MCP
+```
+1. En /adm/work-orders, verificar vista Kanban:
+   - 7 columnas visibles
+   - OTs mostradas en columnas correctas
+   - Datos: Cliente, Vehículo, Total
+2. Cambiar a vista Lista (toggle)
+3. Verificar lista ordenada por fecha
+4. Abrir OT creada en paso anterior
+5. Verificar detalle de OT:
+   - Info cliente completa
+   - Info vehículo completa
+   - Items listados
+   - Totales correctos
+6. Cambiar estado de OT:
+   - Usar selector "Cambiar Estado"
+   - Probar flujo: En Espera → En Proceso → Listo
+   - Verificar timestamps automáticos (startedAt, completedAt)
+7. Verificar tabs:
+   - Checklists (ingreso y calidad)
+   - Fotos (entry/exit)
+   - Timeline de eventos
+```
+
+**Validaciones**:
+- Kanban responsive (scroll horizontal si es necesario)
+- Cambio de estado persiste
+- Timestamps registrados correctamente
+- Timeline muestra eventos en orden cronológico
+
+### Fase 8.5: Búsqueda y Filtrado
+**Herramienta**: Playwright MCP + API
+```
+1. Probar búsqueda de clientes:
+   - GET /api/customers?search=[nombre]
+   - GET /api/customers?search=[teléfono]
+   - GET /api/customers?search=[documento]
+2. Probar búsqueda de vehículos:
+   - GET /api/vehicles/by-identifier/[patente]
+3. Probar filtros de OTs:
+   - GET /api/work-orders?status=IN_PROGRESS
+   - GET /api/work-orders?customerId=[id]
+4. Verificar respuestas JSON correctas
+```
+
+## Checklist de Errores Workshop Comunes a Detectar
 
 ### Errores de Tema
 - [ ] Modal transparente o sin fondo

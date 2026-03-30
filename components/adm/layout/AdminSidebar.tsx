@@ -8,7 +8,9 @@ import {
   Truck,
   Users, 
   Settings,
-  LogOut 
+  LogOut,
+  UserCircle,
+  Wrench,
 } from 'lucide-react';
 
 const navigation = [
@@ -16,6 +18,8 @@ const navigation = [
   { name: 'Productos', href: '/adm/products', icon: Package },
   { name: 'Categorías', href: '/adm/categories', icon: Folder },
   { name: 'Proveedores', href: '/adm/suppliers', icon: Truck },
+  { name: 'Clientes', href: '/adm/customers', icon: UserCircle },
+  { name: 'Órdenes de Trabajo', href: '/adm/work-orders', icon: Wrench },
   { name: 'Usuarios', href: '/adm/users', icon: Users },
   { name: 'Configuración', href: '/adm/settings', icon: Settings },
 ];

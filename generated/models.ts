@@ -8,6 +8,14 @@
  *
  * 🟢 You can import this file directly.
  */
+export type * from './models/Customer'
+export type * from './models/VehicleMake'
+export type * from './models/VehicleModel'
+export type * from './models/Vehicle'
+export type * from './models/Service'
+export type * from './models/WorkOrder'
+export type * from './models/WorkOrderItem'
+export type * from './models/Photo'
 export type * from './models/User'
 export type * from './models/Session'
 export type * from './models/Account'

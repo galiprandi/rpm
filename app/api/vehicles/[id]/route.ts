@@ -1,0 +1,112 @@
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+
+// GET /api/vehicles/[id] - Get vehicle by ID
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const vehicle = await prisma.vehicle.findUnique({
+      where: { id },
+      include: {
+        customer: true,
+        make: true,
+        model: true,
+        workOrders: {
+          orderBy: { createdAt: "desc" },
+          take: 10,
+        },
+      },
+    });
+
+    if (!vehicle) {
+      return NextResponse.json(
+        { error: "Vehicle not found" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(vehicle);
+  } catch (error) {
+    console.error("Error fetching vehicle:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch vehicle" },
+      { status: 500 }
+    );
+  }
+}
+
+// PUT /api/vehicles/[id] - Update vehicle
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const body = await request.json();
+    const {
+      identifier,
+      category,
+      makeId,
+      modelId,
+      year,
+      color,
+      equipmentName,
+      equipmentType,
+      description,
+      notes,
+    } = body;
+
+    const vehicle = await prisma.vehicle.update({
+      where: { id },
+      data: {
+        identifier: identifier?.toUpperCase(),
+        category,
+        makeId,
+        modelId,
+        year,
+        color,
+        equipmentName,
+        equipmentType,
+        description,
+        notes,
+      },
+      include: {
+        customer: true,
+        make: true,
+        model: true,
+      },
+    });
+
+    return NextResponse.json(vehicle);
+  } catch (error) {
+    console.error("Error updating vehicle:", error);
+    return NextResponse.json(
+      { error: "Failed to update vehicle" },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE /api/vehicles/[id] - Delete vehicle
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    await prisma.vehicle.delete({
+      where: { id },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting vehicle:", error);
+    return NextResponse.json(
+      { error: "Failed to delete vehicle" },
+      { status: 500 }
+    );
+  }
+}
