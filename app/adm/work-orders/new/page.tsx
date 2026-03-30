@@ -12,8 +12,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { Header } from "@/components/adm/Header";
 import { WorkOrderStepper } from "@/components/ui/stepper";
@@ -37,8 +37,6 @@ const ENTRY_CHECKLIST = [
   { id: "keys", label: "Llaves/Control recibido", required: true },
   { id: "visual", label: "Estado visual general documentado", required: true },
   { id: "accessories", label: "Accesorios guardados", required: false },
-  { id: "odometer", label: "Odómetro registrado", required: false },
-  { id: "fuel", label: "Nivel de combustible", required: false },
 ];
 
 interface VehicleWithCustomer {
@@ -125,6 +123,8 @@ export default function NewWorkOrderPage() {
 
   // Step 3: Checklist & Notes
   const [checklist, setChecklist] = useState<Record<string, boolean>>({});
+  const [odometerValue, setOdometerValue] = useState<string>("");
+  const [fuelLevel, setFuelLevel] = useState<number>(50);
   const [notes, setNotes] = useState("");
   const [scheduledDate, setScheduledDate] = useState("");
 
@@ -286,6 +286,8 @@ export default function NewWorkOrderPage() {
           })),
           completedAt: new Date().toISOString(),
         },
+        odometerValue: odometerValue ? parseInt(odometerValue) : undefined,
+        fuelLevel: fuelLevel > 0 ? fuelLevel : undefined,
         notes,
         scheduledDate: scheduledDate || undefined,
         source: "IN_PERSON",
@@ -807,6 +809,33 @@ export default function NewWorkOrderPage() {
                       </span>
                     </label>
                   ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Odómetro (km)</Label>
+                  <Input
+                    type="number"
+                    placeholder="Ej: 45320"
+                    value={odometerValue}
+                    onChange={(e) => setOdometerValue(e.target.value)}
+                    min={0}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Nivel de Combustible: {fuelLevel}%</Label>
+                  <Slider
+                    value={[fuelLevel]}
+                    onValueChange={(value: number[]) => setFuelLevel(value[0])}
+                    max={100}
+                    step={5}
+                    className="py-4"
+                  />
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span> Vacío</span>
+                    <span>Full</span>
+                  </div>
                 </div>
               </div>
 
