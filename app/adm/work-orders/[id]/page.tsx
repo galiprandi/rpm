@@ -24,6 +24,7 @@ import {
 import {
   ArrowLeft,
   Phone,
+  Mail,
   Car,
   Clock,
   DollarSign,
@@ -32,7 +33,7 @@ import {
   FileText,
 } from "lucide-react";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 const STATUSES = [
   { id: "CONFIRMED", label: "Confirmada", color: "bg-blue-100" },
@@ -155,15 +156,6 @@ export default function WorkOrderDetailPage() {
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    const statusConfig = STATUSES.find((s) => s.id === status);
-    return (
-      <Badge className={cn("text-sm", statusConfig?.color || "bg-gray-100")}>
-        {statusConfig?.label || status}
-      </Badge>
-    );
-  };
-
   if (loading) {
     return (
       <div className="container mx-auto py-6">
@@ -181,142 +173,181 @@ export default function WorkOrderDetailPage() {
   }
 
   return (
-    <div className="container mx-auto py-6">
-      <div className="mb-4 flex items-center justify-between">
-        <Link href="/adm/work-orders">
-          <Button variant="ghost" size="sm">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Volver a OTs
-          </Button>
-        </Link>
+    <div className="container mx-auto py-6 space-y-6">
+      {/* Header - Vehículo como protagonista */}
+      <div className="flex justify-between items-start">
         <div className="flex items-center gap-4">
-          <span className="text-muted-foreground">{workOrder.id}</span>
-          {getStatusBadge(workOrder.status)}
+          <Link href="/adm/work-orders">
+            <Button variant="ghost" size="sm">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Volver
+            </Button>
+          </Link>
+          <div>
+            <h1 className="text-3xl font-bold">
+              {workOrder.vehicle.identifier}
+            </h1>
+            <p className="text-muted-foreground">
+              {workOrder.vehicle.make?.name} {workOrder.vehicle.model?.name} {workOrder.vehicle.year && `(${workOrder.vehicle.year})`}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-4">
+          <Select
+            value={workOrder.status}
+            onValueChange={handleStatusChange}
+            disabled={updatingStatus}
+          >
+            <SelectTrigger className="w-44">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {STATUSES.map((status) => (
+                <SelectItem key={status.id} value={status.id}>
+                  {status.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
-      <div className="grid gap-6">
-        {/* Status Control */}
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-4">
-              <span className="font-medium">Cambiar Estado:</span>
-              <Select
-                value={workOrder.status}
-                onValueChange={handleStatusChange}
-                disabled={updatingStatus}
-              >
-                <SelectTrigger className="w-48">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {STATUSES.map((status) => (
-                    <SelectItem key={status.id} value={status.id}>
-                      {status.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+      {/* Info Cards - Vehículo prominente, Cliente secundario */}
+      <div className="grid md:grid-cols-3 gap-4">
+        {/* Vehicle Info - Principal */}
+        <Card className="md:col-span-2">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Car className="h-5 w-5" />
+              Información del Vehículo
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">Patente/ID</span>
+              <span className="font-semibold text-lg">{workOrder.vehicle.identifier}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">Marca/Modelo</span>
+              <span>{workOrder.vehicle.make?.name} {workOrder.vehicle.model?.name}</span>
+            </div>
+            {workOrder.vehicle.year && (
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Año</span>
+                <span>{workOrder.vehicle.year}</span>
+              </div>
+            )}
+            {workOrder.vehicle.color && (
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Color</span>
+                <span>{workOrder.vehicle.color}</span>
+              </div>
+            )}
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">Categoría</span>
+              <span>{workOrder.vehicle.category}</span>
+            </div>
+            <div className="pt-2 border-t flex justify-end">
+              <Link href={`/adm/vehicles/${workOrder.vehicle.id}`}>
+                <Button variant="outline" size="sm">
+                  Ver Ficha Vehículo
+                </Button>
+              </Link>
             </div>
           </CardContent>
         </Card>
 
-        {/* Customer & Vehicle Info */}
-        <div className="grid md:grid-cols-2 gap-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Phone className="h-5 w-5" />
-                Cliente
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="font-medium text-lg">{workOrder.customer.fullName}</div>
-              <div className="text-muted-foreground mt-1">
-                {workOrder.customer.phone}
-              </div>
-              {workOrder.customer.email && (
-                <div className="text-muted-foreground">{workOrder.customer.email}</div>
-              )}
-              <div className="mt-2 text-sm">
-                {workOrder.customer.documentType} {workOrder.customer.documentNumber}
-              </div>
-              <div className="mt-4">
-                <Link href={`/adm/customers/${workOrder.customer.id}`}>
-                  <Button variant="outline" size="sm">
-                    Ver Ficha Cliente
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Car className="h-5 w-5" />
-                Vehículo / Equipo
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="font-medium text-lg">{workOrder.vehicle.identifier}</div>
-              <div className="text-muted-foreground mt-1">
-                {workOrder.vehicle.category}
-              </div>
-              {(workOrder.vehicle.make || workOrder.vehicle.model) && (
-                <div className="mt-1">
-                  {workOrder.vehicle.make?.name} {workOrder.vehicle.model?.name}
-                  {workOrder.vehicle.year && ` (${workOrder.vehicle.year})`}
-                </div>
-              )}
-              {workOrder.vehicle.color && (
-                <div className="text-sm text-muted-foreground">
-                  Color: {workOrder.vehicle.color}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Items & Totals */}
+        {/* Cliente - Secundario, solo contacto */}
         <Card>
-          <CardHeader>
+          <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
-              <DollarSign className="h-5 w-5" />
-              Servicios y Productos
+              <Phone className="h-5 w-5" />
+              Contacto Cliente
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
+          <CardContent className="space-y-3">
+            <div>
+              <p className="font-medium">{workOrder.customer.fullName}</p>
+            </div>
+            <a
+              href={`tel:${workOrder.customer.phone}`}
+              className="flex items-center gap-2 text-sm text-primary hover:underline"
+            >
+              <Phone className="h-4 w-4" />
+              {workOrder.customer.phone}
+            </a>
+            {workOrder.customer.email && (
+              <a
+                href={`mailto:${workOrder.customer.email}`}
+                className="flex items-center gap-2 text-sm text-primary hover:underline"
+              >
+                <Mail className="h-4 w-4" />
+                {workOrder.customer.email}
+              </a>
+            )}
+            <div className="pt-2 border-t">
+              <Link href={`/adm/customers/${workOrder.customer.id}`}>
+                <Button variant="ghost" size="sm" className="w-full">
+                  Ver Cliente
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Totals Card */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <DollarSign className="h-5 w-5" />
+            Servicios y Productos
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Item</TableHead>
+                <TableHead>Tipo</TableHead>
+                <TableHead className="text-right">Cantidad</TableHead>
+                <TableHead className="text-right">Precio Unit.</TableHead>
+                <TableHead className="text-right">Subtotal</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {workOrder.items.length === 0 ? (
                 <TableRow>
-                  <TableHead>Item</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Cantidad</TableHead>
-                  <TableHead>Precio Unit.</TableHead>
-                  <TableHead>Subtotal</TableHead>
+                  <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                    Sin items registrados
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {workOrder.items.map((item) => (
+              ) : (
+                workOrder.items.map((item) => (
                   <TableRow key={item.id}>
                     <TableCell className="font-medium">
                       {item.product?.name || item.service?.name || item.name}
                     </TableCell>
                     <TableCell>
                       <Badge variant={item.type === "PRODUCT" ? "default" : "secondary"}>
-                        {item.type}
+                        {item.type === "PRODUCT" ? "Producto" : "Servicio"}
                       </Badge>
                     </TableCell>
-                    <TableCell>{item.quantity}</TableCell>
-                    <TableCell>${Number(item.unitPrice).toLocaleString("es-AR")}</TableCell>
-                    <TableCell>${Number(item.subtotal).toLocaleString("es-AR")}</TableCell>
+                    <TableCell className="text-right">{item.quantity}</TableCell>
+                    <TableCell className="text-right">
+                      ${Number(item.unitPrice).toLocaleString("es-AR")}
+                    </TableCell>
+                    <TableCell className="text-right font-medium">
+                      ${Number(item.subtotal).toLocaleString("es-AR")}
+                    </TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                ))
+              )}
+            </TableBody>
+          </Table>
 
-            <div className="mt-4 flex justify-end">
+          {workOrder.items.length > 0 && (
+            <div className="mt-4 flex justify-end pt-4 border-t">
               <div className="text-right space-y-1">
                 <div className="text-sm text-muted-foreground">
                   Productos: ${Number(workOrder.totalProducts).toLocaleString("es-AR")}
@@ -324,211 +355,216 @@ export default function WorkOrderDetailPage() {
                 <div className="text-sm text-muted-foreground">
                   Servicios: ${Number(workOrder.totalServices).toLocaleString("es-AR")}
                 </div>
-                <div className="text-xl font-bold pt-2 border-t">
+                <div className="text-2xl font-bold pt-1">
                   Total: ${Number(workOrder.total).toLocaleString("es-AR")}
                 </div>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          )}
+        </CardContent>
+      </Card>
 
-        {/* Checklists & Timeline */}
-        <Tabs defaultValue="checklist">
-          <TabsList>
-            <TabsTrigger value="checklist" className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4" />
-              Checklists
+      {/* Tabs: Checklists, Fotos, Timeline */}
+      <Tabs defaultValue="checklist">
+        <TabsList className="w-full justify-start">
+          <TabsTrigger value="checklist" className="flex items-center gap-2">
+            <CheckCircle className="h-4 w-4" />
+            Checklists
+          </TabsTrigger>
+          <TabsTrigger value="photos" className="flex items-center gap-2">
+            <Camera className="h-4 w-4" />
+            Fotos
+          </TabsTrigger>
+          <TabsTrigger value="timeline" className="flex items-center gap-2">
+            <Clock className="h-4 w-4" />
+            Timeline
+          </TabsTrigger>
+          {workOrder.notes && (
+            <TabsTrigger value="notes" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Notas
             </TabsTrigger>
-            <TabsTrigger value="photos" className="flex items-center gap-2">
-              <Camera className="h-4 w-4" />
-              Fotos
-            </TabsTrigger>
-            <TabsTrigger value="timeline" className="flex items-center gap-2">
-              <Clock className="h-4 w-4" />
-              Timeline
-            </TabsTrigger>
-          </TabsList>
+          )}
+        </TabsList>
 
-          <TabsContent value="checklist">
-            <div className="grid md:grid-cols-2 gap-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Checklist de Ingreso</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {workOrder.entryChecklist ? (
-                    <div className="space-y-2">
-                      {workOrder.entryChecklist.items.map((item, index) => (
-                        <div key={index} className="flex items-center gap-2">
-                          <input type="checkbox" checked={item.checked} readOnly className="rounded" />
-                          <span className={item.checked ? "" : "text-muted-foreground"}>
-                            {item.label}
-                          </span>
-                        </div>
-                      ))}
-                      <div className="text-xs text-muted-foreground mt-4">
-                        Completado: {new Date(workOrder.entryChecklist.completedAt).toLocaleString("es-AR")}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-muted-foreground">Sin checklist de ingreso</div>
-                  )}
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Checklist de Calidad (Salida)</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {workOrder.exitChecklist ? (
-                    <div className="space-y-2">
-                      {workOrder.exitChecklist.items.map((item, index) => (
-                        <div key={index} className="flex items-center gap-2">
-                          <input type="checkbox" checked={item.checked} readOnly className="rounded" />
-                          <span className={item.checked ? "" : "text-muted-foreground"}>
-                            {item.label}
-                          </span>
-                        </div>
-                      ))}
-                      <div className="text-xs text-muted-foreground mt-4">
-                        Completado: {new Date(workOrder.exitChecklist.completedAt).toLocaleString("es-AR")}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-muted-foreground">Sin checklist de calidad</div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="photos">
-            <div className="grid md:grid-cols-2 gap-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Fotos de Ingreso</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {workOrder.entryPhotos.length > 0 ? (
-                    <div className="grid grid-cols-2 gap-2">
-                      {workOrder.entryPhotos.map((url, index) => (
-                        <img
-                          key={index}
-                          src={url}
-                          alt={`Ingreso ${index + 1}`}
-                          className="rounded-md max-h-40 object-cover"
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-muted-foreground">Sin fotos de ingreso</div>
-                  )}
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Fotos de Egreso</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {workOrder.exitPhotos.length > 0 ? (
-                    <div className="grid grid-cols-2 gap-2">
-                      {workOrder.exitPhotos.map((url, index) => (
-                        <img
-                          key={index}
-                          src={url}
-                          alt={`Egreso ${index + 1}`}
-                          className="rounded-md max-h-40 object-cover"
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-muted-foreground">Sin fotos de egreso</div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="timeline">
+        <TabsContent value="checklist" className="mt-4">
+          <div className="grid md:grid-cols-2 gap-4">
             <Card>
-              <CardContent className="p-6">
-                <div className="space-y-4">
+              <CardHeader>
+                <CardTitle className="text-base">Checklist de Ingreso</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {workOrder.entryChecklist ? (
+                  <div className="space-y-2">
+                    {workOrder.entryChecklist.items.map((item, index) => (
+                      <div key={index} className="flex items-center gap-2">
+                        <input type="checkbox" checked={item.checked} readOnly className="rounded" />
+                        <span className={item.checked ? "" : "text-muted-foreground"}>
+                          {item.label}
+                        </span>
+                      </div>
+                    ))}
+                    <div className="text-xs text-muted-foreground mt-4">
+                      Completado: {new Date(workOrder.entryChecklist.completedAt).toLocaleString("es-AR")}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-muted-foreground">Sin checklist de ingreso</div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Checklist de Calidad (Salida)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {workOrder.exitChecklist ? (
+                  <div className="space-y-2">
+                    {workOrder.exitChecklist.items.map((item, index) => (
+                      <div key={index} className="flex items-center gap-2">
+                        <input type="checkbox" checked={item.checked} readOnly className="rounded" />
+                        <span className={item.checked ? "" : "text-muted-foreground"}>
+                          {item.label}
+                        </span>
+                      </div>
+                    ))}
+                    <div className="text-xs text-muted-foreground mt-4">
+                      Completado: {new Date(workOrder.exitChecklist.completedAt).toLocaleString("es-AR")}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-muted-foreground">Sin checklist de calidad</div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="photos" className="mt-4">
+          <div className="grid md:grid-cols-2 gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Fotos de Ingreso</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {workOrder.entryPhotos.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-2">
+                    {workOrder.entryPhotos.map((url, index) => (
+                      <Image
+                        key={index}
+                        src={url}
+                        alt={`Ingreso ${index + 1}`}
+                        width={300}
+                        height={160}
+                        className="rounded-md max-h-40 object-cover"
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-muted-foreground">Sin fotos de ingreso</div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Fotos de Egreso</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {workOrder.exitPhotos.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-2">
+                    {workOrder.exitPhotos.map((url, index) => (
+                      <Image
+                        key={index}
+                        src={url}
+                        alt={`Egreso ${index + 1}`}
+                        width={300}
+                        height={160}
+                        className="rounded-md max-h-40 object-cover"
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-muted-foreground">Sin fotos de egreso</div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="timeline" className="mt-4">
+          <Card>
+            <CardContent className="p-6">
+              <div className="space-y-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-3 h-3 rounded-full bg-primary" />
+                  <div>
+                    <div className="font-medium">OT Creada</div>
+                    <div className="text-sm text-muted-foreground">
+                      {new Date(workOrder.createdAt).toLocaleString("es-AR")}
+                    </div>
+                  </div>
+                </div>
+                {workOrder.scheduledDate && (
                   <div className="flex items-center gap-4">
-                    <div className="w-3 h-3 rounded-full bg-primary" />
+                    <div className="w-3 h-3 rounded-full bg-blue-500" />
                     <div>
-                      <div className="font-medium">OT Creada</div>
+                      <div className="font-medium">Turno Agendado</div>
                       <div className="text-sm text-muted-foreground">
-                        {new Date(workOrder.createdAt).toLocaleString("es-AR")}
+                        {new Date(workOrder.scheduledDate).toLocaleString("es-AR")}
                       </div>
                     </div>
                   </div>
-                  {workOrder.scheduledDate && (
-                    <div className="flex items-center gap-4">
-                      <div className="w-3 h-3 rounded-full bg-blue-500" />
-                      <div>
-                        <div className="font-medium">Turno Agendado</div>
-                        <div className="text-sm text-muted-foreground">
-                          {new Date(workOrder.scheduledDate).toLocaleString("es-AR")}
-                        </div>
+                )}
+                {workOrder.startedAt && (
+                  <div className="flex items-center gap-4">
+                    <div className="w-3 h-3 rounded-full bg-orange-500" />
+                    <div>
+                      <div className="font-medium">Trabajo Iniciado</div>
+                      <div className="text-sm text-muted-foreground">
+                        {new Date(workOrder.startedAt).toLocaleString("es-AR")}
                       </div>
                     </div>
-                  )}
-                  {workOrder.startedAt && (
-                    <div className="flex items-center gap-4">
-                      <div className="w-3 h-3 rounded-full bg-orange-500" />
-                      <div>
-                        <div className="font-medium">Trabajo Iniciado</div>
-                        <div className="text-sm text-muted-foreground">
-                          {new Date(workOrder.startedAt).toLocaleString("es-AR")}
-                        </div>
+                  </div>
+                )}
+                {workOrder.completedAt && (
+                  <div className="flex items-center gap-4">
+                    <div className="w-3 h-3 rounded-full bg-green-500" />
+                    <div>
+                      <div className="font-medium">Trabajo Completado</div>
+                      <div className="text-sm text-muted-foreground">
+                        {new Date(workOrder.completedAt).toLocaleString("es-AR")}
                       </div>
                     </div>
-                  )}
-                  {workOrder.completedAt && (
-                    <div className="flex items-center gap-4">
-                      <div className="w-3 h-3 rounded-full bg-green-500" />
-                      <div>
-                        <div className="font-medium">Trabajo Completado</div>
-                        <div className="text-sm text-muted-foreground">
-                          {new Date(workOrder.completedAt).toLocaleString("es-AR")}
-                        </div>
+                  </div>
+                )}
+                {workOrder.deliveredAt && (
+                  <div className="flex items-center gap-4">
+                    <div className="w-3 h-3 rounded-full bg-gray-500" />
+                    <div>
+                      <div className="font-medium">Entregado al Cliente</div>
+                      <div className="text-sm text-muted-foreground">
+                        {new Date(workOrder.deliveredAt).toLocaleString("es-AR")}
                       </div>
                     </div>
-                  )}
-                  {workOrder.deliveredAt && (
-                    <div className="flex items-center gap-4">
-                      <div className="w-3 h-3 rounded-full bg-gray-500" />
-                      <div>
-                        <div className="font-medium">Entregado al Cliente</div>
-                        <div className="text-sm text-muted-foreground">
-                          {new Date(workOrder.deliveredAt).toLocaleString("es-AR")}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {workOrder.notes && (
+          <TabsContent value="notes" className="mt-4">
+            <Card>
+              <CardContent className="p-6">
+                <p className="whitespace-pre-wrap">{workOrder.notes}</p>
               </CardContent>
             </Card>
           </TabsContent>
-        </Tabs>
-
-        {/* Notes */}
-        {workOrder.notes && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Notas
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="whitespace-pre-wrap">{workOrder.notes}</p>
-            </CardContent>
-          </Card>
         )}
-      </div>
+      </Tabs>
     </div>
   );
 }

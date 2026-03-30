@@ -161,13 +161,17 @@ Validar todos con:
 
 **Importancia**: Este módulo es CORE para el negocio. Validación exhaustiva requerida.
 
-### Fase 8.1: CRUD Clientes
+### Fase 8.1: CRUD Clientes - NUEVA UI CON HEADER REUSABLE
 **Herramienta**: Playwright MCP
 ```
 1. Navegar a /adm/customers
 2. Verificar que "Clientes" aparece segundo en el menú sidebar
-3. Click "Nuevo Cliente"
-4. Validar formulario completo:
+3. Verificar Header estándar en lista:
+   - Título "Clientes" (text-3xl font-bold)
+   - Descripción "Gestiona tus clientes"
+   - Botón "Nuevo Cliente" con estilo bg-slate-900
+4. Click "Nuevo Cliente"
+5. Validar formulario completo:
    - Nombre completo (requerido)
    - Teléfono principal (requerido)
    - Teléfono alternativo (WhatsApp)
@@ -176,24 +180,33 @@ Validar todos con:
    - Número documento (requerido)
    - Dirección
    - Notas
-5. Crear cliente de prueba
-6. Verificar en lista con conteo de vehículos y OTs
-7. Click "Ver" para ir a ficha de cliente
-8. Validar tabs: Vehículos e Historial OTs
-9. Editar cliente
-10. Volver a lista y verificar cambios
+6. Crear cliente de prueba
+7. Verificar en lista con conteo de vehículos y OTs
+8. Click "Ver" para ir a ficha de cliente
+9. Validar VISTA DE DETALLE con Header reusable:
+   - Título: Nombre del cliente (no UUID)
+   - Subtítulo: "Cliente desde [fecha]"
+   - Contactos accionables: teléfono (clickable), email (clickable)
+   - Botón "Volver" (ghost)
+   - CTA "Crear Vehículo" (bg-slate-900)
+10. Validar tabs: Vehículos e Historial OTs
+11. Editar cliente
+12. Volver a lista y verificar cambios
 ```
 
 **Validaciones**:
+- Header component reusable funciona correctamente
 - Screenshot del formulario de cliente
 - Búsqueda funciona (por nombre, teléfono, documento)
 - Conteo de vehículos y OTs correcto
-- Navegación "Nueva OT" desde lista de clientes
+- **NUEVO**: CTA cambiado de "Nueva OT" a "Crear Vehículo" en vista de cliente
+- **NUEVO**: Contactos son clickeables (tel: y mailto:)
+- **NUEVO**: No se muestran UUIDs en el header
 
-### Fase 8.2: CRUD Vehículos/Activos
+### Fase 8.2: CRUD Vehículos/Activos - NUEVO HEADER
 **Herramienta**: Playwright MCP
 ```
-1. Desde ficha de cliente, click "Agregar Vehículo"
+1. Desde ficha de cliente, click "Crear Vehículo" (CTA principal)
 2. Validar selector de categorías:
    - Auto/Camioneta 🚗
    - SUV/4x4 🚙
@@ -213,37 +226,50 @@ Validar todos con:
    - Campos: Código/Serie, Nombre del Equipo, Tipo, Descripción
    - Guardar
 5. Verificar en lista de vehículos del cliente
-6. Buscar vehículo por identificador (patente/código)
+6. Click "Ver" en vehículo para ir a ficha de vehículo
+7. Validar VISTA DE DETALLE de vehículo:
+   - Header con patente/código como título
+   - Descripción con categoría
+   - Botón "Volver"
+   - CTA "Nueva OT" (bg-slate-900)
+8. Buscar vehículo por identificador (patente/código)
 ```
 
 **Validaciones**:
 - Campos condicionales según categoría
 - Normalización de marcas/modelos
 - Identificador único por cliente
+- **NUEVO**: Header reutilizable en vista de vehículo
+- **NUEVO**: CTA "Nueva OT" disponible desde vehículo
+- **NUEVO**: Contactos del propietario accionables en header
 
-### Fase 8.3: Creación de Órdenes de Trabajo (OT)
+### Fase 8.3: Creación de Órdenes de Trabajo (OT) - NUEVO FLUJO
 **Herramienta**: Playwright MCP
 ```
 1. Navegar a /adm/work-orders
 2. Verificar menú "Órdenes de Trabajo" en sidebar
 3. Verificar vista Kanban con 7 columnas:
    - Confirmada, En Espera, En Proceso, Control QC, Listo, Pagada, Entregada
-4. Click "Nueva OT"
-5. Wizard paso 1 - Buscar/Seleccionar Cliente:
+4. Validar HEADER del Kanban:
+   - Título "Órdenes de Trabajo"
+   - Botón "Nueva OT" (bg-slate-900)
+   - Toggle Kanban/Lista
+5. Click "Nueva OT"
+6. Wizard paso 1 - Buscar/Seleccionar Cliente:
    - Buscar cliente existente
    - Verificar resultados de búsqueda
    - Seleccionar cliente
-6. Wizard paso 2 - Vehículo:
+7. Wizard paso 2 - Vehículo:
    - Verificar vehículos del cliente listados
    - O crear nuevo vehículo en el momento
    - Seleccionar categoría y completar datos
-7. Wizard paso 3 - Items:
+8. Wizard paso 3 - Items:
    - Agregar servicios del catálogo
    - Agregar productos
    - Verificar cálculo de totales (productos + servicios)
    - Modificar cantidades
    - Eliminar items
-8. Wizard paso 4 - Checklist y Finalizar:
+9. Wizard paso 4 - Checklist y Finalizar:
    - Checklist de ingreso (checkboxes)
    - Fecha agendada opcional
    - Notas
@@ -255,39 +281,79 @@ Validar todos con:
 - Wizard de 4 pasos funciona correctamente
 - Totales calculados en tiempo real
 - Checklist de ingreso guardado
+- **NUEVO**: Header estándar en vista de Kanban
+- **NUEVO**: Toggle Kanban/Lista visible
 
-### Fase 8.4: Kanban de OTs y Cambio de Estados
+### Fase 8.4: Kanban de OTs y Detalle - NUEVA UI
 **Herramienta**: Playwright MCP
 ```
 1. En /adm/work-orders, verificar vista Kanban:
    - 7 columnas visibles
+   - Cards rediseñados con info: Cliente, Vehículo, Total, Delay warning
    - OTs mostradas en columnas correctas
-   - Datos: Cliente, Vehículo, Total
 2. Cambiar a vista Lista (toggle)
 3. Verificar lista ordenada por fecha
 4. Abrir OT creada en paso anterior
-5. Verificar detalle de OT:
-   - Info cliente completa
-   - Info vehículo completa
-   - Items listados
-   - Totales correctos
-6. Cambiar estado de OT:
+5. Verificar DETALLE DE OT rediseñado:
+   - Header con info VEHÍCULO prioritaria:
+     - Patente/Identificador como título
+     - Marca/Modelo/Año
+     - Info del cliente secundaria (nombre, contactos accionables)
+   - Botón "Volver" (ghost)
+   - Selector "Cambiar Estado" visible
+6. Verificar TABS:
+   - Checklists (ingreso y calidad)
+   - Items/Servicios con tabla
+   - Fotos (entry/exit)
+   - Timeline de eventos
+7. Cambiar estado de OT:
    - Usar selector "Cambiar Estado"
    - Probar flujo: En Espera → En Proceso → Listo
    - Verificar timestamps automáticos (startedAt, completedAt)
-7. Verificar tabs:
-   - Checklists (ingreso y calidad)
-   - Fotos (entry/exit)
-   - Timeline de eventos
+8. Verificar DataTable de items:
+   - Columnas: Servicio/Producto, Cantidad, Precio, Total
+   - Totales al pie
 ```
 
 **Validaciones**:
 - Kanban responsive (scroll horizontal si es necesario)
+- Cards con nuevo diseño (delay warnings visibles)
+- **NUEVO**: Header prioriza info del vehículo sobre cliente
+- **NUEVO**: Tabs organizados correctamente
+- **NUEVO**: DataTable para items
 - Cambio de estado persiste
 - Timestamps registrados correctamente
 - Timeline muestra eventos en orden cronológico
 
-### Fase 8.5: Búsqueda y Filtrado
+### Fase 8.5: UI Architecture - Header Component ✅ NUEVO
+**Herramienta**: Inspección de código + Playwright
+```
+1. Verificar Header component en todas las vistas admin:
+   - /adm/customers - Header con título, desc, CTA
+   - /adm/customers/[id] - Header con contactos, botón volver
+   - /adm/vehicles/[id] - Header con patente, info propietario
+   - /adm/work-orders - Header Kanban con toggle
+   - /adm/work-orders/[id] - Header con info vehículo
+   - /adm/products - Header con stats
+
+2. Validar anatomía estándar:
+   - Título (text-3xl font-bold text-foreground)
+   - Descripción (text-muted-foreground)
+   - Botón Volver (ghost, cuando showBackButton=true)
+   - CTA Principal (bg-slate-900 text-white)
+   - Contactos accionables (tel:, mailto:, maps)
+
+3. Verificar imports correctos:
+   - import { Header } from '@/components/adm/Header'
+```
+
+**Validaciones**:
+- Header reusable usado en todas las vistas de detalle
+- Consistencia visual en todas las páginas
+- No hay stats cards en vistas de detalle (solo en listados)
+- Contactos son clickeables en headers de detalle
+
+### Fase 8.6: Búsqueda y Filtrado
 **Herramienta**: Playwright MCP + API
 ```
 1. Probar búsqueda de clientes:
@@ -311,17 +377,24 @@ Validar todos con:
 - [ ] Inputs sin bordes
 - [ ] Botones con colores incorrectos
 
-### Errores de Layout
+### Errores de Layout - NUEVOS
 - [ ] Sidebar items con fondo incorrecto
 - [ ] Desbordamiento de texto
 - [ ] Scroll no funciona en modales largos
 - [ ] Z-index incorrecto (elementos tapados)
+- [ ] **Header no usa componente reusable**
+- [ ] **Stats cards en vista de detalle (debe estar solo en listados)**
+- [ ] **UUIDs visibles en headers**
+- [ ] **Contactos no clickeables**
 
 ### Errores de Funcionalidad
 - [ ] Selectores no cargan opciones
 - [ ] Formularios no envían datos
 - [ ] Errores en consola (404, 500)
 - [ ] Validaciones de campos no funcionan
+- [ ] **Botón "Volver" no funciona**
+- [ ] **CTA principal no navega correctamente**
+- [ ] **Toggle Kanban/Lista no funciona**
 
 ## Formato de Reporte de Issues
 
@@ -362,6 +435,17 @@ document.documentElement.classList.contains('dark');  // true/false
 ### Verificar clases de elemento:
 ```javascript
 document.querySelector('[elemento]').className;
+```
+
+### Verificar Header component:
+```javascript
+// Verificar que se usa el Header component
+const header = document.querySelector('h1').closest('.flex.justify-between');
+console.log('Header estructura:', header?.innerHTML?.includes('text-3xl font-bold'));
+
+// Verificar contactos accionables
+const phoneLink = document.querySelector('a[href^="tel:"]');
+console.log('Teléfono clickeable:', phoneLink !== null);
 ```
 
 ### Verificar registro en historial de stock:

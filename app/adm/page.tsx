@@ -1,12 +1,14 @@
 'use client';
 
+import type { Session } from '@/lib/auth-client';
 import { authClient } from '@/lib/auth-client';
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Header } from '@/components/adm/Header';
 import { Package, Users, Settings, TrendingUp } from 'lucide-react';
 
 export default function AdminDashboard() {
-  const [session, setSession] = useState<any>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -55,12 +57,10 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-        <p className="text-muted-foreground">
-          Bienvenido al panel de administración de RPM Accesorios
-        </p>
-      </div>
+      <Header
+        title="Dashboard"
+        description="Bienvenido al panel de administración de RPM Accesorios"
+      />
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>

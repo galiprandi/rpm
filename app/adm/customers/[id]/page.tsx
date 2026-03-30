@@ -1,19 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { DataTable } from "@/components/ui/data-table";
+import { ColumnDef } from "@tanstack/react-table";
 import {
   ArrowLeft,
   Phone,
@@ -27,32 +20,36 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
+interface Vehicle {
+  id: string;
+  identifier: string;
+  category: string;
+  make?: { name: string };
+  model?: { name: string };
+  year?: number;
+}
+
+interface WorkOrder {
+  id: string;
+  status: string;
+  total: number;
+  createdAt: string;
+  vehicle: { identifier: string };
+}
+
 interface CustomerDetail {
   id: string;
   fullName: string;
   phone: string;
   phoneAlt?: string;
   email?: string;
-  documentType: string;
-  documentNumber: string;
+  documentType?: string;
+  documentNumber?: string;
   address?: string;
   notes?: string;
   createdAt: string;
-  vehicles: Array<{
-    id: string;
-    identifier: string;
-    category: string;
-    make?: { name: string };
-    model?: { name: string };
-    year?: number;
-  }>;
-  workOrders: Array<{
-    id: string;
-    status: string;
-    total: number;
-    createdAt: string;
-    vehicle: { identifier: string };
-  }>;
+  vehicles: Vehicle[];
+  workOrders: WorkOrder[];
 }
 
 export default function CustomerDetailPage() {
@@ -112,6 +109,96 @@ export default function CustomerDetailPage() {
     );
   };
 
+  // Columnas para DataTable de vehículos
+  const vehicleColumns: ColumnDef<Vehicle>[] = useMemo(
+    () => [
+      {
+        accessorKey: "identifier",
+        header: "Identificador",
+        cell: ({ row }) => (
+          <span className="font-medium">{row.original.identifier}</span>
+        ),
+      },
+      {
+        accessorKey: "category",
+        header: "Categoría",
+      },
+      {
+        accessorKey: "make.name",
+        header: "Marca/Modelo",
+        cell: ({ row }) => (
+          <span>
+            {row.original.make?.name} {row.original.model?.name}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "year",
+        header: "Año",
+        cell: ({ row }) => row.original.year || "-",
+      },
+      {
+        id: "actions",
+        header: "Acciones",
+        cell: ({ row }) => (
+          <div className="flex gap-2">
+            <Link href={`/adm/vehicles/${row.original.id}`}>
+              <Button variant="outline" size="sm">
+                Ver
+              </Button>
+            </Link>
+            <Link href={`/adm/work-orders/new?vehicleId=${row.original.id}`}>
+              <Button variant="ghost" size="sm">
+                <Plus className="h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
+        ),
+      },
+    ],
+    []
+  );
+
+  // Columnas para DataTable de OTs
+  const workOrderColumns: ColumnDef<WorkOrder>[] = useMemo(
+    () => [
+      {
+        accessorKey: "vehicle.identifier",
+        header: "Vehículo",
+        cell: ({ row }) => row.original.vehicle.identifier,
+      },
+      {
+        accessorKey: "status",
+        header: "Estado",
+        cell: ({ row }) => getStatusBadge(row.original.status),
+      },
+      {
+        accessorKey: "total",
+        header: "Total",
+        cell: ({ row }) =>
+          `$${Number(row.original.total).toLocaleString("es-AR")}`,
+      },
+      {
+        accessorKey: "createdAt",
+        header: "Fecha",
+        cell: ({ row }) =>
+          new Date(row.original.createdAt).toLocaleDateString("es-AR"),
+      },
+      {
+        id: "actions",
+        header: "Acciones",
+        cell: ({ row }) => (
+          <Link href={`/adm/work-orders/${row.original.id}`}>
+            <Button variant="outline" size="sm">
+              Ver
+            </Button>
+          </Link>
+        ),
+      },
+    ],
+    []
+  );
+
   if (loading) {
     return (
       <div className="container mx-auto py-6">
@@ -129,19 +216,59 @@ export default function CustomerDetailPage() {
   }
 
   return (
-    <div className="container mx-auto py-6">
-      <div className="mb-4 flex items-center justify-between">
-        <Link href="/adm/customers">
-          <Button variant="ghost" size="sm">
+    <div className="container mx-auto py-6 space-y-6">
+      {/* Header Estándar */}
+      <div className="flex justify-between items-start">
+        <div>
+          <h1 className="text-3xl font-bold">{customer.fullName}</h1>
+          <p className="text-muted-foreground">
+            Cliente desde {new Date(customer.createdAt).toLocaleDateString("es-AR")}
+          </p>
+          {/* Contactos clickeables */}
+          <div className="flex flex-wrap gap-4 mt-2">
+            <a
+              href={`tel:${customer.phone}`}
+              className="flex items-center gap-1 text-sm hover:underline text-primary"
+            >
+              <Phone className="h-4 w-4" /> {customer.phone}
+            </a>
+            {customer.phoneAlt && (
+              <a
+                href={`tel:${customer.phoneAlt}`}
+                className="flex items-center gap-1 text-sm hover:underline text-primary"
+              >
+                <Phone className="h-4 w-4" /> {customer.phoneAlt} (alt)
+              </a>
+            )}
+            {customer.email && (
+              <a
+                href={`mailto:${customer.email}`}
+                className="flex items-center gap-1 text-sm hover:underline text-primary"
+              >
+                <Mail className="h-4 w-4" /> {customer.email}
+              </a>
+            )}
+            {customer.address && (
+              <a
+                href={`https://maps.google.com/?q=${encodeURIComponent(customer.address)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 text-sm hover:underline text-primary"
+              >
+                <MapPin className="h-4 w-4" /> {customer.address}
+              </a>
+            )}
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="ghost" size="sm" onClick={() => router.back()}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Volver
           </Button>
-        </Link>
-        <div className="flex gap-2">
-          <Link href={`/adm/work-orders/new?customerId=${customerId}`}>
-            <Button>
+          <Link href={`/adm/vehicles/new?customerId=${customerId}`}>
+            <Button className="bg-slate-900 text-white hover:bg-slate-800">
               <Plus className="h-4 w-4 mr-2" />
-              Nueva OT
+              Crear Vehículo
             </Button>
           </Link>
           <Button variant="outline" onClick={handleDelete}>
@@ -151,177 +278,74 @@ export default function CustomerDetailPage() {
         </div>
       </div>
 
-      <div className="grid gap-6">
-        {/* Header Card */}
+      {/* Notas */}
+      {customer.notes && (
         <Card>
           <CardHeader>
-            <div className="flex items-start justify-between">
-              <div>
-                <CardTitle className="text-2xl">{customer.fullName}</CardTitle>
-                <div className="mt-2 text-sm text-muted-foreground">
-                  Cliente desde {new Date(customer.createdAt).toLocaleDateString("es-AR")}
-                </div>
-              </div>
-              <Badge variant="outline">
-                {customer.documentType} {customer.documentNumber}
-              </Badge>
-            </div>
+            <CardTitle className="text-base flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Notas
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="flex items-center gap-2">
-                <Phone className="h-4 w-4 text-muted-foreground" />
-                <span>{customer.phone}</span>
-              </div>
-              {customer.phoneAlt && (
-                <div className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 text-muted-foreground" />
-                  <span>{customer.phoneAlt} (alt)</span>
-                </div>
-              )}
-              {customer.email && (
-                <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                  <span>{customer.email}</span>
-                </div>
-              )}
-              {customer.address && (
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-muted-foreground" />
-                  <span>{customer.address}</span>
-                </div>
-              )}
-            </div>
-            {customer.notes && (
-              <div className="mt-4 p-3 bg-muted rounded-md">
-                <div className="flex items-center gap-2 text-sm font-medium mb-1">
-                  <FileText className="h-4 w-4" />
-                  Notas
-                </div>
-                <p className="text-sm text-muted-foreground">{customer.notes}</p>
-              </div>
-            )}
+            <p className="text-sm text-muted-foreground">{customer.notes}</p>
           </CardContent>
         </Card>
+      )}
 
-        {/* Tabs */}
-        <Tabs defaultValue="vehicles">
-          <TabsList>
-            <TabsTrigger value="vehicles" className="flex items-center gap-2">
-              <Car className="h-4 w-4" />
-              Vehículos ({customer.vehicles.length})
-            </TabsTrigger>
-            <TabsTrigger value="workorders" className="flex items-center gap-2">
-              <Wrench className="h-4 w-4" />
-              Órdenes de Trabajo ({customer.workOrders.length})
-            </TabsTrigger>
-          </TabsList>
+      {/* Vehículos y Equipos - DataTable */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <Car className="h-5 w-5" />
+            Vehículos y Equipos ({customer.vehicles.length})
+          </CardTitle>
+          <Link href={`/adm/vehicles/new?customerId=${customerId}`}>
+            <Button size="sm" variant="outline">
+              <Plus className="h-4 w-4 mr-2" />
+              Agregar
+            </Button>
+          </Link>
+        </CardHeader>
+        <CardContent>
+          {customer.vehicles.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No hay vehículos registrados
+            </div>
+          ) : (
+            <DataTable
+              data={customer.vehicles}
+              columns={vehicleColumns}
+              enableGlobalFilter={true}
+              globalFilterPlaceholder="Buscar vehículo..."
+            />
+          )}
+        </CardContent>
+      </Card>
 
-          <TabsContent value="vehicles">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Vehículos y Equipos</CardTitle>
-                <Link href={`/adm/vehicles/new?customerId=${customerId}`}>
-                  <Button size="sm">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Agregar
-                  </Button>
-                </Link>
-              </CardHeader>
-              <CardContent>
-                {customer.vehicles.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No hay vehículos registrados
-                  </div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Identificador</TableHead>
-                        <TableHead>Categoría</TableHead>
-                        <TableHead>Marca/Modelo</TableHead>
-                        <TableHead>Año</TableHead>
-                        <TableHead>Acciones</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {customer.vehicles.map((vehicle) => (
-                        <TableRow key={vehicle.id}>
-                          <TableCell className="font-medium">
-                            {vehicle.identifier}
-                          </TableCell>
-                          <TableCell>{vehicle.category}</TableCell>
-                          <TableCell>
-                            {vehicle.make?.name} {vehicle.model?.name}
-                          </TableCell>
-                          <TableCell>{vehicle.year || "-"}</TableCell>
-                          <TableCell>
-                            <Link href={`/adm/vehicles/${vehicle.id}`}>
-                              <Button variant="outline" size="sm">
-                                Ver
-                              </Button>
-                            </Link>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="workorders">
-            <Card>
-              <CardHeader>
-                <CardTitle>Historial de Órdenes de Trabajo</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {customer.workOrders.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No hay órdenes de trabajo registradas
-                  </div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>OT #</TableHead>
-                        <TableHead>Vehículo</TableHead>
-                        <TableHead>Estado</TableHead>
-                        <TableHead>Total</TableHead>
-                        <TableHead>Fecha</TableHead>
-                        <TableHead>Acciones</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {customer.workOrders.map((wo) => (
-                        <TableRow key={wo.id}>
-                          <TableCell className="font-medium">{wo.id}</TableCell>
-                          <TableCell>{wo.vehicle.identifier}</TableCell>
-                          <TableCell>{getStatusBadge(wo.status)}</TableCell>
-                          <TableCell>
-                            ${Number(wo.total).toLocaleString("es-AR")}
-                          </TableCell>
-                          <TableCell>
-                            {new Date(wo.createdAt).toLocaleDateString("es-AR")}
-                          </TableCell>
-                          <TableCell>
-                            <Link href={`/adm/work-orders/${wo.id}`}>
-                              <Button variant="outline" size="sm">
-                                Ver
-                              </Button>
-                            </Link>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
+      {/* Historial de OTs - DataTable */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <Wrench className="h-5 w-5" />
+            Historial de Órdenes de Trabajo ({customer.workOrders.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {customer.workOrders.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No hay órdenes de trabajo registradas
+            </div>
+          ) : (
+            <DataTable
+              data={customer.workOrders}
+              columns={workOrderColumns}
+              enableGlobalFilter={true}
+              globalFilterPlaceholder="Buscar OT..."
+            />
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

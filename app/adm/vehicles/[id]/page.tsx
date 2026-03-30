@@ -1,18 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { DataTable } from "@/components/ui/data-table";
+import { ColumnDef } from "@tanstack/react-table";
 import {
   ArrowLeft,
   Car,
@@ -20,12 +14,19 @@ import {
   Wrench,
   Calendar,
   Palette,
-  Hash,
+  Phone,
+  Mail,
   Trash2,
-  Edit,
   Plus,
 } from "lucide-react";
 import Link from "next/link";
+
+interface WorkOrder {
+  id: string;
+  status: string;
+  total: number;
+  createdAt: string;
+}
 
 interface VehicleDetail {
   id: string;
@@ -44,6 +45,7 @@ interface VehicleDetail {
     id: string;
     fullName: string;
     phone: string;
+    email?: string;
   };
   make?: {
     id: string;
@@ -53,12 +55,7 @@ interface VehicleDetail {
     id: string;
     name: string;
   };
-  workOrders: Array<{
-    id: string;
-    status: string;
-    total: number;
-    createdAt: string;
-  }>;
+  workOrders: WorkOrder[];
 }
 
 const categoryLabels: Record<string, string> = {
@@ -130,17 +127,40 @@ export default function VehicleDetailPage() {
     );
   };
 
-  const getCategoryIcon = (category: string) => {
-    const isVehicle = [
-      "CAR",
-      "TRUCK",
-      "SUV",
-      "PICKUP",
-      "MOTORCYCLE",
-      "TRAILER",
-    ].includes(category);
-    return isVehicle ? <Car className="h-5 w-5" /> : <Wrench className="h-5 w-5" />;
-  };
+  // Columnas para DataTable de OTs
+  const workOrderColumns: ColumnDef<WorkOrder>[] = useMemo(
+    () => [
+      {
+        accessorKey: "status",
+        header: "Estado",
+        cell: ({ row }) => getStatusBadge(row.original.status),
+      },
+      {
+        accessorKey: "total",
+        header: "Total",
+        cell: ({ row }) =>
+          `$${Number(row.original.total).toLocaleString("es-AR")}`,
+      },
+      {
+        accessorKey: "createdAt",
+        header: "Fecha",
+        cell: ({ row }) =>
+          new Date(row.original.createdAt).toLocaleDateString("es-AR"),
+      },
+      {
+        id: "actions",
+        header: "Acciones",
+        cell: ({ row }) => (
+          <Link href={`/adm/work-orders/${row.original.id}`}>
+            <Button variant="outline" size="sm">
+              Ver
+            </Button>
+          </Link>
+        ),
+      },
+    ],
+    []
+  );
 
   if (loading) {
     return (
@@ -164,15 +184,27 @@ export default function VehicleDetailPage() {
     vehicle.category === "OTHER";
 
   return (
-    <div className="container mx-auto py-6">
-      <div className="mb-4 flex items-center justify-between">
-        <Button variant="ghost" size="sm" onClick={() => router.back()}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Volver
-        </Button>
+    <div className="container mx-auto py-6 space-y-6">
+      {/* Header Estándar */}
+      <div className="flex justify-between items-start">
+        <div>
+          <h1 className="text-3xl font-bold">
+            {isEquipment
+              ? vehicle.equipmentName || vehicle.identifier
+              : vehicle.identifier}
+          </h1>
+          <p className="text-muted-foreground">
+            {categoryLabels[vehicle.category] || vehicle.category}
+            {vehicle.make?.name && ` • ${vehicle.make.name} ${vehicle.model?.name || ""}`}
+          </p>
+        </div>
         <div className="flex gap-2">
+          <Button variant="ghost" size="sm" onClick={() => router.back()}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Volver
+          </Button>
           <Link href={`/adm/work-orders/new?vehicleId=${vehicleId}`}>
-            <Button>
+            <Button className="bg-slate-900 text-white hover:bg-slate-800">
               <Plus className="h-4 w-4 mr-2" />
               Nueva OT
             </Button>
@@ -184,36 +216,17 @@ export default function VehicleDetailPage() {
         </div>
       </div>
 
-      <div className="grid gap-6">
-        {/* Header Card */}
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Vehicle Details */}
         <Card>
           <CardHeader>
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                {getCategoryIcon(vehicle.category)}
-                <div>
-                  <CardTitle className="text-2xl">
-                    {isEquipment
-                      ? vehicle.equipmentName || vehicle.identifier
-                      : vehicle.identifier}
-                  </CardTitle>
-                  <div className="mt-1 text-sm text-muted-foreground">
-                    {categoryLabels[vehicle.category] || vehicle.category}
-                  </div>
-                </div>
-              </div>
-              <Badge variant="outline">
-                {vehicle.make?.name} {vehicle.model?.name}
-              </Badge>
-            </div>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Car className="h-5 w-5" />
+              Información del Vehículo
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="flex items-center gap-2">
-                <Hash className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">ID:</span>
-                <span className="font-medium">{vehicle.identifier}</span>
-              </div>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
               {!isEquipment && vehicle.year && (
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -237,7 +250,7 @@ export default function VehicleDetailPage() {
               )}
             </div>
             {vehicle.notes && (
-              <div className="mt-4 p-3 bg-muted rounded-md">
+              <div className="p-3 bg-muted rounded-md">
                 <div className="text-sm font-medium mb-1">Notas</div>
                 <p className="text-sm text-muted-foreground">{vehicle.notes}</p>
               </div>
@@ -245,90 +258,75 @@ export default function VehicleDetailPage() {
           </CardContent>
         </Card>
 
-        {/* Customer Card */}
+        {/* Customer Card - Contactos Accionables */}
         {vehicle.customer && (
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="text-lg flex items-center gap-2">
                 <User className="h-5 w-5" />
                 Propietario
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">{vehicle.customer.fullName}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {vehicle.customer.phone}
-                  </p>
-                </div>
-                <Link href={`/adm/customers/${vehicle.customer.id}`}>
-                  <Button variant="outline" size="sm">
-                    <User className="h-4 w-4 mr-2" />
-                    Ver Cliente
-                  </Button>
-                </Link>
+            <CardContent className="space-y-4">
+              <div>
+                <p className="font-medium text-lg">{vehicle.customer.fullName}</p>
               </div>
+              <div className="flex flex-wrap gap-3">
+                <a
+                  href={`tel:${vehicle.customer.phone}`}
+                  className="flex items-center gap-1 text-sm hover:underline text-primary"
+                >
+                  <Phone className="h-4 w-4" /> {vehicle.customer.phone}
+                </a>
+                {vehicle.customer.email && (
+                  <a
+                    href={`mailto:${vehicle.customer.email}`}
+                    className="flex items-center gap-1 text-sm hover:underline text-primary"
+                  >
+                    <Mail className="h-4 w-4" /> {vehicle.customer.email}
+                  </a>
+                )}
+              </div>
+              <Link href={`/adm/customers/${vehicle.customer.id}`}>
+                <Button variant="outline" size="sm">
+                  <User className="h-4 w-4 mr-2" />
+                  Ver Ficha Cliente
+                </Button>
+              </Link>
             </CardContent>
           </Card>
         )}
-
-        {/* Work Orders */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Wrench className="h-5 w-5" />
-              Historial de Órdenes de Trabajo ({vehicle.workOrders.length})
-            </CardTitle>
-            <Link href={`/adm/work-orders/new?vehicleId=${vehicleId}`}>
-              <Button size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Nueva OT
-              </Button>
-            </Link>
-          </CardHeader>
-          <CardContent>
-            {vehicle.workOrders.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                No hay órdenes de trabajo registradas
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>OT #</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead>Total</TableHead>
-                    <TableHead>Fecha</TableHead>
-                    <TableHead>Acciones</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {vehicle.workOrders.map((wo) => (
-                    <TableRow key={wo.id}>
-                      <TableCell className="font-medium">{wo.id}</TableCell>
-                      <TableCell>{getStatusBadge(wo.status)}</TableCell>
-                      <TableCell>
-                        ${Number(wo.total).toLocaleString("es-AR")}
-                      </TableCell>
-                      <TableCell>
-                        {new Date(wo.createdAt).toLocaleDateString("es-AR")}
-                      </TableCell>
-                      <TableCell>
-                        <Link href={`/adm/work-orders/${wo.id}`}>
-                          <Button variant="outline" size="sm">
-                            Ver
-                          </Button>
-                        </Link>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
       </div>
+
+      {/* Work Orders - DataTable */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <Wrench className="h-5 w-5" />
+            Historial de Órdenes de Trabajo ({vehicle.workOrders.length})
+          </CardTitle>
+          <Link href={`/adm/work-orders/new?vehicleId=${vehicleId}`}>
+            <Button size="sm" variant="outline">
+              <Plus className="h-4 w-4 mr-2" />
+              Agregar
+            </Button>
+          </Link>
+        </CardHeader>
+        <CardContent>
+          {vehicle.workOrders.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No hay órdenes de trabajo registradas
+            </div>
+          ) : (
+            <DataTable
+              data={vehicle.workOrders}
+              columns={workOrderColumns}
+              enableGlobalFilter={true}
+              globalFilterPlaceholder="Buscar OT..."
+            />
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

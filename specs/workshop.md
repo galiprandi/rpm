@@ -22,18 +22,29 @@ Digitalizar la operación del taller: órdenes de trabajo, presupuestos, instala
 ```typescript
 interface Customer {
   id: string;
-  fullName: string;
-  phone: string;           // Principal
-  phoneAlt?: string;       // Alternativo (WhatsApp)
+  name: string;              // Nombre o Razón Social
+  phone: string;             // Principal
+  phoneAlt?: string;         // Alternativo (WhatsApp)
   email?: string;
-  documentType: 'DNI' | 'CUIT' | 'CUIL';
-  documentNumber: string;
   address?: string;
-  notes?: string;          // Observaciones
+  notes?: string;            // Observaciones
+  
+  // Datos de facturación (opcional - solo si factura)
+  billingData?: {
+    cuit: string;            // CUIT para facturación AFIP
+    invoiceType: 'A' | 'B' | 'C' | 'M';  // Tipo de factura
+  };
+  
   vehicles: Vehicle[];
   createdAt: Date;
 }
 ```
+
+**Persona Física vs Jurídica:**
+- **Sin diferenciar en UI**: Mismo formulario, mismas acciones
+- **Diferencia implícita**: Solo en los datos que complete
+  - PF: Completa nombre personal, puede dejar CUIT vacío o usar DNI como CUIT
+  - PJ: Completa "Razón Social" en `name`, CUIT de la empresa obligatorio para facturar
 
 ### 2. Gestión de Vehículos / Activos
 
@@ -51,7 +62,7 @@ El modelo `Vehicle` soporta tanto vehículos como equipos genéricos (trailers, 
 ```typescript
 // Categorías disponibles
 enum VehicleCategory {
-  CAR = 'CAR',                    // Auto/Camioneta
+  CAR = 'CAR',                  // Auto/Camioneta
   TRUCK = 'TRUCK',              // Camión
   SUV = 'SUV',                  // SUV/4x4
   PICKUP = 'PICKUP',            // Pickup
@@ -238,6 +249,7 @@ PENDIENTE → APROBADO → OT GENERADA
 interface WorkOrder {
   id: string;                    // Número OT (ej: OT-2024-0001)
   status: WorkOrderStatus;
+  source: 'IN_PERSON' | 'WEB';   // Origen: Presencial o Web
   customerId: string;
   vehicleId: string;
   technicianId?: string;         // Asignado
@@ -306,6 +318,78 @@ const generateEntryChecklist = (category: VehicleCategory) => {
 };
 ```
 
+---
+
+## Flujos de Usuario (MVP - Flujo Express)
+
+### Flujo Principal: Instalación Express (MVP)
+
+**Flujo Presencial - Inicio por Patente:**
+
+```
+┌─────────────┐   ┌─────────────────────────┐   ┌─────────────────────────┐
+│Cliente      │──▶│ Recepcionista ingresa   │──▶│ Sistema busca patente   │
+│llega con    │   │ patente: XYZ789 [Buscar]│   │ en base de datos        │
+│vehículo     │   └─────────────────────────┘   └─────────────────────────┘
+└─────────────┘                                          │
+                                                         ▼
+                              ┌────────────────────────────────────────┐
+                              │  ✅ VEHÍCULO ENCONTRADO               │
+                              │  🚗 Ford Ranger - Negro               │
+                              │  Dueño: María González                │
+                              │  Tel: +54 11 5555-6666                │
+                              │                                      │
+                              │  [✓ Confirmar cliente] [Gestionar]    │
+                              └────────────────────────────────────────┘
+                                         │
+                    ┌────────────────────┴────────────────────┐
+                    ▼                                         ▼
+         ┌─────────────────────┐               ┌─────────────────────┐
+         │ CONFIRMAR → Paso 2│               │ GESTIONAR → Cambiar │
+         │ Servicios/Checklist│              │ dueño del vehículo  │
+         └─────────────────────┘               └─────────────────────┘
+```
+
+**Si patente NO existe:**
+
+```
+┌─────────────────────────────────────────┐
+│  ❌ Patente XYZ789 no encontrada        │
+│                                         │
+│  [+ Crear nuevo vehículo]              │
+│                                         │
+│  Cliente: [Buscar o crear]             │
+│  ├── María González (encontrado)       │
+│  └── [+ Nuevo cliente]                 │
+│                                         │
+│  [Continuar]                           │
+└─────────────────────────────────────────┘
+```
+
+### Diferencias: Presencial vs Web
+
+| Aspecto | Presencial | Web (futuro) |
+|---------|------------|--------------|
+| **Vehículo** | Staff crea si no existe | Cliente registra previamente |
+| **Inicio flujo** | Buscar patente | Cliente selecciona vehículo propio |
+| **Servicio** | Staff selecciona del catálogo | Cliente describe libremente |
+| **Estado inicial** | WAITING o IN_PROGRESS | CONFIRMED (turno solicitado) |
+| **Checklist** | Staff completa ingreso | Cliente acepta términos online |
+| **Origen** | `source: 'IN_PERSON'` | `source: 'WEB'` |
+
+### Flujo Alternativo: Cliente Nuevo + OT Directa
+
+```
+┌─────────────┐   ┌─────────────────────────┐   ┌─────────────────────────┐   ┌─────────────┐
+│Cliente      │──▶│ Crear nuevo vehículo  │──▶│ Buscar/crear cliente   │──▶│ Crear OT    │
+│nuevo        │   │ con patente             │   │ asociado al vehículo   │   │ directa     │
+└─────────────┘   └─────────────────────────┘   └─────────────────────────┘   └─────────────┘
+```
+
+> **Nota**: El flujo con presupuestos se implementará en iteración posterior (ver sección Presupuestos).
+
+---
+
 ### 6. Gestión de Técnicos
 
 | Feature | Prioridad | Descripción |
@@ -323,39 +407,6 @@ const generateEntryChecklist = (category: VehicleCategory) => {
 | **Notificación** | P2 | WhatsApp/SMS recordatorio |
 
 ---
-
-## Flujos de Usuario (MVP - Flujo Express)
-
-### Flujo Principal: Instalación Express (MVP)
-
-```
-┌─────────────┐   ┌─────────────┐   ┌─────────────┐   ┌─────────────┐
-│Cliente      │──▶│Busca cliente│──▶│Registra     │──▶│Crea OT      │
-│solicita     │   │o activo     │   │activo       │   │directa      │
-│instalación  │   │por identif. │   │(si no existe)│   │             │
-└─────────────┘   └─────────────┘   └─────────────┘   └──────┬──────┘
-                                                           │
-┌─────────────┐   ┌─────────────┐   ┌─────────────┐        │
-│Entrega      │◄──│Registra     │◄──│Completa     │◄───────┘
-│activo       │   │pago         │   │trabajo      │
-└─────────────┘   └─────────────┘   └─────────────┘
-```
-
-### Flujo Alternativo: Cliente Nuevo + OT Directa
-
-```
-┌─────────────┐   ┌─────────────┐   ┌─────────────┐   ┌─────────────┐
-│Cliente      │──▶│Registra     │──▶│Registra     │──▶│Crea OT      │
-│nuevo        │   │cliente      │   │activo       │   │directa      │
-└─────────────┘   └─────────────┘   └─────────────┘   └─────────────┘
-```
-
-> **Nota**: El flujo con presupuestos se implementará en iteración posterior (ver sección Presupuestos).
-
----
-
-## Modelo de Datos FASE 2
-
 ### DB de Assets Normalizada (Marcas/Modelos)
 
 Para evitar duplicados y construir una base de conocimiento:
@@ -705,6 +756,43 @@ export async function POST(request: Request) {
 ## API Endpoints Fase 2
 
 ### Clientes
+
+**Schema:**
+```typescript
+// POST /api/customers - Request Body
+{
+  name: string;           // Nombre o Razón Social (requerido)
+  phone: string;          // Teléfono principal (requerido)
+  phoneAlt?: string;      // Teléfono alternativo (WhatsApp)
+  email?: string;
+  address?: string;
+  notes?: string;
+  billingData?: {         // Solo si factura
+    cuit: string;         // CUIT para AFIP
+    invoiceType: 'A' | 'B' | 'C' | 'M';
+  };
+}
+
+// GET /api/customers - Response
+{
+  customers: [{
+    id: string;
+    name: string;
+    phone: string;
+    phoneAlt?: string;
+    email?: string;
+    address?: string;
+    notes?: string;
+    billingData?: { cuit: string; invoiceType: string };
+    vehicles: [...];
+    _count: { workOrders: number };
+  }];
+  total: number;
+}
+```
+
+**Endpoints:**
+
 | Endpoint | Método | Descripción | Roles |
 |----------|--------|-------------|-------|
 | `/api/customers` | GET | Listar clientes | SELLER, TECHNICIAN, ADMIN |
@@ -752,6 +840,34 @@ export async function POST(request: Request) {
 > **Nota**: Presupuestos se implementarán post-MVP
 
 ### Órdenes de Trabajo
+
+**Schema:**
+```typescript
+// POST /api/work-orders - Request Body
+{
+  customerId: string;
+  vehicleId?: string;           // Si ya existe
+  vehicleData?: {               // Si es nuevo (se crea vehicle)
+    identifier: string;
+    category: string;
+    makeName?: string;
+    modelName?: string;
+    year?: number;
+    color?: string;
+    equipmentName?: string;
+    equipmentType?: string;
+    description?: string;
+  };
+  items: [...];                 // Productos y servicios
+  entryChecklist?: {...};
+  notes?: string;
+  scheduledDate?: string;
+  source?: 'IN_PERSON' | 'WEB'; // Default: 'IN_PERSON'
+}
+```
+
+**Endpoints:**
+
 | Endpoint | Método | Descripción | Roles |
 |----------|--------|-------------|-------|
 | `/api/work-orders` | GET | Listar OTs con filtros | SELLER, TECHNICIAN, ADMIN |
