@@ -43,7 +43,7 @@ interface VehicleDetail {
   updatedAt: string;
   customer?: {
     id: string;
-    fullName: string;
+    name: string;
     phone: string;
     email?: string;
   };
@@ -269,7 +269,7 @@ export default function VehicleDetailPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <p className="font-medium text-lg">{vehicle.customer.fullName}</p>
+                <p className="font-medium text-lg">{vehicle.customer.name}</p>
               </div>
               <div className="flex flex-wrap gap-3">
                 <a

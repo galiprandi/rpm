@@ -172,15 +172,16 @@ Validar todos con:
    - Botón "Nuevo Cliente" con estilo bg-slate-900
 4. Click "Nuevo Cliente"
 5. Validar formulario completo:
-   - Nombre completo (requerido)
+   - **Nombre** (requerido) - campo unificado para PF/PJ
    - Teléfono principal (requerido)
    - Teléfono alternativo (WhatsApp)
    - Email
-   - Tipo documento (DNI/CUIT/CUIL)
-   - Número documento (requerido)
    - Dirección
    - Notas
-6. Crear cliente de prueba
+   - **Datos de facturación opcional** (sección colapsable):
+     - CUIT (para factura A/B)
+     - Tipo de factura (A, B, C, M)
+6. Crear cliente de prueba (sin documento requerido)
 7. Verificar en lista con conteo de vehículos y OTs
 8. Click "Ver" para ir a ficha de cliente
 9. Validar VISTA DE DETALLE con Header reusable:
@@ -243,7 +244,7 @@ Validar todos con:
 - **NUEVO**: CTA "Nueva OT" disponible desde vehículo
 - **NUEVO**: Contactos del propietario accionables en header
 
-### Fase 8.3: Creación de Órdenes de Trabajo (OT) - NUEVO FLUJO
+### Fase 8.3: Creación de Órdenes de Trabajo (OT) - NUEVO FLUJO POR PATENTE ⭐
 **Herramienta**: Playwright MCP
 ```
 1. Navegar a /adm/work-orders
@@ -255,34 +256,52 @@ Validar todos con:
    - Botón "Nueva OT" (bg-slate-900)
    - Toggle Kanban/Lista
 5. Click "Nueva OT"
-6. Wizard paso 1 - Buscar/Seleccionar Cliente:
-   - Buscar cliente existente
-   - Verificar resultados de búsqueda
-   - Seleccionar cliente
-7. Wizard paso 2 - Vehículo:
-   - Verificar vehículos del cliente listados
-   - O crear nuevo vehículo en el momento
-   - Seleccionar categoría y completar datos
-8. Wizard paso 3 - Items:
+6. **PASO 1 - Buscar Vehículo por Patente (NUEVO FLUJO):**
+   - Input: "Ingrese patente..." (ej: ABC123 o AB123CD)
+   - Click "Buscar"
+   - **SI ENCUENTRA vehículo:**
+     - Card verde con: Patente, Categoría, Marca/Modelo/Año
+     - Datos del dueño: Nombre, Teléfono
+     - Botón "Confirmar y Continuar"
+     - Botón "Buscar Otro" (por si es otro vehículo)
+   - **SI NO ENCUENTRA vehículo:**
+     - Mensaje: "No se encontró vehículo con patente X"
+     - Formulario de creación de vehículo:
+       - Categoría (select con iconos)
+       - Patente/Identificador
+       - Marca/Modelo/Año/Color (si es vehículo)
+       - Nombre/Tipo de equipo (si es equipo)
+     - Sección "Seleccionar Dueño":
+       - Buscar cliente existente por nombre/teléfono
+       - O "Crear Nuevo Cliente" inline (nombre, teléfono, email)
+       - Mostrar "Cliente seleccionado" en verde
+     - Botón "Continuar" (disabled hasta tener vehículo + cliente)
+7. **PASO 2 - Servicios/Productos:**
+   - Mostrar resumen: Patente + Nombre del cliente
+   - Botón "Cambiar" (volver a paso 1)
    - Agregar servicios del catálogo
    - Agregar productos
-   - Verificar cálculo de totales (productos + servicios)
+   - Verificar cálculo de totales
    - Modificar cantidades
    - Eliminar items
-9. Wizard paso 4 - Checklist y Finalizar:
+8. **PASO 3 - Checklist y Finalizar:**
+   - Mostrar resumen: Patente + Cliente + N° items
    - Checklist de ingreso (checkboxes)
    - Fecha agendada opcional
    - Notas
    - Verificar total estimado
+   - **Campo source automático: 'IN_PERSON'**
    - Crear OT
 ```
 
 **Validaciones**:
-- Wizard de 4 pasos funciona correctamente
+- **NUEVO**: Wizard de 3 pasos (no 4) - flujo invertido por patente
+- **NUEVO**: Búsqueda por patente como entrada principal
+- **NUEVO**: Card de vehículo con datos del dueño
+- **NUEVO**: Creación inline de vehículo + cliente si no existe
+- **NUEVO**: Campo `source` en WorkOrder ('IN_PERSON' | 'WEB')
 - Totales calculados en tiempo real
 - Checklist de ingreso guardado
-- **NUEVO**: Header estándar en vista de Kanban
-- **NUEVO**: Toggle Kanban/Lista visible
 
 ### Fase 8.4: Kanban de OTs y Detalle - NUEVA UI
 **Herramienta**: Playwright MCP
@@ -299,6 +318,7 @@ Validar todos con:
      - Patente/Identificador como título
      - Marca/Modelo/Año
      - Info del cliente secundaria (nombre, contactos accionables)
+     - **Badge de origen: 'Presencial' o 'Web'**
    - Botón "Volver" (ghost)
    - Selector "Cambiar Estado" visible
 6. Verificar TABS:
@@ -319,6 +339,7 @@ Validar todos con:
 - Kanban responsive (scroll horizontal si es necesario)
 - Cards con nuevo diseño (delay warnings visibles)
 - **NUEVO**: Header prioriza info del vehículo sobre cliente
+- **NUEVO**: Badge de origen OT (Presencial/Web) visible
 - **NUEVO**: Tabs organizados correctamente
 - **NUEVO**: DataTable para items
 - Cambio de estado persiste
@@ -359,7 +380,7 @@ Validar todos con:
 1. Probar búsqueda de clientes:
    - GET /api/customers?search=[nombre]
    - GET /api/customers?search=[teléfono]
-   - GET /api/customers?search=[documento]
+   - Ya no se busca por documento (eliminado del modelo)
 2. Probar búsqueda de vehículos:
    - GET /api/vehicles/by-identifier/[patente]
 3. Probar filtros de OTs:
@@ -395,6 +416,9 @@ Validar todos con:
 - [ ] **Botón "Volver" no funciona**
 - [ ] **CTA principal no navega correctamente**
 - [ ] **Toggle Kanban/Lista no funciona**
+- [ ] **Datos de facturación no se muestran/colapsan correctamente**
+- [ ] **Búsqueda por patente no funciona**
+- [ ] **Flujo de creación vehículo+cliente inline falla**
 
 ## Formato de Reporte de Issues
 

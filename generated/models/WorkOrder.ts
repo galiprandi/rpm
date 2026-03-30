@@ -41,6 +41,7 @@ export type WorkOrderSumAggregateOutputType = {
 export type WorkOrderMinAggregateOutputType = {
   id: string | null
   status: string | null
+  source: string | null
   customerId: string | null
   vehicleId: string | null
   technicianId: string | null
@@ -62,6 +63,7 @@ export type WorkOrderMinAggregateOutputType = {
 export type WorkOrderMaxAggregateOutputType = {
   id: string | null
   status: string | null
+  source: string | null
   customerId: string | null
   vehicleId: string | null
   technicianId: string | null
@@ -83,6 +85,7 @@ export type WorkOrderMaxAggregateOutputType = {
 export type WorkOrderCountAggregateOutputType = {
   id: number
   status: number
+  source: number
   customerId: number
   vehicleId: number
   technicianId: number
@@ -122,6 +125,7 @@ export type WorkOrderSumAggregateInputType = {
 export type WorkOrderMinAggregateInputType = {
   id?: true
   status?: true
+  source?: true
   customerId?: true
   vehicleId?: true
   technicianId?: true
@@ -143,6 +147,7 @@ export type WorkOrderMinAggregateInputType = {
 export type WorkOrderMaxAggregateInputType = {
   id?: true
   status?: true
+  source?: true
   customerId?: true
   vehicleId?: true
   technicianId?: true
@@ -164,6 +169,7 @@ export type WorkOrderMaxAggregateInputType = {
 export type WorkOrderCountAggregateInputType = {
   id?: true
   status?: true
+  source?: true
   customerId?: true
   vehicleId?: true
   technicianId?: true
@@ -276,6 +282,7 @@ export type WorkOrderGroupByArgs<ExtArgs extends runtime.Types.Extensions.Intern
 export type WorkOrderGroupByOutputType = {
   id: string
   status: string
+  source: string
   customerId: string
   vehicleId: string
   technicianId: string | null
@@ -324,6 +331,7 @@ export type WorkOrderWhereInput = {
   NOT?: Prisma.WorkOrderWhereInput | Prisma.WorkOrderWhereInput[]
   id?: Prisma.StringFilter<"WorkOrder"> | string
   status?: Prisma.StringFilter<"WorkOrder"> | string
+  source?: Prisma.StringFilter<"WorkOrder"> | string
   customerId?: Prisma.StringFilter<"WorkOrder"> | string
   vehicleId?: Prisma.StringFilter<"WorkOrder"> | string
   technicianId?: Prisma.StringNullableFilter<"WorkOrder"> | string | null
@@ -353,6 +361,7 @@ export type WorkOrderWhereInput = {
 export type WorkOrderOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  source?: Prisma.SortOrder
   customerId?: Prisma.SortOrder
   vehicleId?: Prisma.SortOrder
   technicianId?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -385,6 +394,7 @@ export type WorkOrderWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.WorkOrderWhereInput[]
   NOT?: Prisma.WorkOrderWhereInput | Prisma.WorkOrderWhereInput[]
   status?: Prisma.StringFilter<"WorkOrder"> | string
+  source?: Prisma.StringFilter<"WorkOrder"> | string
   customerId?: Prisma.StringFilter<"WorkOrder"> | string
   vehicleId?: Prisma.StringFilter<"WorkOrder"> | string
   technicianId?: Prisma.StringNullableFilter<"WorkOrder"> | string | null
@@ -414,6 +424,7 @@ export type WorkOrderWhereUniqueInput = Prisma.AtLeast<{
 export type WorkOrderOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  source?: Prisma.SortOrder
   customerId?: Prisma.SortOrder
   vehicleId?: Prisma.SortOrder
   technicianId?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -447,6 +458,7 @@ export type WorkOrderScalarWhereWithAggregatesInput = {
   NOT?: Prisma.WorkOrderScalarWhereWithAggregatesInput | Prisma.WorkOrderScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"WorkOrder"> | string
   status?: Prisma.StringWithAggregatesFilter<"WorkOrder"> | string
+  source?: Prisma.StringWithAggregatesFilter<"WorkOrder"> | string
   customerId?: Prisma.StringWithAggregatesFilter<"WorkOrder"> | string
   vehicleId?: Prisma.StringWithAggregatesFilter<"WorkOrder"> | string
   technicianId?: Prisma.StringNullableWithAggregatesFilter<"WorkOrder"> | string | null
@@ -472,6 +484,7 @@ export type WorkOrderScalarWhereWithAggregatesInput = {
 export type WorkOrderCreateInput = {
   id?: string
   status: string
+  source?: string
   technicianId?: string | null
   entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   exitChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -499,6 +512,7 @@ export type WorkOrderCreateInput = {
 export type WorkOrderUncheckedCreateInput = {
   id?: string
   status: string
+  source?: string
   customerId: string
   vehicleId: string
   technicianId?: string | null
@@ -526,6 +540,7 @@ export type WorkOrderUncheckedCreateInput = {
 export type WorkOrderUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
+  source?: Prisma.StringFieldUpdateOperationsInput | string
   technicianId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   exitChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -553,6 +568,7 @@ export type WorkOrderUpdateInput = {
 export type WorkOrderUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
+  source?: Prisma.StringFieldUpdateOperationsInput | string
   customerId?: Prisma.StringFieldUpdateOperationsInput | string
   vehicleId?: Prisma.StringFieldUpdateOperationsInput | string
   technicianId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -580,6 +596,7 @@ export type WorkOrderUncheckedUpdateInput = {
 export type WorkOrderCreateManyInput = {
   id?: string
   status: string
+  source?: string
   customerId: string
   vehicleId: string
   technicianId?: string | null
@@ -605,6 +622,7 @@ export type WorkOrderCreateManyInput = {
 export type WorkOrderUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
+  source?: Prisma.StringFieldUpdateOperationsInput | string
   technicianId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   exitChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -628,6 +646,7 @@ export type WorkOrderUpdateManyMutationInput = {
 export type WorkOrderUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
+  source?: Prisma.StringFieldUpdateOperationsInput | string
   customerId?: Prisma.StringFieldUpdateOperationsInput | string
   vehicleId?: Prisma.StringFieldUpdateOperationsInput | string
   technicianId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -663,6 +682,7 @@ export type WorkOrderOrderByRelationAggregateInput = {
 export type WorkOrderCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  source?: Prisma.SortOrder
   customerId?: Prisma.SortOrder
   vehicleId?: Prisma.SortOrder
   technicianId?: Prisma.SortOrder
@@ -694,6 +714,7 @@ export type WorkOrderAvgOrderByAggregateInput = {
 export type WorkOrderMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  source?: Prisma.SortOrder
   customerId?: Prisma.SortOrder
   vehicleId?: Prisma.SortOrder
   technicianId?: Prisma.SortOrder
@@ -715,6 +736,7 @@ export type WorkOrderMaxOrderByAggregateInput = {
 export type WorkOrderMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  source?: Prisma.SortOrder
   customerId?: Prisma.SortOrder
   vehicleId?: Prisma.SortOrder
   technicianId?: Prisma.SortOrder
@@ -881,6 +903,7 @@ export type WorkOrderUpdateOneRequiredWithoutPhotosNestedInput = {
 export type WorkOrderCreateWithoutCustomerInput = {
   id?: string
   status: string
+  source?: string
   technicianId?: string | null
   entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   exitChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -907,6 +930,7 @@ export type WorkOrderCreateWithoutCustomerInput = {
 export type WorkOrderUncheckedCreateWithoutCustomerInput = {
   id?: string
   status: string
+  source?: string
   vehicleId: string
   technicianId?: string | null
   entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -962,6 +986,7 @@ export type WorkOrderScalarWhereInput = {
   NOT?: Prisma.WorkOrderScalarWhereInput | Prisma.WorkOrderScalarWhereInput[]
   id?: Prisma.StringFilter<"WorkOrder"> | string
   status?: Prisma.StringFilter<"WorkOrder"> | string
+  source?: Prisma.StringFilter<"WorkOrder"> | string
   customerId?: Prisma.StringFilter<"WorkOrder"> | string
   vehicleId?: Prisma.StringFilter<"WorkOrder"> | string
   technicianId?: Prisma.StringNullableFilter<"WorkOrder"> | string | null
@@ -987,6 +1012,7 @@ export type WorkOrderScalarWhereInput = {
 export type WorkOrderCreateWithoutVehicleInput = {
   id?: string
   status: string
+  source?: string
   technicianId?: string | null
   entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   exitChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1013,6 +1039,7 @@ export type WorkOrderCreateWithoutVehicleInput = {
 export type WorkOrderUncheckedCreateWithoutVehicleInput = {
   id?: string
   status: string
+  source?: string
   customerId: string
   technicianId?: string | null
   entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1065,6 +1092,7 @@ export type WorkOrderUpdateManyWithWhereWithoutVehicleInput = {
 export type WorkOrderCreateWithoutItemsInput = {
   id?: string
   status: string
+  source?: string
   technicianId?: string | null
   entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   exitChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1091,6 +1119,7 @@ export type WorkOrderCreateWithoutItemsInput = {
 export type WorkOrderUncheckedCreateWithoutItemsInput = {
   id?: string
   status: string
+  source?: string
   customerId: string
   vehicleId: string
   technicianId?: string | null
@@ -1133,6 +1162,7 @@ export type WorkOrderUpdateToOneWithWhereWithoutItemsInput = {
 export type WorkOrderUpdateWithoutItemsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
+  source?: Prisma.StringFieldUpdateOperationsInput | string
   technicianId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   exitChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1159,6 +1189,7 @@ export type WorkOrderUpdateWithoutItemsInput = {
 export type WorkOrderUncheckedUpdateWithoutItemsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
+  source?: Prisma.StringFieldUpdateOperationsInput | string
   customerId?: Prisma.StringFieldUpdateOperationsInput | string
   vehicleId?: Prisma.StringFieldUpdateOperationsInput | string
   technicianId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1185,6 +1216,7 @@ export type WorkOrderUncheckedUpdateWithoutItemsInput = {
 export type WorkOrderCreateWithoutPhotosInput = {
   id?: string
   status: string
+  source?: string
   technicianId?: string | null
   entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   exitChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1211,6 +1243,7 @@ export type WorkOrderCreateWithoutPhotosInput = {
 export type WorkOrderUncheckedCreateWithoutPhotosInput = {
   id?: string
   status: string
+  source?: string
   customerId: string
   vehicleId: string
   technicianId?: string | null
@@ -1253,6 +1286,7 @@ export type WorkOrderUpdateToOneWithWhereWithoutPhotosInput = {
 export type WorkOrderUpdateWithoutPhotosInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
+  source?: Prisma.StringFieldUpdateOperationsInput | string
   technicianId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   exitChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1279,6 +1313,7 @@ export type WorkOrderUpdateWithoutPhotosInput = {
 export type WorkOrderUncheckedUpdateWithoutPhotosInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
+  source?: Prisma.StringFieldUpdateOperationsInput | string
   customerId?: Prisma.StringFieldUpdateOperationsInput | string
   vehicleId?: Prisma.StringFieldUpdateOperationsInput | string
   technicianId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1305,6 +1340,7 @@ export type WorkOrderUncheckedUpdateWithoutPhotosInput = {
 export type WorkOrderCreateManyCustomerInput = {
   id?: string
   status: string
+  source?: string
   vehicleId: string
   technicianId?: string | null
   entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1329,6 +1365,7 @@ export type WorkOrderCreateManyCustomerInput = {
 export type WorkOrderUpdateWithoutCustomerInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
+  source?: Prisma.StringFieldUpdateOperationsInput | string
   technicianId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   exitChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1355,6 +1392,7 @@ export type WorkOrderUpdateWithoutCustomerInput = {
 export type WorkOrderUncheckedUpdateWithoutCustomerInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
+  source?: Prisma.StringFieldUpdateOperationsInput | string
   vehicleId?: Prisma.StringFieldUpdateOperationsInput | string
   technicianId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1381,6 +1419,7 @@ export type WorkOrderUncheckedUpdateWithoutCustomerInput = {
 export type WorkOrderUncheckedUpdateManyWithoutCustomerInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
+  source?: Prisma.StringFieldUpdateOperationsInput | string
   vehicleId?: Prisma.StringFieldUpdateOperationsInput | string
   technicianId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1405,6 +1444,7 @@ export type WorkOrderUncheckedUpdateManyWithoutCustomerInput = {
 export type WorkOrderCreateManyVehicleInput = {
   id?: string
   status: string
+  source?: string
   customerId: string
   technicianId?: string | null
   entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1429,6 +1469,7 @@ export type WorkOrderCreateManyVehicleInput = {
 export type WorkOrderUpdateWithoutVehicleInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
+  source?: Prisma.StringFieldUpdateOperationsInput | string
   technicianId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   exitChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1455,6 +1496,7 @@ export type WorkOrderUpdateWithoutVehicleInput = {
 export type WorkOrderUncheckedUpdateWithoutVehicleInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
+  source?: Prisma.StringFieldUpdateOperationsInput | string
   customerId?: Prisma.StringFieldUpdateOperationsInput | string
   technicianId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1481,6 +1523,7 @@ export type WorkOrderUncheckedUpdateWithoutVehicleInput = {
 export type WorkOrderUncheckedUpdateManyWithoutVehicleInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
+  source?: Prisma.StringFieldUpdateOperationsInput | string
   customerId?: Prisma.StringFieldUpdateOperationsInput | string
   technicianId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1545,6 +1588,7 @@ export type WorkOrderCountOutputTypeCountPhotosArgs<ExtArgs extends runtime.Type
 export type WorkOrderSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   status?: boolean
+  source?: boolean
   customerId?: boolean
   vehicleId?: boolean
   technicianId?: boolean
@@ -1575,6 +1619,7 @@ export type WorkOrderSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
 export type WorkOrderSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   status?: boolean
+  source?: boolean
   customerId?: boolean
   vehicleId?: boolean
   technicianId?: boolean
@@ -1602,6 +1647,7 @@ export type WorkOrderSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ext
 export type WorkOrderSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   status?: boolean
+  source?: boolean
   customerId?: boolean
   vehicleId?: boolean
   technicianId?: boolean
@@ -1629,6 +1675,7 @@ export type WorkOrderSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ext
 export type WorkOrderSelectScalar = {
   id?: boolean
   status?: boolean
+  source?: boolean
   customerId?: boolean
   vehicleId?: boolean
   technicianId?: boolean
@@ -1651,7 +1698,7 @@ export type WorkOrderSelectScalar = {
   updatedAt?: boolean
 }
 
-export type WorkOrderOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "status" | "customerId" | "vehicleId" | "technicianId" | "entryChecklist" | "exitChecklist" | "entryPhotos" | "exitPhotos" | "scheduledDate" | "startedAt" | "completedAt" | "deliveredAt" | "paymentMethod" | "paymentNotes" | "total" | "totalProducts" | "totalServices" | "invoiceId" | "notes" | "createdAt" | "updatedAt", ExtArgs["result"]["workOrder"]>
+export type WorkOrderOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "status" | "source" | "customerId" | "vehicleId" | "technicianId" | "entryChecklist" | "exitChecklist" | "entryPhotos" | "exitPhotos" | "scheduledDate" | "startedAt" | "completedAt" | "deliveredAt" | "paymentMethod" | "paymentNotes" | "total" | "totalProducts" | "totalServices" | "invoiceId" | "notes" | "createdAt" | "updatedAt", ExtArgs["result"]["workOrder"]>
 export type WorkOrderInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   customer?: boolean | Prisma.CustomerDefaultArgs<ExtArgs>
   vehicle?: boolean | Prisma.VehicleDefaultArgs<ExtArgs>
@@ -1679,6 +1726,7 @@ export type $WorkOrderPayload<ExtArgs extends runtime.Types.Extensions.InternalA
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     status: string
+    source: string
     customerId: string
     vehicleId: string
     technicianId: string | null
@@ -2128,6 +2176,7 @@ export interface Prisma__WorkOrderClient<T, Null = never, ExtArgs extends runtim
 export interface WorkOrderFieldRefs {
   readonly id: Prisma.FieldRef<"WorkOrder", 'String'>
   readonly status: Prisma.FieldRef<"WorkOrder", 'String'>
+  readonly source: Prisma.FieldRef<"WorkOrder", 'String'>
   readonly customerId: Prisma.FieldRef<"WorkOrder", 'String'>
   readonly vehicleId: Prisma.FieldRef<"WorkOrder", 'String'>
   readonly technicianId: Prisma.FieldRef<"WorkOrder", 'String'>

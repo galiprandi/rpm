@@ -14,23 +14,27 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Save, User } from "lucide-react";
+import { ArrowLeft, Save, User, ChevronDown } from "lucide-react";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 
-const DOCUMENT_TYPES = ["DNI", "CUIT", "CUIL"];
+const INVOICE_TYPES = ["A", "B", "C", "M"];
 
 export default function NewCustomerPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [showBilling, setShowBilling] = useState(false);
   const [formData, setFormData] = useState({
-    fullName: "",
+    name: "",
     phone: "",
     phoneAlt: "",
     email: "",
-    documentType: "DNI",
-    documentNumber: "",
     address: "",
     notes: "",
+    billingData: {
+      cuit: "",
+      invoiceType: "B",
+    },
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -38,10 +42,15 @@ export default function NewCustomerPage() {
     setLoading(true);
 
     try {
+      const payload = {
+        ...formData,
+        billingData: showBilling ? formData.billingData : undefined,
+      };
+
       const response = await fetch("/api/customers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) throw new Error("Failed to create customer");
@@ -81,12 +90,12 @@ export default function NewCustomerPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="fullName">Nombre Completo *</Label>
+              <Label htmlFor="name">Nombre o Razón Social *</Label>
               <Input
-                id="fullName"
-                value={formData.fullName}
-                onChange={(e) => handleChange("fullName", e.target.value)}
-                placeholder="Juan Pérez"
+                id="name"
+                value={formData.name}
+                onChange={(e) => handleChange("name", e.target.value)}
+                placeholder="Juan Pérez o Empresa S.A."
                 required
               />
             </div>
@@ -124,37 +133,6 @@ export default function NewCustomerPage() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="documentType">Tipo Documento *</Label>
-                <Select
-                  value={formData.documentType}
-                  onValueChange={(value) => handleChange("documentType", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {DOCUMENT_TYPES.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {type}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="documentNumber">Número Documento *</Label>
-                <Input
-                  id="documentNumber"
-                  value={formData.documentNumber}
-                  onChange={(e) => handleChange("documentNumber", e.target.value)}
-                  placeholder="12345678"
-                  required
-                />
-              </div>
-            </div>
-
             <div className="space-y-2">
               <Label htmlFor="address">Dirección</Label>
               <Input
@@ -163,6 +141,65 @@ export default function NewCustomerPage() {
                 onChange={(e) => handleChange("address", e.target.value)}
                 placeholder="Av. Siempre Viva 123, Springfield"
               />
+            </div>
+
+            {/* Datos de Facturación (colapsable) */}
+            <div className="border rounded-lg">
+              <button
+                type="button"
+                onClick={() => setShowBilling(!showBilling)}
+                className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
+              >
+                <span className="font-medium">Datos de Facturación (opcional)</span>
+                <ChevronDown className={cn("h-4 w-4 transition-transform", showBilling && "rotate-180")} />
+              </button>
+              
+              {showBilling && (
+                <div className="p-4 pt-0 space-y-4 border-t">
+                  <p className="text-sm text-muted-foreground">
+                    Solo completa si el cliente requiere factura AFIP
+                  </p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="cuit">CUIT</Label>
+                      <Input
+                        id="cuit"
+                        value={formData.billingData.cuit}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            billingData: { ...prev.billingData, cuit: e.target.value },
+                          }))
+                        }
+                        placeholder="30-12345678-9"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="invoiceType">Tipo Factura</Label>
+                      <Select
+                        value={formData.billingData.invoiceType}
+                        onValueChange={(value) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            billingData: { ...prev.billingData, invoiceType: value },
+                          }))
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {INVOICE_TYPES.map((type) => (
+                            <SelectItem key={type} value={type}>
+                              Factura {type}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">

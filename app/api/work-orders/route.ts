@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
         customer: {
           select: {
             id: true,
-            fullName: true,
+            name: true,
             phone: true,
           },
         },
@@ -38,6 +38,18 @@ export async function GET(request: NextRequest) {
             id: true,
             identifier: true,
             category: true,
+            make: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+            model: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
           },
         },
         items: {
@@ -75,98 +87,133 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const {
       customerId,
+      vehicleId,
       vehicleData,
       technicianId,
       items,
       entryChecklist,
       notes,
       scheduledDate,
+      source = "IN_PERSON",
     } = body;
 
-    if (!customerId || !vehicleData) {
+    if (!customerId || (!vehicleId && !vehicleData)) {
       return NextResponse.json(
-        { error: "Missing required fields: customerId, vehicleData" },
+        { error: "Missing required fields: customerId, vehicleId or vehicleData" },
         { status: 400 }
       );
     }
 
-    const { identifier, category, makeName, modelName, year, color, equipmentName, equipmentType, description } = vehicleData;
+    let vehicle;
 
-    // 1. Find or create VehicleMake (only for vehicles, not equipment)
-    let makeId = null;
-    let modelId = null;
-
-    const isVehicle = ["CAR", "TRUCK", "SUV", "PICKUP", "MOTORCYCLE", "TRAILER"].includes(category);
-
-    if (isVehicle && makeName) {
-      const normalizedMakeName = normalizeText(makeName);
-      let make = await prisma.vehicleMake.findUnique({
-        where: { normalizedName: normalizedMakeName },
+    // If vehicleId is provided, use existing vehicle
+    if (vehicleId) {
+      vehicle = await prisma.vehicle.findUnique({
+        where: { id: vehicleId },
       });
 
-      if (!make) {
-        make = await prisma.vehicleMake.create({
-          data: {
-            name: capitalizeText(makeName),
-            normalizedName: normalizedMakeName,
-            category: [category],
-          },
-        });
+      if (!vehicle) {
+        return NextResponse.json(
+          { error: "Vehicle not found" },
+          { status: 404 }
+        );
       }
-      makeId = make.id;
 
-      // 2. Find or create VehicleModel
-      if (modelName) {
-        const normalizedModelName = normalizeText(modelName);
-        let model = await prisma.vehicleModel.findFirst({
-          where: {
-            makeId: make.id,
-            normalizedName: normalizedModelName,
-          },
+      // Verify vehicle belongs to customer
+      if (vehicle.customerId !== customerId) {
+        return NextResponse.json(
+          { error: "Vehicle does not belong to customer" },
+          { status: 400 }
+        );
+      }
+    } else if (vehicleData) {
+      // Create or find vehicle from vehicleData
+      const { identifier, category, makeName, modelName, year, color, equipmentName, equipmentType, description } = vehicleData;
+
+      // 1. Find or create VehicleMake (only for vehicles, not equipment)
+      let makeId = null;
+      let modelId = null;
+
+      const isVehicle = ["CAR", "TRUCK", "SUV", "PICKUP", "MOTORCYCLE", "TRAILER"].includes(category);
+
+      if (isVehicle && makeName) {
+        const normalizedMakeName = normalizeText(makeName);
+        let make = await prisma.vehicleMake.findUnique({
+          where: { normalizedName: normalizedMakeName },
         });
 
-        if (!model) {
-          model = await prisma.vehicleModel.create({
+        if (!make) {
+          make = await prisma.vehicleMake.create({
             data: {
-              makeId: make.id,
-              name: capitalizeText(modelName),
-              normalizedName: normalizedModelName,
-              years: year ? [year] : [],
+              name: capitalizeText(makeName),
+              normalizedName: normalizedMakeName,
+              category: [category],
             },
           });
-        } else if (year && !model.years.includes(year)) {
-          model = await prisma.vehicleModel.update({
-            where: { id: model.id },
-            data: { years: { push: year } },
-          });
         }
-        modelId = model.id;
+        makeId = make.id;
+
+        // 2. Find or create VehicleModel
+        if (modelName) {
+          const normalizedModelName = normalizeText(modelName);
+          let model = await prisma.vehicleModel.findFirst({
+            where: {
+              makeId: make.id,
+              normalizedName: normalizedModelName,
+            },
+          });
+
+          if (!model) {
+            model = await prisma.vehicleModel.create({
+              data: {
+                makeId: make.id,
+                name: capitalizeText(modelName),
+                normalizedName: normalizedModelName,
+                years: year ? [year] : [],
+              },
+            });
+          } else if (year && !model.years.includes(year)) {
+            model = await prisma.vehicleModel.update({
+              where: { id: model.id },
+              data: { years: { push: year } },
+            });
+          }
+          modelId = model.id;
+        }
+      }
+
+      // 3. Find or create Vehicle
+      vehicle = await prisma.vehicle.findFirst({
+        where: {
+          identifier: identifier.toUpperCase(),
+          customerId,
+        },
+      });
+
+      if (!vehicle) {
+        vehicle = await prisma.vehicle.create({
+          data: {
+            identifier: identifier.toUpperCase(),
+            category,
+            customerId,
+            makeId,
+            modelId,
+            year,
+            color,
+            equipmentName,
+            equipmentType,
+            description,
+          },
+        });
       }
     }
 
-    // 3. Find or create Vehicle
-    let vehicle = await prisma.vehicle.findFirst({
-      where: {
-        identifier: identifier.toUpperCase(),
-        customerId,
-      },
-    });
-
+    // Ensure vehicle was resolved
     if (!vehicle) {
-      vehicle = await prisma.vehicle.create({
-        data: {
-          identifier: identifier.toUpperCase(),
-          category,
-          customerId,
-          makeId,
-          modelId,
-          year,
-          color,
-          equipmentName,
-          equipmentType,
-          description,
-        },
-      });
+      return NextResponse.json(
+        { error: "Failed to resolve vehicle" },
+        { status: 500 }
+      );
     }
 
     // 4. Calculate totals
@@ -199,6 +246,7 @@ export async function POST(request: NextRequest) {
         vehicleId: vehicle.id,
         technicianId,
         status: scheduledDate ? "CONFIRMED" : "WAITING",
+        source,
         entryChecklist,
         notes: notes || "",
         scheduledDate: scheduledDate ? new Date(scheduledDate) : null,

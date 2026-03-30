@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
         customer: {
           select: {
             id: true,
-            fullName: true,
+            name: true,
             phone: true,
           },
         },

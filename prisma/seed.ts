@@ -65,7 +65,7 @@ async function seed() {
 
   // Crear usuario administrador
   await prisma.user.upsert({
-    where: { id: adminUser.id },
+    where: { email: adminUser.email },
     update: adminUser,
     create: adminUser,
   });

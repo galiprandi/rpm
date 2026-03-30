@@ -177,15 +177,31 @@ const VehicleForm = ({ category }) => {
 };
 ```
 
-### 3. Servicios (Catálogo de Trabajos)
+### Servicios (Catálogo de Trabajos)
 
 | Feature | Prioridad | Descripción |
 |---------|-----------|-------------|
+| **CRUD Servicios** | P0 | Crear, listar, editar y desactivar servicios |
 | **Definición servicios** | P0 | Lista de trabajos estándar |
 | **Costo base** | P0 | Precio referencia |
 | **Factor vehículo** | P1 | Ajuste por tipo de vehículo |
 | **Tiempo estimado** | P1 | Para agendamiento |
 | **Productos incluidos** | P2 | Kits (servicio + insumos) |
+
+**Schema Service:**
+```typescript
+interface Service {
+  id: string;
+  name: string;              // Nombre único del servicio
+  description?: string;      // Descripción detallada
+  baseCost: number;          // Costo base referencia
+  timeMinutes: number;       // Tiempo estimado (default 60)
+  vehicleFactor: number;     // Factor ajuste por vehículo (default 1.0)
+  isActive: boolean;         // Activo/inactivo
+  createdAt: Date;
+  updatedAt: Date;
+}
+```
 
 Servicios típicos RPM:
 ```typescript

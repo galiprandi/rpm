@@ -62,7 +62,7 @@ export interface HeaderProps {
  * @example
  * // Vista de detalle con acciones múltiples
  * <Header
- *   title={customer.fullName}
+ *   title={customer.name}
  *   description={`Cliente desde ${date}`}
  *   showBackButton
  *   secondaryActions={[
@@ -140,20 +140,29 @@ export function Header({
 
         {/* Acción Principal (CTA) */}
         {primaryAction && (
-          <Button
-            variant={primaryAction.variant || 'default'}
-            size="sm"
-            onClick={primaryAction.onClick}
-            className={
-              primaryAction.className ||
-              'bg-slate-900 text-white hover:bg-slate-800 border border-slate-900 shadow-lg hover:shadow-xl transition-all font-semibold px-4 py-2 h-10'
+          (() => {
+            const button = (
+              <Button
+                variant={primaryAction.variant || 'default'}
+                size="sm"
+                onClick={primaryAction.onClick}
+                className={
+                  primaryAction.className ||
+                  'bg-slate-900 text-white hover:bg-slate-800 border border-slate-900 shadow-lg hover:shadow-xl transition-all font-semibold px-4 py-2 h-10'
+                }
+              >
+                {primaryAction.icon && (
+                  <primaryAction.icon className="h-5 w-5 mr-2" />
+                )}
+                {primaryAction.label}
+              </Button>
+            );
+
+            if (primaryAction.href) {
+              return <a href={primaryAction.href}>{button}</a>;
             }
-          >
-            {primaryAction.icon && (
-              <primaryAction.icon className="h-5 w-5 mr-2" />
-            )}
-            {primaryAction.label}
-          </Button>
+            return button;
+          })()
         )}
       </div>
     </div>

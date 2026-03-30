@@ -6,12 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Plus, LayoutGrid, List, ArrowUpDown } from "lucide-react";
+import { Header } from "@/components/adm/Header";
 import { cn } from "@/lib/utils";
 
 interface WorkOrder {
   id: string;
   status: string;
-  customer: { fullName: string; phone: string };
+  customer: { name: string; phone: string };
   vehicle: { identifier: string; category: string; make?: { name: string }; model?: { name: string } };
   total: number;
   technicianId?: string;
@@ -84,45 +85,40 @@ export default function WorkOrdersPage() {
 
   return (
     <div className="container mx-auto py-6 space-y-4 h-[calc(100vh-6rem)] flex flex-col">
-      {/* Header Estándar */}
-      <div className="flex justify-between items-start flex-shrink-0">
-        <div>
-          <h1 className="text-3xl font-bold">Órdenes de Trabajo</h1>
-          <p className="text-muted-foreground">
-            Gestiona el flujo de trabajo del taller
-          </p>
+      <Header
+        title="Órdenes de Trabajo"
+        description="Gestiona el flujo de trabajo del taller"
+        primaryAction={{
+          label: "Nueva OT",
+          href: "/adm/work-orders/new",
+          icon: Plus,
+        }}
+      >
+        <div className="flex items-center gap-2 mt-2">
+          <Button
+            variant={viewMode === "kanban" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setViewMode("kanban")}
+          >
+            <LayoutGrid className="h-4 w-4 mr-2" />
+            Kanban
+          </Button>
+          <Button
+            variant={viewMode === "list" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setViewMode("list")}
+          >
+            <List className="h-4 w-4 mr-2" />
+            Lista
+          </Button>
         </div>
-        <div className="flex gap-2">
-          <div className="flex border rounded-md">
-            <Button
-              variant={viewMode === "kanban" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setViewMode("kanban")}
-            >
-              <LayoutGrid className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={viewMode === "list" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setViewMode("list")}
-            >
-              <List className="h-4 w-4" />
-            </Button>
-          </div>
-          <Link href="/adm/work-orders/new">
-            <Button className="bg-slate-900 text-white hover:bg-slate-800">
-              <Plus className="h-4 w-4 mr-2" />
-              Nueva OT
-            </Button>
-          </Link>
-        </div>
-      </div>
+      </Header>
 
       {/* Content */}
       {viewMode === "kanban" ? (
         <div className="flex-1 overflow-hidden">
           <div className="h-full overflow-x-auto">
-            <div className="flex gap-2 h-full min-w-full pb-2 px-1">
+            <div className="flex gap-2 h-full pb-2 px-1">
               {workOrdersByStatus.map((status) => (
                 <div
                   key={status.id}
@@ -161,7 +157,7 @@ export default function WorkOrdersPage() {
                             
                             {/* Customer - Secondary */}
                             <div className="text-xs text-muted-foreground pt-1 border-t">
-                              {wo.customer.fullName}
+                              {wo.customer.name}
                             </div>
                             
                             {/* Footer: Status & Delay Warning */}
@@ -210,7 +206,7 @@ export default function WorkOrdersPage() {
                           {wo.vehicle.identifier}
                         </div>
                         <div>
-                          <div className="font-medium">{wo.customer.fullName}</div>
+                          <div className="font-medium">{wo.customer.name}</div>
                           <div className="text-sm text-muted-foreground">
                             {wo.vehicle.make?.name} {wo.vehicle.model?.name}
                           </div>

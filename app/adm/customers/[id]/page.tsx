@@ -39,14 +39,16 @@ interface WorkOrder {
 
 interface CustomerDetail {
   id: string;
-  fullName: string;
+  name: string;
   phone: string;
   phoneAlt?: string;
   email?: string;
-  documentType?: string;
-  documentNumber?: string;
   address?: string;
   notes?: string;
+  billingData?: {
+    cuit: string;
+    invoiceType: string;
+  };
   createdAt: string;
   vehicles: Vehicle[];
   workOrders: WorkOrder[];
@@ -220,9 +222,14 @@ export default function CustomerDetailPage() {
       {/* Header Estándar */}
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-3xl font-bold">{customer.fullName}</h1>
+          <h1 className="text-3xl font-bold">{customer.name}</h1>
           <p className="text-muted-foreground">
             Cliente desde {new Date(customer.createdAt).toLocaleDateString("es-AR")}
+            {customer.billingData && (
+              <span className="ml-2 text-blue-600">
+                • Factura {customer.billingData.invoiceType} (CUIT: {customer.billingData.cuit})
+              </span>
+            )}
           </p>
           {/* Contactos clickeables */}
           <div className="flex flex-wrap gap-4 mt-2">

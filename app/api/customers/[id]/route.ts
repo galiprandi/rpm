@@ -52,19 +52,35 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { fullName, phone, phoneAlt, email, documentType, documentNumber, address, notes } = body;
+    const { name, phone, phoneAlt, email, address, notes, billingData } = body;
+
+    // Validate billingData if provided
+    if (billingData) {
+      if (!billingData.cuit || !billingData.invoiceType) {
+        return NextResponse.json(
+          { error: "billingData requires cuit and invoiceType" },
+          { status: 400 }
+        );
+      }
+      const validInvoiceTypes = ["A", "B", "C", "M"];
+      if (!validInvoiceTypes.includes(billingData.invoiceType)) {
+        return NextResponse.json(
+          { error: "Invalid invoiceType. Must be A, B, C, or M" },
+          { status: 400 }
+        );
+      }
+    }
 
     const customer = await prisma.customer.update({
       where: { id },
       data: {
-        fullName,
+        name,
         phone,
         phoneAlt,
         email,
-        documentType,
-        documentNumber,
         address,
         notes,
+        billingData: billingData || null,
       },
     });
 

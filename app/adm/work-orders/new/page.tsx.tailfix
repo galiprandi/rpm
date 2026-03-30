@@ -1,0 +1,16 @@
+              <div className="flex justify-between">
+                <Button variant="outline" onClick={() => setStep(2)}>
+                  Anterior
+                </Button>
+                <Button onClick={handleSubmit} disabled={loading}>
+                  <Save className="h-4 w-4 mr-2" />
+                  {loading ? "Creando..." : "Crear Orden de Trabajo"}
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

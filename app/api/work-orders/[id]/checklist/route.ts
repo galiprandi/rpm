@@ -43,7 +43,7 @@ export async function POST(
         customer: {
           select: {
             id: true,
-            fullName: true,
+            name: true,
             phone: true,
           },
         },

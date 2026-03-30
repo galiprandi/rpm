@@ -13,9 +13,8 @@ export async function GET(request: NextRequest) {
     const where = search
       ? {
           OR: [
-            { fullName: { contains: search, mode: "insensitive" as const } },
+            { name: { contains: search, mode: "insensitive" as const } },
             { phone: { contains: search, mode: "insensitive" as const } },
-            { documentNumber: { contains: search, mode: "insensitive" as const } },
           ],
         }
       : {};
@@ -57,35 +56,42 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { fullName, phone, phoneAlt, email, documentType, documentNumber, address, notes } = body;
+    const { name, phone, phoneAlt, email, address, notes, billingData } = body;
 
     // Validate required fields
-    if (!fullName || !phone || !documentType || !documentNumber) {
+    if (!name || !phone) {
       return NextResponse.json(
-        { error: "Missing required fields: fullName, phone, documentType, documentNumber" },
+        { error: "Missing required fields: name, phone" },
         { status: 400 }
       );
     }
 
-    // Validate document type
-    const validDocTypes = ["DNI", "CUIT", "CUIL"];
-    if (!validDocTypes.includes(documentType)) {
-      return NextResponse.json(
-        { error: "Invalid documentType. Must be DNI, CUIT, or CUIL" },
-        { status: 400 }
-      );
+    // Validate billingData if provided
+    if (billingData) {
+      if (!billingData.cuit || !billingData.invoiceType) {
+        return NextResponse.json(
+          { error: "billingData requires cuit and invoiceType" },
+          { status: 400 }
+        );
+      }
+      const validInvoiceTypes = ["A", "B", "C", "M"];
+      if (!validInvoiceTypes.includes(billingData.invoiceType)) {
+        return NextResponse.json(
+          { error: "Invalid invoiceType. Must be A, B, C, or M" },
+          { status: 400 }
+        );
+      }
     }
 
     const customer = await prisma.customer.create({
       data: {
-        fullName,
+        name,
         phone,
         phoneAlt,
         email,
-        documentType,
-        documentNumber,
         address,
         notes,
+        billingData: billingData || null,
       },
     });
 

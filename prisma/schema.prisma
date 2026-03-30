@@ -17,25 +17,26 @@ datasource db {
 
 // Customer - Ficha de cliente
 model Customer {
-  id             String    @id @default(uuid())
-  fullName       String
-  phone          String    // Principal
-  phoneAlt       String?   // Alternativo (WhatsApp)
-  email          String?
-  documentType   String    // 'DNI' | 'CUIT' | 'CUIL'
-  documentNumber String
-  address        String?
-  notes          String?   // Observaciones
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  id        String   @id @default(uuid())
+  name      String   // Nombre o Razón Social
+  phone     String   // Principal
+  phoneAlt  String?  // Alternativo (WhatsApp)
+  email     String?
+  address   String?
+  notes     String?  // Observaciones
+  
+  // Datos de facturación (opcional, para AFIP)
+  billingData Json?  // { cuit: string, invoiceType: 'A' | 'B' | 'C' | 'M' }
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
   vehicles   Vehicle[]
   workOrders WorkOrder[]
 
   @@index([phone])
-  @@index([documentNumber])
-  @@index([fullName])
+  @@index([name])
   @@map("customer")
 }
 
@@ -139,6 +140,7 @@ model Service {
 model WorkOrder {
   id         String @id @default(uuid()) // OT-2024-0001 format
   status     String // CONFIRMED | WAITING | IN_PROGRESS | QC_CHECK | READY | PAID | DELIVERED
+  source     String @default("IN_PERSON") // IN_PERSON | WEB
 
   // Relations
   customerId    String
@@ -153,6 +155,10 @@ model WorkOrder {
   // Checklists
   entryChecklist Json? // Checklist de ingreso
   exitChecklist  Json? // Checklist de calidad salida
+
+  // Detalles de ingreso del vehículo
+  odometerValue Int?    // Valor del odómetro al ingresar (km)
+  fuelLevel     Int?    // Nivel de combustible 0-100%
 
   // Fotos
   entryPhotos String[] // URLs fotos ingreso

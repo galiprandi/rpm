@@ -45,6 +45,7 @@ const navigation = [
   { name: 'Órdenes de Trabajo', href: '/adm/work-orders', icon: Wrench },
   { name: 'Clientes', href: '/adm/customers', icon: UserCircle },
   { name: 'Productos', href: '/adm/products', icon: Package },
+  { name: 'Servicios', href: '/adm/services', icon: Wrench },
   { name: 'Categorías', href: '/adm/categories', icon: Folder },
   { name: 'Proveedores', href: '/adm/suppliers', icon: Truck },
   { name: 'Usuarios', href: '/adm/users', icon: Users },

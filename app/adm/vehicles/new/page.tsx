@@ -31,7 +31,7 @@ const VEHICLE_CATEGORIES = [
 
 interface Customer {
   id: string;
-  fullName: string;
+  name: string;
 }
 
 export default function NewVehiclePage() {
@@ -125,7 +125,7 @@ export default function NewVehiclePage() {
           </CardTitle>
           {customer && (
             <div className="text-sm text-muted-foreground">
-              Cliente: {customer.fullName}
+              Cliente: {customer.name}
             </div>
           )}
         </CardHeader>

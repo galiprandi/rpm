@@ -12,11 +12,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Save, Wrench, Plus, Trash2, Search } from "lucide-react";
-import Link from "next/link";
-import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { Header } from "@/components/adm/Header";
+import { WorkOrderStepper } from "@/components/ui/stepper";
+import { SearchableSelect } from "@/components/ui/SearchableSelect";
+import { QuickServiceDialog } from "@/components/work-orders/QuickServiceDialog";
+import { Save, Plus, Trash2, Search, Car, User, CheckCircle, Edit } from "lucide-react";
 
 const VEHICLE_CATEGORIES = [
   { value: "CAR", label: "Auto/Camioneta", icon: "🚗" },
@@ -38,10 +41,23 @@ const ENTRY_CHECKLIST = [
   { id: "fuel", label: "Nivel de combustible", required: false },
 ];
 
-interface Customer {
+interface VehicleWithCustomer {
   id: string;
-  fullName: string;
-  phone: string;
+  identifier: string;
+  category: string;
+  make?: { name: string };
+  model?: { name: string };
+  year?: number;
+  color?: string;
+  equipmentName?: string;
+  equipmentType?: string;
+  description?: string;
+  customer: {
+    id: string;
+    name: string;
+    phone: string;
+    email?: string;
+  };
 }
 
 interface Service {
@@ -68,18 +84,19 @@ interface WorkOrderItem {
 export default function NewWorkOrderPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const preselectedCustomerId = searchParams.get("customerId");
+  const vehicleIdFromUrl = searchParams.get("vehicleId");
 
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState(preselectedCustomerId ? 2 : 1);
+  const [step, setStep] = useState(1);
 
-  // Step 1: Customer
-  const [customerSearch, setCustomerSearch] = useState("");
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  // Step 1: Search by license plate
+  const [plateSearch, setPlateSearch] = useState("");
+  const [searching, setSearching] = useState(false);
+  const [foundVehicle, setFoundVehicle] = useState<VehicleWithCustomer | null>(null);
+  const [showCreateVehicle, setShowCreateVehicle] = useState(false);
 
-  // Step 2: Vehicle
-  const [vehicleData, setVehicleData] = useState({
+  // Step 1b: Create new vehicle (if not found)
+  const [newVehicleData, setNewVehicleData] = useState({
     identifier: "",
     category: "CAR",
     makeName: "",
@@ -90,13 +107,23 @@ export default function NewWorkOrderPage() {
     equipmentType: "",
     description: "",
   });
+  const [newCustomerSearch, setNewCustomerSearch] = useState("");
+  const [foundCustomers, setFoundCustomers] = useState<Array<{ id: string; name: string; phone: string }>>([]);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
+  const [creatingCustomer, setCreatingCustomer] = useState(false);
+  const [newCustomerData, setNewCustomerData] = useState({
+    name: "",
+    phone: "",
+    email: "",
+  });
 
-  // Step 3: Items
+  // Step 2: Items
   const [services, setServices] = useState<Service[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [items, setItems] = useState<WorkOrderItem[]>([]);
+  const [showQuickServiceDialog, setShowQuickServiceDialog] = useState(false);
 
-  // Step 4: Checklist & Notes
+  // Step 3: Checklist & Notes
   const [checklist, setChecklist] = useState<Record<string, boolean>>({});
   const [notes, setNotes] = useState("");
   const [scheduledDate, setScheduledDate] = useState("");
@@ -120,28 +147,87 @@ export default function NewWorkOrderPage() {
     fetchData();
   }, []);
 
-  // Fetch preselected customer
+  // Auto-fetch vehicle if vehicleId is in URL
   useEffect(() => {
-    if (preselectedCustomerId) {
-      fetch(`/api/customers/${preselectedCustomerId}`)
-        .then((res) => res.json())
-        .then((data) => setSelectedCustomer(data));
-    }
-  }, [preselectedCustomerId]);
+    const fetchVehicleById = async () => {
+      if (!vehicleIdFromUrl) return;
+      setSearching(true);
+      try {
+        const res = await fetch(`/api/vehicles/${vehicleIdFromUrl}`);
+        if (res.ok) {
+          const vehicle = await res.json();
+          if (vehicle && vehicle.id) {
+            setFoundVehicle(vehicle);
+            setPlateSearch(vehicle.identifier);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching vehicle by ID:", error);
+      } finally {
+        setSearching(false);
+      }
+    };
+    fetchVehicleById();
+  }, [vehicleIdFromUrl]);
 
-  // Search customers
-  const searchCustomers = async () => {
-    if (!customerSearch) return;
-    const res = await fetch(`/api/customers?search=${encodeURIComponent(customerSearch)}`);
-    if (res.ok) {
-      const data = await res.json();
-      setCustomers(data.customers);
+  // Search vehicle by identifier
+  const searchVehicle = async () => {
+    if (!plateSearch.trim()) return;
+    setSearching(true);
+    try {
+      const res = await fetch(`/api/vehicles/by-identifier/${encodeURIComponent(plateSearch)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.vehicles && data.vehicles.length > 0) {
+          setFoundVehicle(data.vehicles[0]);
+          setShowCreateVehicle(false);
+        } else {
+          setFoundVehicle(null);
+          setShowCreateVehicle(true);
+          setNewVehicleData(prev => ({ ...prev, identifier: plateSearch.toUpperCase() }));
+        }
+      }
+    } catch (error) {
+      console.error("Error searching vehicle:", error);
+    } finally {
+      setSearching(false);
     }
   };
 
-  const isVehicle = ["CAR", "TRUCK", "SUV", "PICKUP", "MOTORCYCLE", "TRAILER"].includes(
-    vehicleData.category
-  );
+  // Search customers for new vehicle
+  const searchCustomersForNewVehicle = async () => {
+    if (!newCustomerSearch.trim()) return;
+    const res = await fetch(`/api/customers?search=${encodeURIComponent(newCustomerSearch)}`);
+    if (res.ok) {
+      const data = await res.json();
+      setFoundCustomers(data.customers || []);
+    }
+  };
+
+  // Create new customer inline
+  const createCustomerInline = async () => {
+    if (!newCustomerData.name || !newCustomerData.phone) return;
+    setLoading(true);
+    try {
+      const res = await fetch("/api/customers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newCustomerData),
+      });
+      if (res.ok) {
+        const customer = await res.json();
+        setSelectedCustomerId(customer.id);
+        setCreatingCustomer(false);
+      }
+    } catch (error) {
+      console.error("Error creating customer:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const isMotorVehicle = (category: string) =>
+    ["CAR", "TRUCK", "SUV", "PICKUP", "MOTORCYCLE", "TRAILER"].includes(category);
 
   const addItem = (type: "PRODUCT" | "SERVICE", item: Service | Product) => {
     const unitPrice = type === "SERVICE" ? (item as Service).baseCost : (item as Product).salePrice;
@@ -172,16 +258,19 @@ export default function NewWorkOrderPage() {
   };
 
   const handleSubmit = async () => {
-    if (!selectedCustomer) return;
+    if (!foundVehicle && !selectedCustomerId) return;
     setLoading(true);
 
     try {
-      const payload = {
-        customerId: selectedCustomer.id,
-        vehicleData: {
-          ...vehicleData,
-          year: vehicleData.year ? parseInt(vehicleData.year) : undefined,
-        },
+      const customerId = foundVehicle?.customer.id || selectedCustomerId;
+
+      if (!customerId) {
+        throw new Error("Missing customer");
+      }
+
+      // Build payload with vehicleData for atomic creation
+      const payload: Record<string, unknown> = {
+        customerId,
         items: items.map((item) => ({
           type: item.type,
           productId: item.productId,
@@ -199,7 +288,19 @@ export default function NewWorkOrderPage() {
         },
         notes,
         scheduledDate: scheduledDate || undefined,
+        source: "IN_PERSON",
       };
+
+      // Include vehicleData for new vehicles (atomic creation)
+      if (!foundVehicle && selectedCustomerId) {
+        payload.vehicleData = {
+          ...newVehicleData,
+          year: newVehicleData.year ? parseInt(newVehicleData.year) : undefined,
+        };
+      } else if (foundVehicle) {
+        // Use existing vehicle ID
+        payload.vehicleId = foundVehicle.id;
+      }
 
       const response = await fetch("/api/work-orders", {
         method: "POST",
@@ -219,282 +320,394 @@ export default function NewWorkOrderPage() {
     }
   };
 
+  const resetSearch = () => {
+    setFoundVehicle(null);
+    setShowCreateVehicle(false);
+    setPlateSearch("");
+    setSelectedCustomerId(null);
+    setFoundCustomers([]);
+  };
+
   return (
-    <div className="container mx-auto py-6 max-w-4xl">
-      <div className="mb-4">
-        <Link href="/adm/work-orders">
-          <Button variant="ghost" size="sm">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Volver a OTs
-          </Button>
-        </Link>
-      </div>
+    <div className="container mx-auto py-6 max-w-4xl space-y-6">
+      <Header
+        title="Nueva Orden de Trabajo"
+        description="Crear una nueva orden de trabajo para un vehículo"
+        showBackButton
+        onBack={() => router.push("/adm/work-orders")}
+      />
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl flex items-center gap-2">
-            <Wrench className="h-6 w-6" />
-            Nueva Orden de Trabajo
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {/* Step Indicator */}
-          <div className="flex mb-6">
-            {[1, 2, 3, 4].map((s) => (
-              <div
-                key={s}
-                className={cn(
-                  "flex-1 py-2 text-center text-sm font-medium",
-                  step === s
-                    ? "bg-primary text-primary-foreground"
-                    : step > s
-                    ? "bg-muted"
-                    : "bg-muted/50 text-muted-foreground"
-                )}
-              >
-                {s === 1 && "Cliente"}
-                {s === 2 && "Vehículo"}
-                {s === 3 && "Servicios/Productos"}
-                {s === 4 && "Checklist & Finalizar"}
-              </div>
-            ))}
-          </div>
+      <WorkOrderStepper currentStep={step} className="mb-8" />
 
-          {/* Step 1: Customer */}
+      <div className="space-y-6">
+          {/* Step 1: Search Vehicle by License Plate */}
           {step === 1 && (
-            <div className="space-y-4">
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Buscar cliente por nombre, teléfono o documento..."
-                  value={customerSearch}
-                  onChange={(e) => setCustomerSearch(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && searchCustomers()}
-                  className="flex-1"
-                />
-                <Button onClick={searchCustomers}>
-                  <Search className="h-4 w-4 mr-2" />
-                  Buscar
-                </Button>
-              </div>
+            <div className="space-y-6">
+              {!foundVehicle && !showCreateVehicle && (
+                <>
+                  <div className="text-center space-y-2">
+                    <Car className="h-12 w-12 mx-auto text-muted-foreground" />
+                    <h3 className="text-lg font-medium">Buscar vehículo por patente</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Ingrese la patente para buscar el vehículo y su dueño
+                    </p>
+                  </div>
 
-              {customers.length > 0 && (
-                <div className="border rounded-md divide-y">
-                  {customers.map((customer) => (
-                    <button
-                      key={customer.id}
-                      onClick={() => {
-                        setSelectedCustomer(customer);
-                        setStep(2);
-                      }}
-                      className="w-full p-4 text-left hover:bg-muted transition-colors"
-                    >
-                      <div className="font-medium">{customer.fullName}</div>
-                      <div className="text-sm text-muted-foreground">{customer.phone}</div>
-                    </button>
-                  ))}
+                  <div className="flex gap-2 max-w-md mx-auto">
+                    <Input
+                      placeholder="Ej: ABC123 o AB123CD"
+                      value={plateSearch}
+                      onChange={(e) => setPlateSearch(e.target.value.toUpperCase())}
+                      onKeyDown={(e) => e.key === "Enter" && searchVehicle()}
+                      className="flex-1 text-center text-lg uppercase"
+                    />
+                    <Button onClick={searchVehicle} disabled={searching || !plateSearch.trim()}>
+                      <Search className="h-4 w-4 mr-2" />
+                      {searching ? "Buscando..." : "Buscar"}
+                    </Button>
+                  </div>
+                </>
+              )}
+
+              {/* Vehicle Found Card */}
+              {foundVehicle && (
+                <div className="space-y-4">
+                  <div className="border rounded-lg p-6 bg-green-50/50">
+                    <div className="flex items-start gap-4">
+                      <div className="bg-primary/10 p-3 rounded-full">
+                        <Car className="h-6 w-6 text-primary" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-xl font-bold">{foundVehicle.identifier}</h3>
+                          <Badge variant="outline">{foundVehicle.category}</Badge>
+                        </div>
+                        <p className="text-muted-foreground">
+                          {foundVehicle.make?.name} {foundVehicle.model?.name} {foundVehicle.year && `(${foundVehicle.year})`}
+                        </p>
+                        
+                        <div className="mt-4 p-3 bg-white rounded border">
+                          <div className="flex items-center gap-2 text-sm font-medium">
+                            <User className="h-4 w-4" />
+                            Dueño: {foundVehicle.customer.name}
+                          </div>
+                          <div className="text-sm text-muted-foreground ml-6">
+                            {foundVehicle.customer.phone}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 mt-4">
+                      <Button onClick={() => setStep(2)} className="flex-1">
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Confirmar y Continuar
+                      </Button>
+                      <Button variant="outline" onClick={resetSearch}>
+                        <Edit className="h-4 w-4 mr-2" />
+                        Buscar Otro
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               )}
 
-              <div className="flex justify-center">
-                <Link href="/adm/customers/new">
-                  <Button variant="outline">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Crear Nuevo Cliente
-                  </Button>
-                </Link>
-              </div>
+              {/* Create New Vehicle */}
+              {showCreateVehicle && (
+                <div className="space-y-4">
+                  <div className="text-center">
+                    <p className="text-muted-foreground">
+                      No se encontró vehículo con patente <strong>{plateSearch}</strong>
+                    </p>
+                    <p className="text-sm">Complete los datos para crear el vehículo y la orden</p>
+                  </div>
+
+                  <div className="border rounded-lg p-4 space-y-4">
+                    <h4 className="font-medium flex items-center gap-2">
+                      <Car className="h-4 w-4" />
+                      Datos del Vehículo
+                    </h4>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Categoría *</Label>
+                        <Select
+                          value={newVehicleData.category}
+                          onValueChange={(value) =>
+                            setNewVehicleData((prev) => ({ ...prev, category: value }))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {VEHICLE_CATEGORIES.map((cat) => (
+                              <SelectItem key={cat.value} value={cat.value}>
+                                {cat.icon} {cat.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Patente/Identificador *</Label>
+                        <Input
+                          value={newVehicleData.identifier}
+                          onChange={(e) =>
+                            setNewVehicleData((prev) => ({ ...prev, identifier: e.target.value.toUpperCase() }))
+                          }
+                          placeholder="AB123CD"
+                        />
+                      </div>
+                    </div>
+
+                    {isMotorVehicle(newVehicleData.category) ? (
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Marca</Label>
+                          <Input
+                            value={newVehicleData.makeName}
+                            onChange={(e) =>
+                              setNewVehicleData((prev) => ({ ...prev, makeName: e.target.value }))
+                            }
+                            placeholder="Toyota"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Modelo</Label>
+                          <Input
+                            value={newVehicleData.modelName}
+                            onChange={(e) =>
+                              setNewVehicleData((prev) => ({ ...prev, modelName: e.target.value }))
+                            }
+                            placeholder="Hilux"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Año</Label>
+                          <Input
+                            value={newVehicleData.year}
+                            onChange={(e) =>
+                              setNewVehicleData((prev) => ({ ...prev, year: e.target.value }))
+                            }
+                            placeholder="2024"
+                            type="number"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Color</Label>
+                          <Input
+                            value={newVehicleData.color}
+                            onChange={(e) =>
+                              setNewVehicleData((prev) => ({ ...prev, color: e.target.value }))
+                            }
+                            placeholder="Blanco"
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label>Nombre del Equipo *</Label>
+                          <Input
+                            value={newVehicleData.equipmentName}
+                            onChange={(e) =>
+                              setNewVehicleData((prev) => ({ ...prev, equipmentName: e.target.value }))
+                            }
+                            placeholder="Parlante Sony GTK-XB90"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Tipo de Equipo *</Label>
+                          <Input
+                            value={newVehicleData.equipmentType}
+                            onChange={(e) =>
+                              setNewVehicleData((prev) => ({ ...prev, equipmentType: e.target.value }))
+                            }
+                            placeholder="Equipo de audio portátil"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Customer Selection */}
+                  <div className="border rounded-lg p-4 space-y-4">
+                    <h4 className="font-medium flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      Seleccionar Dueño
+                    </h4>
+
+                    {!selectedCustomerId && !creatingCustomer && (
+                      <>
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder="Buscar cliente por nombre o teléfono..."
+                            value={newCustomerSearch}
+                            onChange={(e) => setNewCustomerSearch(e.target.value)}
+                            onKeyDown={(e) => e.key === "Enter" && searchCustomersForNewVehicle()}
+                            className="flex-1"
+                          />
+                          <Button onClick={searchCustomersForNewVehicle}>
+                            <Search className="h-4 w-4 mr-2" />
+                            Buscar
+                          </Button>
+                        </div>
+
+                        {foundCustomers.length > 0 && (
+                          <div className="border rounded-md divide-y">
+                            {foundCustomers.map((customer) => (
+                              <button
+                                key={customer.id}
+                                onClick={() => setSelectedCustomerId(customer.id)}
+                                className="w-full p-3 text-left hover:bg-muted transition-colors"
+                              >
+                                <div className="font-medium">{customer.name}</div>
+                                <div className="text-sm text-muted-foreground">{customer.phone}</div>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+
+                        <div className="text-center">
+                          <Button variant="outline" onClick={() => setCreatingCustomer(true)}>
+                            <Plus className="h-4 w-4 mr-2" />
+                            Crear Nuevo Cliente
+                          </Button>
+                        </div>
+                      </>
+                    )}
+
+                    {creatingCustomer && (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label>Nombre *</Label>
+                            <Input
+                              value={newCustomerData.name}
+                              onChange={(e) => setNewCustomerData(prev => ({ ...prev, name: e.target.value }))}
+                              placeholder="Juan Pérez"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Teléfono *</Label>
+                            <Input
+                              value={newCustomerData.phone}
+                              onChange={(e) => setNewCustomerData(prev => ({ ...prev, phone: e.target.value }))}
+                              placeholder="+54 11 1234-5678"
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Email</Label>
+                          <Input
+                            value={newCustomerData.email}
+                            onChange={(e) => setNewCustomerData(prev => ({ ...prev, email: e.target.value }))}
+                            placeholder="juan@ejemplo.com"
+                            type="email"
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <Button onClick={createCustomerInline} disabled={!newCustomerData.name || !newCustomerData.phone || loading}>
+                            {loading ? "Creando..." : "Crear Cliente"}
+                          </Button>
+                          <Button variant="outline" onClick={() => setCreatingCustomer(false)}>
+                            Cancelar
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {selectedCustomerId && (
+                      <div className="p-3 bg-green-50 rounded border">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                          <span className="font-medium">Cliente seleccionado</span>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setSelectedCustomerId(null)}
+                          className="mt-2"
+                        >
+                          Cambiar cliente
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button variant="outline" onClick={resetSearch} className="flex-1">
+                      Cancelar
+                    </Button>
+                    <Button
+                      onClick={() => setStep(2)}
+                      disabled={!selectedCustomerId || !newVehicleData.identifier}
+                      className="flex-1"
+                    >
+                      Continuar
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
-          {/* Step 2: Vehicle */}
-          {step === 2 && selectedCustomer && (
+          {/* Step 2: Items */}
+          {step === 2 && (
             <div className="space-y-4">
-              <div className="p-3 bg-muted rounded-md">
-                <div className="font-medium">{selectedCustomer.fullName}</div>
-                <div className="text-sm text-muted-foreground">{selectedCustomer.phone}</div>
+              <div className="p-3 bg-muted rounded-md flex items-center justify-between">
+                <div>
+                  <div className="font-medium">
+                    {foundVehicle?.identifier || newVehicleData.identifier}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {foundVehicle?.customer.name || newCustomerData.name}
+                  </div>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => setStep(1)}>
+                  Cambiar
+                </Button>
               </div>
 
               <div className="space-y-2">
-                <Label>Categoría *</Label>
-                <Select
-                  value={vehicleData.category}
-                  onValueChange={(value) =>
-                    setVehicleData((prev) => ({ ...prev, category: value }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {VEHICLE_CATEGORIES.map((cat) => (
-                      <SelectItem key={cat.value} value={cat.value}>
-                        {cat.icon} {cat.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>{isVehicle ? "Patente" : "Código/N° Serie"} *</Label>
-                <Input
-                  value={vehicleData.identifier}
-                  onChange={(e) =>
-                    setVehicleData((prev) => ({
-                      ...prev,
-                      identifier: e.target.value.toUpperCase(),
-                    }))
-                  }
-                  placeholder={isVehicle ? "AB123CD" : "SN-12345"}
+                <Label>Agregar Servicio</Label>
+                <SearchableSelect
+                  placeholder="Buscar y seleccionar servicio..."
+                  searchPlaceholder="Escribe para buscar servicios..."
+                  emptyMessage="No se encontraron servicios"
+                  createButtonText="+ Crear servicio rápido"
+                  apiUrl="/api/services"
+                  onSelect={(item) => {
+                    const service = {
+                      id: item.id,
+                      name: item.name,
+                      baseCost: item.price,
+                    } as Service;
+                    addItem("SERVICE", service);
+                  }}
+                  onCreateNew={() => setShowQuickServiceDialog(true)}
                 />
               </div>
 
-              {isVehicle ? (
-                <>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Marca</Label>
-                      <Input
-                        value={vehicleData.makeName}
-                        onChange={(e) =>
-                          setVehicleData((prev) => ({ ...prev, makeName: e.target.value }))
-                        }
-                        placeholder="Toyota"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Modelo</Label>
-                      <Input
-                        value={vehicleData.modelName}
-                        onChange={(e) =>
-                          setVehicleData((prev) => ({ ...prev, modelName: e.target.value }))
-                        }
-                        placeholder="Hilux"
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Año</Label>
-                      <Input
-                        value={vehicleData.year}
-                        onChange={(e) =>
-                          setVehicleData((prev) => ({ ...prev, year: e.target.value }))
-                        }
-                        placeholder="2024"
-                        type="number"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Color</Label>
-                      <Input
-                        value={vehicleData.color}
-                        onChange={(e) =>
-                          setVehicleData((prev) => ({ ...prev, color: e.target.value }))
-                        }
-                        placeholder="Blanco"
-                      />
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="space-y-2">
-                    <Label>Nombre del Equipo *</Label>
-                    <Input
-                      value={vehicleData.equipmentName}
-                      onChange={(e) =>
-                        setVehicleData((prev) => ({ ...prev, equipmentName: e.target.value }))
-                      }
-                      placeholder="Parlante Sony GTK-XB90"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Tipo de Equipo *</Label>
-                    <Input
-                      value={vehicleData.equipmentType}
-                      onChange={(e) =>
-                        setVehicleData((prev) => ({ ...prev, equipmentType: e.target.value }))
-                      }
-                      placeholder="Equipo de audio portátil"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Descripción</Label>
-                    <Textarea
-                      value={vehicleData.description}
-                      onChange={(e) =>
-                        setVehicleData((prev) => ({ ...prev, description: e.target.value }))
-                      }
-                      placeholder="Detalles adicionales del equipo..."
-                      rows={3}
-                    />
-                  </div>
-                </>
-              )}
-
-              <div className="flex justify-between">
-                <Button variant="outline" onClick={() => setStep(1)}>
-                  Anterior
-                </Button>
-                <Button
-                  onClick={() => setStep(3)}
-                  disabled={!vehicleData.identifier}
-                >
-                  Siguiente
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* Step 3: Items */}
-          {step === 3 && (
-            <div className="space-y-4">
-              {/* Services */}
-              <div className="space-y-2">
-                <Label>Agregar Servicio</Label>
-                <Select
-                  onValueChange={(value) => {
-                    const service = services.find((s) => s.id === value);
-                    if (service) addItem("SERVICE", service);
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar servicio..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {services.map((service) => (
-                      <SelectItem key={service.id} value={service.id}>
-                        {service.name} - ${Number(service.baseCost).toLocaleString("es-AR")}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Products */}
               <div className="space-y-2">
                 <Label>Agregar Producto</Label>
-                <Select
-                  onValueChange={(value) => {
-                    const product = products.find((p) => p.id === value);
-                    if (product) addItem("PRODUCT", product);
+                <SearchableSelect
+                  placeholder="Buscar y seleccionar producto..."
+                  searchPlaceholder="Escribe para buscar productos..."
+                  emptyMessage="No se encontraron productos"
+                  apiUrl="/api/products"
+                  onSelect={(item) => {
+                    const product = {
+                      id: item.id,
+                      name: item.name,
+                      salePrice: item.price,
+                    } as Product;
+                    addItem("PRODUCT", product);
                   }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar producto..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {products.map((product) => (
-                      <SelectItem key={product.id} value={product.id}>
-                        {product.name} - ${Number(product.salePrice).toLocaleString("es-AR")}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                />
               </div>
 
-              {/* Items List */}
               {items.length > 0 && (
                 <div className="border rounded-md">
                   <div className="grid grid-cols-12 gap-2 p-3 bg-muted font-medium text-sm">
@@ -524,11 +737,7 @@ export default function NewWorkOrderPage() {
                         ${(item.unitPrice * item.quantity).toLocaleString("es-AR")}
                       </div>
                       <div className="col-span-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeItem(index)}
-                        >
+                        <Button variant="ghost" size="sm" onClick={() => removeItem(index)}>
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </div>
@@ -544,17 +753,41 @@ export default function NewWorkOrderPage() {
               )}
 
               <div className="flex justify-between">
-                <Button variant="outline" onClick={() => setStep(2)}>
+                <Button variant="outline" onClick={() => setStep(1)}>
                   Anterior
                 </Button>
-                <Button onClick={() => setStep(4)}>Siguiente</Button>
+                <Button onClick={() => setStep(3)}>Siguiente</Button>
               </div>
+
+              {/* Quick Service Dialog */}
+              <QuickServiceDialog
+                isOpen={showQuickServiceDialog}
+                onClose={() => setShowQuickServiceDialog(false)}
+                onServiceCreated={(service) => {
+                  addItem("SERVICE", service);
+                  setShowQuickServiceDialog(false);
+                }}
+              />
             </div>
           )}
 
-          {/* Step 4: Checklist & Finalize */}
-          {step === 4 && (
+          {/* Step 3: Checklist & Finalize */}
+          {step === 3 && (
             <div className="space-y-4">
+              <div className="p-3 bg-muted rounded-md flex items-center justify-between">
+                <div>
+                  <div className="font-medium">
+                    {foundVehicle?.identifier || newVehicleData.identifier}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {foundVehicle?.customer.name || newCustomerData.name} • {items.length} items
+                  </div>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => setStep(1)}>
+                  Cambiar
+                </Button>
+              </div>
+
               <div className="space-y-2">
                 <Label>Checklist de Ingreso</Label>
                 <div className="space-y-2 border rounded-md p-4">
@@ -606,7 +839,7 @@ export default function NewWorkOrderPage() {
               </div>
 
               <div className="flex justify-between">
-                <Button variant="outline" onClick={() => setStep(3)}>
+                <Button variant="outline" onClick={() => setStep(2)}>
                   Anterior
                 </Button>
                 <Button onClick={handleSubmit} disabled={loading}>
@@ -616,8 +849,7 @@ export default function NewWorkOrderPage() {
               </div>
             </div>
           )}
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+      </div>
   );
 }

@@ -5,10 +5,18 @@ import { prisma } from "@/lib/prisma";
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
+    
+    // Filtros opcionales
     const isActive = searchParams.get("isActive");
+    const search = searchParams.get("search");
 
     const where: Record<string, unknown> = {};
     if (isActive !== null) where.isActive = isActive === "true";
+    
+    // Search by name
+    if (search) {
+      where.name = { contains: search, mode: "insensitive" };
+    }
 
     const services = await prisma.service.findMany({
       where,
@@ -33,8 +41,27 @@ export async function POST(request: NextRequest) {
 
     if (!name || baseCost === undefined) {
       return NextResponse.json(
-        { error: "Missing required fields: name, baseCost" },
+        { error: "Nombre y costo base son requeridos" },
         { status: 400 }
+      );
+    }
+
+    if (baseCost < 0) {
+      return NextResponse.json(
+        { error: "El costo no puede ser negativo" },
+        { status: 400 }
+      );
+    }
+
+    // Check for duplicate name
+    const existing = await prisma.service.findUnique({
+      where: { name },
+    });
+
+    if (existing) {
+      return NextResponse.json(
+        { error: "Ya existe un servicio con ese nombre" },
+        { status: 409 }
       );
     }
 
@@ -48,7 +75,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return NextResponse.json(service, { status: 201 });
+    return NextResponse.json({ service }, { status: 201 });
   } catch (error) {
     console.error("Error creating service:", error);
     return NextResponse.json(

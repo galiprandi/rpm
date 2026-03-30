@@ -59,13 +59,15 @@ const _paymentMethods = PAYMENT_METHODS;
 interface WorkOrderDetail {
   id: string;
   status: string;
-  customer: {
+  customer?: {
     id: string;
-    fullName: string;
+    name: string;
     phone: string;
     email?: string;
-    documentType: string;
-    documentNumber: string;
+    billingData?: {
+      cuit: string;
+      invoiceType: string;
+    };
   };
   vehicle: {
     id: string;
@@ -267,16 +269,21 @@ export default function WorkOrderDetailPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             <div>
-              <p className="font-medium">{workOrder.customer.fullName}</p>
+              <p className="font-medium">{workOrder.customer?.name}</p>
+              {workOrder.customer?.billingData && (
+                <p className="text-xs text-blue-600">
+                  CUIT: {workOrder.customer.billingData.cuit} (Factura {workOrder.customer.billingData.invoiceType})
+                </p>
+              )}
             </div>
             <a
-              href={`tel:${workOrder.customer.phone}`}
+              href={`tel:${workOrder.customer?.phone}`}
               className="flex items-center gap-2 text-sm text-primary hover:underline"
             >
               <Phone className="h-4 w-4" />
-              {workOrder.customer.phone}
+              Cliente: {workOrder.customer?.name}
             </a>
-            {workOrder.customer.email && (
+            {workOrder.customer?.email && (
               <a
                 href={`mailto:${workOrder.customer.email}`}
                 className="flex items-center gap-2 text-sm text-primary hover:underline"
@@ -286,7 +293,7 @@ export default function WorkOrderDetailPage() {
               </a>
             )}
             <div className="pt-2 border-t">
-              <Link href={`/adm/customers/${workOrder.customer.id}`}>
+              <Link href={`/adm/customers/${workOrder.customer?.id}`}>
                 <Button variant="ghost" size="sm" className="w-full">
                   Ver Cliente
                 </Button>
