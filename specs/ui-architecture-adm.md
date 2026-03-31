@@ -189,6 +189,99 @@ const confirmed = await confirm({ title: 'Eliminar', description: '¿Estás segu
 
 ---
 
+## 🪟 Construcción de Modales
+
+### Componentes Base
+
+**Siempre usar `ModalBase` y `ModalBaseFooter` para consistencia.**
+
+```typescript
+import { ModalBase, ModalBaseFooter } from '@/components/ui/ModalBase';
+
+<ModalBase
+  isOpen={isOpen}
+  onClose={() => setIsOpen(false)}
+  title="Nuevo Cliente"
+  maxWidth="2xl"
+  footer={
+    <ModalBaseFooter
+      onCancel={() => setIsOpen(false)}
+      onSave={handleSave}
+      saveText="Crear Cliente"
+      isLoading={isLoading}
+    />
+  }
+>
+  <CustomerForm formData={formData} setFormData={setFormData} />
+</ModalBase>
+```
+
+### Reglas de Botones en Modales
+
+| Regla | Implementación |
+|-------|----------------|
+| **Orden** | Cancelar (izquierda) → Guardar (derecha) |
+| **Alineación** | `justify-end` (derecha) |
+| **Gap** | `gap-3` entre botones |
+| **Tamaño** | Según contenido, NO usar `flex-1` o ancho completo |
+| **Estilo primario** | `bg-primary text-primary-foreground hover:bg-primary/90 border border-primary shadow-lg hover:shadow-xl transition-all font-semibold` |
+| **Estilo secundario** | `variant="outline"` |
+
+### ❌ PROHIBIDO: Botones mal posicionados
+
+```typescript
+// ❌ MAL: Botones con flex-1 (ancho completo)
+<div className="flex gap-4 pt-4">
+  <Button className="flex-1">Guardar</Button>
+  <Button variant="outline" className="flex-1">Cancelar</Button>
+</div>
+
+// ❌ MAL: Guardar a la izquierda
+<div className="flex items-center justify-end gap-3">
+  <Button onClick={onSave}>Guardar</Button>
+  <Button variant="outline" onClick={onCancel}>Cancelar</Button>
+</div>
+
+// ❌ MAL: Botón primario sin estilo definido
+<Button type="submit">Guardar</Button>
+```
+
+### ✅ OBLIGATORIO: Botones según ModalBaseFooter
+
+```typescript
+// ✅ BIEN: Cancelar izquierda, Guardar derecha, alineados a la derecha
+<div className="flex items-center justify-end gap-3">
+  <Button variant="outline" onClick={onCancel} disabled={isLoading}>
+    Cancelar
+  </Button>
+  <Button
+    onClick={onSave}
+    disabled={isLoading}
+    className="bg-primary text-primary-foreground hover:bg-primary/90 border border-primary shadow-lg hover:shadow-xl transition-all font-semibold"
+  >
+    {isLoading ? 'Guardando...' : 'Guardar Cambios'}
+  </Button>
+</div>
+```
+
+### Separación de Formularios
+
+**Los formularios de modales DEBEN estar en componentes separados.**
+
+```typescript
+// ✅ BIEN: Formulario separado en components/customers/CustomerForm.tsx
+export function CustomerForm({ formData, setFormData }: CustomerFormProps) {
+  return <form className="space-y-4">{/* campos */}</form>;
+}
+
+// ✅ BIEN: Modal simple en la página
+<ModalBase ...>
+  <CustomerForm formData={formData} setFormData={setFormData} />
+</ModalBase>
+```
+
+---
+
 ## Anatomía de Vistas
 
 ### Vista de Listado (CRUD)

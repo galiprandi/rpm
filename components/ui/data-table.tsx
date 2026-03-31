@@ -17,6 +17,28 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ArrowUpDown, ArrowUp, ArrowDown, Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 
+interface DataTableAction {
+  label: string;
+  onClick: () => void;
+  variant?: 'default' | 'outline' | 'ghost' | 'secondary' | 'destructive' | 'link';
+  icon?: React.ComponentType<{ className?: string }>;
+}
+
+interface DataTableProps<TData> {
+  data: TData[];
+  columns: ColumnDef<TData>[];
+  enableGlobalFilter?: boolean;
+  globalFilterPlaceholder?: string;
+  emptyMessage?: string;
+  externalGlobalFilter?: string;
+  onExternalGlobalFilterChange?: (value: string) => void;
+  footerPlaceholder?: React.ReactNode;
+  pageSize?: number;
+  actions?: DataTableAction[];
+  title?: React.ReactNode;
+  compactActions?: boolean;
+}
+
 interface DataTableProps<TData> {
   data: TData[];
   columns: ColumnDef<TData>[];
@@ -38,6 +60,9 @@ export function DataTable<TData>({
   onExternalGlobalFilterChange,
   footerPlaceholder,
   pageSize = 20,
+  actions,
+  title,
+  compactActions = true,
 }: DataTableProps<TData>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [internalGlobalFilter, setInternalGlobalFilter] = React.useState('');
@@ -74,15 +99,39 @@ export function DataTable<TData>({
 
   return (
     <div className="space-y-4">
-      {enableGlobalFilter && !isControlled && (
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder={globalFilterPlaceholder}
-            value={globalFilter}
-            onChange={(e) => setGlobalFilter(e.target.value)}
-            className="pl-10 max-w-sm"
-          />
+      {enableGlobalFilter && (
+        <div className="flex items-center justify-between gap-4">
+          {title && <div className="text-lg font-semibold">{title}</div>}
+          <div className="flex items-center gap-3 w-1/2 justify-end">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder={globalFilterPlaceholder}
+                value={globalFilter}
+                onChange={(e) => setGlobalFilter(e.target.value)}
+                className="pl-10 h-9"
+              />
+            </div>
+            {actions && actions.length > 0 && (
+              <div className="flex items-center gap-2">
+                {actions.map((action, index) => {
+                  const Icon = action.icon;
+                  return (
+                    <Button
+                      key={index}
+                      onClick={action.onClick}
+                      variant={action.variant || 'default'}
+                      size="sm"
+                      className="h-9"
+                    >
+                      {Icon && <Icon className="h-4 w-4 mr-2" />}
+                      {action.label}
+                    </Button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -91,15 +140,16 @@ export function DataTable<TData>({
           <thead className="bg-muted/50">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id} className="border-b">
-                {headerGroup.headers.map((header) => {
+                {headerGroup.headers.map((header, headerIndex) => {
                   const canSort = header.column.getCanSort();
                   const isSorted = header.column.getIsSorted();
+                  const isLastColumn = headerIndex === headerGroup.headers.length - 1;
 
                   return (
                     <th
                       key={header.id}
-                      className="text-left py-3 px-4 font-medium"
-                      style={{ width: header.getSize() }}
+                      className={`py-3 px-4 font-medium ${isLastColumn && compactActions ? 'text-right w-24' : 'text-left'}`}
+                      style={{ width: isLastColumn && compactActions ? 'auto' : header.getSize() }}
                     >
                       {canSort ? (
                         <Button
@@ -131,11 +181,17 @@ export function DataTable<TData>({
                   key={row.id}
                   className={index % 2 === 0 ? 'bg-background' : 'bg-muted/30'}
                 >
-                  {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className="py-3 px-4">
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </td>
-                  ))}
+                  {row.getVisibleCells().map((cell, cellIndex) => {
+                    const isLastCell = cellIndex === row.getVisibleCells().length - 1;
+                    return (
+                      <td 
+                        key={cell.id} 
+                        className={`py-3 px-4 ${isLastCell && compactActions ? 'text-right' : ''}`}
+                      >
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </td>
+                    );
+                  })}
                 </tr>
               ))
             ) : (

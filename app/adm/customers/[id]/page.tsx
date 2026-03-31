@@ -8,7 +8,6 @@ import { Badge } from "@/components/ui/badge";
 import { DataTable } from "@/components/ui/data-table";
 import { ColumnDef } from "@tanstack/react-table";
 import {
-  ArrowLeft,
   Phone,
   Mail,
   MapPin,
@@ -16,9 +15,20 @@ import {
   Plus,
   Car,
   Wrench,
-  Trash2,
+  Pencil,
+  Search,
+  Eye,
 } from "lucide-react";
 import Link from "next/link";
+import { Header } from "@/components/adm/Header";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { CustomerForm } from "@/components/customers/CustomerForm";
+import { Input } from "@/components/ui/input";
 
 interface Vehicle {
   id: string;
@@ -40,7 +50,7 @@ interface WorkOrder {
 interface CustomerDetail {
   id: string;
   name: string;
-  phone: string;
+  phone?: string;
   phoneAlt?: string;
   email?: string;
   address?: string;
@@ -56,11 +66,15 @@ interface CustomerDetail {
 
 export default function CustomerDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const customerId = params.id as string;
 
   const [customer, setCustomer] = useState<CustomerDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [vehicleFilter, setVehicleFilter] = useState('');
+  const [workOrderFilter, setWorkOrderFilter] = useState('');
+  const router = useRouter();
 
   const fetchCustomer = useCallback(async () => {
     try {
@@ -78,21 +92,6 @@ export default function CustomerDetailPage() {
   useEffect(() => {
     fetchCustomer();
   }, [fetchCustomer]);
-
-  const handleDelete = async () => {
-    if (!confirm("¿Está seguro de eliminar este cliente?")) return;
-
-    try {
-      const response = await fetch(`/api/customers/${customerId}`, {
-        method: "DELETE",
-      });
-      if (!response.ok) throw new Error("Failed to delete");
-      router.push("/adm/customers");
-    } catch (error) {
-      console.error("Error deleting customer:", error);
-      alert("Error al eliminar cliente");
-    }
-  };
 
   const getStatusBadge = (status: string) => {
     const statusColors: Record<string, string> = {
@@ -141,17 +140,19 @@ export default function CustomerDetailPage() {
       },
       {
         id: "actions",
-        header: "Acciones",
+        header: "",
+        size: 100,
         cell: ({ row }) => (
-          <div className="flex gap-2">
+          <div className="flex gap-2 justify-end">
             <Link href={`/adm/vehicles/${row.original.id}`}>
-              <Button variant="outline" size="sm">
-                Ver
+              <Button variant="ghost" size="sm">
+                <Eye className="h-4 w-4" />
               </Button>
             </Link>
             <Link href={`/adm/work-orders/new?vehicleId=${row.original.id}`}>
-              <Button variant="ghost" size="sm">
-                <Plus className="h-4 w-4" />
+              <Button size="sm">
+                <Plus className="h-4 w-4 mr-1" />
+                OT
               </Button>
             </Link>
           </div>
@@ -219,71 +220,54 @@ export default function CustomerDetailPage() {
 
   return (
     <div className="container mx-auto py-6 space-y-6">
-      {/* Header Estándar */}
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-bold">{customer.name}</h1>
-          <p className="text-muted-foreground">
-            Cliente desde {new Date(customer.createdAt).toLocaleDateString("es-AR")}
-            {customer.billingData && (
-              <span className="ml-2 text-blue-600">
-                • Factura {customer.billingData.invoiceType} (CUIT: {customer.billingData.cuit})
-              </span>
-            )}
-          </p>
-          {/* Contactos clickeables */}
-          <div className="flex flex-wrap gap-4 mt-2">
+      {/* Header con componente estandar */}
+      <Header
+        title={customer.name}
+        description={`Cliente desde ${new Date(customer.createdAt).toLocaleDateString("es-AR")}${customer.billingData ? ` • Factura ${customer.billingData.invoiceType} (CUIT: ${customer.billingData.cuit})` : ""}`}
+        primaryAction={{
+          label: "Editar",
+          onClick: () => setIsEditModalOpen(true),
+          icon: Pencil,
+        }}
+      >
+        {/* Contactos clickeables */}
+        <div className="flex flex-wrap gap-4 mt-2">
+          {customer.phone && (
             <a
               href={`tel:${customer.phone}`}
               className="flex items-center gap-1 text-sm hover:underline text-primary"
             >
               <Phone className="h-4 w-4" /> {customer.phone}
             </a>
-            {customer.phoneAlt && (
-              <a
-                href={`tel:${customer.phoneAlt}`}
-                className="flex items-center gap-1 text-sm hover:underline text-primary"
-              >
-                <Phone className="h-4 w-4" /> {customer.phoneAlt} (alt)
-              </a>
-            )}
-            {customer.email && (
-              <a
-                href={`mailto:${customer.email}`}
-                className="flex items-center gap-1 text-sm hover:underline text-primary"
-              >
-                <Mail className="h-4 w-4" /> {customer.email}
-              </a>
-            )}
-            {customer.address && (
-              <a
-                href={`https://maps.google.com/?q=${encodeURIComponent(customer.address)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1 text-sm hover:underline text-primary"
-              >
-                <MapPin className="h-4 w-4" /> {customer.address}
-              </a>
-            )}
-          </div>
+          )}
+          {customer.phoneAlt && (
+            <a
+              href={`tel:${customer.phoneAlt}`}
+              className="flex items-center gap-1 text-sm hover:underline text-primary"
+            >
+              <Phone className="h-4 w-4" /> {customer.phoneAlt} (alt)
+            </a>
+          )}
+          {customer.email && (
+            <a
+              href={`mailto:${customer.email}`}
+              className="flex items-center gap-1 text-sm hover:underline text-primary"
+            >
+              <Mail className="h-4 w-4" /> {customer.email}
+            </a>
+          )}
+          {customer.address && (
+            <a
+              href={`https://maps.google.com/?q=${encodeURIComponent(customer.address)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 text-sm hover:underline text-primary"
+            >
+              <MapPin className="h-4 w-4" /> {customer.address}
+            </a>
+          )}
         </div>
-        <div className="flex gap-2">
-          <Button variant="ghost" size="sm" onClick={() => router.back()}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Volver
-          </Button>
-          <Link href={`/adm/vehicles/new?customerId=${customerId}`}>
-            <Button className="bg-slate-900 text-white hover:bg-slate-800">
-              <Plus className="h-4 w-4 mr-2" />
-              Crear Vehículo
-            </Button>
-          </Link>
-          <Button variant="outline" onClick={handleDelete}>
-            <Trash2 className="h-4 w-4 mr-2" />
-            Eliminar
-          </Button>
-        </div>
-      </div>
+      </Header>
 
       {/* Notas */}
       {customer.notes && (
@@ -301,58 +285,127 @@ export default function CustomerDetailPage() {
       )}
 
       {/* Vehículos y Equipos - DataTable */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
+      {customer.vehicles.length === 0 ? (
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold flex items-center gap-2">
             <Car className="h-5 w-5" />
-            Vehículos y Equipos ({customer.vehicles.length})
-          </CardTitle>
-          <Link href={`/adm/vehicles/new?customerId=${customerId}`}>
-            <Button size="sm" variant="outline">
-              <Plus className="h-4 w-4 mr-2" />
-              Agregar
-            </Button>
-          </Link>
-        </CardHeader>
-        <CardContent>
-          {customer.vehicles.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No hay vehículos registrados
-            </div>
-          ) : (
-            <DataTable
-              data={customer.vehicles}
-              columns={vehicleColumns}
-              enableGlobalFilter={true}
-              globalFilterPlaceholder="Buscar vehículo..."
-            />
-          )}
-        </CardContent>
-      </Card>
+            Vehículos y Equipos (0)
+          </h2>
+          <div className="text-center py-8 text-muted-foreground">
+            No hay vehículos registrados
+          </div>
+        </div>
+      ) : (
+        <DataTable
+          data={customer.vehicles}
+          columns={vehicleColumns}
+          enableGlobalFilter={true}
+          globalFilterPlaceholder="Buscar vehículo..."
+          externalGlobalFilter={vehicleFilter}
+          onExternalGlobalFilterChange={setVehicleFilter}
+          pageSize={5}
+          compactActions
+          title={
+            <span className="flex items-center gap-2">
+              <Car className="h-5 w-5" />
+              Vehículos y Equipos ({customer.vehicles.length})
+            </span>
+          }
+          actions={[
+            {
+              label: "Agregar",
+              onClick: () => router.push(`/adm/vehicles/new?customerId=${customerId}`),
+              icon: Plus,
+            },
+          ]}
+        />
+      )}
 
       {/* Historial de OTs - DataTable */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
+      <div className="space-y-4">
+        <div className="flex flex-row items-center justify-between gap-4">
+          <h2 className="text-lg font-semibold flex items-center gap-2">
             <Wrench className="h-5 w-5" />
             Historial de Órdenes de Trabajo ({customer.workOrders.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {customer.workOrders.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No hay órdenes de trabajo registradas
+          </h2>
+          {customer.workOrders.length > 0 && (
+            <div className="relative w-full max-w-xs">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar OT..."
+                value={workOrderFilter}
+                onChange={(e) => setWorkOrderFilter(e.target.value)}
+                className="pl-10 h-9"
+              />
             </div>
-          ) : (
-            <DataTable
-              data={customer.workOrders}
-              columns={workOrderColumns}
-              enableGlobalFilter={true}
-              globalFilterPlaceholder="Buscar OT..."
-            />
           )}
-        </CardContent>
-      </Card>
+        </div>
+        {customer.workOrders.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            No hay órdenes de trabajo registradas
+          </div>
+        ) : (
+          <DataTable
+            data={customer.workOrders}
+            columns={workOrderColumns}
+            enableGlobalFilter={true}
+            globalFilterPlaceholder="Buscar OT..."
+            externalGlobalFilter={workOrderFilter}
+            onExternalGlobalFilterChange={setWorkOrderFilter}
+            pageSize={5}
+          />
+        )}
+      </div>
+
+      {/* Modal de edición */}
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar Cliente</DialogTitle>
+          </DialogHeader>
+          <CustomerForm
+            initialData={{
+              name: customer.name,
+              phone: customer.phone,
+              phoneAlt: customer.phoneAlt,
+              email: customer.email,
+              address: customer.address,
+              notes: customer.notes,
+              billingData: customer.billingData || undefined,
+            }}
+            onSubmit={async (formData) => {
+              setIsEditing(true);
+              try {
+                const payload = {
+                  ...formData,
+                  billingData: formData.billingData?.cuit
+                    ? formData.billingData
+                    : undefined,
+                };
+
+                const response = await fetch(`/api/customers/${customerId}`, {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(payload),
+                });
+
+                if (!response.ok) throw new Error("Failed to update customer");
+
+                setIsEditModalOpen(false);
+                fetchCustomer();
+              } catch (error) {
+                console.error("Error updating customer:", error);
+                alert("Error al actualizar cliente");
+              } finally {
+                setIsEditing(false);
+              }
+            }}
+            onCancel={() => setIsEditModalOpen(false)}
+            submitLabel="Guardar Cambios"
+            isSubmitting={isEditing}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

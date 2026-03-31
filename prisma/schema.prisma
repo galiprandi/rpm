@@ -19,7 +19,7 @@ datasource db {
 model Customer {
   id        String   @id @default(uuid())
   name      String   // Nombre o Razón Social
-  phone     String   // Principal
+  phone     String?  // Principal (opcional)
   phoneAlt  String?  // Alternativo (WhatsApp)
   email     String?
   address   String?

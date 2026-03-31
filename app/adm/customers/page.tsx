@@ -3,9 +3,17 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { CrudAdmin } from "@/components/adm";
-import { Eye, FilePlus, Phone, User } from "lucide-react";
+import { Phone, User, Eye } from "lucide-react";
 import Link from "next/link";
 import { type ColumnDef } from "@tanstack/react-table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { CustomerForm, type CustomerFormData } from "@/components/customers/CustomerForm";
+import { useRouter } from "next/navigation";
 
 interface Customer {
   id: string;
@@ -28,8 +36,11 @@ interface Customer {
 }
 
 export default function CustomersPage() {
+  const router = useRouter();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
 
   const fetchCustomers = useCallback(async () => {
     setLoading(true);
@@ -78,16 +89,9 @@ export default function CustomersPage() {
         accessorKey: "phone",
         header: "Teléfono",
         cell: ({ row }) => (
-          <div>
-            <div className="flex items-center gap-1">
-              <Phone className="h-3 w-3" />
-              {row.original.phone}
-            </div>
-            {row.original.phoneAlt && (
-              <div className="text-sm text-muted-foreground">
-                Alt: {row.original.phoneAlt}
-              </div>
-            )}
+          <div className="flex items-center gap-1">
+            <Phone className="h-3 w-3" />
+            {row.original.phone || <span className="text-muted-foreground">-</span>}
           </div>
         ),
       },
@@ -102,12 +106,13 @@ export default function CustomersPage() {
           return (
             <div className="flex flex-col gap-1">
               {vehicles.slice(0, 2).map((v) => (
-                <span
+                <Link
                   key={v.id}
-                  className="text-sm bg-muted px-2 py-0.5 rounded"
+                  href={`/adm/vehicles/${v.id}`}
+                  className="text-sm bg-muted px-2 py-0.5 rounded hover:bg-muted/80 hover:underline"
                 >
                   {v.identifier}
-                </span>
+                </Link>
               ))}
               {vehicles.length > 2 && (
                 <span className="text-sm text-muted-foreground">
@@ -129,18 +134,11 @@ export default function CustomersPage() {
         id: "actions",
         header: "Acciones",
         cell: ({ row }) => (
-          <div className="flex gap-1">
-            <Link href={`/adm/customers/${row.original.id}`}>
-              <Button variant="ghost" size="sm" title="Ver cliente">
-                <Eye className="h-4 w-4" />
-              </Button>
-            </Link>
-            <Link href={`/adm/work-orders/new?customerId=${row.original.id}`}>
-              <Button variant="ghost" size="sm" title="Nueva OT">
-                <FilePlus className="h-4 w-4" />
-              </Button>
-            </Link>
-          </div>
+          <Link href={`/adm/customers/${row.original.id}`}>
+            <Button variant="ghost" size="sm" title="Ver detalle">
+              <Eye className="h-4 w-4" />
+            </Button>
+          </Link>
         ),
       },
     ],
@@ -148,22 +146,67 @@ export default function CustomersPage() {
   );
 
   const handleCreate = () => {
-    window.location.href = "/adm/customers/new";
+    setIsCreateModalOpen(true);
+  };
+
+  const handleCreateSubmit = async (formData: CustomerFormData) => {
+    setIsCreating(true);
+    try {
+      const payload = {
+        ...formData,
+        billingData: formData.billingData?.cuit ? formData.billingData : undefined,
+      };
+
+      const response = await fetch("/api/customers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) throw new Error("Failed to create customer");
+
+      const customer = await response.json();
+      setIsCreateModalOpen(false);
+      router.push(`/adm/customers/${customer.id}`);
+      fetchCustomers();
+    } catch (error) {
+      console.error("Error creating customer:", error);
+      alert("Error al crear cliente");
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   return (
-    <CrudAdmin
-      title="Clientes"
-      description="Gestiona las fichas de tus clientes"
-      items={customers}
-      loading={loading}
-      onCreate={handleCreate}
-      columns={columns}
-      emptyIcon={<User className="h-12 w-12 mx-auto text-muted-foreground mb-4" />}
-      emptyMessage="No hay clientes registrados. Haz clic en 'Nuevo Cliente' para crear el primero."
-      createButtonText="Nuevo Cliente"
-      tableTitle="Listado de Clientes"
-      searchPlaceholder="Buscar por nombre o teléfono..."
-    />
+    <>
+      <CrudAdmin
+        title="Clientes"
+        description="Gestiona las fichas de tus clientes"
+        items={customers}
+        loading={loading}
+        onCreate={handleCreate}
+        columns={columns}
+        emptyIcon={<User className="h-12 w-12 mx-auto text-muted-foreground mb-4" />}
+        emptyMessage="No hay clientes registrados. Haz clic en 'Nuevo Cliente' para crear el primero."
+        createButtonText="Nuevo Cliente"
+        tableTitle="Listado de Clientes"
+        searchPlaceholder="Buscar por nombre o teléfono..."
+      />
+
+      {/* Modal para crear cliente */}
+      <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Nuevo Cliente</DialogTitle>
+          </DialogHeader>
+          <CustomerForm
+            onSubmit={handleCreateSubmit}
+            onCancel={() => setIsCreateModalOpen(false)}
+            submitLabel="Crear Cliente"
+            isSubmitting={isCreating}
+          />
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
