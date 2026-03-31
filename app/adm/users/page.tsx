@@ -285,7 +285,7 @@ export default function UsersPage() {
         stats={stats}
         emptyIcon={<Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />}
         emptyMessage="No hay usuarios creados. Haz clic en 'Nuevo Usuario' para crear el primero."
-        createButtonText="Nuevo Usuario"
+        createButtonText="Usuario"
         tableTitle="Listado de Usuarios"
         searchPlaceholder="Buscar por nombre o email..."
         rowActions={(user) => (

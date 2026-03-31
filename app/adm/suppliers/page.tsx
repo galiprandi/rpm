@@ -271,7 +271,7 @@ export default function SuppliersPage() {
         stats={stats}
         emptyIcon={<Truck className="h-12 w-12 mx-auto text-muted-foreground mb-4" />}
         emptyMessage="No hay proveedores creados. Crea el primero arriba."
-        createButtonText="Nuevo Proveedor"
+        createButtonText="Proveedor"
         tableTitle="Listado de Proveedores"
         searchPlaceholder="Buscar proveedores..."
         rowActions={(supplier) => (

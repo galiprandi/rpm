@@ -297,7 +297,7 @@ export default function ServicesPage() {
         stats={stats}
         emptyIcon={<Wrench className="h-12 w-12 mx-auto text-muted-foreground mb-4" />}
         emptyMessage="No hay servicios creados. Haz clic en 'Nuevo Servicio' para crear el primero."
-        createButtonText="Nuevo Servicio"
+        createButtonText="Servicio"
         tableTitle="Listado de Servicios"
         searchPlaceholder="Buscar por nombre..."
         rowActions={(service) => (

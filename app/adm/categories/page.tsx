@@ -159,7 +159,7 @@ export default function CategoriesPage() {
       icon: Layers,
     },
     {
-      label: 'Activas',
+      label: '+ Categorías Activas',
       value: categories.filter((c) => c.isActive).length,
       icon: Folder,
       iconColor: '#22c55e',
@@ -234,8 +234,8 @@ export default function CategoriesPage() {
         columns={columns}
         stats={stats}
         emptyIcon={<Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />}
-        emptyMessage="No hay categorías creadas. Haz clic en 'Nueva Categoría' para crear la primera."
-        createButtonText="Nueva Categoría"
+        emptyMessage="No hay categorías creadas. Haz clic en '+ Categoría' para crear la primera."
+        createButtonText="Categoría"
         tableTitle="Listado de Categorías"
         searchPlaceholder="Buscar categorías..."
         rowActions={(category) => (

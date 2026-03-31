@@ -322,7 +322,7 @@ export default function VehicleDetailPage() {
               globalFilterPlaceholder="Buscar OT..."
               headerActions={[
                 {
-                  label: "Agregar",
+                  label: "OT",
                   onClick: () => router.push(`/adm/work-orders/new?vehicleId=${vehicleId}`),
                   icon: Plus,
                 },

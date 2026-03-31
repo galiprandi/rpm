@@ -388,7 +388,7 @@ export default function ProductsPage() {
         stats={stats}
         emptyIcon={<Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />}
         emptyMessage="No hay productos creados. Haz clic en 'Nuevo Producto' para crear el primero."
-        createButtonText="Nuevo Producto"
+        createButtonText="Producto"
         tableTitle="Listado de Productos"
         searchPlaceholder="Buscar por SKU, nombre..."
         rowActions={(product) => (

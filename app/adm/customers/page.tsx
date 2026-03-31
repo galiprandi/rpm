@@ -177,7 +177,7 @@ export default function CustomersPage() {
         columns={columns}
         emptyIcon={<User className="h-12 w-12 mx-auto text-muted-foreground mb-4" />}
         emptyMessage="No hay clientes registrados. Haz clic en 'Nuevo Cliente' para crear el primero."
-        createButtonText="Nuevo Cliente"
+        createButtonText="Cliente"
         tableTitle="Listado de Clientes"
         searchPlaceholder="Buscar por nombre o teléfono..."
         rowActions={(customer) => (
