@@ -40,6 +40,11 @@ export interface HeaderProps {
   showBackButton?: boolean;
   /** Callback personalizado para el botón volver */
   onBack?: () => void;
+  /**
+   * Elementos React personalizados para mostrar junto al botón volver
+   * Se renderizan después del botón volver y antes de las secondaryActions
+   */
+  leftActions?: ReactNode;
   /** Clases CSS adicionales para el contenedor */
   className?: string;
 }
@@ -87,6 +92,7 @@ export function Header({
   secondaryActions = [],
   showBackButton = false,
   onBack,
+  leftActions,
   className = '',
 }: HeaderProps) {
   return (
@@ -111,6 +117,9 @@ export function Header({
             Volver
           </Button>
         )}
+
+        {/* Acciones izquierdas personalizadas (ej: Select de estado) */}
+        {leftActions}
 
         {/* Acciones Secundarias */}
         {secondaryActions.map((action, index) => {

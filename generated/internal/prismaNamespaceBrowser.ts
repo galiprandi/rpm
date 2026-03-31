@@ -171,6 +171,8 @@ export const WorkOrderScalarFieldEnum = {
   technicianId: 'technicianId',
   entryChecklist: 'entryChecklist',
   exitChecklist: 'exitChecklist',
+  odometerValue: 'odometerValue',
+  fuelLevel: 'fuelLevel',
   entryPhotos: 'entryPhotos',
   exitPhotos: 'exitPhotos',
   scheduledDate: 'scheduledDate',

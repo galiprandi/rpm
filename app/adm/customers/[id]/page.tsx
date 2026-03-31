@@ -94,18 +94,19 @@ export default function CustomerDetailPage() {
   }, [fetchCustomer]);
 
   const getStatusBadge = (status: string) => {
-    const statusColors: Record<string, string> = {
-      CONFIRMED: "bg-blue-100 text-blue-800",
-      WAITING: "bg-yellow-100 text-yellow-800",
-      IN_PROGRESS: "bg-orange-100 text-orange-800",
-      QC_CHECK: "bg-purple-100 text-purple-800",
-      READY: "bg-green-100 text-green-800",
-      PAID: "bg-emerald-100 text-emerald-800",
-      DELIVERED: "bg-gray-100 text-gray-800",
+    const statusConfig: Record<string, { color: string; label: string }> = {
+      CONFIRMED: { color: "bg-blue-100 text-blue-800", label: "Confirmada" },
+      WAITING: { color: "bg-yellow-100 text-yellow-800", label: "Esperando" },
+      IN_PROGRESS: { color: "bg-orange-100 text-orange-800", label: "En Progreso" },
+      QC_CHECK: { color: "bg-purple-100 text-purple-800", label: "Control de Calidad" },
+      READY: { color: "bg-green-100 text-green-800", label: "Lista" },
+      PAID: { color: "bg-emerald-100 text-emerald-800", label: "Pagada" },
+      DELIVERED: { color: "bg-gray-100 text-gray-800", label: "Entregada" },
     };
+    const config = statusConfig[status] || { color: "bg-gray-100", label: status };
     return (
-      <Badge className={statusColors[status] || "bg-gray-100"}>
-        {status}
+      <Badge className={config.color}>
+        {config.label}
       </Badge>
     );
   };
@@ -166,17 +167,6 @@ export default function CustomerDetailPage() {
         header: "Fecha",
         cell: ({ row }) =>
           new Date(row.original.createdAt).toLocaleDateString("es-AR"),
-      },
-      {
-        id: "actions",
-        header: "Acciones",
-        cell: ({ row }) => (
-          <Link href={`/adm/work-orders/${row.original.id}`}>
-            <Button variant="outline" size="sm">
-              Ver
-            </Button>
-          </Link>
-        ),
       },
     ],
     []
@@ -347,6 +337,13 @@ export default function CustomerDetailPage() {
             externalGlobalFilter={workOrderFilter}
             onExternalGlobalFilterChange={setWorkOrderFilter}
             pageSize={5}
+            rowActions={(workOrder) => (
+              <Link href={`/adm/work-orders/${workOrder.id}`}>
+                <Button variant="ghost" size="sm">
+                  <Pencil className="h-4 w-4" />
+                </Button>
+              </Link>
+            )}
           />
         )}
       </div>

@@ -2,17 +2,10 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { useUI } from "@/components/ui/UIProvider";
 import {
   Table,
   TableBody,
@@ -22,19 +15,16 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  ArrowLeft,
-  Phone,
-  Mail,
-  Car,
-  Clock,
-  DollarSign,
   CheckCircle,
   Camera,
+  Clock,
+  DollarSign,
   FileText,
+  Phone,
+  Mail,
 } from "lucide-react";
-import Link from "next/link";
 import Image from "next/image";
-import { useUI } from "@/components/ui/UIProvider";
+import { Header } from "@/components/adm/Header";
 
 const STATUSES = [
   { id: "CONFIRMED", label: "Confirmada", color: "bg-blue-100" },
@@ -183,131 +173,49 @@ export default function WorkOrderDetailPage() {
   return (
     <div className="container mx-auto py-6 space-y-6">
       {/* Header - Vehículo como protagonista */}
-      <div className="flex justify-between items-start">
-        <div className="flex items-center gap-4">
-          <Link href="/adm/work-orders">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Volver
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-3xl font-bold">
-              {workOrder.vehicle.identifier}
-            </h1>
-            <p className="text-muted-foreground">
-              {workOrder.vehicle.make?.name} {workOrder.vehicle.model?.name} {workOrder.vehicle.year && `(${workOrder.vehicle.year})`}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-4">
-          <Select
+      <Header
+        title={workOrder.vehicle.identifier}
+        leftActions={
+          <select
             value={workOrder.status}
-            onValueChange={handleStatusChange}
+            onChange={(e) => handleStatusChange(e.target.value)}
             disabled={updatingStatus}
+            className="w-44 h-9 px-3 rounded-md border border-input bg-background text-sm"
           >
-            <SelectTrigger className="w-44">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {STATUSES.map((status) => (
-                <SelectItem key={status.id} value={status.id}>
-                  {status.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            {STATUSES.map((status) => (
+              <option key={status.id} value={status.id}>
+                {status.label}
+              </option>
+            ))}
+          </select>
+        }
+      >
+        {/* Línea 1: Info del vehículo */}
+        <div className="text-muted-foreground">
+          {[workOrder.vehicle.make?.name, workOrder.vehicle.model?.name, workOrder.vehicle.year, workOrder.vehicle.color].filter(Boolean).join(" ")}
         </div>
-      </div>
-
-      {/* Info Cards - Vehículo prominente, Cliente secundario */}
-      <div className="grid md:grid-cols-3 gap-4">
-        {/* Vehicle Info - Principal */}
-        <Card className="md:col-span-2">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Car className="h-5 w-5" />
-              Información del Vehículo
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">Patente/ID</span>
-              <span className="font-semibold text-lg">{workOrder.vehicle.identifier}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">Marca/Modelo</span>
-              <span>{workOrder.vehicle.make?.name} {workOrder.vehicle.model?.name}</span>
-            </div>
-            {workOrder.vehicle.year && (
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Año</span>
-                <span>{workOrder.vehicle.year}</span>
-              </div>
-            )}
-            {workOrder.vehicle.color && (
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Color</span>
-                <span>{workOrder.vehicle.color}</span>
-              </div>
-            )}
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">Categoría</span>
-              <span>{workOrder.vehicle.category}</span>
-            </div>
-            <div className="pt-2 border-t flex justify-end">
-              <Link href={`/adm/vehicles/${workOrder.vehicle.id}`}>
-                <Button variant="outline" size="sm">
-                  Ver Ficha Vehículo
-                </Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Cliente - Secundario, solo contacto */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Phone className="h-5 w-5" />
-              Contacto Cliente
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div>
-              <p className="font-medium">{workOrder.customer?.name}</p>
-              {workOrder.customer?.billingData && (
-                <p className="text-xs text-blue-600">
-                  CUIT: {workOrder.customer.billingData.cuit} (Factura {workOrder.customer.billingData.invoiceType})
-                </p>
-              )}
-            </div>
+        
+        {/* Línea 2: Contacto del cliente */}
+        <div className="flex flex-wrap items-center gap-3 text-sm mt-1">
+          <a
+            href={`tel:${workOrder.customer?.phone}`}
+            className="flex items-center gap-1 text-primary hover:underline"
+          >
+            {workOrder.customer?.name}
+            <Phone className="h-4 w-4" />
+            {workOrder.customer?.phone}
+          </a>
+          {workOrder.customer?.email && (
             <a
-              href={`tel:${workOrder.customer?.phone}`}
-              className="flex items-center gap-2 text-sm text-primary hover:underline"
+              href={`mailto:${workOrder.customer.email}`}
+              className="flex items-center gap-1 text-primary hover:underline"
             >
-              <Phone className="h-4 w-4" />
-              Cliente: {workOrder.customer?.name}
+              <Mail className="h-4 w-4" />
+              {workOrder.customer.email}
             </a>
-            {workOrder.customer?.email && (
-              <a
-                href={`mailto:${workOrder.customer.email}`}
-                className="flex items-center gap-2 text-sm text-primary hover:underline"
-              >
-                <Mail className="h-4 w-4" />
-                {workOrder.customer.email}
-              </a>
-            )}
-            <div className="pt-2 border-t">
-              <Link href={`/adm/customers/${workOrder.customer?.id}`}>
-                <Button variant="ghost" size="sm" className="w-full">
-                  Ver Cliente
-                </Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+          )}
+        </div>
+      </Header>
 
       {/* Totals Card */}
       <Card>

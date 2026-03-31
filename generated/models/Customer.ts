@@ -176,7 +176,7 @@ export type CustomerGroupByArgs<ExtArgs extends runtime.Types.Extensions.Interna
 export type CustomerGroupByOutputType = {
   id: string
   name: string
-  phone: string
+  phone: string | null
   phoneAlt: string | null
   email: string | null
   address: string | null
@@ -210,7 +210,7 @@ export type CustomerWhereInput = {
   NOT?: Prisma.CustomerWhereInput | Prisma.CustomerWhereInput[]
   id?: Prisma.StringFilter<"Customer"> | string
   name?: Prisma.StringFilter<"Customer"> | string
-  phone?: Prisma.StringFilter<"Customer"> | string
+  phone?: Prisma.StringNullableFilter<"Customer"> | string | null
   phoneAlt?: Prisma.StringNullableFilter<"Customer"> | string | null
   email?: Prisma.StringNullableFilter<"Customer"> | string | null
   address?: Prisma.StringNullableFilter<"Customer"> | string | null
@@ -225,7 +225,7 @@ export type CustomerWhereInput = {
 export type CustomerOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
-  phone?: Prisma.SortOrder
+  phone?: Prisma.SortOrderInput | Prisma.SortOrder
   phoneAlt?: Prisma.SortOrderInput | Prisma.SortOrder
   email?: Prisma.SortOrderInput | Prisma.SortOrder
   address?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -243,7 +243,7 @@ export type CustomerWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.CustomerWhereInput[]
   NOT?: Prisma.CustomerWhereInput | Prisma.CustomerWhereInput[]
   name?: Prisma.StringFilter<"Customer"> | string
-  phone?: Prisma.StringFilter<"Customer"> | string
+  phone?: Prisma.StringNullableFilter<"Customer"> | string | null
   phoneAlt?: Prisma.StringNullableFilter<"Customer"> | string | null
   email?: Prisma.StringNullableFilter<"Customer"> | string | null
   address?: Prisma.StringNullableFilter<"Customer"> | string | null
@@ -258,7 +258,7 @@ export type CustomerWhereUniqueInput = Prisma.AtLeast<{
 export type CustomerOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
-  phone?: Prisma.SortOrder
+  phone?: Prisma.SortOrderInput | Prisma.SortOrder
   phoneAlt?: Prisma.SortOrderInput | Prisma.SortOrder
   email?: Prisma.SortOrderInput | Prisma.SortOrder
   address?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -277,7 +277,7 @@ export type CustomerScalarWhereWithAggregatesInput = {
   NOT?: Prisma.CustomerScalarWhereWithAggregatesInput | Prisma.CustomerScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"Customer"> | string
   name?: Prisma.StringWithAggregatesFilter<"Customer"> | string
-  phone?: Prisma.StringWithAggregatesFilter<"Customer"> | string
+  phone?: Prisma.StringNullableWithAggregatesFilter<"Customer"> | string | null
   phoneAlt?: Prisma.StringNullableWithAggregatesFilter<"Customer"> | string | null
   email?: Prisma.StringNullableWithAggregatesFilter<"Customer"> | string | null
   address?: Prisma.StringNullableWithAggregatesFilter<"Customer"> | string | null
@@ -290,7 +290,7 @@ export type CustomerScalarWhereWithAggregatesInput = {
 export type CustomerCreateInput = {
   id?: string
   name: string
-  phone: string
+  phone?: string | null
   phoneAlt?: string | null
   email?: string | null
   address?: string | null
@@ -305,7 +305,7 @@ export type CustomerCreateInput = {
 export type CustomerUncheckedCreateInput = {
   id?: string
   name: string
-  phone: string
+  phone?: string | null
   phoneAlt?: string | null
   email?: string | null
   address?: string | null
@@ -320,7 +320,7 @@ export type CustomerUncheckedCreateInput = {
 export type CustomerUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  phone?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phoneAlt?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -335,7 +335,7 @@ export type CustomerUpdateInput = {
 export type CustomerUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  phone?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phoneAlt?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -350,7 +350,7 @@ export type CustomerUncheckedUpdateInput = {
 export type CustomerCreateManyInput = {
   id?: string
   name: string
-  phone: string
+  phone?: string | null
   phoneAlt?: string | null
   email?: string | null
   address?: string | null
@@ -363,7 +363,7 @@ export type CustomerCreateManyInput = {
 export type CustomerUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  phone?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phoneAlt?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -376,7 +376,7 @@ export type CustomerUpdateManyMutationInput = {
 export type CustomerUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  phone?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phoneAlt?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -471,7 +471,7 @@ export type CustomerUpdateOneRequiredWithoutWorkOrdersNestedInput = {
 export type CustomerCreateWithoutVehiclesInput = {
   id?: string
   name: string
-  phone: string
+  phone?: string | null
   phoneAlt?: string | null
   email?: string | null
   address?: string | null
@@ -485,7 +485,7 @@ export type CustomerCreateWithoutVehiclesInput = {
 export type CustomerUncheckedCreateWithoutVehiclesInput = {
   id?: string
   name: string
-  phone: string
+  phone?: string | null
   phoneAlt?: string | null
   email?: string | null
   address?: string | null
@@ -515,7 +515,7 @@ export type CustomerUpdateToOneWithWhereWithoutVehiclesInput = {
 export type CustomerUpdateWithoutVehiclesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  phone?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phoneAlt?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -529,7 +529,7 @@ export type CustomerUpdateWithoutVehiclesInput = {
 export type CustomerUncheckedUpdateWithoutVehiclesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  phone?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phoneAlt?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -543,7 +543,7 @@ export type CustomerUncheckedUpdateWithoutVehiclesInput = {
 export type CustomerCreateWithoutWorkOrdersInput = {
   id?: string
   name: string
-  phone: string
+  phone?: string | null
   phoneAlt?: string | null
   email?: string | null
   address?: string | null
@@ -557,7 +557,7 @@ export type CustomerCreateWithoutWorkOrdersInput = {
 export type CustomerUncheckedCreateWithoutWorkOrdersInput = {
   id?: string
   name: string
-  phone: string
+  phone?: string | null
   phoneAlt?: string | null
   email?: string | null
   address?: string | null
@@ -587,7 +587,7 @@ export type CustomerUpdateToOneWithWhereWithoutWorkOrdersInput = {
 export type CustomerUpdateWithoutWorkOrdersInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  phone?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phoneAlt?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -601,7 +601,7 @@ export type CustomerUpdateWithoutWorkOrdersInput = {
 export type CustomerUncheckedUpdateWithoutWorkOrdersInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  phone?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phoneAlt?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -725,7 +725,7 @@ export type $CustomerPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     name: string
-    phone: string
+    phone: string | null
     phoneAlt: string | null
     email: string | null
     address: string | null

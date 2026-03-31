@@ -27,12 +27,16 @@ export type AggregateWorkOrder = {
 }
 
 export type WorkOrderAvgAggregateOutputType = {
+  odometerValue: number | null
+  fuelLevel: number | null
   total: runtime.Decimal | null
   totalProducts: runtime.Decimal | null
   totalServices: runtime.Decimal | null
 }
 
 export type WorkOrderSumAggregateOutputType = {
+  odometerValue: number | null
+  fuelLevel: number | null
   total: runtime.Decimal | null
   totalProducts: runtime.Decimal | null
   totalServices: runtime.Decimal | null
@@ -45,6 +49,8 @@ export type WorkOrderMinAggregateOutputType = {
   customerId: string | null
   vehicleId: string | null
   technicianId: string | null
+  odometerValue: number | null
+  fuelLevel: number | null
   scheduledDate: Date | null
   startedAt: Date | null
   completedAt: Date | null
@@ -67,6 +73,8 @@ export type WorkOrderMaxAggregateOutputType = {
   customerId: string | null
   vehicleId: string | null
   technicianId: string | null
+  odometerValue: number | null
+  fuelLevel: number | null
   scheduledDate: Date | null
   startedAt: Date | null
   completedAt: Date | null
@@ -91,6 +99,8 @@ export type WorkOrderCountAggregateOutputType = {
   technicianId: number
   entryChecklist: number
   exitChecklist: number
+  odometerValue: number
+  fuelLevel: number
   entryPhotos: number
   exitPhotos: number
   scheduledDate: number
@@ -111,12 +121,16 @@ export type WorkOrderCountAggregateOutputType = {
 
 
 export type WorkOrderAvgAggregateInputType = {
+  odometerValue?: true
+  fuelLevel?: true
   total?: true
   totalProducts?: true
   totalServices?: true
 }
 
 export type WorkOrderSumAggregateInputType = {
+  odometerValue?: true
+  fuelLevel?: true
   total?: true
   totalProducts?: true
   totalServices?: true
@@ -129,6 +143,8 @@ export type WorkOrderMinAggregateInputType = {
   customerId?: true
   vehicleId?: true
   technicianId?: true
+  odometerValue?: true
+  fuelLevel?: true
   scheduledDate?: true
   startedAt?: true
   completedAt?: true
@@ -151,6 +167,8 @@ export type WorkOrderMaxAggregateInputType = {
   customerId?: true
   vehicleId?: true
   technicianId?: true
+  odometerValue?: true
+  fuelLevel?: true
   scheduledDate?: true
   startedAt?: true
   completedAt?: true
@@ -175,6 +193,8 @@ export type WorkOrderCountAggregateInputType = {
   technicianId?: true
   entryChecklist?: true
   exitChecklist?: true
+  odometerValue?: true
+  fuelLevel?: true
   entryPhotos?: true
   exitPhotos?: true
   scheduledDate?: true
@@ -288,6 +308,8 @@ export type WorkOrderGroupByOutputType = {
   technicianId: string | null
   entryChecklist: runtime.JsonValue | null
   exitChecklist: runtime.JsonValue | null
+  odometerValue: number | null
+  fuelLevel: number | null
   entryPhotos: string[]
   exitPhotos: string[]
   scheduledDate: Date | null
@@ -337,6 +359,8 @@ export type WorkOrderWhereInput = {
   technicianId?: Prisma.StringNullableFilter<"WorkOrder"> | string | null
   entryChecklist?: Prisma.JsonNullableFilter<"WorkOrder">
   exitChecklist?: Prisma.JsonNullableFilter<"WorkOrder">
+  odometerValue?: Prisma.IntNullableFilter<"WorkOrder"> | number | null
+  fuelLevel?: Prisma.IntNullableFilter<"WorkOrder"> | number | null
   entryPhotos?: Prisma.StringNullableListFilter<"WorkOrder">
   exitPhotos?: Prisma.StringNullableListFilter<"WorkOrder">
   scheduledDate?: Prisma.DateTimeNullableFilter<"WorkOrder"> | Date | string | null
@@ -367,6 +391,8 @@ export type WorkOrderOrderByWithRelationInput = {
   technicianId?: Prisma.SortOrderInput | Prisma.SortOrder
   entryChecklist?: Prisma.SortOrderInput | Prisma.SortOrder
   exitChecklist?: Prisma.SortOrderInput | Prisma.SortOrder
+  odometerValue?: Prisma.SortOrderInput | Prisma.SortOrder
+  fuelLevel?: Prisma.SortOrderInput | Prisma.SortOrder
   entryPhotos?: Prisma.SortOrder
   exitPhotos?: Prisma.SortOrder
   scheduledDate?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -400,6 +426,8 @@ export type WorkOrderWhereUniqueInput = Prisma.AtLeast<{
   technicianId?: Prisma.StringNullableFilter<"WorkOrder"> | string | null
   entryChecklist?: Prisma.JsonNullableFilter<"WorkOrder">
   exitChecklist?: Prisma.JsonNullableFilter<"WorkOrder">
+  odometerValue?: Prisma.IntNullableFilter<"WorkOrder"> | number | null
+  fuelLevel?: Prisma.IntNullableFilter<"WorkOrder"> | number | null
   entryPhotos?: Prisma.StringNullableListFilter<"WorkOrder">
   exitPhotos?: Prisma.StringNullableListFilter<"WorkOrder">
   scheduledDate?: Prisma.DateTimeNullableFilter<"WorkOrder"> | Date | string | null
@@ -430,6 +458,8 @@ export type WorkOrderOrderByWithAggregationInput = {
   technicianId?: Prisma.SortOrderInput | Prisma.SortOrder
   entryChecklist?: Prisma.SortOrderInput | Prisma.SortOrder
   exitChecklist?: Prisma.SortOrderInput | Prisma.SortOrder
+  odometerValue?: Prisma.SortOrderInput | Prisma.SortOrder
+  fuelLevel?: Prisma.SortOrderInput | Prisma.SortOrder
   entryPhotos?: Prisma.SortOrder
   exitPhotos?: Prisma.SortOrder
   scheduledDate?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -464,6 +494,8 @@ export type WorkOrderScalarWhereWithAggregatesInput = {
   technicianId?: Prisma.StringNullableWithAggregatesFilter<"WorkOrder"> | string | null
   entryChecklist?: Prisma.JsonNullableWithAggregatesFilter<"WorkOrder">
   exitChecklist?: Prisma.JsonNullableWithAggregatesFilter<"WorkOrder">
+  odometerValue?: Prisma.IntNullableWithAggregatesFilter<"WorkOrder"> | number | null
+  fuelLevel?: Prisma.IntNullableWithAggregatesFilter<"WorkOrder"> | number | null
   entryPhotos?: Prisma.StringNullableListFilter<"WorkOrder">
   exitPhotos?: Prisma.StringNullableListFilter<"WorkOrder">
   scheduledDate?: Prisma.DateTimeNullableWithAggregatesFilter<"WorkOrder"> | Date | string | null
@@ -488,6 +520,8 @@ export type WorkOrderCreateInput = {
   technicianId?: string | null
   entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   exitChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  odometerValue?: number | null
+  fuelLevel?: number | null
   entryPhotos?: Prisma.WorkOrderCreateentryPhotosInput | string[]
   exitPhotos?: Prisma.WorkOrderCreateexitPhotosInput | string[]
   scheduledDate?: Date | string | null
@@ -518,6 +552,8 @@ export type WorkOrderUncheckedCreateInput = {
   technicianId?: string | null
   entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   exitChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  odometerValue?: number | null
+  fuelLevel?: number | null
   entryPhotos?: Prisma.WorkOrderCreateentryPhotosInput | string[]
   exitPhotos?: Prisma.WorkOrderCreateexitPhotosInput | string[]
   scheduledDate?: Date | string | null
@@ -544,6 +580,8 @@ export type WorkOrderUpdateInput = {
   technicianId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   exitChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  odometerValue?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  fuelLevel?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   entryPhotos?: Prisma.WorkOrderUpdateentryPhotosInput | string[]
   exitPhotos?: Prisma.WorkOrderUpdateexitPhotosInput | string[]
   scheduledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -574,6 +612,8 @@ export type WorkOrderUncheckedUpdateInput = {
   technicianId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   exitChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  odometerValue?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  fuelLevel?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   entryPhotos?: Prisma.WorkOrderUpdateentryPhotosInput | string[]
   exitPhotos?: Prisma.WorkOrderUpdateexitPhotosInput | string[]
   scheduledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -602,6 +642,8 @@ export type WorkOrderCreateManyInput = {
   technicianId?: string | null
   entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   exitChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  odometerValue?: number | null
+  fuelLevel?: number | null
   entryPhotos?: Prisma.WorkOrderCreateentryPhotosInput | string[]
   exitPhotos?: Prisma.WorkOrderCreateexitPhotosInput | string[]
   scheduledDate?: Date | string | null
@@ -626,6 +668,8 @@ export type WorkOrderUpdateManyMutationInput = {
   technicianId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   exitChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  odometerValue?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  fuelLevel?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   entryPhotos?: Prisma.WorkOrderUpdateentryPhotosInput | string[]
   exitPhotos?: Prisma.WorkOrderUpdateexitPhotosInput | string[]
   scheduledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -652,6 +696,8 @@ export type WorkOrderUncheckedUpdateManyInput = {
   technicianId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   exitChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  odometerValue?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  fuelLevel?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   entryPhotos?: Prisma.WorkOrderUpdateentryPhotosInput | string[]
   exitPhotos?: Prisma.WorkOrderUpdateexitPhotosInput | string[]
   scheduledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -688,6 +734,8 @@ export type WorkOrderCountOrderByAggregateInput = {
   technicianId?: Prisma.SortOrder
   entryChecklist?: Prisma.SortOrder
   exitChecklist?: Prisma.SortOrder
+  odometerValue?: Prisma.SortOrder
+  fuelLevel?: Prisma.SortOrder
   entryPhotos?: Prisma.SortOrder
   exitPhotos?: Prisma.SortOrder
   scheduledDate?: Prisma.SortOrder
@@ -706,6 +754,8 @@ export type WorkOrderCountOrderByAggregateInput = {
 }
 
 export type WorkOrderAvgOrderByAggregateInput = {
+  odometerValue?: Prisma.SortOrder
+  fuelLevel?: Prisma.SortOrder
   total?: Prisma.SortOrder
   totalProducts?: Prisma.SortOrder
   totalServices?: Prisma.SortOrder
@@ -718,6 +768,8 @@ export type WorkOrderMaxOrderByAggregateInput = {
   customerId?: Prisma.SortOrder
   vehicleId?: Prisma.SortOrder
   technicianId?: Prisma.SortOrder
+  odometerValue?: Prisma.SortOrder
+  fuelLevel?: Prisma.SortOrder
   scheduledDate?: Prisma.SortOrder
   startedAt?: Prisma.SortOrder
   completedAt?: Prisma.SortOrder
@@ -740,6 +792,8 @@ export type WorkOrderMinOrderByAggregateInput = {
   customerId?: Prisma.SortOrder
   vehicleId?: Prisma.SortOrder
   technicianId?: Prisma.SortOrder
+  odometerValue?: Prisma.SortOrder
+  fuelLevel?: Prisma.SortOrder
   scheduledDate?: Prisma.SortOrder
   startedAt?: Prisma.SortOrder
   completedAt?: Prisma.SortOrder
@@ -756,6 +810,8 @@ export type WorkOrderMinOrderByAggregateInput = {
 }
 
 export type WorkOrderSumOrderByAggregateInput = {
+  odometerValue?: Prisma.SortOrder
+  fuelLevel?: Prisma.SortOrder
   total?: Prisma.SortOrder
   totalProducts?: Prisma.SortOrder
   totalServices?: Prisma.SortOrder
@@ -907,6 +963,8 @@ export type WorkOrderCreateWithoutCustomerInput = {
   technicianId?: string | null
   entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   exitChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  odometerValue?: number | null
+  fuelLevel?: number | null
   entryPhotos?: Prisma.WorkOrderCreateentryPhotosInput | string[]
   exitPhotos?: Prisma.WorkOrderCreateexitPhotosInput | string[]
   scheduledDate?: Date | string | null
@@ -935,6 +993,8 @@ export type WorkOrderUncheckedCreateWithoutCustomerInput = {
   technicianId?: string | null
   entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   exitChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  odometerValue?: number | null
+  fuelLevel?: number | null
   entryPhotos?: Prisma.WorkOrderCreateentryPhotosInput | string[]
   exitPhotos?: Prisma.WorkOrderCreateexitPhotosInput | string[]
   scheduledDate?: Date | string | null
@@ -992,6 +1052,8 @@ export type WorkOrderScalarWhereInput = {
   technicianId?: Prisma.StringNullableFilter<"WorkOrder"> | string | null
   entryChecklist?: Prisma.JsonNullableFilter<"WorkOrder">
   exitChecklist?: Prisma.JsonNullableFilter<"WorkOrder">
+  odometerValue?: Prisma.IntNullableFilter<"WorkOrder"> | number | null
+  fuelLevel?: Prisma.IntNullableFilter<"WorkOrder"> | number | null
   entryPhotos?: Prisma.StringNullableListFilter<"WorkOrder">
   exitPhotos?: Prisma.StringNullableListFilter<"WorkOrder">
   scheduledDate?: Prisma.DateTimeNullableFilter<"WorkOrder"> | Date | string | null
@@ -1016,6 +1078,8 @@ export type WorkOrderCreateWithoutVehicleInput = {
   technicianId?: string | null
   entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   exitChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  odometerValue?: number | null
+  fuelLevel?: number | null
   entryPhotos?: Prisma.WorkOrderCreateentryPhotosInput | string[]
   exitPhotos?: Prisma.WorkOrderCreateexitPhotosInput | string[]
   scheduledDate?: Date | string | null
@@ -1044,6 +1108,8 @@ export type WorkOrderUncheckedCreateWithoutVehicleInput = {
   technicianId?: string | null
   entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   exitChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  odometerValue?: number | null
+  fuelLevel?: number | null
   entryPhotos?: Prisma.WorkOrderCreateentryPhotosInput | string[]
   exitPhotos?: Prisma.WorkOrderCreateexitPhotosInput | string[]
   scheduledDate?: Date | string | null
@@ -1096,6 +1162,8 @@ export type WorkOrderCreateWithoutItemsInput = {
   technicianId?: string | null
   entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   exitChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  odometerValue?: number | null
+  fuelLevel?: number | null
   entryPhotos?: Prisma.WorkOrderCreateentryPhotosInput | string[]
   exitPhotos?: Prisma.WorkOrderCreateexitPhotosInput | string[]
   scheduledDate?: Date | string | null
@@ -1125,6 +1193,8 @@ export type WorkOrderUncheckedCreateWithoutItemsInput = {
   technicianId?: string | null
   entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   exitChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  odometerValue?: number | null
+  fuelLevel?: number | null
   entryPhotos?: Prisma.WorkOrderCreateentryPhotosInput | string[]
   exitPhotos?: Prisma.WorkOrderCreateexitPhotosInput | string[]
   scheduledDate?: Date | string | null
@@ -1166,6 +1236,8 @@ export type WorkOrderUpdateWithoutItemsInput = {
   technicianId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   exitChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  odometerValue?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  fuelLevel?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   entryPhotos?: Prisma.WorkOrderUpdateentryPhotosInput | string[]
   exitPhotos?: Prisma.WorkOrderUpdateexitPhotosInput | string[]
   scheduledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1195,6 +1267,8 @@ export type WorkOrderUncheckedUpdateWithoutItemsInput = {
   technicianId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   exitChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  odometerValue?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  fuelLevel?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   entryPhotos?: Prisma.WorkOrderUpdateentryPhotosInput | string[]
   exitPhotos?: Prisma.WorkOrderUpdateexitPhotosInput | string[]
   scheduledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1220,6 +1294,8 @@ export type WorkOrderCreateWithoutPhotosInput = {
   technicianId?: string | null
   entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   exitChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  odometerValue?: number | null
+  fuelLevel?: number | null
   entryPhotos?: Prisma.WorkOrderCreateentryPhotosInput | string[]
   exitPhotos?: Prisma.WorkOrderCreateexitPhotosInput | string[]
   scheduledDate?: Date | string | null
@@ -1249,6 +1325,8 @@ export type WorkOrderUncheckedCreateWithoutPhotosInput = {
   technicianId?: string | null
   entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   exitChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  odometerValue?: number | null
+  fuelLevel?: number | null
   entryPhotos?: Prisma.WorkOrderCreateentryPhotosInput | string[]
   exitPhotos?: Prisma.WorkOrderCreateexitPhotosInput | string[]
   scheduledDate?: Date | string | null
@@ -1290,6 +1368,8 @@ export type WorkOrderUpdateWithoutPhotosInput = {
   technicianId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   exitChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  odometerValue?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  fuelLevel?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   entryPhotos?: Prisma.WorkOrderUpdateentryPhotosInput | string[]
   exitPhotos?: Prisma.WorkOrderUpdateexitPhotosInput | string[]
   scheduledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1319,6 +1399,8 @@ export type WorkOrderUncheckedUpdateWithoutPhotosInput = {
   technicianId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   exitChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  odometerValue?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  fuelLevel?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   entryPhotos?: Prisma.WorkOrderUpdateentryPhotosInput | string[]
   exitPhotos?: Prisma.WorkOrderUpdateexitPhotosInput | string[]
   scheduledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1345,6 +1427,8 @@ export type WorkOrderCreateManyCustomerInput = {
   technicianId?: string | null
   entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   exitChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  odometerValue?: number | null
+  fuelLevel?: number | null
   entryPhotos?: Prisma.WorkOrderCreateentryPhotosInput | string[]
   exitPhotos?: Prisma.WorkOrderCreateexitPhotosInput | string[]
   scheduledDate?: Date | string | null
@@ -1369,6 +1453,8 @@ export type WorkOrderUpdateWithoutCustomerInput = {
   technicianId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   exitChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  odometerValue?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  fuelLevel?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   entryPhotos?: Prisma.WorkOrderUpdateentryPhotosInput | string[]
   exitPhotos?: Prisma.WorkOrderUpdateexitPhotosInput | string[]
   scheduledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1397,6 +1483,8 @@ export type WorkOrderUncheckedUpdateWithoutCustomerInput = {
   technicianId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   exitChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  odometerValue?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  fuelLevel?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   entryPhotos?: Prisma.WorkOrderUpdateentryPhotosInput | string[]
   exitPhotos?: Prisma.WorkOrderUpdateexitPhotosInput | string[]
   scheduledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1424,6 +1512,8 @@ export type WorkOrderUncheckedUpdateManyWithoutCustomerInput = {
   technicianId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   exitChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  odometerValue?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  fuelLevel?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   entryPhotos?: Prisma.WorkOrderUpdateentryPhotosInput | string[]
   exitPhotos?: Prisma.WorkOrderUpdateexitPhotosInput | string[]
   scheduledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1449,6 +1539,8 @@ export type WorkOrderCreateManyVehicleInput = {
   technicianId?: string | null
   entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   exitChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  odometerValue?: number | null
+  fuelLevel?: number | null
   entryPhotos?: Prisma.WorkOrderCreateentryPhotosInput | string[]
   exitPhotos?: Prisma.WorkOrderCreateexitPhotosInput | string[]
   scheduledDate?: Date | string | null
@@ -1473,6 +1565,8 @@ export type WorkOrderUpdateWithoutVehicleInput = {
   technicianId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   exitChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  odometerValue?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  fuelLevel?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   entryPhotos?: Prisma.WorkOrderUpdateentryPhotosInput | string[]
   exitPhotos?: Prisma.WorkOrderUpdateexitPhotosInput | string[]
   scheduledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1501,6 +1595,8 @@ export type WorkOrderUncheckedUpdateWithoutVehicleInput = {
   technicianId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   exitChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  odometerValue?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  fuelLevel?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   entryPhotos?: Prisma.WorkOrderUpdateentryPhotosInput | string[]
   exitPhotos?: Prisma.WorkOrderUpdateexitPhotosInput | string[]
   scheduledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1528,6 +1624,8 @@ export type WorkOrderUncheckedUpdateManyWithoutVehicleInput = {
   technicianId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   exitChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  odometerValue?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  fuelLevel?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   entryPhotos?: Prisma.WorkOrderUpdateentryPhotosInput | string[]
   exitPhotos?: Prisma.WorkOrderUpdateexitPhotosInput | string[]
   scheduledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1594,6 +1692,8 @@ export type WorkOrderSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   technicianId?: boolean
   entryChecklist?: boolean
   exitChecklist?: boolean
+  odometerValue?: boolean
+  fuelLevel?: boolean
   entryPhotos?: boolean
   exitPhotos?: boolean
   scheduledDate?: boolean
@@ -1625,6 +1725,8 @@ export type WorkOrderSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ext
   technicianId?: boolean
   entryChecklist?: boolean
   exitChecklist?: boolean
+  odometerValue?: boolean
+  fuelLevel?: boolean
   entryPhotos?: boolean
   exitPhotos?: boolean
   scheduledDate?: boolean
@@ -1653,6 +1755,8 @@ export type WorkOrderSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ext
   technicianId?: boolean
   entryChecklist?: boolean
   exitChecklist?: boolean
+  odometerValue?: boolean
+  fuelLevel?: boolean
   entryPhotos?: boolean
   exitPhotos?: boolean
   scheduledDate?: boolean
@@ -1681,6 +1785,8 @@ export type WorkOrderSelectScalar = {
   technicianId?: boolean
   entryChecklist?: boolean
   exitChecklist?: boolean
+  odometerValue?: boolean
+  fuelLevel?: boolean
   entryPhotos?: boolean
   exitPhotos?: boolean
   scheduledDate?: boolean
@@ -1698,7 +1804,7 @@ export type WorkOrderSelectScalar = {
   updatedAt?: boolean
 }
 
-export type WorkOrderOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "status" | "source" | "customerId" | "vehicleId" | "technicianId" | "entryChecklist" | "exitChecklist" | "entryPhotos" | "exitPhotos" | "scheduledDate" | "startedAt" | "completedAt" | "deliveredAt" | "paymentMethod" | "paymentNotes" | "total" | "totalProducts" | "totalServices" | "invoiceId" | "notes" | "createdAt" | "updatedAt", ExtArgs["result"]["workOrder"]>
+export type WorkOrderOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "status" | "source" | "customerId" | "vehicleId" | "technicianId" | "entryChecklist" | "exitChecklist" | "odometerValue" | "fuelLevel" | "entryPhotos" | "exitPhotos" | "scheduledDate" | "startedAt" | "completedAt" | "deliveredAt" | "paymentMethod" | "paymentNotes" | "total" | "totalProducts" | "totalServices" | "invoiceId" | "notes" | "createdAt" | "updatedAt", ExtArgs["result"]["workOrder"]>
 export type WorkOrderInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   customer?: boolean | Prisma.CustomerDefaultArgs<ExtArgs>
   vehicle?: boolean | Prisma.VehicleDefaultArgs<ExtArgs>
@@ -1732,6 +1838,8 @@ export type $WorkOrderPayload<ExtArgs extends runtime.Types.Extensions.InternalA
     technicianId: string | null
     entryChecklist: runtime.JsonValue | null
     exitChecklist: runtime.JsonValue | null
+    odometerValue: number | null
+    fuelLevel: number | null
     entryPhotos: string[]
     exitPhotos: string[]
     scheduledDate: Date | null
@@ -2182,6 +2290,8 @@ export interface WorkOrderFieldRefs {
   readonly technicianId: Prisma.FieldRef<"WorkOrder", 'String'>
   readonly entryChecklist: Prisma.FieldRef<"WorkOrder", 'Json'>
   readonly exitChecklist: Prisma.FieldRef<"WorkOrder", 'Json'>
+  readonly odometerValue: Prisma.FieldRef<"WorkOrder", 'Int'>
+  readonly fuelLevel: Prisma.FieldRef<"WorkOrder", 'Int'>
   readonly entryPhotos: Prisma.FieldRef<"WorkOrder", 'String[]'>
   readonly exitPhotos: Prisma.FieldRef<"WorkOrder", 'String[]'>
   readonly scheduledDate: Prisma.FieldRef<"WorkOrder", 'DateTime'>
