@@ -18,6 +18,7 @@ import {
   Mail,
   Trash2,
   Plus,
+  Eye,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -147,18 +148,18 @@ export default function VehicleDetailPage() {
         cell: ({ row }) =>
           new Date(row.original.createdAt).toLocaleDateString("es-AR"),
       },
-      {
-        id: "actions",
-        header: "Acciones",
-        cell: ({ row }) => (
-          <Link href={`/adm/work-orders/${row.original.id}`}>
-            <Button variant="outline" size="sm">
-              Ver
-            </Button>
-          </Link>
-        ),
-      },
     ],
+    []
+  );
+
+  const workOrderRowActions = useCallback(
+    (row: WorkOrder) => (
+      <Link href={`/adm/work-orders/${row.id}`}>
+        <Button variant="ghost" size="icon" className="h-8 w-8">
+          <Eye className="h-4 w-4" />
+        </Button>
+      </Link>
+    ),
     []
   );
 
@@ -300,17 +301,11 @@ export default function VehicleDetailPage() {
 
       {/* Work Orders - DataTable */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Wrench className="h-5 w-5" />
             Historial de Órdenes de Trabajo ({vehicle.workOrders.length})
           </CardTitle>
-          <Link href={`/adm/work-orders/new?vehicleId=${vehicleId}`}>
-            <Button size="sm" variant="outline">
-              <Plus className="h-4 w-4 mr-2" />
-              Agregar
-            </Button>
-          </Link>
         </CardHeader>
         <CardContent>
           {vehicle.workOrders.length === 0 ? (
@@ -321,8 +316,17 @@ export default function VehicleDetailPage() {
             <DataTable
               data={vehicle.workOrders}
               columns={workOrderColumns}
+              rowActions={workOrderRowActions}
+              title="Órdenes de Trabajo"
               enableGlobalFilter={true}
               globalFilterPlaceholder="Buscar OT..."
+              headerActions={[
+                {
+                  label: "Agregar",
+                  onClick: () => router.push(`/adm/work-orders/new?vehicleId=${vehicleId}`),
+                  icon: Plus,
+                },
+              ]}
             />
           )}
         </CardContent>
