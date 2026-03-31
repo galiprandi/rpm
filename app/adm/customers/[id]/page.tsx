@@ -16,7 +16,6 @@ import {
   Car,
   Wrench,
   Pencil,
-  Search,
   Eye,
 } from "lucide-react";
 import Link from "next/link";
@@ -28,7 +27,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { CustomerForm } from "@/components/customers/CustomerForm";
-import { Input } from "@/components/ui/input";
 
 interface Vehicle {
   id: string;
@@ -306,47 +304,40 @@ export default function CustomerDetailPage() {
       )}
 
       {/* Historial de OTs - DataTable */}
-      <div className="space-y-4">
-        <div className="flex flex-row items-center justify-between gap-4">
+      {customer.workOrders.length === 0 ? (
+        <div className="space-y-4">
           <h2 className="text-lg font-semibold flex items-center gap-2">
             <Wrench className="h-5 w-5" />
-            Historial de Órdenes de Trabajo ({customer.workOrders.length})
+            Historial de Órdenes de Trabajo (0)
           </h2>
-          {customer.workOrders.length > 0 && (
-            <div className="relative w-full max-w-xs">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar OT..."
-                value={workOrderFilter}
-                onChange={(e) => setWorkOrderFilter(e.target.value)}
-                className="pl-10 h-9"
-              />
-            </div>
-          )}
-        </div>
-        {customer.workOrders.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             No hay órdenes de trabajo registradas
           </div>
-        ) : (
-          <DataTable
-            data={customer.workOrders}
-            columns={workOrderColumns}
-            enableGlobalFilter={true}
-            globalFilterPlaceholder="Buscar OT..."
-            externalGlobalFilter={workOrderFilter}
-            onExternalGlobalFilterChange={setWorkOrderFilter}
-            pageSize={5}
-            rowActions={(workOrder) => (
-              <Link href={`/adm/work-orders/${workOrder.id}`}>
-                <Button variant="ghost" size="sm">
-                  <Pencil className="h-4 w-4" />
-                </Button>
-              </Link>
-            )}
-          />
-        )}
-      </div>
+        </div>
+      ) : (
+        <DataTable
+          data={customer.workOrders}
+          columns={workOrderColumns}
+          enableGlobalFilter={true}
+          globalFilterPlaceholder="Buscar OT..."
+          externalGlobalFilter={workOrderFilter}
+          onExternalGlobalFilterChange={setWorkOrderFilter}
+          pageSize={5}
+          title={
+            <span className="flex items-center gap-2">
+              <Wrench className="h-5 w-5" />
+              Historial de Órdenes de Trabajo ({customer.workOrders.length})
+            </span>
+          }
+          rowActions={(workOrder) => (
+            <Link href={`/adm/work-orders/${workOrder.id}`}>
+              <Button variant="ghost" size="sm">
+                <Pencil className="h-4 w-4" />
+              </Button>
+            </Link>
+          )}
+        />
+      )}
 
       {/* Modal de edición */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
