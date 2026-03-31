@@ -240,7 +240,7 @@ export default function CategoriesPage() {
         searchPlaceholder="Buscar categorías..."
         rowActions={(category) => (
           <div className="flex gap-1">
-            <Button variant="ghost" size="sm" onClick={() => openEditDialog(category)}>
+            <Button variant="ghost" size="sm" onClick={() => openEditDialog(category)} title="Editar categoría">
               <Edit2 className="h-4 w-4" />
             </Button>
             <Button
@@ -249,6 +249,7 @@ export default function CategoriesPage() {
               className="text-red-600"
               onClick={() => handleDeleteCategory(category)}
               disabled={category.productCount > 0}
+              title="Eliminar categoría"
             >
               <Trash2 className="h-4 w-4" />
             </Button>

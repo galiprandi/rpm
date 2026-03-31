@@ -276,7 +276,7 @@ export default function SuppliersPage() {
         searchPlaceholder="Buscar proveedores..."
         rowActions={(supplier) => (
           <div className="flex gap-1">
-            <Button variant="ghost" size="sm" onClick={() => openEditDialog(supplier)}>
+            <Button variant="ghost" size="sm" onClick={() => openEditDialog(supplier)} title="Editar proveedor">
               <Edit2 className="h-4 w-4" />
             </Button>
             <Button
@@ -285,6 +285,7 @@ export default function SuppliersPage() {
               className="text-red-600"
               onClick={() => handleDeleteSupplier(supplier)}
               disabled={supplier.productCount > 0}
+              title="Eliminar proveedor"
             >
               <Trash2 className="h-4 w-4" />
             </Button>

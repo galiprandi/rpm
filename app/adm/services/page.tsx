@@ -302,7 +302,7 @@ export default function ServicesPage() {
         searchPlaceholder="Buscar por nombre..."
         rowActions={(service) => (
           <div className="flex gap-1">
-            <Button variant="ghost" size="sm" onClick={() => openEditDialog(service)}>
+            <Button variant="ghost" size="sm" onClick={() => openEditDialog(service)} title="Editar servicio">
               <Edit2 className="h-4 w-4" />
             </Button>
             <Button
@@ -310,6 +310,7 @@ export default function ServicesPage() {
               size="sm"
               className="text-red-600"
               onClick={() => handleDelete(service)}
+              title="Eliminar servicio"
             >
               <Trash2 className="h-4 w-4" />
             </Button>

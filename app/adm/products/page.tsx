@@ -401,7 +401,7 @@ export default function ProductsPage() {
             >
               <History className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => openEditDialog(product)}>
+            <Button variant="ghost" size="sm" onClick={() => openEditDialog(product)} title="Editar producto">
               <Edit2 className="h-4 w-4" />
             </Button>
             <Button
@@ -409,6 +409,7 @@ export default function ProductsPage() {
               size="sm"
               className="text-red-600"
               onClick={() => handleDelete(product)}
+              title="Eliminar producto"
             >
               <Trash2 className="h-4 w-4" />
             </Button>

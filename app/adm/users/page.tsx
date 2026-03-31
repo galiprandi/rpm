@@ -290,7 +290,7 @@ export default function UsersPage() {
         searchPlaceholder="Buscar por nombre o email..."
         rowActions={(user) => (
           <div className="flex gap-1">
-            <Button variant="ghost" size="sm" onClick={() => openEditDialog(user)}>
+            <Button variant="ghost" size="sm" onClick={() => openEditDialog(user)} title="Editar usuario">
               <Edit2 className="h-4 w-4" />
             </Button>
           </div>
