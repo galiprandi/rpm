@@ -6,13 +6,8 @@ import { CrudAdmin } from "@/components/adm";
 import { Phone, User, Eye } from "lucide-react";
 import Link from "next/link";
 import { type ColumnDef } from "@tanstack/react-table";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { CustomerForm, type CustomerFormData } from "@/components/customers/CustomerForm";
+import { CustomerDialog } from "@/components/customers/CustomerDialog";
+import { type CustomerFormData } from "@/components/customers/CustomerForm";
 import { useRouter } from "next/navigation";
 
 interface Customer {
@@ -190,19 +185,14 @@ export default function CustomersPage() {
       />
 
       {/* Modal para crear cliente */}
-      <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Nuevo Cliente</DialogTitle>
-          </DialogHeader>
-          <CustomerForm
-            onSubmit={handleCreateSubmit}
-            onCancel={() => setIsCreateModalOpen(false)}
-            submitLabel="Crear Cliente"
-            isSubmitting={isCreating}
-          />
-        </DialogContent>
-      </Dialog>
+      <CustomerDialog
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSubmit={handleCreateSubmit}
+        onCancel={() => setIsCreateModalOpen(false)}
+        submitLabel="Crear Cliente"
+        isSubmitting={isCreating}
+      />
     </>
   );
 }

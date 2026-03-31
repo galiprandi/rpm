@@ -3,9 +3,9 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ModalBase, ModalBaseFooter } from '@/components/ui/ModalBase';
 import { useUI } from '@/components/ui/UIProvider';
-import { CategoryForm, type CategoryFormData } from '@/components/categories/CategoryForm';
+import { CategoryDialog } from '@/components/categories/CategoryDialog';
+import { type CategoryFormData } from '@/components/categories/CategoryForm';
 import { CrudAdmin, StatItem } from '@/components/adm';
 import { Folder, Edit2, Trash2, Package, Layers } from 'lucide-react';
 import { type ColumnDef } from '@tanstack/react-table';
@@ -257,48 +257,28 @@ export default function CategoriesPage() {
         )}
       />
 
-      {/* Edit Category Modal */}
-      <ModalBase
+      {/* Edit Category Dialog */}
+      <CategoryDialog
         isOpen={isDialogOpen}
         onClose={() => setIsDialogOpen(false)}
-        title="Editar Categoría"
-        description="Modifica los datos de la categoría."
-        maxWidth="md"
-        footer={
-          <ModalBaseFooter
-            onCancel={() => setIsDialogOpen(false)}
-            onSave={() => handleEditSubmit({ preventDefault: () => {} } as React.FormEvent)}
-            saveText="Guardar Cambios"
-          />
-        }
-      >
-        <CategoryForm formData={editForm} setFormData={setEditForm} onSubmit={handleEditSubmit} />
-      </ModalBase>
+        editingCategory={editingCategory}
+        formData={editForm}
+        setFormData={setEditForm}
+        onSubmit={handleEditSubmit}
+      />
 
-      {/* Create Category Modal */}
-      <ModalBase
+      {/* Create Category Dialog */}
+      <CategoryDialog
         isOpen={isCreateDialogOpen}
         onClose={() => setIsCreateDialogOpen(false)}
-        title="Nueva Categoría"
-        description="Completa los datos para crear una nueva categoría."
-        maxWidth="md"
-        footer={
-          <ModalBaseFooter
-            onCancel={() => setIsCreateDialogOpen(false)}
-            onSave={handleCreateCategory}
-            saveText="Crear Categoría"
-          />
-        }
-      >
-        <CategoryForm
-          formData={createForm}
-          setFormData={setCreateForm}
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleCreateCategory();
-          }}
-        />
-      </ModalBase>
+        editingCategory={null}
+        formData={createForm}
+        setFormData={setCreateForm}
+        onSubmit={(e) => {
+          e?.preventDefault();
+          handleCreateCategory();
+        }}
+      />
     </>
   );
 }

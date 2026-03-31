@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Save, ChevronDown, Loader2 } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const INVOICE_TYPES = ["A", "B", "C", "M"];
@@ -232,11 +232,6 @@ export function CustomerForm({
           disabled={isSubmitting}
           className="bg-primary text-primary-foreground hover:bg-primary/90 border border-primary shadow-lg hover:shadow-xl transition-all font-semibold"
         >
-          {isSubmitting ? (
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-          ) : (
-            <Save className="h-4 w-4 mr-2" />
-          )}
           {isSubmitting ? "Guardando..." : submitLabel}
         </Button>
       </div>

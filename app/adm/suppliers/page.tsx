@@ -3,9 +3,9 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ModalBase, ModalBaseFooter } from '@/components/ui/ModalBase';
 import { useUI } from '@/components/ui/UIProvider';
-import { SupplierForm, type SupplierFormData } from '@/components/suppliers/SupplierForm';
+import { SupplierDialog } from '@/components/suppliers/SupplierDialog';
+import { type SupplierFormData } from '@/components/suppliers/SupplierForm';
 import { CrudAdmin, StatItem } from '@/components/adm';
 import {
   Truck,
@@ -13,7 +13,6 @@ import {
   Trash2,
   Phone,
   Mail,
-  MapPin,
   Building2,
   Package
 } from 'lucide-react';
@@ -293,45 +292,28 @@ export default function SuppliersPage() {
         )}
       />
 
-      {/* Create Supplier Modal */}
-      <ModalBase
+      {/* Create Supplier Dialog */}
+      <SupplierDialog
         isOpen={isCreateDialogOpen}
         onClose={() => setIsCreateDialogOpen(false)}
-        title="Nuevo Proveedor"
-        description="Completa los datos para crear un nuevo proveedor."
-        maxWidth="md"
-        footer={
-          <ModalBaseFooter
-            onCancel={() => setIsCreateDialogOpen(false)}
-            onSave={handleCreateSupplier}
-            saveText="Crear Proveedor"
-          />
-        }
-      >
-        <SupplierForm
-          formData={createForm}
-          setFormData={setCreateForm}
-          onSubmit={(e) => { e.preventDefault(); handleCreateSupplier(); }}
-        />
-      </ModalBase>
+        editingSupplier={null}
+        formData={createForm}
+        setFormData={setCreateForm}
+        onSubmit={(e) => {
+          e?.preventDefault();
+          handleCreateSupplier();
+        }}
+      />
 
-      {/* Edit Supplier Modal */}
-      <ModalBase
+      {/* Edit Supplier Dialog */}
+      <SupplierDialog
         isOpen={isDialogOpen}
         onClose={() => setIsDialogOpen(false)}
-        title="Editar Proveedor"
-        description="Modifica los datos del proveedor."
-        maxWidth="md"
-        footer={
-          <ModalBaseFooter
-            onCancel={() => setIsDialogOpen(false)}
-            onSave={() => handleEditSubmit({ preventDefault: () => {} } as React.FormEvent)}
-            saveText="Guardar Cambios"
-          />
-        }
-      >
-        <SupplierForm formData={editForm} setFormData={setEditForm} onSubmit={handleEditSubmit} />
-      </ModalBase>
+        editingSupplier={editingSupplier}
+        formData={editForm}
+        setFormData={setEditForm}
+        onSubmit={handleEditSubmit}
+      />
     </>
   );
 }
