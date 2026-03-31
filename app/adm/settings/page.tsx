@@ -1,5 +1,6 @@
 'use client';
 
+import { Header } from '@/components/adm/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ThemeSelector } from '@/components/ui/ThemeSelector';
 import { Separator } from '@/components/ui/separator';
@@ -7,13 +8,10 @@ import { Separator } from '@/components/ui/separator';
 export default function SettingsPage() {
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold">Configuración</h1>
-        <p className="text-muted-foreground">
-          Personaliza la apariencia y comportamiento de la aplicación.
-        </p>
-      </div>
+      <Header
+        title="Configuración"
+        description="Personaliza la apariencia y comportamiento de la aplicación."
+      />
 
       {/* Apariencia */}
       <Card>

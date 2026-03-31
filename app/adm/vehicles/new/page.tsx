@@ -12,9 +12,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Save, Car } from "lucide-react";
+import { Header } from "@/components/adm/Header";
+import { Save } from "lucide-react";
 import Link from "next/link";
 
 const VEHICLE_CATEGORIES = [
@@ -107,28 +108,13 @@ export default function NewVehiclePage() {
   }
 
   return (
-    <div className="container mx-auto py-6 max-w-2xl">
-      <div className="mb-4">
-        <Link href={`/adm/customers/${customerId}`}>
-          <Button variant="ghost" size="sm">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Volver a Cliente
-          </Button>
-        </Link>
-      </div>
+    <div className="container mx-auto py-6 max-w-2xl space-y-6">
+      <Header
+        title="Nuevo Vehículo / Equipo"
+        description={customer ? `Cliente: ${customer.name}` : undefined}
+      />
 
       <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl flex items-center gap-2">
-            <Car className="h-6 w-6" />
-            Nuevo Vehículo / Equipo
-          </CardTitle>
-          {customer && (
-            <div className="text-sm text-muted-foreground">
-              Cliente: {customer.name}
-            </div>
-          )}
-        </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">

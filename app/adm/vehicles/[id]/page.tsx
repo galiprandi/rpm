@@ -7,8 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { DataTable } from "@/components/ui/data-table";
 import { ColumnDef } from "@tanstack/react-table";
+import { Header } from "@/components/adm/Header";
 import {
-  ArrowLeft,
   Car,
   User,
   Wrench,
@@ -186,38 +186,44 @@ export default function VehicleDetailPage() {
 
   return (
     <div className="container mx-auto py-6 space-y-6">
-      {/* Header Estándar */}
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-bold">
-            {isEquipment
-              ? vehicle.equipmentName || vehicle.identifier
-              : vehicle.identifier}
-          </h1>
-          <p className="text-muted-foreground">
-            {categoryLabels[vehicle.category] || vehicle.category}
-            {vehicle.make?.name && ` • ${vehicle.make.name} ${vehicle.model?.name || ""}`}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="ghost" size="sm" onClick={() => router.back()}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Volver
-          </Button>
-          <Link href={`/adm/work-orders/new?vehicleId=${vehicleId}`}>
-            <Button className="bg-slate-900 text-white hover:bg-slate-800">
-              <Plus className="h-4 w-4 mr-2" />
-              Nueva OT
-            </Button>
-          </Link>
-          <Button variant="outline" onClick={handleDelete}>
-            <Trash2 className="h-4 w-4 mr-2" />
-            Eliminar
-          </Button>
-        </div>
-      </div>
+      <Header
+        title={isEquipment ? vehicle.equipmentName || vehicle.identifier : vehicle.identifier}
+        description={`${categoryLabels[vehicle.category] || vehicle.category}${vehicle.make?.name ? ` • ${vehicle.make.name} ${vehicle.model?.name || ""}` : ""}`}
+        primaryAction={{
+          label: "OT",
+          href: `/adm/work-orders/new?vehicleId=${vehicleId}`,
+          icon: Plus,
+        }}
+        secondaryActions={[
+          {
+            label: "Eliminar",
+            onClick: handleDelete,
+            variant: "outline",
+            icon: Trash2,
+          },
+        ]}
+      >
+        {vehicle.customer && (
+          <div className="flex flex-wrap gap-3 mt-2">
+            <a
+              href={`tel:${vehicle.customer.phone}`}
+              className="flex items-center gap-1 text-sm hover:underline text-primary"
+            >
+              <Phone className="h-4 w-4" /> {vehicle.customer.phone}
+            </a>
+            {vehicle.customer.email && (
+              <a
+                href={`mailto:${vehicle.customer.email}`}
+                className="flex items-center gap-1 text-sm hover:underline text-primary"
+              >
+                <Mail className="h-4 w-4" /> {vehicle.customer.email}
+              </a>
+            )}
+          </div>
+        )}
+      </Header>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2">
         {/* Vehicle Details */}
         <Card>
           <CardHeader>
