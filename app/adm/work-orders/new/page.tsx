@@ -19,6 +19,7 @@ import { Header } from "@/components/adm/Header";
 import { WorkOrderStepper } from "@/components/ui/stepper";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
 import { QuickServiceDialog } from "@/components/work-orders/QuickServiceDialog";
+import { useUI } from "@/components/ui/UIProvider";
 import { Save, Plus, Trash2, Search, Car, User, CheckCircle, Edit } from "lucide-react";
 
 const VEHICLE_CATEGORIES = [
@@ -80,6 +81,7 @@ interface WorkOrderItem {
 }
 
 export default function NewWorkOrderPage() {
+  const { alert } = useUI();
   const router = useRouter();
   const searchParams = useSearchParams();
   const vehicleIdFromUrl = searchParams.get("vehicleId");
@@ -316,7 +318,11 @@ export default function NewWorkOrderPage() {
       router.push(`/adm/work-orders/${workOrder.id}`);
     } catch (error) {
       console.error("Error creating work order:", error);
-      alert("Error al crear orden de trabajo");
+      await alert({
+        title: 'Error',
+        description: 'Error al crear orden de trabajo. Por favor intente nuevamente.',
+        variant: 'error',
+      });
     } finally {
       setLoading(false);
     }
@@ -644,7 +650,12 @@ export default function NewWorkOrderPage() {
                     </Button>
                     <Button
                       onClick={() => setStep(2)}
-                      disabled={!selectedCustomerId || !newVehicleData.identifier}
+                      disabled={
+                        !selectedCustomerId ||
+                        !newVehicleData.identifier ||
+                        (!isMotorVehicle(newVehicleData.category) &&
+                          (!newVehicleData.equipmentName || !newVehicleData.equipmentType))
+                      }
                       className="flex-1"
                     >
                       Continuar
@@ -758,7 +769,9 @@ export default function NewWorkOrderPage() {
                 <Button variant="outline" onClick={() => setStep(1)}>
                   Anterior
                 </Button>
-                <Button onClick={() => setStep(3)}>Siguiente</Button>
+                <Button onClick={() => setStep(3)} disabled={items.length === 0}>
+                  Siguiente
+                </Button>
               </div>
 
               {/* Quick Service Dialog */}

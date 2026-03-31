@@ -63,9 +63,11 @@ export default function WorkOrdersPage() {
   };
 
   // Check if OT is delayed (more than 3 days in current status without progress)
+  // BUG FIX: Use startedAt when available, otherwise use createdAt
   const isDelayed = (wo: WorkOrder) => {
+    const referenceDate = wo.startedAt ? new Date(wo.startedAt) : new Date(wo.createdAt);
     const daysInStatus = Math.floor(
-      (Date.now() - new Date(wo.createdAt).getTime()) / (1000 * 60 * 60 * 24)
+      (Date.now() - referenceDate.getTime()) / (1000 * 60 * 60 * 24)
     );
     return daysInStatus > 3 && ["WAITING", "IN_PROGRESS"].includes(wo.status);
   };

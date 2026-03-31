@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { useUI } from "@/components/ui/UIProvider";
 
 const STATUSES = [
   { id: "CONFIRMED", label: "Confirmada", color: "bg-blue-100" },
@@ -113,6 +114,7 @@ interface WorkOrderDetail {
 }
 
 export default function WorkOrderDetailPage() {
+  const { alert } = useUI();
   const params = useParams();
   const workOrderId = params.id as string;
 
@@ -152,7 +154,11 @@ export default function WorkOrderDetailPage() {
       setWorkOrder((prev) => (prev ? { ...prev, ...updated } : null));
     } catch (error) {
       console.error("Error updating status:", error);
-      alert("Error al actualizar estado");
+      await alert({
+        title: 'Error',
+        description: 'Error al actualizar estado. Por favor intente nuevamente.',
+        variant: 'error',
+      });
     } finally {
       setUpdatingStatus(false);
     }

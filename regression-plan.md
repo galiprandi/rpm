@@ -389,6 +389,50 @@ Validar todos con:
 4. Verificar respuestas JSON correctas
 ```
 
+### Fase 8.7: Tests E2E Automatizados - Work Orders ⭐ NUEVO
+**Herramienta**: Playwright Test Suite (`tests/playwright/work-orders.spec.ts`)
+**Propósito**: Ejecución automatizada de regresión completa del flujo de OTs
+
+```
+1. Ejecutar suite completa:
+   pnpm exec playwright test tests/playwright/work-orders.spec.ts
+
+2. Tests incluidos:
+   
+   TC-WO-001: Listado de Órdenes de Trabajo
+   - Verificar redirección a login sin autenticación
+   - Validar protección de rutas /adm/*
+   
+   TC-WO-002: Creación de OT - Flujo Completo
+   - Paso 1: Búsqueda de vehículo por patente
+   - Paso 2: Agregar servicios/productos
+   - Paso 3: Checklist y finalización
+   
+   TC-WO-003: APIs de Work Orders
+   - GET /api/work-orders - debe retornar 401 sin auth
+   - POST /api/work-orders - debe retornar 401 sin auth
+   - GET /api/vehicles/by-identifier/:id - debe retornar 401 sin auth
+   
+   TC-WO-004: Validaciones y Edge Cases
+   - Búsqueda de vehículo con patente vacía
+   - Creación de OT sin items (debe ser bloqueada)
+   - Creación de OT sin cliente (debe ser bloqueada)
+
+3. Validar resultados:
+   - Todos los tests deben pasar (✅)
+   - No debe haber errores de conexión
+   - Screenshots generados en caso de fallo
+```
+
+**Validaciones E2E**:
+- Flujo completo de creación de OT en < 30 segundos
+- Todos los pasos del wizard funcionan correctamente
+- Validaciones de formulario en tiempo real
+- Manejo de errores consistente (useUI hook)
+- Redirecciones correctas después de crear OT
+
+**Archivo de Tests**: `tests/playwright/work-orders.spec.ts`
+
 ## Checklist de Errores Workshop Comunes a Detectar
 
 ### Errores de Tema
@@ -419,6 +463,59 @@ Validar todos con:
 - [ ] **Datos de facturación no se muestran/colapsan correctamente**
 - [ ] **Búsqueda por patente no funciona**
 - [ ] **Flujo de creación vehículo+cliente inline falla**
+- [ ] **Cálculo incorrecto de OTs atrasadas (usando createdAt en vez de startedAt)**
+- [ ] **Alert nativo en lugar de useUI hook**
+- [ ] **Step 2 permite continuar sin items seleccionados**
+- [ ] **Validación inconsistente para equipos no motorizados**
+
+## Formato de Reporte de QA Profesional
+
+Al finalizar la regresión, generar informe con el siguiente formato:
+
+```markdown
+# 📊 INFORME QA - [Módulo/Flujo Testeado]
+
+## Resumen Ejecutivo
+**Estado General**: 🟢 Funcional / 🟡 Funcional con mejoras / 🔴 Crítico
+**Tests E2E**: [Cantidad] creados/ejecutados
+**Bugs Críticos**: [Número]
+**Mejoras Recomendadas**: [Número]
+
+## 🐛 BUGS ENCONTRADOS
+
+### BUG-00X: [Título descriptivo] ([Severidad])
+**Ubicación**: `@/ruta/archivo:linea`
+
+Código problemático:
+```typescript
+// Código con el bug
+```
+
+**Problema**: [Descripción del problema]
+
+**Fix**: [Descripción de la solución]
+```typescript
+// Código fixeado
+```
+
+## 🔧 MEJORAS RECOMENDADAS
+
+### MEJ-00X: [Título]
+**Descripción**: [Explicación de la mejora]
+
+## ✅ TESTS E2E CREADOS/EJECUTADOS
+
+**Archivo**: `tests/playwright/[archivo].spec.ts`
+
+- ✅ TC-XXX: [Nombre del test case]
+- ✅ TC-XXX: [Nombre del test case]
+
+## 📁 Archivos Modificados
+- `@/ruta/archivo` - [Descripción del cambio]
+
+## 📝 Notas para el Equipo
+[Instrucciones adicionales]
+```
 
 ## Formato de Reporte de Issues
 
