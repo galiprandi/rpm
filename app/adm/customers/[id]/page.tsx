@@ -138,26 +138,6 @@ export default function CustomerDetailPage() {
         header: "Año",
         cell: ({ row }) => row.original.year || "-",
       },
-      {
-        id: "actions",
-        header: "",
-        size: 100,
-        cell: ({ row }) => (
-          <div className="flex gap-2 justify-end">
-            <Link href={`/adm/vehicles/${row.original.id}`}>
-              <Button variant="ghost" size="sm">
-                <Eye className="h-4 w-4" />
-              </Button>
-            </Link>
-            <Link href={`/adm/work-orders/new?vehicleId=${row.original.id}`}>
-              <Button size="sm">
-                <Plus className="h-4 w-4 mr-1" />
-                OT
-              </Button>
-            </Link>
-          </div>
-        ),
-      },
     ],
     []
   );
@@ -304,20 +284,34 @@ export default function CustomerDetailPage() {
           externalGlobalFilter={vehicleFilter}
           onExternalGlobalFilterChange={setVehicleFilter}
           pageSize={5}
-          compactActions
           title={
             <span className="flex items-center gap-2">
               <Car className="h-5 w-5" />
               Vehículos y Equipos ({customer.vehicles.length})
             </span>
           }
-          actions={[
+          headerActions={[
             {
               label: "Agregar",
               onClick: () => router.push(`/adm/vehicles/new?customerId=${customerId}`),
               icon: Plus,
             },
           ]}
+          rowActions={(vehicle) => (
+            <div className="flex gap-2">
+              <Link href={`/adm/vehicles/${vehicle.id}`}>
+                <Button variant="ghost" size="sm">
+                  <Eye className="h-4 w-4" />
+                </Button>
+              </Link>
+              <Link href={`/adm/work-orders/new?vehicleId=${vehicle.id}`}>
+                <Button size="sm">
+                  <Plus className="h-4 w-4 mr-1" />
+                  OT
+                </Button>
+              </Link>
+            </div>
+          )}
         />
       )}
 

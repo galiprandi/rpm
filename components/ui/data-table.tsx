@@ -1,5 +1,9 @@
 'use client';
 
+// React Compiler skips this component because useReactTable returns non-memoizable functions
+// This is expected behavior from TanStack Table - see: https://tanstack.com/table/latest/docs/faq
+'use no memo';
+
 import * as React from 'react';
 import {
   useReactTable,
@@ -34,9 +38,9 @@ interface DataTableProps<TData> {
   onExternalGlobalFilterChange?: (value: string) => void;
   footerPlaceholder?: React.ReactNode;
   pageSize?: number;
-  actions?: DataTableAction[];
+  headerActions?: DataTableAction[];
   title?: React.ReactNode;
-  compactActions?: boolean;
+  rowActions?: (row: TData) => React.ReactNode;
 }
 
 interface DataTableProps<TData> {
@@ -60,10 +64,27 @@ export function DataTable<TData>({
   onExternalGlobalFilterChange,
   footerPlaceholder,
   pageSize = 20,
-  actions,
+  headerActions,
   title,
-  compactActions = true,
+  rowActions,
 }: DataTableProps<TData>) {
+  // Build columns with optional actions column
+  const allColumns = React.useMemo(() => {
+    if (!rowActions) return columns;
+    return [
+      ...columns,
+      {
+        id: 'actions',
+        header: '',
+        size: 1,
+        cell: ({ row }) => (
+          <div className="flex justify-end">
+            {rowActions(row.original)}
+          </div>
+        ),
+      } as ColumnDef<TData>,
+    ];
+  }, [columns, rowActions]);
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [internalGlobalFilter, setInternalGlobalFilter] = React.useState('');
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
@@ -80,7 +101,7 @@ export function DataTable<TData>({
 
   const table = useReactTable({
     data,
-    columns,
+    columns: allColumns,
     state: {
       sorting,
       globalFilter: enableGlobalFilter ? globalFilter : undefined,
@@ -112,9 +133,9 @@ export function DataTable<TData>({
                 className="pl-10 h-9"
               />
             </div>
-            {actions && actions.length > 0 && (
+            {headerActions && headerActions.length > 0 && (
               <div className="flex items-center gap-2">
-                {actions.map((action, index) => {
+                {headerActions.map((action, index) => {
                   const Icon = action.icon;
                   return (
                     <Button
@@ -140,16 +161,15 @@ export function DataTable<TData>({
           <thead className="bg-muted/50">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id} className="border-b">
-                {headerGroup.headers.map((header, headerIndex) => {
+                {headerGroup.headers.map((header) => {
                   const canSort = header.column.getCanSort();
                   const isSorted = header.column.getIsSorted();
-                  const isLastColumn = headerIndex === headerGroup.headers.length - 1;
 
                   return (
                     <th
                       key={header.id}
-                      className={`py-3 px-4 font-medium ${isLastColumn && compactActions ? 'text-right w-24' : 'text-left'}`}
-                      style={{ width: isLastColumn && compactActions ? 'auto' : header.getSize() }}
+                      className="text-left py-3 px-4 font-medium"
+                      style={{ width: header.getSize() }}
                     >
                       {canSort ? (
                         <Button
@@ -181,17 +201,11 @@ export function DataTable<TData>({
                   key={row.id}
                   className={index % 2 === 0 ? 'bg-background' : 'bg-muted/30'}
                 >
-                  {row.getVisibleCells().map((cell, cellIndex) => {
-                    const isLastCell = cellIndex === row.getVisibleCells().length - 1;
-                    return (
-                      <td 
-                        key={cell.id} 
-                        className={`py-3 px-4 ${isLastCell && compactActions ? 'text-right' : ''}`}
-                      >
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </td>
-                    );
-                  })}
+                  {row.getVisibleCells().map((cell) => (
+                    <td key={cell.id} className="py-3 px-4">
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </td>
+                  ))}
                 </tr>
               ))
             ) : (

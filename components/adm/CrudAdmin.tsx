@@ -26,6 +26,7 @@ interface CrudAdminProps<T extends { id: string }> {
   enableExport?: boolean;
   getExportData?: (items: T[]) => Record<string, string>[];
   exportFilename?: string;
+  rowActions?: (item: T) => React.ReactNode;
 }
 
 export function CrudAdmin<T extends { id: string }>({
@@ -46,6 +47,7 @@ export function CrudAdmin<T extends { id: string }>({
   enableExport = true,
   getExportData,
   exportFilename = 'export.csv',
+  rowActions,
 }: CrudAdminProps<T>) {
   const [globalFilter, setGlobalFilter] = useState('');
 
@@ -148,6 +150,7 @@ export function CrudAdmin<T extends { id: string }>({
                 emptyMessage={emptyMessage}
                 externalGlobalFilter={globalFilter}
                 onExternalGlobalFilterChange={setGlobalFilter}
+                rowActions={rowActions}
               />
             </div>
           ) : (

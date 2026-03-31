@@ -364,33 +364,6 @@ export default function ProductsPage() {
             <Badge variant="destructive">Inactivo</Badge>
           ),
       },
-      {
-        id: 'actions',
-        header: 'Acciones',
-        cell: ({ row }) => (
-          <div className="flex gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => openMovementsModal(row.original)}
-              title="Ver historial"
-            >
-              <History className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => openEditDialog(row.original)}>
-              <Edit2 className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-red-600"
-              onClick={() => handleDelete(row.original)}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        ),
-      },
     ],
     []
   );
@@ -418,6 +391,29 @@ export default function ProductsPage() {
         createButtonText="Nuevo Producto"
         tableTitle="Listado de Productos"
         searchPlaceholder="Buscar por SKU, nombre..."
+        rowActions={(product) => (
+          <div className="flex gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => openMovementsModal(product)}
+              title="Ver historial"
+            >
+              <History className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => openEditDialog(product)}>
+              <Edit2 className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-red-600"
+              onClick={() => handleDelete(product)}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
       />
 
       {/* Product Modal */}
