@@ -20,11 +20,59 @@ import {
   Clock,
   DollarSign,
   FileText,
+  Check,
   Phone,
   Mail,
 } from "lucide-react";
 import Image from "next/image";
 import { Header } from "@/components/adm/Header";
+import { cn } from "@/lib/utils";
+
+// Timeline Item Component
+function TimelineItem({
+  title,
+  date,
+  status,
+  isFirst = false,
+  isLast = false,
+}: {
+  title: string;
+  date: string;
+  status: "completed" | "pending";
+  isFirst?: boolean;
+  isLast?: boolean;
+}) {
+  return (
+    <div className="flex gap-3">
+      <div className="flex flex-col items-center">
+        {!isFirst && <div className="w-px h-3 bg-border" />}
+        <div
+          className={cn(
+            "w-5 h-5 rounded-full flex items-center justify-center shrink-0",
+            status === "completed"
+              ? "bg-green-500 text-white"
+              : "bg-muted border-2 border-muted-foreground/30"
+          )}
+        >
+          {status === "completed" && <Check className="h-3 w-3" />}
+        </div>
+        {!isLast && <div className="w-px flex-1 bg-border min-h-[24px]" />}
+      </div>
+      <div className={cn("pb-4", isLast && "pb-0")}>
+        <p className="text-sm font-medium">{title}</p>
+        <p className="text-xs text-muted-foreground">
+          {new Date(date).toLocaleString("es-AR", {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+        </p>
+      </div>
+    </div>
+  );
+}
 
 const STATUSES = [
   { id: "CONFIRMED", label: "Confirmada", color: "bg-blue-100" },
@@ -217,7 +265,7 @@ export default function WorkOrderDetailPage() {
         </div>
       </Header>
 
-      {/* Totals Card */}
+      {/* Servicios y Productos - Sección separada */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-lg flex items-center gap-2">
@@ -285,92 +333,97 @@ export default function WorkOrderDetailPage() {
         </CardContent>
       </Card>
 
-      {/* Tabs: Checklists, Fotos, Timeline */}
-      <Tabs defaultValue="checklist">
-        <TabsList className="w-full justify-start">
-          <TabsTrigger value="checklist" className="flex items-center gap-2">
-            <CheckCircle className="h-4 w-4" />
-            Checklists
-          </TabsTrigger>
-          <TabsTrigger value="photos" className="flex items-center gap-2">
-            <Camera className="h-4 w-4" />
-            Fotos
-          </TabsTrigger>
-          <TabsTrigger value="timeline" className="flex items-center gap-2">
-            <Clock className="h-4 w-4" />
-            Timeline
-          </TabsTrigger>
-          {workOrder.notes && (
-            <TabsTrigger value="notes" className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              Notas
+      {/* Tabs Section */}
+      <Tabs defaultValue="checklists" className="w-full">
+          <TabsList variant="line" className="w-full justify-start border-b bg-transparent p-0 h-10">
+            <TabsTrigger value="checklists" className="flex items-center gap-2 px-4 py-2 data-[state=active]:after:bg-primary">
+              <CheckCircle className="h-4 w-4" />
+              <span className="hidden sm:inline">Checklists</span>
             </TabsTrigger>
-          )}
-        </TabsList>
+            <TabsTrigger value="photos" className="flex items-center gap-2 px-4 py-2 data-[state=active]:after:bg-primary">
+              <Camera className="h-4 w-4" />
+              <span className="hidden sm:inline">Fotos</span>
+            </TabsTrigger>
+            <TabsTrigger value="timeline" className="flex items-center gap-2 px-4 py-2 data-[state=active]:after:bg-primary">
+              <Clock className="h-4 w-4" />
+              <span className="hidden sm:inline">Historial</span>
+            </TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="checklist" className="mt-4">
+          {/* Tab: Checklists */}
+          <TabsContent value="checklists" className="pt-4 outline-none">
           <div className="grid md:grid-cols-2 gap-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Checklist de Ingreso</CardTitle>
+            <Card className="border-l-4 border-l-blue-500">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-blue-500" />
+                  Checklist de Ingreso
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 {workOrder.entryChecklist ? (
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {workOrder.entryChecklist.items.map((item, index) => (
-                      <div key={index} className="flex items-center gap-2">
-                        <input type="checkbox" checked={item.checked} readOnly className="rounded" />
-                        <span className={item.checked ? "" : "text-muted-foreground"}>
+                      <div key={index} className="flex items-start gap-3">
+                        <input type="checkbox" checked={item.checked} readOnly className="rounded mt-0.5" />
+                        <span className={cn("text-sm", item.checked ? "" : "text-muted-foreground")}>
                           {item.label}
                         </span>
                       </div>
                     ))}
-                    <div className="text-xs text-muted-foreground mt-4">
+                    <div className="text-xs text-muted-foreground mt-4 pt-3 border-t">
                       Completado: {new Date(workOrder.entryChecklist.completedAt).toLocaleString("es-AR")}
                     </div>
                   </div>
                 ) : (
-                  <div className="text-muted-foreground">Sin checklist de ingreso</div>
+                  <div className="text-muted-foreground py-4">Sin checklist de ingreso registrado</div>
                 )}
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Checklist de Calidad (Salida)</CardTitle>
+            <Card className="border-l-4 border-l-green-500">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  Checklist de Calidad (Salida)
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 {workOrder.exitChecklist ? (
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {workOrder.exitChecklist.items.map((item, index) => (
-                      <div key={index} className="flex items-center gap-2">
-                        <input type="checkbox" checked={item.checked} readOnly className="rounded" />
-                        <span className={item.checked ? "" : "text-muted-foreground"}>
+                      <div key={index} className="flex items-start gap-3">
+                        <input type="checkbox" checked={item.checked} readOnly className="rounded mt-0.5" />
+                        <span className={cn("text-sm", item.checked ? "" : "text-muted-foreground")}>
                           {item.label}
                         </span>
                       </div>
                     ))}
-                    <div className="text-xs text-muted-foreground mt-4">
+                    <div className="text-xs text-muted-foreground mt-4 pt-3 border-t">
                       Completado: {new Date(workOrder.exitChecklist.completedAt).toLocaleString("es-AR")}
                     </div>
                   </div>
                 ) : (
-                  <div className="text-muted-foreground">Sin checklist de calidad</div>
+                  <div className="text-muted-foreground py-4">Sin checklist de calidad registrado</div>
                 )}
               </CardContent>
             </Card>
           </div>
         </TabsContent>
 
-        <TabsContent value="photos" className="mt-4">
+          {/* Tab: Photos */}
+          <TabsContent value="photos" className="pt-4 outline-none">
           <div className="grid md:grid-cols-2 gap-4">
             <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Fotos de Ingreso</CardTitle>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Camera className="h-4 w-4" />
+                  Fotos de Ingreso
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 {workOrder.entryPhotos.length > 0 ? (
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-3">
                     {workOrder.entryPhotos.map((url, index) => (
                       <Image
                         key={index}
@@ -378,23 +431,26 @@ export default function WorkOrderDetailPage() {
                         alt={`Ingreso ${index + 1}`}
                         width={300}
                         height={160}
-                        className="rounded-md max-h-40 object-cover"
+                        className="rounded-lg max-h-40 object-cover w-full"
                       />
                     ))}
                   </div>
                 ) : (
-                  <div className="text-muted-foreground">Sin fotos de ingreso</div>
+                  <div className="text-muted-foreground py-8 text-center">Sin fotos de ingreso</div>
                 )}
               </CardContent>
             </Card>
 
             <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Fotos de Egreso</CardTitle>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Camera className="h-4 w-4" />
+                  Fotos de Egreso
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 {workOrder.exitPhotos.length > 0 ? (
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-3">
                     {workOrder.exitPhotos.map((url, index) => (
                       <Image
                         key={index}
@@ -402,89 +458,84 @@ export default function WorkOrderDetailPage() {
                         alt={`Egreso ${index + 1}`}
                         width={300}
                         height={160}
-                        className="rounded-md max-h-40 object-cover"
+                        className="rounded-lg max-h-40 object-cover w-full"
                       />
                     ))}
                   </div>
                 ) : (
-                  <div className="text-muted-foreground">Sin fotos de egreso</div>
+                  <div className="text-muted-foreground py-8 text-center">Sin fotos de egreso</div>
                 )}
               </CardContent>
             </Card>
           </div>
         </TabsContent>
 
-        <TabsContent value="timeline" className="mt-4">
-          <Card>
-            <CardContent className="p-6">
-              <div className="space-y-4">
-                <div className="flex items-center gap-4">
-                  <div className="w-3 h-3 rounded-full bg-primary" />
-                  <div>
-                    <div className="font-medium">OT Creada</div>
-                    <div className="text-sm text-muted-foreground">
-                      {new Date(workOrder.createdAt).toLocaleString("es-AR")}
-                    </div>
-                  </div>
-                </div>
-                {workOrder.scheduledDate && (
-                  <div className="flex items-center gap-4">
-                    <div className="w-3 h-3 rounded-full bg-blue-500" />
-                    <div>
-                      <div className="font-medium">Turno Agendado</div>
-                      <div className="text-sm text-muted-foreground">
-                        {new Date(workOrder.scheduledDate).toLocaleString("es-AR")}
-                      </div>
-                    </div>
-                  </div>
-                )}
-                {workOrder.startedAt && (
-                  <div className="flex items-center gap-4">
-                    <div className="w-3 h-3 rounded-full bg-orange-500" />
-                    <div>
-                      <div className="font-medium">Trabajo Iniciado</div>
-                      <div className="text-sm text-muted-foreground">
-                        {new Date(workOrder.startedAt).toLocaleString("es-AR")}
-                      </div>
-                    </div>
-                  </div>
-                )}
-                {workOrder.completedAt && (
-                  <div className="flex items-center gap-4">
-                    <div className="w-3 h-3 rounded-full bg-green-500" />
-                    <div>
-                      <div className="font-medium">Trabajo Completado</div>
-                      <div className="text-sm text-muted-foreground">
-                        {new Date(workOrder.completedAt).toLocaleString("es-AR")}
-                      </div>
-                    </div>
-                  </div>
-                )}
-                {workOrder.deliveredAt && (
-                  <div className="flex items-center gap-4">
-                    <div className="w-3 h-3 rounded-full bg-gray-500" />
-                    <div>
-                      <div className="font-medium">Entregado al Cliente</div>
-                      <div className="text-sm text-muted-foreground">
-                        {new Date(workOrder.deliveredAt).toLocaleString("es-AR")}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {workOrder.notes && (
-          <TabsContent value="notes" className="mt-4">
+          {/* Tab: Timeline */}
+          <TabsContent value="timeline" className="pt-4 outline-none">
+          <div className="grid md:grid-cols-2 gap-6">
             <Card>
-              <CardContent className="p-6">
-                <p className="whitespace-pre-wrap">{workOrder.notes}</p>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  Historial de Estados
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-0">
+                  <TimelineItem
+                    title="OT Creada"
+                    date={workOrder.createdAt}
+                    status="completed"
+                    isFirst
+                  />
+                  {workOrder.scheduledDate && (
+                    <TimelineItem
+                      title="Turno Agendado"
+                      date={workOrder.scheduledDate}
+                      status="completed"
+                    />
+                  )}
+                  {workOrder.startedAt && (
+                    <TimelineItem
+                      title="Trabajo Iniciado"
+                      date={workOrder.startedAt}
+                      status="completed"
+                    />
+                  )}
+                  {workOrder.completedAt && (
+                    <TimelineItem
+                      title="Trabajo Completado"
+                      date={workOrder.completedAt}
+                      status="completed"
+                    />
+                  )}
+                  {workOrder.deliveredAt && (
+                    <TimelineItem
+                      title="Entregado al Cliente"
+                      date={workOrder.deliveredAt}
+                      status="completed"
+                      isLast
+                    />
+                  )}
+                </div>
               </CardContent>
             </Card>
-          </TabsContent>
-        )}
+
+            {workOrder.notes && (
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    Notas
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm whitespace-pre-wrap text-muted-foreground">{workOrder.notes}</p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </TabsContent>
       </Tabs>
     </div>
   );
