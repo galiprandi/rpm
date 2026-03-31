@@ -130,17 +130,6 @@ export default function CustomersPage() {
           <span className="font-medium">{row.original._count.workOrders}</span>
         ),
       },
-      {
-        id: "actions",
-        header: "Acciones",
-        cell: ({ row }) => (
-          <Link href={`/adm/customers/${row.original.id}`}>
-            <Button variant="ghost" size="sm" title="Ver detalle">
-              <Eye className="h-4 w-4" />
-            </Button>
-          </Link>
-        ),
-      },
     ],
     []
   );
@@ -191,6 +180,13 @@ export default function CustomersPage() {
         createButtonText="Nuevo Cliente"
         tableTitle="Listado de Clientes"
         searchPlaceholder="Buscar por nombre o teléfono..."
+        rowActions={(customer) => (
+          <Link href={`/adm/customers/${customer.id}`}>
+            <Button variant="ghost" size="sm" title="Ver detalle">
+              <Eye className="h-4 w-4" />
+            </Button>
+          </Link>
+        )}
       />
 
       {/* Modal para crear cliente */}

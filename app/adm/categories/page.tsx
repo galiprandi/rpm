@@ -219,26 +219,6 @@ export default function CategoriesPage() {
             <Badge variant="destructive">Inactiva</Badge>
           ),
       },
-      {
-        id: 'actions',
-        header: 'Acciones',
-        cell: ({ row }) => (
-          <div className="flex gap-1">
-            <Button variant="ghost" size="sm" onClick={() => openEditDialog(row.original)}>
-              <Edit2 className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-red-600"
-              onClick={() => handleDeleteCategory(row.original)}
-              disabled={row.original.productCount > 0}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        ),
-      },
     ],
     []
   );
@@ -258,6 +238,22 @@ export default function CategoriesPage() {
         createButtonText="Nueva Categoría"
         tableTitle="Listado de Categorías"
         searchPlaceholder="Buscar categorías..."
+        rowActions={(category) => (
+          <div className="flex gap-1">
+            <Button variant="ghost" size="sm" onClick={() => openEditDialog(category)}>
+              <Edit2 className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-red-600"
+              onClick={() => handleDeleteCategory(category)}
+              disabled={category.productCount > 0}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
       />
 
       {/* Edit Category Modal */}

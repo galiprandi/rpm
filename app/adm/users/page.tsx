@@ -261,17 +261,6 @@ export default function UsersPage() {
           </span>
         ),
       },
-      {
-        id: 'actions',
-        header: 'Acciones',
-        cell: ({ row }) => (
-          <div className="flex gap-1">
-            <Button variant="ghost" size="sm" onClick={() => openEditDialog(row.original)}>
-              <Edit2 className="h-4 w-4" />
-            </Button>
-          </div>
-        ),
-      },
     ],
     []
   );
@@ -299,6 +288,13 @@ export default function UsersPage() {
         createButtonText="Nuevo Usuario"
         tableTitle="Listado de Usuarios"
         searchPlaceholder="Buscar por nombre o email..."
+        rowActions={(user) => (
+          <div className="flex gap-1">
+            <Button variant="ghost" size="sm" onClick={() => openEditDialog(user)}>
+              <Edit2 className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
       />
 
       {/* User Dialog */}

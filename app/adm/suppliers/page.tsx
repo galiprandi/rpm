@@ -247,26 +247,6 @@ export default function SuppliersPage() {
             <Badge variant="destructive">Inactivo</Badge>
           ),
       },
-      {
-        id: 'actions',
-        header: 'Acciones',
-        cell: ({ row }) => (
-          <div className="flex gap-1">
-            <Button variant="ghost" size="sm" onClick={() => openEditDialog(row.original)}>
-              <Edit2 className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-red-600"
-              onClick={() => handleDeleteSupplier(row.original)}
-              disabled={row.original.productCount > 0}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        ),
-      },
     ],
     []
   );
@@ -294,6 +274,22 @@ export default function SuppliersPage() {
         createButtonText="Nuevo Proveedor"
         tableTitle="Listado de Proveedores"
         searchPlaceholder="Buscar proveedores..."
+        rowActions={(supplier) => (
+          <div className="flex gap-1">
+            <Button variant="ghost" size="sm" onClick={() => openEditDialog(supplier)}>
+              <Edit2 className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-red-600"
+              onClick={() => handleDeleteSupplier(supplier)}
+              disabled={supplier.productCount > 0}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
       />
 
       {/* Create Supplier Modal */}

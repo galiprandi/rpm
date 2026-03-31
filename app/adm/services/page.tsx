@@ -273,25 +273,6 @@ export default function ServicesPage() {
             <Badge variant="destructive">Inactivo</Badge>
           ),
       },
-      {
-        id: 'actions',
-        header: 'Acciones',
-        cell: ({ row }) => (
-          <div className="flex gap-1">
-            <Button variant="ghost" size="sm" onClick={() => openEditDialog(row.original)}>
-              <Edit2 className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-red-600"
-              onClick={() => handleDelete(row.original)}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        ),
-      },
     ],
     [handleDelete]
   );
@@ -319,6 +300,21 @@ export default function ServicesPage() {
         createButtonText="Nuevo Servicio"
         tableTitle="Listado de Servicios"
         searchPlaceholder="Buscar por nombre..."
+        rowActions={(service) => (
+          <div className="flex gap-1">
+            <Button variant="ghost" size="sm" onClick={() => openEditDialog(service)}>
+              <Edit2 className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-red-600"
+              onClick={() => handleDelete(service)}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
       />
 
       <ServiceDialog
