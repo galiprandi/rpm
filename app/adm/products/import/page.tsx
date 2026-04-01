@@ -70,6 +70,7 @@ export default function ProductImporterPage() {
     preview: Record<string, string>[];
     totalRows: number;
     file: File;
+    delimiter?: string;
   } | null>(null);
 
   // Column mapping state
@@ -145,12 +146,13 @@ export default function ProductImporterPage() {
     if (!fileData) return;
 
     try {
-      // Parse CSV data
+      // Parse CSV data using the detected delimiter
       const csvContent = await fileData.file.text();
       const lines = csvContent.split('\n').filter((l) => l.trim());
-      const headers = lines[0].split(',').map((h) => h.trim());
+      const delimiter = fileData.delimiter || ',';
+      const headers = lines[0].split(delimiter).map((h) => h.trim());
       const rows = lines.slice(1).map((line) =>
-        line.split(',').map((cell) => cell.trim().replace(/^["']|["']$/g, ''))
+        line.split(delimiter).map((cell) => cell.trim().replace(/^["']|["']$/g, ''))
       );
 
       // Process preview data
