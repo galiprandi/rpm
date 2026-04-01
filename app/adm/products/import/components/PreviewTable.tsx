@@ -4,7 +4,7 @@
  * PreviewTable Component
  * Muestra una previsualización de cómo quedarán los registros procesados usando DataTable
  */
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -35,16 +35,6 @@ interface PreviewTableProps {
   totalRows: number;
   mapping: Record<string, ColumnMapping>;
 }
-
-const PROCESS_LABELS: Record<string, string> = {
-  capitalize_trim: 'Capitalizar',
-  uppercase_trim: 'Mayúsculas',
-  lowercase_trim: 'Minúsculas',
-  trim: 'Trim',
-  parse_es_number: 'Número ES',
-  round_2: 'Round 2dec',
-  round_int: 'Round Int',
-};
 
 export function PreviewTable({ previewData, totalRows, mapping }: PreviewTableProps) {
   // Get mapped fields info
@@ -153,42 +143,13 @@ export function PreviewTable({ previewData, totalRows, mapping }: PreviewTablePr
         </div>
       </div>
 
-      {/* Mapped Fields Info */}
-      <Card className="bg-muted/50">
-        <CardHeader className="py-3">
-          <CardTitle className="text-sm font-medium">Campos mapeados</CardTitle>
-        </CardHeader>
-        <CardContent className="py-2">
-          <div className="flex flex-wrap gap-2">
-            {mappedFields.length === 0 ? (
-              <span className="text-sm text-muted-foreground">
-                No hay campos mapeados todavía
-              </span>
-            ) : (
-              mappedFields.map(({ field, sourceColumn, process }) => (
-                <Badge key={field} variant="secondary" className="text-xs">
-                  {field}
-                  <span className="mx-1 text-muted-foreground">←</span>
-                  {sourceColumn}
-                  {process !== 'trim' && (
-                    <span className="ml-1 text-muted-foreground">
-                      ({PROCESS_LABELS[process] || process})
-                    </span>
-                  )}
-                </Badge>
-              ))
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
       {/* DataTable Preview */}
       <Card>
         <CardContent className="p-0">
           <DataTable
             data={previewData}
             columns={columns}
-            pageSize={25}
+            pageSize={20}
             emptyMessage="No hay datos para mostrar. Asegúrate de haber mapeado al menos el campo 'nombre'."
             footerPlaceholder="Vista previa con paginación. Los valores pueden variar según la configuración de categorías."
           />
