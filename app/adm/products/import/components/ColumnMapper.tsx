@@ -8,8 +8,9 @@ import { useEffect, useState } from 'react';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 interface ColumnMapping {
   column: string;
@@ -37,14 +38,16 @@ interface ColumnMapperProps {
 }
 
 const SYSTEM_FIELDS = [
-  { key: 'name', label: 'Nombre', required: true, process: 'capitalize_trim' },
-  { key: 'code', label: 'Código (SKU)', required: false, process: 'uppercase_trim' },
-  { key: 'barcode', label: 'Código de Barras', required: false, process: 'trim' },
+  { key: 'name', label: 'Nombre del producto', required: true, process: 'capitalize_trim' },
+  { key: 'sku', label: 'SKU (código)', required: false, process: 'uppercase_trim' },
+  { key: 'barcode', label: 'Código de barras (EAN)', required: false, process: 'trim' },
+  { key: 'description', label: 'Descripción', required: false, process: 'capitalize_trim' },
   { key: 'categoryId', label: 'Categoría', required: false, process: 'capitalize_trim' },
-  { key: 'costPrice', label: 'Precio Costo', required: false, process: 'parse_es_number' },
-  { key: 'wholesalePrice', label: 'Precio Mayorista', required: false, process: 'parse_es_number' },
-  { key: 'retailPrice', label: 'Precio Venta', required: false, process: 'parse_es_number' },
-  { key: 'stock', label: 'Stock', required: false, process: 'round_int' },
+  { key: 'costPrice', label: 'Precio de costo', required: false, process: 'parse_es_number' },
+  { key: 'salePrice', label: 'Precio de venta', required: false, process: 'parse_es_number' },
+  { key: 'stock', label: 'Stock inicial', required: false, process: 'round_int' },
+  { key: 'minStock', label: 'Stock mínimo', required: false, process: 'round_int' },
+  { key: 'location', label: 'Ubicación', required: false, process: 'uppercase_trim' },
 ];
 
 const PROCESS_FUNCTIONS = [
@@ -75,7 +78,6 @@ export function ColumnMapper({
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        // Only use saved mapping if columns match
         const savedColumns = Object.values(parsed).map((m: unknown) => (m as ColumnMapping).column);
         if (savedColumns.length > 0 && savedColumns.some((c) => columns.includes(c))) {
           onMappingChange(parsed);
@@ -84,7 +86,7 @@ export function ColumnMapper({
         // Ignore parse errors
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Save mapping when it changes (debounced)
@@ -98,13 +100,10 @@ export function ColumnMapper({
     }, 500);
 
     return () => clearTimeout(timer);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [mapping]);
 
-  const updateFieldMapping = (
-    fieldKey: string,
-    updates: Partial<ColumnMapping>
-  ) => {
+  const updateFieldMapping = (fieldKey: string, updates: Partial<ColumnMapping>) => {
     onMappingChange({
       ...mapping,
       [fieldKey]: {
@@ -114,203 +113,193 @@ export function ColumnMapper({
     });
   };
 
-  // Get default category name from ID
-  const getDefaultCategoryName = () => {
-    if (importOptions.defaultCategoryId === '_none') return 'Sin categoría';
-    const cat = existingCategories.find((c) => c.id === importOptions.defaultCategoryId);
-    return cat?.name || 'Sin categoría';
-  };
-
   return (
     <div className="space-y-6">
       {/* Global Options */}
-      <Card className="p-4">
-        <h3 className="font-medium mb-4">Opciones de Importación</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              id="skipStock"
-              checked={importOptions.skipStockLessThanOne}
-              onChange={(e) =>
-                onImportOptionsChange({
-                  ...importOptions,
-                  skipStockLessThanOne: e.target.checked,
-                })
-              }
-              className="h-4 w-4 rounded border-gray-300"
-            />
-            <Label htmlFor="skipStock" className="cursor-pointer">
-              Omitir productos con stock &lt; 1
-            </Label>
-          </div>
+      <Card className="bg-muted/50">
+        <CardContent className="p-4">
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="skipStock"
+                checked={importOptions.skipStockLessThanOne}
+                onChange={(e) =>
+                  onImportOptionsChange({
+                    ...importOptions,
+                    skipStockLessThanOne: e.target.checked,
+                  })
+                }
+                className="h-4 w-4 rounded border-gray-300"
+              />
+              <Label htmlFor="skipStock" className="cursor-pointer text-sm">
+                Omitir stock &lt; 1
+              </Label>
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="duplicateAction">Acción con duplicados</Label>
-            <Select
-              value={importOptions.duplicateAction}
-              onValueChange={(value) =>
-                onImportOptionsChange({
-                  ...importOptions,
-                  duplicateAction: value as 'skip' | 'update' | 'create_with_suffix',
-                })
-              }
-            >
-              <SelectTrigger id="duplicateAction">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="skip">Omitir duplicados</SelectItem>
-                <SelectItem value="update">Actualizar existentes</SelectItem>
-                <SelectItem value="create_with_suffix">Crear con sufijo (2)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="duplicateAction" className="text-sm text-muted-foreground">Duplicados:</Label>
+              <Select
+                value={importOptions.duplicateAction}
+                onValueChange={(value) =>
+                  onImportOptionsChange({
+                    ...importOptions,
+                    duplicateAction: value as 'skip' | 'update' | 'create_with_suffix',
+                  })
+                }
+              >
+                <SelectTrigger id="duplicateAction" className="w-[140px] h-8 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="skip">Omitir</SelectItem>
+                  <SelectItem value="update">Actualizar</SelectItem>
+                  <SelectItem value="create_with_suffix">Sufijo (2)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="defaultCategory">Categoría por defecto</Label>
-            <Select
-              value={importOptions.defaultCategoryId}
-              onValueChange={(value) =>
-                onImportOptionsChange({
-                  ...importOptions,
-                  defaultCategoryId: value,
-                })
-              }
-            >
-              <SelectTrigger id="defaultCategory">
-                <SelectValue placeholder="Seleccionar categoría..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="_none">Sin categoría</SelectItem>
-                {existingCategories.map((cat) => (
-                  <SelectItem key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">
-              Se usará &quot;{getDefaultCategoryName()}&quot; cuando no haya categoría asignada
-            </p>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="defaultCategory" className="text-sm text-muted-foreground">Categoría:</Label>
+              <Select
+                value={importOptions.defaultCategoryId}
+                onValueChange={(value) =>
+                  onImportOptionsChange({
+                    ...importOptions,
+                    defaultCategoryId: value,
+                  })
+                }
+              >
+                <SelectTrigger id="defaultCategory" className="w-[160px] h-8 text-sm">
+                  <SelectValue placeholder="Sin categoría" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="_none">Sin categoría</SelectItem>
+                  {existingCategories.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-        </div>
+        </CardContent>
       </Card>
 
       {/* Field Mapping */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="font-medium">Mapeo de Columnas</h3>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-lg">Mapeo de columnas</CardTitle>
           {savedMessage && (
             <Badge variant="outline" className="text-green-600">
               {savedMessage}
             </Badge>
           )}
-        </div>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[200px]">Campo del sistema</TableHead>
+                <TableHead className="w-[200px]">Columna CSV</TableHead>
+                <TableHead className="w-[180px]">Procesamiento</TableHead>
+                <TableHead className="w-[150px]">Valor por defecto</TableHead>
+                <TableHead className="w-[120px]">Omitir si vacío</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {SYSTEM_FIELDS.map((field) => {
+                const fieldMapping = mapping[field.key] || {
+                  column: '',
+                  process: field.process,
+                  skipEmpty: false,
+                  defaultValue: '',
+                };
 
-        <div className="grid grid-cols-1 gap-4">
-          {SYSTEM_FIELDS.map((field) => {
-            const fieldMapping = mapping[field.key] || {
-              column: '',
-              process: field.process,
-              skipEmpty: false,
-              defaultValue: '',
-            };
-
-            return (
-              <Card key={field.key} className="p-4">
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-start">
-                  {/* Field Label */}
-                  <div className="md:col-span-1">
-                    <Label className="font-medium">
-                      {field.label}
-                      {field.required && (
-                        <span className="text-red-500 ml-1">*</span>
-                      )}
-                    </Label>
-                  </div>
-
-                  {/* Column Select */}
-                  <div className="md:col-span-1">
-                    <Select
-                      value={fieldMapping.column || '_none'}
-                      onValueChange={(value) =>
-                        updateFieldMapping(field.key, {
-                          column: value === '_none' ? '' : value,
-                        })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar columna..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="_none">-- No mapear --</SelectItem>
-                        {columns.map((col) => (
-                          <SelectItem key={col} value={col}>
-                            {col}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Process Function */}
-                  <div className="md:col-span-1">
-                    <Select
-                      value={fieldMapping.process}
-                      onValueChange={(value) =>
-                        updateFieldMapping(field.key, { process: value })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Procesamiento..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {PROCESS_FUNCTIONS.map((fn) => (
-                          <SelectItem key={fn.value} value={fn.value}>
-                            {fn.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Default Value */}
-                  <div className="md:col-span-1">
-                    <Input
-                      placeholder="Valor por defecto"
-                      value={fieldMapping.defaultValue || ''}
-                      onChange={(e) =>
-                        updateFieldMapping(field.key, {
-                          defaultValue: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-
-                  {/* Skip Empty */}
-                  <div className="md:col-span-1 flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id={`skip-${field.key}`}
-                      checked={fieldMapping.skipEmpty || false}
-                      onChange={(e) =>
-                        updateFieldMapping(field.key, {
-                          skipEmpty: e.target.checked,
-                        })
-                      }
-                      className="h-4 w-4 rounded border-gray-300"
-                    />
-                    <Label htmlFor={`skip-${field.key}`} className="cursor-pointer text-sm">
-                      Omitir si vacío
-                    </Label>
-                  </div>
-                </div>
-              </Card>
-            );
-          })}
-        </div>
-      </div>
+                return (
+                  <TableRow key={field.key}>
+                    <TableCell>
+                      <div className="font-medium">
+                        {field.label}
+                        {field.required && (
+                          <span className="text-red-500 ml-1">*</span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Select
+                        value={fieldMapping.column || '_none'}
+                        onValueChange={(value) =>
+                          updateFieldMapping(field.key, {
+                            column: value === '_none' ? '' : value,
+                          })
+                        }
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="No disponible" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="_none">No disponible</SelectItem>
+                          {columns.map((col) => (
+                            <SelectItem key={col} value={col}>
+                              {col}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell>
+                      <Select
+                        value={fieldMapping.process}
+                        onValueChange={(value) =>
+                          updateFieldMapping(field.key, { process: value })
+                        }
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {PROCESS_FUNCTIONS.map((fn) => (
+                            <SelectItem key={fn.value} value={fn.value}>
+                              {fn.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        value={fieldMapping.defaultValue || ''}
+                        onChange={(e) =>
+                          updateFieldMapping(field.key, {
+                            defaultValue: e.target.value,
+                          })
+                        }
+                        className="w-full"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex justify-center">
+                        <input
+                          type="checkbox"
+                          checked={fieldMapping.skipEmpty || false}
+                          onChange={(e) =>
+                            updateFieldMapping(field.key, {
+                              skipEmpty: e.target.checked,
+                            })
+                          }
+                          className="h-4 w-4 rounded border-gray-300"
+                        />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 }

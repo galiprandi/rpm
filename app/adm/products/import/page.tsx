@@ -13,7 +13,8 @@ import { ColumnMapper } from './components/ColumnMapper';
 import { CategoryMapper } from './components/CategoryMapper';
 import { ValidationPreview } from './components/ValidationPreview';
 import { ImportProgress } from './components/ImportProgress';
-import { Loader2, Upload, Settings, Tag, CheckCircle, Play } from 'lucide-react';
+import { PreviewTable } from './components/PreviewTable';
+import { Loader2, Upload, Settings, Eye, Tag, CheckCircle, Play } from 'lucide-react';
 
 interface ColumnMapping {
   column: string;
@@ -91,6 +92,21 @@ export default function ProductImporterPage() {
     categoriesToCreate: Array<{ key: string; name: string; count: number }>;
   } | null>(null);
 
+  // Preview state
+  const [previewData, setPreviewData] = useState<Array<{
+    rowIndex: number;
+    name: string;
+    sku?: string;
+    barcode?: string;
+    description?: string;
+    costPrice?: number;
+    salePrice?: number;
+    stock?: number;
+    minStock?: number;
+    location?: string;
+    categoryName: string;
+  }> | null>(null);
+
   // Import execution state
   const [isImporting, setIsImporting] = useState(false);
   const [importProgress, setImportProgress] = useState(0);
@@ -123,6 +139,86 @@ export default function ProductImporterPage() {
     setFileData(data);
     setCurrentStep(1);
   }, []);
+
+  // Handle generate preview
+  const handleGeneratePreview = async () => {
+    if (!fileData) return;
+
+    try {
+      // Parse CSV data
+      const csvContent = await fileData.file.text();
+      const lines = csvContent.split('\n').filter((l) => l.trim());
+      const headers = lines[0].split(',').map((h) => h.trim());
+      const rows = lines.slice(1).map((line) =>
+        line.split(',').map((cell) => cell.trim().replace(/^["']|["']$/g, ''))
+      );
+
+      // Process preview data
+      const preview = rows.map((row, index) => {
+        const rowData: Record<string, string> = {};
+        headers.forEach((h, i) => {
+          rowData[h] = row[i] || '';
+        });
+
+        // Apply mapping
+        const getValue = (fieldKey: string): string | undefined => {
+          const fieldMapping = mapping[fieldKey];
+          if (!fieldMapping?.column) return fieldMapping?.defaultValue;
+
+          const rawValue = rowData[fieldMapping.column];
+          if (!rawValue || rawValue.trim() === '') {
+            if (fieldMapping.skipEmpty) return undefined;
+            return fieldMapping.defaultValue;
+          }
+
+          // Apply processing
+          let processed = rawValue;
+          switch (fieldMapping.process) {
+            case 'capitalize_trim':
+              processed = rawValue
+                .split(' ')
+                .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+                .join(' ')
+                .trim();
+              break;
+            case 'uppercase_trim':
+              processed = rawValue.toUpperCase().trim();
+              break;
+            case 'lowercase_trim':
+              processed = rawValue.toLowerCase().trim();
+              break;
+            case 'trim':
+              processed = rawValue.trim();
+              break;
+            case 'parse_es_number':
+              processed = rawValue.replace(/\./g, '').replace(',', '.');
+              break;
+          }
+          return processed;
+        };
+
+        return {
+          rowIndex: index + 2,
+          name: getValue('name') || '',
+          sku: getValue('sku'),
+          barcode: getValue('barcode'),
+          description: getValue('description'),
+          costPrice: getValue('costPrice') ? parseFloat(getValue('costPrice')!) : undefined,
+          salePrice: getValue('salePrice') ? parseFloat(getValue('salePrice')!) : undefined,
+          stock: getValue('stock') ? parseInt(getValue('stock')!) : undefined,
+          minStock: getValue('minStock') ? parseInt(getValue('minStock')!) : undefined,
+          location: getValue('location'),
+          categoryName: getValue('categoryId') || '',
+        };
+      });
+
+      setPreviewData(preview);
+      setCurrentStep(2);
+    } catch (error) {
+      console.error('Preview error:', error);
+      alert('Error al generar la vista previa');
+    }
+  };
 
   // Handle validation
   const handleValidate = async () => {
@@ -251,11 +347,13 @@ export default function ProductImporterPage() {
     setValidatedData(null);
     setImportResults(null);
     setDryRun(true);
+    setPreviewData(null); // Agregar setPreviewData(null)
   };
 
   const steps = [
     { label: 'Cargar CSV', description: 'Selecciona el archivo' },
     { label: 'Mapear', description: 'Configura columnas' },
+    { label: 'Preview', description: 'Vista previa' },
     { label: 'Categorías', description: 'Revisa categorías' },
     { label: 'Validar', description: 'Verifica datos' },
     { label: 'Importar', description: dryRun ? 'Simulación' : 'Importar' },
@@ -274,7 +372,7 @@ export default function ProductImporterPage() {
         steps={steps.map((s, i) => ({
           value: i + 1,
           label: s.label,
-          icon: [Upload, Settings, Tag, CheckCircle, Play][i] || CheckCircle,
+          icon: [Upload, Settings, Eye, Tag, CheckCircle, Play][i] || CheckCircle,
         }))}
         currentStep={currentStep + 1}
         className="mb-8"
@@ -299,6 +397,24 @@ export default function ProductImporterPage() {
               <Button variant="outline" onClick={() => setCurrentStep(0)}>
                 Volver
               </Button>
+              <Button onClick={handleGeneratePreview}>
+                Ver Vista Previa
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {currentStep === 2 && previewData && fileData && (
+          <div className="space-y-6">
+            <PreviewTable
+              previewData={previewData}
+              totalRows={fileData.totalRows}
+              mapping={mapping}
+            />
+            <div className="flex justify-between">
+              <Button variant="outline" onClick={() => setCurrentStep(1)}>
+                Volver
+              </Button>
               <Button onClick={handleValidate} disabled={isImporting}>
                 {isImporting ? (
                   <>
@@ -306,14 +422,14 @@ export default function ProductImporterPage() {
                     Validando...
                   </>
                 ) : (
-                  'Validar Datos'
+                  'Continuar'
                 )}
               </Button>
             </div>
           </div>
         )}
 
-        {currentStep === 2 && validatedData && (
+        {currentStep === 3 && validatedData && (
           <div className="space-y-6">
             <CategoryMapper
               detectedCategories={validatedData.categoriesToCreate}
@@ -322,15 +438,15 @@ export default function ProductImporterPage() {
               onMappingChange={setCategoryMapping}
             />
             <div className="flex justify-between">
-              <Button variant="outline" onClick={() => setCurrentStep(1)}>
+              <Button variant="outline" onClick={() => setCurrentStep(2)}>
                 Volver
               </Button>
-              <Button onClick={() => setCurrentStep(3)}>Continuar</Button>
+              <Button onClick={() => setCurrentStep(4)}>Continuar</Button>
             </div>
           </div>
         )}
 
-        {currentStep === 3 && validatedData && (
+        {currentStep === 4 && validatedData && (
           <div className="space-y-6">
             <ValidationPreview
               validProducts={validatedData.valid}
@@ -339,7 +455,7 @@ export default function ProductImporterPage() {
               categoriesToCreate={validatedData.categoriesToCreate}
             />
             <div className="flex justify-between">
-              <Button variant="outline" onClick={() => setCurrentStep(2)}>
+              <Button variant="outline" onClick={() => setCurrentStep(3)}>
                 Volver
               </Button>
               <div className="flex gap-2">
@@ -371,7 +487,7 @@ export default function ProductImporterPage() {
           </div>
         )}
 
-        {currentStep === 4 && importResults && (
+        {currentStep === 5 && importResults && (
           <ImportProgress
             isRunning={isImporting}
             progress={importProgress}

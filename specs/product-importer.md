@@ -43,25 +43,38 @@ Importador de productos desde CSV legacy con mapeo inteligente de columnas, infe
 - Mostrar notificación "Mapeo guardado" con debounce de 1 segundo
 - Al cargar Paso 2, recuperar mapeo de `localStorage` si existe para estas columnas
 
-**Campos del Sistema Disponibles:**
-| Campo | Tipo | Requerido | Default Sugerido | Funciones |
-|-------|------|-----------|------------------|-----------|
-| name | string | Sí | - | Capitalize + Trim |
-| code | string | No | Auto-generado | Trim + Uppercase |
-| barcode | string | No | - | Trim |
-| categoryId | string | No | Sin categoría | - |
-| costPrice | number | No | 0 | Round 2 decimals |
-| wholesalePrice | number | No | 0 | Round 2 decimals |
-| retailPrice | number | No | 0 | Round 2 decimals |
-| stock | integer | No | 0 | Round integer |
-| unit | string | No | "unidad" | Capitalize + Trim |
+**Campos del Sistema Disponibles (mapeo 1:1 con tabla `Product`):**
+| Campo DB | Label UI | Tipo | Requerido | Default Sugerido | Funciones |
+|----------|----------|------|-----------|------------------|-----------|
+| `name` | Nombre del producto | string | Sí | - | Capitalize + Trim |
+| `sku` | SKU (código) | string | No | Auto-generado | Trim + Uppercase |
+| `barcode` | Código de barras (EAN) | string | No | - | Trim |
+| `description` | Descripción | string | No | - | Capitalize + Trim |
+| `categoryId` | Categoría | relation | No | Sin categoría | - |
+| `costPrice` | Precio de costo | Decimal | No | 0 | Round 2 decimals |
+| `salePrice` | Precio de venta | Decimal | No | 0 | Round 2 decimals |
+| `stock` | Stock inicial | Int | No | 0 | Round integer |
+| `minStock` | Stock mínimo | Int | No | 0 | Round integer |
+| `location` | Ubicación | string | No | - | Uppercase + Trim |
 
-**Mapeo Flexible:** El usuario puede asignar CUALQUIER columna CSV a CUALQUIER campo de precio. Por ejemplo:
-- CSV.MAYORISTA → Product.wholesalePrice
-- CSV.CONTADO → Product.salePrice (o retailPrice)
-- CSV.MINORISTA → Product.retailPrice
-- CSV.CODIGO → Product.code (o barcode)
-- CSV.CODPROV → Product.supplierCode (metadata)
+**Nota importante:** El modelo `Product` en Prisma NO tiene campos `wholesalePrice`, `retailPrice`, ni `unit`. El precio mayorista del CSV debe mapearse al campo `salePrice` si es el precio principal de venta.
+
+**Campos del modelo Product (Prisma):**
+```prisma
+model Product {
+  id          String   @id @default(uuid())
+  sku         String?  @unique
+  name        String
+  description String?
+  costPrice   Decimal  @db.Decimal(10, 2)
+  salePrice   Decimal  @db.Decimal(10, 2)
+  stock       Int      @default(0)
+  minStock    Int      @default(0)
+  barcode     String?
+  location    String?
+  // ... relations
+}
+```
 
 ### Paso 3: Configuración de Categorías
 - Detectar valores únicos de columna Rubro + Subrubro

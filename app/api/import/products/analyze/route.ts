@@ -11,18 +11,46 @@ function parseCSV(content: string): { headers: string[]; rows: string[][]; delim
   let bestDelimiter = ',';
   let maxCols = 0;
 
-  const firstLines = content.split('\n').slice(0, 5);
+  // Get first few non-empty lines for delimiter detection
+  const allLines = content.split('\n');
+  const firstLines = allLines
+    .map(line => line.trim())
+    .filter(line => line.length > 0)
+    .slice(0, 5);
 
+  if (firstLines.length === 0) {
+    return { headers: [], rows: [], delimiter: bestDelimiter };
+  }
+
+  // Find the best delimiter
   for (const delim of delimiters) {
     const colCounts = firstLines.map(line => line.split(delim).length);
     const consistent = colCounts.every(c => c === colCounts[0]);
+    const minCols = Math.min(...colCounts);
+    
+    // Prefer consistent delimiters, but also consider those that produce more columns
     if (consistent && colCounts[0] > maxCols) {
       maxCols = colCounts[0];
+      bestDelimiter = delim;
+    } else if (!consistent && minCols > maxCols && minCols > 1) {
+      // If no consistent delimiter found, use one that produces most columns
+      maxCols = minCols;
       bestDelimiter = delim;
     }
   }
 
-  const lines = content.split('\n').filter(line => line.trim());
+  // If still no good delimiter found, check first line specifically
+  if (maxCols <= 1) {
+    for (const delim of delimiters) {
+      const firstLineCols = firstLines[0].split(delim).length;
+      if (firstLineCols > maxCols) {
+        maxCols = firstLineCols;
+        bestDelimiter = delim;
+      }
+    }
+  }
+
+  const lines = allLines.filter(line => line.trim());
   if (lines.length === 0) {
     return { headers: [], rows: [], delimiter: bestDelimiter };
   }
