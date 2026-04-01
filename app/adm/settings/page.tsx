@@ -43,7 +43,7 @@ export default function SettingsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Link href="/settings/import/products">
+          <Link href="/adm/products/import">
             <Button variant="outline" className="w-full justify-between">
               <div className="flex items-center gap-3">
                 <FileSpreadsheet className="h-5 w-5 text-blue-500" />
@@ -57,24 +57,6 @@ export default function SettingsPage() {
               <ChevronRight className="h-4 w-4 text-muted-foreground" />
             </Button>
           </Link>
-        </CardContent>
-      </Card>
-
-      <Separator />
-
-      {/* Próximamente */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Más opciones</CardTitle>
-          <CardDescription>
-            Configuraciones adicionales estarán disponibles próximamente.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <span className="text-2xl">🚧</span>
-            <span>En desarrollo</span>
-          </div>
         </CardContent>
       </Card>
     </div>

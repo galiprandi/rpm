@@ -2,7 +2,7 @@
 
 /**
  * Product Importer Page
- * /settings/import/products
+ * /adm/products/import
  */
 import { useState, useCallback, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
@@ -33,7 +33,7 @@ interface CategoryMapping {
 interface ImportOptions {
   skipStockLessThanOne: boolean;
   duplicateAction: 'skip' | 'update' | 'create_with_suffix';
-  defaultCategoryName: string;
+  defaultCategoryId: string;
 }
 
 interface ValidatedProduct {
@@ -55,6 +55,11 @@ interface ValidationStats {
   categoriesToCreateCount: number;
 }
 
+interface Category {
+  id: string;
+  name: string;
+}
+
 export default function ProductImporterPage() {
   const [currentStep, setCurrentStep] = useState(0);
 
@@ -71,11 +76,11 @@ export default function ProductImporterPage() {
   const [importOptions, setImportOptions] = useState<ImportOptions>({
     skipStockLessThanOne: false,
     duplicateAction: 'skip',
-    defaultCategoryName: 'Sin categoría',
+    defaultCategoryId: '_none',
   });
 
   // Categories state
-  const [existingCategories, setExistingCategories] = useState<Array<{ id: string; name: string }>>([]);
+  const [existingCategories, setExistingCategories] = useState<Category[]>([]);
   const [categoryMapping, setCategoryMapping] = useState<CategoryMapping>({});
 
   // Validation state
@@ -257,7 +262,7 @@ export default function ProductImporterPage() {
   ];
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-6xl">
+    <div className="space-y-6">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Importar Productos</h1>
         <p className="text-muted-foreground">
@@ -288,6 +293,7 @@ export default function ProductImporterPage() {
               onMappingChange={setMapping}
               importOptions={importOptions}
               onImportOptionsChange={setImportOptions}
+              existingCategories={existingCategories}
             />
             <div className="flex justify-between">
               <Button variant="outline" onClick={() => setCurrentStep(0)}>

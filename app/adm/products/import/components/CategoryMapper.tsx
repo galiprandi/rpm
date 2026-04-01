@@ -4,12 +4,11 @@
  * CategoryMapper Component
  * Mapeo de rubros del CSV a categorías del sistema
  */
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tag, Plus, Link2 } from 'lucide-react';
 

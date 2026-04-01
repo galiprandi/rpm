@@ -18,6 +18,11 @@ interface ColumnMapping {
   defaultValue?: string;
 }
 
+interface Category {
+  id: string;
+  name: string;
+}
+
 interface ColumnMapperProps {
   columns: string[];
   mapping: Record<string, ColumnMapping>;
@@ -25,9 +30,10 @@ interface ColumnMapperProps {
   importOptions: {
     skipStockLessThanOne: boolean;
     duplicateAction: 'skip' | 'update' | 'create_with_suffix';
-    defaultCategoryName: string;
+    defaultCategoryId: string;
   };
   onImportOptionsChange: (options: ColumnMapperProps['importOptions']) => void;
+  existingCategories: Category[];
 }
 
 const SYSTEM_FIELDS = [
@@ -59,6 +65,7 @@ export function ColumnMapper({
   onMappingChange,
   importOptions,
   onImportOptionsChange,
+  existingCategories,
 }: ColumnMapperProps) {
   const [savedMessage, setSavedMessage] = useState<string | null>(null);
 
@@ -91,7 +98,7 @@ export function ColumnMapper({
     }, 500);
 
     return () => clearTimeout(timer);
-   
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mapping]);
 
   const updateFieldMapping = (
@@ -105,6 +112,13 @@ export function ColumnMapper({
         ...updates,
       },
     });
+  };
+
+  // Get default category name from ID
+  const getDefaultCategoryName = () => {
+    if (importOptions.defaultCategoryId === '_none') return 'Sin categoría';
+    const cat = existingCategories.find((c) => c.id === importOptions.defaultCategoryId);
+    return cat?.name || 'Sin categoría';
   };
 
   return (
@@ -155,17 +169,30 @@ export function ColumnMapper({
 
           <div className="space-y-2">
             <Label htmlFor="defaultCategory">Categoría por defecto</Label>
-            <Input
-              id="defaultCategory"
-              value={importOptions.defaultCategoryName}
-              onChange={(e) =>
+            <Select
+              value={importOptions.defaultCategoryId}
+              onValueChange={(value) =>
                 onImportOptionsChange({
                   ...importOptions,
-                  defaultCategoryName: e.target.value,
+                  defaultCategoryId: value,
                 })
               }
-              placeholder="Sin categoría"
-            />
+            >
+              <SelectTrigger id="defaultCategory">
+                <SelectValue placeholder="Seleccionar categoría..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="_none">Sin categoría</SelectItem>
+                {existingCategories.map((cat) => (
+                  <SelectItem key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Se usará &quot;{getDefaultCategoryName()}&quot; cuando no haya categoría asignada
+            </p>
           </div>
         </div>
       </Card>
