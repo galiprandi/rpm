@@ -1,305 +1,287 @@
 /**
  * API Route: /api/import/products/validate
- * POST: Valida los datos del CSV sin guardar (dry-run)
+ * POST: Valida datos CSV contra esquema Zod y detecta duplicados/categorías
  */
+
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import {
+  ProductWithCategorySchema,
+  ValidationResultSchema,
+  transformValue,
+  findBestCategoryMatch,
+  type ColumnMapping,
+  type ImportOptions,
+  type ProductWithCategoryInput,
+  type InvalidRow,
+  type DetectedCategory,
+} from '@/lib/product-import-schemas';
 
-// Process functions
-const processFunctions: Record<string, (value: string) => string | number> = {
-  capitalize_trim: (v) => v.trim().replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()),
-  uppercase_trim: (v) => v.trim().toUpperCase(),
-  lowercase_trim: (v) => v.trim().toLowerCase(),
-  trim: (v) => v.trim(),
-  round_2: (v) => {
-    const num = parseFloat(v.replace(',', '.'));
-    return isNaN(num) ? 0 : Math.round(num * 100) / 100;
-  },
-  round_int: (v) => {
-    const num = parseFloat(v.replace(',', '.'));
-    return isNaN(num) ? 0 : Math.round(num);
-  },
-  parse_es_number: (v) => {
-    const num = parseFloat(v.replace(/\./g, '').replace(',', '.'));
-    return isNaN(num) ? 0 : num;
-  },
+// ============================================================================
+// Field Type Mapping
+// ============================================================================
+
+const FIELD_TYPES: Record<string, 'string' | 'decimal' | 'integer' | 'category'> = {
+  name: 'string',
+  sku: 'string',
+  barcode: 'string',
+  description: 'string',
+  costPrice: 'decimal',
+  salePrice: 'decimal',
+  stock: 'integer',
+  minStock: 'integer',
+  location: 'string',
+  categoryId: 'category',
 };
 
-interface ColumnMapping {
-  column: string;
-  process: string;
-  skipEmpty?: boolean;
-  defaultValue?: string;
-}
+// ============================================================================
+// CSV Row Processing
+// ============================================================================
 
-interface ImportOptions {
-  skipStockLessThanOne: boolean;
-  duplicateAction: 'skip' | 'update' | 'create_with_suffix';
-  defaultCategoryName: string;
-}
+function processRow(
+  row: string[],
+  headers: string[],
+  mapping: Record<string, ColumnMapping>,
+  defaultCategoryId?: string
+): { product: Partial<ProductWithCategoryInput>; errors: string[] } {
+  const product: Partial<ProductWithCategoryInput> = {};
+  const errors: string[] = [];
 
-interface CategoryMapping {
-  [key: string]: {
-    action: 'create' | 'map';
-    targetId?: string;
-    newName?: string;
-  };
-}
+  for (const [fieldKey, fieldMapping] of Object.entries(mapping)) {
+    // Skip unmapped fields
+    if (!fieldMapping.column || fieldMapping.column === '_none') {
+      continue;
+    }
 
-function processValue(value: string, mapping: ColumnMapping): string | number | null {
-  if (!value || value.trim() === '') {
-    if (mapping.skipEmpty) return null;
-    if (mapping.defaultValue) value = mapping.defaultValue;
-    else return '';
+    // Find column index
+    const colIndex = headers.indexOf(fieldMapping.column);
+    if (colIndex === -1) {
+      errors.push(`Columna ${fieldMapping.column} no encontrada`);
+      continue;
+    }
+
+    const rawValue = row[colIndex] || '';
+
+    // Check skipEmpty
+    if (fieldMapping.skipEmpty && rawValue.trim() === '') {
+      errors.push(`Campo ${fieldKey} está vacío (omitir)`);
+      return { product: {}, errors };
+    }
+
+    // Transform value based on field type
+    const fieldType = FIELD_TYPES[fieldKey];
+    if (!fieldType) {
+      errors.push(`Tipo desconocido para campo ${fieldKey}`);
+      continue;
+    }
+
+    const transformed = transformValue(
+      rawValue,
+      fieldType,
+      fieldMapping.transform,
+      fieldMapping.defaultValue
+    );
+
+    // Assign to product
+    if (fieldKey === 'categoryId') {
+      // Category is handled separately after initial processing
+      (product as Record<string, unknown>)[fieldKey] = transformed;
+    } else {
+      (product as Record<string, unknown>)[fieldKey] = transformed;
+    }
   }
 
-  const processor = processFunctions[mapping.process];
-  if (processor) {
-    return processor(value);
+  // Apply default category if none mapped
+  if (!product.categoryId && defaultCategoryId) {
+    product.categoryId = defaultCategoryId;
   }
-  return value.trim();
+
+  return { product, errors };
 }
 
-function parseSpanishNumber(value: string): number {
-  if (!value) return 0;
-  // Handle Spanish format: "1.234,56" or "1234,56"
-  const clean = value.replace(/\./g, '').replace(',', '.');
-  const num = parseFloat(clean);
-  return isNaN(num) ? 0 : num;
-}
+// ============================================================================
+// Main Handler
+// ============================================================================
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    console.log('Received validation request:', JSON.stringify(body, null, 2));
+    
     const {
       csvData,
       mapping,
-      categoryMapping,
       importOptions,
     }: {
       csvData: { headers: string[]; rows: string[][] };
       mapping: Record<string, ColumnMapping>;
-      categoryMapping: CategoryMapping;
       importOptions: ImportOptions;
     } = body;
 
-    if (!csvData || !mapping || !mapping.name) {
-      return NextResponse.json({ error: 'Missing required data' }, { status: 400 });
+    // Validate input
+    if (!csvData?.rows?.length) {
+      console.error('No CSV data rows found');
+      return NextResponse.json({ error: 'No hay datos CSV' }, { status: 400 });
     }
 
-    // Get existing categories for duplicate detection
-    const existingCategories = await prisma.category.findMany({
-      select: { id: true, name: true },
-    });
-    const categoryNameToId = new Map(existingCategories.map(c => [c.name.toLowerCase(), c.id]));
+    if (!mapping?.name?.column) {
+      console.error('No name column mapped:', mapping);
+      return NextResponse.json({ error: 'El campo nombre es requerido' }, { status: 400 });
+    }
 
-    // Get existing products for duplicate detection
-    const existingProducts = await prisma.product.findMany({
-      select: { id: true, name: true, sku: true, barcode: true },
-    });
+    // Load existing data for duplicate/category detection
+    const [existingCategories, existingProducts] = await Promise.all([
+      prisma.category.findMany({ select: { id: true, name: true } }),
+      prisma.product.findMany({
+        select: { id: true, name: true, sku: true, barcode: true },
+      }),
+    ]);
+
     const existingNames = new Set(existingProducts.map(p => p.name.toLowerCase()));
     const existingSkus = new Set(existingProducts.map(p => p.sku?.toLowerCase()).filter(Boolean));
-    const existingBarcodes = new Set(existingProducts.map(p => p.barcode?.toLowerCase()).filter(Boolean));
 
-    const valid: unknown[] = [];
-    const invalid: Array<{ row: number; reason: string; data: Record<string, unknown> }> = [];
-    const categoriesToCreate = new Map<string, { name: string; count: number }>();
+    // Process rows
+    const validProducts: ProductWithCategoryInput[] = [];
+    const invalidRows: InvalidRow[] = [];
+    const detectedCategories = new Map<string, { count: number; normalizedName: string }>();
 
-    for (let i = 0; i < csvData.rows.length; i++) {
-      const row = csvData.rows[i];
-      const rowIndex = i + 2;
-      const rowData: Record<string, string> = {};
-      csvData.headers.forEach((h, idx) => {
-        rowData[h] = row[idx] || '';
-      });
+    for (let rowIndex = 0; rowIndex < csvData.rows.length; rowIndex++) {
+      const row = csvData.rows[rowIndex];
 
-      // Process name (required)
-      const nameMapping = mapping.name;
-      const rawName = rowData[nameMapping.column] || '';
-      const name = processValue(rawName, nameMapping) as string;
+      // Process row
+      const { product, errors } = processRow(
+        row,
+        csvData.headers,
+        mapping,
+        importOptions.defaultCategoryId
+      );
 
-      if (!name || name.trim() === '') {
-        invalid.push({
-          row: rowIndex,
-          reason: 'Nombre vacío',
-          data: rowData,
+      if (errors.length > 0) {
+        invalidRows.push({
+          rowIndex,
+          reason: errors.join('; '),
+          rawData: Object.fromEntries(
+            csvData.headers.map((h, i) => [h, row[i] || ''])
+          ),
+          errors,
         });
         continue;
       }
 
-      // Check for empty column skip
-      let shouldSkip = false;
-      for (const [field, fieldMapping] of Object.entries(mapping)) {
-        if (fieldMapping.skipEmpty && fieldMapping.column) {
-          const value = rowData[fieldMapping.column];
-          if (!value || value.trim() === '') {
-            invalid.push({
-              row: rowIndex,
-              reason: `Campo ${field} vacío (omitir si vacío activado)`,
-              data: rowData,
-            });
-            shouldSkip = true;
-            break;
-          }
-        }
-      }
-      if (shouldSkip) continue;
-
-      // Process stock
-      const stockMapping = mapping.stock;
-      let stock = 0;
-      if (stockMapping?.column) {
-        const rawStock = rowData[stockMapping.column] || '0';
-        stock = processValue(rawStock, { ...stockMapping, process: 'round_int' }) as number;
-      }
-
-      // Skip if stock < 1 and option enabled
-      if (importOptions.skipStockLessThanOne && stock < 1) {
-        invalid.push({
-          row: rowIndex,
-          reason: `Stock ${stock} < 1 (omitir stock bajo activado)`,
-          data: rowData,
+      // Validate with Zod
+      const parseResult = ProductWithCategorySchema.safeParse(product);
+      if (!parseResult.success) {
+        const zodErrors = parseResult.error.issues.map(e => `${e.path.join('.')}: ${e.message}`);
+        invalidRows.push({
+          rowIndex,
+          reason: zodErrors.join('; '),
+          rawData: Object.fromEntries(
+            csvData.headers.map((h, i) => [h, row[i] || ''])
+          ),
+          errors: zodErrors,
         });
         continue;
       }
 
-      // Process code/sku
-      let code: string | undefined;
-      if (mapping.code?.column) {
-        code = processValue(rowData[mapping.code.column] || '', mapping.code) as string;
+      const validatedProduct = parseResult.data;
+
+      // Check stock filter
+      if (importOptions.skipStockLessThanOne && validatedProduct.stock < 1) {
+        invalidRows.push({
+          rowIndex,
+          reason: 'Stock menor a 1',
+          rawData: Object.fromEntries(
+            csvData.headers.map((h, i) => [h, row[i] || ''])
+          ),
+        });
+        continue;
       }
 
-      // Process barcode
-      let barcode: string | undefined;
-      if (mapping.barcode?.column) {
-        barcode = processValue(rowData[mapping.barcode.column] || '', mapping.barcode) as string;
+      // Check duplicates and handle based on action
+      const isDuplicate = existingNames.has(validatedProduct.name.toLowerCase()) ||
+        (validatedProduct.sku && existingSkus.has(validatedProduct.sku.toLowerCase()));
+
+      // Skip duplicates if action is 'skip'
+      if (isDuplicate && importOptions.duplicateAction === 'skip') {
+        invalidRows.push({
+          rowIndex,
+          reason: 'Producto duplicado (omitido por configuración)',
+          rawData: Object.fromEntries(
+            csvData.headers.map((h, i) => [h, row[i] || ''])
+          ),
+        });
+        continue;
       }
 
-      // Check duplicates
-      const nameLower = name.toLowerCase();
-      const codeLower = code?.toLowerCase();
-      const barcodeLower = barcode?.toLowerCase();
-
-      const isDuplicate = existingNames.has(nameLower) ||
-        (codeLower && existingSkus.has(codeLower)) ||
-        (barcodeLower && existingBarcodes.has(barcodeLower));
-
-      let finalName = name;
-      if (isDuplicate) {
-        if (importOptions.duplicateAction === 'skip') {
-          invalid.push({
-            row: rowIndex,
-            reason: 'Producto duplicado (omitir)', // Product duplicated (skip)
-            data: rowData,
-          });
-          continue;
-        } else if (importOptions.duplicateAction === 'create_with_suffix') {
-          let suffix = 2;
-          while (existingNames.has(`${nameLower} (${suffix})`)) {
-            suffix++;
-          }
-          finalName = `${name} (${suffix})`;
-        }
-        // If 'update', we'll handle it in execute
-      }
-
-      // Process category
-      let categoryId: string | undefined;
-      const categoryCol = mapping.categoryId?.column || 'RUBRO';
-      const rawCategory = rowData[categoryCol] || '';
-      const categoryName = rawCategory.trim() || importOptions.defaultCategoryName;
-
-      if (categoryName) {
-        const categoryKey = categoryName.toLowerCase();
-        const existingId = categoryNameToId.get(categoryKey);
-
-        if (existingId) {
-          categoryId = existingId;
+      // Track category
+      if (validatedProduct.categoryId) {
+        const catKey = validatedProduct.categoryId.toLowerCase();
+        const existing = detectedCategories.get(catKey);
+        if (existing) {
+          existing.count++;
         } else {
-          const mapped = categoryMapping[categoryKey];
-          if (mapped?.action === 'map' && mapped.targetId) {
-            categoryId = mapped.targetId;
-          } else {
-            // Will create new category
-            const newCatName = processFunctions.capitalize_trim(categoryName) as string;
-            if (!categoriesToCreate.has(categoryKey)) {
-              categoriesToCreate.set(categoryKey, { name: newCatName, count: 0 });
-            }
-            categoriesToCreate.get(categoryKey)!.count++;
-          }
+          detectedCategories.set(catKey, {
+            count: 1,
+            normalizedName: validatedProduct.categoryId,
+          });
         }
       }
 
-      // Process prices
-      let costPrice = 0;
-      if (mapping.costPrice?.column) {
-        const raw = rowData[mapping.costPrice.column] || '0';
-        costPrice = parseSpanishNumber(raw);
-      }
-
-      let wholesalePrice = 0;
-      if (mapping.wholesalePrice?.column) {
-        const raw = rowData[mapping.wholesalePrice.column] || '0';
-        wholesalePrice = parseSpanishNumber(raw);
-      }
-
-      let retailPrice = 0;
-      if (mapping.retailPrice?.column) {
-        const raw = rowData[mapping.retailPrice.column] || '0';
-        retailPrice = parseSpanishNumber(raw);
-      }
-
-      // Use salePrice if available, fallback to retailPrice or costPrice
-      let salePrice = retailPrice || wholesalePrice || costPrice;
-
-      // Ensure non-negative prices
-      costPrice = Math.max(0, costPrice);
-      salePrice = Math.max(0, salePrice);
-
-      // Process unit
-      let unit = 'unidad';
-      if (mapping.unit?.column) {
-        unit = processValue(rowData[mapping.unit.column] || 'unidad', mapping.unit) as string;
-      }
-
-      const processedProduct = {
-        _rowIndex: rowIndex,
-        name: finalName,
-        sku: code,
-        barcode,
-        costPrice,
-        salePrice,
-        stock,
-        unit,
-        categoryId,
-        categoryName: categoryName || importOptions.defaultCategoryName,
-        isDuplicate,
-        _sourceData: rowData,
-      };
-
-      valid.push(processedProduct);
+      // Add to results
+      validProducts.push(validatedProduct);
     }
 
-    const stats = {
-      total: csvData.rows.length,
-      valid: valid.length,
-      invalid: invalid.length,
-      categoriesToCreateCount: categoriesToCreate.size,
+    // Build category mappings
+    const categories: DetectedCategory[] = Array.from(detectedCategories.entries()).map(
+      ([, data]) => {
+        // Check for fuzzy match with existing
+        const match = findBestCategoryMatch(data.normalizedName, existingCategories);
+
+        return {
+          detectedName: data.normalizedName,
+          normalizedName: data.normalizedName,
+          count: data.count,
+          action: match ? 'map' : 'create',
+          targetCategoryId: match?.id,
+          finalName: match?.name || data.normalizedName,
+        };
+      }
+    );
+
+    // Build result
+    const result = {
+      valid: validProducts,
+      invalid: invalidRows,
+      categories,
+      stats: {
+        total: csvData.rows.length,
+        valid: validProducts.length,
+        invalid: invalidRows.length,
+        categoriesToCreate: categories.filter(c => c.action === 'create').length,
+      },
     };
 
-    return NextResponse.json({
-      valid,
-      invalid,
-      stats,
-      categoriesToCreate: Array.from(categoriesToCreate.entries()).map(([key, val]) => ({
-        key,
-        ...val,
-      })),
-    });
+    console.log('Validation result:', JSON.stringify(result, null, 2));
+
+    // Validate response with Zod
+    const validatedResult = ValidationResultSchema.parse(result);
+
+    return NextResponse.json(validatedResult);
+
   } catch (error) {
-    console.error('Error validating CSV:', error);
+    console.error('Validation error:', error);
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    
+    // If it's a Zod error, provide more details
+    if (error instanceof Error && error.message.includes('Zod')) {
+      return NextResponse.json(
+        { error: 'Error de validación de esquema', details: error.message },
+        { status: 400 }
+      );
+    }
+    
     return NextResponse.json(
-      { error: 'Error validating CSV data' },
+      { error: 'Error validando datos', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }

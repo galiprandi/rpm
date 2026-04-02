@@ -121,10 +121,10 @@ export function DataTable<TData>({
   return (
     <div className="space-y-4">
       {enableGlobalFilter && (
-        <div className="flex items-center justify-between gap-4">
-          {title && <div className="text-lg font-semibold">{title}</div>}
-          <div className="flex items-center gap-3 w-1/2 justify-end">
-            <div className="relative flex-1 max-w-sm">
+        <div className="grid grid-cols-2 items-center gap-4">
+          <div>{title && <div className="text-lg font-semibold">{title}</div>}</div>
+          <div className="flex items-center justify-end gap-3">
+            <div className="relative w-full max-w-sm">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder={globalFilterPlaceholder}

@@ -4,7 +4,7 @@ import { config } from 'dotenv';
 config({ path: '.env.local' });
 
 // Setup for Vitest tests
-import '@testing-library/jest-dom';
+import '@testing-library/jest-dom/vitest';
 
 // Mock Next.js headers
 const mockHeaders = new Headers();

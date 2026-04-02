@@ -271,35 +271,49 @@ interface Product {
   id: string;              // SKU único (ej: LED-001, PPF-CAPOT)
   name: string;            // Nombre descriptivo
   description?: string;    // Descripción larga
-  categoryId: string;      // FK a Category
-  costPrice: number;       // Precio de costo
-  salePrice: number;       // Precio de venta al público
-  stock: number;           // Stock actual
-  minStock: number;        // Stock mínimo (para alerta)
-  supplier?: string;        // Nombre proveedor principal
+  sku: string;             // Código interno único
   barcode?: string;         // Código de barras EAN/UPC
-  location?: string;       // Ubicación en depósito
+  costPrice: number;        // Precio de compra (10,2)
+  salePrice: number;        // Precio de venta (10,2)
+  stock: number;           // Unidades en depósito
+  minStock: number;        // Stock mínimo para reposición
+  location?: string;       // Ubicación en depósito (ej: A1-B2)
+  categoryId: string;      // FK a Category
+  supplier?: string;        // Nombre proveedor principal
   isActive: boolean;       // Producto activo/inactivo
   createdAt: Date;
   updatedAt: Date;
 }
 ```
 
-**Validaciones:**
-- `id` (SKU): Alfanumérico, único, 3-20 caracteres
-- `costPrice` y `salePrice`: > 0, salePrice >= costPrice
-- `stock` y `minStock`: >= 0, enteros
+**Campos Importables desde CSV:**
+- `name` → PRODUCTO, DESCRIPTOR, ARTÍCULO
+- `sku` → SKU, CÓDIGO, REFERENCIA  
+- `barcode` → CÓDIGO BARRAS, EAN, GTIN
+- `costPrice` → PRECIO COMPRA, COSTO
+- `salePrice` → PRECIO VENTA, PRECIO LISTA
+- `stock` → STOCK, CANTIDAD, UNIDADES
+- `minStock` → STOCK MÍNIMO, MÍNIMO
+- `location` → UBICACIÓN, SECTOR, ESTANTE
 
-**Cálculos Derivados:**
+**Validaciones de Negocio:**
 ```typescript
-// Margen actual
+// Márgenes de rentabilidad
 const margin = ((salePrice - costPrice) / costPrice) * 100;
+if (margin < 20) {
+  console.warn('Margen bajo detectado:', margin + '%');
+}
 
 // Stock comprometido (en OTs activas)
 const committedStock = await getCommittedStock(productId);
 
 // Stock disponible real
 const availableStock = stock - committedStock;
+
+// Alerta de reposición
+if (availableStock <= minStock) {
+  await triggerReorderAlert(productId);
+}
 ```
 
 **Relaciones:**
@@ -307,6 +321,21 @@ const availableStock = stock - committedStock;
 - 1:N con `WORK_ORDER_ITEM` (consumo en OTs)
 - 1:N con `INVOICE_ITEM` (ventas)
 - 1:N con `SERVICE_KIT` (productos incluidos en servicios)
+
+**Importación Masiva:**
+```typescript
+interface ImportResult {
+  stats: {
+    attempted: number;      // Total filas procesadas
+    created: number;        // Productos nuevos creados
+    failed: number;         // Filas con errores
+    skipped: number;        // Filas omitidas (duplicados, stock<1)
+  };
+  results: Product[];      // Productos exitosamente importados
+  createdCategories: Category[]; // Categorías auto-creadas
+  errors: ImportError[];   // Detalle de errores por fila
+}
+```
 
 ---
 
@@ -1368,7 +1397,196 @@ model UserRole {
 
 ---
 
-## Migraciones de Datos Iniciales
+## 12. Flujo de Importación de Productos
+
+### 12.1 Arquitectura del Importador
+
+```typescript
+// Estado global del importador (Zustand)
+interface ImportState {
+  // Navegación
+  currentStep: number;        // 0-3: Upload → Configure → Review → Execute
+  
+  // Datos del archivo
+  fileData: FileData | null;  // Resultado del análisis CSV
+  
+  // Configuración
+  configuration: {
+    mapping: ColumnMapping;     // CSV → DB field mapping
+    options: ImportOptions;     // skipStockLessThanOne, duplicateAction
+  };
+  
+  // Validación
+  validationResult: ValidationResult | null;
+  
+  // Categorías
+  categoryMappings: CategoryMapping[];
+  
+  // Resultados
+  importResults: ImportResult | null;
+  
+  // Estado UI
+  isProcessing: boolean;
+}
+```
+
+### 12.2 Pipeline de Procesamiento
+
+```
+CSV Raw → Sanitización → Análisis → Mapeo → Transformación → Validación → Importación
+    │           │           │        │           │            │
+    ▼           ▼           ▼        ▼           ▼            ▼
+[FormData] [Rows] [AnalyzeResult] [MappedData] [ValidData] [Products]
+```
+
+**Etapas Detalladas:**
+
+1. **Sanitización**: Filas con número incorrecto de columnas → descartar
+2. **Análisis**: Detectar encoding, delimitador, headers únicos
+3. **Mapeo**: Usuario asigna columnas CSV a campos DB
+4. **Transformación**: Aplicar funciones (capitalize, number parsing, etc.)
+5. **Validación**: Contra DB existente (duplicados, categorías)
+6. **Importación**: Batch processing en chunks de 100
+
+### 12.3 Estructura de Datos de Importación
+
+```typescript
+// Resultado del análisis inicial
+interface FileData {
+  columns: string[];                    // Headers detectados
+  preview: Record<string, string>[];     // Primeras 5 filas
+  totalRows: number;                     // Total filas válidas
+  file: File;                           // Archivo original
+  delimiter?: string;                   // ',' | ';' | '\t'
+  encoding?: string;                    // 'utf-8' | 'latin-1'
+  skippedRows?: number;                  // Filas descartadas
+}
+
+// Mapeo de columnas
+interface ColumnMapping {
+  [dbField: string]: {
+    column: string;           // Nombre columna CSV
+    transform: string | string[]; // Funciones de transformación
+    skipEmpty?: boolean;      // Omitir si vacío
+    defaultValue?: string;    // Valor por defecto
+  };
+}
+
+// Opciones globales
+interface ImportOptions {
+  skipStockLessThanOne: boolean;
+  duplicateAction: 'skip' | 'create_with_suffix';
+  defaultCategoryName?: string;
+}
+
+// Resultado de validación
+interface ValidationResult {
+  valid: ProductWithCategoryInput[];
+  invalid: InvalidRow[];
+  stats: ValidationStats;
+  categoriesToCreate: Category[];
+}
+```
+
+### 12.4 Transformadores Disponibles
+
+```typescript
+interface Transformer {
+  name: string;
+  fn: (value: string) => any;
+  applicableTo: ('string' | 'number' | 'decimal')[];
+}
+
+const TRANSFORMERS: Record<string, Transformer> = {
+  'capitalize_trim': {
+    name: 'Capitalizar y limpiar',
+    fn: (v) => v.replace(/\b\w/g, l => l.toUpperCase()).trim(),
+    applicableTo: ['string']
+  },
+  'uppercase_trim': {
+    name: 'Mayúsculas y limpiar',
+    fn: (v) => v.toUpperCase().trim(),
+    applicableTo: ['string']
+  },
+  'resilient_decimal': {
+    name: 'Número español a decimal',
+    fn: (v) => parseFloat(v.replace('.', '').replace(',', '.')),
+    applicableTo: ['decimal']
+  },
+  'round_2': {
+    name: 'Redondear a 2 decimales',
+    fn: (v) => Math.round(v * 100) / 100,
+    applicableTo: ['decimal']
+  }
+};
+```
+
+### 12.5 Manejo de Errores y Validaciones
+
+```typescript
+interface ImportError {
+  row: number;              // Número de fila
+  field?: string;           // Campo con error
+  value: string;            // Valor que causó error
+  error: string;            // Mensaje de error
+  severity: 'error' | 'warning'; // Gravedad
+}
+
+// Validaciones por campo
+const FIELD_VALIDATIONS = {
+  name: {
+    required: true,
+    maxLength: 200,
+    pattern: /^[a-zA-Z0-9\s\-_]+$/,
+    error: 'Nombre inválido (solo letras, números, espacios, guiones)'
+  },
+  costPrice: {
+    required: false,
+    min: 0,
+    max: 999999.99,
+    error: 'Precio de costo debe ser positivo y máximo 999,999.99'
+  },
+  stock: {
+    required: false,
+    min: 0,
+    max: 999999,
+    integer: true,
+    error: 'Stock debe ser entero positivo y máximo 999,999'
+  }
+};
+```
+
+### 12.6 Performance y Escalabilidad
+
+```typescript
+// Configuración de batch processing
+const BATCH_CONFIG = {
+  chunkSize: 100,              // Productos por lote
+  maxConcurrency: 5,            // Lotes simultáneos
+  timeout: 30000,               // 30s por lote
+  retryAttempts: 3,            // Reintentos por lote
+};
+
+// Límites del sistema
+const LIMITS = {
+  maxFileSize: 10 * 1024 * 1024, // 10MB
+  maxRows: 50000,               // 50k filas
+  maxColumns: 50,               // 50 columnas
+  processingTimeout: 300000    // 5 minutos total
+};
+
+// Métricas de rendimiento
+interface ImportMetrics {
+  startTime: Date;
+  endTime?: Date;
+  rowsProcessed: number;
+  rowsPerSecond: number;
+  memoryUsage: number;
+  errors: ImportError[];
+}
+```
+
+## 13. Migraciones de Datos Iniciales
 
 ### Seed de Categorías
 ```typescript

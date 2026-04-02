@@ -1,65 +1,75 @@
 # Product Importer Spec
 
 ## Resumen
-Importador de productos desde CSV legacy con mapeo inteligente de columnas, inferencia de categorías y procesamiento de datos.
+Importador de productos desde CSV con flujo optimizado: sanitización → mapeo DB→CSV → revisión validada → importación.
 
-## Alcance (Scope Contenido)
+## Alcance (Scope)
 - **Solo productos** - No importa proveedores, clientes ni stock inicial
-- **Inferencia de categorías** - Crea rubros detectados automáticamente (categorías planas, sin sub-rubros)
-- **Mapeo manual de columnas** - Usuario asigna qué columna CSV va a qué campo del sistema
-- **Preview y validación** - Muestra cantidad de registros detectados y válidos antes de importar
-- **Procesamiento de datos** - Capitalización, trim, redondeo de números
+- **Categorías planas** - Sin jerarquía de sub-rubros
+- **Mapeo DB→CSV** - Campos de base de datos como origen, columnas CSV como destino
+- **Datos validados** - Solo se muestra en revisión lo que realmente irá a la DB
+- **Sanitización automática** - Filas malformadas se descartan al cargar
 
 ## Out of Scope
-- Importación de proveedores (solo referencia por nombre/código si existe)
-- Importación de stock inicial (se puede agregar después)
+- Importación de proveedores
+- Importación de stock inicial  
 - Actualización de productos existentes (solo creación)
 - Historial de precios
 - Imágenes de productos
 
 ## Ubicación
-- Ruta: `/settings/import/products`
-- Componente: `ProductImporter` (client-side, heavy interactivity)
+- Ruta: `/adm/products/import`
+- Componente principal: `ProductImporterPage`
 
-## Flujo del Usuario
+## Flujo del Usuario (Implementado)
 
-### Paso 1: Carga de Archivo
-- Dropzone o input file para CSV
-- Validación: archivo .csv o .txt
-- Detección automática de:
-  - Encoding (UTF-8, ISO-8859-1, Windows-1252)
-  - Delimitador (coma, punto y coma, tab)
-  - Línea de headers
-- Preview primeras 5 filas crudas
+### Paso 1: Cargar CSV ✅
+**Objetivo:** Sanitizar y detectar columnas
 
-### Paso 2: Mapeo de Columnas
-- Mostrar columnas detectadas del CSV
-- Por cada campo del sistema, permitir:
-  - Seleccionar columna origen (dropdown)
-  - Definir valor por defecto (input)
-  - Seleccionar función de procesamiento (dropdown)
-  - Checkbox "Omitir si vacío" (`skipEmpty`)
-- **Persistencia**: Guardar mapeo en `localStorage` automáticamente al cambiar cualquier valor
-- Mostrar notificación "Mapeo guardado" con debounce de 1 segundo
-- Al cargar Paso 2, recuperar mapeo de `localStorage` si existe para estas columnas
+- **Componente:** `UploadStep.tsx`
+- **Hook:** `useFileUpload.ts`
+- **Funcionalidad:**
+  - Dropzone para CSV (.csv, .txt)
+  - Sanitización: Descartar filas que no coincidan con el número de columnas del header
+  - Detección automática: Encoding (UTF-8, ISO-8859-1), Delimitador (coma, punto y coma)
+  - Preview de primeras filas válidas
 
-**Campos del Sistema Disponibles (mapeo 1:1 con tabla `Product`):**
-| Campo DB | Label UI | Tipo | Requerido | Default Sugerido | Funciones |
-|----------|----------|------|-----------|------------------|-----------|
-| `name` | Nombre del producto | string | Sí | - | Capitalize + Trim |
-| `sku` | SKU (código) | string | No | Auto-generado | Trim + Uppercase |
-| `barcode` | Código de barras (EAN) | string | No | - | Trim |
-| `description` | Descripción | string | No | - | Capitalize + Trim |
-| `categoryId` | Categoría | relation | No | Sin categoría | - |
-| `costPrice` | Precio de costo | Decimal | No | 0 | `['resilient_decimal', 'round_2']` |
-| `salePrice` | Precio de venta | Decimal | No | 0 | `['resilient_decimal', 'round_2']` |
-| `stock` | Stock inicial | Int | No | 0 | Round integer |
-| `minStock` | Stock mínimo | Int | No | 0 | Round integer |
-| `location` | Ubicación | string | No | - | Uppercase + Trim |
+### Paso 2: Mapear Columnas ✅
+**Objetivo:** Asignar columnas CSV a campos de DB
 
-**Nota importante:** El modelo `Product` en Prisma NO tiene campos `wholesalePrice`, `retailPrice`, ni `unit`. El precio mayorista del CSV debe mapearse al campo `salePrice` si es el precio principal de venta.
+- **Componente:** `ConfigurationStep.tsx`
+- **Hook:** `useConfiguration.ts`
+- **Componentes:** `ColumnMapper.tsx`, `FieldConfigRow.tsx`
+- **Funcionalidad:**
+  - Tabla con campos de DB como filas
+  - Transformaciones por tipo (Capitalizar, Formato numérico, etc.)
+  - Opciones globales (Omitir stock < 1, Acción con duplicados)
+  - Persistencia en localStorage
 
-**Campos del modelo Product (Prisma):**
+### Paso 3: Revisar ✅
+**Objetivo:** Validar contra DB y mostrar qué se importará
+
+- **Componente:** `ReviewStep.tsx`
+- **Hook:** Integración con API de validación
+- **Componentes:** `ProductReviewTable.tsx` con tabs
+- **Funcionalidad:**
+  - 4 tabs: Nuevos, Omitidos, Existentes, Categorías
+  - Datos transformados listos para DB
+  - Mapeo de categorías detectadas
+
+### Paso 4: Importar ✅
+**Objetivo:** Ejecutar importación con batch processing
+
+- **Componente:** `ExecuteStep.tsx`
+- **Hook:** `useImportExecution.ts`
+- **Componentes:** `ImportProgress.tsx`
+- **Funcionalidad:**
+  - Batch processing (chunks de 100)
+  - Progress bar
+  - Resultado final con reporte descargable
+
+## Campos de DB Disponibles para Mapeo
+
 ```prisma
 model Product {
   id          String   @id @default(uuid())
@@ -72,37 +82,89 @@ model Product {
   minStock    Int      @default(0)
   barcode     String?
   location    String?
+  categoryId  String
   // ... relations
 }
 ```
 
-### Paso 3: Configuración de Categorías
-- Detectar valores únicos de columna Rubro + Subrubro
-- Mostrar tabla: Rubro | Subrubro | Cantidad Productos
-- Por cada combinación, permitir:
-  - Mapear a categoría existente (search/select)
-  - O crear nueva categoría (input nombre + descripción opcional)
-- Default: crea categorías con nombre = Rubro (capitalizado)
+| Campo DB | Label UI | Tipo | Requerido | Transformación Default |
+|----------|----------|------|-----------|------------------------|
+| `name` | Nombre | String | Sí | Capitalizar + Trim |
+| `sku` | SKU/Código | String | No | Mayúsculas + Trim |
+| `barcode` | Código de barras | String | No | Trim |
+| `description` | Descripción | String | No | Capitalizar + Trim |
+| `costPrice` | Precio de costo | Decimal | No | Formato español → Decimal(10,2) |
+| `salePrice` | Precio de venta | Decimal | No | Formato español → Decimal(10,2) |
+| `stock` | Stock inicial | Int | No | Redondear entero |
+| `minStock` | Stock mínimo | Int | No | Redondear entero |
+| `location` | Ubicación | String | No | Mayúsculas + Trim |
+| `categoryId` | Categoría | Relación | No* | Capitalizar + match fuzzy |
 
-### Paso 4: Preview y Validación
-- Procesar todas las filas del CSV
-- Mostrar estadísticas:
-  - Total registros detectados
-  - Registros válidos (tienen nombre)
-  - Registros inválidos (falta nombre u obligatorio)
-  - Categorías a crear
-  - Productos por categoría
-- Lista de errores detectados (fila + motivo)
-- Botón "Importar" habilitado solo si hay válidos > 0
+*Si no se mapea categoría, se usa `defaultCategoryId`.
 
-### Paso 5: Procesamiento e Importación
-- Batch processing (chunks de 100)
-- Progress bar con contador
-- Resultado final:
-  - Productos creados exitosamente
-  - Categorías creadas
-  - Errores durante importación (si los hay)
-  - Botón "Descargar reporte" (CSV con resultado por fila)
+## Tests Unitarios ✅
+
+### Stack de Testing
+- **Framework**: Vitest (compatible con React 19)
+- **Testing Library**: @testing-library/react para render de hooks y componentes
+- **DOM Testing**: @testing-library/jest-dom/vitest para matchers
+- **Mocks**: vi.fn() de Vitest en lugar de jest.fn()
+- **Environment**: jsdom con setup personalizado
+
+### Hooks Testeados
+- **useImportState.test.ts** - 19 tests pasados ✅
+  - Navegación entre pasos
+  - Gestión de datos de archivo
+  - Gestión de configuración
+  - Gestión de resultados de validación
+  - Gestión de mapeos de categorías
+  - Gestión de resultados de importación
+  - Gestión de estado UI
+  - Persistencia (adaptada para entorno de测试)
+
+- **useFileUpload.test.ts** - 6 tests pasados ✅
+  - Inicialización correcta
+  - Reset de estado
+  - Análisis exitoso de archivos CSV
+  - Manejo de errores de API
+  - Validación de tipo de archivo (CSV obligatorio)
+  - Validación de tamaño (límite 10MB)
+
+- **useConfiguration.test.ts** - Tests pasados ✅
+  - Configuración de campos
+  - Opciones globales
+  - Auto-detección de headers (español: PRODUCTO, PRECIO, STOCK, etc.)
+  - Validación
+  - Persistencia en localStorage con clave `product-import-configuration`
+
+### Componentes Testeados
+- **UploadStep.test.tsx** - En progreso 🟡
+  - Renderizado de interfaz
+  - Manejo de archivos
+  - Estados de error (mensajes en español)
+  - Accesibilidad
+  - Integración con hooks
+  - Mocks actualizados para compatibilidad con vitest
+
+## Estado de Implementación
+
+### ✅ Completado
+- [x] Arquitectura modular con hooks separados
+- [x] Componentes reutilizables en `/components/products/import/`
+- [x] Flujo completo de 4 pasos
+- [x] Estado global con Zustand + persistencia
+- [x] Validación con Zod schemas compartidos
+- [x] Tests unitarios para hooks principales (useImportState, useFileUpload, useConfiguration)
+- [x] Migración de jest a vitest para compatibilidad con React 19
+- [x] Build exitoso sin errores
+
+### � En Progreso
+- [ ] UploadStep.test.tsx - Corrigiendo mensajes de error en español
+
+### 📋 Pendiente
+- [ ] Tests para componentes restantes (ConfigurationStep, ReviewStep, ExecuteStep)
+- [ ] Tests de integración E2E
+- [ ] Eliminar componentes obsoletos (CategoryMapper.tsx)
 
 ## Funciones de Procesamiento
 
@@ -197,16 +259,31 @@ interface MappingTemplate {
 ## Componentes UI
 
 ```
+components/products/import/
+├── steps/
+│   ├── UploadStep.tsx           # Paso 1: Cargar y analizar CSV
+│   ├── ConfigurationStep.tsx    # Paso 2: Mapear columnas
+│   ├── ReviewStep.tsx           # Paso 3: Revisar validación
+│   └── ExecuteStep.tsx          # Paso 4: Importar
+├── shared/
+│   └── StepActions.tsx          # Componente de navegación
+├── FileUploader.tsx             # Input file + detección encoding/delimiter
+├── ColumnMapper.tsx             # Mapeo columnas ↔ campos
+├── ProductReviewTable.tsx       # Tabla de revisión con tabs
+├── ImportProgress.tsx           # Progress de importación
+└── CategoryMapper.tsx           # Mapeo de categorías (obsoleto)
+
 app/adm/products/import/
-├── page.tsx                    # Página contenedora
-├── components/
-│   ├── FileUploader.tsx        # Input file + detección encoding/delimiter
-│   ├── ColumnMapper.tsx        # Mapeo columnas ↔ campos
-│   ├── PreviewTable.tsx        # Preview paginado con DataTable
-│   └── ImportButton.tsx        # Botón de importación con estado
-├── lib/
-│   ├── transformers.ts         # Helper con funciones de transformación
-│   └── transformers.test.ts    # Tests unitarios
+├── page.tsx                     # Página contenedora
+├── hooks/
+│   ├── useImportState.ts        # Estado global del importador
+│   ├── useFileUpload.ts         # Manejo de archivos
+│   ├── useConfiguration.ts      # Configuración de mapeo
+│   ├── useCategoryMapping.ts    # Mapeo de categorías
+│   └── useImportExecution.ts    # Ejecución de importación
+└── lib/
+    ├── transformers.ts         # Helper con funciones de transformación
+    └── transformers.test.ts    # Tests unitarios
 ```
 
 ## Modelo de Datos - Campos Adicionales

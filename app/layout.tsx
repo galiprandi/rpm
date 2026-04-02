@@ -5,7 +5,6 @@ import { UIProvider } from "@/components/ui/UIProvider";
 import { ThemeProvider } from "@/components/ui/ThemeProvider";
 import { UserSyncServer } from "@/components/users/UserSyncServer";
 import { TooltipProvider } from "@/components/ui/tooltip";
-
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
