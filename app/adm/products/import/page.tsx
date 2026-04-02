@@ -15,6 +15,36 @@ import { ValidationPreview } from './components/ValidationPreview';
 import { ImportProgress } from './components/ImportProgress';
 import { PreviewTable } from './components/PreviewTable';
 import { Loader2, Upload, Settings, Eye, Tag, CheckCircle, Play } from 'lucide-react';
+import { applyTransformer } from './lib/transformers';
+
+// Parse CSV line handling quotes correctly
+function parseCSVLine(line: string, delimiter: string = ','): string[] {
+  const result: string[] = [];
+  let current = '';
+  let inQuotes = false;
+  
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    const nextChar = line[i + 1];
+    
+    if (char === '"') {
+      if (inQuotes && nextChar === '"') {
+        // Escaped quote
+        current += '"';
+        i++; // Skip next quote
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (char === delimiter && !inQuotes) {
+      result.push(current.trim());
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  result.push(current.trim());
+  return result;
+}
 
 interface ColumnMapping {
   column: string;
@@ -150,9 +180,9 @@ export default function ProductImporterPage() {
       const csvContent = await fileData.file.text();
       const lines = csvContent.split('\n').filter((l) => l.trim());
       const delimiter = fileData.delimiter || ',';
-      const headers = lines[0].split(delimiter).map((h) => h.trim());
+      const headers = parseCSVLine(lines[0], delimiter).map((h) => h.trim());
       const rows = lines.slice(1).map((line) =>
-        line.split(delimiter).map((cell) => cell.trim().replace(/^["']|["']$/g, ''))
+        parseCSVLine(line, delimiter).map((cell) => cell.trim().replace(/^["']|["']$/g, ''))
       );
 
       // Process preview data
@@ -173,29 +203,9 @@ export default function ProductImporterPage() {
             return fieldMapping.defaultValue;
           }
 
-          // Apply processing
-          let processed = rawValue;
-          switch (fieldMapping.process) {
-            case 'capitalize_trim':
-              processed = rawValue
-                .split(' ')
-                .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-                .join(' ')
-                .trim();
-              break;
-            case 'uppercase_trim':
-              processed = rawValue.toUpperCase().trim();
-              break;
-            case 'lowercase_trim':
-              processed = rawValue.toLowerCase().trim();
-              break;
-            case 'trim':
-              processed = rawValue.trim();
-              break;
-            case 'parse_es_number':
-              processed = rawValue.replace(/\./g, '').replace(',', '.');
-              break;
-          }
+          // Apply processing using helper with fallback
+          const processed = applyTransformer(rawValue, fieldMapping.process, true);
+          
           return processed;
         };
 
@@ -206,7 +216,10 @@ export default function ProductImporterPage() {
           barcode: getValue('barcode'),
           description: getValue('description'),
           costPrice: getValue('costPrice') ? parseFloat(getValue('costPrice')!) : undefined,
-          salePrice: getValue('salePrice') ? parseFloat(getValue('salePrice')!) : undefined,
+          salePrice: (() => {
+            const val = getValue('salePrice');
+            return val ? parseFloat(val) : undefined;
+          })(),
           stock: getValue('stock') ? parseInt(getValue('stock')!) : undefined,
           minStock: getValue('minStock') ? parseInt(getValue('minStock')!) : undefined,
           location: getValue('location'),

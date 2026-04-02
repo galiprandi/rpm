@@ -51,8 +51,8 @@ Importador de productos desde CSV legacy con mapeo inteligente de columnas, infe
 | `barcode` | Código de barras (EAN) | string | No | - | Trim |
 | `description` | Descripción | string | No | - | Capitalize + Trim |
 | `categoryId` | Categoría | relation | No | Sin categoría | - |
-| `costPrice` | Precio de costo | Decimal | No | 0 | Round 2 decimals |
-| `salePrice` | Precio de venta | Decimal | No | 0 | Round 2 decimals |
+| `costPrice` | Precio de costo | Decimal | No | 0 | `['resilient_decimal', 'round_2']` |
+| `salePrice` | Precio de venta | Decimal | No | 0 | `['resilient_decimal', 'round_2']` |
 | `stock` | Stock inicial | Int | No | 0 | Round integer |
 | `minStock` | Stock mínimo | Int | No | 0 | Round integer |
 | `location` | Ubicación | string | No | - | Uppercase + Trim |
@@ -111,10 +111,14 @@ model Product {
 | `capitalize_trim` | Capitaliza primera letra de cada palabra + trim | strings |
 | `uppercase_trim` | Convierte a mayúsculas + trim | códigos, IDs |
 | `lowercase_trim` | Convierte a minúsculas + trim | emails, slugs |
+| `trim` | Solo elimina espacios al inicio y final | strings |
 | `round_2` | Redondea a 2 decimales | precios |
 | `round_int` | Redondea a entero | cantidades |
 | `parse_es_number` | Convierte número español (coma decimal) a float | precios legacy |
-| `boolean_yes_no` | "SI"/"YES"/"1" → true, resto → false | flags |
+| `resilient_decimal` | Detecta formato numérico (ES/EN) y convierte a decimal | precios |
+| `resilient_integer` | Detecta formato numérico y convierte a entero | cantidades |
+
+**Nota**: Los campos de precio usan un **array de transformers** (ej: `['resilient_decimal', 'round_2']`) para procesar en cadena: primero detectan/convierten el formato numérico, luego redondean.
 
 ## API Endpoints Requeridos
 
@@ -149,15 +153,12 @@ POST /api/import/products/execute
 
 ```typescript
 interface ColumnMapping {
-  name: { column: string; process: ProcessFunction; skipEmpty?: boolean };
-  code?: { column: string; process: ProcessFunction; skipEmpty?: boolean };
-  barcode?: { column: string; process: ProcessFunction; skipEmpty?: boolean };
-  categoryId?: { column: string; process: ProcessFunction; skipEmpty?: boolean };
-  costPrice?: { column: string; process: ProcessFunction; skipEmpty?: boolean };
-  wholesalePrice?: { column: string; process: ProcessFunction; skipEmpty?: boolean };
-  retailPrice?: { column: string; process: ProcessFunction; skipEmpty?: boolean };
-  stock?: { column: string; process: ProcessFunction; skipEmpty?: boolean };
-  unit?: { column: string; process: ProcessFunction; skipEmpty?: boolean };
+  [fieldKey: string]: {
+    column: string;
+    process: string | string[];  // Single transformer or array for chaining
+    skipEmpty?: boolean;
+    defaultValue?: string;
+  };
 }
 
 interface ImportOptions {
@@ -196,15 +197,16 @@ interface MappingTemplate {
 ## Componentes UI
 
 ```
-app/settings/import/products/
+app/adm/products/import/
 ├── page.tsx                    # Página contenedora
 ├── components/
-│   ├── FileUploader.tsx        # Dropzone + detección encoding
+│   ├── FileUploader.tsx        # Input file + detección encoding/delimiter
 │   ├── ColumnMapper.tsx        # Mapeo columnas ↔ campos
-│   ├── CategoryMapper.tsx      # Mapeo rubros ↔ categorías
-│   ├── ValidationPreview.tsx  # Preview + estadísticas
-│   ├── ImportProgress.tsx      # Progress bar + resultados
-│   └── ProcessFunctionSelect.tsx # Selector de funciones de procesamiento
+│   ├── PreviewTable.tsx        # Preview paginado con DataTable
+│   └── ImportButton.tsx        # Botón de importación con estado
+├── lib/
+│   ├── transformers.ts         # Helper con funciones de transformación
+│   └── transformers.test.ts    # Tests unitarios
 ```
 
 ## Modelo de Datos - Campos Adicionales
@@ -221,7 +223,7 @@ No requiere cambios en schema.prisma. Usa modelos existentes:
 |--------|------|---------|-------------|
 | `skipStockLessThanOne` | switch | false | Omitir productos con stock < 1 |
 | `duplicateAction` | select | 'skip' | Acción al detectar duplicados: skip, update, create_with_suffix |
-| `defaultCategoryName` | input | "Sin categoría" | Nombre de categoría default para rubros vacíos |
+| `defaultCategoryId` | select | "_none" | Categoría por defecto (usar "/adm/categories" para crear) |
 
 ### Opciones por Columna (Step 2 - Mapeo)
 

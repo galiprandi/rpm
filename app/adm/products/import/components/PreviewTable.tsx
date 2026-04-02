@@ -150,6 +150,8 @@ export function PreviewTable({ previewData, totalRows, mapping }: PreviewTablePr
             data={previewData}
             columns={columns}
             pageSize={20}
+            enableGlobalFilter={true}
+            globalFilterPlaceholder="Buscar productos..."
             emptyMessage="No hay datos para mostrar. Asegúrate de haber mapeado al menos el campo 'nombre'."
             footerPlaceholder="Vista previa con paginación. Los valores pueden variar según la configuración de categorías."
           />

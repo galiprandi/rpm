@@ -14,7 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 
 interface ColumnMapping {
   column: string;
-  process: string;
+  process: string | string[];
   skipEmpty?: boolean;
   defaultValue?: string;
 }
@@ -43,8 +43,8 @@ const SYSTEM_FIELDS = [
   { key: 'barcode', label: 'Código de barras (EAN)', required: false, process: 'trim' },
   { key: 'description', label: 'Descripción', required: false, process: 'capitalize_trim' },
   { key: 'categoryId', label: 'Categoría', required: false, process: 'capitalize_trim' },
-  { key: 'costPrice', label: 'Precio de costo', required: false, process: 'parse_es_number' },
-  { key: 'salePrice', label: 'Precio de venta', required: false, process: 'parse_es_number' },
+  { key: 'costPrice', label: 'Precio de costo', required: false, process: ['resilient_decimal', 'round_2'] },
+  { key: 'salePrice', label: 'Precio de venta', required: false, process: ['resilient_decimal', 'round_2'] },
   { key: 'stock', label: 'Stock inicial', required: false, process: 'round_int' },
   { key: 'minStock', label: 'Stock mínimo', required: false, process: 'round_int' },
   { key: 'location', label: 'Ubicación', required: false, process: 'uppercase_trim' },
@@ -56,6 +56,8 @@ const PROCESS_FUNCTIONS = [
   { value: 'lowercase_trim', label: 'Minúsculas + Trim' },
   { value: 'trim', label: 'Solo Trim' },
   { value: 'parse_es_number', label: 'Número Español (coma decimal)' },
+  { value: 'resilient_decimal', label: 'Número c/decimal (auto)' },
+  { value: 'resilient_integer', label: 'Número entero (auto)' },
   { value: 'round_2', label: 'Redondear 2 decimales' },
   { value: 'round_int', label: 'Redondear Entero' },
 ];
@@ -251,7 +253,7 @@ export function ColumnMapper({
                     </TableCell>
                     <TableCell>
                       <Select
-                        value={fieldMapping.process}
+                        value={Array.isArray(fieldMapping.process) ? fieldMapping.process[0] : fieldMapping.process}
                         onValueChange={(value) =>
                           updateFieldMapping(field.key, { process: value })
                         }
@@ -267,6 +269,11 @@ export function ColumnMapper({
                           ))}
                         </SelectContent>
                       </Select>
+                      {Array.isArray(fieldMapping.process) && (
+                        <span className="text-xs text-muted-foreground mt-1 block">
+                          +{fieldMapping.process.length - 1} más
+                        </span>
+                      )}
                     </TableCell>
                     <TableCell>
                       <Input
