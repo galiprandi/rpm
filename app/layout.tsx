@@ -5,7 +5,7 @@ import { UIProvider } from "@/components/ui/UIProvider";
 import { ThemeProvider } from "@/components/ui/ThemeProvider";
 import { UserSyncServer } from "@/components/users/UserSyncServer";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { DebugConsoleHelper } from "@/components/DebugConsoleHelper";
+import "@/lib/debug-auth-helper-safe";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -36,7 +36,6 @@ export default function RootLayout({
         <ThemeProvider>
           <TooltipProvider>
             <UIProvider>
-              <DebugConsoleHelper />
               <UserSyncServer />
               {children}
             </UIProvider>

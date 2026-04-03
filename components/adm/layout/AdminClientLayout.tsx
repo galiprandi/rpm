@@ -53,7 +53,7 @@ export function AdminClientLayout({ children, user }: AdminClientLayoutProps) {
             body: JSON.stringify({ role: role.toUpperCase() })
           });
 
-          if (!response.ok()) {
+          if (!response.ok) {
             throw new Error(`Error: ${response.status}`);
           }
 

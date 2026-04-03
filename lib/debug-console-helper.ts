@@ -15,7 +15,7 @@ async function switchUser(role: 'admin' | 'staff' | 'user'): Promise<void> {
       body: JSON.stringify({ role: role.toUpperCase() })
     });
 
-    if (!response.ok()) {
+    if (!response.ok) {
       throw new Error(`Error: ${response.status}`);
     }
 

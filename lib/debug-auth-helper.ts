@@ -51,7 +51,7 @@ async function switchUser(role: 'admin' | 'staff' | 'user'): Promise<void> {
       body: JSON.stringify({ role: roleMap[role] })
     });
 
-    if (!response.ok()) {
+    if (!response.ok) {
       throw new Error(`Error: ${response.status}`);
     }
 
