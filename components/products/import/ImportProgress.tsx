@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, XCircle, AlertCircle, Download, RotateCcw } from 'lucide-react';
+import { StatsCards } from './shared/StatsCards';
 
 interface ImportResult {
   row: number;
@@ -33,7 +34,7 @@ interface ImportProgressProps {
   results: ImportResult[];
   onDownloadReport: () => void;
   onReset: () => void;
-  onToggleDryRun: () => void;
+  onToggleDryRun?: () => void;
 }
 
 export function ImportProgress({
@@ -74,75 +75,33 @@ export function ImportProgress({
 
   return (
     <div className="space-y-6">
-      {/* Dry Run Toggle */}
-      <Card className="p-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="font-medium">Modo Dry-Run (Simulación)</h3>
-            <p className="text-sm text-muted-foreground">
-              {dryRun
-                ? 'No se guardarán datos. Útil para validar antes de importar.'
-                : 'Los productos se crearán/actualizarán en la base de datos.'}
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="dryRun"
-              checked={dryRun}
-              onChange={onToggleDryRun}
-              disabled={isRunning}
-              className="h-5 w-5 rounded border-gray-300"
-            />
-            <Label htmlFor="dryRun" className="cursor-pointer font-medium">
-              {dryRun ? 'Activado' : 'Desactivado'}
-            </Label>
-          </div>
-        </div>
-      </Card>
-
       {/* Progress */}
       {isRunning && (
-        <Card className="p-4">
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span>Procesando...</span>
-              <span>{progress}%</span>
-            </div>
-            <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-primary transition-all duration-300"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
+        <div className="space-y-2">
+          <div className="flex justify-between text-sm">
+            <span>Procesando...</span>
+            <span>{progress}%</span>
           </div>
-        </Card>
+          <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-primary transition-all duration-300"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
       )}
 
       {/* Stats */}
       {!isRunning && stats.total > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <Card className="p-4">
-            <div className="text-2xl font-bold">{stats.total}</div>
-            <div className="text-sm text-muted-foreground">Total</div>
-          </Card>
-          <Card className="p-4 border-green-200 bg-green-50">
-            <div className="text-2xl font-bold text-green-700">{stats.created}</div>
-            <div className="text-sm text-green-600">{dryRun ? 'Serían creados' : 'Creados'}</div>
-          </Card>
-          <Card className="p-4 border-blue-200 bg-blue-50">
-            <div className="text-2xl font-bold text-blue-700">{stats.updated}</div>
-            <div className="text-sm text-blue-600">{dryRun ? 'Serían actualizados' : 'Actualizados'}</div>
-          </Card>
-          <Card className="p-4 border-yellow-200 bg-yellow-50">
-            <div className="text-2xl font-bold text-yellow-700">{stats.skipped}</div>
-            <div className="text-sm text-yellow-600">Omitidos</div>
-          </Card>
-          <Card className="p-4 border-red-200 bg-red-50">
-            <div className="text-2xl font-bold text-red-700">{stats.errors}</div>
-            <div className="text-sm text-red-600">Errores</div>
-          </Card>
-        </div>
+        <StatsCards
+          stats={[
+            { value: stats.total, label: 'Total', color: 'gray' },
+            { value: stats.created, label: 'Creados', color: 'green' },
+            { value: stats.updated, label: 'Actualizados', color: 'blue' },
+            { value: stats.skipped, label: 'Omitidos', color: 'yellow' },
+            { value: stats.errors, label: 'Errores', color: 'red' },
+          ]}
+        />
       )}
 
       {/* Results Table */}

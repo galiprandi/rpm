@@ -7,7 +7,6 @@
  */
 
 import { useEffect } from 'react';
-import { toast } from 'sonner';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
@@ -85,39 +84,25 @@ export function ColumnMapper({
   onImportOptionsChange,
   existingCategories,
 }: ColumnMapperProps) {
-  // Load saved mapping on mount
+  // Load saved mapping on mount - DESACTIVADO
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        const savedColumns = Object.values(parsed.mapping || {}).map(
-          (m: unknown) => (m as ColumnMapping).column
-        );
-        if (savedColumns.length > 0 && savedColumns.some((c: string) => columns.includes(c))) {
-          onMappingChange(parsed.mapping);
-          onImportOptionsChange(parsed.importOptions);
-        }
-      } catch {
-        // Ignore parse errors
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    // SIN LOCALSTORAGE - Estado solo en memoria
+  }, [columns, onMappingChange, onImportOptionsChange]);
 
-  // Save mapping when it changes (debounced)
+  // Save mapping when it changes (debounced) - DESACTIVADO
   useEffect(() => {
-    if (Object.keys(mapping).length === 0) return;
+    // SIN LOCALSTORAGE - Estado solo en memoria
+    // if (Object.keys(mapping).length === 0) return;
 
-    const timer = setTimeout(() => {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({ mapping, importOptions })
-      );
-      toast.success('Configuración guardada', { duration: 2000 });
-    }, 1000);
+    // const timer = setTimeout(() => {
+    //   localStorage.setItem(
+    //     STORAGE_KEY,
+    //     JSON.stringify({ mapping, importOptions })
+    //   );
+    //   toast.success('Configuración guardada', { duration: 2000 });
+    // }, 1000);
 
-    return () => clearTimeout(timer);
+    // return () => clearTimeout(timer);
   }, [mapping, importOptions]);
 
   const updateFieldMapping = (fieldKey: string, updates: Partial<ColumnMapping>) => {

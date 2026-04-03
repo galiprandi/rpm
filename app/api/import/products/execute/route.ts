@@ -120,7 +120,7 @@ async function createCategories(
           const newCategory = await prisma.category.create({
             data: {
               name: mapping.newName,
-              description: `Importado desde CSV`,
+              description: null,
             },
           });
           idMap.set(mapping.sourceName, newCategory.id);

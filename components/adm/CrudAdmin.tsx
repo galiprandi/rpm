@@ -26,6 +26,12 @@ interface CrudAdminProps<T extends { id: string }> {
   getExportData?: (items: T[]) => Record<string, string>[];
   exportFilename?: string;
   rowActions?: (item: T) => React.ReactNode;
+  secondaryActions?: Array<{
+    label: string;
+    onClick: () => void;
+    variant?: 'outline' | 'ghost' | 'secondary';
+    icon?: React.ComponentType<{ className?: string }>;
+  }>;
 }
 
 export function CrudAdmin<T extends { id: string }>({
@@ -47,6 +53,7 @@ export function CrudAdmin<T extends { id: string }>({
   getExportData,
   exportFilename = 'export.csv',
   rowActions,
+  secondaryActions,
 }: CrudAdminProps<T>) {
   const handleExport = () => {
     if (!items.length) return;
@@ -87,6 +94,7 @@ export function CrudAdmin<T extends { id: string }>({
           icon: Download,
         }]
       : []),
+    ...(secondaryActions || []),
     {
       label: createButtonText,
       onClick: onCreate,

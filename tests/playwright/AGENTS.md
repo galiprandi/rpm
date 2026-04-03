@@ -53,6 +53,13 @@ pnpm test:e2e tests/playwright/security/
 
 Sistema que permite autenticarse automáticamente con cualquier rol (USER, STAFF, ADMIN) sin usar Google OAuth. **Solo funciona en desarrollo local.**
 
+### Cómo funciona
+
+1. El helper `loginAs()` crea una cookie `rpm_debug_auth` vía API
+2. El **proxy** (`proxy.ts`) intercepta todas las peticiones a `/adm/*`
+3. El proxy valida la cookie y rol antes de que lleguen al Server Component
+4. Si es válido, permite acceso; si no, redirige al login
+
 ### Uso Básico
 
 ```typescript
@@ -70,6 +77,16 @@ test('nombre del test', async ({ page }) => {
   await expect(page).toHaveURL('/adm/products');
 });
 ```
+
+### Rutas Soportadas
+
+✅ **Todas las rutas `/adm/*` funcionan con bypass:**
+- `/adm` - Dashboard
+- `/adm/products` - Lista de productos  
+- `/adm/products/import` - Importador de productos
+- `/adm/categories` - Categorías
+- `/adm/customers` - Clientes
+- Cualquier subruta de `/adm/*`
 
 ### Roles Disponibles
 
@@ -112,8 +129,9 @@ test.describe('Suite de tests', () => {
   });
   
   test('test 2', async ({ page }) => {
-    // Ya está logueado como ADMIN
-    await page.goto('/adm/categories');
+    // Navegar a importador funciona perfectamente
+    await page.goto('/adm/products/import');
+    await expect(page.locator('text=Importar Productos')).toBeVisible();
   });
 });
 ```
@@ -191,8 +209,19 @@ test('API de productos requiere auth', async ({ request }) => {
 
 - ✅ Debug Auth **solo funciona en `NODE_ENV=development`**
 - ✅ Requiere `DEBUG_AUTH_ENABLED=true` explícito
+- ✅ Validación en múltiples capas (proxy + cookie + rol)
 - ❌ **NUNCA** funciona en producción
 - ❌ **NUNCA** commitear `.env.local` con `DEBUG_AUTH_ENABLED=true`
+
+### Garantías de Seguridad
+
+El sistema tiene **3 capas de protección**:
+
+| Capa | Producción | Desarrollo |
+|------|------------|------------|
+| `NODE_ENV === 'production'` | ❌ Bloquea | ✅ Permite |
+| `DEBUG_AUTH_ENABLED !== 'true'` | ❌ Bloquea | ✅ Requerido |
+| Cookie inválida o rol no válido | ❌ Bloquea | ❌ Bloquea |
 
 ### Verificación de Seguridad
 
@@ -215,6 +244,16 @@ Ver reporte completo en: `tests/playwright/security/SECURITY_CERTIFICATION_REPOR
 pnpm dev:debug
 ```
 
+### Bypass funciona en `/adm` pero no en `/adm/products`
+
+**Causa:** Anteriormente había problemas con Server Components  
+**Estado:** ✅ **SOLUCIONADO** - El proxy (`proxy.ts`) ahora maneja correctamente todas las rutas `/adm/*`
+
+Si aún tienes problemas:
+1. Verifica que estés usando `pnpm dev:debug`
+2. Usa `await loginAs(page, 'ADMIN')` antes de navegar
+3. El helper ya maneja automáticamente las cookies
+
 ### "No redirect to login"
 
 **Causa:** Ya hay una sesión activa  
@@ -236,6 +275,16 @@ curl http://localhost:3000/api/auth/debug
 pnpm dev:debug
 ```
 
+### Error: "Debug auth not enabled"
+
+**Causa:** Falta variable de entorno  
+**Solución:**
+```bash
+# En terminal donde corres el servidor:
+export DEBUG_AUTH_ENABLED=true
+pnpm dev
+```
+
 ---
 
 ## 📚 Referencias
@@ -243,6 +292,7 @@ pnpm dev:debug
 - **Configuración de auth:** `/auth.ts`
 - **Server helpers:** `/lib/auth-server.ts`
 - **API endpoint:** `/app/api/auth/debug/route.ts`
+- **Proxy middleware:** `/proxy.ts` (maneja el bypass de auth)
 - **Reporte de seguridad:** `/tests/playwright/security/SECURITY_CERTIFICATION_REPORT.md`
 
 ---
@@ -254,6 +304,7 @@ pnpm dev:debug
 3. **Usar `setupAuth()` en `beforeEach` para suites completas**
 4. **No hardcodear cookies - usar siempre los helpers**
 5. **Si algo falla, verificar que el servidor esté en modo debug**
+6. **Ahora todas las rutas `/adm/*` funcionan con bypass** gracias al proxy
 
 ---
 

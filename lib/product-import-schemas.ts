@@ -125,6 +125,7 @@ export const InvalidRowSchema = z.object({
   rowIndex: z.number().int(),
   reason: z.string(),
   rawData: z.record(z.string(), z.unknown()),
+  transformedData: z.record(z.string(), z.unknown()).optional(), // Valores transformados
   errors: z.array(z.string()).optional(), // Errores de validación Zod
 });
 

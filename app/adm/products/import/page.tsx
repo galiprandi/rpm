@@ -4,7 +4,7 @@
  * Product Importer Page
  * Página principal refactorizada con arquitectura modular
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { WorkOrderStepper } from '@/components/ui/stepper';
 import { Upload, Settings, Eye, Play, CheckCircle } from 'lucide-react';
@@ -24,15 +24,18 @@ interface Category {
 }
 
 export default function ProductImporterPage() {
-  const { currentStep, reset, goToStep, fileData } = useImportState();
+  const { currentStep, reset, fileData, configuration } = useImportState();
   const [existingCategories, setExistingCategories] = useState<Category[]>([]);
+  const hasReset = useRef(false);
 
-  // Reset to step 0 if no file is loaded (prevents getting stuck on later steps after reload)
+  // Reset solo si es navegación fresca (sin datos previos) - evita bucle infinito
   useEffect(() => {
-    if (!fileData && currentStep !== 0) {
-      goToStep(0);
+    if (!hasReset.current && !fileData && (!configuration.mapping || Object.keys(configuration.mapping).length === 0)) {
+      reset();
+      console.log('🧹 Estado del importador reiniciado (navegación fresca)');
+      hasReset.current = true;
     }
-  }, [fileData, currentStep, goToStep]);
+  }, [fileData, configuration]);
 
   // Load existing categories on mount
   useEffect(() => {

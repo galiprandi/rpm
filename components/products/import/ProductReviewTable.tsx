@@ -8,10 +8,11 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { DataTable } from '@/components/ui/data-table';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Loader2, CheckCircle, AlertTriangle, XCircle, Tag } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Loader2 } from 'lucide-react';
+import { StatsCards } from './shared/StatsCards';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { 
   ValidationResult, 
@@ -210,24 +211,119 @@ export function ProductReviewTable({
     return columns;
   }, [mapping, categoryMappings]);
 
-  const invalidColumns: ColumnDef<InvalidRow>[] = [
-    {
-      accessorKey: 'rowIndex',
-      header: 'Fila',
-      size: 70,
-    },
-    {
-      accessorKey: 'reason',
-      header: 'Motivo',
-      size: 200,
-    },
-    {
-      accessorKey: 'name',
-      header: 'Nombre',
-      size: 200,
-      cell: ({ row }) => row.original.rawData?.name || '-',
-    },
-  ];
+  // Columnas para productos omitidos - exactamente igual que Nuevos pero para InvalidRow
+  const skippedColumns = useMemo<ColumnDef<InvalidRow>[]>(() => {
+    const mappedFields = Object.entries(mapping)
+      .filter(([, config]) => config.column && config.column !== '_none')
+      .map(([field]) => field);
+
+    const columns: ColumnDef<InvalidRow>[] = [];
+
+    // Add columns in order of mapping - usar valores transformados
+    for (const field of mappedFields) {
+      switch (field) {
+        case 'name':
+          columns.push({
+            accessorKey: `transformedData.name`,
+            header: 'Nombre',
+            size: 250,
+            cell: ({ row }) => row.original.transformedData?.name || '-',
+          });
+          break;
+        case 'sku':
+          columns.push({
+            accessorKey: `transformedData.sku`,
+            header: 'SKU',
+            size: 120,
+            cell: ({ row }) => row.original.transformedData?.sku || '-',
+          });
+          break;
+        case 'barcode':
+          columns.push({
+            accessorKey: `transformedData.barcode`,
+            header: 'Código de barras',
+            size: 150,
+            cell: ({ row }) => row.original.transformedData?.barcode || '-',
+          });
+          break;
+        case 'categoryId':
+          columns.push({
+            accessorKey: `transformedData.categoryId`,
+            header: 'Categoría',
+            size: 150,
+            cell: ({ row }) => row.original.transformedData?.categoryId || '-',
+          });
+          break;
+        case 'costPrice':
+          columns.push({
+            accessorKey: `transformedData.costPrice`,
+            header: 'Costo',
+            size: 100,
+            cell: ({ row }) => {
+              const value = row.original.transformedData?.costPrice;
+              return value !== undefined && value !== null && value !== ''
+                ? new Intl.NumberFormat('es-AR', {
+                    style: 'currency',
+                    currency: 'ARS',
+                  }).format(Number(value))
+                : '-';
+            },
+          });
+          break;
+        case 'salePrice':
+          columns.push({
+            accessorKey: `transformedData.salePrice`,
+            header: 'Venta',
+            size: 100,
+            cell: ({ row }) => {
+              const value = row.original.transformedData?.salePrice;
+              return value !== undefined && value !== null && value !== ''
+                ? new Intl.NumberFormat('es-AR', {
+                    style: 'currency',
+                    currency: 'ARS',
+                  }).format(Number(value))
+                : '-';
+            },
+          });
+          break;
+        case 'stock':
+          columns.push({
+            accessorKey: `transformedData.stock`,
+            header: 'Stock',
+            size: 80,
+            cell: ({ row }) => row.original.transformedData?.stock || '-',
+          });
+          break;
+        case 'minStock':
+          columns.push({
+            accessorKey: `transformedData.minStock`,
+            header: 'Stock Mín.',
+            size: 100,
+            cell: ({ row }) => row.original.transformedData?.minStock || '-',
+          });
+          break;
+        case 'location':
+          columns.push({
+            accessorKey: `transformedData.location`,
+            header: 'Ubicación',
+            size: 120,
+            cell: ({ row }) => row.original.transformedData?.location || '-',
+          });
+          break;
+        case 'description':
+          columns.push({
+            accessorKey: `transformedData.description`,
+            header: 'Descripción',
+            size: 300,
+            cell: ({ row }) => row.original.transformedData?.description || '-',
+          });
+          break;
+      }
+    }
+
+    // SIN columna "Motivo" - solo columnas mapeadas como las demás tabs
+    return columns;
+  }, [mapping]);
 
   // Tab counts
   const counts = useMemo(() => {
@@ -305,59 +401,59 @@ export function ProductReviewTable({
 
   return (
     <div className="space-y-4">
-      {/* Stats Summary */}
-      <div className="grid grid-cols-4 gap-4">
-        <Card
-          className={`cursor-pointer transition-colors ${activeTab === 'new' ? 'border-primary bg-primary/5' : ''}`}
+      {/* Stats Summary - Tabs con badges */}
+      <div className="flex flex-wrap gap-2 justify-between">
+        <div
+          className={`cursor-pointer transition-colors flex flex-col items-center gap-1 min-w-0 flex-1 ${activeTab === 'new' ? 'opacity-100' : 'opacity-70 hover:opacity-100'}`}
           onClick={() => setActiveTab('new')}
         >
-          <CardContent className="p-4 flex items-center gap-3">
-            <CheckCircle className="h-5 w-5 text-green-500" />
-            <div>
-              <div className="text-2xl font-bold">{counts.new}</div>
-              <div className="text-sm text-muted-foreground">Nuevos</div>
-            </div>
-          </CardContent>
-        </Card>
+          <Badge 
+            variant="outline" 
+            className={`bg-green-100 text-green-800 border-green-200 h-6 px-3 font-semibold text-sm ${activeTab === 'new' ? 'ring-2 ring-green-500' : ''}`}
+          >
+            {counts.new}
+          </Badge>
+          <span className="text-xs text-gray-500 whitespace-nowrap">Nuevos</span>
+        </div>
 
-        <Card
-          className={`cursor-pointer transition-colors ${activeTab === 'skipped' ? 'border-primary bg-primary/5' : ''}`}
+        <div
+          className={`cursor-pointer transition-colors flex flex-col items-center gap-1 min-w-0 flex-1 ${activeTab === 'skipped' ? 'opacity-100' : 'opacity-70 hover:opacity-100'}`}
           onClick={() => setActiveTab('skipped')}
         >
-          <CardContent className="p-4 flex items-center gap-3">
-            <XCircle className="h-5 w-5 text-red-500" />
-            <div>
-              <div className="text-2xl font-bold">{counts.skipped}</div>
-              <div className="text-sm text-muted-foreground">Omitidos</div>
-            </div>
-          </CardContent>
-        </Card>
+          <Badge 
+            variant="outline" 
+            className={`bg-red-100 text-red-800 border-red-200 h-6 px-3 font-semibold text-sm ${activeTab === 'skipped' ? 'ring-2 ring-red-500' : ''}`}
+          >
+            {counts.skipped}
+          </Badge>
+          <span className="text-xs text-gray-500 whitespace-nowrap">Omitidos</span>
+        </div>
 
-        <Card
-          className={`cursor-pointer transition-colors ${activeTab === 'existing' ? 'border-primary bg-primary/5' : ''}`}
+        <div
+          className={`cursor-pointer transition-colors flex flex-col items-center gap-1 min-w-0 flex-1 ${activeTab === 'existing' ? 'opacity-100' : 'opacity-70 hover:opacity-100'}`}
           onClick={() => setActiveTab('existing')}
         >
-          <CardContent className="p-4 flex items-center gap-3">
-            <AlertTriangle className="h-5 w-5 text-yellow-500" />
-            <div>
-              <div className="text-2xl font-bold">{counts.existing}</div>
-              <div className="text-sm text-muted-foreground">Existentes</div>
-            </div>
-          </CardContent>
-        </Card>
+          <Badge 
+            variant="outline" 
+            className={`bg-yellow-100 text-yellow-800 border-yellow-200 h-6 px-3 font-semibold text-sm ${activeTab === 'existing' ? 'ring-2 ring-yellow-500' : ''}`}
+          >
+            {counts.existing}
+          </Badge>
+          <span className="text-xs text-gray-500 whitespace-nowrap">Existentes</span>
+        </div>
 
-        <Card
-          className={`cursor-pointer transition-colors ${activeTab === 'categories' ? 'border-primary bg-primary/5' : ''}`}
+        <div
+          className={`cursor-pointer transition-colors flex flex-col items-center gap-1 min-w-0 flex-1 ${activeTab === 'categories' ? 'opacity-100' : 'opacity-70 hover:opacity-100'}`}
           onClick={() => setActiveTab('categories')}
         >
-          <CardContent className="p-4 flex items-center gap-3">
-            <Tag className="h-5 w-5 text-blue-500" />
-            <div>
-              <div className="text-2xl font-bold">{counts.categories}</div>
-              <div className="text-sm text-muted-foreground">Categorías</div>
-            </div>
-          </CardContent>
-        </Card>
+          <Badge 
+            variant="outline" 
+            className={`bg-blue-100 text-blue-800 border-blue-200 h-6 px-3 font-semibold text-sm ${activeTab === 'categories' ? 'ring-2 ring-blue-500' : ''}`}
+          >
+            {counts.categories}
+          </Badge>
+          <span className="text-xs text-gray-500 whitespace-nowrap">Categorías</span>
+        </div>
       </div>
 
       {/* Tab Content */}
@@ -372,7 +468,7 @@ export function ProductReviewTable({
       {activeTab === 'skipped' && (
         <DataTable
           data={tabData.skipped}
-          columns={invalidColumns}
+          columns={skippedColumns}
           title="Productos omitidos"
           globalFilterPlaceholder="Buscar..."
         />

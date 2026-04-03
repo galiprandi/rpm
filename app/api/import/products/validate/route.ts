@@ -163,6 +163,7 @@ export async function POST(request: NextRequest) {
           rawData: Object.fromEntries(
             csvData.headers.map((h, i) => [h, row[i] || ''])
           ),
+          transformedData: product, // Incluir valores transformados
           errors,
         });
         continue;
@@ -178,6 +179,7 @@ export async function POST(request: NextRequest) {
           rawData: Object.fromEntries(
             csvData.headers.map((h, i) => [h, row[i] || ''])
           ),
+          transformedData: product, // Incluir valores transformados
           errors: zodErrors,
         });
         continue;
@@ -193,6 +195,7 @@ export async function POST(request: NextRequest) {
           rawData: Object.fromEntries(
             csvData.headers.map((h, i) => [h, row[i] || ''])
           ),
+          transformedData: product, // Incluir valores transformados
         });
         continue;
       }
@@ -209,6 +212,7 @@ export async function POST(request: NextRequest) {
           rawData: Object.fromEntries(
             csvData.headers.map((h, i) => [h, row[i] || ''])
           ),
+          transformedData: product, // Incluir valores transformados
         });
         continue;
       }

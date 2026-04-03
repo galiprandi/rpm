@@ -4,7 +4,6 @@
  */
 
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 import type { ColumnMapping, ImportOptions, ValidationResult, DetectedCategory, ImportResult } from '@/lib/product-import-schemas';
 
 interface FileData {
@@ -65,8 +64,7 @@ const DEFAULT_OPTIONS: ImportOptions = {
 };
 
 export const useImportState = create<ImportState>()(
-  persist(
-    (set, get) => ({
+  (set, get) => ({
       // Navigation
       currentStep: 0,
       goToStep: (step) => set({ currentStep: step }),
@@ -124,18 +122,8 @@ export const useImportState = create<ImportState>()(
       // UI state
       isProcessing: false,
       setIsProcessing: (processing) => set({ isProcessing: processing }),
-    }),
-    {
-      name: 'product-import-state',
-      version: 2, // Increment version to force reset of old state that had currentStep persisted
-      // Solo persistir configuración, no paso actual ni datos temporales
-      partialize: (state) => ({
-        configuration: state.configuration,
-        // No persistir: currentStep, fileData, validationResult, categoryMappings, importResults
-      }),
-    }
-  )
-);
+    })
+  );
 
 // Selectores para componentes específicos
 export const useNavigation = () => {
@@ -187,45 +175,48 @@ export function useConfiguration(): UseConfigurationReturn {
   };
   
   const autoDetect = (columns: string[]) => {
-    // Auto-detection logic
-    const mapping: Record<string, ColumnMapping> = {};
+    // AUTO-DETECCIÓN DESACTIVADA - Forzar mapeo manual
+    console.log('Auto-detección desactivada - el usuario debe mapear manualmente');
     
-    const columnMappings: Record<string, { field: string; transform: string }> = {
-      'PRODUCTO': { field: 'name', transform: 'capitalize' },
-      'NOMBRE': { field: 'name', transform: 'capitalize' },
-      'RUBRO': { field: 'categoryId', transform: 'capitalize' },
-      'CATEGORIA': { field: 'categoryId', transform: 'capitalize' },
-      'CODIGO': { field: 'sku', transform: 'uppercase' },
-      'CODPROV': { field: 'sku', transform: 'uppercase' },
-      'SKU': { field: 'sku', transform: 'uppercase' },
-      'BARCODE': { field: 'barcode', transform: 'trim' },
-      'COD_BARRA': { field: 'barcode', transform: 'trim' },
-      'STOCK': { field: 'stock', transform: 'round' },
-      'PRESENTACION': { field: 'description', transform: 'capitalize' },
-      'DESCRIPCION': { field: 'description', transform: 'capitalize' },
-      'PRECIO COMPRA': { field: 'costPrice', transform: 'spanish' },
-      'COSTO': { field: 'costPrice', transform: 'spanish' },
-      'MAYORISTA': { field: 'salePrice', transform: 'spanish' },
-      'MINORISTA': { field: 'salePrice', transform: 'spanish' },
-      'CONTADO': { field: 'salePrice', transform: 'spanish' },
-      'PRECIO VENTA': { field: 'salePrice', transform: 'spanish' },
-    };
-    
-    columns.forEach((col) => {
-      const upperCol = col.toUpperCase().trim();
-      const config = columnMappings[upperCol];
-      if (config) {
-        mapping[config.field] = {
-          column: col,
-          transform: config.transform,
-          skipEmpty: false,
-        };
-      }
-    });
-    
-    if (Object.keys(mapping).length > 0) {
-      setMapping(mapping);
-    }
+    // Comentado para desactivar auto-mapeo
+    // const mapping: Record<string, ColumnMapping> = {};
+    // 
+    // const columnMappings: Record<string, { field: string; transform: string }> = {
+    //   'PRODUCTO': { field: 'name', transform: 'capitalize' },
+    //   'NOMBRE': { field: 'name', transform: 'capitalize' },
+    //   'RUBRO': { field: 'categoryId', transform: 'capitalize' },
+    //   'CATEGORIA': { field: 'categoryId', transform: 'capitalize' },
+    //   'CODIGO': { field: 'sku', transform: 'uppercase' },
+    //   'CODPROV': { field: 'sku', transform: 'uppercase' },
+    //   'SKU': { field: 'sku', transform: 'uppercase' },
+    //   'BARCODE': { field: 'barcode', transform: 'trim' },
+    //   'COD_BARRA': { field: 'barcode', transform: 'trim' },
+    //   'STOCK': { field: 'stock', transform: 'round' },
+    //   'PRESENTACION': { field: 'description', transform: 'capitalize' },
+    //   'DESCRIPCION': { field: 'description', transform: 'capitalize' },
+    //   'PRECIO COMPRA': { field: 'costPrice', transform: 'spanish' },
+    //   'COSTO': { field: 'costPrice', transform: 'spanish' },
+    //   'MAYORISTA': { field: 'salePrice', transform: 'spanish' },
+    //   'MINORISTA': { field: 'salePrice', transform: 'spanish' },
+    //   'CONTADO': { field: 'salePrice', transform: 'spanish' },
+    //   'PRECIO VENTA': { field: 'salePrice', transform: 'spanish' },
+    // };
+    // 
+    // columns.forEach((col) => {
+    //   const upperCol = col.toUpperCase().trim();
+    //   const config = columnMappings[upperCol];
+    //   if (config) {
+    //     mapping[config.field] = {
+    //       column: col,
+    //       transform: config.transform,
+    //       skipEmpty: false,
+    //     };
+    //   }
+    // });
+    // 
+    // if (Object.keys(mapping).length > 0) {
+    //   setMapping(mapping);
+    // }
   };
   
   const clear = () => {

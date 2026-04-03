@@ -72,7 +72,7 @@ export function ReviewStep({ existingCategories }: ReviewStepProps) {
         onBack={prevStep}
         onContinue={handleContinue}
         onContinueDisabled={!validationResult || validationResult.valid.length === 0}
-        continueLabel="Continuar a Categorías"
+        continueLabel="Siguiente"
       />
     </div>
   );

@@ -36,6 +36,68 @@ export function AdminClientLayout({ children, user }: AdminClientLayoutProps) {
     return () => clearTimeout(timer);
   }, []);
 
+  // Initialize debug helpers in development
+  useEffect(() => {
+    // Solo inicializar en desarrollo
+    if (process.env.NODE_ENV === 'development' && process.env.DEBUG_AUTH_ENABLED === 'true') {
+      console.log('🔐 Inicializando Debug Auth Helper...');
+      
+      // Función simple para cambiar de usuario
+      const switchUser = async (role: 'admin' | 'staff' | 'user'): Promise<void> => {
+        try {
+          console.log(`🔄 Cambiando a ${role.toUpperCase()}...`);
+          
+          const response = await fetch('/api/auth/debug', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ role: role.toUpperCase() })
+          });
+
+          if (!response.ok()) {
+            throw new Error(`Error: ${response.status}`);
+          }
+
+          const result = await response.json();
+          console.log('✅ Usuario cambiado:', result.user.name);
+          
+          // Recargar la página
+          location.reload();
+          
+        } catch (error) {
+          console.error('❌ Error al cambiar usuario:', error);
+        }
+      };
+
+      // Función para mostrar ayuda
+      const showHelp = (): void => {
+        console.log(`
+🔐 Debug Auth Helper - Comandos rápidos:
+
+💥 Si te redirigen a /login:
+   → await switchUser('admin')
+
+🔍 Cambiar de rol:
+   → await switchUser('admin')   // Acceso total
+   → await switchUser('staff')    // Acceso limitado
+   → await switchUser('user')     // Solo público
+
+📋 Ver usuario actual:
+   → await fetch('/api/auth/debug').then(r => r.json()).then(console.log)
+
+⚡ El más útil: await switchUser('admin')
+        `);
+      };
+
+      // Asignar a window
+      (window as any).switchUser = switchUser;
+      (window as any).showDebugHelp = showHelp;
+      
+      // Mostrar ayuda
+      console.log('🔐 Debug Auth Helper cargado. Ejecuta showDebugHelp() para ver ayuda.');
+      showHelp();
+    }
+  }, []);
+
   const handleSignOut = async () => {
     const confirmed = await confirm({
       title: 'Cerrar sesión',
