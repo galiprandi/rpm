@@ -1,0 +1,226 @@
+/**
+ * API Route: /api/import/products/execute
+ * POST: Ejecuta importación con batch processing
+ * Recibe payload validado por Zod, crea categorías y productos en batches
+ */
+
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import {
+  ImportPayloadSchema,
+  ImportResultSchema,
+  type ImportPayload,
+  type ImportResult,
+  type ImportResultItem,
+  type ProductWithCategoryInput,
+} from '@/lib/product-import-schemas';
+
+// Batch size for processing
+const BATCH_SIZE = 100;
+
+// ============================================================================
+// Batch Processing
+// ============================================================================
+
+interface BatchResult {
+  created: number;
+  failed: number;
+  skipped: number;
+  results: ImportResultItem[];
+}
+
+async function processBatch(
+  products: ProductWithCategoryInput[],
+  categoryIdMap: Map<string, string>, // detectedName -> finalCategoryId
+  startIndex: number
+): Promise<BatchResult> {
+  const results: ImportResultItem[] = [];
+  let created = 0;
+  let failed = 0;
+  const skipped = 0;
+
+  // Process sequentially within batch for transaction safety
+  for (let i = 0; i < products.length; i++) {
+    const product = products[i];
+    const globalIndex = startIndex + i;
+
+    try {
+      // Resolve category ID
+      const finalCategoryId = categoryIdMap.get(product.categoryId);
+      if (!finalCategoryId) {
+        results.push({
+          row: globalIndex,
+          name: product.name,
+          status: 'error',
+          message: `Categoría no encontrada: ${product.categoryId}`,
+        });
+        failed++;
+        continue;
+      }
+
+      // Create product
+      const createdProduct = await prisma.product.create({
+        data: {
+          ...product,
+          categoryId: finalCategoryId,
+          isActive: true,
+        },
+      });
+
+      results.push({
+        row: globalIndex,
+        name: product.name,
+        status: 'success',
+        message: 'Producto creado',
+        productId: createdProduct.id,
+      });
+      created++;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Error desconocido';
+      results.push({
+        row: globalIndex,
+        name: product.name,
+        status: 'error',
+        message: `Error: ${message}`,
+      });
+      failed++;
+    }
+  }
+
+  return { created, failed, skipped, results };
+}
+
+// ============================================================================
+// Category Creation
+// ============================================================================
+
+async function createCategories(
+  categoryMappings: ImportPayload['categoryMappings'],
+  existingCategories: Array<{ id: string; name: string }>
+): Promise<{
+  idMap: Map<string, string>; // detectedName -> categoryId
+  created: Array<{ id: string; name: string }>;
+}> {
+  const idMap = new Map<string, string>();
+  const created: Array<{ id: string; name: string }> = [];
+  const existingByName = new Map(existingCategories.map(c => [c.name.toLowerCase(), c.id]));
+
+  for (const mapping of categoryMappings) {
+    if (mapping.action === 'map' && mapping.targetId) {
+      // Use existing category
+      idMap.set(mapping.sourceName, mapping.targetId);
+    } else {
+      // Create new category
+      const existingId = existingByName.get(mapping.newName.toLowerCase());
+      if (existingId) {
+        // Category already exists (race condition or duplicate)
+        idMap.set(mapping.sourceName, existingId);
+      } else {
+        try {
+          const newCategory = await prisma.category.create({
+            data: {
+              name: mapping.newName,
+              description: null,
+            },
+          });
+          idMap.set(mapping.sourceName, newCategory.id);
+          created.push({ id: newCategory.id, name: newCategory.name });
+        } catch (error) {
+          // If creation failed, try to find existing
+          const existing = await prisma.category.findUnique({
+            where: { name: mapping.newName },
+          });
+          if (existing) {
+            idMap.set(mapping.sourceName, existing.id);
+          }
+        }
+      }
+    }
+  }
+
+  return { idMap, created };
+}
+
+// ============================================================================
+// Main Handler
+// ============================================================================
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+
+    // Validate with Zod
+    const parseResult = ImportPayloadSchema.safeParse(body);
+    if (!parseResult.success) {
+      return NextResponse.json(
+        { error: 'Payload inválido', details: parseResult.error.issues },
+        { status: 400 }
+      );
+    }
+
+    const { products, categoryMappings, options } = parseResult.data;
+
+    if (products.length === 0) {
+      return NextResponse.json(
+        { error: 'No hay productos para importar' },
+        { status: 400 }
+      );
+    }
+
+    // Get existing categories
+    const existingCategories = await prisma.category.findMany({
+      select: { id: true, name: true },
+    });
+
+    // Create/resolve categories first
+    const { idMap: categoryIdMap, created: createdCategories } = await createCategories(
+      categoryMappings,
+      existingCategories
+    );
+
+    // Filter products based on duplicate action
+    const productsToProcess = options.duplicateAction === 'skip'
+      ? products // Skip logic already handled in validation
+      : products;
+
+    // Process in batches
+    const allResults: ImportResultItem[] = [];
+    let totalCreated = 0;
+    let totalFailed = 0;
+    let totalSkipped = 0;
+
+    for (let i = 0; i < productsToProcess.length; i += BATCH_SIZE) {
+      const batch = productsToProcess.slice(i, i + BATCH_SIZE);
+      const batchResult = await processBatch(batch, categoryIdMap, i);
+
+      totalCreated += batchResult.created;
+      totalFailed += batchResult.failed;
+      totalSkipped += batchResult.skipped;
+      allResults.push(...batchResult.results);
+    }
+
+    // Build result
+    const result: ImportResult = {
+      stats: {
+        attempted: products.length,
+        created: totalCreated,
+        failed: totalFailed,
+        skipped: totalSkipped,
+      },
+      results: allResults,
+      createdCategories,
+    };
+
+    // Validate response
+    const validatedResult = ImportResultSchema.parse(result);
+
+    return NextResponse.json(validatedResult);
+
+  } catch (error) {
+    console.error('Import execution error:', error);
+    return NextResponse.json(
+      { error: 'Error ejecutando importación' },
+      { status: 500 }
+    );
+  }
+}

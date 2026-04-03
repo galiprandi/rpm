@@ -7,13 +7,88 @@
 
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
+import { cookies } from 'next/headers';
 import { UserRole } from './auth/roles';
+
+const DEBUG_COOKIE_NAME = 'rpm_debug_auth';
+
+/**
+ * Check if debug auth is enabled
+ */
+function isDebugAuthEnabled(): boolean {
+  return (
+    process.env.NODE_ENV !== 'production' &&
+    process.env.DEBUG_AUTH_ENABLED === 'true'
+  );
+}
+
+/**
+ * Get debug session from cookie
+ * Only available in development when DEBUG_AUTH_ENABLED=true
+ */
+async function getDebugSession() {
+  if (!isDebugAuthEnabled()) {
+    return null;
+  }
+
+  try {
+    const cookieStore = await cookies();
+    const debugCookie = cookieStore.get(DEBUG_COOKIE_NAME);
+
+    if (!debugCookie?.value) {
+      // Create default debug session if none exists
+      const defaultRole = (process.env.DEBUG_AUTH_DEFAULT_ROLE as UserRole) || UserRole.USER;
+      if (Object.values(UserRole).includes(defaultRole)) {
+        return createDebugSession(defaultRole);
+      }
+      return null;
+    }
+
+    const session = JSON.parse(debugCookie.value);
+    return session;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Create a mock debug session
+ */
+function createDebugSession(role: UserRole) {
+  const timestamp = Date.now();
+  return {
+    user: {
+      id: `debug-${role.toLowerCase()}-${timestamp}`,
+      name: `Debug ${role}`,
+      email: `debug-${role.toLowerCase()}@rpm.local`,
+      image: null,
+      role: role,
+    },
+    session: {
+      id: `debug-session-${timestamp}`,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      expiresAt: new Date(Date.now() + 60 * 60 * 24 * 7 * 1000),
+      userId: `debug-${role.toLowerCase()}-${timestamp}`,
+    },
+  };
+}
 
 /**
  * Get current session from server context
  * Use this in Server Components and API routes
+ * 
+ * In development with DEBUG_AUTH_ENABLED=true, returns debug session
+ * In production or without debug enabled, returns real Better Auth session
  */
 export async function getSession() {
+  // Try debug session first (only in development)
+  const debugSession = await getDebugSession();
+  if (debugSession) {
+    return debugSession;
+  }
+
+  // Fall back to real Better Auth session
   const headersList = await headers();
   const session = await auth.api.getSession({ headers: headersList });
   return session;

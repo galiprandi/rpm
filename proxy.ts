@@ -8,6 +8,51 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionCookie } from 'better-auth/cookies';
 
+const DEBUG_COOKIE_NAME = 'rpm_debug_auth';
+
+/**
+ * Check if debug auth is enabled and valid
+ * ONLY works in development with DEBUG_AUTH_ENABLED=true
+ */
+function isDebugAuthEnabled(request: NextRequest): { enabled: boolean; role?: string } {
+  // Security: Only in development
+  if (process.env.NODE_ENV === 'production') {
+    return { enabled: false };
+  }
+
+  // Security: Only if explicitly enabled
+  if (process.env.DEBUG_AUTH_ENABLED !== 'true') {
+    return { enabled: false };
+  }
+
+  // Check debug cookie
+  const debugCookie = request.cookies.get(DEBUG_COOKIE_NAME);
+  if (!debugCookie?.value) {
+    return { enabled: false };
+  }
+
+  try {
+    const session = JSON.parse(debugCookie.value);
+    const role = session?.user?.role;
+    
+    // Validate role
+    if (!role || !['USER', 'STAFF', 'ADMIN'].includes(role)) {
+      return { enabled: false };
+    }
+
+    return { enabled: true, role };
+  } catch {
+    return { enabled: false };
+  }
+}
+
+/**
+ * Check if role has access to /adm routes
+ */
+function hasAdmAccess(role: string | undefined): boolean {
+  return role === 'STAFF' || role === 'ADMIN';
+}
+
 /**
  * Proxy function for route protection
  * 
@@ -22,12 +67,41 @@ import { getSessionCookie } from 'better-auth/cookies';
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   
-  // Debug mode - bypass authentication for testing
-  // ONLY via environment variable - NEVER via query param (security risk)
-  const isDebugMode = process.env.DEBUG_AUTH === 'true';
+  // Check debug auth first (only in dev, only if enabled)
+  const debugAuth = isDebugAuthEnabled(request);
   
-  if (isDebugMode) {
-    console.log('[DEBUG] Auth bypass enabled via DEBUG_AUTH env var');
+  if (debugAuth.enabled && debugAuth.role) {
+    console.log('[PROXY] Debug auth enabled for role:', debugAuth.role);
+    
+    // Public routes always allowed
+    const publicRoutes = ['/', '/login', '/auth/error', '/api/health', '/api/health/db'];
+    if (publicRoutes.includes(pathname)) {
+      return NextResponse.next();
+    }
+    
+    // Check access based on role
+    if (pathname.startsWith('/adm/') || pathname.startsWith('/adm')) {
+      if (hasAdmAccess(debugAuth.role)) {
+        // Add debug headers for visibility
+        const response = NextResponse.next();
+        response.headers.set('x-debug-auth', 'true');
+        response.headers.set('x-debug-role', debugAuth.role);
+        return response;
+      }
+      // USER role trying to access /adm - redirect to home
+      return NextResponse.redirect(new URL('/', request.url));
+    }
+    
+    // Allow all other routes for authenticated debug users
+    const response = NextResponse.next();
+    response.headers.set('x-debug-auth', 'true');
+    response.headers.set('x-debug-role', debugAuth.role);
+    return response;
+  }
+  
+  // Legacy DEBUG_AUTH support (bypass all - deprecated but kept for compatibility)
+  if (process.env.DEBUG_AUTH === 'true') {
+    console.log('[PROXY] DEBUG_AUTH legacy mode - bypassing all auth');
     return NextResponse.next();
   }
   

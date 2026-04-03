@@ -6,16 +6,18 @@ import { Badge } from '@/components/ui/badge';
 import { ProductDialog } from '@/components/products/ProductDialog';
 import { ProductMovementsModal } from '@/components/products/ProductMovementsModal';
 import { useUI } from '@/components/ui/UIProvider';
-import { CrudAdmin, StatItem } from '@/components/adm';
-import { Package, Edit2, Trash2, AlertTriangle, DollarSign, Boxes, History } from 'lucide-react';
+import { Header, CrudAdmin, StatItem } from '@/components/adm';
+import { Package, Edit2, Trash2, AlertTriangle, DollarSign, Boxes, History, Upload } from 'lucide-react';
 import { PriceDisplay } from '@/components/ui/price-display';
 import { StockDisplay } from '@/components/ui/stock-display';
 import { type ColumnDef } from '@tanstack/react-table';
+import { useRouter } from 'next/navigation';
 
 import { type Product, type Category, type Supplier, type ProductFormData } from '@/components/products/types';
 
 export default function ProductsPage() {
   const { alert, confirm } = useUI();
+  const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -142,6 +144,10 @@ export default function ProductsPage() {
   const openCreateDialog = () => {
     resetForm();
     setIsDialogOpen(true);
+  };
+
+  const goToImporter = () => {
+    router.push('/adm/products/import');
   };
 
   const openEditDialog = (product: Product) => {
@@ -378,44 +384,60 @@ export default function ProductsPage() {
 
   return (
     <>
-      <CrudAdmin
-        title="Productos"
-        description="Gestiona el inventario de productos y servicios"
-        items={products}
-        loading={loading}
-        onCreate={openCreateDialog}
-        columns={columns}
-        stats={stats}
-        emptyIcon={<Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />}
-        emptyMessage="No hay productos creados. Haz clic en 'Nuevo Producto' para crear el primero."
-        createButtonText="Producto"
-        tableTitle="Listado de Productos"
-        searchPlaceholder="Buscar por SKU, nombre..."
-        rowActions={(product) => (
-          <div className="flex gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => openMovementsModal(product)}
-              title="Ver historial"
-            >
-              <History className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => openEditDialog(product)} title="Editar producto">
-              <Edit2 className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-red-600"
-              onClick={() => handleDelete(product)}
-              title="Eliminar producto"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
-      />
+      <div className="space-y-6">
+        <Header
+          title="Productos"
+          description="Gestiona el inventario de productos y servicios"
+          secondaryActions={[
+            {
+              label: 'Importar Productos',
+              onClick: goToImporter,
+              variant: 'outline' as const,
+              icon: Upload,
+            },
+          ]}
+        />
+
+        {/* CrudAdmin para la tabla con Exportar y Nuevo Producto */}
+        <CrudAdmin
+          title=""
+          description=""
+          items={products}
+          loading={loading}
+          onCreate={openCreateDialog}
+          columns={columns}
+          stats={stats}
+          emptyIcon={<Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />}
+          emptyMessage="No hay productos creados. Haz clic en &apos;Nuevo Producto&apos; para crear el primero."
+          createButtonText="Producto"
+          tableTitle="Listado de Productos"
+          searchPlaceholder="Buscar por SKU, nombre..."
+          rowActions={(product: Product) => (
+            <div className="flex gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => openMovementsModal(product)}
+                title="Ver historial"
+              >
+                <History className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => openEditDialog(product)} title="Editar producto">
+                <Edit2 className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-red-600"
+                onClick={() => handleDelete(product)}
+                title="Eliminar producto"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+        />
+      </div>
 
       {/* Product Modal */}
       <ProductDialog

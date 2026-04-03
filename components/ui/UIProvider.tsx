@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { createContext, useContext, useState, useCallback } from 'react';
+import { Toaster } from 'sonner';
 import { AlertDialog } from './alert-dialog';
 import { ConfirmDialog } from './confirm-dialog';
 
@@ -83,6 +84,8 @@ export function UIProvider({ children }: { children: React.ReactNode }) {
   return (
     <UIContext.Provider value={{ alert, confirm }}>
       {children}
+
+      <Toaster position="top-right" />
 
       <AlertDialog
         isOpen={!!alertState}

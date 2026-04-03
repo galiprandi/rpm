@@ -22,6 +22,171 @@ Configuración de base de datos PostgreSQL con Prisma ORM para desarrollo local 
 - **Query Optimization**: Prisma Query Engine
 - **Backup**: Automático Vercel / Manual Docker
 
+## 🔄 Importador de Productos - Impacto en Database
+
+### Consideraciones Críticas
+
+**⚠️ IMPORTANTE**: Cualquier cambio en el modelo de productos o categorías requiere adaptaciones en múltiples partes del sistema:
+
+1. **Schema Prisma** - Modificar modelos `Product` y `Category`
+2. **API Endpoints** - Actualizar `/api/import/products/*`
+3. **Transformadores** - Ajustar funciones de mapeo en `lib/transformers.ts`
+4. **Validaciones** - Actualizar schemas Zod en `lib/product-import-schemas.ts`
+5. **UI Components** - Modificar `ColumnMapper.tsx` y campos disponibles
+6. **Tests** - Actualizar mocks y expected values
+
+### Modelo Product - Campos Importables
+
+```prisma
+model Product {
+  id          String   @id @default(uuid())
+  sku         String?  @unique
+  name        String
+  description String?
+  costPrice   Decimal  @db.Decimal(10, 2)
+  salePrice   Decimal  @db.Decimal(10, 2)
+  stock       Int      @default(0)
+  minStock    Int      @default(0)
+  barcode     String?
+  location    String?
+  categoryId  String
+  supplier    String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  category    Category @relation(fields: [categoryId], references: [id])
+  workOrderItems WorkOrderItem[]
+  invoiceItems InvoiceItem[]
+  serviceKits ServiceKit[]
+
+  @@index([categoryId])
+  @@index([stock, minStock])
+  @@index([sku])
+  @@map("products")
+}
+```
+
+### Batch Processing Strategy
+
+```typescript
+// Configuración para importación masiva
+const IMPORT_BATCH_CONFIG = {
+  // Tamaño del lote para no saturar la DB
+  chunkSize: 100,
+  
+  // Transacciones por lote
+  maxRetries: 3,
+  transactionTimeout: 30000,
+  
+  // Optimizaciones Prisma
+  selectFields: {
+    id: true,
+    sku: true,
+    name: true,
+    categoryId: true
+  }
+};
+
+// Estrategia de inserción
+async function batchImport(products: ProductInput[]) {
+  const results = [];
+  
+  for (const chunk of chunkArray(products, 100)) {
+    try {
+      // Usar createMany para mejor performance
+      const result = await prisma.product.createMany({
+        data: chunk,
+        skipDuplicates: true
+      });
+      
+      results.push(result);
+    } catch (error) {
+      // Fallback a inserciones individuales si falla batch
+      for (const product of chunk) {
+        try {
+          await prisma.product.create({ data: product });
+        } catch (e) {
+          // Log error y continuar
+          console.error(`Failed to import ${product.sku}:`, e);
+        }
+      }
+    }
+  }
+  
+  return results;
+}
+```
+
+### Índices Optimizados para Importación
+
+```sql
+-- Índices específicos para validación de duplicados
+CREATE INDEX CONCURRENTLY idx_product_sku_name ON Product(sku, name) WHERE sku IS NOT NULL;
+CREATE INDEX CONCURRENTLY idx_product_category_active ON Product(categoryId, isActive) WHERE isActive = true;
+
+-- Índices para búsquedas durante importación
+CREATE INDEX CONCURRENTLY idx_product_barcode ON Product(barcode) WHERE barcode IS NOT NULL;
+CREATE INDEX CONCURRENTLY idx_category_name_lower ON Category(LOWER(name));
+
+-- Índice compuesto para stock management
+CREATE INDEX CONCURRENTLY idx_product_stock_category ON Product(stock, categoryId) WHERE isActive = true;
+```
+
+### Consideraciones de Performance
+
+```typescript
+// Límites para prevenir timeouts
+const IMPORT_LIMITS = {
+  maxFileSize: 10 * 1024 * 1024, // 10MB
+  maxRowsPerFile: 50000,         // 50k filas
+  maxBatchSize: 100,             // Productos por lote
+  maxConcurrentImports: 3,        // Importaciones simultáneas
+  queryTimeout: 30000            // 30s por query
+};
+
+// Monitoreo de recursos
+interface ImportMetrics {
+  dbConnections: number;    // Conexiones activas
+  memoryUsage: number;      // MB usados
+  queryTime: number;        // Tiempo promedio queries
+  errorsPerBatch: number;   // Errores por lote
+}
+```
+
+### Validaciones a Nivel de Base de Datos
+
+```sql
+-- Constraints para integridad de datos
+ALTER TABLE Product 
+ADD CONSTRAINT chk_product_price_positive 
+CHECK (costPrice >= 0 AND salePrice >= 0);
+
+ALTER TABLE Product 
+ADD CONSTRAINT chk_product_stock_positive 
+CHECK (stock >= 0 AND minStock >= 0);
+
+ALTER TABLE Product 
+ADD CONSTRAINT chk_product_margin_reasonable 
+CHECK (salePrice >= costPrice OR costPrice = 0);
+
+-- Trigger para auditoría de importaciones
+CREATE OR REPLACE FUNCTION log_product_import()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO import_logs(table_name, operation, record_id, timestamp)
+  VALUES ('products', 'INSERT', NEW.id, NOW());
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_product_import_audit
+AFTER INSERT ON Product
+FOR EACH ROW
+EXECUTE FUNCTION log_product_import();
+```
+
 ## Vercel Postgres Configuration
 
 ### Database Setup
