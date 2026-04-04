@@ -16,6 +16,7 @@ import {
   UserCircle,
   ClipboardList,
   Handshake,
+  CircleDollarSign,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -48,6 +49,7 @@ const navigation = [
   { name: 'Productos', href: '/adm/products', icon: Package },
   { name: 'Servicios', href: '/adm/services', icon: Handshake },
   { name: 'Categorías', href: '/adm/categories', icon: Folder },
+  { name: 'Precios', href: '/adm/price-lists', icon: CircleDollarSign },
   { name: 'Proveedores', href: '/adm/suppliers', icon: Truck },
   { name: 'Usuarios', href: '/adm/users', icon: Users },
 ];

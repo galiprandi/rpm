@@ -122,6 +122,8 @@ export default function NewWorkOrderPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [items, setItems] = useState<WorkOrderItem[]>([]);
   const [showQuickServiceDialog, setShowQuickServiceDialog] = useState(false);
+  const [selectedPriceList, setSelectedPriceList] = useState<string>("");
+  const [priceLists, setPriceLists] = useState<Array<{ id: string; name: string; baseMarginPercentage: number }>>([]);
 
   // Step 3: Checklist & Notes
   const [checklist, setChecklist] = useState<Record<string, boolean>>({});
@@ -130,12 +132,13 @@ export default function NewWorkOrderPage() {
   const [notes, setNotes] = useState("");
   const [scheduledDate, setScheduledDate] = useState("");
 
-  // Fetch services and products on mount
+  // Fetch services, products and price lists on mount
   useEffect(() => {
     const fetchData = async () => {
-      const [servicesRes, productsRes] = await Promise.all([
+      const [servicesRes, productsRes, priceListsRes] = await Promise.all([
         fetch("/api/services"),
         fetch("/api/products"),
+        fetch("/api/price-lists"),
       ]);
       if (servicesRes.ok) {
         const data = await servicesRes.json();
@@ -144,6 +147,16 @@ export default function NewWorkOrderPage() {
       if (productsRes.ok) {
         const data = await productsRes.json();
         setProducts(data.products || []);
+      }
+      if (priceListsRes.ok) {
+        const data = await priceListsRes.json();
+        const lists = data.priceLists || [];
+        setPriceLists(lists);
+        // Auto-select first active price list if available
+        const firstActive = lists.find((pl: { isActive: boolean }) => pl.isActive);
+        if (firstActive) {
+          setSelectedPriceList(firstActive.id);
+        }
       }
     };
     fetchData();
@@ -231,8 +244,32 @@ export default function NewWorkOrderPage() {
   const isMotorVehicle = (category: string) =>
     ["CAR", "TRUCK", "SUV", "PICKUP", "MOTORCYCLE", "TRAILER"].includes(category);
 
-  const addItem = (type: "PRODUCT" | "SERVICE", item: Service | Product) => {
-    const unitPrice = type === "SERVICE" ? (item as Service).baseCost : (item as Product).salePrice;
+  const addItem = async (type: "PRODUCT" | "SERVICE", item: Service | Product) => {
+    let unitPrice: number;
+    
+    if (type === "SERVICE") {
+      unitPrice = (item as Service).baseCost;
+    } else {
+      // Calculate price from selected price list
+      const product = item as Product;
+      if (selectedPriceList) {
+        try {
+          const res = await fetch(`/api/price-lists/${selectedPriceList}/calculate-price?productId=${product.id}`);
+          if (res.ok) {
+            const data = await res.json();
+            unitPrice = data.finalPrice;
+          } else {
+            // Fallback to salePrice if calculation fails
+            unitPrice = product.salePrice;
+          }
+        } catch {
+          unitPrice = product.salePrice;
+        }
+      } else {
+        unitPrice = product.salePrice;
+      }
+    }
+    
     setItems((prev) => [
       ...prev,
       {
@@ -683,6 +720,28 @@ export default function NewWorkOrderPage() {
                 </Button>
               </div>
 
+              {/* Price List Selector */}
+              {priceLists.length > 0 && (
+                <div className="space-y-2">
+                  <Label>Lista de Precios</Label>
+                  <Select
+                    value={selectedPriceList}
+                    onValueChange={setSelectedPriceList}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona una lista de precios" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {priceLists.map((pl) => (
+                        <SelectItem key={pl.id} value={pl.id}>
+                          {pl.name} (Margen: {pl.baseMarginPercentage}%)
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
               <div className="space-y-2">
                 <Label>Agregar Servicio</Label>
                 <SearchableSelect
@@ -710,13 +769,13 @@ export default function NewWorkOrderPage() {
                   searchPlaceholder="Escribe para buscar productos..."
                   emptyMessage="No se encontraron productos"
                   apiUrl="/api/products"
-                  onSelect={(item) => {
+                  onSelect={async (item) => {
                     const product = {
                       id: item.id,
                       name: item.name,
                       salePrice: item.price,
                     } as Product;
-                    addItem("PRODUCT", product);
+                    await addItem("PRODUCT", product);
                   }}
                 />
               </div>

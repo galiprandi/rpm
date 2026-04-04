@@ -62,8 +62,11 @@ export const ModelName = {
   User: 'User',
   Session: 'Session',
   Account: 'Account',
+  Setting: 'Setting',
   Verification: 'Verification',
   UserRole: 'UserRole',
+  PriceList: 'PriceList',
+  PriceListItem: 'PriceListItem',
   Category: 'Category',
   Supplier: 'Supplier',
   Product: 'Product',
@@ -266,6 +269,16 @@ export const AccountScalarFieldEnum = {
 export type AccountScalarFieldEnum = (typeof AccountScalarFieldEnum)[keyof typeof AccountScalarFieldEnum]
 
 
+export const SettingScalarFieldEnum = {
+  id: 'id',
+  key: 'key',
+  value: 'value',
+  updatedAt: 'updatedAt'
+} as const
+
+export type SettingScalarFieldEnum = (typeof SettingScalarFieldEnum)[keyof typeof SettingScalarFieldEnum]
+
+
 export const VerificationScalarFieldEnum = {
   id: 'id',
   identifier: 'identifier',
@@ -292,6 +305,35 @@ export const UserRoleScalarFieldEnum = {
 } as const
 
 export type UserRoleScalarFieldEnum = (typeof UserRoleScalarFieldEnum)[keyof typeof UserRoleScalarFieldEnum]
+
+
+export const PriceListScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  isPublic: 'isPublic',
+  isActive: 'isActive',
+  startDate: 'startDate',
+  endDate: 'endDate',
+  baseMarginPercentage: 'baseMarginPercentage',
+  roundingRule: 'roundingRule',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PriceListScalarFieldEnum = (typeof PriceListScalarFieldEnum)[keyof typeof PriceListScalarFieldEnum]
+
+
+export const PriceListItemScalarFieldEnum = {
+  id: 'id',
+  priceListId: 'priceListId',
+  productId: 'productId',
+  overrideMarginPercentage: 'overrideMarginPercentage',
+  fixedPrice: 'fixedPrice',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PriceListItemScalarFieldEnum = (typeof PriceListItemScalarFieldEnum)[keyof typeof PriceListItemScalarFieldEnum]
 
 
 export const CategoryScalarFieldEnum = {
@@ -332,6 +374,7 @@ export const ProductScalarFieldEnum = {
   description: 'description',
   costPrice: 'costPrice',
   salePrice: 'salePrice',
+  replacementCost: 'replacementCost',
   stock: 'stock',
   minStock: 'minStock',
   barcode: 'barcode',

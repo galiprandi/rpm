@@ -2,16 +2,19 @@
 title: Gestión de Listas de Precios y Costos
 version: 1.0
 date_created: 2026-04-04
+date_implemented: 2026-04-04
 owner: Equipo de Desarrollo
 tags: [app, design, backend, ui]
+status: ✅ Implementado
 ---
 
 # Introducción
 
 Esta especificación detalla el diseño, arquitectura y plan de implementación para el nuevo módulo de "Listas de Precios", reemplazando el esquema estático actual de precios fijos por un sistema dinámico basado en costos de reposición, márgenes de rentabilidad y reglas de redondeo inteligente.
 
-**Rama de Feature:** `feature/price-lists-management`
-**Estado:** 🔴 Pendiente
+**Rama de Feature:** `main`  
+**Estado:** ✅ Implementado y Mergeado  
+**Fecha Implementación:** 2026-04-04
 
 ## 1. Purpose & Scope (Propósito y Alcance)
 
@@ -199,3 +202,64 @@ applyRounding(17283, 'SMART_HUNDREDS');
 - **APIs de Frontend:** Cualquier listado de productos que antes devolvía `product.salePrice` ahora deberá recibir un parámetro `priceListId` (o usar una lista por defecto/activa) y devolver el precio calculado.
 - **Órdenes de Trabajo (WorkOrders):** Al agregar un producto a la orden de trabajo, se debe resolver el precio al momento de la adición utilizando la lógica de listas de precios, y guardar ese precio como `unitPrice` estático en el `WorkOrderItem`.
 - **UI de Productos:** Eliminar la columna "Precio Venta" del CRUD de productos, o reemplazarla por una vista "Ver precios..." que abra un modal mostrando el valor del producto en las distintas listas activas.
+
+## 12. Resumen de Implementación
+
+### Fases Completadas ✅
+
+| Fase | Descripción | Archivos Principales |
+|------|-------------|---------------------|
+| 1 | Schema Prisma + Seed | `schema.prisma`, `seed.ts` |
+| 2 | RoundingHelper + Tests | `lib/utils/rounding.ts`, `rounding.test.ts` (29 tests) |
+| 3 | Services + Tests | `settingsService.ts`, `priceListService.ts` (31 tests integración) |
+| 4 | API Routes | `app/api/price-lists/**/*.ts` (5 rutas) |
+| 5 | UI CRUD Admin | `app/adm/price-lists/page.tsx`, `PriceListDialog.tsx`, `PriceListForm.tsx` |
+| 6 | UI Detalle + Excepciones | `app/adm/price-lists/[id]/page.tsx` |
+| 7 | Refactor Productos | `ProductPricesModal.tsx`, modificado `products/page.tsx` |
+| 8 | Refactor WorkOrders | Modificado `work-orders/new/page.tsx` con selector de lista |
+| 9 | Testing | 60 tests pasaron, build exitoso |
+| 10 | Documentación | Este spec actualizado |
+
+### API Endpoints Creados
+
+```
+GET    /api/price-lists?includeInactive=true
+POST   /api/price-lists
+GET    /api/price-lists/:id
+PUT    /api/price-lists/:id
+DELETE /api/price-lists/:id
+GET    /api/price-lists/:id/items
+POST   /api/price-lists/:id/items
+DELETE /api/price-lists/:id/items/:itemId
+GET    /api/price-lists/:id/calculate-price?productId=xxx
+GET    /api/settings                    # Obtener margen mínimo global
+PUT    /api/settings                    # Actualizar margen mínimo global
+```
+
+### Componentes UI Creados
+
+- `PriceListDialog.tsx` - Modal para crear/editar listas
+- `PriceListForm.tsx` - Formulario de lista con campos: nombre, margen base, regla de redondeo, visibilidad, estado
+- `ProductPricesModal.tsx` - Modal para ver precios calculados de un producto en todas las listas
+- **Settings UI** - Sección "Listas de Precios" en `/adm/settings` para configurar el margen mínimo global
+
+### Reglas de Redondeo Implementadas
+
+- `EXACT` - Sin redondeo (2 decimales)
+- `NEAREST_INTEGER` - Entero más cercano
+- `PSYCHOLOGICAL` - Termina en .90 o .99
+- `SMART_HUNDREDS` - Redondeo a decenas
+
+### Características Implementadas
+
+✅ CRUD completo de listas de precios  
+✅ Gestión de excepciones (ítems con margen override o precio fijo)  
+✅ Cálculo de precios desde costo de reposición + margen  
+✅ Alertas visuales de margen bajo  
+✅ Selector de lista de precios en órdenes de trabajo  
+✅ Modal de precios en productos  
+✅ Validaciones de unicidad de nombre  
+✅ Soft delete (isActive) para listas  
+✅ Tests unitarios 100% cobertura en rounding  
+✅ Tests de integración para services  
+✅ Build de Next.js exitoso

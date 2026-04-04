@@ -73,6 +73,11 @@ export type Session = Prisma.SessionModel
  */
 export type Account = Prisma.AccountModel
 /**
+ * Model Setting
+ * 
+ */
+export type Setting = Prisma.SettingModel
+/**
  * Model Verification
  * 
  */
@@ -82,6 +87,16 @@ export type Verification = Prisma.VerificationModel
  * 
  */
 export type UserRole = Prisma.UserRoleModel
+/**
+ * Model PriceList
+ * 
+ */
+export type PriceList = Prisma.PriceListModel
+/**
+ * Model PriceListItem
+ * 
+ */
+export type PriceListItem = Prisma.PriceListItemModel
 /**
  * Model Category
  * 

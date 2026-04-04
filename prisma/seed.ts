@@ -41,6 +41,15 @@ const adminRole = {
   isActive: true,
 };
 
+const defaultPriceList = {
+  id: 'pl-default',
+  name: 'Lista General',
+  isPublic: true,
+  isActive: true,
+  baseMarginPercentage: 40.00,
+  roundingRule: 'SMART_HUNDREDS',
+};
+
 async function seed() {
   console.log('🌱 Iniciando seed mínimo...');
 
@@ -78,6 +87,25 @@ async function seed() {
     create: adminRole,
   });
   console.log('✅ Rol ADMIN asignado');
+
+  // Crear configuración de margen mínimo global
+  await prisma.setting.upsert({
+    where: { key: 'MINIMUM_MARGIN_PERCENTAGE' },
+    update: { value: '15.0' },
+    create: {
+      key: 'MINIMUM_MARGIN_PERCENTAGE',
+      value: '15.0',
+    },
+  });
+  console.log('✅ Configuración de margen mínimo creada (15%)');
+
+  // Crear lista de precios por defecto
+  await prisma.priceList.upsert({
+    where: { id: defaultPriceList.id },
+    update: defaultPriceList,
+    create: defaultPriceList,
+  });
+  console.log('✅ Lista de precios por defecto creada (Lista General)');
 
   console.log('🎉 Seed completado! (0 productos creados - base de datos lista para desarrollo)');
 }

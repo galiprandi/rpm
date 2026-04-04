@@ -290,6 +290,15 @@ model Account {
   @@map("account")
 }
 
+model Setting {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+
+  @@map("setting")
+}
+
 model Verification {
   id         String   @id
   identifier String
@@ -318,6 +327,51 @@ model UserRole {
   @@index([email])
   @@index([role])
   @@map("user_role")
+}
+
+// ============================================
+// Price Lists Management - Listas de Precios
+// ============================================
+
+model PriceList {
+  id                   String    @id @default(uuid())
+  name                 String
+  isPublic             Boolean   @default(false)
+  isActive             Boolean   @default(true)
+  startDate            DateTime?
+  endDate              DateTime?
+  baseMarginPercentage Decimal   @db.Decimal(5, 2)
+  roundingRule         String    @default("SMART_HUNDREDS") // EXACT, NEAREST_INTEGER, PSYCHOLOGICAL, SMART_HUNDREDS
+
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  items                PriceListItem[]
+
+  @@index([isActive])
+  @@index([isPublic])
+  @@map("price_list")
+}
+
+model PriceListItem {
+  id                       String    @id @default(uuid())
+  priceListId              String
+  priceList                PriceList @relation(fields: [priceListId], references: [id], onDelete: Cascade)
+
+  // Relación con Product
+  productId                String?
+  product                  Product?  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  overrideMarginPercentage Decimal?  @db.Decimal(5, 2)
+  fixedPrice               Decimal?  @db.Decimal(10, 2)
+
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
+
+  @@unique([priceListId, productId])
+  @@index([priceListId])
+  @@index([productId])
+  @@map("price_list_item")
 }
 
 // ============================================
@@ -370,6 +424,7 @@ model Product {
   description String?
   costPrice   Decimal  @db.Decimal(10, 2)
   salePrice   Decimal  @db.Decimal(10, 2)
+  replacementCost Decimal? @db.Decimal(10, 2) // Costo de reposición para cálculo de precios
   stock       Int      @default(0)
   minStock    Int      @default(0)
   barcode     String?  // EAN opcional
@@ -389,6 +444,9 @@ model Product {
   // Audit trail
   movements StockMovement[]
   workOrderItems WorkOrderItem[]
+  
+  // Price lists
+  priceListItems PriceListItem[]
 
   @@index([categoryId])
   @@index([supplierId])

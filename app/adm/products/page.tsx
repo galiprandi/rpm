@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ProductDialog } from '@/components/products/ProductDialog';
 import { ProductMovementsModal } from '@/components/products/ProductMovementsModal';
+import { ProductPricesModal } from '@/components/products/ProductPricesModal';
 import { useUI } from '@/components/ui/UIProvider';
 import { Header, CrudAdmin, StatItem } from '@/components/adm';
 import { Package, Edit2, Trash2, AlertTriangle, DollarSign, Boxes, History, Upload } from 'lucide-react';
@@ -99,6 +100,10 @@ export default function ProductsPage() {
   }>>([]);
   const [movementsLoading, setMovementsLoading] = useState(false);
 
+  // Prices modal state
+  const [pricesModalOpen, setPricesModalOpen] = useState(false);
+  const [selectedProductForPrices, setSelectedProductForPrices] = useState<Product | null>(null);
+
   const openMovementsModal = async (product: Product) => {
     setSelectedProductForMovements(product);
     setMovementsModalOpen(true);
@@ -122,6 +127,11 @@ export default function ProductsPage() {
     } finally {
       setMovementsLoading(false);
     }
+  };
+
+  const openPricesModal = (product: Product) => {
+    setSelectedProductForPrices(product);
+    setPricesModalOpen(true);
   };
 
   const resetForm = () => {
@@ -352,15 +362,6 @@ export default function ProductsPage() {
         ),
       },
       {
-        accessorKey: 'salePrice',
-        header: 'Precio',
-        cell: ({ row }) => (
-          <span className="font-medium">
-            <PriceDisplay value={row.original.salePrice} />
-          </span>
-        ),
-      },
-      {
         accessorKey: 'isActive',
         header: 'Estado',
         cell: ({ row }) =>
@@ -417,6 +418,14 @@ export default function ProductsPage() {
               <Button
                 variant="ghost"
                 size="sm"
+                onClick={() => openPricesModal(product)}
+                title="Ver precios"
+              >
+                <DollarSign className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => openMovementsModal(product)}
                 title="Ver historial"
               >
@@ -450,6 +459,13 @@ export default function ProductsPage() {
         categories={categories}
         suppliers={suppliers}
         isValid={formValid}
+      />
+
+      {/* Prices Modal */}
+      <ProductPricesModal
+        isOpen={pricesModalOpen}
+        onClose={() => setPricesModalOpen(false)}
+        product={selectedProductForPrices}
       />
 
       {/* Movements Modal */}
