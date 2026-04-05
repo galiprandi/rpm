@@ -68,7 +68,7 @@ interface Service {
 interface Product {
   id: string;
   name: string;
-  salePrice: number;
+  replacementCost: number;
 }
 
 interface WorkOrderItem {
@@ -259,14 +259,14 @@ export default function NewWorkOrderPage() {
             const data = await res.json();
             unitPrice = data.finalPrice;
           } else {
-            // Fallback to salePrice if calculation fails
-            unitPrice = product.salePrice;
+            // Fallback to replacementCost with default margin if calculation fails
+            unitPrice = product.replacementCost * 1.4; // 40% default margin
           }
         } catch {
-          unitPrice = product.salePrice;
+          unitPrice = product.replacementCost * 1.4; // 40% default margin
         }
       } else {
-        unitPrice = product.salePrice;
+        unitPrice = product.replacementCost * 1.4; // 40% default margin
       }
     }
     
@@ -773,7 +773,7 @@ export default function NewWorkOrderPage() {
                     const product = {
                       id: item.id,
                       name: item.name,
-                      salePrice: item.price,
+                      replacementCost: item.price,
                     } as Product;
                     await addItem("PRODUCT", product);
                   }}

@@ -98,7 +98,7 @@ El sitio público está optimizado para:
     <h3 className="text-lg font-semibold">{product.name}</h3>
     <p className="text-sm text-muted-foreground">{product.category}</p>
     <div className="mt-2 flex items-center justify-between">
-      <span className="text-xl font-bold">${product.salePrice}</span>
+      <span className="text-xl font-bold">${product.replacementCost}</span>
       <Button size="sm">Ver más</Button>
     </div>
   </CardContent>

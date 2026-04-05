@@ -44,7 +44,7 @@ model Product {
   name        String
   description String?
   costPrice   Decimal  @db.Decimal(10, 2)
-  salePrice   Decimal  @db.Decimal(10, 2)
+  replacementCost Decimal  @db.Decimal(10, 2) // Costo de reposición para cálculo de precios
   stock       Int      @default(0)
   minStock    Int      @default(0)
   barcode     String?
@@ -160,8 +160,8 @@ interface ImportMetrics {
 ```sql
 -- Constraints para integridad de datos
 ALTER TABLE Product 
-ADD CONSTRAINT chk_product_price_positive 
-CHECK (costPrice >= 0 AND salePrice >= 0);
+ADD CONSTRAINT chk_product_replacement_positive 
+CHECK (replacementCost >= 0);
 
 ALTER TABLE Product 
 ADD CONSTRAINT chk_product_stock_positive 
@@ -169,7 +169,7 @@ CHECK (stock >= 0 AND minStock >= 0);
 
 ALTER TABLE Product 
 ADD CONSTRAINT chk_product_margin_reasonable 
-CHECK (salePrice >= costPrice OR costPrice = 0);
+CHECK (replacementCost >= costPrice OR costPrice = 0);
 
 -- Trigger para auditoría de importaciones
 CREATE OR REPLACE FUNCTION log_product_import()

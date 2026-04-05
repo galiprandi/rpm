@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { ProductForm, ProductFormData } from './ProductForm';
+import { ProductForm, ProductFormData } from '@/components/products/ProductForm';
 
 describe('ProductForm', () => {
   const mockSetFormData = vi.fn();
@@ -13,7 +13,7 @@ describe('ProductForm', () => {
     supplierId: '',
     location: '',
     costPrice: '',
-    salePrice: '',
+    replacementCost: '',
     stock: '',
     minStock: '',
     description: '',
@@ -160,7 +160,7 @@ describe('ProductForm', () => {
       expect(screen.getByLabelText(/Categoría/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/Proveedor/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/Costo/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/Venta/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/Costo de Reposición/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/Stock/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/Mínimo/i)).toBeInTheDocument();
       

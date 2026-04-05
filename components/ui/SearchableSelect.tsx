@@ -71,13 +71,13 @@ export function SearchableSelect({
           name: string; 
           description?: string | null; 
           baseCost?: number; 
-          salePrice?: number;
+          replacementCost?: number;
         };
         return {
           id: typedItem.id,
           name: typedItem.name,
           description: typedItem.description,
-          price: typedItem.baseCost || typedItem.salePrice || 0,
+          price: typedItem.baseCost || typedItem.replacementCost || 0,
         };
       });
       setItems(mappedItems);

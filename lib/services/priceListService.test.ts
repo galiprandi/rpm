@@ -39,8 +39,7 @@ async function createTestProduct(categoryId: string, supplierId: string) {
     data: {
       name: `Test-Product-${Date.now()}`,
       costPrice: 100,
-      salePrice: 150,
-      replacementCost: 120,
+      replacementCost: 150,
       categoryId,
       supplierId,
       stock: 10,

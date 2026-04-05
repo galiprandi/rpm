@@ -41,7 +41,7 @@ interface ProductPricesModalProps {
   product: Product | null;
 }
 
-type EditMode = 'override' | 'fixed';
+type EditMode = 'override' | 'fixed' | 'default';
 
 export function ProductPricesModal({ isOpen, onClose, product }: ProductPricesModalProps) {
   const [priceLists, setPriceLists] = useState<PriceList[]>([]);
@@ -56,10 +56,12 @@ export function ProductPricesModal({ isOpen, onClose, product }: ProductPricesMo
     roundingRule: RoundingRule;
     baseMargin: number;
   } | null>(null);
-  const [editMode, setEditMode] = useState<EditMode>('override');
+  const [editMode, setEditMode] = useState<EditMode>('default');
   const [overrideMargin, setOverrideMargin] = useState<string>('');
   const [fixedPrice, setFixedPrice] = useState<string>('');
   const [saving, setSaving] = useState(false);
+  const [hasExistingException, setHasExistingException] = useState(false);
+  const [existingItemId, setExistingItemId] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen && product) {
@@ -106,16 +108,56 @@ export function ProductPricesModal({ isOpen, onClose, product }: ProductPricesMo
     }
   };
 
-  const handleEditMargin = (
+  const handleEditMargin = async (
     priceListId: string,
     priceListName: string,
     roundingRule: RoundingRule,
     baseMargin: number
   ) => {
     setEditingPriceList({ id: priceListId, name: priceListName, roundingRule, baseMargin });
-    setEditMode('override');
-    setOverrideMargin('');
-    setFixedPrice('');
+    
+    // Check if there's an existing exception for this product in this price list
+    try {
+      const response = await fetch(`/api/price-lists/${priceListId}/items`);
+      if (response.ok) {
+        const data = await response.json();
+        const existingItem = data.items?.find(
+          (item: { productId: string }) => item.productId === product?.id
+        );
+        
+        if (existingItem) {
+          setHasExistingException(true);
+          setExistingItemId(existingItem.id);
+          
+          // Set initial mode based on existing exception type
+          if (existingItem.fixedPrice !== null && existingItem.fixedPrice !== undefined) {
+            setEditMode('fixed');
+            setFixedPrice(existingItem.fixedPrice.toString());
+            setOverrideMargin('');
+          } else if (existingItem.overrideMarginPercentage !== null && existingItem.overrideMarginPercentage !== undefined) {
+            setEditMode('override');
+            setOverrideMargin(existingItem.overrideMarginPercentage.toString());
+            setFixedPrice('');
+          } else {
+            setEditMode('default');
+            setOverrideMargin('');
+            setFixedPrice('');
+          }
+        } else {
+          setHasExistingException(false);
+          setExistingItemId(null);
+          setEditMode('default');
+          setOverrideMargin('');
+          setFixedPrice('');
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching price list items:', error);
+      setHasExistingException(false);
+      setExistingItemId(null);
+      setEditMode('default');
+    }
+    
     setEditDialogOpen(true);
   };
 
@@ -124,6 +166,31 @@ export function ProductPricesModal({ isOpen, onClose, product }: ProductPricesMo
     
     setSaving(true);
     try {
+      // If mode is 'default' and there's an existing exception, delete it
+      if (editMode === 'default' && hasExistingException && existingItemId) {
+        const response = await fetch(
+          `/api/price-lists/${editingPriceList.id}/items/${existingItemId}`,
+          { method: 'DELETE' }
+        );
+
+        if (response.ok) {
+          setEditDialogOpen(false);
+          setHasExistingException(false);
+          setExistingItemId(null);
+          fetchPriceLists();
+        } else {
+          const error = await response.json();
+          console.error('Error deleting exception:', error);
+        }
+        return;
+      }
+
+      // If mode is 'default' but no existing exception, just close
+      if (editMode === 'default') {
+        setEditDialogOpen(false);
+        return;
+      }
+
       const body: {
         productId: string;
         overrideMarginPercentage?: number | null;
@@ -152,6 +219,7 @@ export function ProductPricesModal({ isOpen, onClose, product }: ProductPricesMo
 
       if (response.ok) {
         setEditDialogOpen(false);
+        setHasExistingException(true);
         // Refresh prices
         fetchPriceLists();
       } else {
@@ -319,6 +387,15 @@ export function ProductPricesModal({ isOpen, onClose, product }: ProductPricesMo
             <div className="flex gap-2">
               <Button
                 type="button"
+                variant={editMode === 'default' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setEditMode('default')}
+                className={hasExistingException && editMode === 'default' ? 'border-green-500' : ''}
+              >
+                Por defecto
+              </Button>
+              <Button
+                type="button"
                 variant={editMode === 'override' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setEditMode('override')}
@@ -334,6 +411,32 @@ export function ProductPricesModal({ isOpen, onClose, product }: ProductPricesMo
                 Precio fijo ($)
               </Button>
             </div>
+            
+            {/* Show info when default mode */}
+            {editMode === 'default' && (
+              <div className="space-y-3">
+                <div className="bg-muted/50 rounded-lg p-3">
+                  <p className="text-sm text-muted-foreground mb-1">
+                    Usará el margen base de la lista ({editingPriceList?.baseMargin}%)
+                  </p>
+                  <p className="text-2xl font-bold text-primary">
+                    {formatPrice(applyRounding(
+                      replacementCost * (1 + (editingPriceList?.baseMargin || 0) / 100),
+                      editingPriceList?.roundingRule || 'SMART_HUNDREDS'
+                    ))}
+                  </p>
+                </div>
+                
+                {hasExistingException && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                    <p className="text-sm text-yellow-800">
+                      <strong>Atención:</strong> Este producto tiene un precio personalizado.
+                      Guardar en modo &quot;Por defecto&quot; eliminará la excepción y volverá al precio calculado con el margen base.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
             
             {editMode === 'override' && (
               <div className="space-y-3">
@@ -424,9 +527,9 @@ export function ProductPricesModal({ isOpen, onClose, product }: ProductPricesMo
             </Button>
             <Button
               onClick={handleSaveException}
-              disabled={saving || (editMode === 'override' ? !overrideMargin : !fixedPrice)}
+              disabled={saving || (editMode === 'override' ? !overrideMargin : editMode === 'fixed' ? !fixedPrice : false)}
             >
-              {saving ? 'Guardando...' : 'Guardar'}
+              {saving ? 'Guardando...' : (editMode === 'default' && hasExistingException ? 'Eliminar excepción' : 'Guardar')}
             </Button>
           </div>
         </DialogContent>

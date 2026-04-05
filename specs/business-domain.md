@@ -333,7 +333,7 @@ RPM maneja un catálogo de **2000+ productos** accesorios vehiculares con actual
 | `barcode` | CÓDIGO BARRAS, EAN, GTIN | Trim | ❌ |
 | `description` | DESCRIPCIÓN, DETALLE | Capitalizar + Trim | ❌ |
 | `costPrice` | PRECIO COMPRA, COSTO | Número ES → Decimal(10,2) | ❌ |
-| `salePrice` | PRECIO VENTA, PRECIO LISTA | Número ES → Decimal(10,2) | ❌ |
+| `replacementCost` | COSTO REPOSICIÓN, PRECIO REPOSICIÓN | Número ES → Decimal(10,2) | ❌ |
 | `stock` | STOCK, CANTIDAD, UNIDADES | Entero | ❌ |
 | `minStock` | STOCK MÍNIMO, MÍNIMO | Entero | ❌ |
 | `location` | UBICACIÓN, SECTOR, ESTANTE | Mayúsculas + Trim | ❌ |

@@ -77,7 +77,7 @@ model Product {
   name        String
   description String?
   costPrice   Decimal  @db.Decimal(10, 2)
-  salePrice   Decimal  @db.Decimal(10, 2)
+  replacementCost Decimal @db.Decimal(10, 2)
   stock       Int      @default(0)
   minStock    Int      @default(0)
   barcode     String?
