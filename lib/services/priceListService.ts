@@ -10,6 +10,32 @@ import { Prisma } from '@/generated/client';
 import { calculateFinalPrice, calculateMarginPercentage, type RoundingRule } from '@/lib/utils/rounding';
 import { getMinimumMargin } from './settingsService';
 
+/**
+ * Calculate the effective base cost for a product.
+ * Uses replacementCost if available (> 0), otherwise falls back to costPrice.
+ * This is the centralized source of truth for product cost calculation.
+ * 
+ * @param replacementCost - The replacement cost (may be null, 0, or Prisma Decimal)
+ * @param costPrice - The cost price (fallback, may be Prisma Decimal)
+ * @returns The effective base cost as a number
+ */
+export function getProductBaseCost(
+  replacementCost: unknown,
+  costPrice: unknown
+): number {
+  const replacement = replacementCost !== null && replacementCost !== undefined
+    ? Number(replacementCost)
+    : 0;
+  
+  if (replacement > 0) {
+    return replacement;
+  }
+  
+  return costPrice !== null && costPrice !== undefined
+    ? Number(costPrice)
+    : 0;
+}
+
 // Types
 export interface PriceList {
   id: string;
@@ -283,9 +309,7 @@ export async function createPriceListItem(
     throw new Error('Product not found');
   }
 
-  const replacementCost = (product.replacementCost !== null && Number(product.replacementCost) > 0)
-    ? Number(product.replacementCost)
-    : Number(product.costPrice); // Fallback to costPrice if replacementCost not set
+  const replacementCost = getProductBaseCost(product.replacementCost, product.costPrice);
 
   // Create the item
   const item = await prisma.priceListItem.create({
@@ -366,9 +390,7 @@ export async function calculateProductPrice(
 
   if (!product) return null;
 
-  const replacementCost = (product.replacementCost !== null && Number(product.replacementCost) > 0)
-    ? Number(product.replacementCost)
-    : Number(product.costPrice);
+  const replacementCost = getProductBaseCost(product.replacementCost, product.costPrice);
 
   // Check for exception
   const exception = await prisma.priceListItem.findUnique({

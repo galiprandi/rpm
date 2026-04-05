@@ -71,8 +71,6 @@ export async function proxy(request: NextRequest) {
   const debugAuth = isDebugAuthEnabled(request);
   
   if (debugAuth.enabled && debugAuth.role) {
-    console.log('[PROXY] Debug auth enabled for role:', debugAuth.role);
-    
     // Public routes always allowed
     const publicRoutes = ['/', '/login', '/auth/error', '/api/health', '/api/health/db'];
     if (publicRoutes.includes(pathname)) {
@@ -101,7 +99,6 @@ export async function proxy(request: NextRequest) {
   
   // Legacy DEBUG_AUTH support (bypass all - deprecated but kept for compatibility)
   if (process.env.DEBUG_AUTH === 'true') {
-    console.log('[PROXY] DEBUG_AUTH legacy mode - bypassing all auth');
     return NextResponse.next();
   }
   

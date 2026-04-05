@@ -66,18 +66,26 @@ export function SearchableSelect({
       // Handle different response structures
       const itemsList = data.services || data.products || [];
       const mappedItems: SearchableItem[] = itemsList.map((item: unknown) => {
-        const typedItem = item as { 
-          id: string; 
-          name: string; 
-          description?: string | null; 
-          baseCost?: number; 
+        const typedItem = item as {
+          id: string;
+          name: string;
+          description?: string | null;
+          baseCost?: number;
           replacementCost?: number;
+          costPrice?: number;
         };
+        // For services: use baseCost
+        // For products: use replacementCost if > 0, otherwise costPrice
+        const price = typedItem.baseCost ??
+          (typedItem.replacementCost && typedItem.replacementCost > 0
+            ? typedItem.replacementCost
+            : typedItem.costPrice) ??
+          0;
         return {
           id: typedItem.id,
           name: typedItem.name,
           description: typedItem.description,
-          price: typedItem.baseCost || typedItem.replacementCost || 0,
+          price,
         };
       });
       setItems(mappedItems);

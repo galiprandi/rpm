@@ -222,7 +222,7 @@ export async function POST(request: NextRequest) {
     let totalProducts = 0;
     let totalServices = 0;
 
-    const workOrderItems = items?.map((item: { type: string; productId?: string; serviceId?: string; quantity: number; unitPrice: number }) => {
+    const workOrderItems = items?.map((item: { type: string; productId?: string; serviceId?: string; quantity: number; unitPrice: number; priceListId?: string; isManualPrice?: boolean }) => {
       const subtotal = item.quantity * item.unitPrice;
       if (item.type === "PRODUCT") {
         totalProducts += subtotal;
@@ -242,6 +242,22 @@ export async function POST(request: NextRequest) {
     const total = totalProducts + totalServices;
 
     // 5. Create WorkOrder
+    console.log("Creating WorkOrder with data:", {
+      customerId,
+      vehicleId: vehicle.id,
+      technicianId,
+      status: scheduledDate ? "CONFIRMED" : "WAITING",
+      source,
+      entryChecklist,
+      odometerValue: odometerValue || null,
+      fuelLevel: fuelLevel || null,
+      notes: notes || "",
+      scheduledDate: scheduledDate ? new Date(scheduledDate) : null,
+      total,
+      totalProducts,
+      totalServices,
+    });
+
     const workOrder = await prisma.workOrder.create({
       data: {
         customerId,
@@ -257,9 +273,6 @@ export async function POST(request: NextRequest) {
         total,
         totalProducts,
         totalServices,
-        items: {
-          create: workOrderItems,
-        },
       },
       include: {
         customer: true,
@@ -277,6 +290,23 @@ export async function POST(request: NextRequest) {
         },
       },
     });
+
+    console.log("WorkOrder created successfully:", workOrder.id);
+
+    // 6. Create WorkOrderItems separately
+    if (workOrderItems.length > 0) {
+      console.log("Creating WorkOrderItems:", workOrderItems);
+      console.log("WorkOrder ID:", workOrder.id);
+      
+      await prisma.work_order_item.createMany({
+        data: workOrderItems.map((item: any) => ({
+          ...item,
+          workOrderId: workOrder.id,
+        })),
+      });
+      
+      console.log("WorkOrderItems created successfully");
+    }
 
     return NextResponse.json(workOrder, { status: 201 });
   } catch (error) {

@@ -18,102 +18,102 @@ export { Prisma }
 export * as $Enums from './enums'
 export * from './enums';
 /**
- * Model Customer
+ * Model account
  * 
  */
-export type Customer = Prisma.CustomerModel
+export type account = Prisma.accountModel
 /**
- * Model VehicleMake
+ * Model category
  * 
  */
-export type VehicleMake = Prisma.VehicleMakeModel
+export type category = Prisma.categoryModel
 /**
- * Model VehicleModel
+ * Model customer
  * 
  */
-export type VehicleModel = Prisma.VehicleModelModel
+export type customer = Prisma.customerModel
 /**
- * Model Vehicle
+ * Model photo
  * 
  */
-export type Vehicle = Prisma.VehicleModel
+export type photo = Prisma.photoModel
 /**
- * Model Service
+ * Model price_list
  * 
  */
-export type Service = Prisma.ServiceModel
+export type price_list = Prisma.price_listModel
 /**
- * Model WorkOrder
+ * Model price_list_item
  * 
  */
-export type WorkOrder = Prisma.WorkOrderModel
+export type price_list_item = Prisma.price_list_itemModel
 /**
- * Model WorkOrderItem
+ * Model product
  * 
  */
-export type WorkOrderItem = Prisma.WorkOrderItemModel
+export type product = Prisma.productModel
 /**
- * Model Photo
+ * Model service
  * 
  */
-export type Photo = Prisma.PhotoModel
+export type service = Prisma.serviceModel
 /**
- * Model User
+ * Model session
  * 
  */
-export type User = Prisma.UserModel
+export type session = Prisma.sessionModel
 /**
- * Model Session
+ * Model setting
  * 
  */
-export type Session = Prisma.SessionModel
+export type setting = Prisma.settingModel
 /**
- * Model Account
+ * Model stock_movement
  * 
  */
-export type Account = Prisma.AccountModel
+export type stock_movement = Prisma.stock_movementModel
 /**
- * Model Setting
+ * Model supplier
  * 
  */
-export type Setting = Prisma.SettingModel
+export type supplier = Prisma.supplierModel
 /**
- * Model Verification
+ * Model user
  * 
  */
-export type Verification = Prisma.VerificationModel
+export type user = Prisma.userModel
 /**
- * Model UserRole
+ * Model user_role
  * 
  */
-export type UserRole = Prisma.UserRoleModel
+export type user_role = Prisma.user_roleModel
 /**
- * Model PriceList
+ * Model vehicle
  * 
  */
-export type PriceList = Prisma.PriceListModel
+export type vehicle = Prisma.vehicleModel
 /**
- * Model PriceListItem
+ * Model vehicle_make
  * 
  */
-export type PriceListItem = Prisma.PriceListItemModel
+export type vehicle_make = Prisma.vehicle_makeModel
 /**
- * Model Category
+ * Model vehicle_model
  * 
  */
-export type Category = Prisma.CategoryModel
+export type vehicle_model = Prisma.vehicle_modelModel
 /**
- * Model Supplier
+ * Model verification
  * 
  */
-export type Supplier = Prisma.SupplierModel
+export type verification = Prisma.verificationModel
 /**
- * Model Product
+ * Model work_order
  * 
  */
-export type Product = Prisma.ProductModel
+export type work_order = Prisma.work_orderModel
 /**
- * Model StockMovement
+ * Model work_order_item
  * 
  */
-export type StockMovement = Prisma.StockMovementModel
+export type work_order_item = Prisma.work_order_itemModel

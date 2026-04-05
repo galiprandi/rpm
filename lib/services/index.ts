@@ -72,6 +72,7 @@ export {
   createPriceListItem,
   deletePriceListItem,
   calculateProductPrice,
+  getProductBaseCost,
   type PriceList,
   type PriceListItem,
   type PriceListDetail,

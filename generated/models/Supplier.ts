@@ -4,7 +4,7 @@
 // biome-ignore-all lint: generated file
 // @ts-nocheck 
 /*
- * This file exports the `Supplier` model and its related types.
+ * This file exports the `supplier` model and its related types.
  *
  * 🟢 You can import this file directly.
  */
@@ -13,10 +13,10 @@ import type * as $Enums from "../enums"
 import type * as Prisma from "../internal/prismaNamespace"
 
 /**
- * Model Supplier
+ * Model supplier
  * 
  */
-export type SupplierModel = runtime.Types.Result.DefaultSelection<Prisma.$SupplierPayload>
+export type supplierModel = runtime.Types.Result.DefaultSelection<Prisma.$supplierPayload>
 
 export type AggregateSupplier = {
   _count: SupplierCountAggregateOutputType | null
@@ -107,37 +107,37 @@ export type SupplierCountAggregateInputType = {
 
 export type SupplierAggregateArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Filter which Supplier to aggregate.
+   * Filter which supplier to aggregate.
    */
-  where?: Prisma.SupplierWhereInput
+  where?: Prisma.supplierWhereInput
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
    * 
-   * Determine the order of Suppliers to fetch.
+   * Determine the order of suppliers to fetch.
    */
-  orderBy?: Prisma.SupplierOrderByWithRelationInput | Prisma.SupplierOrderByWithRelationInput[]
+  orderBy?: Prisma.supplierOrderByWithRelationInput | Prisma.supplierOrderByWithRelationInput[]
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
    * 
    * Sets the start position
    */
-  cursor?: Prisma.SupplierWhereUniqueInput
+  cursor?: Prisma.supplierWhereUniqueInput
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
    * 
-   * Take `±n` Suppliers from the position of the cursor.
+   * Take `±n` suppliers from the position of the cursor.
    */
   take?: number
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
    * 
-   * Skip the first `n` Suppliers.
+   * Skip the first `n` suppliers.
    */
   skip?: number
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    * 
-   * Count returned Suppliers
+   * Count returned suppliers
   **/
   _count?: true | SupplierCountAggregateInputType
   /**
@@ -165,11 +165,11 @@ export type GetSupplierAggregateType<T extends SupplierAggregateArgs> = {
 
 
 
-export type SupplierGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.SupplierWhereInput
-  orderBy?: Prisma.SupplierOrderByWithAggregationInput | Prisma.SupplierOrderByWithAggregationInput[]
+export type supplierGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.supplierWhereInput
+  orderBy?: Prisma.supplierOrderByWithAggregationInput | Prisma.supplierOrderByWithAggregationInput[]
   by: Prisma.SupplierScalarFieldEnum[] | Prisma.SupplierScalarFieldEnum
-  having?: Prisma.SupplierScalarWhereWithAggregatesInput
+  having?: Prisma.supplierScalarWhereWithAggregatesInput
   take?: number
   skip?: number
   _count?: SupplierCountAggregateInputType | true
@@ -193,7 +193,7 @@ export type SupplierGroupByOutputType = {
   _max: SupplierMaxAggregateOutputType | null
 }
 
-type GetSupplierGroupByPayload<T extends SupplierGroupByArgs> = Prisma.PrismaPromise<
+type GetSupplierGroupByPayload<T extends supplierGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<SupplierGroupByOutputType, T['by']> &
       {
@@ -208,24 +208,24 @@ type GetSupplierGroupByPayload<T extends SupplierGroupByArgs> = Prisma.PrismaPro
 
 
 
-export type SupplierWhereInput = {
-  AND?: Prisma.SupplierWhereInput | Prisma.SupplierWhereInput[]
-  OR?: Prisma.SupplierWhereInput[]
-  NOT?: Prisma.SupplierWhereInput | Prisma.SupplierWhereInput[]
-  id?: Prisma.StringFilter<"Supplier"> | string
-  name?: Prisma.StringFilter<"Supplier"> | string
-  contactName?: Prisma.StringNullableFilter<"Supplier"> | string | null
-  phone?: Prisma.StringNullableFilter<"Supplier"> | string | null
-  email?: Prisma.StringNullableFilter<"Supplier"> | string | null
-  address?: Prisma.StringNullableFilter<"Supplier"> | string | null
-  notes?: Prisma.StringNullableFilter<"Supplier"> | string | null
-  isActive?: Prisma.BoolFilter<"Supplier"> | boolean
-  createdAt?: Prisma.DateTimeFilter<"Supplier"> | Date | string
-  updatedAt?: Prisma.DateTimeFilter<"Supplier"> | Date | string
-  products?: Prisma.ProductListRelationFilter
+export type supplierWhereInput = {
+  AND?: Prisma.supplierWhereInput | Prisma.supplierWhereInput[]
+  OR?: Prisma.supplierWhereInput[]
+  NOT?: Prisma.supplierWhereInput | Prisma.supplierWhereInput[]
+  id?: Prisma.StringFilter<"supplier"> | string
+  name?: Prisma.StringFilter<"supplier"> | string
+  contactName?: Prisma.StringNullableFilter<"supplier"> | string | null
+  phone?: Prisma.StringNullableFilter<"supplier"> | string | null
+  email?: Prisma.StringNullableFilter<"supplier"> | string | null
+  address?: Prisma.StringNullableFilter<"supplier"> | string | null
+  notes?: Prisma.StringNullableFilter<"supplier"> | string | null
+  isActive?: Prisma.BoolFilter<"supplier"> | boolean
+  createdAt?: Prisma.DateTimeFilter<"supplier"> | Date | string
+  updatedAt?: Prisma.DateTimeFilter<"supplier"> | Date | string
+  product?: Prisma.ProductListRelationFilter
 }
 
-export type SupplierOrderByWithRelationInput = {
+export type supplierOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   contactName?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -236,27 +236,27 @@ export type SupplierOrderByWithRelationInput = {
   isActive?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
-  products?: Prisma.ProductOrderByRelationAggregateInput
+  product?: Prisma.productOrderByRelationAggregateInput
 }
 
-export type SupplierWhereUniqueInput = Prisma.AtLeast<{
+export type supplierWhereUniqueInput = Prisma.AtLeast<{
   id?: string
   name?: string
-  AND?: Prisma.SupplierWhereInput | Prisma.SupplierWhereInput[]
-  OR?: Prisma.SupplierWhereInput[]
-  NOT?: Prisma.SupplierWhereInput | Prisma.SupplierWhereInput[]
-  contactName?: Prisma.StringNullableFilter<"Supplier"> | string | null
-  phone?: Prisma.StringNullableFilter<"Supplier"> | string | null
-  email?: Prisma.StringNullableFilter<"Supplier"> | string | null
-  address?: Prisma.StringNullableFilter<"Supplier"> | string | null
-  notes?: Prisma.StringNullableFilter<"Supplier"> | string | null
-  isActive?: Prisma.BoolFilter<"Supplier"> | boolean
-  createdAt?: Prisma.DateTimeFilter<"Supplier"> | Date | string
-  updatedAt?: Prisma.DateTimeFilter<"Supplier"> | Date | string
-  products?: Prisma.ProductListRelationFilter
+  AND?: Prisma.supplierWhereInput | Prisma.supplierWhereInput[]
+  OR?: Prisma.supplierWhereInput[]
+  NOT?: Prisma.supplierWhereInput | Prisma.supplierWhereInput[]
+  contactName?: Prisma.StringNullableFilter<"supplier"> | string | null
+  phone?: Prisma.StringNullableFilter<"supplier"> | string | null
+  email?: Prisma.StringNullableFilter<"supplier"> | string | null
+  address?: Prisma.StringNullableFilter<"supplier"> | string | null
+  notes?: Prisma.StringNullableFilter<"supplier"> | string | null
+  isActive?: Prisma.BoolFilter<"supplier"> | boolean
+  createdAt?: Prisma.DateTimeFilter<"supplier"> | Date | string
+  updatedAt?: Prisma.DateTimeFilter<"supplier"> | Date | string
+  product?: Prisma.ProductListRelationFilter
 }, "id" | "name">
 
-export type SupplierOrderByWithAggregationInput = {
+export type supplierOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   contactName?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -267,29 +267,29 @@ export type SupplierOrderByWithAggregationInput = {
   isActive?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
-  _count?: Prisma.SupplierCountOrderByAggregateInput
-  _max?: Prisma.SupplierMaxOrderByAggregateInput
-  _min?: Prisma.SupplierMinOrderByAggregateInput
+  _count?: Prisma.supplierCountOrderByAggregateInput
+  _max?: Prisma.supplierMaxOrderByAggregateInput
+  _min?: Prisma.supplierMinOrderByAggregateInput
 }
 
-export type SupplierScalarWhereWithAggregatesInput = {
-  AND?: Prisma.SupplierScalarWhereWithAggregatesInput | Prisma.SupplierScalarWhereWithAggregatesInput[]
-  OR?: Prisma.SupplierScalarWhereWithAggregatesInput[]
-  NOT?: Prisma.SupplierScalarWhereWithAggregatesInput | Prisma.SupplierScalarWhereWithAggregatesInput[]
-  id?: Prisma.StringWithAggregatesFilter<"Supplier"> | string
-  name?: Prisma.StringWithAggregatesFilter<"Supplier"> | string
-  contactName?: Prisma.StringNullableWithAggregatesFilter<"Supplier"> | string | null
-  phone?: Prisma.StringNullableWithAggregatesFilter<"Supplier"> | string | null
-  email?: Prisma.StringNullableWithAggregatesFilter<"Supplier"> | string | null
-  address?: Prisma.StringNullableWithAggregatesFilter<"Supplier"> | string | null
-  notes?: Prisma.StringNullableWithAggregatesFilter<"Supplier"> | string | null
-  isActive?: Prisma.BoolWithAggregatesFilter<"Supplier"> | boolean
-  createdAt?: Prisma.DateTimeWithAggregatesFilter<"Supplier"> | Date | string
-  updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Supplier"> | Date | string
+export type supplierScalarWhereWithAggregatesInput = {
+  AND?: Prisma.supplierScalarWhereWithAggregatesInput | Prisma.supplierScalarWhereWithAggregatesInput[]
+  OR?: Prisma.supplierScalarWhereWithAggregatesInput[]
+  NOT?: Prisma.supplierScalarWhereWithAggregatesInput | Prisma.supplierScalarWhereWithAggregatesInput[]
+  id?: Prisma.StringWithAggregatesFilter<"supplier"> | string
+  name?: Prisma.StringWithAggregatesFilter<"supplier"> | string
+  contactName?: Prisma.StringNullableWithAggregatesFilter<"supplier"> | string | null
+  phone?: Prisma.StringNullableWithAggregatesFilter<"supplier"> | string | null
+  email?: Prisma.StringNullableWithAggregatesFilter<"supplier"> | string | null
+  address?: Prisma.StringNullableWithAggregatesFilter<"supplier"> | string | null
+  notes?: Prisma.StringNullableWithAggregatesFilter<"supplier"> | string | null
+  isActive?: Prisma.BoolWithAggregatesFilter<"supplier"> | boolean
+  createdAt?: Prisma.DateTimeWithAggregatesFilter<"supplier"> | Date | string
+  updatedAt?: Prisma.DateTimeWithAggregatesFilter<"supplier"> | Date | string
 }
 
-export type SupplierCreateInput = {
-  id?: string
+export type supplierCreateInput = {
+  id: string
   name: string
   contactName?: string | null
   phone?: string | null
@@ -298,12 +298,12 @@ export type SupplierCreateInput = {
   notes?: string | null
   isActive?: boolean
   createdAt?: Date | string
-  updatedAt?: Date | string
-  products?: Prisma.ProductCreateNestedManyWithoutSupplierInput
+  updatedAt: Date | string
+  product?: Prisma.productCreateNestedManyWithoutSupplierInput
 }
 
-export type SupplierUncheckedCreateInput = {
-  id?: string
+export type supplierUncheckedCreateInput = {
+  id: string
   name: string
   contactName?: string | null
   phone?: string | null
@@ -312,11 +312,11 @@ export type SupplierUncheckedCreateInput = {
   notes?: string | null
   isActive?: boolean
   createdAt?: Date | string
-  updatedAt?: Date | string
-  products?: Prisma.ProductUncheckedCreateNestedManyWithoutSupplierInput
+  updatedAt: Date | string
+  product?: Prisma.productUncheckedCreateNestedManyWithoutSupplierInput
 }
 
-export type SupplierUpdateInput = {
+export type supplierUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   contactName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -327,10 +327,10 @@ export type SupplierUpdateInput = {
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  products?: Prisma.ProductUpdateManyWithoutSupplierNestedInput
+  product?: Prisma.productUpdateManyWithoutSupplierNestedInput
 }
 
-export type SupplierUncheckedUpdateInput = {
+export type supplierUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   contactName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -341,11 +341,11 @@ export type SupplierUncheckedUpdateInput = {
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  products?: Prisma.ProductUncheckedUpdateManyWithoutSupplierNestedInput
+  product?: Prisma.productUncheckedUpdateManyWithoutSupplierNestedInput
 }
 
-export type SupplierCreateManyInput = {
-  id?: string
+export type supplierCreateManyInput = {
+  id: string
   name: string
   contactName?: string | null
   phone?: string | null
@@ -354,10 +354,10 @@ export type SupplierCreateManyInput = {
   notes?: string | null
   isActive?: boolean
   createdAt?: Date | string
-  updatedAt?: Date | string
+  updatedAt: Date | string
 }
 
-export type SupplierUpdateManyMutationInput = {
+export type supplierUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   contactName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -370,7 +370,7 @@ export type SupplierUpdateManyMutationInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
-export type SupplierUncheckedUpdateManyInput = {
+export type supplierUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   contactName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -381,70 +381,70 @@ export type SupplierUncheckedUpdateManyInput = {
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-}
-
-export type SupplierCountOrderByAggregateInput = {
-  id?: Prisma.SortOrder
-  name?: Prisma.SortOrder
-  contactName?: Prisma.SortOrder
-  phone?: Prisma.SortOrder
-  email?: Prisma.SortOrder
-  address?: Prisma.SortOrder
-  notes?: Prisma.SortOrder
-  isActive?: Prisma.SortOrder
-  createdAt?: Prisma.SortOrder
-  updatedAt?: Prisma.SortOrder
-}
-
-export type SupplierMaxOrderByAggregateInput = {
-  id?: Prisma.SortOrder
-  name?: Prisma.SortOrder
-  contactName?: Prisma.SortOrder
-  phone?: Prisma.SortOrder
-  email?: Prisma.SortOrder
-  address?: Prisma.SortOrder
-  notes?: Prisma.SortOrder
-  isActive?: Prisma.SortOrder
-  createdAt?: Prisma.SortOrder
-  updatedAt?: Prisma.SortOrder
-}
-
-export type SupplierMinOrderByAggregateInput = {
-  id?: Prisma.SortOrder
-  name?: Prisma.SortOrder
-  contactName?: Prisma.SortOrder
-  phone?: Prisma.SortOrder
-  email?: Prisma.SortOrder
-  address?: Prisma.SortOrder
-  notes?: Prisma.SortOrder
-  isActive?: Prisma.SortOrder
-  createdAt?: Prisma.SortOrder
-  updatedAt?: Prisma.SortOrder
 }
 
 export type SupplierNullableScalarRelationFilter = {
-  is?: Prisma.SupplierWhereInput | null
-  isNot?: Prisma.SupplierWhereInput | null
+  is?: Prisma.supplierWhereInput | null
+  isNot?: Prisma.supplierWhereInput | null
 }
 
-export type SupplierCreateNestedOneWithoutProductsInput = {
-  create?: Prisma.XOR<Prisma.SupplierCreateWithoutProductsInput, Prisma.SupplierUncheckedCreateWithoutProductsInput>
-  connectOrCreate?: Prisma.SupplierCreateOrConnectWithoutProductsInput
-  connect?: Prisma.SupplierWhereUniqueInput
+export type supplierCountOrderByAggregateInput = {
+  id?: Prisma.SortOrder
+  name?: Prisma.SortOrder
+  contactName?: Prisma.SortOrder
+  phone?: Prisma.SortOrder
+  email?: Prisma.SortOrder
+  address?: Prisma.SortOrder
+  notes?: Prisma.SortOrder
+  isActive?: Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
+  updatedAt?: Prisma.SortOrder
 }
 
-export type SupplierUpdateOneWithoutProductsNestedInput = {
-  create?: Prisma.XOR<Prisma.SupplierCreateWithoutProductsInput, Prisma.SupplierUncheckedCreateWithoutProductsInput>
-  connectOrCreate?: Prisma.SupplierCreateOrConnectWithoutProductsInput
-  upsert?: Prisma.SupplierUpsertWithoutProductsInput
-  disconnect?: Prisma.SupplierWhereInput | boolean
-  delete?: Prisma.SupplierWhereInput | boolean
-  connect?: Prisma.SupplierWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.SupplierUpdateToOneWithWhereWithoutProductsInput, Prisma.SupplierUpdateWithoutProductsInput>, Prisma.SupplierUncheckedUpdateWithoutProductsInput>
+export type supplierMaxOrderByAggregateInput = {
+  id?: Prisma.SortOrder
+  name?: Prisma.SortOrder
+  contactName?: Prisma.SortOrder
+  phone?: Prisma.SortOrder
+  email?: Prisma.SortOrder
+  address?: Prisma.SortOrder
+  notes?: Prisma.SortOrder
+  isActive?: Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
+  updatedAt?: Prisma.SortOrder
 }
 
-export type SupplierCreateWithoutProductsInput = {
-  id?: string
+export type supplierMinOrderByAggregateInput = {
+  id?: Prisma.SortOrder
+  name?: Prisma.SortOrder
+  contactName?: Prisma.SortOrder
+  phone?: Prisma.SortOrder
+  email?: Prisma.SortOrder
+  address?: Prisma.SortOrder
+  notes?: Prisma.SortOrder
+  isActive?: Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
+  updatedAt?: Prisma.SortOrder
+}
+
+export type supplierCreateNestedOneWithoutProductInput = {
+  create?: Prisma.XOR<Prisma.supplierCreateWithoutProductInput, Prisma.supplierUncheckedCreateWithoutProductInput>
+  connectOrCreate?: Prisma.supplierCreateOrConnectWithoutProductInput
+  connect?: Prisma.supplierWhereUniqueInput
+}
+
+export type supplierUpdateOneWithoutProductNestedInput = {
+  create?: Prisma.XOR<Prisma.supplierCreateWithoutProductInput, Prisma.supplierUncheckedCreateWithoutProductInput>
+  connectOrCreate?: Prisma.supplierCreateOrConnectWithoutProductInput
+  upsert?: Prisma.supplierUpsertWithoutProductInput
+  disconnect?: Prisma.supplierWhereInput | boolean
+  delete?: Prisma.supplierWhereInput | boolean
+  connect?: Prisma.supplierWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.supplierUpdateToOneWithWhereWithoutProductInput, Prisma.supplierUpdateWithoutProductInput>, Prisma.supplierUncheckedUpdateWithoutProductInput>
+}
+
+export type supplierCreateWithoutProductInput = {
+  id: string
   name: string
   contactName?: string | null
   phone?: string | null
@@ -453,11 +453,11 @@ export type SupplierCreateWithoutProductsInput = {
   notes?: string | null
   isActive?: boolean
   createdAt?: Date | string
-  updatedAt?: Date | string
+  updatedAt: Date | string
 }
 
-export type SupplierUncheckedCreateWithoutProductsInput = {
-  id?: string
+export type supplierUncheckedCreateWithoutProductInput = {
+  id: string
   name: string
   contactName?: string | null
   phone?: string | null
@@ -466,26 +466,26 @@ export type SupplierUncheckedCreateWithoutProductsInput = {
   notes?: string | null
   isActive?: boolean
   createdAt?: Date | string
-  updatedAt?: Date | string
+  updatedAt: Date | string
 }
 
-export type SupplierCreateOrConnectWithoutProductsInput = {
-  where: Prisma.SupplierWhereUniqueInput
-  create: Prisma.XOR<Prisma.SupplierCreateWithoutProductsInput, Prisma.SupplierUncheckedCreateWithoutProductsInput>
+export type supplierCreateOrConnectWithoutProductInput = {
+  where: Prisma.supplierWhereUniqueInput
+  create: Prisma.XOR<Prisma.supplierCreateWithoutProductInput, Prisma.supplierUncheckedCreateWithoutProductInput>
 }
 
-export type SupplierUpsertWithoutProductsInput = {
-  update: Prisma.XOR<Prisma.SupplierUpdateWithoutProductsInput, Prisma.SupplierUncheckedUpdateWithoutProductsInput>
-  create: Prisma.XOR<Prisma.SupplierCreateWithoutProductsInput, Prisma.SupplierUncheckedCreateWithoutProductsInput>
-  where?: Prisma.SupplierWhereInput
+export type supplierUpsertWithoutProductInput = {
+  update: Prisma.XOR<Prisma.supplierUpdateWithoutProductInput, Prisma.supplierUncheckedUpdateWithoutProductInput>
+  create: Prisma.XOR<Prisma.supplierCreateWithoutProductInput, Prisma.supplierUncheckedCreateWithoutProductInput>
+  where?: Prisma.supplierWhereInput
 }
 
-export type SupplierUpdateToOneWithWhereWithoutProductsInput = {
-  where?: Prisma.SupplierWhereInput
-  data: Prisma.XOR<Prisma.SupplierUpdateWithoutProductsInput, Prisma.SupplierUncheckedUpdateWithoutProductsInput>
+export type supplierUpdateToOneWithWhereWithoutProductInput = {
+  where?: Prisma.supplierWhereInput
+  data: Prisma.XOR<Prisma.supplierUpdateWithoutProductInput, Prisma.supplierUncheckedUpdateWithoutProductInput>
 }
 
-export type SupplierUpdateWithoutProductsInput = {
+export type supplierUpdateWithoutProductInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   contactName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -498,7 +498,7 @@ export type SupplierUpdateWithoutProductsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
-export type SupplierUncheckedUpdateWithoutProductsInput = {
+export type supplierUncheckedUpdateWithoutProductInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   contactName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -517,11 +517,11 @@ export type SupplierUncheckedUpdateWithoutProductsInput = {
  */
 
 export type SupplierCountOutputType = {
-  products: number
+  product: number
 }
 
 export type SupplierCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  products?: boolean | SupplierCountOutputTypeCountProductsArgs
+  product?: boolean | SupplierCountOutputTypeCountProductArgs
 }
 
 /**
@@ -537,12 +537,12 @@ export type SupplierCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Ext
 /**
  * SupplierCountOutputType without action
  */
-export type SupplierCountOutputTypeCountProductsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.ProductWhereInput
+export type SupplierCountOutputTypeCountProductArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.productWhereInput
 }
 
 
-export type SupplierSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
+export type supplierSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   name?: boolean
   contactName?: boolean
@@ -553,11 +553,11 @@ export type SupplierSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   isActive?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  products?: boolean | Prisma.Supplier$productsArgs<ExtArgs>
+  product?: boolean | Prisma.supplier$productArgs<ExtArgs>
   _count?: boolean | Prisma.SupplierCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["supplier"]>
 
-export type SupplierSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
+export type supplierSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   name?: boolean
   contactName?: boolean
@@ -570,7 +570,7 @@ export type SupplierSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exte
   updatedAt?: boolean
 }, ExtArgs["result"]["supplier"]>
 
-export type SupplierSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
+export type supplierSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   name?: boolean
   contactName?: boolean
@@ -583,7 +583,7 @@ export type SupplierSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exte
   updatedAt?: boolean
 }, ExtArgs["result"]["supplier"]>
 
-export type SupplierSelectScalar = {
+export type supplierSelectScalar = {
   id?: boolean
   name?: boolean
   contactName?: boolean
@@ -596,18 +596,18 @@ export type SupplierSelectScalar = {
   updatedAt?: boolean
 }
 
-export type SupplierOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "contactName" | "phone" | "email" | "address" | "notes" | "isActive" | "createdAt" | "updatedAt", ExtArgs["result"]["supplier"]>
-export type SupplierInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  products?: boolean | Prisma.Supplier$productsArgs<ExtArgs>
+export type supplierOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "contactName" | "phone" | "email" | "address" | "notes" | "isActive" | "createdAt" | "updatedAt", ExtArgs["result"]["supplier"]>
+export type supplierInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  product?: boolean | Prisma.supplier$productArgs<ExtArgs>
   _count?: boolean | Prisma.SupplierCountOutputTypeDefaultArgs<ExtArgs>
 }
-export type SupplierIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
-export type SupplierIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
+export type supplierIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
+export type supplierIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
 
-export type $SupplierPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  name: "Supplier"
+export type $supplierPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  name: "supplier"
   objects: {
-    products: Prisma.$ProductPayload<ExtArgs>[]
+    product: Prisma.$productPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -624,18 +624,18 @@ export type $SupplierPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
   composites: {}
 }
 
-export type SupplierGetPayload<S extends boolean | null | undefined | SupplierDefaultArgs> = runtime.Types.Result.GetResult<Prisma.$SupplierPayload, S>
+export type supplierGetPayload<S extends boolean | null | undefined | supplierDefaultArgs> = runtime.Types.Result.GetResult<Prisma.$supplierPayload, S>
 
-export type SupplierCountArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> =
-  Omit<SupplierFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+export type supplierCountArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> =
+  Omit<supplierFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
     select?: SupplierCountAggregateInputType | true
   }
 
-export interface SupplierDelegate<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> {
-  [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['Supplier'], meta: { name: 'Supplier' } }
+export interface supplierDelegate<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+  [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['supplier'], meta: { name: 'supplier' } }
   /**
    * Find zero or one Supplier that matches the filter.
-   * @param {SupplierFindUniqueArgs} args - Arguments to find a Supplier
+   * @param {supplierFindUniqueArgs} args - Arguments to find a Supplier
    * @example
    * // Get one Supplier
    * const supplier = await prisma.supplier.findUnique({
@@ -644,12 +644,12 @@ export interface SupplierDelegate<ExtArgs extends runtime.Types.Extensions.Inter
    *   }
    * })
    */
-  findUnique<T extends SupplierFindUniqueArgs>(args: Prisma.SelectSubset<T, SupplierFindUniqueArgs<ExtArgs>>): Prisma.Prisma__SupplierClient<runtime.Types.Result.GetResult<Prisma.$SupplierPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  findUnique<T extends supplierFindUniqueArgs>(args: Prisma.SelectSubset<T, supplierFindUniqueArgs<ExtArgs>>): Prisma.Prisma__supplierClient<runtime.Types.Result.GetResult<Prisma.$supplierPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
 
   /**
    * Find one Supplier that matches the filter or throw an error with `error.code='P2025'`
    * if no matches were found.
-   * @param {SupplierFindUniqueOrThrowArgs} args - Arguments to find a Supplier
+   * @param {supplierFindUniqueOrThrowArgs} args - Arguments to find a Supplier
    * @example
    * // Get one Supplier
    * const supplier = await prisma.supplier.findUniqueOrThrow({
@@ -658,13 +658,13 @@ export interface SupplierDelegate<ExtArgs extends runtime.Types.Extensions.Inter
    *   }
    * })
    */
-  findUniqueOrThrow<T extends SupplierFindUniqueOrThrowArgs>(args: Prisma.SelectSubset<T, SupplierFindUniqueOrThrowArgs<ExtArgs>>): Prisma.Prisma__SupplierClient<runtime.Types.Result.GetResult<Prisma.$SupplierPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+  findUniqueOrThrow<T extends supplierFindUniqueOrThrowArgs>(args: Prisma.SelectSubset<T, supplierFindUniqueOrThrowArgs<ExtArgs>>): Prisma.Prisma__supplierClient<runtime.Types.Result.GetResult<Prisma.$supplierPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
 
   /**
    * Find the first Supplier that matches the filter.
    * Note, that providing `undefined` is treated as the value not being there.
    * Read more here: https://pris.ly/d/null-undefined
-   * @param {SupplierFindFirstArgs} args - Arguments to find a Supplier
+   * @param {supplierFindFirstArgs} args - Arguments to find a Supplier
    * @example
    * // Get one Supplier
    * const supplier = await prisma.supplier.findFirst({
@@ -673,14 +673,14 @@ export interface SupplierDelegate<ExtArgs extends runtime.Types.Extensions.Inter
    *   }
    * })
    */
-  findFirst<T extends SupplierFindFirstArgs>(args?: Prisma.SelectSubset<T, SupplierFindFirstArgs<ExtArgs>>): Prisma.Prisma__SupplierClient<runtime.Types.Result.GetResult<Prisma.$SupplierPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  findFirst<T extends supplierFindFirstArgs>(args?: Prisma.SelectSubset<T, supplierFindFirstArgs<ExtArgs>>): Prisma.Prisma__supplierClient<runtime.Types.Result.GetResult<Prisma.$supplierPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
 
   /**
    * Find the first Supplier that matches the filter or
    * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
    * Note, that providing `undefined` is treated as the value not being there.
    * Read more here: https://pris.ly/d/null-undefined
-   * @param {SupplierFindFirstOrThrowArgs} args - Arguments to find a Supplier
+   * @param {supplierFindFirstOrThrowArgs} args - Arguments to find a Supplier
    * @example
    * // Get one Supplier
    * const supplier = await prisma.supplier.findFirstOrThrow({
@@ -689,13 +689,13 @@ export interface SupplierDelegate<ExtArgs extends runtime.Types.Extensions.Inter
    *   }
    * })
    */
-  findFirstOrThrow<T extends SupplierFindFirstOrThrowArgs>(args?: Prisma.SelectSubset<T, SupplierFindFirstOrThrowArgs<ExtArgs>>): Prisma.Prisma__SupplierClient<runtime.Types.Result.GetResult<Prisma.$SupplierPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+  findFirstOrThrow<T extends supplierFindFirstOrThrowArgs>(args?: Prisma.SelectSubset<T, supplierFindFirstOrThrowArgs<ExtArgs>>): Prisma.Prisma__supplierClient<runtime.Types.Result.GetResult<Prisma.$supplierPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
 
   /**
    * Find zero or more Suppliers that matches the filter.
    * Note, that providing `undefined` is treated as the value not being there.
    * Read more here: https://pris.ly/d/null-undefined
-   * @param {SupplierFindManyArgs} args - Arguments to filter and select certain fields only.
+   * @param {supplierFindManyArgs} args - Arguments to filter and select certain fields only.
    * @example
    * // Get all Suppliers
    * const suppliers = await prisma.supplier.findMany()
@@ -707,11 +707,11 @@ export interface SupplierDelegate<ExtArgs extends runtime.Types.Extensions.Inter
    * const supplierWithIdOnly = await prisma.supplier.findMany({ select: { id: true } })
    * 
    */
-  findMany<T extends SupplierFindManyArgs>(args?: Prisma.SelectSubset<T, SupplierFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SupplierPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+  findMany<T extends supplierFindManyArgs>(args?: Prisma.SelectSubset<T, supplierFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$supplierPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
 
   /**
    * Create a Supplier.
-   * @param {SupplierCreateArgs} args - Arguments to create a Supplier.
+   * @param {supplierCreateArgs} args - Arguments to create a Supplier.
    * @example
    * // Create one Supplier
    * const Supplier = await prisma.supplier.create({
@@ -721,11 +721,11 @@ export interface SupplierDelegate<ExtArgs extends runtime.Types.Extensions.Inter
    * })
    * 
    */
-  create<T extends SupplierCreateArgs>(args: Prisma.SelectSubset<T, SupplierCreateArgs<ExtArgs>>): Prisma.Prisma__SupplierClient<runtime.Types.Result.GetResult<Prisma.$SupplierPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+  create<T extends supplierCreateArgs>(args: Prisma.SelectSubset<T, supplierCreateArgs<ExtArgs>>): Prisma.Prisma__supplierClient<runtime.Types.Result.GetResult<Prisma.$supplierPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
 
   /**
    * Create many Suppliers.
-   * @param {SupplierCreateManyArgs} args - Arguments to create many Suppliers.
+   * @param {supplierCreateManyArgs} args - Arguments to create many Suppliers.
    * @example
    * // Create many Suppliers
    * const supplier = await prisma.supplier.createMany({
@@ -735,11 +735,11 @@ export interface SupplierDelegate<ExtArgs extends runtime.Types.Extensions.Inter
    * })
    *     
    */
-  createMany<T extends SupplierCreateManyArgs>(args?: Prisma.SelectSubset<T, SupplierCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<Prisma.BatchPayload>
+  createMany<T extends supplierCreateManyArgs>(args?: Prisma.SelectSubset<T, supplierCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<Prisma.BatchPayload>
 
   /**
    * Create many Suppliers and returns the data saved in the database.
-   * @param {SupplierCreateManyAndReturnArgs} args - Arguments to create many Suppliers.
+   * @param {supplierCreateManyAndReturnArgs} args - Arguments to create many Suppliers.
    * @example
    * // Create many Suppliers
    * const supplier = await prisma.supplier.createManyAndReturn({
@@ -759,11 +759,11 @@ export interface SupplierDelegate<ExtArgs extends runtime.Types.Extensions.Inter
    * Read more here: https://pris.ly/d/null-undefined
    * 
    */
-  createManyAndReturn<T extends SupplierCreateManyAndReturnArgs>(args?: Prisma.SelectSubset<T, SupplierCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SupplierPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+  createManyAndReturn<T extends supplierCreateManyAndReturnArgs>(args?: Prisma.SelectSubset<T, supplierCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$supplierPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
 
   /**
    * Delete a Supplier.
-   * @param {SupplierDeleteArgs} args - Arguments to delete one Supplier.
+   * @param {supplierDeleteArgs} args - Arguments to delete one Supplier.
    * @example
    * // Delete one Supplier
    * const Supplier = await prisma.supplier.delete({
@@ -773,11 +773,11 @@ export interface SupplierDelegate<ExtArgs extends runtime.Types.Extensions.Inter
    * })
    * 
    */
-  delete<T extends SupplierDeleteArgs>(args: Prisma.SelectSubset<T, SupplierDeleteArgs<ExtArgs>>): Prisma.Prisma__SupplierClient<runtime.Types.Result.GetResult<Prisma.$SupplierPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+  delete<T extends supplierDeleteArgs>(args: Prisma.SelectSubset<T, supplierDeleteArgs<ExtArgs>>): Prisma.Prisma__supplierClient<runtime.Types.Result.GetResult<Prisma.$supplierPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
 
   /**
    * Update one Supplier.
-   * @param {SupplierUpdateArgs} args - Arguments to update one Supplier.
+   * @param {supplierUpdateArgs} args - Arguments to update one Supplier.
    * @example
    * // Update one Supplier
    * const supplier = await prisma.supplier.update({
@@ -790,11 +790,11 @@ export interface SupplierDelegate<ExtArgs extends runtime.Types.Extensions.Inter
    * })
    * 
    */
-  update<T extends SupplierUpdateArgs>(args: Prisma.SelectSubset<T, SupplierUpdateArgs<ExtArgs>>): Prisma.Prisma__SupplierClient<runtime.Types.Result.GetResult<Prisma.$SupplierPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+  update<T extends supplierUpdateArgs>(args: Prisma.SelectSubset<T, supplierUpdateArgs<ExtArgs>>): Prisma.Prisma__supplierClient<runtime.Types.Result.GetResult<Prisma.$supplierPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
 
   /**
    * Delete zero or more Suppliers.
-   * @param {SupplierDeleteManyArgs} args - Arguments to filter Suppliers to delete.
+   * @param {supplierDeleteManyArgs} args - Arguments to filter Suppliers to delete.
    * @example
    * // Delete a few Suppliers
    * const { count } = await prisma.supplier.deleteMany({
@@ -804,13 +804,13 @@ export interface SupplierDelegate<ExtArgs extends runtime.Types.Extensions.Inter
    * })
    * 
    */
-  deleteMany<T extends SupplierDeleteManyArgs>(args?: Prisma.SelectSubset<T, SupplierDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<Prisma.BatchPayload>
+  deleteMany<T extends supplierDeleteManyArgs>(args?: Prisma.SelectSubset<T, supplierDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<Prisma.BatchPayload>
 
   /**
    * Update zero or more Suppliers.
    * Note, that providing `undefined` is treated as the value not being there.
    * Read more here: https://pris.ly/d/null-undefined
-   * @param {SupplierUpdateManyArgs} args - Arguments to update one or more rows.
+   * @param {supplierUpdateManyArgs} args - Arguments to update one or more rows.
    * @example
    * // Update many Suppliers
    * const supplier = await prisma.supplier.updateMany({
@@ -823,11 +823,11 @@ export interface SupplierDelegate<ExtArgs extends runtime.Types.Extensions.Inter
    * })
    * 
    */
-  updateMany<T extends SupplierUpdateManyArgs>(args: Prisma.SelectSubset<T, SupplierUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<Prisma.BatchPayload>
+  updateMany<T extends supplierUpdateManyArgs>(args: Prisma.SelectSubset<T, supplierUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<Prisma.BatchPayload>
 
   /**
    * Update zero or more Suppliers and returns the data updated in the database.
-   * @param {SupplierUpdateManyAndReturnArgs} args - Arguments to update many Suppliers.
+   * @param {supplierUpdateManyAndReturnArgs} args - Arguments to update many Suppliers.
    * @example
    * // Update many Suppliers
    * const supplier = await prisma.supplier.updateManyAndReturn({
@@ -853,11 +853,11 @@ export interface SupplierDelegate<ExtArgs extends runtime.Types.Extensions.Inter
    * Read more here: https://pris.ly/d/null-undefined
    * 
    */
-  updateManyAndReturn<T extends SupplierUpdateManyAndReturnArgs>(args: Prisma.SelectSubset<T, SupplierUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SupplierPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+  updateManyAndReturn<T extends supplierUpdateManyAndReturnArgs>(args: Prisma.SelectSubset<T, supplierUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$supplierPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
 
   /**
    * Create or update one Supplier.
-   * @param {SupplierUpsertArgs} args - Arguments to update or create a Supplier.
+   * @param {supplierUpsertArgs} args - Arguments to update or create a Supplier.
    * @example
    * // Update or create a Supplier
    * const supplier = await prisma.supplier.upsert({
@@ -872,14 +872,14 @@ export interface SupplierDelegate<ExtArgs extends runtime.Types.Extensions.Inter
    *   }
    * })
    */
-  upsert<T extends SupplierUpsertArgs>(args: Prisma.SelectSubset<T, SupplierUpsertArgs<ExtArgs>>): Prisma.Prisma__SupplierClient<runtime.Types.Result.GetResult<Prisma.$SupplierPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+  upsert<T extends supplierUpsertArgs>(args: Prisma.SelectSubset<T, supplierUpsertArgs<ExtArgs>>): Prisma.Prisma__supplierClient<runtime.Types.Result.GetResult<Prisma.$supplierPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
 
 
   /**
    * Count the number of Suppliers.
    * Note, that providing `undefined` is treated as the value not being there.
    * Read more here: https://pris.ly/d/null-undefined
-   * @param {SupplierCountArgs} args - Arguments to filter Suppliers to count.
+   * @param {supplierCountArgs} args - Arguments to filter Suppliers to count.
    * @example
    * // Count the number of Suppliers
    * const count = await prisma.supplier.count({
@@ -888,8 +888,8 @@ export interface SupplierDelegate<ExtArgs extends runtime.Types.Extensions.Inter
    *   }
    * })
   **/
-  count<T extends SupplierCountArgs>(
-    args?: Prisma.Subset<T, SupplierCountArgs>,
+  count<T extends supplierCountArgs>(
+    args?: Prisma.Subset<T, supplierCountArgs>,
   ): Prisma.PrismaPromise<
     T extends runtime.Types.Utils.Record<'select', any>
       ? T['select'] extends true
@@ -928,7 +928,7 @@ export interface SupplierDelegate<ExtArgs extends runtime.Types.Extensions.Inter
    * Group by Supplier.
    * Note, that providing `undefined` is treated as the value not being there.
    * Read more here: https://pris.ly/d/null-undefined
-   * @param {SupplierGroupByArgs} args - Group by arguments.
+   * @param {supplierGroupByArgs} args - Group by arguments.
    * @example
    * // Group by city, order by createdAt, get count
    * const result = await prisma.user.groupBy({
@@ -943,14 +943,14 @@ export interface SupplierDelegate<ExtArgs extends runtime.Types.Extensions.Inter
    * 
   **/
   groupBy<
-    T extends SupplierGroupByArgs,
+    T extends supplierGroupByArgs,
     HasSelectOrTake extends Prisma.Or<
       Prisma.Extends<'skip', Prisma.Keys<T>>,
       Prisma.Extends<'take', Prisma.Keys<T>>
     >,
     OrderByArg extends Prisma.True extends HasSelectOrTake
-      ? { orderBy: SupplierGroupByArgs['orderBy'] }
-      : { orderBy?: SupplierGroupByArgs['orderBy'] },
+      ? { orderBy: supplierGroupByArgs['orderBy'] }
+      : { orderBy?: supplierGroupByArgs['orderBy'] },
     OrderFields extends Prisma.ExcludeUnderscoreKeys<Prisma.Keys<Prisma.MaybeTupleToUnion<T['orderBy']>>>,
     ByFields extends Prisma.MaybeTupleToUnion<T['by']>,
     ByValid extends Prisma.Has<ByFields, OrderFields>,
@@ -999,22 +999,22 @@ export interface SupplierDelegate<ExtArgs extends runtime.Types.Extensions.Inter
           ? never
           : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
       }[OrderFields]
-  >(args: Prisma.SubsetIntersection<T, SupplierGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetSupplierGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  >(args: Prisma.SubsetIntersection<T, supplierGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetSupplierGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
 /**
- * Fields of the Supplier model
+ * Fields of the supplier model
  */
-readonly fields: SupplierFieldRefs;
+readonly fields: supplierFieldRefs;
 }
 
 /**
- * The delegate class that acts as a "Promise-like" for Supplier.
+ * The delegate class that acts as a "Promise-like" for supplier.
  * Why is this prefixed with `Prisma__`?
  * Because we want to prevent naming conflicts as mentioned in
  * https://github.com/prisma/prisma-client-js/issues/707
  */
-export interface Prisma__SupplierClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+export interface Prisma__supplierClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  products<T extends Prisma.Supplier$productsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Supplier$productsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ProductPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  product<T extends Prisma.supplier$productArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.supplier$productArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$productPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1041,449 +1041,449 @@ export interface Prisma__SupplierClient<T, Null = never, ExtArgs extends runtime
 
 
 /**
- * Fields of the Supplier model
+ * Fields of the supplier model
  */
-export interface SupplierFieldRefs {
-  readonly id: Prisma.FieldRef<"Supplier", 'String'>
-  readonly name: Prisma.FieldRef<"Supplier", 'String'>
-  readonly contactName: Prisma.FieldRef<"Supplier", 'String'>
-  readonly phone: Prisma.FieldRef<"Supplier", 'String'>
-  readonly email: Prisma.FieldRef<"Supplier", 'String'>
-  readonly address: Prisma.FieldRef<"Supplier", 'String'>
-  readonly notes: Prisma.FieldRef<"Supplier", 'String'>
-  readonly isActive: Prisma.FieldRef<"Supplier", 'Boolean'>
-  readonly createdAt: Prisma.FieldRef<"Supplier", 'DateTime'>
-  readonly updatedAt: Prisma.FieldRef<"Supplier", 'DateTime'>
+export interface supplierFieldRefs {
+  readonly id: Prisma.FieldRef<"supplier", 'String'>
+  readonly name: Prisma.FieldRef<"supplier", 'String'>
+  readonly contactName: Prisma.FieldRef<"supplier", 'String'>
+  readonly phone: Prisma.FieldRef<"supplier", 'String'>
+  readonly email: Prisma.FieldRef<"supplier", 'String'>
+  readonly address: Prisma.FieldRef<"supplier", 'String'>
+  readonly notes: Prisma.FieldRef<"supplier", 'String'>
+  readonly isActive: Prisma.FieldRef<"supplier", 'Boolean'>
+  readonly createdAt: Prisma.FieldRef<"supplier", 'DateTime'>
+  readonly updatedAt: Prisma.FieldRef<"supplier", 'DateTime'>
 }
     
 
 // Custom InputTypes
 /**
- * Supplier findUnique
+ * supplier findUnique
  */
-export type SupplierFindUniqueArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type supplierFindUniqueArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the Supplier
+   * Select specific fields to fetch from the supplier
    */
-  select?: Prisma.SupplierSelect<ExtArgs> | null
+  select?: Prisma.supplierSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the Supplier
+   * Omit specific fields from the supplier
    */
-  omit?: Prisma.SupplierOmit<ExtArgs> | null
+  omit?: Prisma.supplierOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.SupplierInclude<ExtArgs> | null
+  include?: Prisma.supplierInclude<ExtArgs> | null
   /**
-   * Filter, which Supplier to fetch.
+   * Filter, which supplier to fetch.
    */
-  where: Prisma.SupplierWhereUniqueInput
+  where: Prisma.supplierWhereUniqueInput
 }
 
 /**
- * Supplier findUniqueOrThrow
+ * supplier findUniqueOrThrow
  */
-export type SupplierFindUniqueOrThrowArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type supplierFindUniqueOrThrowArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the Supplier
+   * Select specific fields to fetch from the supplier
    */
-  select?: Prisma.SupplierSelect<ExtArgs> | null
+  select?: Prisma.supplierSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the Supplier
+   * Omit specific fields from the supplier
    */
-  omit?: Prisma.SupplierOmit<ExtArgs> | null
+  omit?: Prisma.supplierOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.SupplierInclude<ExtArgs> | null
+  include?: Prisma.supplierInclude<ExtArgs> | null
   /**
-   * Filter, which Supplier to fetch.
+   * Filter, which supplier to fetch.
    */
-  where: Prisma.SupplierWhereUniqueInput
+  where: Prisma.supplierWhereUniqueInput
 }
 
 /**
- * Supplier findFirst
+ * supplier findFirst
  */
-export type SupplierFindFirstArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type supplierFindFirstArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the Supplier
+   * Select specific fields to fetch from the supplier
    */
-  select?: Prisma.SupplierSelect<ExtArgs> | null
+  select?: Prisma.supplierSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the Supplier
+   * Omit specific fields from the supplier
    */
-  omit?: Prisma.SupplierOmit<ExtArgs> | null
+  omit?: Prisma.supplierOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.SupplierInclude<ExtArgs> | null
+  include?: Prisma.supplierInclude<ExtArgs> | null
   /**
-   * Filter, which Supplier to fetch.
+   * Filter, which supplier to fetch.
    */
-  where?: Prisma.SupplierWhereInput
+  where?: Prisma.supplierWhereInput
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
    * 
-   * Determine the order of Suppliers to fetch.
+   * Determine the order of suppliers to fetch.
    */
-  orderBy?: Prisma.SupplierOrderByWithRelationInput | Prisma.SupplierOrderByWithRelationInput[]
+  orderBy?: Prisma.supplierOrderByWithRelationInput | Prisma.supplierOrderByWithRelationInput[]
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
    * 
-   * Sets the position for searching for Suppliers.
+   * Sets the position for searching for suppliers.
    */
-  cursor?: Prisma.SupplierWhereUniqueInput
+  cursor?: Prisma.supplierWhereUniqueInput
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
    * 
-   * Take `±n` Suppliers from the position of the cursor.
+   * Take `±n` suppliers from the position of the cursor.
    */
   take?: number
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
    * 
-   * Skip the first `n` Suppliers.
+   * Skip the first `n` suppliers.
    */
   skip?: number
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
    * 
-   * Filter by unique combinations of Suppliers.
+   * Filter by unique combinations of suppliers.
    */
   distinct?: Prisma.SupplierScalarFieldEnum | Prisma.SupplierScalarFieldEnum[]
 }
 
 /**
- * Supplier findFirstOrThrow
+ * supplier findFirstOrThrow
  */
-export type SupplierFindFirstOrThrowArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type supplierFindFirstOrThrowArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the Supplier
+   * Select specific fields to fetch from the supplier
    */
-  select?: Prisma.SupplierSelect<ExtArgs> | null
+  select?: Prisma.supplierSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the Supplier
+   * Omit specific fields from the supplier
    */
-  omit?: Prisma.SupplierOmit<ExtArgs> | null
+  omit?: Prisma.supplierOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.SupplierInclude<ExtArgs> | null
+  include?: Prisma.supplierInclude<ExtArgs> | null
   /**
-   * Filter, which Supplier to fetch.
+   * Filter, which supplier to fetch.
    */
-  where?: Prisma.SupplierWhereInput
+  where?: Prisma.supplierWhereInput
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
    * 
-   * Determine the order of Suppliers to fetch.
+   * Determine the order of suppliers to fetch.
    */
-  orderBy?: Prisma.SupplierOrderByWithRelationInput | Prisma.SupplierOrderByWithRelationInput[]
+  orderBy?: Prisma.supplierOrderByWithRelationInput | Prisma.supplierOrderByWithRelationInput[]
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
    * 
-   * Sets the position for searching for Suppliers.
+   * Sets the position for searching for suppliers.
    */
-  cursor?: Prisma.SupplierWhereUniqueInput
+  cursor?: Prisma.supplierWhereUniqueInput
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
    * 
-   * Take `±n` Suppliers from the position of the cursor.
+   * Take `±n` suppliers from the position of the cursor.
    */
   take?: number
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
    * 
-   * Skip the first `n` Suppliers.
+   * Skip the first `n` suppliers.
    */
   skip?: number
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
    * 
-   * Filter by unique combinations of Suppliers.
+   * Filter by unique combinations of suppliers.
    */
   distinct?: Prisma.SupplierScalarFieldEnum | Prisma.SupplierScalarFieldEnum[]
 }
 
 /**
- * Supplier findMany
+ * supplier findMany
  */
-export type SupplierFindManyArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type supplierFindManyArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the Supplier
+   * Select specific fields to fetch from the supplier
    */
-  select?: Prisma.SupplierSelect<ExtArgs> | null
+  select?: Prisma.supplierSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the Supplier
+   * Omit specific fields from the supplier
    */
-  omit?: Prisma.SupplierOmit<ExtArgs> | null
+  omit?: Prisma.supplierOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.SupplierInclude<ExtArgs> | null
+  include?: Prisma.supplierInclude<ExtArgs> | null
   /**
-   * Filter, which Suppliers to fetch.
+   * Filter, which suppliers to fetch.
    */
-  where?: Prisma.SupplierWhereInput
+  where?: Prisma.supplierWhereInput
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
    * 
-   * Determine the order of Suppliers to fetch.
+   * Determine the order of suppliers to fetch.
    */
-  orderBy?: Prisma.SupplierOrderByWithRelationInput | Prisma.SupplierOrderByWithRelationInput[]
+  orderBy?: Prisma.supplierOrderByWithRelationInput | Prisma.supplierOrderByWithRelationInput[]
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
    * 
-   * Sets the position for listing Suppliers.
+   * Sets the position for listing suppliers.
    */
-  cursor?: Prisma.SupplierWhereUniqueInput
+  cursor?: Prisma.supplierWhereUniqueInput
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
    * 
-   * Take `±n` Suppliers from the position of the cursor.
+   * Take `±n` suppliers from the position of the cursor.
    */
   take?: number
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
    * 
-   * Skip the first `n` Suppliers.
+   * Skip the first `n` suppliers.
    */
   skip?: number
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
    * 
-   * Filter by unique combinations of Suppliers.
+   * Filter by unique combinations of suppliers.
    */
   distinct?: Prisma.SupplierScalarFieldEnum | Prisma.SupplierScalarFieldEnum[]
 }
 
 /**
- * Supplier create
+ * supplier create
  */
-export type SupplierCreateArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type supplierCreateArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the Supplier
+   * Select specific fields to fetch from the supplier
    */
-  select?: Prisma.SupplierSelect<ExtArgs> | null
+  select?: Prisma.supplierSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the Supplier
+   * Omit specific fields from the supplier
    */
-  omit?: Prisma.SupplierOmit<ExtArgs> | null
+  omit?: Prisma.supplierOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.SupplierInclude<ExtArgs> | null
+  include?: Prisma.supplierInclude<ExtArgs> | null
   /**
-   * The data needed to create a Supplier.
+   * The data needed to create a supplier.
    */
-  data: Prisma.XOR<Prisma.SupplierCreateInput, Prisma.SupplierUncheckedCreateInput>
+  data: Prisma.XOR<Prisma.supplierCreateInput, Prisma.supplierUncheckedCreateInput>
 }
 
 /**
- * Supplier createMany
+ * supplier createMany
  */
-export type SupplierCreateManyArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type supplierCreateManyArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * The data used to create many Suppliers.
+   * The data used to create many suppliers.
    */
-  data: Prisma.SupplierCreateManyInput | Prisma.SupplierCreateManyInput[]
+  data: Prisma.supplierCreateManyInput | Prisma.supplierCreateManyInput[]
   skipDuplicates?: boolean
 }
 
 /**
- * Supplier createManyAndReturn
+ * supplier createManyAndReturn
  */
-export type SupplierCreateManyAndReturnArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type supplierCreateManyAndReturnArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the Supplier
+   * Select specific fields to fetch from the supplier
    */
-  select?: Prisma.SupplierSelectCreateManyAndReturn<ExtArgs> | null
+  select?: Prisma.supplierSelectCreateManyAndReturn<ExtArgs> | null
   /**
-   * Omit specific fields from the Supplier
+   * Omit specific fields from the supplier
    */
-  omit?: Prisma.SupplierOmit<ExtArgs> | null
+  omit?: Prisma.supplierOmit<ExtArgs> | null
   /**
-   * The data used to create many Suppliers.
+   * The data used to create many suppliers.
    */
-  data: Prisma.SupplierCreateManyInput | Prisma.SupplierCreateManyInput[]
+  data: Prisma.supplierCreateManyInput | Prisma.supplierCreateManyInput[]
   skipDuplicates?: boolean
 }
 
 /**
- * Supplier update
+ * supplier update
  */
-export type SupplierUpdateArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type supplierUpdateArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the Supplier
+   * Select specific fields to fetch from the supplier
    */
-  select?: Prisma.SupplierSelect<ExtArgs> | null
+  select?: Prisma.supplierSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the Supplier
+   * Omit specific fields from the supplier
    */
-  omit?: Prisma.SupplierOmit<ExtArgs> | null
+  omit?: Prisma.supplierOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.SupplierInclude<ExtArgs> | null
+  include?: Prisma.supplierInclude<ExtArgs> | null
   /**
-   * The data needed to update a Supplier.
+   * The data needed to update a supplier.
    */
-  data: Prisma.XOR<Prisma.SupplierUpdateInput, Prisma.SupplierUncheckedUpdateInput>
+  data: Prisma.XOR<Prisma.supplierUpdateInput, Prisma.supplierUncheckedUpdateInput>
   /**
-   * Choose, which Supplier to update.
+   * Choose, which supplier to update.
    */
-  where: Prisma.SupplierWhereUniqueInput
+  where: Prisma.supplierWhereUniqueInput
 }
 
 /**
- * Supplier updateMany
+ * supplier updateMany
  */
-export type SupplierUpdateManyArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type supplierUpdateManyArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * The data used to update Suppliers.
+   * The data used to update suppliers.
    */
-  data: Prisma.XOR<Prisma.SupplierUpdateManyMutationInput, Prisma.SupplierUncheckedUpdateManyInput>
+  data: Prisma.XOR<Prisma.supplierUpdateManyMutationInput, Prisma.supplierUncheckedUpdateManyInput>
   /**
-   * Filter which Suppliers to update
+   * Filter which suppliers to update
    */
-  where?: Prisma.SupplierWhereInput
+  where?: Prisma.supplierWhereInput
   /**
-   * Limit how many Suppliers to update.
+   * Limit how many suppliers to update.
    */
   limit?: number
 }
 
 /**
- * Supplier updateManyAndReturn
+ * supplier updateManyAndReturn
  */
-export type SupplierUpdateManyAndReturnArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type supplierUpdateManyAndReturnArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the Supplier
+   * Select specific fields to fetch from the supplier
    */
-  select?: Prisma.SupplierSelectUpdateManyAndReturn<ExtArgs> | null
+  select?: Prisma.supplierSelectUpdateManyAndReturn<ExtArgs> | null
   /**
-   * Omit specific fields from the Supplier
+   * Omit specific fields from the supplier
    */
-  omit?: Prisma.SupplierOmit<ExtArgs> | null
+  omit?: Prisma.supplierOmit<ExtArgs> | null
   /**
-   * The data used to update Suppliers.
+   * The data used to update suppliers.
    */
-  data: Prisma.XOR<Prisma.SupplierUpdateManyMutationInput, Prisma.SupplierUncheckedUpdateManyInput>
+  data: Prisma.XOR<Prisma.supplierUpdateManyMutationInput, Prisma.supplierUncheckedUpdateManyInput>
   /**
-   * Filter which Suppliers to update
+   * Filter which suppliers to update
    */
-  where?: Prisma.SupplierWhereInput
+  where?: Prisma.supplierWhereInput
   /**
-   * Limit how many Suppliers to update.
+   * Limit how many suppliers to update.
    */
   limit?: number
 }
 
 /**
- * Supplier upsert
+ * supplier upsert
  */
-export type SupplierUpsertArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type supplierUpsertArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the Supplier
+   * Select specific fields to fetch from the supplier
    */
-  select?: Prisma.SupplierSelect<ExtArgs> | null
+  select?: Prisma.supplierSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the Supplier
+   * Omit specific fields from the supplier
    */
-  omit?: Prisma.SupplierOmit<ExtArgs> | null
+  omit?: Prisma.supplierOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.SupplierInclude<ExtArgs> | null
+  include?: Prisma.supplierInclude<ExtArgs> | null
   /**
-   * The filter to search for the Supplier to update in case it exists.
+   * The filter to search for the supplier to update in case it exists.
    */
-  where: Prisma.SupplierWhereUniqueInput
+  where: Prisma.supplierWhereUniqueInput
   /**
-   * In case the Supplier found by the `where` argument doesn't exist, create a new Supplier with this data.
+   * In case the supplier found by the `where` argument doesn't exist, create a new supplier with this data.
    */
-  create: Prisma.XOR<Prisma.SupplierCreateInput, Prisma.SupplierUncheckedCreateInput>
+  create: Prisma.XOR<Prisma.supplierCreateInput, Prisma.supplierUncheckedCreateInput>
   /**
-   * In case the Supplier was found with the provided `where` argument, update it with this data.
+   * In case the supplier was found with the provided `where` argument, update it with this data.
    */
-  update: Prisma.XOR<Prisma.SupplierUpdateInput, Prisma.SupplierUncheckedUpdateInput>
+  update: Prisma.XOR<Prisma.supplierUpdateInput, Prisma.supplierUncheckedUpdateInput>
 }
 
 /**
- * Supplier delete
+ * supplier delete
  */
-export type SupplierDeleteArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type supplierDeleteArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the Supplier
+   * Select specific fields to fetch from the supplier
    */
-  select?: Prisma.SupplierSelect<ExtArgs> | null
+  select?: Prisma.supplierSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the Supplier
+   * Omit specific fields from the supplier
    */
-  omit?: Prisma.SupplierOmit<ExtArgs> | null
+  omit?: Prisma.supplierOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.SupplierInclude<ExtArgs> | null
+  include?: Prisma.supplierInclude<ExtArgs> | null
   /**
-   * Filter which Supplier to delete.
+   * Filter which supplier to delete.
    */
-  where: Prisma.SupplierWhereUniqueInput
+  where: Prisma.supplierWhereUniqueInput
 }
 
 /**
- * Supplier deleteMany
+ * supplier deleteMany
  */
-export type SupplierDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type supplierDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Filter which Suppliers to delete
+   * Filter which suppliers to delete
    */
-  where?: Prisma.SupplierWhereInput
+  where?: Prisma.supplierWhereInput
   /**
-   * Limit how many Suppliers to delete.
+   * Limit how many suppliers to delete.
    */
   limit?: number
 }
 
 /**
- * Supplier.products
+ * supplier.product
  */
-export type Supplier$productsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type supplier$productArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the Product
+   * Select specific fields to fetch from the product
    */
-  select?: Prisma.ProductSelect<ExtArgs> | null
+  select?: Prisma.productSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the Product
+   * Omit specific fields from the product
    */
-  omit?: Prisma.ProductOmit<ExtArgs> | null
+  omit?: Prisma.productOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.ProductInclude<ExtArgs> | null
-  where?: Prisma.ProductWhereInput
-  orderBy?: Prisma.ProductOrderByWithRelationInput | Prisma.ProductOrderByWithRelationInput[]
-  cursor?: Prisma.ProductWhereUniqueInput
+  include?: Prisma.productInclude<ExtArgs> | null
+  where?: Prisma.productWhereInput
+  orderBy?: Prisma.productOrderByWithRelationInput | Prisma.productOrderByWithRelationInput[]
+  cursor?: Prisma.productWhereUniqueInput
   take?: number
   skip?: number
   distinct?: Prisma.ProductScalarFieldEnum | Prisma.ProductScalarFieldEnum[]
 }
 
 /**
- * Supplier without action
+ * supplier without action
  */
-export type SupplierDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type supplierDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the Supplier
+   * Select specific fields to fetch from the supplier
    */
-  select?: Prisma.SupplierSelect<ExtArgs> | null
+  select?: Prisma.supplierSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the Supplier
+   * Omit specific fields from the supplier
    */
-  omit?: Prisma.SupplierOmit<ExtArgs> | null
+  omit?: Prisma.supplierOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.SupplierInclude<ExtArgs> | null
+  include?: Prisma.supplierInclude<ExtArgs> | null
 }

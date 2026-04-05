@@ -1,6 +1,3 @@
-// Prisma Schema - Base Configuration
-// Tables will be added on-demand by each specification
-
 generator client {
   provider = "prisma-client"
   output   = "../generated"
@@ -10,272 +7,11 @@ datasource db {
   provider = "postgresql"
 }
 
-// ============================================
-// FASE 2: Workshop Management (Gestión de Taller)
-// Models: Customer, Vehicle, WorkOrder, Service, etc.
-// ============================================
-
-// Customer - Ficha de cliente
-model Customer {
-  id        String   @id @default(uuid())
-  name      String   // Nombre o Razón Social
-  phone     String?  // Principal (opcional)
-  phoneAlt  String?  // Alternativo (WhatsApp)
-  email     String?
-  address   String?
-  notes     String?  // Observaciones
-  
-  // Datos de facturación (opcional, para AFIP)
-  billingData Json?  // { cuit: string, invoiceType: 'A' | 'B' | 'C' | 'M' }
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  vehicles   Vehicle[]
-  workOrders WorkOrder[]
-
-  @@index([phone])
-  @@index([name])
-  @@map("customer")
-}
-
-// VehicleMake - Marcas normalizadas (Toyota, Ford, Sony)
-model VehicleMake {
-  id             String   @id @default(uuid())
-  name           String   // "Toyota", "Ford", "Sony" (capitalizado)
-  normalizedName String   // "toyota", "ford", "sony" (para búsqueda)
-  category       String[] // [CAR, SUV, PICKUP] o [AUDIO_EQUIPMENT]
-  isActive       Boolean  @default(true)
-  createdAt      DateTime @default(now())
-
-  // Relations
-  models VehicleModel[]
-  vehicles Vehicle[]
-
-  @@unique([normalizedName])
-  @@index([normalizedName])
-  @@map("vehicle_make")
-}
-
-// VehicleModel - Modelos normalizados (Hilux, Ranger, GTK-XB90)
-model VehicleModel {
-  id             String   @id @default(uuid())
-  makeId         String
-  name           String   // "Hilux", "Ranger", "GTK-XB90"
-  normalizedName String   // "hilux", "ranger", "gtk-xb90"
-  years          Int[]    // [2020, 2021, 2022, 2023, 2024]
-  isActive       Boolean  @default(true)
-  createdAt      DateTime @default(now())
-
-  // Relations
-  make     VehicleMake @relation(fields: [makeId], references: [id], onDelete: Cascade)
-  vehicles Vehicle[]
-
-  @@unique([makeId, normalizedName])
-  @@index([makeId])
-  @@index([normalizedName])
-  @@map("vehicle_model")
-}
-
-// Vehicle - Activo genérico (vehículos o equipos)
-model Vehicle {
-  id       String @id @default(uuid())
-  identifier String // Patente (vehículos) o N° Serie/Código (equipos) - ÚNICO por cliente
-
-  // Categoría determina qué campos usar
-  category String
-  // CAR, TRUCK, SUV, PICKUP, MOTORCYCLE, TRAILER, AUDIO_EQUIPMENT, ELECTRIC_SCOOTER, OTHER
-
-  // Campos para vehículos motorizados (opcionales)
-  makeId  String?
-  modelId String?
-  year    Int?
-  color   String?
-
-  // Campos para equipos genéricos (opcionales)
-  equipmentName String? // "Parlante Sony GTK-XB90"
-  equipmentType String? // "Equipo de audio", "Monopatín eléctrico"
-  description   String? // Detalles adicionales del equipo
-
-  // Común
-  notes      String?
-  customerId String
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  // Relations
-  customer   Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  make       VehicleMake?  @relation(fields: [makeId], references: [id], onDelete: SetNull)
-  model      VehicleModel? @relation(fields: [modelId], references: [id], onDelete: SetNull)
-  workOrders WorkOrder[]
-
-  @@unique([identifier, customerId])
-  @@index([customerId])
-  @@index([identifier])
-  @@index([category])
-  @@map("vehicle")
-}
-
-// Service - Catálogo de trabajos/servicios
-model Service {
-  id            String  @id @default(uuid())
-  name          String  @unique
-  description   String?
-  baseCost      Decimal @db.Decimal(10, 2) // Precio referencia
-  timeMinutes   Int     @default(60) // Tiempo estimado para agendamiento
-  vehicleFactor Decimal @default(1.0) @db.Decimal(3, 2) // Factor de ajuste por tipo de vehículo
-  isActive      Boolean @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  // Relations
-  workOrderItems WorkOrderItem[]
-
-  @@index([isActive])
-  @@map("service")
-}
-
-// WorkOrder - Orden de Trabajo (OT)
-model WorkOrder {
-  id         String @id @default(uuid()) // OT-2024-0001 format
-  status     String // CONFIRMED | WAITING | IN_PROGRESS | QC_CHECK | READY | PAID | DELIVERED
-  source     String @default("IN_PERSON") // IN_PERSON | WEB
-
-  // Relations
-  customerId    String
-  customer      Customer    @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  vehicleId     String
-  vehicle       Vehicle     @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
-  technicianId  String?     // User ID of assigned technician
-
-  // Items (productos + servicios)
-  items WorkOrderItem[]
-
-  // Checklists
-  entryChecklist Json? // Checklist de ingreso
-  exitChecklist  Json? // Checklist de calidad salida
-
-  // Detalles de ingreso del vehículo
-  odometerValue Int?    // Valor del odómetro al ingresar (km)
-  fuelLevel     Int?    // Nivel de combustible 0-100%
-
-  // Fotos
-  entryPhotos String[] // URLs fotos ingreso
-  exitPhotos  String[] // URLs fotos egreso
-
-  // Tiempos
-  scheduledDate DateTime? // Turno agendado
-  startedAt     DateTime? // Inicio del trabajo
-  completedAt   DateTime? // Trabajo completado
-  deliveredAt   DateTime? // Entregado al cliente
-
-  // Pago (MVP - sin facturación AFIP aún)
-  paymentMethod String? // CASH | TRANSFER | QR | CARD | OTHER
-  paymentNotes  String? // Referencia transferencia, etc.
-  total         Decimal @db.Decimal(10, 2)
-  totalProducts Decimal @db.Decimal(10, 2)
-  totalServices Decimal @db.Decimal(10, 2)
-
-  // Facturación (futuro - cuando se implemente AFIP)
-  invoiceId String?
-
-  notes     String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  photos Photo[]
-
-  @@index([customerId])
-  @@index([vehicleId])
-  @@index([technicianId])
-  @@index([status])
-  @@index([scheduledDate])
-  @@index([createdAt])
-  @@map("work_order")
-}
-
-// WorkOrderItem - Items de una OT (productos o servicios)
-model WorkOrderItem {
-  id          String  @id @default(uuid())
-  workOrderId String
-  workOrder   WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
-
-  type String // PRODUCT | SERVICE
-
-  // Para productos
-  productId String?
-  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
-
-  // Para servicios
-  serviceId String?
-  service   Service? @relation(fields: [serviceId], references: [id], onDelete: SetNull)
-
-  quantity  Int
-  unitPrice Decimal @db.Decimal(10, 2)
-  subtotal  Decimal @db.Decimal(10, 2)
-
-  @@index([workOrderId])
-  @@index([productId])
-  @@index([serviceId])
-  @@map("work_order_item")
-}
-
-// Photo - Fotos de una OT (antes/después)
-model Photo {
-  id          String   @id @default(uuid())
-  workOrderId String
-  workOrder   WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
-
-  type        String // ENTRY | EXIT
-  url         String
-  description String?
-  createdAt   DateTime @default(now())
-
-  @@index([workOrderId])
-  @@index([type])
-  @@map("photo")
-}
-
-model User {
-  id            String    @id
-  name          String
-  email         String
-  emailVerified Boolean   @default(false)
-  image         String?
-  role          String    @default("USER") // ADMIN, STAFF, USER
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  sessions      Session[]
-  accounts      Account[]
-
-  @@unique([email])
-  @@map("user")
-}
-
-model Session {
-  id        String   @id
-  expiresAt DateTime
-  token     String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  ipAddress String?
-  userAgent String?
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([token])
-  @@index([userId])
-  @@map("session")
-}
-
-model Account {
+model account {
   id                    String    @id
   accountId             String
   providerId            String
   userId                String
-  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   accessToken           String?
   refreshToken          String?
   idToken               String?
@@ -284,121 +20,181 @@ model Account {
   scope                 String?
   password              String?
   createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
+  updatedAt             DateTime
+  user                  user      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
-  @@map("account")
 }
 
-model Setting {
-  id        String   @id @default(uuid())
-  key       String   @unique
-  value     String
-  updatedAt DateTime @updatedAt
-
-  @@map("setting")
-}
-
-model Verification {
-  id         String   @id
-  identifier String
-  value      String
-  expiresAt  DateTime
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  @@index([identifier])
-  @@map("verification")
-}
-
-// Role Management - Gestión de roles vía Prisma Studio
-model UserRole {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  role      String   // ADMIN, SELLER, TECHNICIAN, CASHIER, USER
-  name      String?  // Nombre para identificar quién es
-  image     String?  // Foto de perfil del usuario (Google OAuth)
-  notes     String?  // Observaciones (ej: "Dueño", "Vendedor turno mañana")
-  isActive  Boolean  @default(true)
-  lastLogin DateTime? // Último login del usuario
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([email])
-  @@index([role])
-  @@map("user_role")
-}
-
-// ============================================
-// Price Lists Management - Listas de Precios
-// ============================================
-
-model PriceList {
-  id                   String    @id @default(uuid())
-  name                 String
-  isPublic             Boolean   @default(false)
+model category {
+  id                   String    @id
+  name                 String    @unique
+  description          String?
+  defaultMarginPercent Float     @default(40)
+  color                String?
+  sortOrder            Int       @default(0)
   isActive             Boolean   @default(true)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime
+  product              product[]
+
+  @@index([sortOrder])
+}
+
+model customer {
+  id          String       @id
+  phone       String?
+  phoneAlt    String?
+  email       String?
+  address     String?
+  notes       String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime
+  billingData Json?
+  name        String
+  vehicle     vehicle[]
+  work_order  work_order[]
+
+  @@index([name])
+  @@index([phone])
+}
+
+model photo {
+  id          String     @id
+  workOrderId String
+  type        String
+  url         String
+  description String?
+  createdAt   DateTime   @default(now())
+  work_order  work_order @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+
+  @@index([type])
+  @@index([workOrderId])
+}
+
+model price_list {
+  id                   String            @id
+  name                 String
+  isPublic             Boolean           @default(false)
+  isActive             Boolean           @default(true)
   startDate            DateTime?
   endDate              DateTime?
-  baseMarginPercentage Decimal   @db.Decimal(5, 2)
-  roundingRule         String    @default("SMART_HUNDREDS") // EXACT, NEAREST_INTEGER, PSYCHOLOGICAL, SMART_HUNDREDS
-
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @updatedAt
-
-  items                PriceListItem[]
+  baseMarginPercentage Decimal           @db.Decimal(5, 2)
+  roundingRule         String            @default("SMART_HUNDREDS")
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime
+  price_list_item      price_list_item[]
 
   @@index([isActive])
   @@index([isPublic])
-  @@map("price_list")
 }
 
-model PriceListItem {
-  id                       String    @id @default(uuid())
+model price_list_item {
+  id                       String     @id
   priceListId              String
-  priceList                PriceList @relation(fields: [priceListId], references: [id], onDelete: Cascade)
-
-  // Relación con Product
   productId                String?
-  product                  Product?  @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  overrideMarginPercentage Decimal?  @db.Decimal(5, 2)
-  fixedPrice               Decimal?  @db.Decimal(10, 2)
-
-  createdAt                DateTime  @default(now())
-  updatedAt                DateTime  @updatedAt
+  overrideMarginPercentage Decimal?   @db.Decimal(5, 2)
+  fixedPrice               Decimal?   @db.Decimal(10, 2)
+  createdAt                DateTime   @default(now())
+  updatedAt                DateTime
+  price_list               price_list @relation(fields: [priceListId], references: [id], onDelete: Cascade)
+  product                  product?   @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@unique([priceListId, productId])
   @@index([priceListId])
   @@index([productId])
-  @@map("price_list_item")
 }
 
-// ============================================
-// FASE 1: MVP Stock & Ventas
-// Modelos Product y Category
-// ============================================
+model product {
+  id              String            @id
+  sku             String?           @unique
+  name            String
+  description     String?
+  costPrice       Decimal           @db.Decimal(10, 2)
+  stock           Int               @default(0)
+  minStock        Int               @default(0)
+  barcode         String?
+  location        String?
+  isActive        Boolean           @default(true)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime
+  categoryId      String
+  supplierId      String?
+  lastMovementAt  DateTime?
+  replacementCost Decimal           @db.Decimal(10, 2)
+  price_list_item price_list_item[]
+  category        category          @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  supplier        supplier?         @relation(fields: [supplierId], references: [id])
+  stock_movement  stock_movement[]
+  work_order_item work_order_item[]
 
-model Category {
-  id                 String    @id @default(uuid())
-  name               String    @unique
-  description        String?
-  defaultMarginPercent Float   @default(40)  // Margen sugerido por defecto
-  color              String?   // Color para UI (hex)
-  sortOrder          Int       @default(0)
-  isActive           Boolean   @default(true)
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
-
-  // Relations
-  products Product[]
-
-  @@index([sortOrder])
-  @@map("category")
+  @@index([categoryId])
+  @@index([isActive])
+  @@index([lastMovementAt])
+  @@index([name])
+  @@index([sku])
+  @@index([stock, minStock])
+  @@index([supplierId])
 }
 
-model Supplier {
-  id          String    @id @default(uuid())
+model service {
+  id              String            @id
+  name            String            @unique
+  description     String?
+  baseCost        Decimal           @db.Decimal(10, 2)
+  timeMinutes     Int               @default(60)
+  vehicleFactor   Decimal           @default(1.0) @db.Decimal(3, 2)
+  isActive        Boolean           @default(true)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime
+  work_order_item work_order_item[]
+
+  @@index([isActive])
+}
+
+model session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model setting {
+  id        String   @id
+  key       String   @unique
+  value     String
+  updatedAt DateTime
+}
+
+model stock_movement {
+  id            String   @id
+  productId     String
+  userId        String?
+  userName      String?
+  type          String
+  quantity      Int
+  previousStock Int
+  newStock      Int
+  reason        String
+  reasonDetails String?
+  salePrice     Decimal? @db.Decimal(10, 2)
+  createdAt     DateTime @default(now())
+  product       product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
+  @@index([productId])
+  @@index([type])
+}
+
+model supplier {
+  id          String    @id
   name        String    @unique
   contactName String?
   phone       String?
@@ -407,79 +203,163 @@ model Supplier {
   notes       String?
   isActive    Boolean   @default(true)
   createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  updatedAt   DateTime
+  product     product[]
 
-  // Relations
-  products Product[]
-
-  @@index([name])
   @@index([isActive])
-  @@map("supplier")
+  @@index([name])
 }
 
-model Product {
-  id          String   @id @default(uuid())
-  sku         String?  @unique  // SKU opcional según spec
-  name        String
-  description String?
-  costPrice   Decimal  @db.Decimal(10, 2)
-  replacementCost Decimal  @db.Decimal(10, 2) // Costo de reposición para cálculo de precios
-  stock       Int      @default(0)
-  minStock    Int      @default(0)
-  barcode     String?  // EAN opcional
-  location    String?
-  lastMovementAt DateTime? // Último movimiento de stock (para detectar obsoletos)
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  categoryId String
-  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  
-  supplierId String?
-  supplier   Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
-
-  // Audit trail
-  movements StockMovement[]
-  workOrderItems WorkOrderItem[]
-  
-  // Price lists
-  priceListItems PriceListItem[]
-
-  @@index([categoryId])
-  @@index([supplierId])
-  @@index([sku])
-  @@index([name])
-  @@index([isActive])
-  @@index([stock, minStock])
-  @@index([lastMovementAt]) // Para queries de obsoletos (productos sin movimientos)
-  @@map("product")
+model user {
+  id            String    @id
+  name          String
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime
+  role          String    @default("USER")
+  account       account[]
+  session       session[]
 }
 
-// ============================================
-// Stock Audit Trail - Traza de movimientos
-// ============================================
+model user_role {
+  id        String    @id
+  email     String    @unique
+  role      String
+  name      String?
+  notes     String?
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime
+  lastLogin DateTime?
+  image     String?
 
-model StockMovement {
-  id            String   @id @default(uuid())
-  productId     String
-  userId        String?  // Email del usuario que hizo el movimiento
-  userName      String?  // Nombre del usuario (denormalizado para historial)
-  type          String   // IN (entrada), OUT (salida), ADJUSTMENT (ajuste)
-  quantity      Int      // Cantidad movida (positivo o negativo)
-  previousStock Int      // Stock antes del movimiento
-  newStock      Int      // Stock después del movimiento
-  reason        String   // Motivo del movimiento (enum como string)
-  reasonDetails String?  // Detalles adicionales (ej: "Venta #123")
-  salePrice     Decimal? @db.Decimal(10, 2) // Precio de venta al momento (para auditoría)
-  createdAt     DateTime @default(now())
+  @@index([email])
+  @@index([role])
+}
 
-  // Relations
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+model vehicle {
+  id            String         @id
+  identifier    String
+  category      String
+  makeId        String?
+  modelId       String?
+  year          Int?
+  color         String?
+  equipmentName String?
+  equipmentType String?
+  description   String?
+  notes         String?
+  customerId    String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime
+  customer      customer       @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  vehicle_make  vehicle_make?  @relation(fields: [makeId], references: [id])
+  vehicle_model vehicle_model? @relation(fields: [modelId], references: [id])
+  work_order    work_order[]
+
+  @@unique([identifier, customerId])
+  @@index([category])
+  @@index([customerId])
+  @@index([identifier])
+}
+
+model vehicle_make {
+  id             String          @id
+  name           String
+  normalizedName String          @unique
+  category       String[]
+  isActive       Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  vehicle        vehicle[]
+  vehicle_model  vehicle_model[]
+
+  @@index([normalizedName])
+}
+
+model vehicle_model {
+  id             String       @id
+  makeId         String
+  name           String
+  normalizedName String
+  years          Int[]
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  vehicle        vehicle[]
+  vehicle_make   vehicle_make @relation(fields: [makeId], references: [id], onDelete: Cascade)
+
+  @@unique([makeId, normalizedName])
+  @@index([makeId])
+  @@index([normalizedName])
+}
+
+model verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime
+
+  @@index([identifier])
+}
+
+model work_order {
+  id              String            @id
+  status          String
+  customerId      String
+  vehicleId       String
+  technicianId    String?
+  entryChecklist  Json?
+  exitChecklist   Json?
+  entryPhotos     String[]
+  exitPhotos      String[]
+  scheduledDate   DateTime?
+  startedAt       DateTime?
+  completedAt     DateTime?
+  deliveredAt     DateTime?
+  paymentMethod   String?
+  paymentNotes    String?
+  total           Decimal           @db.Decimal(10, 2)
+  totalProducts   Decimal           @db.Decimal(10, 2)
+  totalServices   Decimal           @db.Decimal(10, 2)
+  invoiceId       String?
+  notes           String
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime
+  source          String            @default("IN_PERSON")
+  fuelLevel       Int?
+  odometerValue   Int?
+  photo           photo[]
+  customer        customer          @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  vehicle         vehicle           @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  work_order_item work_order_item[]
+
+  @@index([createdAt])
+  @@index([customerId])
+  @@index([scheduledDate])
+  @@index([status])
+  @@index([technicianId])
+  @@index([vehicleId])
+}
+
+model work_order_item {
+  id            String     @id
+  workOrderId   String
+  type          String
+  productId     String?
+  serviceId     String?
+  quantity      Int
+  unitPrice     Decimal    @db.Decimal(10, 2)
+  subtotal      Decimal    @db.Decimal(10, 2)
+  isManualPrice Boolean    @default(false)
+  priceListId   String?
+  product       product?   @relation(fields: [productId], references: [id])
+  service       service?   @relation(fields: [serviceId], references: [id])
+  work_order    work_order @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
 
   @@index([productId])
-  @@index([createdAt])
-  @@index([type])
-  @@map("stock_movement")
+  @@index([serviceId])
+  @@index([workOrderId])
 }

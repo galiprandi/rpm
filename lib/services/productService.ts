@@ -432,24 +432,17 @@ export async function createStockMovement(input: CreateMovementInput): Promise<S
  * Get all movements for a product
  */
 export async function getProductMovements(productId: string): Promise<StockMovement[]> {
-  console.log('[Service] getProductMovements called with productId:', productId);
-  try {
-    const movements = await prisma.stockMovement.findMany({
-      where: { productId },
-      orderBy: { createdAt: 'desc' },
-    });
-    console.log('[Service] Movements found:', movements.length);
+  const movements = await prisma.stockMovement.findMany({
+    where: { productId },
+    orderBy: { createdAt: 'desc' },
+  });
 
-    return movements.map(m => ({
-      ...m,
-      type: m.type as MovementType,
-      reason: m.reason as MovementReason,
-      salePrice: m.salePrice ? Number(m.salePrice) : null,
-    }));
-  } catch (error) {
-    console.error('[Service] Error in getProductMovements:', error);
-    throw error;
-  }
+  return movements.map(m => ({
+    ...m,
+    type: m.type as MovementType,
+    reason: m.reason as MovementReason,
+    salePrice: m.salePrice ? Number(m.salePrice) : null,
+  }));
 }
 
 /**

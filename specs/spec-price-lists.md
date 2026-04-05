@@ -52,6 +52,41 @@ Permitir a los administradores gestionar múltiples listas de precios dinámicas
 
 ## 4. Interfaces & Data Contracts (Interfaces y Modelo de Datos)
 
+### Regla de Cálculo de Costo Base de Producto
+
+**⚠️ IMPORTANTE:** El costo base efectivo de un producto se calcula SIEMPRE usando la siguiente regla centralizada:
+
+```typescript
+// En lib/services/priceListService.ts
+export function getProductBaseCost(
+  replacementCost: unknown,
+  costPrice: unknown
+): number {
+  const replacement = replacementCost !== null && replacementCost !== undefined
+    ? Number(replacementCost)
+    : 0;
+  
+  if (replacement > 0) {
+    return replacement;
+  }
+  
+  return costPrice !== null && costPrice !== undefined
+    ? Number(costPrice)
+    : 0;
+}
+```
+
+**Regla:**
+1. Si `replacementCost` existe y es mayor a 0 → usar `replacementCost`
+2. Si no, usar `costPrice` como fallback
+3. Si ambos son 0/null → retornar 0
+
+**Esta función es la única fuente de verdad** para el cálculo del costo base en:
+- Cálculo de precios en listas de precios
+- Órdenes de trabajo
+- Selectores de productos
+- Importación de productos
+
 ### Prisma Schema Updates
 
 ```prisma

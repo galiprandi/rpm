@@ -20,7 +20,7 @@ import { WorkOrderStepper } from "@/components/ui/stepper";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
 import { QuickServiceDialog } from "@/components/work-orders/QuickServiceDialog";
 import { useUI } from "@/components/ui/UIProvider";
-import { Save, Plus, Trash2, Search, Car, User, CheckCircle, Edit } from "lucide-react";
+import { Save, Plus, Trash2, Search, Car, User, CheckCircle, Edit, Fuel, Droplet } from "lucide-react";
 
 const VEHICLE_CATEGORIES = [
   { value: "CAR", label: "Auto/Camioneta", icon: "🚗" },
@@ -69,6 +69,22 @@ interface Product {
   id: string;
   name: string;
   replacementCost: number;
+  costPrice?: number;  // Fallback when replacementCost is 0
+}
+
+// Client-side helper to calculate effective product base cost
+// Uses replacementCost if > 0, otherwise falls back to costPrice
+function getProductBaseCost(
+  replacementCost: number | null | undefined,
+  costPrice: number | null | undefined
+): number {
+  if (replacementCost !== null && replacementCost !== undefined && replacementCost > 0) {
+    return replacementCost;
+  }
+  if (costPrice !== null && costPrice !== undefined) {
+    return costPrice;
+  }
+  return 0;
 }
 
 interface WorkOrderItem {
@@ -78,6 +94,10 @@ interface WorkOrderItem {
   name: string;
   quantity: number;
   unitPrice: number;
+  priceListId?: string;      // Lista usada como base
+  isManualPrice?: boolean;   // true = precio editado manualmente
+  originalPrice?: number;    // Precio calculado original (para comparar)
+  replacementCost?: number;  // Costo de reposición (para calcular margen)
 }
 
 export default function NewWorkOrderPage() {
@@ -124,6 +144,7 @@ export default function NewWorkOrderPage() {
   const [showQuickServiceDialog, setShowQuickServiceDialog] = useState(false);
   const [selectedPriceList, setSelectedPriceList] = useState<string>("");
   const [priceLists, setPriceLists] = useState<Array<{ id: string; name: string; baseMarginPercentage: number }>>([]);
+  const [minimumMargin, setMinimumMargin] = useState<number>(15); // Default 15%
 
   // Step 3: Checklist & Notes
   const [checklist, setChecklist] = useState<Record<string, boolean>>({});
@@ -135,10 +156,11 @@ export default function NewWorkOrderPage() {
   // Fetch services, products and price lists on mount
   useEffect(() => {
     const fetchData = async () => {
-      const [servicesRes, productsRes, priceListsRes] = await Promise.all([
+      const [servicesRes, productsRes, priceListsRes, settingsRes] = await Promise.all([
         fetch("/api/services"),
         fetch("/api/products"),
         fetch("/api/price-lists"),
+        fetch("/api/settings"),
       ]);
       if (servicesRes.ok) {
         const data = await servicesRes.json();
@@ -156,6 +178,13 @@ export default function NewWorkOrderPage() {
         const firstActive = lists.find((pl: { isActive: boolean }) => pl.isActive);
         if (firstActive) {
           setSelectedPriceList(firstActive.id);
+        }
+      }
+      if (settingsRes.ok) {
+        const data = await settingsRes.json();
+        const minMargin = data.settings?.find((s: { key: string }) => s.key === "MINIMUM_MARGIN_PERCENTAGE")?.value;
+        if (minMargin) {
+          setMinimumMargin(parseFloat(minMargin));
         }
       }
     };
@@ -246,7 +275,8 @@ export default function NewWorkOrderPage() {
 
   const addItem = async (type: "PRODUCT" | "SERVICE", item: Service | Product) => {
     let unitPrice: number;
-    
+    let priceListId: string | undefined;
+
     if (type === "SERVICE") {
       unitPrice = (item as Service).baseCost;
     } else {
@@ -258,18 +288,22 @@ export default function NewWorkOrderPage() {
           if (res.ok) {
             const data = await res.json();
             unitPrice = data.finalPrice;
+            priceListId = selectedPriceList;
           } else {
-            // Fallback to replacementCost with default margin if calculation fails
-            unitPrice = product.replacementCost * 1.4; // 40% default margin
+            // Fallback to base cost with default margin if calculation fails
+            const baseCost = getProductBaseCost(product.replacementCost, product.costPrice);
+            unitPrice = baseCost * 1.4; // 40% default margin
           }
         } catch {
-          unitPrice = product.replacementCost * 1.4; // 40% default margin
+          const baseCost = getProductBaseCost(product.replacementCost, product.costPrice);
+          unitPrice = baseCost * 1.4; // 40% default margin
         }
       } else {
-        unitPrice = product.replacementCost * 1.4; // 40% default margin
+        const baseCost = getProductBaseCost(product.replacementCost, product.costPrice);
+        unitPrice = baseCost * 1.4; // 40% default margin
       }
     }
-    
+
     setItems((prev) => [
       ...prev,
       {
@@ -278,6 +312,12 @@ export default function NewWorkOrderPage() {
         name: item.name,
         quantity: 1,
         unitPrice: Number(unitPrice),
+        priceListId,
+        isManualPrice: false,
+        originalPrice: Number(unitPrice),
+        replacementCost: type === "PRODUCT" 
+          ? getProductBaseCost((item as Product).replacementCost, (item as Product).costPrice) 
+          : undefined,
       },
     ]);
   };
@@ -292,8 +332,33 @@ export default function NewWorkOrderPage() {
     );
   };
 
+  const updateItemPrice = (index: number, newPrice: number) => {
+    setItems((prev) =>
+      prev.map((item, i) =>
+        i === index
+          ? { ...item, unitPrice: Math.max(0, newPrice), isManualPrice: true }
+          : item
+      )
+    );
+  };
+
   const calculateTotal = () => {
     return items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
+  };
+
+  // Calculate margin percentage for a product item
+  const calculateMargin = (item: WorkOrderItem): number | null => {
+    if (item.type !== "PRODUCT" || !item.replacementCost || item.replacementCost === 0) {
+      return null;
+    }
+    return ((item.unitPrice - item.replacementCost) / item.replacementCost) * 100;
+  };
+
+  // Check if item is below minimum margin
+  const isBelowMinimumMargin = (item: WorkOrderItem): boolean => {
+    const margin = calculateMargin(item);
+    if (margin === null) return false;
+    return margin < minimumMargin;
   };
 
   const handleSubmit = async () => {
@@ -783,38 +848,74 @@ export default function NewWorkOrderPage() {
               {items.length > 0 && (
                 <div className="border rounded-md">
                   <div className="grid grid-cols-12 gap-2 p-3 bg-muted font-medium text-sm">
-                    <div className="col-span-6">Item</div>
+                    <div className="col-span-5">Item</div>
                     <div className="col-span-2">Cantidad</div>
-                    <div className="col-span-3">Precio</div>
+                    <div className="col-span-3">Precio Unit.</div>
+                    <div className="col-span-1">Subtotal</div>
                     <div className="col-span-1"></div>
                   </div>
-                  {items.map((item, index) => (
-                    <div key={index} className="grid grid-cols-12 gap-2 p-3 border-t items-center">
-                      <div className="col-span-6">
-                        <div className="font-medium">{item.name}</div>
-                        <div className="text-xs text-muted-foreground">{item.type}</div>
+                  {items.map((item, index) => {
+                    const margin = calculateMargin(item);
+                    const belowMin = isBelowMinimumMargin(item);
+                    return (
+                      <div key={index} className={`grid grid-cols-12 gap-2 p-3 border-t items-center ${belowMin ? 'bg-red-50/50' : ''}`}>
+                        <div className="col-span-5">
+                          <div className="font-medium flex items-center gap-2 flex-wrap">
+                            {item.name}
+                            {item.isManualPrice && (
+                              <Badge variant="outline" className="text-xs bg-yellow-50 text-yellow-700 border-yellow-200">
+                                Manual
+                              </Badge>
+                            )}
+                            {belowMin && (
+                              <Badge variant="outline" className="text-xs bg-red-50 text-red-700 border-red-200">
+                                Margen Bajo
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {item.type}
+                            {margin !== null && (
+                              <span className={`ml-2 ${belowMin ? 'text-red-600 font-medium' : 'text-muted-foreground'}`}>
+                                (Margen: {margin.toFixed(1)}%)
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="col-span-2">
+                          <Input
+                            type="number"
+                            min={1}
+                            value={item.quantity}
+                            onChange={(e) =>
+                              updateItemQuantity(index, parseInt(e.target.value) || 1)
+                            }
+                            className="h-8"
+                          />
+                        </div>
+                        <div className="col-span-3">
+                          <Input
+                            type="number"
+                            min={0}
+                            step="1"
+                            value={item.unitPrice}
+                            onChange={(e) =>
+                              updateItemPrice(index, parseFloat(e.target.value) || 0)
+                            }
+                            className={`h-8 ${item.isManualPrice ? 'border-yellow-400 bg-yellow-50/30' : ''} ${belowMin ? 'border-red-400' : ''}`}
+                          />
+                        </div>
+                        <div className="col-span-1 text-sm">
+                          ${(item.unitPrice * item.quantity).toLocaleString("es-AR")}
+                        </div>
+                        <div className="col-span-1">
+                          <Button variant="ghost" size="sm" onClick={() => removeItem(index)}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
                       </div>
-                      <div className="col-span-2">
-                        <Input
-                          type="number"
-                          min={1}
-                          value={item.quantity}
-                          onChange={(e) =>
-                            updateItemQuantity(index, parseInt(e.target.value) || 1)
-                          }
-                          className="h-8"
-                        />
-                      </div>
-                      <div className="col-span-3">
-                        ${(item.unitPrice * item.quantity).toLocaleString("es-AR")}
-                      </div>
-                      <div className="col-span-1">
-                        <Button variant="ghost" size="sm" onClick={() => removeItem(index)}>
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                   <div className="p-3 border-t bg-muted">
                     <div className="flex justify-between font-medium">
                       <span>Total:</span>
@@ -902,11 +1003,17 @@ export default function NewWorkOrderPage() {
                     onValueChange={(value: number[]) => setFuelLevel(value[0])}
                     max={100}
                     step={5}
-                    className="py-4"
+                    className="py-4 [&_[data-slot=slider-track]]:h-2 [&_[data-slot=slider-range]]:bg-blue-700 [&_[data-slot=slider-thumb]]:bg-gray-600 [&_[data-slot=slider-thumb]]:border-gray-700 [&_[data-slot=slider-thumb]]:w-4 [&_[data-slot=slider-thumb]]:h-4"
                   />
                   <div className="flex justify-between text-xs text-muted-foreground">
-                    <span> Vacío</span>
-                    <span>Full</span>
+                    <span className="flex items-center gap-1">
+                      <Droplet className="h-3 w-3" />
+                      Vacío
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Fuel className="h-3 w-3" />
+                      Lleno
+                    </span>
                   </div>
                 </div>
               </div>

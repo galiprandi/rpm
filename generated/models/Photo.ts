@@ -4,7 +4,7 @@
 // biome-ignore-all lint: generated file
 // @ts-nocheck 
 /*
- * This file exports the `Photo` model and its related types.
+ * This file exports the `photo` model and its related types.
  *
  * 🟢 You can import this file directly.
  */
@@ -13,10 +13,10 @@ import type * as $Enums from "../enums"
 import type * as Prisma from "../internal/prismaNamespace"
 
 /**
- * Model Photo
+ * Model photo
  * 
  */
-export type PhotoModel = runtime.Types.Result.DefaultSelection<Prisma.$PhotoPayload>
+export type photoModel = runtime.Types.Result.DefaultSelection<Prisma.$photoPayload>
 
 export type AggregatePhoto = {
   _count: PhotoCountAggregateOutputType | null
@@ -83,37 +83,37 @@ export type PhotoCountAggregateInputType = {
 
 export type PhotoAggregateArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Filter which Photo to aggregate.
+   * Filter which photo to aggregate.
    */
-  where?: Prisma.PhotoWhereInput
+  where?: Prisma.photoWhereInput
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
    * 
-   * Determine the order of Photos to fetch.
+   * Determine the order of photos to fetch.
    */
-  orderBy?: Prisma.PhotoOrderByWithRelationInput | Prisma.PhotoOrderByWithRelationInput[]
+  orderBy?: Prisma.photoOrderByWithRelationInput | Prisma.photoOrderByWithRelationInput[]
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
    * 
    * Sets the start position
    */
-  cursor?: Prisma.PhotoWhereUniqueInput
+  cursor?: Prisma.photoWhereUniqueInput
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
    * 
-   * Take `±n` Photos from the position of the cursor.
+   * Take `±n` photos from the position of the cursor.
    */
   take?: number
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
    * 
-   * Skip the first `n` Photos.
+   * Skip the first `n` photos.
    */
   skip?: number
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    * 
-   * Count returned Photos
+   * Count returned photos
   **/
   _count?: true | PhotoCountAggregateInputType
   /**
@@ -141,11 +141,11 @@ export type GetPhotoAggregateType<T extends PhotoAggregateArgs> = {
 
 
 
-export type PhotoGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.PhotoWhereInput
-  orderBy?: Prisma.PhotoOrderByWithAggregationInput | Prisma.PhotoOrderByWithAggregationInput[]
+export type photoGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.photoWhereInput
+  orderBy?: Prisma.photoOrderByWithAggregationInput | Prisma.photoOrderByWithAggregationInput[]
   by: Prisma.PhotoScalarFieldEnum[] | Prisma.PhotoScalarFieldEnum
-  having?: Prisma.PhotoScalarWhereWithAggregatesInput
+  having?: Prisma.photoScalarWhereWithAggregatesInput
   take?: number
   skip?: number
   _count?: PhotoCountAggregateInputType | true
@@ -165,7 +165,7 @@ export type PhotoGroupByOutputType = {
   _max: PhotoMaxAggregateOutputType | null
 }
 
-type GetPhotoGroupByPayload<T extends PhotoGroupByArgs> = Prisma.PrismaPromise<
+type GetPhotoGroupByPayload<T extends photoGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<PhotoGroupByOutputType, T['by']> &
       {
@@ -180,77 +180,77 @@ type GetPhotoGroupByPayload<T extends PhotoGroupByArgs> = Prisma.PrismaPromise<
 
 
 
-export type PhotoWhereInput = {
-  AND?: Prisma.PhotoWhereInput | Prisma.PhotoWhereInput[]
-  OR?: Prisma.PhotoWhereInput[]
-  NOT?: Prisma.PhotoWhereInput | Prisma.PhotoWhereInput[]
-  id?: Prisma.StringFilter<"Photo"> | string
-  workOrderId?: Prisma.StringFilter<"Photo"> | string
-  type?: Prisma.StringFilter<"Photo"> | string
-  url?: Prisma.StringFilter<"Photo"> | string
-  description?: Prisma.StringNullableFilter<"Photo"> | string | null
-  createdAt?: Prisma.DateTimeFilter<"Photo"> | Date | string
-  workOrder?: Prisma.XOR<Prisma.WorkOrderScalarRelationFilter, Prisma.WorkOrderWhereInput>
+export type photoWhereInput = {
+  AND?: Prisma.photoWhereInput | Prisma.photoWhereInput[]
+  OR?: Prisma.photoWhereInput[]
+  NOT?: Prisma.photoWhereInput | Prisma.photoWhereInput[]
+  id?: Prisma.StringFilter<"photo"> | string
+  workOrderId?: Prisma.StringFilter<"photo"> | string
+  type?: Prisma.StringFilter<"photo"> | string
+  url?: Prisma.StringFilter<"photo"> | string
+  description?: Prisma.StringNullableFilter<"photo"> | string | null
+  createdAt?: Prisma.DateTimeFilter<"photo"> | Date | string
+  work_order?: Prisma.XOR<Prisma.Work_orderScalarRelationFilter, Prisma.work_orderWhereInput>
 }
 
-export type PhotoOrderByWithRelationInput = {
+export type photoOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   workOrderId?: Prisma.SortOrder
   type?: Prisma.SortOrder
   url?: Prisma.SortOrder
   description?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
-  workOrder?: Prisma.WorkOrderOrderByWithRelationInput
+  work_order?: Prisma.work_orderOrderByWithRelationInput
 }
 
-export type PhotoWhereUniqueInput = Prisma.AtLeast<{
+export type photoWhereUniqueInput = Prisma.AtLeast<{
   id?: string
-  AND?: Prisma.PhotoWhereInput | Prisma.PhotoWhereInput[]
-  OR?: Prisma.PhotoWhereInput[]
-  NOT?: Prisma.PhotoWhereInput | Prisma.PhotoWhereInput[]
-  workOrderId?: Prisma.StringFilter<"Photo"> | string
-  type?: Prisma.StringFilter<"Photo"> | string
-  url?: Prisma.StringFilter<"Photo"> | string
-  description?: Prisma.StringNullableFilter<"Photo"> | string | null
-  createdAt?: Prisma.DateTimeFilter<"Photo"> | Date | string
-  workOrder?: Prisma.XOR<Prisma.WorkOrderScalarRelationFilter, Prisma.WorkOrderWhereInput>
+  AND?: Prisma.photoWhereInput | Prisma.photoWhereInput[]
+  OR?: Prisma.photoWhereInput[]
+  NOT?: Prisma.photoWhereInput | Prisma.photoWhereInput[]
+  workOrderId?: Prisma.StringFilter<"photo"> | string
+  type?: Prisma.StringFilter<"photo"> | string
+  url?: Prisma.StringFilter<"photo"> | string
+  description?: Prisma.StringNullableFilter<"photo"> | string | null
+  createdAt?: Prisma.DateTimeFilter<"photo"> | Date | string
+  work_order?: Prisma.XOR<Prisma.Work_orderScalarRelationFilter, Prisma.work_orderWhereInput>
 }, "id">
 
-export type PhotoOrderByWithAggregationInput = {
+export type photoOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   workOrderId?: Prisma.SortOrder
   type?: Prisma.SortOrder
   url?: Prisma.SortOrder
   description?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
-  _count?: Prisma.PhotoCountOrderByAggregateInput
-  _max?: Prisma.PhotoMaxOrderByAggregateInput
-  _min?: Prisma.PhotoMinOrderByAggregateInput
+  _count?: Prisma.photoCountOrderByAggregateInput
+  _max?: Prisma.photoMaxOrderByAggregateInput
+  _min?: Prisma.photoMinOrderByAggregateInput
 }
 
-export type PhotoScalarWhereWithAggregatesInput = {
-  AND?: Prisma.PhotoScalarWhereWithAggregatesInput | Prisma.PhotoScalarWhereWithAggregatesInput[]
-  OR?: Prisma.PhotoScalarWhereWithAggregatesInput[]
-  NOT?: Prisma.PhotoScalarWhereWithAggregatesInput | Prisma.PhotoScalarWhereWithAggregatesInput[]
-  id?: Prisma.StringWithAggregatesFilter<"Photo"> | string
-  workOrderId?: Prisma.StringWithAggregatesFilter<"Photo"> | string
-  type?: Prisma.StringWithAggregatesFilter<"Photo"> | string
-  url?: Prisma.StringWithAggregatesFilter<"Photo"> | string
-  description?: Prisma.StringNullableWithAggregatesFilter<"Photo"> | string | null
-  createdAt?: Prisma.DateTimeWithAggregatesFilter<"Photo"> | Date | string
+export type photoScalarWhereWithAggregatesInput = {
+  AND?: Prisma.photoScalarWhereWithAggregatesInput | Prisma.photoScalarWhereWithAggregatesInput[]
+  OR?: Prisma.photoScalarWhereWithAggregatesInput[]
+  NOT?: Prisma.photoScalarWhereWithAggregatesInput | Prisma.photoScalarWhereWithAggregatesInput[]
+  id?: Prisma.StringWithAggregatesFilter<"photo"> | string
+  workOrderId?: Prisma.StringWithAggregatesFilter<"photo"> | string
+  type?: Prisma.StringWithAggregatesFilter<"photo"> | string
+  url?: Prisma.StringWithAggregatesFilter<"photo"> | string
+  description?: Prisma.StringNullableWithAggregatesFilter<"photo"> | string | null
+  createdAt?: Prisma.DateTimeWithAggregatesFilter<"photo"> | Date | string
 }
 
-export type PhotoCreateInput = {
-  id?: string
+export type photoCreateInput = {
+  id: string
   type: string
   url: string
   description?: string | null
   createdAt?: Date | string
-  workOrder: Prisma.WorkOrderCreateNestedOneWithoutPhotosInput
+  work_order: Prisma.work_orderCreateNestedOneWithoutPhotoInput
 }
 
-export type PhotoUncheckedCreateInput = {
-  id?: string
+export type photoUncheckedCreateInput = {
+  id: string
   workOrderId: string
   type: string
   url: string
@@ -258,16 +258,16 @@ export type PhotoUncheckedCreateInput = {
   createdAt?: Date | string
 }
 
-export type PhotoUpdateInput = {
+export type photoUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
   url?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  workOrder?: Prisma.WorkOrderUpdateOneRequiredWithoutPhotosNestedInput
+  work_order?: Prisma.work_orderUpdateOneRequiredWithoutPhotoNestedInput
 }
 
-export type PhotoUncheckedUpdateInput = {
+export type photoUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   workOrderId?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
@@ -276,8 +276,8 @@ export type PhotoUncheckedUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
-export type PhotoCreateManyInput = {
-  id?: string
+export type photoCreateManyInput = {
+  id: string
   workOrderId: string
   type: string
   url: string
@@ -285,7 +285,7 @@ export type PhotoCreateManyInput = {
   createdAt?: Date | string
 }
 
-export type PhotoUpdateManyMutationInput = {
+export type photoUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
   url?: Prisma.StringFieldUpdateOperationsInput | string
@@ -293,157 +293,157 @@ export type PhotoUpdateManyMutationInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
-export type PhotoUncheckedUpdateManyInput = {
+export type photoUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   workOrderId?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
   url?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type photoCountOrderByAggregateInput = {
+  id?: Prisma.SortOrder
+  workOrderId?: Prisma.SortOrder
+  type?: Prisma.SortOrder
+  url?: Prisma.SortOrder
+  description?: Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
+}
+
+export type photoMaxOrderByAggregateInput = {
+  id?: Prisma.SortOrder
+  workOrderId?: Prisma.SortOrder
+  type?: Prisma.SortOrder
+  url?: Prisma.SortOrder
+  description?: Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
+}
+
+export type photoMinOrderByAggregateInput = {
+  id?: Prisma.SortOrder
+  workOrderId?: Prisma.SortOrder
+  type?: Prisma.SortOrder
+  url?: Prisma.SortOrder
+  description?: Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
 }
 
 export type PhotoListRelationFilter = {
-  every?: Prisma.PhotoWhereInput
-  some?: Prisma.PhotoWhereInput
-  none?: Prisma.PhotoWhereInput
+  every?: Prisma.photoWhereInput
+  some?: Prisma.photoWhereInput
+  none?: Prisma.photoWhereInput
 }
 
-export type PhotoOrderByRelationAggregateInput = {
+export type photoOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
 }
 
-export type PhotoCountOrderByAggregateInput = {
-  id?: Prisma.SortOrder
-  workOrderId?: Prisma.SortOrder
-  type?: Prisma.SortOrder
-  url?: Prisma.SortOrder
-  description?: Prisma.SortOrder
-  createdAt?: Prisma.SortOrder
+export type photoCreateNestedManyWithoutWork_orderInput = {
+  create?: Prisma.XOR<Prisma.photoCreateWithoutWork_orderInput, Prisma.photoUncheckedCreateWithoutWork_orderInput> | Prisma.photoCreateWithoutWork_orderInput[] | Prisma.photoUncheckedCreateWithoutWork_orderInput[]
+  connectOrCreate?: Prisma.photoCreateOrConnectWithoutWork_orderInput | Prisma.photoCreateOrConnectWithoutWork_orderInput[]
+  createMany?: Prisma.photoCreateManyWork_orderInputEnvelope
+  connect?: Prisma.photoWhereUniqueInput | Prisma.photoWhereUniqueInput[]
 }
 
-export type PhotoMaxOrderByAggregateInput = {
-  id?: Prisma.SortOrder
-  workOrderId?: Prisma.SortOrder
-  type?: Prisma.SortOrder
-  url?: Prisma.SortOrder
-  description?: Prisma.SortOrder
-  createdAt?: Prisma.SortOrder
+export type photoUncheckedCreateNestedManyWithoutWork_orderInput = {
+  create?: Prisma.XOR<Prisma.photoCreateWithoutWork_orderInput, Prisma.photoUncheckedCreateWithoutWork_orderInput> | Prisma.photoCreateWithoutWork_orderInput[] | Prisma.photoUncheckedCreateWithoutWork_orderInput[]
+  connectOrCreate?: Prisma.photoCreateOrConnectWithoutWork_orderInput | Prisma.photoCreateOrConnectWithoutWork_orderInput[]
+  createMany?: Prisma.photoCreateManyWork_orderInputEnvelope
+  connect?: Prisma.photoWhereUniqueInput | Prisma.photoWhereUniqueInput[]
 }
 
-export type PhotoMinOrderByAggregateInput = {
-  id?: Prisma.SortOrder
-  workOrderId?: Prisma.SortOrder
-  type?: Prisma.SortOrder
-  url?: Prisma.SortOrder
-  description?: Prisma.SortOrder
-  createdAt?: Prisma.SortOrder
+export type photoUpdateManyWithoutWork_orderNestedInput = {
+  create?: Prisma.XOR<Prisma.photoCreateWithoutWork_orderInput, Prisma.photoUncheckedCreateWithoutWork_orderInput> | Prisma.photoCreateWithoutWork_orderInput[] | Prisma.photoUncheckedCreateWithoutWork_orderInput[]
+  connectOrCreate?: Prisma.photoCreateOrConnectWithoutWork_orderInput | Prisma.photoCreateOrConnectWithoutWork_orderInput[]
+  upsert?: Prisma.photoUpsertWithWhereUniqueWithoutWork_orderInput | Prisma.photoUpsertWithWhereUniqueWithoutWork_orderInput[]
+  createMany?: Prisma.photoCreateManyWork_orderInputEnvelope
+  set?: Prisma.photoWhereUniqueInput | Prisma.photoWhereUniqueInput[]
+  disconnect?: Prisma.photoWhereUniqueInput | Prisma.photoWhereUniqueInput[]
+  delete?: Prisma.photoWhereUniqueInput | Prisma.photoWhereUniqueInput[]
+  connect?: Prisma.photoWhereUniqueInput | Prisma.photoWhereUniqueInput[]
+  update?: Prisma.photoUpdateWithWhereUniqueWithoutWork_orderInput | Prisma.photoUpdateWithWhereUniqueWithoutWork_orderInput[]
+  updateMany?: Prisma.photoUpdateManyWithWhereWithoutWork_orderInput | Prisma.photoUpdateManyWithWhereWithoutWork_orderInput[]
+  deleteMany?: Prisma.photoScalarWhereInput | Prisma.photoScalarWhereInput[]
 }
 
-export type PhotoCreateNestedManyWithoutWorkOrderInput = {
-  create?: Prisma.XOR<Prisma.PhotoCreateWithoutWorkOrderInput, Prisma.PhotoUncheckedCreateWithoutWorkOrderInput> | Prisma.PhotoCreateWithoutWorkOrderInput[] | Prisma.PhotoUncheckedCreateWithoutWorkOrderInput[]
-  connectOrCreate?: Prisma.PhotoCreateOrConnectWithoutWorkOrderInput | Prisma.PhotoCreateOrConnectWithoutWorkOrderInput[]
-  createMany?: Prisma.PhotoCreateManyWorkOrderInputEnvelope
-  connect?: Prisma.PhotoWhereUniqueInput | Prisma.PhotoWhereUniqueInput[]
+export type photoUncheckedUpdateManyWithoutWork_orderNestedInput = {
+  create?: Prisma.XOR<Prisma.photoCreateWithoutWork_orderInput, Prisma.photoUncheckedCreateWithoutWork_orderInput> | Prisma.photoCreateWithoutWork_orderInput[] | Prisma.photoUncheckedCreateWithoutWork_orderInput[]
+  connectOrCreate?: Prisma.photoCreateOrConnectWithoutWork_orderInput | Prisma.photoCreateOrConnectWithoutWork_orderInput[]
+  upsert?: Prisma.photoUpsertWithWhereUniqueWithoutWork_orderInput | Prisma.photoUpsertWithWhereUniqueWithoutWork_orderInput[]
+  createMany?: Prisma.photoCreateManyWork_orderInputEnvelope
+  set?: Prisma.photoWhereUniqueInput | Prisma.photoWhereUniqueInput[]
+  disconnect?: Prisma.photoWhereUniqueInput | Prisma.photoWhereUniqueInput[]
+  delete?: Prisma.photoWhereUniqueInput | Prisma.photoWhereUniqueInput[]
+  connect?: Prisma.photoWhereUniqueInput | Prisma.photoWhereUniqueInput[]
+  update?: Prisma.photoUpdateWithWhereUniqueWithoutWork_orderInput | Prisma.photoUpdateWithWhereUniqueWithoutWork_orderInput[]
+  updateMany?: Prisma.photoUpdateManyWithWhereWithoutWork_orderInput | Prisma.photoUpdateManyWithWhereWithoutWork_orderInput[]
+  deleteMany?: Prisma.photoScalarWhereInput | Prisma.photoScalarWhereInput[]
 }
 
-export type PhotoUncheckedCreateNestedManyWithoutWorkOrderInput = {
-  create?: Prisma.XOR<Prisma.PhotoCreateWithoutWorkOrderInput, Prisma.PhotoUncheckedCreateWithoutWorkOrderInput> | Prisma.PhotoCreateWithoutWorkOrderInput[] | Prisma.PhotoUncheckedCreateWithoutWorkOrderInput[]
-  connectOrCreate?: Prisma.PhotoCreateOrConnectWithoutWorkOrderInput | Prisma.PhotoCreateOrConnectWithoutWorkOrderInput[]
-  createMany?: Prisma.PhotoCreateManyWorkOrderInputEnvelope
-  connect?: Prisma.PhotoWhereUniqueInput | Prisma.PhotoWhereUniqueInput[]
-}
-
-export type PhotoUpdateManyWithoutWorkOrderNestedInput = {
-  create?: Prisma.XOR<Prisma.PhotoCreateWithoutWorkOrderInput, Prisma.PhotoUncheckedCreateWithoutWorkOrderInput> | Prisma.PhotoCreateWithoutWorkOrderInput[] | Prisma.PhotoUncheckedCreateWithoutWorkOrderInput[]
-  connectOrCreate?: Prisma.PhotoCreateOrConnectWithoutWorkOrderInput | Prisma.PhotoCreateOrConnectWithoutWorkOrderInput[]
-  upsert?: Prisma.PhotoUpsertWithWhereUniqueWithoutWorkOrderInput | Prisma.PhotoUpsertWithWhereUniqueWithoutWorkOrderInput[]
-  createMany?: Prisma.PhotoCreateManyWorkOrderInputEnvelope
-  set?: Prisma.PhotoWhereUniqueInput | Prisma.PhotoWhereUniqueInput[]
-  disconnect?: Prisma.PhotoWhereUniqueInput | Prisma.PhotoWhereUniqueInput[]
-  delete?: Prisma.PhotoWhereUniqueInput | Prisma.PhotoWhereUniqueInput[]
-  connect?: Prisma.PhotoWhereUniqueInput | Prisma.PhotoWhereUniqueInput[]
-  update?: Prisma.PhotoUpdateWithWhereUniqueWithoutWorkOrderInput | Prisma.PhotoUpdateWithWhereUniqueWithoutWorkOrderInput[]
-  updateMany?: Prisma.PhotoUpdateManyWithWhereWithoutWorkOrderInput | Prisma.PhotoUpdateManyWithWhereWithoutWorkOrderInput[]
-  deleteMany?: Prisma.PhotoScalarWhereInput | Prisma.PhotoScalarWhereInput[]
-}
-
-export type PhotoUncheckedUpdateManyWithoutWorkOrderNestedInput = {
-  create?: Prisma.XOR<Prisma.PhotoCreateWithoutWorkOrderInput, Prisma.PhotoUncheckedCreateWithoutWorkOrderInput> | Prisma.PhotoCreateWithoutWorkOrderInput[] | Prisma.PhotoUncheckedCreateWithoutWorkOrderInput[]
-  connectOrCreate?: Prisma.PhotoCreateOrConnectWithoutWorkOrderInput | Prisma.PhotoCreateOrConnectWithoutWorkOrderInput[]
-  upsert?: Prisma.PhotoUpsertWithWhereUniqueWithoutWorkOrderInput | Prisma.PhotoUpsertWithWhereUniqueWithoutWorkOrderInput[]
-  createMany?: Prisma.PhotoCreateManyWorkOrderInputEnvelope
-  set?: Prisma.PhotoWhereUniqueInput | Prisma.PhotoWhereUniqueInput[]
-  disconnect?: Prisma.PhotoWhereUniqueInput | Prisma.PhotoWhereUniqueInput[]
-  delete?: Prisma.PhotoWhereUniqueInput | Prisma.PhotoWhereUniqueInput[]
-  connect?: Prisma.PhotoWhereUniqueInput | Prisma.PhotoWhereUniqueInput[]
-  update?: Prisma.PhotoUpdateWithWhereUniqueWithoutWorkOrderInput | Prisma.PhotoUpdateWithWhereUniqueWithoutWorkOrderInput[]
-  updateMany?: Prisma.PhotoUpdateManyWithWhereWithoutWorkOrderInput | Prisma.PhotoUpdateManyWithWhereWithoutWorkOrderInput[]
-  deleteMany?: Prisma.PhotoScalarWhereInput | Prisma.PhotoScalarWhereInput[]
-}
-
-export type PhotoCreateWithoutWorkOrderInput = {
-  id?: string
+export type photoCreateWithoutWork_orderInput = {
+  id: string
   type: string
   url: string
   description?: string | null
   createdAt?: Date | string
 }
 
-export type PhotoUncheckedCreateWithoutWorkOrderInput = {
-  id?: string
+export type photoUncheckedCreateWithoutWork_orderInput = {
+  id: string
   type: string
   url: string
   description?: string | null
   createdAt?: Date | string
 }
 
-export type PhotoCreateOrConnectWithoutWorkOrderInput = {
-  where: Prisma.PhotoWhereUniqueInput
-  create: Prisma.XOR<Prisma.PhotoCreateWithoutWorkOrderInput, Prisma.PhotoUncheckedCreateWithoutWorkOrderInput>
+export type photoCreateOrConnectWithoutWork_orderInput = {
+  where: Prisma.photoWhereUniqueInput
+  create: Prisma.XOR<Prisma.photoCreateWithoutWork_orderInput, Prisma.photoUncheckedCreateWithoutWork_orderInput>
 }
 
-export type PhotoCreateManyWorkOrderInputEnvelope = {
-  data: Prisma.PhotoCreateManyWorkOrderInput | Prisma.PhotoCreateManyWorkOrderInput[]
+export type photoCreateManyWork_orderInputEnvelope = {
+  data: Prisma.photoCreateManyWork_orderInput | Prisma.photoCreateManyWork_orderInput[]
   skipDuplicates?: boolean
 }
 
-export type PhotoUpsertWithWhereUniqueWithoutWorkOrderInput = {
-  where: Prisma.PhotoWhereUniqueInput
-  update: Prisma.XOR<Prisma.PhotoUpdateWithoutWorkOrderInput, Prisma.PhotoUncheckedUpdateWithoutWorkOrderInput>
-  create: Prisma.XOR<Prisma.PhotoCreateWithoutWorkOrderInput, Prisma.PhotoUncheckedCreateWithoutWorkOrderInput>
+export type photoUpsertWithWhereUniqueWithoutWork_orderInput = {
+  where: Prisma.photoWhereUniqueInput
+  update: Prisma.XOR<Prisma.photoUpdateWithoutWork_orderInput, Prisma.photoUncheckedUpdateWithoutWork_orderInput>
+  create: Prisma.XOR<Prisma.photoCreateWithoutWork_orderInput, Prisma.photoUncheckedCreateWithoutWork_orderInput>
 }
 
-export type PhotoUpdateWithWhereUniqueWithoutWorkOrderInput = {
-  where: Prisma.PhotoWhereUniqueInput
-  data: Prisma.XOR<Prisma.PhotoUpdateWithoutWorkOrderInput, Prisma.PhotoUncheckedUpdateWithoutWorkOrderInput>
+export type photoUpdateWithWhereUniqueWithoutWork_orderInput = {
+  where: Prisma.photoWhereUniqueInput
+  data: Prisma.XOR<Prisma.photoUpdateWithoutWork_orderInput, Prisma.photoUncheckedUpdateWithoutWork_orderInput>
 }
 
-export type PhotoUpdateManyWithWhereWithoutWorkOrderInput = {
-  where: Prisma.PhotoScalarWhereInput
-  data: Prisma.XOR<Prisma.PhotoUpdateManyMutationInput, Prisma.PhotoUncheckedUpdateManyWithoutWorkOrderInput>
+export type photoUpdateManyWithWhereWithoutWork_orderInput = {
+  where: Prisma.photoScalarWhereInput
+  data: Prisma.XOR<Prisma.photoUpdateManyMutationInput, Prisma.photoUncheckedUpdateManyWithoutWork_orderInput>
 }
 
-export type PhotoScalarWhereInput = {
-  AND?: Prisma.PhotoScalarWhereInput | Prisma.PhotoScalarWhereInput[]
-  OR?: Prisma.PhotoScalarWhereInput[]
-  NOT?: Prisma.PhotoScalarWhereInput | Prisma.PhotoScalarWhereInput[]
-  id?: Prisma.StringFilter<"Photo"> | string
-  workOrderId?: Prisma.StringFilter<"Photo"> | string
-  type?: Prisma.StringFilter<"Photo"> | string
-  url?: Prisma.StringFilter<"Photo"> | string
-  description?: Prisma.StringNullableFilter<"Photo"> | string | null
-  createdAt?: Prisma.DateTimeFilter<"Photo"> | Date | string
+export type photoScalarWhereInput = {
+  AND?: Prisma.photoScalarWhereInput | Prisma.photoScalarWhereInput[]
+  OR?: Prisma.photoScalarWhereInput[]
+  NOT?: Prisma.photoScalarWhereInput | Prisma.photoScalarWhereInput[]
+  id?: Prisma.StringFilter<"photo"> | string
+  workOrderId?: Prisma.StringFilter<"photo"> | string
+  type?: Prisma.StringFilter<"photo"> | string
+  url?: Prisma.StringFilter<"photo"> | string
+  description?: Prisma.StringNullableFilter<"photo"> | string | null
+  createdAt?: Prisma.DateTimeFilter<"photo"> | Date | string
 }
 
-export type PhotoCreateManyWorkOrderInput = {
-  id?: string
+export type photoCreateManyWork_orderInput = {
+  id: string
   type: string
   url: string
   description?: string | null
   createdAt?: Date | string
 }
 
-export type PhotoUpdateWithoutWorkOrderInput = {
+export type photoUpdateWithoutWork_orderInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
   url?: Prisma.StringFieldUpdateOperationsInput | string
@@ -451,7 +451,7 @@ export type PhotoUpdateWithoutWorkOrderInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
-export type PhotoUncheckedUpdateWithoutWorkOrderInput = {
+export type photoUncheckedUpdateWithoutWork_orderInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
   url?: Prisma.StringFieldUpdateOperationsInput | string
@@ -459,7 +459,7 @@ export type PhotoUncheckedUpdateWithoutWorkOrderInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
-export type PhotoUncheckedUpdateManyWithoutWorkOrderInput = {
+export type photoUncheckedUpdateManyWithoutWork_orderInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
   url?: Prisma.StringFieldUpdateOperationsInput | string
@@ -469,37 +469,37 @@ export type PhotoUncheckedUpdateManyWithoutWorkOrderInput = {
 
 
 
-export type PhotoSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
+export type photoSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   workOrderId?: boolean
   type?: boolean
   url?: boolean
   description?: boolean
   createdAt?: boolean
-  workOrder?: boolean | Prisma.WorkOrderDefaultArgs<ExtArgs>
+  work_order?: boolean | Prisma.work_orderDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["photo"]>
 
-export type PhotoSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
+export type photoSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   workOrderId?: boolean
   type?: boolean
   url?: boolean
   description?: boolean
   createdAt?: boolean
-  workOrder?: boolean | Prisma.WorkOrderDefaultArgs<ExtArgs>
+  work_order?: boolean | Prisma.work_orderDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["photo"]>
 
-export type PhotoSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
+export type photoSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   workOrderId?: boolean
   type?: boolean
   url?: boolean
   description?: boolean
   createdAt?: boolean
-  workOrder?: boolean | Prisma.WorkOrderDefaultArgs<ExtArgs>
+  work_order?: boolean | Prisma.work_orderDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["photo"]>
 
-export type PhotoSelectScalar = {
+export type photoSelectScalar = {
   id?: boolean
   workOrderId?: boolean
   type?: boolean
@@ -508,21 +508,21 @@ export type PhotoSelectScalar = {
   createdAt?: boolean
 }
 
-export type PhotoOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "workOrderId" | "type" | "url" | "description" | "createdAt", ExtArgs["result"]["photo"]>
-export type PhotoInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  workOrder?: boolean | Prisma.WorkOrderDefaultArgs<ExtArgs>
+export type photoOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "workOrderId" | "type" | "url" | "description" | "createdAt", ExtArgs["result"]["photo"]>
+export type photoInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  work_order?: boolean | Prisma.work_orderDefaultArgs<ExtArgs>
 }
-export type PhotoIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  workOrder?: boolean | Prisma.WorkOrderDefaultArgs<ExtArgs>
+export type photoIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  work_order?: boolean | Prisma.work_orderDefaultArgs<ExtArgs>
 }
-export type PhotoIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  workOrder?: boolean | Prisma.WorkOrderDefaultArgs<ExtArgs>
+export type photoIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  work_order?: boolean | Prisma.work_orderDefaultArgs<ExtArgs>
 }
 
-export type $PhotoPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  name: "Photo"
+export type $photoPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  name: "photo"
   objects: {
-    workOrder: Prisma.$WorkOrderPayload<ExtArgs>
+    work_order: Prisma.$work_orderPayload<ExtArgs>
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -535,18 +535,18 @@ export type $PhotoPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   composites: {}
 }
 
-export type PhotoGetPayload<S extends boolean | null | undefined | PhotoDefaultArgs> = runtime.Types.Result.GetResult<Prisma.$PhotoPayload, S>
+export type photoGetPayload<S extends boolean | null | undefined | photoDefaultArgs> = runtime.Types.Result.GetResult<Prisma.$photoPayload, S>
 
-export type PhotoCountArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> =
-  Omit<PhotoFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+export type photoCountArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> =
+  Omit<photoFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
     select?: PhotoCountAggregateInputType | true
   }
 
-export interface PhotoDelegate<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> {
-  [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['Photo'], meta: { name: 'Photo' } }
+export interface photoDelegate<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+  [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['photo'], meta: { name: 'photo' } }
   /**
    * Find zero or one Photo that matches the filter.
-   * @param {PhotoFindUniqueArgs} args - Arguments to find a Photo
+   * @param {photoFindUniqueArgs} args - Arguments to find a Photo
    * @example
    * // Get one Photo
    * const photo = await prisma.photo.findUnique({
@@ -555,12 +555,12 @@ export interface PhotoDelegate<ExtArgs extends runtime.Types.Extensions.Internal
    *   }
    * })
    */
-  findUnique<T extends PhotoFindUniqueArgs>(args: Prisma.SelectSubset<T, PhotoFindUniqueArgs<ExtArgs>>): Prisma.Prisma__PhotoClient<runtime.Types.Result.GetResult<Prisma.$PhotoPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  findUnique<T extends photoFindUniqueArgs>(args: Prisma.SelectSubset<T, photoFindUniqueArgs<ExtArgs>>): Prisma.Prisma__photoClient<runtime.Types.Result.GetResult<Prisma.$photoPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
 
   /**
    * Find one Photo that matches the filter or throw an error with `error.code='P2025'`
    * if no matches were found.
-   * @param {PhotoFindUniqueOrThrowArgs} args - Arguments to find a Photo
+   * @param {photoFindUniqueOrThrowArgs} args - Arguments to find a Photo
    * @example
    * // Get one Photo
    * const photo = await prisma.photo.findUniqueOrThrow({
@@ -569,13 +569,13 @@ export interface PhotoDelegate<ExtArgs extends runtime.Types.Extensions.Internal
    *   }
    * })
    */
-  findUniqueOrThrow<T extends PhotoFindUniqueOrThrowArgs>(args: Prisma.SelectSubset<T, PhotoFindUniqueOrThrowArgs<ExtArgs>>): Prisma.Prisma__PhotoClient<runtime.Types.Result.GetResult<Prisma.$PhotoPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+  findUniqueOrThrow<T extends photoFindUniqueOrThrowArgs>(args: Prisma.SelectSubset<T, photoFindUniqueOrThrowArgs<ExtArgs>>): Prisma.Prisma__photoClient<runtime.Types.Result.GetResult<Prisma.$photoPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
 
   /**
    * Find the first Photo that matches the filter.
    * Note, that providing `undefined` is treated as the value not being there.
    * Read more here: https://pris.ly/d/null-undefined
-   * @param {PhotoFindFirstArgs} args - Arguments to find a Photo
+   * @param {photoFindFirstArgs} args - Arguments to find a Photo
    * @example
    * // Get one Photo
    * const photo = await prisma.photo.findFirst({
@@ -584,14 +584,14 @@ export interface PhotoDelegate<ExtArgs extends runtime.Types.Extensions.Internal
    *   }
    * })
    */
-  findFirst<T extends PhotoFindFirstArgs>(args?: Prisma.SelectSubset<T, PhotoFindFirstArgs<ExtArgs>>): Prisma.Prisma__PhotoClient<runtime.Types.Result.GetResult<Prisma.$PhotoPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  findFirst<T extends photoFindFirstArgs>(args?: Prisma.SelectSubset<T, photoFindFirstArgs<ExtArgs>>): Prisma.Prisma__photoClient<runtime.Types.Result.GetResult<Prisma.$photoPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
 
   /**
    * Find the first Photo that matches the filter or
    * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
    * Note, that providing `undefined` is treated as the value not being there.
    * Read more here: https://pris.ly/d/null-undefined
-   * @param {PhotoFindFirstOrThrowArgs} args - Arguments to find a Photo
+   * @param {photoFindFirstOrThrowArgs} args - Arguments to find a Photo
    * @example
    * // Get one Photo
    * const photo = await prisma.photo.findFirstOrThrow({
@@ -600,13 +600,13 @@ export interface PhotoDelegate<ExtArgs extends runtime.Types.Extensions.Internal
    *   }
    * })
    */
-  findFirstOrThrow<T extends PhotoFindFirstOrThrowArgs>(args?: Prisma.SelectSubset<T, PhotoFindFirstOrThrowArgs<ExtArgs>>): Prisma.Prisma__PhotoClient<runtime.Types.Result.GetResult<Prisma.$PhotoPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+  findFirstOrThrow<T extends photoFindFirstOrThrowArgs>(args?: Prisma.SelectSubset<T, photoFindFirstOrThrowArgs<ExtArgs>>): Prisma.Prisma__photoClient<runtime.Types.Result.GetResult<Prisma.$photoPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
 
   /**
    * Find zero or more Photos that matches the filter.
    * Note, that providing `undefined` is treated as the value not being there.
    * Read more here: https://pris.ly/d/null-undefined
-   * @param {PhotoFindManyArgs} args - Arguments to filter and select certain fields only.
+   * @param {photoFindManyArgs} args - Arguments to filter and select certain fields only.
    * @example
    * // Get all Photos
    * const photos = await prisma.photo.findMany()
@@ -618,11 +618,11 @@ export interface PhotoDelegate<ExtArgs extends runtime.Types.Extensions.Internal
    * const photoWithIdOnly = await prisma.photo.findMany({ select: { id: true } })
    * 
    */
-  findMany<T extends PhotoFindManyArgs>(args?: Prisma.SelectSubset<T, PhotoFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PhotoPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+  findMany<T extends photoFindManyArgs>(args?: Prisma.SelectSubset<T, photoFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$photoPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
 
   /**
    * Create a Photo.
-   * @param {PhotoCreateArgs} args - Arguments to create a Photo.
+   * @param {photoCreateArgs} args - Arguments to create a Photo.
    * @example
    * // Create one Photo
    * const Photo = await prisma.photo.create({
@@ -632,11 +632,11 @@ export interface PhotoDelegate<ExtArgs extends runtime.Types.Extensions.Internal
    * })
    * 
    */
-  create<T extends PhotoCreateArgs>(args: Prisma.SelectSubset<T, PhotoCreateArgs<ExtArgs>>): Prisma.Prisma__PhotoClient<runtime.Types.Result.GetResult<Prisma.$PhotoPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+  create<T extends photoCreateArgs>(args: Prisma.SelectSubset<T, photoCreateArgs<ExtArgs>>): Prisma.Prisma__photoClient<runtime.Types.Result.GetResult<Prisma.$photoPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
 
   /**
    * Create many Photos.
-   * @param {PhotoCreateManyArgs} args - Arguments to create many Photos.
+   * @param {photoCreateManyArgs} args - Arguments to create many Photos.
    * @example
    * // Create many Photos
    * const photo = await prisma.photo.createMany({
@@ -646,11 +646,11 @@ export interface PhotoDelegate<ExtArgs extends runtime.Types.Extensions.Internal
    * })
    *     
    */
-  createMany<T extends PhotoCreateManyArgs>(args?: Prisma.SelectSubset<T, PhotoCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<Prisma.BatchPayload>
+  createMany<T extends photoCreateManyArgs>(args?: Prisma.SelectSubset<T, photoCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<Prisma.BatchPayload>
 
   /**
    * Create many Photos and returns the data saved in the database.
-   * @param {PhotoCreateManyAndReturnArgs} args - Arguments to create many Photos.
+   * @param {photoCreateManyAndReturnArgs} args - Arguments to create many Photos.
    * @example
    * // Create many Photos
    * const photo = await prisma.photo.createManyAndReturn({
@@ -670,11 +670,11 @@ export interface PhotoDelegate<ExtArgs extends runtime.Types.Extensions.Internal
    * Read more here: https://pris.ly/d/null-undefined
    * 
    */
-  createManyAndReturn<T extends PhotoCreateManyAndReturnArgs>(args?: Prisma.SelectSubset<T, PhotoCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PhotoPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+  createManyAndReturn<T extends photoCreateManyAndReturnArgs>(args?: Prisma.SelectSubset<T, photoCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$photoPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
 
   /**
    * Delete a Photo.
-   * @param {PhotoDeleteArgs} args - Arguments to delete one Photo.
+   * @param {photoDeleteArgs} args - Arguments to delete one Photo.
    * @example
    * // Delete one Photo
    * const Photo = await prisma.photo.delete({
@@ -684,11 +684,11 @@ export interface PhotoDelegate<ExtArgs extends runtime.Types.Extensions.Internal
    * })
    * 
    */
-  delete<T extends PhotoDeleteArgs>(args: Prisma.SelectSubset<T, PhotoDeleteArgs<ExtArgs>>): Prisma.Prisma__PhotoClient<runtime.Types.Result.GetResult<Prisma.$PhotoPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+  delete<T extends photoDeleteArgs>(args: Prisma.SelectSubset<T, photoDeleteArgs<ExtArgs>>): Prisma.Prisma__photoClient<runtime.Types.Result.GetResult<Prisma.$photoPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
 
   /**
    * Update one Photo.
-   * @param {PhotoUpdateArgs} args - Arguments to update one Photo.
+   * @param {photoUpdateArgs} args - Arguments to update one Photo.
    * @example
    * // Update one Photo
    * const photo = await prisma.photo.update({
@@ -701,11 +701,11 @@ export interface PhotoDelegate<ExtArgs extends runtime.Types.Extensions.Internal
    * })
    * 
    */
-  update<T extends PhotoUpdateArgs>(args: Prisma.SelectSubset<T, PhotoUpdateArgs<ExtArgs>>): Prisma.Prisma__PhotoClient<runtime.Types.Result.GetResult<Prisma.$PhotoPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+  update<T extends photoUpdateArgs>(args: Prisma.SelectSubset<T, photoUpdateArgs<ExtArgs>>): Prisma.Prisma__photoClient<runtime.Types.Result.GetResult<Prisma.$photoPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
 
   /**
    * Delete zero or more Photos.
-   * @param {PhotoDeleteManyArgs} args - Arguments to filter Photos to delete.
+   * @param {photoDeleteManyArgs} args - Arguments to filter Photos to delete.
    * @example
    * // Delete a few Photos
    * const { count } = await prisma.photo.deleteMany({
@@ -715,13 +715,13 @@ export interface PhotoDelegate<ExtArgs extends runtime.Types.Extensions.Internal
    * })
    * 
    */
-  deleteMany<T extends PhotoDeleteManyArgs>(args?: Prisma.SelectSubset<T, PhotoDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<Prisma.BatchPayload>
+  deleteMany<T extends photoDeleteManyArgs>(args?: Prisma.SelectSubset<T, photoDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<Prisma.BatchPayload>
 
   /**
    * Update zero or more Photos.
    * Note, that providing `undefined` is treated as the value not being there.
    * Read more here: https://pris.ly/d/null-undefined
-   * @param {PhotoUpdateManyArgs} args - Arguments to update one or more rows.
+   * @param {photoUpdateManyArgs} args - Arguments to update one or more rows.
    * @example
    * // Update many Photos
    * const photo = await prisma.photo.updateMany({
@@ -734,11 +734,11 @@ export interface PhotoDelegate<ExtArgs extends runtime.Types.Extensions.Internal
    * })
    * 
    */
-  updateMany<T extends PhotoUpdateManyArgs>(args: Prisma.SelectSubset<T, PhotoUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<Prisma.BatchPayload>
+  updateMany<T extends photoUpdateManyArgs>(args: Prisma.SelectSubset<T, photoUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<Prisma.BatchPayload>
 
   /**
    * Update zero or more Photos and returns the data updated in the database.
-   * @param {PhotoUpdateManyAndReturnArgs} args - Arguments to update many Photos.
+   * @param {photoUpdateManyAndReturnArgs} args - Arguments to update many Photos.
    * @example
    * // Update many Photos
    * const photo = await prisma.photo.updateManyAndReturn({
@@ -764,11 +764,11 @@ export interface PhotoDelegate<ExtArgs extends runtime.Types.Extensions.Internal
    * Read more here: https://pris.ly/d/null-undefined
    * 
    */
-  updateManyAndReturn<T extends PhotoUpdateManyAndReturnArgs>(args: Prisma.SelectSubset<T, PhotoUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PhotoPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+  updateManyAndReturn<T extends photoUpdateManyAndReturnArgs>(args: Prisma.SelectSubset<T, photoUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$photoPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
 
   /**
    * Create or update one Photo.
-   * @param {PhotoUpsertArgs} args - Arguments to update or create a Photo.
+   * @param {photoUpsertArgs} args - Arguments to update or create a Photo.
    * @example
    * // Update or create a Photo
    * const photo = await prisma.photo.upsert({
@@ -783,14 +783,14 @@ export interface PhotoDelegate<ExtArgs extends runtime.Types.Extensions.Internal
    *   }
    * })
    */
-  upsert<T extends PhotoUpsertArgs>(args: Prisma.SelectSubset<T, PhotoUpsertArgs<ExtArgs>>): Prisma.Prisma__PhotoClient<runtime.Types.Result.GetResult<Prisma.$PhotoPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+  upsert<T extends photoUpsertArgs>(args: Prisma.SelectSubset<T, photoUpsertArgs<ExtArgs>>): Prisma.Prisma__photoClient<runtime.Types.Result.GetResult<Prisma.$photoPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
 
 
   /**
    * Count the number of Photos.
    * Note, that providing `undefined` is treated as the value not being there.
    * Read more here: https://pris.ly/d/null-undefined
-   * @param {PhotoCountArgs} args - Arguments to filter Photos to count.
+   * @param {photoCountArgs} args - Arguments to filter Photos to count.
    * @example
    * // Count the number of Photos
    * const count = await prisma.photo.count({
@@ -799,8 +799,8 @@ export interface PhotoDelegate<ExtArgs extends runtime.Types.Extensions.Internal
    *   }
    * })
   **/
-  count<T extends PhotoCountArgs>(
-    args?: Prisma.Subset<T, PhotoCountArgs>,
+  count<T extends photoCountArgs>(
+    args?: Prisma.Subset<T, photoCountArgs>,
   ): Prisma.PrismaPromise<
     T extends runtime.Types.Utils.Record<'select', any>
       ? T['select'] extends true
@@ -839,7 +839,7 @@ export interface PhotoDelegate<ExtArgs extends runtime.Types.Extensions.Internal
    * Group by Photo.
    * Note, that providing `undefined` is treated as the value not being there.
    * Read more here: https://pris.ly/d/null-undefined
-   * @param {PhotoGroupByArgs} args - Group by arguments.
+   * @param {photoGroupByArgs} args - Group by arguments.
    * @example
    * // Group by city, order by createdAt, get count
    * const result = await prisma.user.groupBy({
@@ -854,14 +854,14 @@ export interface PhotoDelegate<ExtArgs extends runtime.Types.Extensions.Internal
    * 
   **/
   groupBy<
-    T extends PhotoGroupByArgs,
+    T extends photoGroupByArgs,
     HasSelectOrTake extends Prisma.Or<
       Prisma.Extends<'skip', Prisma.Keys<T>>,
       Prisma.Extends<'take', Prisma.Keys<T>>
     >,
     OrderByArg extends Prisma.True extends HasSelectOrTake
-      ? { orderBy: PhotoGroupByArgs['orderBy'] }
-      : { orderBy?: PhotoGroupByArgs['orderBy'] },
+      ? { orderBy: photoGroupByArgs['orderBy'] }
+      : { orderBy?: photoGroupByArgs['orderBy'] },
     OrderFields extends Prisma.ExcludeUnderscoreKeys<Prisma.Keys<Prisma.MaybeTupleToUnion<T['orderBy']>>>,
     ByFields extends Prisma.MaybeTupleToUnion<T['by']>,
     ByValid extends Prisma.Has<ByFields, OrderFields>,
@@ -910,22 +910,22 @@ export interface PhotoDelegate<ExtArgs extends runtime.Types.Extensions.Internal
           ? never
           : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
       }[OrderFields]
-  >(args: Prisma.SubsetIntersection<T, PhotoGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetPhotoGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  >(args: Prisma.SubsetIntersection<T, photoGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetPhotoGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
 /**
- * Fields of the Photo model
+ * Fields of the photo model
  */
-readonly fields: PhotoFieldRefs;
+readonly fields: photoFieldRefs;
 }
 
 /**
- * The delegate class that acts as a "Promise-like" for Photo.
+ * The delegate class that acts as a "Promise-like" for photo.
  * Why is this prefixed with `Prisma__`?
  * Because we want to prevent naming conflicts as mentioned in
  * https://github.com/prisma/prisma-client-js/issues/707
  */
-export interface Prisma__PhotoClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+export interface Prisma__photoClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  workOrder<T extends Prisma.WorkOrderDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.WorkOrderDefaultArgs<ExtArgs>>): Prisma.Prisma__WorkOrderClient<runtime.Types.Result.GetResult<Prisma.$WorkOrderPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  work_order<T extends Prisma.work_orderDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.work_orderDefaultArgs<ExtArgs>>): Prisma.Prisma__work_orderClient<runtime.Types.Result.GetResult<Prisma.$work_orderPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -952,429 +952,429 @@ export interface Prisma__PhotoClient<T, Null = never, ExtArgs extends runtime.Ty
 
 
 /**
- * Fields of the Photo model
+ * Fields of the photo model
  */
-export interface PhotoFieldRefs {
-  readonly id: Prisma.FieldRef<"Photo", 'String'>
-  readonly workOrderId: Prisma.FieldRef<"Photo", 'String'>
-  readonly type: Prisma.FieldRef<"Photo", 'String'>
-  readonly url: Prisma.FieldRef<"Photo", 'String'>
-  readonly description: Prisma.FieldRef<"Photo", 'String'>
-  readonly createdAt: Prisma.FieldRef<"Photo", 'DateTime'>
+export interface photoFieldRefs {
+  readonly id: Prisma.FieldRef<"photo", 'String'>
+  readonly workOrderId: Prisma.FieldRef<"photo", 'String'>
+  readonly type: Prisma.FieldRef<"photo", 'String'>
+  readonly url: Prisma.FieldRef<"photo", 'String'>
+  readonly description: Prisma.FieldRef<"photo", 'String'>
+  readonly createdAt: Prisma.FieldRef<"photo", 'DateTime'>
 }
     
 
 // Custom InputTypes
 /**
- * Photo findUnique
+ * photo findUnique
  */
-export type PhotoFindUniqueArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type photoFindUniqueArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the Photo
+   * Select specific fields to fetch from the photo
    */
-  select?: Prisma.PhotoSelect<ExtArgs> | null
+  select?: Prisma.photoSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the Photo
+   * Omit specific fields from the photo
    */
-  omit?: Prisma.PhotoOmit<ExtArgs> | null
+  omit?: Prisma.photoOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.PhotoInclude<ExtArgs> | null
+  include?: Prisma.photoInclude<ExtArgs> | null
   /**
-   * Filter, which Photo to fetch.
+   * Filter, which photo to fetch.
    */
-  where: Prisma.PhotoWhereUniqueInput
+  where: Prisma.photoWhereUniqueInput
 }
 
 /**
- * Photo findUniqueOrThrow
+ * photo findUniqueOrThrow
  */
-export type PhotoFindUniqueOrThrowArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type photoFindUniqueOrThrowArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the Photo
+   * Select specific fields to fetch from the photo
    */
-  select?: Prisma.PhotoSelect<ExtArgs> | null
+  select?: Prisma.photoSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the Photo
+   * Omit specific fields from the photo
    */
-  omit?: Prisma.PhotoOmit<ExtArgs> | null
+  omit?: Prisma.photoOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.PhotoInclude<ExtArgs> | null
+  include?: Prisma.photoInclude<ExtArgs> | null
   /**
-   * Filter, which Photo to fetch.
+   * Filter, which photo to fetch.
    */
-  where: Prisma.PhotoWhereUniqueInput
+  where: Prisma.photoWhereUniqueInput
 }
 
 /**
- * Photo findFirst
+ * photo findFirst
  */
-export type PhotoFindFirstArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type photoFindFirstArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the Photo
+   * Select specific fields to fetch from the photo
    */
-  select?: Prisma.PhotoSelect<ExtArgs> | null
+  select?: Prisma.photoSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the Photo
+   * Omit specific fields from the photo
    */
-  omit?: Prisma.PhotoOmit<ExtArgs> | null
+  omit?: Prisma.photoOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.PhotoInclude<ExtArgs> | null
+  include?: Prisma.photoInclude<ExtArgs> | null
   /**
-   * Filter, which Photo to fetch.
+   * Filter, which photo to fetch.
    */
-  where?: Prisma.PhotoWhereInput
+  where?: Prisma.photoWhereInput
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
    * 
-   * Determine the order of Photos to fetch.
+   * Determine the order of photos to fetch.
    */
-  orderBy?: Prisma.PhotoOrderByWithRelationInput | Prisma.PhotoOrderByWithRelationInput[]
+  orderBy?: Prisma.photoOrderByWithRelationInput | Prisma.photoOrderByWithRelationInput[]
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
    * 
-   * Sets the position for searching for Photos.
+   * Sets the position for searching for photos.
    */
-  cursor?: Prisma.PhotoWhereUniqueInput
+  cursor?: Prisma.photoWhereUniqueInput
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
    * 
-   * Take `±n` Photos from the position of the cursor.
+   * Take `±n` photos from the position of the cursor.
    */
   take?: number
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
    * 
-   * Skip the first `n` Photos.
+   * Skip the first `n` photos.
    */
   skip?: number
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
    * 
-   * Filter by unique combinations of Photos.
+   * Filter by unique combinations of photos.
    */
   distinct?: Prisma.PhotoScalarFieldEnum | Prisma.PhotoScalarFieldEnum[]
 }
 
 /**
- * Photo findFirstOrThrow
+ * photo findFirstOrThrow
  */
-export type PhotoFindFirstOrThrowArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type photoFindFirstOrThrowArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the Photo
+   * Select specific fields to fetch from the photo
    */
-  select?: Prisma.PhotoSelect<ExtArgs> | null
+  select?: Prisma.photoSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the Photo
+   * Omit specific fields from the photo
    */
-  omit?: Prisma.PhotoOmit<ExtArgs> | null
+  omit?: Prisma.photoOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.PhotoInclude<ExtArgs> | null
+  include?: Prisma.photoInclude<ExtArgs> | null
   /**
-   * Filter, which Photo to fetch.
+   * Filter, which photo to fetch.
    */
-  where?: Prisma.PhotoWhereInput
+  where?: Prisma.photoWhereInput
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
    * 
-   * Determine the order of Photos to fetch.
+   * Determine the order of photos to fetch.
    */
-  orderBy?: Prisma.PhotoOrderByWithRelationInput | Prisma.PhotoOrderByWithRelationInput[]
+  orderBy?: Prisma.photoOrderByWithRelationInput | Prisma.photoOrderByWithRelationInput[]
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
    * 
-   * Sets the position for searching for Photos.
+   * Sets the position for searching for photos.
    */
-  cursor?: Prisma.PhotoWhereUniqueInput
+  cursor?: Prisma.photoWhereUniqueInput
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
    * 
-   * Take `±n` Photos from the position of the cursor.
+   * Take `±n` photos from the position of the cursor.
    */
   take?: number
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
    * 
-   * Skip the first `n` Photos.
+   * Skip the first `n` photos.
    */
   skip?: number
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
    * 
-   * Filter by unique combinations of Photos.
+   * Filter by unique combinations of photos.
    */
   distinct?: Prisma.PhotoScalarFieldEnum | Prisma.PhotoScalarFieldEnum[]
 }
 
 /**
- * Photo findMany
+ * photo findMany
  */
-export type PhotoFindManyArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type photoFindManyArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the Photo
+   * Select specific fields to fetch from the photo
    */
-  select?: Prisma.PhotoSelect<ExtArgs> | null
+  select?: Prisma.photoSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the Photo
+   * Omit specific fields from the photo
    */
-  omit?: Prisma.PhotoOmit<ExtArgs> | null
+  omit?: Prisma.photoOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.PhotoInclude<ExtArgs> | null
+  include?: Prisma.photoInclude<ExtArgs> | null
   /**
-   * Filter, which Photos to fetch.
+   * Filter, which photos to fetch.
    */
-  where?: Prisma.PhotoWhereInput
+  where?: Prisma.photoWhereInput
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
    * 
-   * Determine the order of Photos to fetch.
+   * Determine the order of photos to fetch.
    */
-  orderBy?: Prisma.PhotoOrderByWithRelationInput | Prisma.PhotoOrderByWithRelationInput[]
+  orderBy?: Prisma.photoOrderByWithRelationInput | Prisma.photoOrderByWithRelationInput[]
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
    * 
-   * Sets the position for listing Photos.
+   * Sets the position for listing photos.
    */
-  cursor?: Prisma.PhotoWhereUniqueInput
+  cursor?: Prisma.photoWhereUniqueInput
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
    * 
-   * Take `±n` Photos from the position of the cursor.
+   * Take `±n` photos from the position of the cursor.
    */
   take?: number
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
    * 
-   * Skip the first `n` Photos.
+   * Skip the first `n` photos.
    */
   skip?: number
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
    * 
-   * Filter by unique combinations of Photos.
+   * Filter by unique combinations of photos.
    */
   distinct?: Prisma.PhotoScalarFieldEnum | Prisma.PhotoScalarFieldEnum[]
 }
 
 /**
- * Photo create
+ * photo create
  */
-export type PhotoCreateArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type photoCreateArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the Photo
+   * Select specific fields to fetch from the photo
    */
-  select?: Prisma.PhotoSelect<ExtArgs> | null
+  select?: Prisma.photoSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the Photo
+   * Omit specific fields from the photo
    */
-  omit?: Prisma.PhotoOmit<ExtArgs> | null
+  omit?: Prisma.photoOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.PhotoInclude<ExtArgs> | null
+  include?: Prisma.photoInclude<ExtArgs> | null
   /**
-   * The data needed to create a Photo.
+   * The data needed to create a photo.
    */
-  data: Prisma.XOR<Prisma.PhotoCreateInput, Prisma.PhotoUncheckedCreateInput>
+  data: Prisma.XOR<Prisma.photoCreateInput, Prisma.photoUncheckedCreateInput>
 }
 
 /**
- * Photo createMany
+ * photo createMany
  */
-export type PhotoCreateManyArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type photoCreateManyArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * The data used to create many Photos.
+   * The data used to create many photos.
    */
-  data: Prisma.PhotoCreateManyInput | Prisma.PhotoCreateManyInput[]
+  data: Prisma.photoCreateManyInput | Prisma.photoCreateManyInput[]
   skipDuplicates?: boolean
 }
 
 /**
- * Photo createManyAndReturn
+ * photo createManyAndReturn
  */
-export type PhotoCreateManyAndReturnArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type photoCreateManyAndReturnArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the Photo
+   * Select specific fields to fetch from the photo
    */
-  select?: Prisma.PhotoSelectCreateManyAndReturn<ExtArgs> | null
+  select?: Prisma.photoSelectCreateManyAndReturn<ExtArgs> | null
   /**
-   * Omit specific fields from the Photo
+   * Omit specific fields from the photo
    */
-  omit?: Prisma.PhotoOmit<ExtArgs> | null
+  omit?: Prisma.photoOmit<ExtArgs> | null
   /**
-   * The data used to create many Photos.
+   * The data used to create many photos.
    */
-  data: Prisma.PhotoCreateManyInput | Prisma.PhotoCreateManyInput[]
+  data: Prisma.photoCreateManyInput | Prisma.photoCreateManyInput[]
   skipDuplicates?: boolean
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.PhotoIncludeCreateManyAndReturn<ExtArgs> | null
+  include?: Prisma.photoIncludeCreateManyAndReturn<ExtArgs> | null
 }
 
 /**
- * Photo update
+ * photo update
  */
-export type PhotoUpdateArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type photoUpdateArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the Photo
+   * Select specific fields to fetch from the photo
    */
-  select?: Prisma.PhotoSelect<ExtArgs> | null
+  select?: Prisma.photoSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the Photo
+   * Omit specific fields from the photo
    */
-  omit?: Prisma.PhotoOmit<ExtArgs> | null
+  omit?: Prisma.photoOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.PhotoInclude<ExtArgs> | null
+  include?: Prisma.photoInclude<ExtArgs> | null
   /**
-   * The data needed to update a Photo.
+   * The data needed to update a photo.
    */
-  data: Prisma.XOR<Prisma.PhotoUpdateInput, Prisma.PhotoUncheckedUpdateInput>
+  data: Prisma.XOR<Prisma.photoUpdateInput, Prisma.photoUncheckedUpdateInput>
   /**
-   * Choose, which Photo to update.
+   * Choose, which photo to update.
    */
-  where: Prisma.PhotoWhereUniqueInput
+  where: Prisma.photoWhereUniqueInput
 }
 
 /**
- * Photo updateMany
+ * photo updateMany
  */
-export type PhotoUpdateManyArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type photoUpdateManyArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * The data used to update Photos.
+   * The data used to update photos.
    */
-  data: Prisma.XOR<Prisma.PhotoUpdateManyMutationInput, Prisma.PhotoUncheckedUpdateManyInput>
+  data: Prisma.XOR<Prisma.photoUpdateManyMutationInput, Prisma.photoUncheckedUpdateManyInput>
   /**
-   * Filter which Photos to update
+   * Filter which photos to update
    */
-  where?: Prisma.PhotoWhereInput
+  where?: Prisma.photoWhereInput
   /**
-   * Limit how many Photos to update.
+   * Limit how many photos to update.
    */
   limit?: number
 }
 
 /**
- * Photo updateManyAndReturn
+ * photo updateManyAndReturn
  */
-export type PhotoUpdateManyAndReturnArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type photoUpdateManyAndReturnArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the Photo
+   * Select specific fields to fetch from the photo
    */
-  select?: Prisma.PhotoSelectUpdateManyAndReturn<ExtArgs> | null
+  select?: Prisma.photoSelectUpdateManyAndReturn<ExtArgs> | null
   /**
-   * Omit specific fields from the Photo
+   * Omit specific fields from the photo
    */
-  omit?: Prisma.PhotoOmit<ExtArgs> | null
+  omit?: Prisma.photoOmit<ExtArgs> | null
   /**
-   * The data used to update Photos.
+   * The data used to update photos.
    */
-  data: Prisma.XOR<Prisma.PhotoUpdateManyMutationInput, Prisma.PhotoUncheckedUpdateManyInput>
+  data: Prisma.XOR<Prisma.photoUpdateManyMutationInput, Prisma.photoUncheckedUpdateManyInput>
   /**
-   * Filter which Photos to update
+   * Filter which photos to update
    */
-  where?: Prisma.PhotoWhereInput
+  where?: Prisma.photoWhereInput
   /**
-   * Limit how many Photos to update.
+   * Limit how many photos to update.
    */
   limit?: number
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.PhotoIncludeUpdateManyAndReturn<ExtArgs> | null
+  include?: Prisma.photoIncludeUpdateManyAndReturn<ExtArgs> | null
 }
 
 /**
- * Photo upsert
+ * photo upsert
  */
-export type PhotoUpsertArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type photoUpsertArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the Photo
+   * Select specific fields to fetch from the photo
    */
-  select?: Prisma.PhotoSelect<ExtArgs> | null
+  select?: Prisma.photoSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the Photo
+   * Omit specific fields from the photo
    */
-  omit?: Prisma.PhotoOmit<ExtArgs> | null
+  omit?: Prisma.photoOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.PhotoInclude<ExtArgs> | null
+  include?: Prisma.photoInclude<ExtArgs> | null
   /**
-   * The filter to search for the Photo to update in case it exists.
+   * The filter to search for the photo to update in case it exists.
    */
-  where: Prisma.PhotoWhereUniqueInput
+  where: Prisma.photoWhereUniqueInput
   /**
-   * In case the Photo found by the `where` argument doesn't exist, create a new Photo with this data.
+   * In case the photo found by the `where` argument doesn't exist, create a new photo with this data.
    */
-  create: Prisma.XOR<Prisma.PhotoCreateInput, Prisma.PhotoUncheckedCreateInput>
+  create: Prisma.XOR<Prisma.photoCreateInput, Prisma.photoUncheckedCreateInput>
   /**
-   * In case the Photo was found with the provided `where` argument, update it with this data.
+   * In case the photo was found with the provided `where` argument, update it with this data.
    */
-  update: Prisma.XOR<Prisma.PhotoUpdateInput, Prisma.PhotoUncheckedUpdateInput>
+  update: Prisma.XOR<Prisma.photoUpdateInput, Prisma.photoUncheckedUpdateInput>
 }
 
 /**
- * Photo delete
+ * photo delete
  */
-export type PhotoDeleteArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type photoDeleteArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the Photo
+   * Select specific fields to fetch from the photo
    */
-  select?: Prisma.PhotoSelect<ExtArgs> | null
+  select?: Prisma.photoSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the Photo
+   * Omit specific fields from the photo
    */
-  omit?: Prisma.PhotoOmit<ExtArgs> | null
+  omit?: Prisma.photoOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.PhotoInclude<ExtArgs> | null
+  include?: Prisma.photoInclude<ExtArgs> | null
   /**
-   * Filter which Photo to delete.
+   * Filter which photo to delete.
    */
-  where: Prisma.PhotoWhereUniqueInput
+  where: Prisma.photoWhereUniqueInput
 }
 
 /**
- * Photo deleteMany
+ * photo deleteMany
  */
-export type PhotoDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type photoDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Filter which Photos to delete
+   * Filter which photos to delete
    */
-  where?: Prisma.PhotoWhereInput
+  where?: Prisma.photoWhereInput
   /**
-   * Limit how many Photos to delete.
+   * Limit how many photos to delete.
    */
   limit?: number
 }
 
 /**
- * Photo without action
+ * photo without action
  */
-export type PhotoDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type photoDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the Photo
+   * Select specific fields to fetch from the photo
    */
-  select?: Prisma.PhotoSelect<ExtArgs> | null
+  select?: Prisma.photoSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the Photo
+   * Omit specific fields from the photo
    */
-  omit?: Prisma.PhotoOmit<ExtArgs> | null
+  omit?: Prisma.photoOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.PhotoInclude<ExtArgs> | null
+  include?: Prisma.photoInclude<ExtArgs> | null
 }
