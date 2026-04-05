@@ -283,7 +283,7 @@ export async function createPriceListItem(
     throw new Error('Product not found');
   }
 
-  const replacementCost = product.replacementCost !== null
+  const replacementCost = (product.replacementCost !== null && Number(product.replacementCost) > 0)
     ? Number(product.replacementCost)
     : Number(product.costPrice); // Fallback to costPrice if replacementCost not set
 
@@ -366,7 +366,7 @@ export async function calculateProductPrice(
 
   if (!product) return null;
 
-  const replacementCost = product.replacementCost !== null
+  const replacementCost = (product.replacementCost !== null && Number(product.replacementCost) > 0)
     ? Number(product.replacementCost)
     : Number(product.costPrice);
 

@@ -53,7 +53,7 @@ interface Product {
   supplier: string;        // Proveedor (OBLIGATORIO)
   categoryId: string;      // Categoría (OBLIGATORIO)
   costPrice: number;       // Precio de costo (OBLIGATORIO)
-  salePrice: number;       // Precio de venta (OBLIGATORIO)
+  replacementCost: number;       // Costo de reposición (OBLIGATORIO)
   stock: number;           // Stock actual (OBLIGATORIO)
   minStock: number;        // Stock mínimo (OBLIGATORIO)
   description?: string;    // Descripción opcional
@@ -287,7 +287,7 @@ Tiempo objetivo: < 2 minutos desde búsqueda hasta factura.
 │ name            │       │ name            │       │ invoiceNumber   │
 │ categoryId      │       │ defaultMargin%  │       │ type (A/B)      │
 │ costPrice       │       │ isActive        │       │ customerName    │
-│ salePrice       │       └─────────────────┘       │ customerDoc     │
+│ replacementCost │       └─────────────────┘       │ customerDoc     │
 │ stock           │       ┌─────────────────┐       │ date            │
 │ minStock        │       │  INVOICE_ITEM   │       │ subtotal        │
 │ supplier        │       ├─────────────────┤       │ taxAmount       │

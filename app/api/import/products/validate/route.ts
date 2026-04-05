@@ -252,7 +252,6 @@ export async function POST(request: NextRequest) {
       }
     );
 
-    // Build result
     const result = {
       valid: validProducts,
       invalid: invalidRows,
@@ -265,8 +264,6 @@ export async function POST(request: NextRequest) {
       },
     };
 
-    console.log('Validation result:', JSON.stringify(result, null, 2));
-
     // Validate response with Zod
     const validatedResult = ValidationResultSchema.parse(result);
 
@@ -274,7 +271,6 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Validation error:', error);
-    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     
     // If it's a Zod error, provide more details
     if (error instanceof Error && error.message.includes('Zod')) {

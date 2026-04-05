@@ -274,7 +274,7 @@ interface Product {
   sku: string;             // Código interno único
   barcode?: string;         // Código de barras EAN/UPC
   costPrice: number;        // Precio de compra (10,2)
-  salePrice: number;        // Precio de venta (10,2)
+  replacementCost: number;        // Costo de reposición (10,2)
   stock: number;           // Unidades en depósito
   minStock: number;        // Stock mínimo para reposición
   location?: string;       // Ubicación en depósito (ej: A1-B2)
@@ -291,7 +291,7 @@ interface Product {
 - `sku` → SKU, CÓDIGO, REFERENCIA  
 - `barcode` → CÓDIGO BARRAS, EAN, GTIN
 - `costPrice` → PRECIO COMPRA, COSTO
-- `salePrice` → PRECIO VENTA, PRECIO LISTA
+- `replacementCost` → COSTO REPOSICIÓN, PRECIO REPOSICIÓN
 - `stock` → STOCK, CANTIDAD, UNIDADES
 - `minStock` → STOCK MÍNIMO, MÍNIMO
 - `location` → UBICACIÓN, SECTOR, ESTANTE
@@ -299,7 +299,7 @@ interface Product {
 **Validaciones de Negocio:**
 ```typescript
 // Márgenes de rentabilidad
-const margin = ((salePrice - costPrice) / costPrice) * 100;
+const margin = ((replacementCost - costPrice) / costPrice) * 100;
 if (margin < 20) {
   console.warn('Margen bajo detectado:', margin + '%');
 }

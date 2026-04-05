@@ -161,13 +161,13 @@ export function ProductReviewTable({
             },
           });
           break;
-        case 'salePrice':
+        case 'replacementCost':
           columns.push({
-            accessorKey: 'salePrice',
-            header: 'Venta',
+            accessorKey: 'replacementCost',
+            header: 'Costo de reposición',
             size: 100,
             cell: ({ row }) => {
-              const value = row.original.salePrice;
+              const value = row.original.replacementCost;
               return value !== undefined
                 ? new Intl.NumberFormat('es-AR', {
                     style: 'currency',
@@ -270,13 +270,13 @@ export function ProductReviewTable({
             },
           });
           break;
-        case 'salePrice':
+        case 'replacementCost':
           columns.push({
-            accessorKey: `transformedData.salePrice`,
-            header: 'Venta',
+            accessorKey: `transformedData.replacementCost`,
+            header: 'Costo de reposición',
             size: 100,
             cell: ({ row }) => {
-              const value = row.original.transformedData?.salePrice;
+              const value = row.original.transformedData?.replacementCost;
               return value !== undefined && value !== null && value !== ''
                 ? new Intl.NumberFormat('es-AR', {
                     style: 'currency',

@@ -94,7 +94,7 @@ model Product {
 | `barcode` | Código de barras | String | No | Trim |
 | `description` | Descripción | String | No | Capitalizar + Trim |
 | `costPrice` | Precio de costo | Decimal | No | Formato español → Decimal(10,2) |
-| `salePrice` | Precio de venta | Decimal | No | Formato español → Decimal(10,2) |
+| `replacementCost` | Costo de reposición | Decimal | No | Formato español → Decimal(10,2) |
 | `stock` | Stock inicial | Int | No | Redondear entero |
 | `minStock` | Stock mínimo | Int | No | Redondear entero |
 | `location` | Ubicación | String | No | Mayúsculas + Trim |
@@ -289,7 +289,7 @@ app/adm/products/import/
 ## Modelo de Datos - Campos Adicionales
 
 No requiere cambios en schema.prisma. Usa modelos existentes:
-- `Product` (name, code, costPrice, salePrice, stock, unit, categoryId)
+- `Product` (name, code, costPrice, replacementCost, stock, unit, categoryId)
 - `Category` (name, description)
 
 ## Opciones de Importación

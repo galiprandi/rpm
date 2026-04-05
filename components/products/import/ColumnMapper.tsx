@@ -37,7 +37,7 @@ const DB_FIELDS: DBField[] = [
   { key: 'barcode', label: 'Código de barras', type: 'string', required: false, defaultTransform: 'trim' },
   { key: 'description', label: 'Descripción', type: 'string', required: false, defaultTransform: 'capitalize' },
   { key: 'costPrice', label: 'Precio de costo', type: 'decimal', required: false, defaultTransform: 'spanish' },
-  { key: 'salePrice', label: 'Precio de venta', type: 'decimal', required: false, defaultTransform: 'spanish' },
+  { key: 'replacementCost', label: 'Costo de reposición', type: 'decimal', required: false, defaultTransform: 'spanish' },
   { key: 'stock', label: 'Stock inicial', type: 'integer', required: false, defaultTransform: 'round' },
   { key: 'minStock', label: 'Stock mínimo', type: 'integer', required: false, defaultTransform: 'round' },
   { key: 'location', label: 'Ubicación', type: 'string', required: false, defaultTransform: 'uppercase' },

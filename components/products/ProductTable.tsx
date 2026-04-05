@@ -47,6 +47,13 @@ export function ProductTable({
         },
       },
       {
+        accessorKey: 'sku',
+        header: 'SKU',
+        cell: ({ row }) => (
+          <span className="font-mono text-xs text-muted-foreground">{row.original.sku}</span>
+        ),
+      },
+      {
         accessorKey: 'name',
         header: 'Producto',
         cell: ({ row }) => {
@@ -88,11 +95,11 @@ export function ProductTable({
         ),
       },
       {
-        accessorKey: 'salePrice',
-        header: 'Precio Venta',
+        accessorKey: 'replacementCost',
+        header: 'Costo de reposición',
         cell: ({ row }) => (
           <div className="text-right font-medium">
-            <PriceDisplay value={row.original.salePrice} />
+            <PriceDisplay value={row.original.replacementCost} />
           </div>
         ),
       },

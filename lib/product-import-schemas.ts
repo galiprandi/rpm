@@ -60,7 +60,7 @@ export const ProductCreateSchema = z.object({
   name: z.string().trim().min(1, 'El nombre del producto es requerido'),
   description: z.string().trim().optional().nullable(),
   costPrice: z.number().min(0, 'El precio de costo no puede ser negativo'),
-  salePrice: z.number().min(0, 'El precio de venta no puede ser negativo'),
+  replacementCost: z.number().min(0, 'El costo de reposición no puede ser negativo').optional().default(0),
   stock: z.number().int().min(0, 'El stock no puede ser negativo').default(0),
   minStock: z.number().int().min(0).default(0),
   barcode: z.string().trim().optional().nullable(),
