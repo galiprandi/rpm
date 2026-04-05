@@ -976,30 +976,34 @@ enum VehicleType {
 }
 
 model Product {
-  id          String    @id @default(uuid())
-  sku         String    @unique
-  name        String
-  description String?
-  costPrice   Decimal   @db.Decimal(10, 2)
-  replacementCost Decimal @db.Decimal(10, 2)
-  stock       Int       @default(0)
-  minStock    Int       @default(0)
-  supplier    String?
-  barcode     String?
-  location    String?
-  isActive    Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id              String    @id @default(uuid())
+  sku             String?   @unique
+  name            String
+  description     String?
+  costPrice       Decimal   @db.Decimal(10, 2)
+  replacementCost Decimal   @db.Decimal(10, 2)
+  stock           Int       @default(0)
+  minStock        Int       @default(0)
+  barcode         String?
+  location        String?
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   // Relations
-  categoryId String
-  category   Category        @relation(fields: [categoryId], references: [id])
-  workOrderItems WorkOrderItem[]
-  invoiceItems   InvoiceItem[]
-  serviceKits    ServiceKit[]
+  categoryId      String
+  category        Category        @relation(fields: [categoryId], references: [id])
+  supplierId      String?         // FK to supplier table (not just a string)
+  supplier        Supplier?       @relation(fields: [supplierId], references: [id])
+  workOrderItems  WorkOrderItem[]
+  invoiceItems    InvoiceItem[]
+  serviceKits     ServiceKit[]
+  stockMovements  StockMovement[] // Audit trail for stock changes
+  priceListItems  PriceListItem[] // Dynamic pricing relations
 
   @@index([categoryId])
   @@index([stock, minStock])
+  @@index([supplierId])
   @@map("products")
 }
 
@@ -1022,11 +1026,11 @@ model Category {
 
 model Service {
   id             String             @id @default(uuid())
-  name           String
+  name           String             @unique
   description    String?
   baseCost       Decimal            @db.Decimal(10, 2)
-  timeMinutes    Int
-  vehicleFactors Json               // { COMPACT: 1.0, SEDAN: 1.1, ... }
+  timeMinutes    Int                @default(60)
+  vehicleFactor  Decimal            @default(1.0) @db.Decimal(3, 2) // Single factor (not JSON)
   isActive       Boolean            @default(true)
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
@@ -1066,6 +1070,13 @@ model WorkOrder {
   totalServices  Decimal           @db.Decimal(10, 2) @default(0)
   total          Decimal           @db.Decimal(10, 2) @default(0)
   notes          String?
+  
+  // Checklists stored as JSON (not separate models)
+  entryChecklist  Json?            // Checklist de ingreso
+  exitChecklist   Json?            // Checklist de egreso
+  entryPhotos     String[]         // URLs de fotos de ingreso
+  exitPhotos      String[]         // URLs de fotos de egreso
+  
   createdAt      DateTime          @default(now())
   updatedAt      DateTime          @updatedAt
 
@@ -1079,7 +1090,6 @@ model WorkOrder {
   invoiceId    String?           @unique
   invoice      Invoice?          @relation(fields: [invoiceId], references: [id])
   items        WorkOrderItem[]
-  checklists   Checklist[]
 
   @@index([customerId])
   @@index([vehicleId])
@@ -1383,10 +1393,12 @@ model User {
 model UserRole {
   id        String   @id @default(uuid())
   email     String   @unique
-  role      String   // ADMIN, SELLER, TECHNICIAN, CASHIER, USER
+  role      String   // ADMIN, STAFF, USER (legacy: SELLER, TECHNICIAN, CASHIER map to ADMIN)
   name      String?  // Nombre para identificar quién es
   notes     String?  // Observaciones
   isActive  Boolean  @default(true)
+  lastLogin DateTime? // Último login
+  image     String?  // Foto de perfil
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

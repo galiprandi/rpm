@@ -46,7 +46,17 @@ NEXTAUTH_SECRET=your-nextauth-secret
 
 ### User Roles Definition
 ```typescript
-type UserRole = 'ADMIN' | 'SELLER' | 'TECHNICIAN' | 'CASHIER' | 'WAREHOUSE' | 'USER';
+type UserRole = 'ADMIN' | 'STAFF' | 'USER';
+
+// Mapeo de roles legado para compatibilidad
+const LEGACY_ROLE_MAP: Record<string, UserRole> = {
+  'ADMIN': 'ADMIN',
+  'SELLER': 'ADMIN',      // Sellers tienen acceso completo a ventas
+  'TECHNICIAN': 'ADMIN',  // Technicians tienen acceso a OTs
+  'CASHIER': 'ADMIN',     // Cashiers tienen acceso a caja
+  'STAFF': 'STAFF',
+  'USER': 'USER',
+};
 ```
 
 ### Role Assignment Strategy (DB + Prisma Studio)
@@ -57,21 +67,41 @@ type UserRole = 'ADMIN' | 'SELLER' | 'TECHNICIAN' | 'CASHIER' | 'WAREHOUSE' | 'U
 // lib/auth/roles.ts
 import { prisma } from '@/lib/prisma';
 
-export type UserRole = 'ADMIN' | 'SELLER' | 'TECHNICIAN' | 'CASHIER' | 'USER';
+export type UserRole = 'ADMIN' | 'STAFF' | 'USER';
 
-// Obtener rol desde DB
-export async function getUserRole(email: string): Promise<UserRole> {
-  const userRole = await prisma.userRole.findUnique({
-    where: { email: email.toLowerCase() },
-  });
-  
-  return (userRole?.role as UserRole) || 'USER';
+// Domains that automatically get STAFF role if no explicit role in DB
+const STAFF_DOMAINS = ['rpmacc.com', 'rpm-sys.com'];
+
+// Mapeo de roles legado (para compatibilidad con DB existente)
+function mapLegacyRole(dbRole: string): UserRole {
+  const upperRole = dbRole.toUpperCase();
+  if (upperRole === 'ADMIN' || upperRole === 'SELLER' || 
+      upperRole === 'TECHNICIAN' || upperRole === 'CASHIER') {
+    return 'ADMIN';
+  }
+  if (upperRole === 'STAFF') return 'STAFF';
+  return 'USER';
 }
 
-// Verificar si email tiene acceso a /adm
-export async function canAccessAdm(email: string): Promise<boolean> {
-  const role = await getUserRole(email);
-  return role !== 'USER';
+// Obtener rol desde DB con fallback por dominio
+export async function getUserRole(email: string): Promise<UserRole> {
+  const normalizedEmail = email.toLowerCase().trim();
+  
+  // Check database for explicit role
+  const userRoleRecord = await prisma.userRole.findUnique({
+    where: { email: normalizedEmail },
+  });
+  
+  if (userRoleRecord?.isActive) {
+    return mapLegacyRole(userRoleRecord.role);
+  }
+  
+  // Domain-based fallback for company emails
+  if (STAFF_DOMAINS.some(domain => email.endsWith(`@${domain}`))) {
+    return 'STAFF';
+  }
+  
+  return 'USER';
 }
 ```
 
@@ -304,21 +334,19 @@ export const config = {
 
 ### Role-based Access Control
 ```typescript
-// lib/auth/rbac.ts - SIMPLIFICADO FASE 1
+// lib/auth/rbac.ts - SIMPLIFICADO
 export const hasRole = (userRole: string, requiredRole: string): boolean => {
   const roleHierarchy: Record<string, number> = {
     'USER': 0,
-    'SELLER': 1,
-    'TECHNICIAN': 2,
-    'CASHIER': 3,
-    'ADMIN': 4,
+    'STAFF': 1,
+    'ADMIN': 2,
   };
   
   return roleHierarchy[userRole] >= roleHierarchy[requiredRole];
 };
 
-export const canAccessAdm = (userRole: string): boolean => {
-  return userRole !== 'USER';
+export const canAccessAdm = (role: UserRole): boolean => {
+  return role === 'ADMIN' || role === 'STAFF';
 };
 ```
 
@@ -354,7 +382,7 @@ export async function GET() {
 import { z } from 'zod';
 import { UserRole } from '@/lib/auth/roles';
 
-export const UserRoleSchema = z.enum(['USER', 'SELLER', 'TECHNICIAN', 'CASHIER', 'ADMIN']);
+export const UserRoleSchema = z.enum(['USER', 'STAFF', 'ADMIN']);
 
 export const SessionSchema = z.object({
   user: z.object({
@@ -445,12 +473,12 @@ describe('Auth Role Assignment', () => {
     expect(role).toBe('ADMIN');
   });
   
-  test('Assigns seller role to seller emails', async () => {
+  test('Maps legacy SELLER role to ADMIN', async () => {
     await prisma.userRole.create({
       data: { email: 'vendedor@rpmacc.com', role: 'SELLER', name: 'Vendedor' }
     });
     const role = await getUserRole('vendedor@rpmacc.com');
-    expect(role).toBe('SELLER');
+    expect(role).toBe('ADMIN');  // SELLER maps to ADMIN
   });
   
   test('Assigns user role to external emails', async () => {

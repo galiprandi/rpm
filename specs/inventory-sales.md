@@ -28,7 +28,7 @@ Solo lo esencial para operar día a día.
 | **EAN/Barcode** | ✅ Sí | Código de barras principal | **Primer campo en formulario**, placeholder "1234567890123" |
 | **Nombre** | ✅ Sí | Nombre descriptivo | Segundo campo, placeholder "Barra LED 20 pulgadas" |
 | **SKU** | ❌ No | Código interno opcional | Placeholder "LED-001 (opcional)", sin required |
-| **Proveedor** | ✅ Sí | Proveedor del producto | Placeholder "Nombre del proveedor", seed incluye "No especificado" |
+| **Proveedor** | ✅ Sí | Relación a tabla Supplier | Dropdown de proveedores, seed incluye "Sin especificar" |
 | **Categoría** | ✅ Sí | Categoría asignada | Dropdown usa `position="popper"` para evitar solapamiento |
 | **Precio Costo** | ✅ Sí | Precio de costo | - |
 | **Precio Venta** | ✅ Sí | Precio de venta | - |
@@ -40,7 +40,7 @@ Solo lo esencial para operar día a día.
 **⚠️ REGLAS CRÍTICAS - NO REGRESAR:**
 1. **EAN es el identificador principal**, no SKU
 2. SKU es completamente opcional (sin asterisco, sin required)
-3. Proveedor es obligatorio - siempre tener "No especificado" en seed
+3. Proveedor es obligatorio (relación a tabla `supplier`) - siempre tener "Sin especificar" en seed
 4. Dropdown de categorías: usar `position="popper"` y `z-50` para evitar solapamiento en modal
 5. Formulario orden: EAN → Nombre → SKU → Proveedor → Categoría → Precios → Stock → Descripción → Ubicación
 
@@ -50,7 +50,7 @@ interface Product {
   barcode: string;         // EAN/Barcode (OBLIGATORIO)
   name: string;            // Nombre descriptivo (OBLIGATORIO)
   sku?: string;            // SKU opcional
-  supplier: string;        // Proveedor (OBLIGATORIO)
+  supplierId?: string;      // FK a tabla Supplier (OBLIGATORIO)
   categoryId: string;      // Categoría (OBLIGATORIO)
   costPrice: number;       // Precio de costo (OBLIGATORIO)
   replacementCost: number;       // Costo de reposición (OBLIGATORIO)
@@ -290,8 +290,8 @@ Tiempo objetivo: < 2 minutos desde búsqueda hasta factura.
 │ replacementCost │       └─────────────────┘       │ customerDoc     │
 │ stock           │       ┌─────────────────┐       │ date            │
 │ minStock        │       │  INVOICE_ITEM   │       │ subtotal        │
-│ supplier        │       ├─────────────────┤       │ taxAmount       │
-│ isActive        │◄──────┤  invoiceId      │       │ total           │
+│ supplierId      │       │                 │       │                 │
+│ (FK a Supplier) │◄──────┤  invoiceId      │       │ caeCode         │
 └─────────────────┘       │ productId       │◄──────┤ caeCode         │
                           │ quantity        │       │ caeExpiry       │
 ┌─────────────────┐       │ unitPrice       │       │ paymentMethod   │

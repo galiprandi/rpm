@@ -44,7 +44,7 @@ model User {
 model UserRole {
   id        String   @id @default(uuid())
   email     String   @unique
-  role      String   // ADMIN, SELLER, TECHNICIAN, CASHIER, USER
+  role      String   // ADMIN, STAFF, USER (legacy: SELLER, TECHNICIAN, CASHIER map to ADMIN)
   name      String?  // Nombre para identificar quién es
   image     String?  // Foto de perfil del usuario (Google OAuth)
   notes     String?  // Observaciones (ej: "Dueño", "Vendedor turno mañana")
@@ -65,11 +65,22 @@ model UserRole {
 
 | Rol | Código | Acceso | Descripción |
 |-----|--------|--------|-------------|
-| **Admin** | `ADMIN` | Completo | Acceso total a /adm, gestión de usuarios |
-| **Vendedor** | `SELLER` | Limitado | Ventas, cotizaciones, clientes |
-| **Técnico** | `TECHNICIAN` | Limitado | Tareas, instalaciones, órdenes de trabajo |
-| **Cajero** | `CASHIER` | Limitado | Cobros, caja, movimientos diarios |
+| **Admin** | `ADMIN` | Completo | Acceso total a /adm, gestión de usuarios y configuración |
+| **Staff** | `STAFF` | Limitado | Acceso a operaciones diarias (ventas, OTs, caja) |
 | **Usuario** | `USER` | Público | Solo acceso a web pública |
+
+### Mapeo de Roles Legado
+
+Para compatibilidad con registros existentes, los roles granulares se mapean al sistema simplificado:
+
+| Rol en DB | Rol efectivo | Descripción |
+|-----------|--------------|-------------|
+| `ADMIN` | **ADMIN** | Administradores |
+| `SELLER` | **ADMIN** | Vendedores (acceso completo a ventas) |
+| `TECHNICIAN` | **ADMIN** | Técnicos (acceso completo a OTs) |
+| `CASHIER` | **ADMIN** | Cajeros (acceso completo a caja) |
+| `STAFF` | **STAFF** | Staff operativo |
+| `USER` | **USER** | Usuarios públicos |
 
 ---
 
@@ -136,9 +147,8 @@ model UserRole {
 const getRoleBadgeVariant = (role: string): BadgeVariant => {
   switch (role) {
     case 'ADMIN': return 'default';
-    case 'SELLER': return 'secondary';
-    case 'TECHNICIAN': return 'outline';
-    case 'CASHIER': return 'outline';
+    case 'STAFF': return 'secondary';
+    case 'USER': return 'outline';
     default: return 'secondary';
   }
 };
@@ -146,9 +156,7 @@ const getRoleBadgeVariant = (role: string): BadgeVariant => {
 const getRoleLabel = (role: string): string => {
   const labels: Record<string, string> = {
     ADMIN: 'Administrador',
-    SELLER: 'Vendedor',
-    TECHNICIAN: 'Técnico',
-    CASHIER: 'Cajero',
+    STAFF: 'Staff',
     USER: 'Usuario',
   };
   return labels[role] || role;
@@ -193,9 +201,7 @@ const getRoleLabel = (role: string): string => {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="ADMIN">Administrador</SelectItem>
-            <SelectItem value="SELLER">Vendedor</SelectItem>
-            <SelectItem value="TECHNICIAN">Técnico</SelectItem>
-            <SelectItem value="CASHIER">Cajero</SelectItem>
+            <SelectItem value="STAFF">Staff</SelectItem>
             <SelectItem value="USER">Usuario</SelectItem>
           </SelectContent>
         </Select>
