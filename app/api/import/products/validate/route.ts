@@ -27,7 +27,7 @@ const FIELD_TYPES: Record<string, 'string' | 'decimal' | 'integer' | 'category'>
   barcode: 'string',
   description: 'string',
   costPrice: 'decimal',
-  salePrice: 'decimal',
+  replacementCost: 'decimal',
   stock: 'integer',
   minStock: 'integer',
   location: 'string',

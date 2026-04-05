@@ -34,7 +34,6 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    console.log('[DEBUG] Creating price list with body:', JSON.stringify(body, null, 2));
 
     // Validations
     if (!body.name) {
@@ -59,9 +58,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check unique name
-    console.log('[DEBUG] Checking existing name:', body.name);
     const existing = await getPriceListByName(body.name);
-    console.log('[DEBUG] Existing price list:', existing);
 
     if (existing) {
       return NextResponse.json(
@@ -80,14 +77,11 @@ export async function POST(request: NextRequest) {
       endDate: body.endDate ? new Date(body.endDate) : null,
     };
 
-    console.log('[DEBUG] Creating with input:', JSON.stringify(input, null, 2));
     const priceList = await createPriceList(input);
-    console.log('[DEBUG] Created successfully:', priceList.id);
 
     return NextResponse.json({ priceList }, { status: 201 });
   } catch (error) {
-    console.error('[DEBUG] Error creating price list:', error);
-    console.error('[DEBUG] Error stack:', (error as Error).stack);
+    console.error('Error creating price list:', error);
     return NextResponse.json(
       { error: 'Error creating price list', details: (error as Error).message },
       { status: 500 }

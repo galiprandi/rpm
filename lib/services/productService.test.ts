@@ -73,7 +73,7 @@ describe('ProductService', () => {
     categoryId: 'cat1',
     category: { id: 'cat1', name: 'LEDs', color: '#ff0000' },
     costPrice: { toNumber: () => 100 },
-    salePrice: { toNumber: () => 150 },
+    replacementCost: { toNumber: () => 150 },
     stock: 10,
     minStock: 5,
     supplier: null,
@@ -139,7 +139,7 @@ describe('ProductService', () => {
           categoryId: null,
           category: null,
           costPrice: { toNumber: () => 10 },
-          salePrice: { toNumber: () => 15 },
+          replacementCost: { toNumber: () => 15 },
           stock: 2,
           minStock: 5,
           supplier: null,
@@ -168,7 +168,7 @@ describe('ProductService', () => {
         categoryId: null,
         category: null,
         costPrice: { toNumber: () => 50 },
-        salePrice: { toNumber: () => 75 },
+        replacementCost: { toNumber: () => 75 },
         stock: 20,
         minStock: 10,
         supplier: null,
@@ -206,7 +206,7 @@ describe('ProductService', () => {
         barcode: '1234567890123',
         categoryId: 'cat1',
         costPrice: 100,
-        salePrice: 150,
+        replacementCost: 150,
         stock: 50,
         minStock: 10,
         supplier: 'Supplier Co',
@@ -221,7 +221,7 @@ describe('ProductService', () => {
         barcode: '1234567890123',
         categoryId: 'cat1',
         costPrice: { toNumber: () => 100 },
-        salePrice: { toNumber: () => 150 },
+        replacementCost: { toNumber: () => 150 },
         stock: 50,
         minStock: 10,
         supplier: 'Supplier Co',
@@ -250,7 +250,7 @@ describe('ProductService', () => {
         name: 'Minimal Product',
         categoryId: 'cat1', // Required field
         costPrice: 10,
-        salePrice: 15,
+        replacementCost: 15,
         stock: 100,
         minStock: 20,
       };
@@ -259,7 +259,7 @@ describe('ProductService', () => {
         ...input,
         id: 'min-id',
         costPrice: { toNumber: () => 10 },
-        salePrice: { toNumber: () => 15 },
+        replacementCost: { toNumber: () => 15 },
         category: { id: 'cat1', name: 'Category', color: null },
       });
 
@@ -284,7 +284,7 @@ describe('ProductService', () => {
     it('should update product fields', async () => {
       const input = {
         name: 'Updated Name',
-        salePrice: 200,
+        replacementCost: 200,
       };
 
       const mockUpdated = {
@@ -296,7 +296,7 @@ describe('ProductService', () => {
         categoryId: null,
         category: null,
         costPrice: { toNumber: () => 100 },
-        salePrice: { toNumber: () => 200 },
+        replacementCost: { toNumber: () => 200 },
         stock: 50,
         minStock: 10,
         supplier: null,
@@ -309,7 +309,7 @@ describe('ProductService', () => {
       const result = await updateProduct('1', input);
 
       expect(result.name).toBe('Updated Name');
-      expect(result.salePrice).toBe(200);
+      expect(result.replacementCost).toBe(200);
       expect(mockFns.update).toHaveBeenCalledWith({
         where: { id: '1' },
         data: expect.objectContaining({
@@ -356,7 +356,7 @@ describe('ProductService', () => {
         categoryId: null,
         category: null,
         costPrice: { toNumber: () => 10 },
-        salePrice: { toNumber: () => 15 },
+        replacementCost: { toNumber: () => 15 },
         stock: 15,
         minStock: 10,
         supplier: null,
@@ -385,7 +385,7 @@ describe('ProductService', () => {
         categoryId: null,
         category: null,
         costPrice: { toNumber: () => 10 },
-        salePrice: { toNumber: () => 15 },
+        replacementCost: { toNumber: () => 15 },
         stock: 5,
         minStock: 10,
         supplier: null,
@@ -414,7 +414,7 @@ describe('ProductService', () => {
         categoryId: null,
         category: null,
         costPrice: { toNumber: () => 10 },
-        salePrice: { toNumber: () => 15 },
+        replacementCost: { toNumber: () => 15 },
         stock: 100,
         minStock: 10,
         supplier: null,

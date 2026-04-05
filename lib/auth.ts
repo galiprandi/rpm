@@ -15,7 +15,7 @@ import { prisma } from './prisma';
  * Features:
  * - Google OAuth 2.0 authentication
  * - Prisma database adapter
- * - Role-based access control
+ * - Role-based access control (via ADMIN_EMAILS env in auth-server.ts)
  * - Session management
  * - TypeScript-first approach
  */
@@ -51,7 +51,7 @@ export const auth = betterAuth({
     cookieCache: {
       enabled: true,
       maxAge: 5 * 60, // 5 minutes
-      version: 'v2', // Increment to invalidate old sessions with wrong role
+      version: 'v2', 
     },
   },
   

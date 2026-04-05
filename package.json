@@ -28,6 +28,9 @@
     "db:reset:prod": "node scripts/reset-db-prod.js",
     "deploy": "vercel --prod"
   },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
   "dependencies": {
     "@better-auth/prisma-adapter": "^1.5.6",
     "@prisma/adapter-pg": "^7.5.0",

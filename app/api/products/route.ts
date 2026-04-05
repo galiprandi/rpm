@@ -52,13 +52,13 @@ export async function GET(request: NextRequest) {
     // Calcular margen para cada producto
     const productsWithMargin = products.map(p => {
       const costPrice = Number(p.costPrice);
-      const salePrice = Number(p.salePrice);
+      const replacementCost = Number(p.replacementCost);
       return {
         ...p,
         costPrice,
-        salePrice,
+        replacementCost,
         margin: costPrice > 0 
-          ? Number(((salePrice - costPrice) / costPrice * 100).toFixed(2))
+          ? Number(((replacementCost - costPrice) / costPrice * 100).toFixed(2))
           : 0,
         isLowStock: p.stock <= p.minStock,
       };
@@ -93,9 +93,9 @@ export async function POST(request: NextRequest) {
     // Generar SKU automático si no se proporciona
     const sku = body.sku || nanoid(8);
 
-    if (body.costPrice < 0 || body.salePrice < 0) {
+    if (body.replacementCost === undefined || body.replacementCost === null) {
       return NextResponse.json(
-        { error: 'Los precios no pueden ser negativos' },
+        { error: 'replacementCost es requerido' },
         { status: 400 }
       );
     }
@@ -125,8 +125,8 @@ export async function POST(request: NextRequest) {
         sku: sku,
         name: body.name,
         description: body.description || null,
-        costPrice: body.costPrice || 0,
-        salePrice: body.salePrice || 0,
+        costPrice: new Prisma.Decimal(body.costPrice),
+        replacementCost: new Prisma.Decimal(body.replacementCost),
         stock: body.stock || 0,
         minStock: body.minStock || 0,
         supplierId: body.supplierId || null,

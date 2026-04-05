@@ -34,15 +34,15 @@ export async function GET(request: NextRequest, { params }: Params) {
     }
 
     const costPrice = Number(product.costPrice);
-    const salePrice = Number(product.salePrice);
+    const replacementCost = Number(product.replacementCost);
 
     return NextResponse.json({
       product: {
         ...product,
         costPrice,
-        salePrice,
+        replacementCost,
         margin: costPrice > 0
-          ? Number(((salePrice - costPrice) / costPrice * 100).toFixed(2))
+          ? Number(((replacementCost - costPrice) / costPrice * 100).toFixed(2))
           : 0,
         isLowStock: product.stock <= product.minStock,
       },
@@ -97,9 +97,9 @@ export async function PUT(request: NextRequest, { params }: Params) {
       );
     }
 
-    if (body.salePrice !== undefined && body.salePrice < 0) {
+    if (body.replacementCost !== undefined && body.replacementCost < 0) {
       return NextResponse.json(
-        { error: 'El precio de venta no puede ser negativo' },
+        { error: 'El costo de reposición no puede ser negativo' },
         { status: 400 }
       );
     }

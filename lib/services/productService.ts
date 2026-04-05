@@ -33,7 +33,7 @@ export interface Product {
     color: string | null;
   } | null;
   costPrice: number;
-  salePrice: number;
+  replacementCost: number;
   stock: number;
   minStock: number;
   isLowStock: boolean;
@@ -51,7 +51,7 @@ export interface CreateProductInput {
   barcode?: string;
   categoryId: string;
   costPrice: number;
-  salePrice: number;
+  replacementCost: number;
   stock: number;
   minStock: number;
   supplierId?: string;
@@ -76,9 +76,9 @@ export interface ProductListResult {
 }
 
 // Helper: Calculate margin
-function calculateMargin(costPrice: number, salePrice: number): number {
+function calculateMargin(costPrice: number, replacementCost: number): number {
   if (costPrice <= 0) return 0;
-  return Number(((salePrice - costPrice) / costPrice * 100).toFixed(2));
+  return Number(((replacementCost - costPrice) / costPrice * 100).toFixed(2));
 }
 
 // Helper: Check if stock is low
@@ -91,12 +91,12 @@ type PrismaProductWithCategory = Prisma.ProductGetPayload<{ include: { category:
 
 function transformProduct(product: PrismaProductWithCategory): Product {
   const cost = product.costPrice?.toNumber ? product.costPrice.toNumber() : Number(product.costPrice) || 0;
-  const sale = product.salePrice?.toNumber ? product.salePrice.toNumber() : Number(product.salePrice) || 0;
+  const replacement = product.replacementCost?.toNumber ? product.replacementCost.toNumber() : Number(product.replacementCost) || 0;
   return {
     ...product,
     costPrice: cost,
-    salePrice: sale,
-    margin: calculateMargin(cost, sale),
+    replacementCost: replacement,
+    margin: calculateMargin(cost, replacement),
     isLowStock: isLowStock(product.stock, product.minStock),
     supplierId: product.supplierId,
     sku: product.sku,
@@ -185,7 +185,7 @@ export async function createProduct(input: CreateProductInput): Promise<Product>
       barcode: input.barcode || null,
       categoryId: input.categoryId,
       costPrice: new Prisma.Decimal(input.costPrice),
-      salePrice: new Prisma.Decimal(input.salePrice),
+      replacementCost: new Prisma.Decimal(input.replacementCost),
       stock: input.stock,
       minStock: input.minStock,
       supplierId: input.supplierId || null,
@@ -211,7 +211,7 @@ export async function updateProduct(id: string, input: UpdateProductInput): Prom
     data.category = { connect: { id: input.categoryId } };
   }
   if (input.costPrice !== undefined) data.costPrice = new Prisma.Decimal(input.costPrice);
-  if (input.salePrice !== undefined) data.salePrice = new Prisma.Decimal(input.salePrice);
+  if (input.replacementCost !== undefined) data.replacementCost = new Prisma.Decimal(input.replacementCost);
   if (input.stock !== undefined) data.stock = input.stock;
   if (input.minStock !== undefined) data.minStock = input.minStock;
   if (input.supplierId !== undefined) {

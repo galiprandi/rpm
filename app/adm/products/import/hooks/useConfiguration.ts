@@ -124,10 +124,10 @@ function autoDetectMapping(columns: string[]): Record<string, ColumnMapping> {
     'DESCRIPCION': { field: 'description', transform: 'capitalize' },
     'PRECIO COMPRA': { field: 'costPrice', transform: 'spanish' },
     'COSTO': { field: 'costPrice', transform: 'spanish' },
-    'MAYORISTA': { field: 'salePrice', transform: 'spanish' },
-    'MINORISTA': { field: 'salePrice', transform: 'spanish' },
-    'CONTADO': { field: 'salePrice', transform: 'spanish' },
-    'PRECIO VENTA': { field: 'salePrice', transform: 'spanish' },
+    'MAYORISTA': { field: 'replacementCost', transform: 'spanish' },
+    'MINORISTA': { field: 'replacementCost', transform: 'spanish' },
+    'CONTADO': { field: 'replacementCost', transform: 'spanish' },
+    'PRECIO VENTA': { field: 'replacementCost', transform: 'spanish' },
   };
   
   columns.forEach((col) => {

@@ -177,46 +177,7 @@ export function useConfiguration(): UseConfigurationReturn {
   const autoDetect = (columns: string[]) => {
     // AUTO-DETECCIÓN DESACTIVADA - Forzar mapeo manual
     console.log('Auto-detección desactivada - el usuario debe mapear manualmente');
-    
-    // Comentado para desactivar auto-mapeo
-    // const mapping: Record<string, ColumnMapping> = {};
-    // 
-    // const columnMappings: Record<string, { field: string; transform: string }> = {
-    //   'PRODUCTO': { field: 'name', transform: 'capitalize' },
-    //   'NOMBRE': { field: 'name', transform: 'capitalize' },
-    //   'RUBRO': { field: 'categoryId', transform: 'capitalize' },
-    //   'CATEGORIA': { field: 'categoryId', transform: 'capitalize' },
-    //   'CODIGO': { field: 'sku', transform: 'uppercase' },
-    //   'CODPROV': { field: 'sku', transform: 'uppercase' },
-    //   'SKU': { field: 'sku', transform: 'uppercase' },
-    //   'BARCODE': { field: 'barcode', transform: 'trim' },
-    //   'COD_BARRA': { field: 'barcode', transform: 'trim' },
-    //   'STOCK': { field: 'stock', transform: 'round' },
-    //   'PRESENTACION': { field: 'description', transform: 'capitalize' },
-    //   'DESCRIPCION': { field: 'description', transform: 'capitalize' },
-    //   'PRECIO COMPRA': { field: 'costPrice', transform: 'spanish' },
-    //   'COSTO': { field: 'costPrice', transform: 'spanish' },
-    //   'MAYORISTA': { field: 'salePrice', transform: 'spanish' },
-    //   'MINORISTA': { field: 'salePrice', transform: 'spanish' },
-    //   'CONTADO': { field: 'salePrice', transform: 'spanish' },
-    //   'PRECIO VENTA': { field: 'salePrice', transform: 'spanish' },
-    // };
-    // 
-    // columns.forEach((col) => {
-    //   const upperCol = col.toUpperCase().trim();
-    //   const config = columnMappings[upperCol];
-    //   if (config) {
-    //     mapping[config.field] = {
-    //       column: col,
-    //       transform: config.transform,
-    //       skipEmpty: false,
-    //     };
-    //   }
-    // });
-    // 
-    // if (Object.keys(mapping).length > 0) {
-    //   setMapping(mapping);
-    // }
+    // Código de auto-detección eliminado - usar useConfiguration.ts para mapeo
   };
   
   const clear = () => {

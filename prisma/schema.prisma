@@ -423,8 +423,7 @@ model Product {
   name        String
   description String?
   costPrice   Decimal  @db.Decimal(10, 2)
-  salePrice   Decimal  @db.Decimal(10, 2)
-  replacementCost Decimal? @db.Decimal(10, 2) // Costo de reposición para cálculo de precios
+  replacementCost Decimal  @db.Decimal(10, 2) // Costo de reposición para cálculo de precios
   stock       Int      @default(0)
   minStock    Int      @default(0)
   barcode     String?  // EAN opcional

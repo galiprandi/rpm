@@ -75,7 +75,7 @@ export default function ProductsPage() {
     name: '',
     description: '',
     costPrice: '',
-    salePrice: '',
+    replacementCost: '',
     stock: '',
     minStock: '',
     categoryId: '',
@@ -140,7 +140,7 @@ export default function ProductsPage() {
       name: '',
       description: '',
       costPrice: '',
-      salePrice: '',
+      replacementCost: '',
       stock: '',
       minStock: '',
       categoryId: '',
@@ -167,7 +167,7 @@ export default function ProductsPage() {
       name: product.name,
       description: product.description || '',
       costPrice: product.costPrice.toString(),
-      salePrice: product.salePrice.toString(),
+      replacementCost: product.replacementCost.toString(),
       stock: product.stock.toString(),
       minStock: product.minStock.toString(),
       categoryId: product.categoryId,
@@ -187,7 +187,7 @@ export default function ProductsPage() {
     if (!formData.categoryId) missingFields.push('Categoría');
     if (!formData.supplierId) missingFields.push('Proveedor');
     if (!formData.costPrice.trim()) missingFields.push('Costo');
-    if (!formData.salePrice.trim()) missingFields.push('Venta');
+    if (!formData.replacementCost.trim()) missingFields.push('Costo de Reposición');
     if (!formData.stock.trim()) missingFields.push('Stock');
     if (!formData.minStock.trim()) missingFields.push('Mínimo');
     
@@ -203,7 +203,7 @@ export default function ProductsPage() {
     const payload = {
       ...formData,
       costPrice: parseFloat(formData.costPrice) || 0,
-      salePrice: parseFloat(formData.salePrice) || 0,
+      replacementCost: parseFloat(formData.replacementCost) || 0,
       stock: parseInt(formData.stock) || 0,
       minStock: parseInt(formData.minStock) || 0,
     };
@@ -247,7 +247,7 @@ export default function ProductsPage() {
       formData.categoryId !== '' &&
       formData.supplierId !== '' &&
       formData.costPrice.trim() !== '' &&
-      formData.salePrice.trim() !== '' &&
+      formData.replacementCost.trim() !== '' &&
       formData.stock.trim() !== '' &&
       formData.minStock.trim() !== ''
     );

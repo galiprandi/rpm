@@ -4,7 +4,7 @@ export interface Product {
   name: string;
   description: string | null;
   costPrice: number;
-  salePrice: number;
+  replacementCost: number;
   stock: number;
   minStock: number;
   supplierId: string | null;
@@ -30,7 +30,7 @@ export interface ProductFormData {
   name: string;
   description: string;
   costPrice: string;
-  salePrice: string;
+  replacementCost: string;
   stock: string;
   minStock: string;
   categoryId: string;

@@ -14,7 +14,7 @@ export interface ProductFormData {
   supplierId: string;
   location: string;
   costPrice: string;
-  salePrice: string;
+  replacementCost: string;
   stock: string;
   minStock: string;
   description: string;
@@ -156,15 +156,15 @@ export function ProductForm({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="salePrice">Venta *</Label>
+          <Label htmlFor="replacementCost">Costo de Reposición *</Label>
           <Input
-            id="salePrice"
+            id="replacementCost"
             type="number"
             min="0"
             step="0.01"
-            value={formData.salePrice}
-            onChange={(e) => setFormData({ ...formData, salePrice: e.target.value })}
-            placeholder="75000"
+            value={formData.replacementCost}
+            onChange={(e) => setFormData({ ...formData, replacementCost: e.target.value })}
+            placeholder="45000"
             required
           />
         </div>

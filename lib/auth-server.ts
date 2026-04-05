@@ -10,6 +10,13 @@ import { headers } from 'next/headers';
 import { cookies } from 'next/headers';
 import { UserRole } from './auth/roles';
 
+// Environment-based admin emails (comma-separated)
+const getAdminEmailsFromEnv = (): string[] => {
+  const adminEmails = process.env.ADMIN_EMAILS;
+  if (!adminEmails) return [];
+  return adminEmails.split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
+};
+
 const DEBUG_COOKIE_NAME = 'rpm_debug_auth';
 
 /**
@@ -80,6 +87,7 @@ function createDebugSession(role: UserRole) {
  * 
  * In development with DEBUG_AUTH_ENABLED=true, returns debug session
  * In production or without debug enabled, returns real Better Auth session
+ * with role override from ADMIN_EMAILS
  */
 export async function getSession() {
   // Try debug session first (only in development)
@@ -91,6 +99,17 @@ export async function getSession() {
   // Fall back to real Better Auth session
   const headersList = await headers();
   const session = await auth.api.getSession({ headers: headersList });
+  
+  // Override role based on ADMIN_EMAILS environment variable
+  if (session?.user) {
+    const userEmail = (session.user as { email?: string }).email;
+    const adminEmails = getAdminEmailsFromEnv();
+    
+    if (userEmail && adminEmails.includes(userEmail.toLowerCase())) {
+      (session.user as { role: string }).role = 'ADMIN';
+    }
+  }
+  
   return session;
 }
 

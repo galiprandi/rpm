@@ -2,6 +2,7 @@
  * Role management system for RPM Accesorios
  * 
  * Fetches roles from database. Falls back to domain-based assignment for new users.
+ * Note: ADMIN_EMAILS env variable is handled in auth-server.ts for server-side override
  */
 
 import { prisma } from '../prisma';
@@ -27,9 +28,11 @@ const STAFF_DOMAINS = ['rpmacc.com', 'rpm-sys.com'];
  * @returns UserRole assigned to the user
  */
 export const getUserRole = async (email: string): Promise<UserRole> => {
-  // First: check database for explicit role
+  const normalizedEmail = email.toLowerCase().trim();
+
+  // Check database for explicit role
   const userRoleRecord = await prisma.userRole.findUnique({
-    where: { email },
+    where: { email: normalizedEmail },
   });
 
   if (userRoleRecord?.isActive) {
@@ -44,7 +47,7 @@ export const getUserRole = async (email: string): Promise<UserRole> => {
     return UserRole.USER;
   }
 
-  // Second: domain-based fallback for company emails
+  // Domain-based fallback for company emails
   if (STAFF_DOMAINS.some(domain => email.endsWith(`@${domain}`))) {
     return UserRole.STAFF;
   }

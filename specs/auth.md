@@ -148,6 +148,29 @@ main();
 | **Reutilizable** | Mismo patrón para otros configs (ver abajo) |
 | **Zero UI dev** | No necesitas crear pantalla de admin en Fase 1 |
 
+### Environment-based Admin Override
+
+Para casos de emergencia o primer setup sin acceso a DB, se puede configurar admins vía environment variable:
+
+```bash
+# .env.local o Vercel Environment Variables
+ADMIN_EMAILS=admin@example.com,superuser@company.com
+```
+
+**Comportamiento:**
+- Los emails en `ADMIN_EMAILS` automáticamente reciben rol `ADMIN` al iniciar sesión
+- Funciona incluso si el usuario no existe en tabla `UserRole`
+- Override se aplica server-side en `getSession()` de `auth-server.ts`
+- Útil para:
+  - Primer acceso tras reset de DB (sin seed)
+  - Recuperación de acceso administrativo
+  - Setup inicial en producción
+
+**Seguridad:**
+- Variable no expuesta al cliente (server-side only)
+- Recomendado rotar/remover después del setup inicial
+- No reemplaza la gestión de roles vía DB, es fallback temporal
+
 ### Otras aplicaciones del patrón DB + Prisma Studio
 
 Este patrón puede reutilizarse para:
