@@ -106,6 +106,113 @@ Si usás Bun, no es necesario el `import "dotenv/config"` porque Bun carga autom
 
 ---
 
+# ⚠️ REGLA CRÍTICA: Validar Cambios - Prohibido Asumir
+
+## Principio Fundamental
+
+**NUNCA asumir que un cambio funciona sin validarlo explícitamente.**
+
+Antes de declarar que algo "debería funcionar" o "está listo", el agente debe:
+- ✅ **Validar con herramientas concretas** (curl, Playwright, Puppeteer, psql, etc.)
+- ✅ **Verificar el comportamiento real** vs. el esperado
+- ✅ **Tomar los segundos necesarios** para confirmar, siempre es mejor que asumir
+
+## Herramientas de Validación Obligatorias
+
+Según el tipo de cambio, usar:
+
+| Tipo de Cambio | Herramienta de Validación | Ejemplo |
+|----------------|---------------------------|---------|
+| **API Backend** | `curl` | `curl -X POST http://localhost:3000/api/...` |
+| **UI / Frontend** | Playwright MCP / Puppeteer MCP | Screenshots, interacciones, asserts |
+| **Base de Datos** | `psql` o queries directas | `SELECT * FROM table WHERE...` |
+| **Componentes** | Storybook MCP | `list-all-documentation`, `run-story-tests` |
+| **Auth/Session** | Verificar cookies/tokens | Inspeccionar `rpm_debug_auth` |
+
+## Flujo Obligatorio
+
+```
+1. Hacer el cambio → 2. VALIDAR → 3. Confirmar que funciona → 4. Responder al usuario
+```
+
+### ❌ PROHIBIDO
+
+```typescript
+// ❌ MAL: "Debería funcionar" sin validar
+"El fix está aplicado, debería mostrar los costos correctos ahora"
+
+// ❌ MAL: "Probablemente funcione"
+"Cambié la conversión de Decimal, probablemente ahora sí muestre los valores"
+
+// ❌ MAL: Asumir sin verificar
+"Agregué el campo a la query, debería traer los datos"
+```
+
+### ✅ OBLIGATORIO
+
+```typescript
+// ✅ BIEN: Validar con curl antes de responder
+"Fix aplicado. Validando con curl..."
+curl -X POST 'http://localhost:3000/api/cost-updates/preview' ...
+// → Verificado: costos ahora se muestran correctamente ($150.00, $230.00, etc.)
+
+// ✅ BIEN: Validar con Playwright
+"Validando UI con Playwright..."
+// Screenshot: muestra los costos correctos en la tabla
+
+// ✅ BIEN: Validar con psql
+"Verificando en base de datos..."
+psql $DATABASE_URL -c "SELECT replacementCost, costPrice FROM product LIMIT 5;"
+```
+
+## Reglas de Validación
+
+1. **Siempre validar después de cambios críticos**:
+   - Conversiones de tipos (Prisma Decimal → number)
+   - Queries de base de datos
+   - APIs que devuelven datos calculados
+   - UI que muestra datos transformados
+
+2. **Si la validación falla, no ocultarlo**:
+   - Reportar el error exacto
+   - Mostrar el output de la herramienta usada
+   - Proponer siguiente paso
+
+3. **Preferir validación automática sobre manual**:
+   - Usar tools MCP cuando estén disponibles
+   - Scripts de validación reproducibles
+   - Tests que capturen el problema
+
+## Ejemplo Completo
+
+```typescript
+// Usuario: "Los costos aparecen en 0"
+
+// 1. Investigar
+"Viendo el código... el problema es que Prisma Decimal no se convierte correctamente"
+
+// 2. Aplicar fix
+"Agrego función decimalToNumber() que usa .toNumber() del objeto Decimal"
+
+// 3. VALIDAR (paso crítico)
+"Validando con curl..."
+$ curl -X POST 'http://localhost:3000/api/cost-updates/preview' \
+  -H 'Content-Type: application/json' \
+  -b 'rpm_debug_auth=...' \
+  --data-raw '{"filters":{},"adjustment":{"type":"PERCENTAGE_INC","value":10},"page":1,"pageSize":3}'
+
+// Output:
+// {"items":[
+//   {"id":"...","currentCost":150.50,"newCost":165.55,...},  ← ✅ CORRECTO
+//   {"id":"...","currentCost":230.00,"newCost":253.00,...}   ← ✅ CORRECTO
+// ]}
+
+// 4. Responder confirmando
+"✅ Fix validado. Ahora muestra costos correctos: $150.50 → $165.55, $230.00 → $253.00"
+```
+
+---
+
 # Storybook Integration - OBLIGATORIO
 
 ## REGLA FUNDAMENTAL: Storybook SIEMPRE Actualizado
