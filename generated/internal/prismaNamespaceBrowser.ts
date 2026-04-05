@@ -373,7 +373,6 @@ export const ProductScalarFieldEnum = {
   name: 'name',
   description: 'description',
   costPrice: 'costPrice',
-  salePrice: 'salePrice',
   replacementCost: 'replacementCost',
   stock: 'stock',
   minStock: 'minStock',
