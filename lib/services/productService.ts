@@ -210,8 +210,8 @@ export async function updateProduct(id: string, input: UpdateProductInput): Prom
   if (input.categoryId !== undefined) {
     data.category = { connect: { id: input.categoryId } };
   }
-  if (input.costPrice !== undefined) data.costPrice = new Prisma.Decimal(input.costPrice);
-  if (input.replacementCost !== undefined) data.replacementCost = new Prisma.Decimal(input.replacementCost);
+  if (input.costPrice !== undefined) data.costPrice = input.costPrice.toString();
+  if (input.replacementCost !== undefined) data.replacementCost = input.replacementCost.toString();
   if (input.stock !== undefined) data.stock = input.stock;
   if (input.minStock !== undefined) data.minStock = input.minStock;
   if (input.supplierId !== undefined) {
@@ -410,7 +410,7 @@ export async function createStockMovement(input: CreateMovementInput): Promise<S
       newStock: input.newStock,
       reason: input.reason,
       reasonDetails: input.reasonDetails || null,
-      salePrice: input.salePrice ? new Prisma.Decimal(input.salePrice) : null,
+      salePrice: input.salePrice ? input.salePrice.toString() : null,
     },
   });
 

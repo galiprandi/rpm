@@ -93,9 +93,16 @@ export async function POST(request: NextRequest) {
     // Generar SKU automático si no se proporciona
     const sku = body.sku || nanoid(8);
 
-    if (body.replacementCost === undefined || body.replacementCost === null) {
+    if (body.replacementCost === undefined || body.replacementCost === null || isNaN(body.replacementCost)) {
       return NextResponse.json(
         { error: 'replacementCost es requerido' },
+        { status: 400 }
+      );
+    }
+
+    if (body.costPrice === undefined || body.costPrice === null || isNaN(body.costPrice)) {
+      return NextResponse.json(
+        { error: 'costPrice es requerido' },
         { status: 400 }
       );
     }
@@ -125,8 +132,8 @@ export async function POST(request: NextRequest) {
         sku: sku,
         name: body.name,
         description: body.description || null,
-        costPrice: new Prisma.Decimal(body.costPrice),
-        replacementCost: new Prisma.Decimal(body.replacementCost),
+        costPrice: body.costPrice.toString(),
+        replacementCost: body.replacementCost.toString(),
         stock: body.stock || 0,
         minStock: body.minStock || 0,
         supplierId: body.supplierId || null,
