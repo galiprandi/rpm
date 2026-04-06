@@ -87,7 +87,7 @@ function isLowStock(stock: number, minStock: number): boolean {
 }
 
 // Helper: Transform Prisma product to Product type
-type PrismaProductWithCategory = Prisma.ProductGetPayload<{ include: { category: true } }>;
+type PrismaProductWithCategory = Prisma.productGetPayload<{ include: { category: true } }>;
 
 function transformProduct(product: PrismaProductWithCategory): Product {
   const cost = product.costPrice?.toNumber ? product.costPrice.toNumber() : Number(product.costPrice) || 0;
@@ -108,7 +108,7 @@ function transformProduct(product: PrismaProductWithCategory): Product {
  * Get all products with optional filters
  */
 export async function getProducts(filters: ProductFilters = {}): Promise<ProductListResult> {
-  const where: Prisma.ProductWhereInput = {};
+  const where: Prisma.productWhereInput = {};
 
   // Search by EAN, name, or SKU
   if (filters.search) {
@@ -204,7 +204,7 @@ export async function createProduct(input: CreateProductInput): Promise<Product>
  * Update an existing product
  */
 export async function updateProduct(id: string, input: UpdateProductInput): Promise<Product> {
-  const data: Prisma.ProductUpdateInput = {};
+  const data: Prisma.productUpdateInput = {};
 
   if (input.sku !== undefined) data.sku = input.sku;
   if (input.name !== undefined) data.name = input.name;
@@ -341,7 +341,7 @@ export async function updateStock(
   quantity: number,
   operation: 'add' | 'subtract' | 'set'
 ): Promise<Product> {
-  let data: Prisma.ProductUpdateInput;
+  let data: Prisma.productUpdateInput;
 
   switch (operation) {
     case 'add':
