@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     const customers = await prisma.customer.findMany({
       where,
       include: {
-        vehicles: {
+        vehicle: {
           select: {
             id: true,
             identifier: true,
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
         },
         _count: {
           select: {
-            workOrders: true,
+            work_order: true,
           },
         },
       },

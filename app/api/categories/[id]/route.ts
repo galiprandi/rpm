@@ -19,7 +19,7 @@ export async function GET(request: NextRequest, { params }: Params) {
       where: { id },
       include: {
         _count: {
-          select: { products: true },
+          select: { product: true },
         },
       },
     });
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest, { params }: Params) {
     return NextResponse.json({
       category: {
         ...category,
-        productCount: category._count.products,
+        productCount: category._count.product,
         _count: undefined,
       },
     });
@@ -110,7 +110,7 @@ export async function DELETE(request: NextRequest, { params }: Params) {
       where: { id },
       include: {
         _count: {
-          select: { products: true },
+          select: { product: true },
         },
       },
     });
@@ -123,7 +123,7 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     }
 
     // Verificar que no tenga productos activos
-    if (existing._count.products > 0) {
+    if (existing._count.product > 0) {
       return NextResponse.json(
         { error: 'No se puede desactivar una categoría con productos' },
         { status: 400 }

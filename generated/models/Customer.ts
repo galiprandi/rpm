@@ -288,7 +288,7 @@ export type customerScalarWhereWithAggregatesInput = {
 }
 
 export type customerCreateInput = {
-  id: string
+  id?: string
   phone?: string | null
   phoneAlt?: string | null
   email?: string | null
@@ -303,7 +303,7 @@ export type customerCreateInput = {
 }
 
 export type customerUncheckedCreateInput = {
-  id: string
+  id?: string
   phone?: string | null
   phoneAlt?: string | null
   email?: string | null
@@ -348,7 +348,7 @@ export type customerUncheckedUpdateInput = {
 }
 
 export type customerCreateManyInput = {
-  id: string
+  id?: string
   phone?: string | null
   phoneAlt?: string | null
   email?: string | null
@@ -457,7 +457,7 @@ export type customerUpdateOneRequiredWithoutWork_orderNestedInput = {
 }
 
 export type customerCreateWithoutVehicleInput = {
-  id: string
+  id?: string
   phone?: string | null
   phoneAlt?: string | null
   email?: string | null
@@ -471,7 +471,7 @@ export type customerCreateWithoutVehicleInput = {
 }
 
 export type customerUncheckedCreateWithoutVehicleInput = {
-  id: string
+  id?: string
   phone?: string | null
   phoneAlt?: string | null
   email?: string | null
@@ -529,7 +529,7 @@ export type customerUncheckedUpdateWithoutVehicleInput = {
 }
 
 export type customerCreateWithoutWork_orderInput = {
-  id: string
+  id?: string
   phone?: string | null
   phoneAlt?: string | null
   email?: string | null
@@ -543,7 +543,7 @@ export type customerCreateWithoutWork_orderInput = {
 }
 
 export type customerUncheckedCreateWithoutWork_orderInput = {
-  id: string
+  id?: string
   phone?: string | null
   phoneAlt?: string | null
   email?: string | null

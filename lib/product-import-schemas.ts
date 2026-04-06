@@ -39,12 +39,14 @@ export interface ImportOptions {
   skipStockLessThanOne: boolean;
   duplicateAction: DuplicateActionType;
   defaultCategoryId?: string;
+  defaultSupplierId?: string;
 }
 
 export const ImportOptionsSchema = z.object({
   skipStockLessThanOne: z.boolean().default(false),
   duplicateAction: DuplicateActionEnum.default('skip'),
   defaultCategoryId: z.string().optional(), // ID de categoría existente
+  defaultSupplierId: z.string().optional(), // ID de proveedor existente
 });
 
 // ============================================================================

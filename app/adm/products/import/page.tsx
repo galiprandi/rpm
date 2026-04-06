@@ -23,9 +23,15 @@ interface Category {
   name: string;
 }
 
+interface Supplier {
+  id: string;
+  name: string;
+}
+
 export default function ProductImporterPage() {
   const { currentStep, reset, fileData, configuration } = useImportState();
   const [existingCategories, setExistingCategories] = useState<Category[]>([]);
+  const [existingSuppliers, setExistingSuppliers] = useState<Supplier[]>([]);
   const hasReset = useRef(false);
 
   // Reset solo si es navegación fresca (sin datos previos) - evita bucle infinito
@@ -35,7 +41,7 @@ export default function ProductImporterPage() {
       console.log('🧹 Estado del importador reiniciado (navegación fresca)');
       hasReset.current = true;
     }
-  }, [fileData, configuration]);
+  }, [fileData, configuration, reset]);
 
   // Load existing categories on mount
   useEffect(() => {
@@ -44,6 +50,18 @@ export default function ProductImporterPage() {
       .then((data) => {
         if (data.categories) {
           setExistingCategories(data.categories);
+        }
+      })
+      .catch(console.error);
+  }, []);
+
+  // Load existing suppliers on mount
+  useEffect(() => {
+    fetch('/api/suppliers')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.suppliers) {
+          setExistingSuppliers(data.suppliers);
         }
       })
       .catch(console.error);
@@ -61,7 +79,7 @@ export default function ProductImporterPage() {
       case 0:
         return <UploadStep />;
       case 1:
-        return <ConfigurationStep existingCategories={existingCategories} />;
+        return <ConfigurationStep existingCategories={existingCategories} existingSuppliers={existingSuppliers} />;
       case 2:
         return <ReviewStep existingCategories={existingCategories} />;
       case 3:

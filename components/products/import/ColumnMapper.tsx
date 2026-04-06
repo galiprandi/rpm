@@ -20,6 +20,11 @@ interface Category {
   name: string;
 }
 
+interface Supplier {
+  id: string;
+  name: string;
+}
+
 type FieldType = 'string' | 'decimal' | 'integer' | 'category';
 
 interface DBField {
@@ -74,6 +79,7 @@ interface ColumnMapperProps {
   importOptions: ImportOptions;
   onImportOptionsChange: (options: ImportOptions) => void;
   existingCategories: Category[];
+  existingSuppliers: Supplier[];
 }
 
 export function ColumnMapper({
@@ -83,6 +89,7 @@ export function ColumnMapper({
   importOptions,
   onImportOptionsChange,
   existingCategories,
+  existingSuppliers,
 }: ColumnMapperProps) {
   // Load saved mapping on mount - DESACTIVADO
   useEffect(() => {
@@ -189,6 +196,31 @@ export function ColumnMapper({
                   {existingCategories.map((cat) => (
                     <SelectItem key={cat.id} value={cat.id}>
                       {cat.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Label className="text-sm text-muted-foreground">Proveedor por defecto:</Label>
+              <Select
+                value={importOptions.defaultSupplierId || '_none'}
+                onValueChange={(value) =>
+                  onImportOptionsChange({
+                    ...importOptions,
+                    defaultSupplierId: value === '_none' ? undefined : value,
+                  })
+                }
+              >
+                <SelectTrigger className="w-[180px] h-8 text-sm">
+                  <SelectValue placeholder="Sin proveedor" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="_none">Sin proveedor</SelectItem>
+                  {existingSuppliers.map((supplier) => (
+                    <SelectItem key={supplier.id} value={supplier.id}>
+                      {supplier.name}
                     </SelectItem>
                   ))}
                 </SelectContent>

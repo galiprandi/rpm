@@ -301,6 +301,7 @@ No requiere cambios en schema.prisma. Usa modelos existentes:
 | `skipStockLessThanOne` | switch | false | Omitir productos con stock < 1 |
 | `duplicateAction` | select | 'skip' | Acción al detectar duplicados: skip, update, create_with_suffix |
 | `defaultCategoryId` | select | "_none" | Categoría por defecto (usar "/adm/categories" para crear) |
+| `defaultSupplierId` | select | "_none" | Proveedor por defecto (usar "/adm/suppliers" para crear) |
 
 ### Opciones por Columna (Step 2 - Mapeo)
 
@@ -401,6 +402,7 @@ No requiere cambios en schema.prisma. Usa modelos existentes:
 - [ ] Opción **"Omitir vacíos"** (`skipEmpty`): checkbox por columna que excluye productos donde esa columna esté vacía
 - [ ] Opción **"Acción con duplicados"** (`duplicateAction`): select con opciones skip | update | create_with_suffix
 - [ ] Opción **"Categoría por defecto"** (`defaultCategoryName`): input para nombre de categoría cuando rubro está vacío
+- [ ] Opción **"Proveedor por defecto"** (`defaultSupplierId`): select para asignar proveedor cuando no se especifica
 
 ### Procesamiento de Datos
 - [ ] **Capitalización**: Nombres de productos y categorías se capitalizan automáticamente

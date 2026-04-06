@@ -8,11 +8,22 @@ import { StepActions } from '../shared/StepActions';
 import { useImportState } from '@/app/adm/products/import/hooks/useImportState';
 import { ColumnMapper } from '../ColumnMapper';
 
-interface ConfigurationStepProps {
-  existingCategories: Array<{ id: string; name: string }>;
+interface Category {
+  id: string;
+  name: string;
 }
 
-export function ConfigurationStep({ existingCategories }: ConfigurationStepProps) {
+interface Supplier {
+  id: string;
+  name: string;
+}
+
+interface ConfigurationStepProps {
+  existingCategories: Array<{ id: string; name: string }>;
+  existingSuppliers: Array<{ id: string; name: string }>;
+}
+
+export function ConfigurationStep({ existingCategories, existingSuppliers }: ConfigurationStepProps) {
   const { fileData, prevStep, nextStep, configuration, setMapping, setOptions } = useImportState();
   const fieldConfig = configuration.mapping;
   const globalOptions = configuration.options;
@@ -79,6 +90,7 @@ export function ConfigurationStep({ existingCategories }: ConfigurationStepProps
         importOptions={globalOptions}
         onImportOptionsChange={handleOptionsChange}
         existingCategories={existingCategories}
+        existingSuppliers={existingSuppliers}
       />
 
       <StepActions

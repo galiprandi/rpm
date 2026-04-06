@@ -11,13 +11,13 @@ export async function GET(
     const customer = await prisma.customer.findUnique({
       where: { id },
       include: {
-        vehicles: {
+        vehicle: {
           include: {
-            make: true,
-            model: true,
+            vehicle_make: true,
+            vehicle_model: true,
           },
         },
-        workOrders: {
+        work_order: {
           orderBy: { createdAt: "desc" },
           take: 10,
           include: {

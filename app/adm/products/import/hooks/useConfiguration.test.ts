@@ -109,6 +109,8 @@ describe('useConfiguration Hook', () => {
       
       expect(result.current.globalOptions.skipStockLessThanOne).toBe(false);
       expect(result.current.globalOptions.duplicateAction).toBe('skip');
+      expect(result.current.globalOptions.defaultCategoryId).toBeUndefined();
+      expect(result.current.globalOptions.defaultSupplierId).toBeUndefined();
     });
 
     it('should update global options', () => {
@@ -118,11 +120,15 @@ describe('useConfiguration Hook', () => {
         result.current.updateOptions({
           skipStockLessThanOne: true,
           duplicateAction: 'create_with_suffix',
+          defaultCategoryId: 'cat-123',
+          defaultSupplierId: 'sup-456',
         });
       });
 
       expect(result.current.globalOptions.skipStockLessThanOne).toBe(true);
       expect(result.current.globalOptions.duplicateAction).toBe('create_with_suffix');
+      expect(result.current.globalOptions.defaultCategoryId).toBe('cat-123');
+      expect(result.current.globalOptions.defaultSupplierId).toBe('sup-456');
     });
 
     it('should update only specified options', () => {
@@ -134,6 +140,8 @@ describe('useConfiguration Hook', () => {
 
       expect(result.current.globalOptions.skipStockLessThanOne).toBe(true);
       expect(result.current.globalOptions.duplicateAction).toBe('skip'); // unchanged
+      expect(result.current.globalOptions.defaultCategoryId).toBeUndefined(); // unchanged
+      expect(result.current.globalOptions.defaultSupplierId).toBeUndefined(); // unchanged
     });
   });
 
@@ -196,11 +204,17 @@ describe('useConfiguration Hook', () => {
       // Set some configuration
       act(() => {
         result.current.updateField('name', { column: 'name', transform: 'capitalize', skipEmpty: false, defaultValue: '' });
-        result.current.updateOptions({ skipStockLessThanOne: true });
+        result.current.updateOptions({ 
+          skipStockLessThanOne: true,
+          defaultCategoryId: 'cat-123',
+          defaultSupplierId: 'sup-456',
+        });
       });
 
       expect(Object.keys(result.current.fieldConfig)).toHaveLength(1);
       expect(result.current.globalOptions.skipStockLessThanOne).toBe(true);
+      expect(result.current.globalOptions.defaultCategoryId).toBe('cat-123');
+      expect(result.current.globalOptions.defaultSupplierId).toBe('sup-456');
 
       // Reset
       act(() => {
@@ -210,6 +224,8 @@ describe('useConfiguration Hook', () => {
       expect(Object.keys(result.current.fieldConfig)).toHaveLength(0);
       expect(result.current.globalOptions.skipStockLessThanOne).toBe(false);
       expect(result.current.globalOptions.duplicateAction).toBe('skip');
+      expect(result.current.globalOptions.defaultCategoryId).toBeUndefined();
+      expect(result.current.globalOptions.defaultSupplierId).toBeUndefined();
     });
   });
 
@@ -239,11 +255,15 @@ describe('useConfiguration Hook', () => {
         result.current.updateOptions({
           skipStockLessThanOne: true,
           duplicateAction: 'create_with_suffix',
+          defaultCategoryId: 'cat-123',
+          defaultSupplierId: 'sup-456',
         });
       });
 
       expect(typeof result.current.globalOptions.skipStockLessThanOne).toBe('boolean');
       expect(['skip', 'create_with_suffix']).toContain(result.current.globalOptions.duplicateAction);
+      expect(typeof result.current.globalOptions.defaultCategoryId).toBe('string');
+      expect(typeof result.current.globalOptions.defaultSupplierId).toBe('string');
     });
   });
 
@@ -253,7 +273,11 @@ describe('useConfiguration Hook', () => {
       
       act(() => {
         result.current.updateField('name', { column: 'name', transform: 'capitalize', skipEmpty: false, defaultValue: '' });
-        result.current.updateOptions({ skipStockLessThanOne: true });
+        result.current.updateOptions({ 
+          skipStockLessThanOne: true,
+          defaultCategoryId: 'cat-123',
+          defaultSupplierId: 'sup-456',
+        });
       });
 
       // Wait for debounced save
@@ -281,7 +305,12 @@ describe('useConfiguration Hook', () => {
         fieldConfig: {
           name: { column: 'name', transform: 'capitalize', skipEmpty: false, defaultValue: '' },
         },
-        globalOptions: { skipStockLessThanOne: true, duplicateAction: 'skip' },
+        globalOptions: { 
+          skipStockLessThanOne: true, 
+          duplicateAction: 'skip',
+          defaultCategoryId: 'cat-123',
+          defaultSupplierId: 'sup-456',
+        },
       };
       
       localStorageMock.setItem('product-import-configuration', JSON.stringify(initialState));
@@ -293,10 +322,14 @@ describe('useConfiguration Hook', () => {
       if (persistedData) {
         expect(result.current.fieldConfig.name).toBeDefined();
         expect(result.current.globalOptions.skipStockLessThanOne).toBe(true);
+        expect(result.current.globalOptions.defaultCategoryId).toBe('cat-123');
+        expect(result.current.globalOptions.defaultSupplierId).toBe('sup-456');
       } else {
         // If localStorage wasn't read, that's expected in test environment
         expect(result.current.fieldConfig.name).toBeUndefined();
         expect(result.current.globalOptions.skipStockLessThanOne).toBe(false);
+        expect(result.current.globalOptions.defaultCategoryId).toBeUndefined();
+        expect(result.current.globalOptions.defaultSupplierId).toBeUndefined();
       }
     });
   });
