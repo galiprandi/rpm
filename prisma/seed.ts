@@ -30,28 +30,6 @@ const defaultSupplier = {
   updatedAt: new Date(),
 };
 
-const adminUser = {
-  id: 'user-german',
-  name: 'Germán Aliprandi',
-  email: 'galiprandi@gmail.com',
-  emailVerified: true,
-  image: null,
-  role: 'ADMIN',
-  createdAt: new Date(),
-  updatedAt: new Date(),
-};
-
-const adminRole = {
-  id: 'role-admin',
-  email: 'galiprandi@gmail.com',
-  role: 'ADMIN',
-  name: 'Germán Aliprandi',
-  notes: 'Administrador del sistema',
-  isActive: true,
-  createdAt: new Date(),
-  updatedAt: new Date(),
-};
-
 const defaultPriceList = {
   id: 'pl-default',
   name: 'Lista General',
@@ -84,22 +62,6 @@ async function seed() {
     },
   });
   console.log('✅ Proveedor por defecto creado');
-
-  // Crear usuario administrador
-  await prisma.user.upsert({
-    where: { email: adminUser.email },
-    update: adminUser,
-    create: adminUser,
-  });
-  console.log('✅ Usuario administrador creado (Germán Aliprandi)');
-
-  // Crear rol ADMIN para el usuario
-  await prisma.user_role.upsert({
-    where: { email: adminRole.email },
-    update: adminRole,
-    create: adminRole,
-  });
-  console.log('✅ Rol ADMIN asignado');
 
   // Crear configuración de margen mínimo global
   await prisma.setting.upsert({

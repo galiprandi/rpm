@@ -2,22 +2,21 @@
 
 ## Overview
 
-Sistema de autenticación centralizado con NextAuth.js v5 mediante Google OAuth, implementando roles y permisos para el acceso diferenciado entre clientes y staff administrativo.
+Sistema de autenticación centralizado con Better Auth mediante Google OAuth, implementando roles y permisos para el acceso diferenciado entre clientes y staff administrativo.
 
 ## Stack Tecnológico
 
 ### Authentication Core
-- **Framework**: NextAuth.js v5 (Auth.js v5)
+- **Framework**: Better Auth
 - **Provider**: Google OAuth 2.0
-- **Validation**: Zod schemas
-- **Database**: Vercel Postgres para sesiones
-- **Session Management**: JWT + Database sessions
+- **Database**: PostgreSQL con Prisma ORM
+- **Session Management**: Database sessions con cookie caching
 
 ### Security Stack
 - **Password Hashing**: No aplica (Google OAuth)
-- **Session Storage**: Database + JWT
-- **CSRF Protection**: Integrado en NextAuth.js
-- **Rate Limiting**: Configurable en middleware
+- **Session Storage**: Database + Cookie Cache (5 minutos)
+- **CSRF Protection**: Integrado en Better Auth
+- **Account Linking**: Deshabilitado (solo un provider por usuario)
 
 ## Google OAuth Configuration
 
@@ -25,9 +24,9 @@ Sistema de autenticación centralizado con NextAuth.js v5 mediante Google OAuth,
 ```typescript
 // Google OAuth 2.0 Credentials
 - Client ID: Configurado en Google Cloud Console
-- Client Secret: Almacenado en Vercel Environment Variables
-- Authorized JavaScript Origins: https://rpm-wheat.vercel.app
-- Authorized Redirect URIs: https://rpm-wheat.vercel.app/api/auth/callback/google
+- Client Secret: Almacenado en Environment Variables
+- Authorized JavaScript Origins: http://localhost:3000 (dev), https://rpm-wheat.vercel.app (prod)
+- Authorized Redirect URIs: http://localhost:3000/api/auth/callback/google (dev), https://rpm-wheat.vercel.app/api/auth/callback/google (prod)
 ```
 
 ### Environment Variables
@@ -35,8 +34,9 @@ Sistema de autenticación centralizado con NextAuth.js v5 mediante Google OAuth,
 # .env.local (development)
 GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret
-NEXTAUTH_URL=http://localhost:3000
-NEXTAUTH_SECRET=your-nextauth-secret
+BETTER_AUTH_URL=http://localhost:3000
+BETTER_AUTH_SECRET=your-better-auth-secret
+ADMIN_EMAILS=admin@example.com,galiprandi@gmail.com
 
 # Production (Vercel)
 # Configuradas en panel Vercel Environment Variables
@@ -48,149 +48,53 @@ NEXTAUTH_SECRET=your-nextauth-secret
 ```typescript
 type UserRole = 'ADMIN' | 'STAFF' | 'USER';
 
-// Mapeo de roles legado para compatibilidad
-const LEGACY_ROLE_MAP: Record<string, UserRole> = {
-  'ADMIN': 'ADMIN',
-  'SELLER': 'ADMIN',      // Sellers tienen acceso completo a ventas
-  'TECHNICIAN': 'ADMIN',  // Technicians tienen acceso a OTs
-  'CASHIER': 'ADMIN',     // Cashiers tienen acceso a caja
-  'STAFF': 'STAFF',
-  'USER': 'USER',
+// Role hierarchy for authorization
+const ROLE_HIERARCHY: Record<UserRole, number> = {
+  USER: 0,
+  STAFF: 1,
+  ADMIN: 2,
 };
 ```
 
-### Role Assignment Strategy (DB + Prisma Studio)
+### Role Assignment Strategy
 
-**Enfoque**: Roles almacenados en base de datos, gestionables vía Prisma Studio como CRUD temporal.
-
-```typescript
-// lib/auth/roles.ts
-import { prisma } from '@/lib/prisma';
-
-export type UserRole = 'ADMIN' | 'STAFF' | 'USER';
-
-// Domains that automatically get STAFF role if no explicit role in DB
-const STAFF_DOMAINS = ['rpmacc.com', 'rpm-sys.com'];
-
-// Mapeo de roles legado (para compatibilidad con DB existente)
-function mapLegacyRole(dbRole: string): UserRole {
-  const upperRole = dbRole.toUpperCase();
-  if (upperRole === 'ADMIN' || upperRole === 'SELLER' || 
-      upperRole === 'TECHNICIAN' || upperRole === 'CASHIER') {
-    return 'ADMIN';
-  }
-  if (upperRole === 'STAFF') return 'STAFF';
-  return 'USER';
-}
-
-// Obtener rol desde DB con fallback por dominio
-export async function getUserRole(email: string): Promise<UserRole> {
-  const normalizedEmail = email.toLowerCase().trim();
-  
-  // Check database for explicit role
-  const userRoleRecord = await prisma.userRole.findUnique({
-    where: { email: normalizedEmail },
-  });
-  
-  if (userRoleRecord?.isActive) {
-    return mapLegacyRole(userRoleRecord.role);
-  }
-  
-  // Domain-based fallback for company emails
-  if (STAFF_DOMAINS.some(domain => email.endsWith(`@${domain}`))) {
-    return 'STAFF';
-  }
-  
-  return 'USER';
-}
-```
-
-### Modelo de Datos UserRole
+**Enfoque**: Roles almacenados en base de datos (tabla `user`), con sincronización automática vía `ADMIN_EMAILS`.
 
 ```prisma
 // prisma/schema.prisma
-model UserRole {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  role      String   // ADMIN, SELLER, TECHNICIAN, CASHIER, USER
-  name      String?  // Nombre para identificar quién es
-  notes     String?  // Observaciones (ej: "Dueño", "Vendedor turno mañana")
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  name          String?
+  role          String    @default("USER")  // USER | STAFF | ADMIN
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  accounts      Account[]
+  sessions      Session[]
   
   @@index([email])
   @@index([role])
 }
 ```
 
-### Gestión vía Prisma Studio
-
-```bash
-# Iniciar Prisma Studio (CRUD temporal)
-npx prisma studio
-```
-
-**URL**: `http://localhost:5555` → Tabla `UserRole`
-
-**Operaciones disponibles**:
-- ✅ Agregar nuevo usuario con rol
-- ✅ Cambiar rol de usuario existente
-- ✅ Desactivar usuario (isActive = false)
-- ✅ Ver todos los usuarios por rol
-
-**Ejemplo de seed inicial**:
-
-```typescript
-// prisma/seed-roles.ts
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
-
-async function main() {
-  const roles = [
-    { email: 'admin@rpmacc.com', role: 'ADMIN', name: 'Administrador' },
-    { email: 'galiprandi@gmail.com', role: 'ADMIN', name: 'Germán' },
-    { email: 'vendedor1@rpmacc.com', role: 'SELLER', name: 'Vendedor Mañana' },
-  ];
-  
-  for (const userRole of roles) {
-    await prisma.userRole.upsert({
-      where: { email: userRole.email },
-      update: userRole,
-      create: userRole,
-    });
-  }
-  
-  console.log('Roles seed completado');
-}
-
-main();
-```
-
-### Ventajas de esta estrategia
-
-| Ventaja | Descripción |
-|---------|-------------|
-| **Sin deploys** | Agregar usuario = 30 seg en Prisma Studio |
-| **Audit trail** | `createdAt`, `updatedAt` trazan cambios |
-| **Flexible** | Desactivar sin borrar, notas por usuario |
-| **Reutilizable** | Mismo patrón para otros configs (ver abajo) |
-| **Zero UI dev** | No necesitas crear pantalla de admin en Fase 1 |
-
-### Environment-based Admin Override
+### ADMIN_EMAILS Environment Variable
 
 Para casos de emergencia o primer setup sin acceso a DB, se puede configurar admins vía environment variable:
 
 ```bash
 # .env.local o Vercel Environment Variables
-ADMIN_EMAILS=admin@example.com,superuser@company.com
+ADMIN_EMAILS=admin@example.com,galiprandi@gmail.com
 ```
 
 **Comportamiento:**
 - Los emails en `ADMIN_EMAILS` automáticamente reciben rol `ADMIN` al iniciar sesión
-- Funciona incluso si el usuario no existe en tabla `UserRole`
-- Override se aplica server-side en `getSession()` de `auth-server.ts`
+- Funciona incluso si el usuario no existe en DB (Better Auth lo crea automáticamente)
+- Override se aplica en dos capas:
+  1. **En memoria** (`getSession()` en `lib/auth-server.ts`) - para autorización inmediata
+  2. **En base de datos** (`proxy.ts`) - para persistencia automática
 - Útil para:
   - Primer acceso tras reset de DB (sin seed)
   - Recuperación de acceso administrativo
@@ -198,156 +102,213 @@ ADMIN_EMAILS=admin@example.com,superuser@company.com
 
 **Seguridad:**
 - Variable no expuesta al cliente (server-side only)
-- Recomendado rotar/remover después del setup inicial
-- No reemplaza la gestión de roles vía DB, es fallback temporal
+- Validación de sesión vía Better Auth (cookies seguras)
+- No reemplaza la gestión de roles vía DB, funciona en conjunto
 
-### Otras aplicaciones del patrón DB + Prisma Studio
-
-Este patrón puede reutilizarse para:
+### Proxy de Sincronización Automática
 
 ```typescript
-// Configuraciones del sistema (sin UI inicial)
-model AppConfig {
-  id        String   @id @default(uuid())
-  key       String   @unique // "afip_point_of_sale", "business_hours"
-  value     String     // JSON string
-  category  String     // "afip", "business", "notifications"
-  updatedAt DateTime   @updatedAt
-}
+// proxy.ts (Next.js 16 middleware)
+export async function proxy(request: NextRequest) {
+  // Skip static files and API routes
+  if (request.nextUrl.pathname.startsWith('/_next') ||
+      request.nextUrl.pathname.startsWith('/api/auth')) {
+    return NextResponse.next();
+  }
 
-// Categorías de productos (dinámicas)
-model Category {
-  id          String   @id @default(uuid())
-  name        String   @unique
-  margin      Float    @default(30) // Margen sugerido %
-  description String?
-  isActive    Boolean  @default(true)
-}
+  try {
+    const session = await auth.api.getSession({
+      headers: request.headers,
+    });
 
-// Servicios de instalación (Fase 2)
-model Service {
-  id          String   @id @default(uuid())
-  code        String   @unique // "POL-S", "LED-4F"
-  name        String
-  basePrice   Float    // Precio base
-  vehicleSize String   // "chico", "mediano", "grande", "todos"
+    // Sync role with ADMIN_EMAILS if user is authenticated
+    if (session?.user?.email) {
+      const adminEmails = process.env.ADMIN_EMAILS?.split(',').map(e => e.trim().toLowerCase()) || [];
+      
+      if (adminEmails.includes(session.user.email.toLowerCase())) {
+        const currentRole = (session.user as { role?: string }).role;
+        
+        // Update role in database if not already ADMIN
+        if (currentRole !== 'ADMIN') {
+          await prisma.user.update({
+            where: { id: session.user.id },
+            data: { role: 'ADMIN' },
+          });
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error syncing role in proxy:', error);
+  }
+
+  return NextResponse.next();
 }
 ```
 
-**Todas gestionables vía Prisma Studio hasta que se desarrolle UI específica.**
+**Características:**
+- Se ejecuta automáticamente en cada request
+- Transparente al frontend
+- No bloquea requests si falla (error handling)
+- Solo actualiza si es necesario (optimización)
 
-## NextAuth.js Configuration
+## Better Auth Configuration
 
 ### Core Setup
 ```typescript
-// app/api/auth/[...nextauth]/route.ts
-import { NextAuthOptions } from 'next-auth';
-import GoogleProvider from 'next-auth/providers/google';
-import { getUserRole } from '@/lib/auth/roles';
+// auth.ts
+import { betterAuth } from 'better-auth';
+import { prismaAdapter } from 'better-auth/adapters/prisma';
+import { prisma } from './lib/prisma';
 
-export const authOptions: NextAuthOptions = {
-  providers: [
-    GoogleProvider({
+export const auth = betterAuth({
+  database: prismaAdapter(prisma, {
+    provider: 'postgresql',
+  }),
+  account: {
+    accountLinking: {
+      enabled: false,
+    },
+  },
+  emailAndPassword: {
+    enabled: false,
+  },
+  socialProviders: {
+    google: {
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    })
-  ],
-  callbacks: {
-    async jwt({ token, account, profile }) {
-      if (account && profile?.email) {
-        token.role = await getUserRole(profile.email); // ← Ahora async
-        token.email = profile.email;
-        token.name = profile.name;
-        token.picture = profile.picture;
-      }
-      return token;
-    },
-    async session({ session, token }) {
-      session.user.id = token.sub!;
-      session.user.email = token.email!;
-      session.user.name = token.name!;
-      session.user.image = token.picture!;
-      session.user.role = token.role as UserRole;
-      return session;
     },
   },
   session: {
-    strategy: 'jwt',
-  },
-  pages: {
-    signIn: '/login',
-    error: '/auth/error',
-  },
-};
-```
-
-### Session Types
-```typescript
-// types/next-auth.d.ts
-import { UserRole } from '@/lib/auth/roles';
-
-declare module 'next-auth' {
-  interface Session {
-    user: {
-      id: string;
-      email: string;
-      name: string;
-      image?: string;
-      role: UserRole;
-    };
-  }
-
-  interface User {
-    role: UserRole;
-  }
-}
-
-declare module 'next-auth/jwt' {
-  interface JWT {
-    role: UserRole;
-  }
-}
-```
-
-## Middleware de Protección
-
-### Route Protection
-```typescript
-// middleware.ts
-import { withAuth } from 'next-auth/middleware';
-import { UserRole } from '@/lib/auth/roles';
-
-export default withAuth({
-  pages: {
-    signIn: '/login',
+    expiresIn: 60 * 60 * 24 * 7, // 7 days
+    updateAge: 60 * 60 * 24, // 1 day
+    cookieCache: {
+      enabled: true,
+      maxAge: 5 * 60, // 5 minutes
+    },
   },
 });
+```
 
-export const config = {
-  matcher: [
-    '/adm/:path*',
-    '/api/admin/:path*',
-    '/api/auth/protected/:path*',
-  ],
-};
+### Session Helpers
+```typescript
+// lib/auth-server.ts
+import { auth } from '@/lib/auth';
+import { headers } from 'next/headers';
+import { UserRole } from './auth/roles';
+
+export async function getSession() {
+  const headersList = await headers();
+  const session = await auth.api.getSession({ headers: headersList });
+  
+  // Override role based on ADMIN_EMAILS environment variable
+  if (session?.user) {
+    const userEmail = (session.user as { email?: string }).email;
+    const adminEmails = process.env.ADMIN_EMAILS?.split(',').map(e => e.trim().toLowerCase()) || [];
+    
+    if (userEmail && adminEmails.includes(userEmail.toLowerCase())) {
+      (session.user as { role: string }).role = 'ADMIN';
+    }
+  }
+  
+  return session;
+}
+
+export async function hasRole(requiredRole: UserRole): Promise<boolean> {
+  const session = await getSession();
+  if (!session?.user) return false;
+  
+  const userRole = (session.user as { role: string }).role as UserRole;
+  const ROLE_HIERARCHY: Record<UserRole, number> = {
+    USER: 0,
+    STAFF: 1,
+    ADMIN: 2,
+  };
+  
+  return ROLE_HIERARCHY[userRole] >= ROLE_HIERARCHY[requiredRole];
+}
+```
+
+## Debug Auth (Development Only)
+
+Para facilitar testing durante desarrollo, existe un modo debug que permite bypass de autenticación Google OAuth.
+
+### Activar Debug Auth
+```bash
+# .env.local
+DEBUG_AUTH_ENABLED=true
+DEBUG_AUTH_DEFAULT_ROLE=ADMIN  # USER | STAFF | ADMIN
+```
+
+### Comportamiento
+- Solo funciona cuando `NODE_ENV !== 'production'`
+- Requiere `DEBUG_AUTH_ENABLED=true` explícito
+- Crea sesión mock con cookie `rpm_debug_auth`
+- Compatible con override de `ADMIN_EMAILS`
+
+### API de Debug
+- `POST /api/auth/debug` - Crear sesión con rol específico
+- `DELETE /api/auth/debug` - Limpiar sesión
+- `GET /api/auth/debug` - Verificar estado de sesión
+
+## Route Protection
+
+### Server Components
+```typescript
+// app/adm/layout.tsx
+import { getSession, hasRole } from '@/lib/auth-server';
+import { UserRole } from '@/lib/auth/roles';
+import { redirect } from 'next/navigation';
+
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  const session = await getSession();
+
+  if (!session?.user) {
+    redirect('/login?callbackUrl=/adm');
+  }
+
+  const isAuthorized = await hasRole(UserRole.STAFF);
+  
+  if (!isAuthorized) {
+    redirect('/');
+  }
+
+  return <>{children}</>;
+}
+```
+
+### Client Components
+```typescript
+// app/adm/page.tsx
+'use client';
+import { authClient } from '@/lib/auth-client';
+
+export default function AdminDashboard() {
+  const { data: session } = authClient.useSession();
+
+  if (!session) {
+    return <div>No autorizado</div>;
+  }
+
+  // Render admin content
+}
 ```
 
 ### Role-based Access Control
 ```typescript
-// lib/auth/rbac.ts - SIMPLIFICADO
-export const hasRole = (userRole: string, requiredRole: string): boolean => {
-  const roleHierarchy: Record<string, number> = {
-    'USER': 0,
-    'STAFF': 1,
-    'ADMIN': 2,
+// lib/auth-server.ts
+export async function hasRole(requiredRole: UserRole): Promise<boolean> {
+  const session = await getSession();
+  if (!session?.user) return false;
+  
+  const userRole = (session.user as { role: string }).role as UserRole;
+  const ROLE_HIERARCHY: Record<UserRole, number> = {
+    USER: 0,
+    STAFF: 1,
+    ADMIN: 2,
   };
   
-  return roleHierarchy[userRole] >= roleHierarchy[requiredRole];
-};
-
-export const canAccessAdm = (role: UserRole): boolean => {
-  return role === 'ADMIN' || role === 'STAFF';
-};
+  return ROLE_HIERARCHY[userRole] >= ROLE_HIERARCHY[requiredRole];
+}
 ```
 
 ## API Routes Protection
@@ -355,65 +316,38 @@ export const canAccessAdm = (role: UserRole): boolean => {
 ### Protected API Example
 ```typescript
 // app/api/admin/users/route.ts
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-import { hasRole, UserRole } from '@/lib/auth/rbac';
+import { getSession, hasRole } from '@/lib/auth-server';
+import { UserRole } from '@/lib/auth/roles';
+import { NextResponse } from 'next/server';
 
 export async function GET() {
-  const session = await getServerSession(authOptions);
+  const session = await getSession();
   
   if (!session) {
-    return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
   
-  if (!hasRole(session.user.role, UserRole.ADMIN)) {
-    return Response.json({ error: 'Forbidden' }, { status: 403 });
+  if (!await hasRole(UserRole.ADMIN)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
   
   // Proceed with admin logic
+  return NextResponse.json({ users: [] });
 }
-```
-
-## Zod Validation Schemas
-
-### Auth Validation
-```typescript
-// schemas/auth.ts
-import { z } from 'zod';
-import { UserRole } from '@/lib/auth/roles';
-
-export const UserRoleSchema = z.enum(['USER', 'STAFF', 'ADMIN']);
-
-export const SessionSchema = z.object({
-  user: z.object({
-    id: z.string(),
-    email: z.string().email(),
-    name: z.string(),
-    image: z.string().url().optional(),
-    role: UserRoleSchema,
-  }),
-  expires: z.string(),
-});
-
-export const AuthCallbackSchema = z.object({
-  code: z.string(),
-  state: z.string().optional(),
-});
 ```
 
 ## Security Best Practices
 
 ### Session Security
-- **JWT Expiration**: 24 hours por defecto
-- **Session Refresh**: Automático con sliding sessions
-- **Secure Cookies**: HttpOnly, Secure, SameSite
-- **CSRF Protection**: Built-in NextAuth.js
+- **Session Expiration**: 7 días
+- **Cookie Cache**: 5 minutos para optimización
+- **Secure Cookies**: HttpOnly, Secure, SameSite (configurado por Better Auth)
+- **CSRF Protection**: Built-in Better Auth
 
 ### OAuth Security
-- **State Parameter**: Validación CSRF en OAuth flow
-- **PKCE**: Proof Key for Code Exchange (opcional)
+- **State Parameter**: Validación CSRF en OAuth flow (Better Auth)
 - **Token Storage**: Server-side only
-- **Scope Limitation**: Mínimos permisos necesarios
+- **Scope Limitation**: Mínimos permisos necesarios (email, profile)
 
 ### Environment Security
 ```typescript
@@ -421,7 +355,7 @@ export const AuthCallbackSchema = z.object({
 const requiredEnvVars = [
   'GOOGLE_CLIENT_ID',
   'GOOGLE_CLIENT_SECRET', 
-  'NEXTAUTH_SECRET',
+  'BETTER_AUTH_SECRET',
 ];
 
 requiredEnvVars.forEach(envVar => {
@@ -435,7 +369,7 @@ requiredEnvVars.forEach(envVar => {
 
 ### Auth Error Types
 ```typescript
-// lib/auth/errors.ts
+// lib/auth-server.ts
 export enum AuthError {
   CONFIGURATION_ERROR = 'CONFIGURATION_ERROR',
   ACCESS_DENIED = 'ACCESS_DENIED',
@@ -456,90 +390,38 @@ export const getAuthErrorMessage = (error: AuthError): string => {
 };
 ```
 
-## Testing Strategy
-
-### Unit Tests
-```typescript
-// tests/auth.test.ts
-import { getUserRole } from '@/lib/auth/roles';
-import { UserRole } from '@/lib/auth/roles';
-
-describe('Auth Role Assignment', () => {
-  test('Assigns admin role to admin emails', async () => {
-    await prisma.userRole.create({
-      data: { email: 'admin@rpmacc.com', role: 'ADMIN', name: 'Admin' }
-    });
-    const role = await getUserRole('admin@rpmacc.com');
-    expect(role).toBe('ADMIN');
-  });
-  
-  test('Maps legacy SELLER role to ADMIN', async () => {
-    await prisma.userRole.create({
-      data: { email: 'vendedor@rpmacc.com', role: 'SELLER', name: 'Vendedor' }
-    });
-    const role = await getUserRole('vendedor@rpmacc.com');
-    expect(role).toBe('ADMIN');  // SELLER maps to ADMIN
-  });
-  
-  test('Assigns user role to external emails', async () => {
-    const role = await getUserRole('cliente@gmail.com');
-    expect(role).toBe('USER');
-  });
-});
-```
-
-### Integration Tests
-```typescript
-// tests/auth.integration.test.ts
-describe('Auth Integration', () => {
-  test('Google OAuth flow completes successfully', async () => {
-    // Test completo del flow OAuth
-  });
-  
-  test('Protected routes redirect to login', async () => {
-    // Test de protección de rutas
-  });
-});
-```
-
 ## Vinculación con Otras Especificaciones
 
 ### Dependencias
 - **core.md**: Requiere configuración de Next.js
-- **database.md**: Requiere tabla de usuarios/sesiones
-- **api.md**: Utiliza middleware de protección
-- **components.md**: Requiere componentes de auth
+- **database.md**: Requiere tabla de usuarios/sesiones de Better Auth
+- **api.md**: Utiliza helpers de auth-server.ts
+- **components.md**: Requiere componentes de auth UI
 
 ### Especificaciones Relacionadas
 - `/specs/SYSTEM_SPEC.md` - Configuración de Vercel
-- `/specs/realtime.md` - Eventos de sesión
-- `/specs/components.md` - Componentes de auth UI
-
-## Tests y Documentación Relacionados
-
-### Tests Unitarios
-- `auth.test.ts` - Validación de roles y permisos
-- `auth.integration.test.ts` - Tests de flujo completo
-- `zod.test.ts` - Validación de schemas
-
-### Documentación Técnica
-- `docs/auth-setup.md` - Guía de configuración
-- `docs/oauth-setup.md` - Configuración Google Console
-
-### Vinculación Activa
-- **Última actualización**: 2025-03-25
-- **Estado tests**: 🟢 Todos pasando
-- **Cobertura**: 90% (objetivo >95%)
+- `/specs/users.md` - Gestión de usuarios
+- `/specs/spec-admin-dashboard.md` - Panel de administración
 
 ## Maintenance
 
 ### Regular Tasks
 - **OAuth Keys**: Rotación trimestral recomendada
-- **Session Cleanup**: Automático con NextAuth.js
+- **Session Cleanup**: Automático con Better Auth
 - **Security Audit**: Revisión mensual de logs
-- **User Roles**: Gestionar vía Prisma Studio o migraciones
+- **User Roles**: Gestionar vía ADMIN_EMAILS o directamente en DB
 
 ### Monitoring
 - **Login Attempts**: Monitorización de patrones anómalos
 - **Session Duration**: Análisis de comportamiento
 - **Error Rates**: Tracking de errores de autenticación
+- **Proxy Performance**: Monitorización del proxy de sincronización
+
+## Cambios Recientes
+
+### 2026-04-07 - Migración a Better Auth
+- Migrado de NextAuth.js v5 a Better Auth
+- Implementado proxy de sincronización automática de roles
+- Eliminada tabla `UserRole` separada (rol ahora en tabla `user`)
+- Agregado override de `ADMIN_EMAILS` en dos capas (memoria + DB)
+- Compatible con modo debug para desarrollo

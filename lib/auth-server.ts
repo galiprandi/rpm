@@ -93,6 +93,14 @@ export async function getSession() {
   // Try debug session first (only in development)
   const debugSession = await getDebugSession();
   if (debugSession) {
+    // Apply ADMIN_EMAILS override to debug session too
+    const userEmail = debugSession.user.email;
+    const adminEmails = getAdminEmailsFromEnv();
+    
+    if (userEmail && adminEmails.includes(userEmail.toLowerCase())) {
+      (debugSession.user as { role: string }).role = 'ADMIN';
+    }
+    
     return debugSession;
   }
 
@@ -149,7 +157,7 @@ export async function requireRole(requiredRole: UserRole) {
 }
 
 /**
- * Check if current user has at least the specified role
+ * Check if user has at least the specified role
  * Returns boolean, doesn't throw
  */
 export async function hasRole(requiredRole: UserRole): Promise<boolean> {

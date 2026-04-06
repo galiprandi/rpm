@@ -3,61 +3,43 @@
 ## 📍 Ubicación
 
 - **Página Admin**: `/app/adm/users/page.tsx`
-- **Schema Prisma**: `prisma/schema.prisma` → `model User` | `model UserRole`
+- **Schema Prisma**: `prisma/schema.prisma` → `model User` (Better Auth)
 - **Servicio**: `lib/services/userService.ts`
 - **Roles**: `lib/auth/roles.ts`
-- **Sync Component**: `components/users/UserSyncServer.tsx` - Server Component para sincronización automática
+- **Proxy de Sincronización**: `proxy.ts` - Middleware Next.js 16 para sincronización automática
 
 ---
 
 ## Propósito
 
-Gestión de usuarios del sistema y asignación de roles. Permite crear nuevos usuarios manualmente (después del login inicial) y administrar sus permisos desde la interfaz de administración.
+Gestión de usuarios del sistema y asignación de roles. Los usuarios se crean automáticamente al hacer login con Google OAuth, y sus roles se sincronizan automáticamente vía `ADMIN_EMAILS`. Los administradores pueden gestionar roles manualmente desde la interfaz.
 
 ---
 
 ## Modelo de Datos
 
-### User (Prisma - NextAuth.js)
+### User (Prisma - Better Auth)
 
 ```prisma
 model User {
-  id            String    @id
-  name          String
-  email         String
+  id            String    @id @default(uuid())
+  email         String    @unique
   emailVerified Boolean   @default(false)
   image         String?
-  role          String    @default("USER") // ADMIN, STAFF, USER
+  name          String?
+  role          String    @default("USER")  // USER | STAFF | ADMIN
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
-  sessions      Session[]
+  
   accounts      Account[]
-
-  @@unique([email])
-  @@map("user")
-}
-```
-
-### UserRole (Prisma - Role Management)
-
-```prisma
-model UserRole {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  role      String   // ADMIN, STAFF, USER (legacy: SELLER, TECHNICIAN, CASHIER map to ADMIN)
-  name      String?  // Nombre para identificar quién es
-  image     String?  // Foto de perfil del usuario (Google OAuth)
-  notes     String?  // Observaciones (ej: "Dueño", "Vendedor turno mañana")
-  isActive  Boolean  @default(true)
-  lastLogin DateTime? // Último login del usuario
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  sessions      Session[]
+  
   @@index([email])
   @@index([role])
-  @@map("user_role")
 }
 ```
+
+**Nota**: Ya no existe la tabla `UserRole` separada. El rol se almacena directamente en la tabla `User` del schema de Better Auth.
 
 ---
 
@@ -68,19 +50,6 @@ model UserRole {
 | **Admin** | `ADMIN` | Completo | Acceso total a /adm, gestión de usuarios y configuración |
 | **Staff** | `STAFF` | Limitado | Acceso a operaciones diarias (ventas, OTs, caja) |
 | **Usuario** | `USER` | Público | Solo acceso a web pública |
-
-### Mapeo de Roles Legado
-
-Para compatibilidad con registros existentes, los roles granulares se mapean al sistema simplificado:
-
-| Rol en DB | Rol efectivo | Descripción |
-|-----------|--------------|-------------|
-| `ADMIN` | **ADMIN** | Administradores |
-| `SELLER` | **ADMIN** | Vendedores (acceso completo a ventas) |
-| `TECHNICIAN` | **ADMIN** | Técnicos (acceso completo a OTs) |
-| `CASHIER` | **ADMIN** | Cajeros (acceso completo a caja) |
-| `STAFF` | **STAFF** | Staff operativo |
-| `USER` | **USER** | Usuarios públicos |
 
 ---
 
@@ -235,30 +204,29 @@ const getRoleLabel = (role: string): string => {
 
 ### Creación de Usuario
 
-- ✅ **Solo ADMIN** puede crear usuarios manualmente
-- ✅ Email debe ser único (constraint de User y UserRole)
-- ✅ Al crear usuario, también se crea registro en `UserRole`
-- ✅ Usuario creado manualmente estará listo para hacer login con Google OAuth
-- ✅ Contraseña: No aplica (usamos Google OAuth)
+- ✅ **Automático**: Better Auth crea usuario al hacer login con Google OAuth
+- ✅ Email debe ser único (constraint de Better Auth)
+- ✅ Rol por defecto: `USER` (se puede sobrescribir vía `ADMIN_EMAILS`)
+- ✅ No se requiere creación manual previa
 
-### Edición de Usuario
+### Sincronización de Roles
 
-- ✅ **Solo ADMIN** puede cambiar roles
-- ✅ No se puede editar el email (es el identificador)
-- ✅ Al cambiar rol, se actualiza tanto `User.role` como `UserRole.role`
+- ✅ **ADMIN_EMAILS**: Emails en esta variable obtienen rol `ADMIN` automáticamente
+- ✅ **Proxy**: Sincronización automática en cada request (transparente al frontend)
+- ✅ **Override en memoria**: `getSession()` aplica override para autorización inmediata
+- ✅ **Persistencia en DB**: Proxy actualiza rol en base de datos automáticamente
+
+### Gestión Manual de Roles
+
+- ✅ **Solo ADMIN** puede cambiar roles manualmente
+- ✅ Se actualiza directamente en tabla `User` (ya no hay tabla `UserRole` separada)
 - ✅ Un ADMIN no puede quitarse su propio rol de admin (protección)
-
-### Activación/Desactivación
-
-- ✅ **Soft delete**: Cambia `isActive` a `false` en `UserRole`
-- ✅ Usuario desactivado no puede hacer login (middleware check)
-- ✅ No se elimina de la base de datos (audit trail)
+- ✅ Debe existir al menos un ADMIN activo
 
 ### Restricciones Importantes
 
 - ❌ **Un ADMIN no puede auto-desactivarse**: Evita quedarse sin admins
 - ❌ **Debe existir al menos un ADMIN activo**: Validación en backend
-- ❌ **Email de dominio staff**: Puede auto-asignarse STAFF en primer login
 
 ---
 
@@ -274,51 +242,28 @@ export interface UserWithRole {
   name: string;
   email: string;
   image?: string | null;
-  role: string;
-  isActive: boolean;
-  notes?: string | null;
+  role: 'USER' | 'STAFF' | 'ADMIN';
   createdAt: Date;
   updatedAt: Date;
 }
 
-export interface CreateUserInput {
-  email: string;
-  name: string;
-  role: 'ADMIN' | 'SELLER' | 'TECHNICIAN' | 'CASHIER' | 'USER';
-  notes?: string;
-}
-
 export interface UpdateUserInput {
   name?: string;
-  role?: 'ADMIN' | 'SELLER' | 'TECHNICIAN' | 'CASHIER' | 'USER';
-  notes?: string;
-  isActive?: boolean;
+  role?: 'USER' | 'STAFF' | 'ADMIN';
 }
 
-// Listar todos los usuarios con sus roles
+// Listar todos los usuarios
 export async function getAllUsers(): Promise<UserWithRole[]>;
 
 // Obtener usuario por email
 export async function getUserByEmail(email: string): Promise<UserWithRole | null>;
 
-// Crear usuario manualmente (después del login)
-export async function createUser(input: CreateUserInput): Promise<UserWithRole>;
-
-// Actualizar usuario (cambiar rol, notas, etc)
+// Actualizar usuario (cambiar rol, etc)
 export async function updateUser(
   id: string, 
   input: UpdateUserInput,
   adminEmail: string // Para validación de no auto-quitarse admin
 ): Promise<UserWithRole>;
-
-// Soft delete (desactivar)
-export async function deactivateUser(
-  id: string,
-  adminEmail: string
-): Promise<void>;
-
-// Reactivar usuario
-export async function activateUser(id: string): Promise<void>;
 ```
 
 ---
@@ -329,162 +274,23 @@ export async function activateUser(id: string): Promise<void>;
 
 | Método | Endpoint | Descripción |
 |--------|----------|-------------|
-| GET | `/api/users` | Listar todos los usuarios con roles |
-| GET | `/api/users?activeOnly=true` | Listar solo usuarios activos |
+| GET | `/api/users` | Listar todos los usuarios |
 | GET | `/api/users/:id` | Obtener usuario específico |
-| **GET** | **`/api/roles`** | **Obtener roles disponibles con descripción** |
-| POST | `/api/users` | Crear usuario manualmente |
-| PUT | `/api/users/:id` | Actualizar usuario (rol, notas, etc) |
-| PATCH | `/api/users/:id/toggle` | Activar/desactivar usuario |
-| DELETE | `/api/users/:id` | Desactivar usuario (soft delete) |
-
-### Endpoint: Obtener Roles Disponibles
-
-```typescript
-// app/api/roles/route.ts
-import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth-server';
-import { hasRole } from '@/lib/auth/roles';
-
-export interface RoleOption {
-  value: string;        // Código del rol (ADMIN, SELLER, etc)
-  label: string;        // Label visible (Administrador, Vendedor, etc)
-  description: string;  // Descripción para tooltip o subtítulo
-  badgeVariant: 'default' | 'secondary' | 'outline' | 'destructive';
-}
-
-const ROLES_CONFIG: RoleOption[] = [
-  {
-    value: 'ADMIN',
-    label: 'Administrador',
-    description: 'Acceso completo al sistema. Gestiona usuarios, configuración y todos los módulos.',
-    badgeVariant: 'default',
-  },
-  {
-    value: 'SELLER',
-    label: 'Vendedor',
-    description: 'Gestiona ventas, cotizaciones y clientes. Acceso limitado a módulo de ventas.',
-    badgeVariant: 'secondary',
-  },
-  {
-    value: 'TECHNICIAN',
-    label: 'Técnico',
-    description: 'Acceso a órdenes de trabajo, instalaciones y tareas técnicas.',
-    badgeVariant: 'outline',
-  },
-  {
-    value: 'CASHIER',
-    label: 'Cajero',
-    description: 'Gestiona cobros, caja diaria y movimientos de tesorería.',
-    badgeVariant: 'outline',
-  },
-  {
-    value: 'USER',
-    label: 'Usuario',
-    description: 'Cliente final. Solo acceso a web pública, sin acceso a /adm.',
-    badgeVariant: 'secondary',
-  },
-];
-
-export async function GET() {
-  const session = await auth();
-  
-  // Requiere al menos autenticación (cualquier rol)
-  if (!session?.user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  // Solo ADMIN puede ver todos los roles (incluyendo ADMIN)
-  // STAFF solo ve roles de staff (no ADMIN)
-  const isAdmin = hasRole(session.user.role, 'ADMIN');
-  
-  const availableRoles = isAdmin 
-    ? ROLES_CONFIG 
-    : ROLES_CONFIG.filter(r => r.value !== 'ADMIN');
-
-  return NextResponse.json(availableRoles);
-}
-```
-
-### Uso en UI (Select de Roles)
-
-```typescript
-// components/users/UserRoleSelect.tsx
-'use client';
-
-import { useEffect, useState } from 'react';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-
-interface RoleOption {
-  value: string;
-  label: string;
-  description: string;
-  badgeVariant: 'default' | 'secondary' | 'outline' | 'destructive';
-}
-
-interface UserRoleSelectProps {
-  value: string;
-  onChange: (value: string) => void;
-  disabled?: boolean;
-}
-
-export function UserRoleSelect({ value, onChange, disabled }: UserRoleSelectProps) {
-  const [roles, setRoles] = useState<RoleOption[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch('/api/roles')
-      .then(res => res.json())
-      .then(data => {
-        setRoles(data);
-        setLoading(false);
-      });
-  }, []);
-
-  if (loading) return <div>Cargando roles...</div>;
-
-  return (
-    <Select value={value} onValueChange={onChange} disabled={disabled}>
-      <SelectTrigger>
-        <SelectValue placeholder="Selecciona un rol" />
-      </SelectTrigger>
-      <SelectContent>
-        {roles.map((role) => (
-          <SelectItem key={role.value} value={role.value}>
-            <div className="flex items-center gap-2">
-              <Badge variant={role.badgeVariant}>{role.label}</Badge>
-              <span className="text-xs text-muted-foreground hidden sm:inline">
-                {role.description}
-              </span>
-            </div>
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  );
-}
-```
+| PUT | `/api/users/:id` | Actualizar usuario (rol, etc) |
 
 ### API Route Example
 
 ```typescript
 // app/api/users/route.ts
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth-server';
-import { getAllUsers, createUser } from '@/lib/services/userService';
-import { hasRole } from '@/lib/auth/roles';
+import { getSession, hasRole } from '@/lib/auth-server';
+import { UserRole } from '@/lib/auth/roles';
+import { getAllUsers, updateUser } from '@/lib/services/userService';
 
 export async function GET() {
-  const session = await auth();
+  const session = await getSession();
   
-  if (!session?.user?.role || !hasRole(session.user.role, 'ADMIN')) {
+  if (!session?.user || !await hasRole(UserRole.ADMIN)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
@@ -492,144 +298,87 @@ export async function GET() {
   return NextResponse.json(users);
 }
 
-export async function POST(request: Request) {
-  const session = await auth();
+export async function PUT(request: Request) {
+  const session = await getSession();
   
-  if (!session?.user?.role || !hasRole(session.user.role, 'ADMIN')) {
+  if (!session?.user || !await hasRole(UserRole.ADMIN)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   const body = await request.json();
-  
-  // Validation
-  if (!body.email || !body.name || !body.role) {
-    return NextResponse.json(
-      { error: 'Missing required fields' }, 
-      { status: 400 }
-    );
-  }
-
-  const user = await createUser(body);
-  return NextResponse.json(user, { status: 201 });
+  const user = await updateUser(body.id, body, session.user.email);
+  return NextResponse.json(user);
 }
 ```
 
 ---
 
-## Flujo: Crear Usuario Después del Login
+## Flujo: Sincronización Automática de Usuarios
 
-### Sincronización Automática con UserSyncServer
+### Proxy de Sincronización (Next.js 16 Middleware)
 
-El componente `UserSyncServer` es un Server Component que se ejecuta en el **root layout** (`app/layout.tsx`) en cada request. Esto garantiza que todo usuario autenticado se sincronice automáticamente con la tabla `UserRole`, manteniendo los datos actualizados (nombre, foto de perfil, último login) en cada visita.
+El proxy (`proxy.ts`) se ejecuta automáticamente en cada request y sincroniza el rol de los usuarios que están en `ADMIN_EMAILS`.
 
 ```typescript
-// components/users/UserSyncServer.tsx
-export async function UserSyncServer() {
-  const session = await getSession();
-  
-  if (session?.user?.email) {
-    await prisma.userRole.upsert({
-      where: { email: session.user.email },
-      create: {
-        email: session.user.email,
-        role: 'USER',
-        name: session.user.name || session.user.email.split('@')[0],
-        image: session.user.image || null,
-        isActive: true,
-        lastLogin: new Date(),
-      },
-      update: {
-        lastLogin: new Date(),
-        name: session.user.name || undefined,
-        image: session.user.image || undefined,
-      },
-    });
+// proxy.ts
+export async function proxy(request: NextRequest) {
+  // Skip static files and API routes
+  if (request.nextUrl.pathname.startsWith('/_next') ||
+      request.nextUrl.pathname.startsWith('/api/auth')) {
+    return NextResponse.next();
   }
-  
-  return null;
-}
-```
 
-### Uso en Root Layout
+  try {
+    const session = await auth.api.getSession({
+      headers: request.headers,
+    });
 
-```tsx
-// app/layout.tsx
-import { UserSyncServer } from '@/components/users/UserSyncServer';
+    // Sync role with ADMIN_EMAILS if user is authenticated
+    if (session?.user?.email) {
+      const adminEmails = process.env.ADMIN_EMAILS?.split(',').map(e => e.trim().toLowerCase()) || [];
+      
+      if (adminEmails.includes(session.user.email.toLowerCase())) {
+        const currentRole = (session.user as { role?: string }).role;
+        
+        // Update role in database if not already ADMIN
+        if (currentRole !== 'ADMIN') {
+          await prisma.user.update({
+            where: { id: session.user.id },
+            data: { role: 'ADMIN' },
+          });
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error syncing role in proxy:', error);
+  }
 
-export default function RootLayout({ children }) {
-  return (
-    <html>
-      <body>
-        <UserSyncServer /> {/* Se ejecuta en cada request */}
-        {children}
-      </body>
-    </html>
-  );
+  return NextResponse.next();
 }
 ```
 
 ### Escenario 1: Usuario hace login por primera vez
 
 1. Usuario autentica con Google OAuth
-2. Better Auth crea registro en `User`
-3. Al cargar cualquier página, `UserSyncServer` ejecuta en el servidor
-4. Crea o actualiza `UserRole` automáticamente con:
-   - `role: 'USER'`
-   - `isActive: true`
-   - `lastLogin: new Date()`
-   - `name: displayName de Google`
-   - `image: foto de perfil de Google`
-5. Usuario aparece inmediatamente en la tabla de usuarios con datos actualizados
+2. Better Auth crea registro en `User` con rol `USER`
+3. Primer request → Proxy detecta email en `ADMIN_EMAILS` y actualiza rol a `ADMIN` en DB
+4. `getSession()` aplica override en memoria (acceso inmediato a `/adm`)
+5. Usuario accede al sistema con rol correcto
 
 ### Escenario 2: Usuario existente hace login
 
-1. Usuario autentica (ya existe en `User` y `UserRole`)
-2. `UserSyncServer` ejecuta en cada request
-3. Actualiza automáticamente:
-   - `lastLogin` a fecha actual
-   - `name` si cambió en Google
-   - `image` si cambió la foto de perfil
-4. El usuario aparece en la tabla con datos siempre actualizados
+1. Usuario autentica (ya existe en `User`)
+2. Proxy verifica si email está en `ADMIN_EMAILS`
+3. Si está en la lista y no tiene rol `ADMIN`, actualiza la DB
+4. `getSession()` aplica override en memoria
+5. Usuario accede con rol correcto
 
-### Escenario 3: ADMIN crea usuario manualmente (antes del primer login)
+### Escenario 3: ADMIN cambia rol manualmente
 
 1. ADMIN va a `/adm/users`
-2. Clica "Nuevo Usuario"
-3. Completa email, nombre, rol, notas
-4. Sistema crea registro en `UserRole` con el rol especificado
-5. Cuando ese usuario hace login por primera vez:
-   - Better Auth crea `User`
-   - `UserSyncServer` encuentra el registro previo en `UserRole`
-   - No sobreescribe el rol predefinido por el ADMIN
-   - Actualiza `lastLogin`, `name` e `image` desde Google
-
-```typescript
-// Flujo de creación manual
-async function createManualUser(input: CreateUserInput) {
-  // 1. Crear UserRole (el usuario aún no existe en User)
-  await prisma.userRole.create({
-    data: {
-      email: input.email.toLowerCase(),
-      role: input.role,
-      name: input.name,
-      notes: input.notes,
-      isActive: true,
-    },
-  });
-
-  // 2. Si el usuario ya existe en User (hizo login antes), actualizar su rol
-  const existingUser = await prisma.user.findUnique({
-    where: { email: input.email.toLowerCase() },
-  });
-
-  if (existingUser) {
-    await prisma.user.update({
-      where: { id: existingUser.id },
-      data: { role: mapToUserRoleEnum(input.role) },
-    });
-  }
-}
-```
+2. Cambia rol de un usuario
+3. Se actualiza directamente en tabla `User`
+4. El proxy respeta el rol manual (no lo sobreescribe si el usuario no está en `ADMIN_EMAILS`)
 
 ---
 
@@ -645,28 +394,20 @@ async function validateAdminCount(
   newRole?: string,
   adminEmail: string
 ): Promise<void> {
-  // Obtener admin que hace la operación
-  const currentAdmin = await prisma.userRole.findUnique({
-    where: { email: adminEmail },
-  });
-
-  // No permitir auto-desactivación de admin
-  const targetUser = await prisma.userRole.findFirst({
-    where: { 
-      user: { id: targetUserId }
-    },
+  // No permitir auto-cambio de rol de admin
+  const targetUser = await prisma.user.findUnique({
+    where: { id: targetUserId },
   });
 
   if (targetUser?.email === adminEmail && newRole !== 'ADMIN') {
     throw new Error('No puedes quitarte tu propio rol de administrador');
   }
 
-  // Contar admins restantes si se desactiva/quita rol
+  // Contar admins restantes si se cambia rol
   if (newRole && newRole !== 'ADMIN') {
-    const adminCount = await prisma.userRole.count({
+    const adminCount = await prisma.user.count({
       where: { 
-        role: 'ADMIN', 
-        isActive: true,
+        role: 'ADMIN',
         email: { not: targetUser?.email },
       },
     });
@@ -682,13 +423,23 @@ async function validateAdminCount(
 
 ## Vinculación con Otras Specs
 
-- `@[specs/auth.md]` - Sistema de autenticación y roles
+- `@[specs/auth.md]` - Sistema de autenticación y roles (Better Auth)
 - `@[specs/ui-architecture-adm.md]` - Diseño de interfaz admin
-- `@[specs/suppliers.md]` - Patrón de CRUD similar
 - `@[specs/components.md]` - Componentes UI reutilizables
 
 ---
 
+## Cambios Recientes
+
+### 2026-04-07 - Migración a Better Auth
+- Migrado de NextAuth.js a Better Auth
+- Eliminada tabla `UserRole` separada (rol ahora en tabla `User`)
+- Implementado proxy de sincronización automática en lugar de UserSyncServer
+- Simplificados roles (solo USER, STAFF, ADMIN)
+- Sincronización automática vía `ADMIN_EMAILS` (proxy + getSession)
+
+---
+
 **Estado**: ✅ Implementado  
-**Dependencias**: ✅ Auth implementado, ✅ UI components listos  
-**Última actualización**: 2026-03-29
+**Dependencias**: ✅ Better Auth implementado, ✅ Proxy de sincronización activo  
+**Última actualización**: 2026-04-07
