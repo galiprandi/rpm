@@ -4,11 +4,11 @@
  * Spec: /specs/inventory-sales.md
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { nanoid } from '@/lib/utils';
+import { getSession } from '@/lib/auth-server';
+import { getProducts, createStockMovement } from '@/lib/services/productService';
 import { Prisma } from '@/generated/client';
-import { createStockMovement } from '@/lib/services/productService';
-import { auth } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
+import { randomUUID } from 'crypto';
 
 // GET /api/products - Listar productos
 export async function GET(request: NextRequest) {
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     const lowStock = searchParams.get('lowStock');
     const isActive = searchParams.get('isActive') !== 'false'; // default true
     
-    const where: Prisma.ProductWhereInput = { isActive };
+    const where: Prisma.productWhereInput = { isActive };
     
     if (categoryId) {
       where.categoryId = categoryId;
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     
     // Get user session for audit trail
-    const session = await auth.api.getSession({ headers: request.headers });
+    const session = await getSession();
     
     // Validaciones básicas
     if (!body.name || !body.categoryId) {
@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Generar SKU automático si no se proporciona
-    const sku = body.sku || nanoid(8);
+    const sku = body.sku || `PRD-${Date.now()}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
 
     if (body.replacementCost === undefined || body.replacementCost === null || isNaN(body.replacementCost)) {
       return NextResponse.json(
@@ -114,63 +114,76 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verificar SKU único
-    const existing = await prisma.product.findUnique({
-      where: { sku: body.sku },
-    });
+    // Verificar SKU único solo si se proporciona
+    if (sku) {
+      const existing = await prisma.product.findUnique({
+        where: { sku: sku },
+      });
 
-    if (existing) {
+      if (existing) {
+        return NextResponse.json(
+          { error: 'Ya existe un producto con ese SKU' },
+          { status: 409 }
+        );
+      }
+    }
+
+    try {
+      const product = await prisma.product.create({
+        data: {
+          id: randomUUID(),
+          sku: sku,
+          name: body.name,
+          description: body.description || null,
+          costPrice: body.costPrice,
+          replacementCost: body.replacementCost,
+          stock: body.stock || 0,
+          minStock: body.minStock || 0,
+          supplierId: body.supplierId || null,
+          barcode: body.barcode || null,
+          location: body.location || null,
+          categoryId: body.categoryId,
+          isActive: true,
+          updatedAt: new Date(),
+        },
+      });
+
+      // Create stock movement record if initial stock > 0
+      const initialStock = body.stock || 0;
+      if (initialStock > 0) {
+        await createStockMovement({
+          productId: product.id,
+          userId: session?.user?.id,
+          userName: session?.user?.name || session?.user?.email || 'Sistema',
+          type: 'IN',
+          quantity: initialStock,
+          previousStock: 0,
+          newStock: initialStock,
+          reason: 'INITIAL_STOCK' as any,
+          salePrice: undefined,
+        });
+      }
+
+      return NextResponse.json(product, { status: 201 });
+    } catch (error: any) {
+      // Handle Prisma unique constraint errors
+      if (error.code === 'P2002' && error.meta?.target?.includes('sku')) {
+        return NextResponse.json(
+          { error: 'Ya existe un producto con ese SKU' },
+          { status: 409 }
+        );
+      }
+      
+      console.error('Error creating product:', error);
       return NextResponse.json(
-        { error: 'Ya existe un producto con ese SKU' },
-        { status: 409 }
+        { error: 'Error creando producto' },
+        { status: 500 }
       );
     }
-
-    const product = await prisma.product.create({
-      data: {
-        id: nanoid(),
-        sku: sku,
-        name: body.name,
-        description: body.description || null,
-        costPrice: body.costPrice,
-        replacementCost: body.replacementCost,
-        stock: body.stock || 0,
-        minStock: body.minStock || 0,
-        supplierId: body.supplierId || null,
-        barcode: body.barcode || null,
-        location: body.location || null,
-        categoryId: body.categoryId,
-        isActive: true,
-        updatedAt: new Date(),
-      },
-      include: {
-        category: {
-          select: { id: true, name: true, color: true },
-        },
-      },
-    });
-
-    // Create stock movement record if initial stock > 0
-    const initialStock = body.stock || 0;
-    if (initialStock > 0) {
-      await createStockMovement({
-        productId: product.id,
-        userId: session?.user?.id,
-        userName: session?.user?.name || session?.user?.email || 'Sistema',
-        type: 'IN',
-        quantity: initialStock,
-        previousStock: 0,
-        newStock: initialStock,
-        reason: 'CARGA_INICIAL',
-        reasonDetails: 'Stock inicial al crear producto',
-      });
-    }
-
-    return NextResponse.json({ product }, { status: 201 });
   } catch (error) {
-    console.error('Error creating product:', error);
+    console.error('Error in POST /api/products:', error);
     return NextResponse.json(
-      { error: 'Error al crear producto' },
+      { error: 'Error al procesar la solicitud' },
       { status: 500 }
     );
   }

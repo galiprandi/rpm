@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { randomUUID } from "crypto";
 
 // GET /api/services - List all services
 export async function GET(request: NextRequest) {
@@ -67,11 +68,13 @@ export async function POST(request: NextRequest) {
 
     const service = await prisma.service.create({
       data: {
+        id: randomUUID(),
         name,
         description,
         baseCost,
         timeMinutes: timeMinutes || 60,
         vehicleFactor: vehicleFactor || 1.0,
+        updatedAt: new Date(),
       },
     });
 

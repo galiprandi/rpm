@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { randomUUID } from 'crypto';
 import {
   ImportPayloadSchema,
   ImportResultSchema,
@@ -32,12 +33,21 @@ interface BatchResult {
 async function processBatch(
   products: ProductWithCategoryInput[],
   categoryIdMap: Map<string, string>, // detectedName -> finalCategoryId
-  startIndex: number
+  startIndex: number,
+  duplicateAction: 'skip' | 'create_with_suffix',
+  defaultSupplierId?: string
 ): Promise<BatchResult> {
   const results: ImportResultItem[] = [];
   let created = 0;
   let failed = 0;
-  const skipped = 0;
+  let skipped = 0;
+
+  // Get existing products for duplicate checking
+  const existingProducts = await prisma.product.findMany({
+    select: { id: true, name: true, sku: true },
+  });
+  const existingNames = new Set(existingProducts.map(p => p.name.toLowerCase()));
+  const existingSkus = new Set(existingProducts.map(p => p.sku?.toLowerCase()).filter(Boolean));
 
   // Process sequentially within batch for transaction safety
   for (let i = 0; i < products.length; i++) {
@@ -58,12 +68,39 @@ async function processBatch(
         continue;
       }
 
+      // Check for duplicates
+      const isDuplicate = existingNames.has(product.name.toLowerCase()) ||
+        (product.sku && existingSkus.has(product.sku.toLowerCase()));
+
+      if (isDuplicate) {
+        if (duplicateAction === 'skip') {
+          results.push({
+            row: globalIndex,
+            name: product.name,
+            status: 'skipped',
+            message: 'Producto duplicado (omitido por configuración)',
+          });
+          skipped++;
+          continue;
+        } else if (duplicateAction === 'create_with_suffix') {
+          // Add suffix to make unique
+          const suffix = 2;
+          product.name = `${product.name} (${suffix})`;
+          if (product.sku) {
+            product.sku = `${product.sku}-${suffix}`;
+          }
+        }
+      }
+
       // Create product
       const createdProduct = await prisma.product.create({
         data: {
+          id: randomUUID(),
           ...product,
           categoryId: finalCategoryId,
+          supplierId: product.supplierId || defaultSupplierId || null,
           isActive: true,
+          updatedAt: new Date(),
         },
       });
 
@@ -71,7 +108,7 @@ async function processBatch(
         row: globalIndex,
         name: product.name,
         status: 'success',
-        message: 'Producto creado',
+        message: isDuplicate ? 'Producto creado con sufijo' : 'Producto creado',
         productId: createdProduct.id,
       });
       created++;
@@ -119,13 +156,15 @@ async function createCategories(
         try {
           const newCategory = await prisma.category.create({
             data: {
+              id: randomUUID(),
               name: mapping.newName,
               description: null,
+              updatedAt: new Date(),
             },
           });
           idMap.set(mapping.sourceName, newCategory.id);
           created.push({ id: newCategory.id, name: newCategory.name });
-        } catch (error) {
+        } catch {
           // If creation failed, try to find existing
           const existing = await prisma.category.findUnique({
             where: { name: mapping.newName },
@@ -191,7 +230,7 @@ export async function POST(request: NextRequest) {
 
     for (let i = 0; i < productsToProcess.length; i += BATCH_SIZE) {
       const batch = productsToProcess.slice(i, i + BATCH_SIZE);
-      const batchResult = await processBatch(batch, categoryIdMap, i);
+      const batchResult = await processBatch(batch, categoryIdMap, i, options.duplicateAction, options.defaultSupplierId);
 
       totalCreated += batchResult.created;
       totalFailed += batchResult.failed;

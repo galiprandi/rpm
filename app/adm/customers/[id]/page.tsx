@@ -25,6 +25,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { CustomerForm } from "@/components/customers/CustomerForm";
 
@@ -344,6 +345,9 @@ export default function CustomerDetailPage() {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar Cliente</DialogTitle>
+            <DialogDescription>
+              Modifica los datos del cliente incluyendo información de contacto y facturación.
+            </DialogDescription>
           </DialogHeader>
           <CustomerForm
             initialData={{

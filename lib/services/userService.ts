@@ -53,7 +53,7 @@ function mapToUserRoleEnum(role: string): string {
  * Get all users with their roles from UserRole table
  */
 export async function getUsers(includeInactive: boolean = false): Promise<UserListResult> {
-  const userRoles = await prisma.userRole.findMany({
+  const userRoles = await prisma.user_role.findMany({
     where: includeInactive ? {} : { isActive: true },
     orderBy: { createdAt: 'desc' },
   });
@@ -94,7 +94,7 @@ export async function getUsers(includeInactive: boolean = false): Promise<UserLi
  * Get a single user by email
  */
 export async function getUserByEmail(email: string): Promise<UserWithRole | null> {
-  const userRole = await prisma.userRole.findUnique({
+  const userRole = await prisma.user_role.findUnique({
     where: { email: email.toLowerCase() },
   });
 
@@ -127,7 +127,7 @@ export async function getUserById(id: string): Promise<UserWithRole | null> {
   });
 
   if (user) {
-    const userRole = await prisma.userRole.findUnique({
+    const userRole = await prisma.user_role.findUnique({
       where: { email: user.email },
     });
 
@@ -147,7 +147,7 @@ export async function getUserById(id: string): Promise<UserWithRole | null> {
   }
 
   // Try to find by UserRole id
-  const userRole = await prisma.userRole.findFirst({
+  const userRole = await prisma.user_role.findFirst({
     where: { id },
   });
 
@@ -179,7 +179,7 @@ async function validateAdminCount(
 ): Promise<void> {
   // If changing role to non-admin, check remaining admins
   if (newRole && newRole !== 'ADMIN') {
-    const adminCount = await prisma.userRole.count({
+    const adminCount = await prisma.user_role.count({
       where: {
         role: 'ADMIN',
         isActive: true,
@@ -200,7 +200,7 @@ export async function createUser(input: CreateUserInput): Promise<UserWithRole> 
   const email = input.email.toLowerCase();
 
   // Check if userRole already exists
-  const existingRole = await prisma.userRole.findUnique({
+  const existingRole = await prisma.user_role.findUnique({
     where: { email },
   });
 
@@ -209,13 +209,15 @@ export async function createUser(input: CreateUserInput): Promise<UserWithRole> 
   }
 
   // Create UserRole record
-  const userRole = await prisma.userRole.create({
+  const userRole = await prisma.user_role.create({
     data: {
+      id: crypto.randomUUID(),
       email,
       role: input.role,
       name: input.name,
       notes: input.notes || null,
       isActive: true,
+      updatedAt: new Date(),
     },
   });
 
@@ -281,13 +283,14 @@ export async function updateUser(
   }
 
   // Update UserRole record
-  const userRole = await prisma.userRole.update({
+  const userRole = await prisma.user_role.update({
     where: { email: user.email },
     data: {
       ...(input.name !== undefined && { name: input.name }),
       ...(input.role !== undefined && { role: input.role }),
       ...(input.notes !== undefined && { notes: input.notes || null }),
       ...(input.isActive !== undefined && { isActive: input.isActive }),
+      updatedAt: new Date(),
     },
   });
 
@@ -367,7 +370,7 @@ export async function deleteUser(id: string, adminEmail: string): Promise<void> 
   }
 
   // Delete UserRole record
-  await prisma.userRole.delete({
+  await prisma.user_role.delete({
     where: { email: user.email },
   });
 

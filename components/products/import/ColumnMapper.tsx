@@ -69,7 +69,7 @@ const TRANSFORM_OPTIONS: Record<FieldType, { value: string; label: string }[]> =
   ],
 };
 
-const STORAGE_KEY = 'product-import-mapping-v2';
+// const STORAGE_KEY = 'product-import-mapping-v2';
 
 // Props
 interface ColumnMapperProps {
@@ -103,7 +103,7 @@ export function ColumnMapper({
 
     // const timer = setTimeout(() => {
     //   localStorage.setItem(
-    //     STORAGE_KEY,
+    //     'product-import-mapping-v2',
     //     JSON.stringify({ mapping, importOptions })
     //   );
     //   toast.success('Configuración guardada', { duration: 2000 });
@@ -136,95 +136,108 @@ export function ColumnMapper({
     <div className="space-y-6">
       {/* Global Options */}
       <Card className="bg-muted/50">
-        <CardContent className="p-4">
-          <div className="flex flex-wrap items-center gap-6">
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="skipStock"
-                checked={importOptions.skipStockLessThanOne}
-                onChange={(e) =>
-                  onImportOptionsChange({
-                    ...importOptions,
-                    skipStockLessThanOne: e.target.checked,
-                  })
-                }
-                className="h-4 w-4 rounded border-gray-300"
-              />
-              <Label htmlFor="skipStock" className="cursor-pointer text-sm">
-                Omitir productos con stock &lt; 1
-              </Label>
-            </div>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Opciones de importación</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Filtros y Validación */}
+          <div className="space-y-3">
+            <h4 className="text-sm font-medium text-muted-foreground">Filtros y Validación</h4>
+            <div className="flex flex-wrap gap-4">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="skipStock"
+                  checked={importOptions.skipStockLessThanOne}
+                  onChange={(e) =>
+                    onImportOptionsChange({
+                      ...importOptions,
+                      skipStockLessThanOne: e.target.checked,
+                    })
+                  }
+                  className="h-4 w-4 rounded border-gray-300"
+                />
+                <Label htmlFor="skipStock" className="cursor-pointer text-sm">
+                  Omitir productos con stock &lt; 1
+                </Label>
+              </div>
 
-            <div className="flex items-center gap-2">
-              <Label className="text-sm text-muted-foreground">Duplicados:</Label>
-              <Select
-                value={importOptions.duplicateAction}
-                onValueChange={(value) =>
-                  onImportOptionsChange({
-                    ...importOptions,
-                    duplicateAction: value as 'skip' | 'create_with_suffix',
-                  })
-                }
-              >
-                <SelectTrigger className="w-[160px] h-8 text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="skip">Omitir</SelectItem>
-                  <SelectItem value="create_with_suffix">Agregar sufijo (2)</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-2">
+                <Label className="text-sm text-muted-foreground">Acción con duplicados:</Label>
+                <Select
+                  value={importOptions.duplicateAction}
+                  onValueChange={(value) =>
+                    onImportOptionsChange({
+                      ...importOptions,
+                      duplicateAction: value as 'skip' | 'create_with_suffix',
+                    })
+                  }
+                >
+                  <SelectTrigger className="w-[160px] h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="skip">Omitir</SelectItem>
+                    <SelectItem value="create_with_suffix">Agregar sufijo (2)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
+          </div>
 
-            <div className="flex items-center gap-2">
-              <Label className="text-sm text-muted-foreground">Categoría por defecto:</Label>
-              <Select
-                value={importOptions.defaultCategoryId || '_none'}
-                onValueChange={(value) =>
-                  onImportOptionsChange({
-                    ...importOptions,
-                    defaultCategoryId: value === '_none' ? undefined : value,
-                  })
-                }
-              >
-                <SelectTrigger className="w-[180px] h-8 text-sm">
-                  <SelectValue placeholder="Sin categoría" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="_none">Sin categoría</SelectItem>
-                  {existingCategories.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          {/* Valores por Defecto */}
+          <div className="space-y-3">
+            <h4 className="text-sm font-medium text-muted-foreground">Valores por Defecto</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex items-center gap-2">
+                <Label className="text-sm text-muted-foreground min-w-[120px]">Categoría:</Label>
+                <Select
+                  value={importOptions.defaultCategoryId || '_none'}
+                  onValueChange={(value) =>
+                    onImportOptionsChange({
+                      ...importOptions,
+                      defaultCategoryId: value === '_none' ? undefined : value,
+                    })
+                  }
+                >
+                  <SelectTrigger className="w-[180px] h-8 text-sm">
+                    <SelectValue placeholder="Sin categoría" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="_none">Sin categoría</SelectItem>
+                    {existingCategories.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div className="flex items-center gap-2">
-              <Label className="text-sm text-muted-foreground">Proveedor por defecto:</Label>
-              <Select
-                value={importOptions.defaultSupplierId || '_none'}
-                onValueChange={(value) =>
-                  onImportOptionsChange({
-                    ...importOptions,
-                    defaultSupplierId: value === '_none' ? undefined : value,
-                  })
-                }
-              >
-                <SelectTrigger className="w-[180px] h-8 text-sm">
-                  <SelectValue placeholder="Sin proveedor" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="_none">Sin proveedor</SelectItem>
-                  {existingSuppliers.map((supplier) => (
-                    <SelectItem key={supplier.id} value={supplier.id}>
-                      {supplier.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-2">
+                <Label className="text-sm text-muted-foreground min-w-[120px]">Proveedor:</Label>
+                <Select
+                  value={importOptions.defaultSupplierId || '_none'}
+                  onValueChange={(value) =>
+                    onImportOptionsChange({
+                      ...importOptions,
+                      defaultSupplierId: value === '_none' ? undefined : value,
+                    })
+                  }
+                >
+                  <SelectTrigger className="w-[180px] h-8 text-sm">
+                    <SelectValue placeholder="Sin proveedor" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="_none">Sin proveedor</SelectItem>
+                    {existingSuppliers.map((supplier) => (
+                      <SelectItem key={supplier.id} value={supplier.id}>
+                        {supplier.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
         </CardContent>

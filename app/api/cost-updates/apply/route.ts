@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
+import { getSession } from '@/lib/auth-server';
 import { applyCostUpdate, type CostUpdateFilters, type CostUpdateAdjustment, type AdjustmentType } from '@/lib/services';
 
 const VALID_ADJUSTMENT_TYPES: AdjustmentType[] = ['PERCENTAGE_INC', 'PERCENTAGE_DEC', 'FIXED_INC', 'FIXED_DEC'];
@@ -12,7 +12,7 @@ const VALID_ADJUSTMENT_TYPES: AdjustmentType[] = ['PERCENTAGE_INC', 'PERCENTAGE_
 export async function POST(request: NextRequest) {
   try {
     // Check authentication
-    const session = await auth.api.getSession({ headers: request.headers });
+    const session = await getSession();
     if (!session?.user) {
       return NextResponse.json(
         { error: 'Unauthorized' },

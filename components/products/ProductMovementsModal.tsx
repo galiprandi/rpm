@@ -74,6 +74,7 @@ export function ProductMovementsModal({
       isOpen={isOpen}
       onClose={onClose}
       title={title}
+      description="Revisa el historial completo de movimientos de stock para este producto."
       maxWidth="3xl"
       maxHeight="max-h-[80vh]"
     >

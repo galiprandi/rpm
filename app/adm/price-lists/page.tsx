@@ -6,9 +6,10 @@ import { Badge } from '@/components/ui/badge';
 import { useUI } from '@/components/ui/UIProvider';
 import { PriceListDialog } from '@/components/price-lists/PriceListDialog';
 import { CostUpdateDialog } from '@/components/cost-updates/CostUpdateDialog';
+import { ProductAuditModal } from '@/components/products/ProductAuditModal';
 import { type PriceListFormData } from '@/components/price-lists/PriceListForm';
 import { CrudAdmin, StatItem } from '@/components/adm';
-import { DollarSign, Edit2, Trash2, List, Percent, Layers, TrendingUp } from 'lucide-react';
+import { DollarSign, Edit2, Trash2, List, Percent, Layers, TrendingUp, History } from 'lucide-react';
 import { type ColumnDef } from '@tanstack/react-table';
 
 interface PriceList {
@@ -36,6 +37,7 @@ export default function PriceListsPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isCostUpdateDialogOpen, setIsCostUpdateDialogOpen] = useState(false);
+  const [showAuditModal, setShowAuditModal] = useState(false);
   const [editForm, setEditForm] = useState<PriceListFormData>({
     name: '',
     baseMarginPercentage: 40,
@@ -268,6 +270,12 @@ export default function PriceListsPage() {
         stats={stats}
         secondaryActions={[
           {
+            label: 'Historial de Auditoría',
+            onClick: () => setShowAuditModal(true),
+            variant: 'outline',
+            icon: History,
+          },
+          {
             label: 'Actualizar Costos',
             onClick: () => setIsCostUpdateDialogOpen(true),
             variant: 'outline',
@@ -327,6 +335,12 @@ export default function PriceListsPage() {
           // Refresh price lists to recalculate prices
           fetchPriceLists();
         }}
+      />
+      
+      {/* Audit Modal */}
+      <ProductAuditModal
+        open={showAuditModal}
+        onClose={() => setShowAuditModal(false)}
       />
     </>
   );

@@ -37,6 +37,7 @@ import {
   Filter,
   Eye,
   Save,
+  Calculator,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -89,7 +90,7 @@ interface CostUpdateDialogProps {
   onSuccess?: () => void;
 }
 
-type WizardStep = 'filters' | 'preview' | 'confirm';
+type WizardStep = 'filters' | 'adjustment' | 'preview' | 'confirm';
 
 // ============================================================================
 // Component
@@ -681,36 +682,33 @@ export function CostUpdateDialog({ open, onClose, onSuccess }: CostUpdateDialogP
           <DialogTitle className="flex items-center gap-2">
             {currentStep === 'filters' && (
               <>
-                <Filter className="w-5 h-5" />
-                Actualización Masiva de Costos
+                <Filter className="h-5 w-5" />
+                Actualización Masiva de Costos - Filtros
+              </>
+            )}
+            {currentStep === 'adjustment' && (
+              <>
+                <Calculator className="h-5 w-5" />
+                Actualización Masiva de Costos - Ajuste
               </>
             )}
             {currentStep === 'preview' && (
               <>
-                <Eye className="w-5 h-5" />
-                Vista Previa
-              </>
-            )}
-            {currentStep === 'confirm' && (
-              <>
-                <CheckCircle className="w-5 h-5" />
-                Confirmar Actualización
+                <Eye className="h-5 w-5" />
+                Actualización Masiva de Costos - Vista Previa
               </>
             )}
           </DialogTitle>
           <DialogDescription>
-            {currentStep === 'filters' &&
-              'Selecciona los productos y configura el ajuste de costo'}
-            {currentStep === 'preview' &&
-              'Revisa los cambios antes de aplicarlos'}
-            {currentStep === 'confirm' &&
-              'Confirma para aplicar los cambios definitivamente'}
+            {currentStep === 'filters' && 'Configura los filtros para seleccionar los productos a actualizar.'}
+            {currentStep === 'adjustment' && 'Define el tipo y valor de ajuste a aplicar a los costos.'}
+            {currentStep === 'preview' && 'Revisa la vista previa de cambios antes de aplicar la actualización.'}
           </DialogDescription>
         </DialogHeader>
 
         {/* Step indicator */}
         <div className="flex items-center gap-2 mb-4">
-          {(['filters', 'preview', 'confirm'] as WizardStep[]).map(
+          {(['filters', 'adjustment', 'preview', 'confirm'] as WizardStep[]).map(
             (step, index) => (
               <div key={step} className="flex items-center gap-2">
                 <div
@@ -719,13 +717,13 @@ export function CostUpdateDialog({ open, onClose, onSuccess }: CostUpdateDialogP
                     currentStep === step &&
                       'bg-primary text-primary-foreground',
                     currentStep !== step &&
-                      (['filters', 'preview', 'confirm'].indexOf(currentStep) >
+                      (['filters', 'adjustment', 'preview', 'confirm'].indexOf(currentStep) >
                       index
                         ? 'bg-green-100 text-green-700'
                         : 'bg-muted text-muted-foreground')
                   )}
                 >
-                  {['filters', 'preview', 'confirm'].indexOf(currentStep) >
+                  {['filters', 'adjustment', 'preview', 'confirm'].indexOf(currentStep) >
                   index ? (
                     <CheckCircle className="w-4 h-4" />
                   ) : (

@@ -1,10 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { DataTable } from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, TrendingUp, TrendingDown, Package } from 'lucide-react';
 import { type ColumnDef } from '@tanstack/react-table';
@@ -12,7 +11,7 @@ import { type ColumnDef } from '@tanstack/react-table';
 interface CostUpdateBatch {
   id: string;
   createdAt: string;
-  filtersApplied: any;
+  filtersApplied: Record<string, unknown>;
   adjustmentType: string;
   adjustmentValue: number;
   itemsAffected: number;
@@ -39,7 +38,13 @@ export function ProductAuditModal({ open, onClose }: ProductAuditModalProps) {
     setLoading(true);
     try {
       const response = await fetch(
-        `/api/cost-updates/history?page=${pagination.page}&pageSize=${pagination.pageSize}`
+        `/api/cost-updates/history?page=${pagination.page}&pageSize=${pagination.pageSize}`,
+        {
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
       );
       
       if (!response.ok) {
@@ -59,7 +64,7 @@ export function ProductAuditModal({ open, onClose }: ProductAuditModalProps) {
     } finally {
       setLoading(false);
     }
-  }, [pagination.page, pagination.pageSize]);
+  }, [pagination.page, pagination.pageSize, setLoading]);
 
   // Load audit data when modal opens
   useEffect(() => {
@@ -138,7 +143,7 @@ export function ProductAuditModal({ open, onClose }: ProductAuditModalProps) {
       accessorKey: 'filtersApplied',
       header: 'Filtros Aplicados',
       cell: ({ row }) => {
-        const filters = row.getValue('filtersApplied') as any || {};
+        const filters = row.getValue('filtersApplied') as Record<string, unknown> || {};
         const filterCount = Object.keys(filters).filter(key => filters[key]).length;
         
         return (
@@ -146,17 +151,17 @@ export function ProductAuditModal({ open, onClose }: ProductAuditModalProps) {
             <Badge variant="outline" className="text-xs">
               {filterCount} filtro{filterCount !== 1 ? 's' : ''}
             </Badge>
-            {filters.search && (
+            {filters.search && typeof filters.search === 'string' && (
               <div className="text-xs text-muted-foreground">
                 Búsqueda: &quot;{filters.search}&quot;
               </div>
             )}
-            {filters.categoryId && (
+            {filters.categoryId && typeof filters.categoryId === 'string' && (
               <div className="text-xs text-muted-foreground">
                 Categoría: {filters.categoryId}
               </div>
             )}
-            {filters.supplierId && (
+            {filters.supplierId && typeof filters.supplierId === 'string' && (
               <div className="text-xs text-muted-foreground">
                 Proveedor: {filters.supplierId}
               </div>
@@ -203,6 +208,9 @@ export function ProductAuditModal({ open, onClose }: ProductAuditModalProps) {
             <Calendar className="h-5 w-5" />
             Historial de Auditoría - Actualizaciones Masivas de Costos
           </DialogTitle>
+          <DialogDescription>
+            Revisa el historial completo de actualizaciones masivas de costos aplicadas a los productos.
+          </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-6">

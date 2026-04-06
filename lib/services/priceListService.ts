@@ -9,6 +9,7 @@ import { prisma } from '@/lib/prisma';
 import { Prisma } from '@/generated/client';
 import { calculateFinalPrice, calculateMarginPercentage, type RoundingRule } from '@/lib/utils/rounding';
 import { getMinimumMargin } from './settingsService';
+import { randomUUID } from 'crypto';
 
 /**
  * Calculate the effective base cost for a product.
@@ -143,6 +144,7 @@ export async function getPriceListById(id: string): Promise<PriceListDetail | nu
             },
           },
         },
+        orderBy: { createdAt: "desc" },
       },
       _count: {
         select: { price_list_item: true },
@@ -155,7 +157,7 @@ export async function getPriceListById(id: string): Promise<PriceListDetail | nu
   const minimumMargin = await getMinimumMargin();
 
   // Transform items with calculated prices and margins
-  const items: PriceListItem[] = priceList.price_list_item.map(item => {
+  const transformedItems: PriceListItem[] = priceList.price_list_item.map(item => {
     const replacementCost = item.product?.replacementCost
       ? Number(item.product.replacementCost)
       : 0;
@@ -197,7 +199,7 @@ export async function getPriceListById(id: string): Promise<PriceListDetail | nu
     baseMarginPercentage: Number(priceList.baseMarginPercentage),
     roundingRule: priceList.roundingRule as RoundingRule,
     itemCount: priceList._count.price_list_item,
-    items: priceList.price_list_item,
+    items: transformedItems,
   };
 }
 
@@ -226,6 +228,7 @@ export async function getPriceListByName(name: string): Promise<PriceList | null
 export async function createPriceList(input: CreatePriceListInput): Promise<PriceList> {
   const priceList = await prisma.price_list.create({
     data: {
+      id: randomUUID(),
       name: input.name,
       isPublic: input.isPublic ?? false,
       isActive: input.isActive ?? true,
@@ -233,6 +236,7 @@ export async function createPriceList(input: CreatePriceListInput): Promise<Pric
       endDate: input.endDate ?? null,
       baseMarginPercentage: input.baseMarginPercentage,
       roundingRule: input.roundingRule ?? 'SMART_HUNDREDS',
+      updatedAt: new Date(),
     },
     include: {
       _count: {
@@ -314,10 +318,12 @@ export async function createPriceListItem(
   // Create the item
   const item = await prisma.price_list_item.create({
     data: {
+      id: randomUUID(),
       priceListId,
       productId: input.productId,
       overrideMarginPercentage: input.overrideMarginPercentage ?? null,
       fixedPrice: input.fixedPrice ?? null,
+      updatedAt: new Date(),
     },
     include: {
       product: {
@@ -351,8 +357,8 @@ export async function createPriceListItem(
     id: item.id,
     priceListId: item.priceListId,
     productId: item.productId,
-    productName: item.product?.name,
-    productSku: item.product?.sku ?? undefined,
+    productName: item.product?.name || 'Unknown Product',
+    productSku: item.product?.sku || undefined,
     replacementCost,
     overrideMarginPercentage: item.overrideMarginPercentage !== null
       ? Number(item.overrideMarginPercentage)

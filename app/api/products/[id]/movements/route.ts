@@ -5,7 +5,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { getProductMovements } from '@/lib/services/productService';
-import { auth } from '@/lib/auth';
+import { getSession } from '@/lib/auth-server';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -15,7 +15,7 @@ interface RouteParams {
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     // Check authentication
-    const session = await auth.api.getSession({ headers: request.headers });
+    const session = await getSession();
     if (!session) {
       return NextResponse.json(
         { error: 'No autorizado' },

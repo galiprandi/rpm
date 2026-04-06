@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { randomUUID } from "crypto";
 
 // Helper functions for text normalization
 const normalizeText = (text: string): string => text.trim().toLowerCase();
@@ -21,12 +22,12 @@ export async function GET(request: NextRequest) {
       where.category = { has: category };
     }
 
-    const makes = await prisma.vehicleMake.findMany({
+    const makes = await prisma.vehicle_make.findMany({
       where,
       include: {
         _count: {
           select: {
-            models: true,
+            vehicle_model: true,
           },
         },
       },
@@ -60,14 +61,15 @@ export async function POST(request: NextRequest) {
     const capitalizedName = capitalizeText(name);
 
     // Try to find existing make
-    let make = await prisma.vehicleMake.findUnique({
+    let make = await prisma.vehicle_make.findUnique({
       where: { normalizedName },
     });
 
     if (!make) {
       // Create new make
-      make = await prisma.vehicleMake.create({
+      make = await prisma.vehicle_make.create({
         data: {
+          id: randomUUID(),
           name: capitalizedName,
           normalizedName,
           category: Array.isArray(category) ? category : [category],

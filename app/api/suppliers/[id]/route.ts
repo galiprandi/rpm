@@ -80,7 +80,7 @@ export async function DELETE(
       where: { id },
       include: {
         _count: {
-          select: { products: true },
+          select: { product: true },
         },
       },
     });
@@ -93,7 +93,7 @@ export async function DELETE(
     }
 
     // No permitir eliminar si tiene productos asociados
-    if (existing._count.products > 0) {
+    if (existing._count.product > 0) {
       return NextResponse.json(
         { error: 'No se puede eliminar un proveedor con productos asociados' },
         { status: 409 }

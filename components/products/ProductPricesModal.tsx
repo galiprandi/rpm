@@ -6,6 +6,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, Pencil, Calculator } from 'lucide-react';
@@ -335,6 +336,9 @@ export function ProductPricesModal({ isOpen, onClose, product }: ProductPricesMo
         <DialogContent className="sm:max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Precios Calculados: {product.name}</DialogTitle>
+            <DialogDescription>
+              Revisa los precios calculados para este producto según las diferentes listas de precios configuradas.
+            </DialogDescription>
           </DialogHeader>
 
           {/* Replacement Cost Section */}
@@ -374,6 +378,9 @@ export function ProductPricesModal({ isOpen, onClose, product }: ProductPricesMo
             <DialogTitle>
               Editar Precio: {editingPriceList?.name}
             </DialogTitle>
+            <DialogDescription>
+              Modifica el precio de este producto para la lista de precios seleccionada.
+            </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4 py-4">

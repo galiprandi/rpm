@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { randomUUID } from "crypto";
 
 const normalizeText = (text: string): string => text.trim().toLowerCase();
 const capitalizeText = (text: string): string =>
@@ -18,10 +19,10 @@ export async function GET(request: NextRequest) {
       where.normalizedName = { contains: normalizeText(search), mode: "insensitive" };
     }
 
-    const models = await prisma.vehicleModel.findMany({
+    const models = await prisma.vehicle_model.findMany({
       where,
       include: {
-        make: true,
+        vehicle_make: true,
       },
       orderBy: { name: "asc" },
     });
@@ -53,7 +54,7 @@ export async function POST(request: NextRequest) {
     const capitalizedName = capitalizeText(name);
 
     // Try to find existing model
-    let model = await prisma.vehicleModel.findFirst({
+    let model = await prisma.vehicle_model.findFirst({
       where: {
         makeId,
         normalizedName,
@@ -62,8 +63,9 @@ export async function POST(request: NextRequest) {
 
     if (!model) {
       // Create new model
-      model = await prisma.vehicleModel.create({
+      model = await prisma.vehicle_model.create({
         data: {
+          id: randomUUID(),
           name: capitalizedName,
           normalizedName,
           makeId,
@@ -75,7 +77,7 @@ export async function POST(request: NextRequest) {
       const existingYears = model.years || [];
       const newYears = [...new Set([...existingYears, ...years])];
       if (newYears.length > existingYears.length) {
-        model = await prisma.vehicleModel.update({
+        model = await prisma.vehicle_model.update({
           where: { id: model.id },
           data: { years: newYears },
         });

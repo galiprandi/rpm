@@ -5,6 +5,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { PriceListForm, type PriceListFormData } from './PriceListForm';
@@ -43,6 +44,12 @@ export function PriceListDialog({
           <DialogTitle>
             {editingPriceList ? 'Editar Lista de Precios' : 'Crear Lista de Precios'}
           </DialogTitle>
+          <DialogDescription>
+            {editingPriceList 
+              ? 'Modifica los datos de la lista de precios existente.' 
+              : 'Crea una nueva lista de precios para aplicar a los productos.'
+            }
+          </DialogDescription>
         </DialogHeader>
         <PriceListForm
           formData={formData}

@@ -61,10 +61,12 @@ interface ImportState {
 const DEFAULT_OPTIONS: ImportOptions = {
   skipStockLessThanOne: false,
   duplicateAction: 'skip',
+  defaultCategoryId: undefined,
+  defaultSupplierId: undefined,
 };
 
 export const useImportState = create<ImportState>()(
-  (set, get) => ({
+  (set) => ({
       // Navigation
       currentStep: 0,
       goToStep: (step) => set({ currentStep: step }),
@@ -96,9 +98,9 @@ export const useImportState = create<ImportState>()(
       setOptions: (options) => set((state) => ({
         configuration: { ...state.configuration, options }
       })),
-      clearConfiguration: () => set((state) => ({
+      clearConfiguration: () => set({
         configuration: { mapping: {}, options: DEFAULT_OPTIONS }
-      })),
+      }),
       
       // Validation
       validationResult: null,
@@ -174,7 +176,7 @@ export function useConfiguration(): UseConfigurationReturn {
     setOptions({ ...configuration.options, ...options });
   };
   
-  const autoDetect = (columns: string[]) => {
+  const autoDetect = () => {
     // AUTO-DETECCIÓN DESACTIVADA - Forzar mapeo manual
     console.log('Auto-detección desactivada - el usuario debe mapear manualmente');
     // Código de auto-detección eliminado - usar useConfiguration.ts para mapeo

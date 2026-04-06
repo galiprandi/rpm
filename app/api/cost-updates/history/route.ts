@@ -4,13 +4,13 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
+import { getSession } from '@/lib/auth-server';
 import { getCostUpdateHistory } from '@/lib/services';
 
 export async function GET(request: NextRequest) {
   try {
     // Check authentication
-    const session = await auth.api.getSession({ headers: request.headers });
+    const session = await getSession();
     if (!session?.user) {
       return NextResponse.json(
         { error: 'Unauthorized' },

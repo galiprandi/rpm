@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { randomUUID } from "crypto";
 
 const normalizeText = (text: string): string => text.trim().toLowerCase();
 const capitalizeText = (text: string): string =>
@@ -23,7 +24,7 @@ export async function GET(request: NextRequest) {
     if (vehicleId) where.vehicleId = vehicleId;
     if (technicianId) where.technicianId = technicianId;
 
-    const workOrders = await prisma.workOrder.findMany({
+    const workOrders = await prisma.work_order.findMany({
       where,
       include: {
         customer: {
@@ -38,13 +39,13 @@ export async function GET(request: NextRequest) {
             id: true,
             identifier: true,
             category: true,
-            make: {
+            vehicle_make: {
               select: {
                 id: true,
                 name: true,
               },
             },
-            model: {
+            vehicle_model: {
               select: {
                 id: true,
                 name: true,
@@ -52,24 +53,20 @@ export async function GET(request: NextRequest) {
             },
           },
         },
-        items: {
+        work_order_item: {
           include: {
             product: true,
             service: true,
           },
         },
-        _count: {
-          select: {
-            photos: true,
-          },
-        },
+        photo: true,
       },
       orderBy: { createdAt: "desc" },
       take: limit,
       skip: offset,
     });
 
-    const total = await prisma.workOrder.count({ where });
+    const total = await prisma.work_order.count({ where });
 
     return NextResponse.json({ workOrders, total, limit, offset });
   } catch (error) {
@@ -140,13 +137,14 @@ export async function POST(request: NextRequest) {
 
       if (isVehicle && makeName) {
         const normalizedMakeName = normalizeText(makeName);
-        let make = await prisma.vehicleMake.findUnique({
+        let make = await prisma.vehicle_make.findUnique({
           where: { normalizedName: normalizedMakeName },
         });
 
         if (!make) {
-          make = await prisma.vehicleMake.create({
+          make = await prisma.vehicle_make.create({
             data: {
+              id: randomUUID(),
               name: capitalizeText(makeName),
               normalizedName: normalizedMakeName,
               category: [category],
@@ -158,7 +156,7 @@ export async function POST(request: NextRequest) {
         // 2. Find or create VehicleModel
         if (modelName) {
           const normalizedModelName = normalizeText(modelName);
-          let model = await prisma.vehicleModel.findFirst({
+          let model = await prisma.vehicle_model.findFirst({
             where: {
               makeId: make.id,
               normalizedName: normalizedModelName,
@@ -166,8 +164,9 @@ export async function POST(request: NextRequest) {
           });
 
           if (!model) {
-            model = await prisma.vehicleModel.create({
+            model = await prisma.vehicle_model.create({
               data: {
+                id: randomUUID(),
                 makeId: make.id,
                 name: capitalizeText(modelName),
                 normalizedName: normalizedModelName,
@@ -175,7 +174,7 @@ export async function POST(request: NextRequest) {
               },
             });
           } else if (year && !model.years.includes(year)) {
-            model = await prisma.vehicleModel.update({
+            model = await prisma.vehicle_model.update({
               where: { id: model.id },
               data: { years: { push: year } },
             });
@@ -195,16 +194,18 @@ export async function POST(request: NextRequest) {
       if (!vehicle) {
         vehicle = await prisma.vehicle.create({
           data: {
+            id: randomUUID(),
             identifier: identifier.toUpperCase(),
             category,
             customerId,
-            makeId,
-            modelId,
-            year,
-            color,
-            equipmentName,
-            equipmentType,
-            description,
+            makeId: makeId || null,
+            modelId: modelId || null,
+            year: year || null,
+            color: color || null,
+            equipmentName: equipmentName || null,
+            equipmentType: equipmentType || null,
+            description: description || null,
+            updatedAt: new Date(),
           },
         });
       }
@@ -258,8 +259,9 @@ export async function POST(request: NextRequest) {
       totalServices,
     });
 
-    const workOrder = await prisma.workOrder.create({
+    const workOrder = await prisma.work_order.create({
       data: {
+        id: randomUUID(),
         customerId,
         vehicleId: vehicle.id,
         technicianId,
@@ -273,16 +275,17 @@ export async function POST(request: NextRequest) {
         total,
         totalProducts,
         totalServices,
+        updatedAt: new Date(),
       },
       include: {
         customer: true,
         vehicle: {
           include: {
-            make: true,
-            model: true,
+            vehicle_make: true,
+            vehicle_model: true,
           },
         },
-        items: {
+        work_order_item: {
           include: {
             product: true,
             service: true,
@@ -299,7 +302,7 @@ export async function POST(request: NextRequest) {
       console.log("WorkOrder ID:", workOrder.id);
       
       await prisma.work_order_item.createMany({
-        data: workOrderItems.map((item: any) => ({
+        data: workOrderItems.map((item: { productId: string; quantity: number; unitPrice: number; type: string }) => ({
           ...item,
           workOrderId: workOrder.id,
         })),

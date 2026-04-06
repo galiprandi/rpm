@@ -6,10 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import { ProductDialog } from '@/components/products/ProductDialog';
 import { ProductMovementsModal } from '@/components/products/ProductMovementsModal';
 import { ProductPricesModal } from '@/components/products/ProductPricesModal';
-import { ProductAuditModal } from '@/components/products/ProductAuditModal';
 import { useUI } from '@/components/ui/UIProvider';
 import { Header, CrudAdmin, StatItem } from '@/components/adm';
-import { Package, Edit2, Trash2, AlertTriangle, DollarSign, Boxes, History, Upload } from 'lucide-react';
+import { Package, Edit2, Trash2, AlertTriangle, DollarSign, Boxes, Upload, Clock } from 'lucide-react';
 import { PriceDisplay } from '@/components/ui/price-display';
 import { StockDisplay } from '@/components/ui/stock-display';
 import { type ColumnDef } from '@tanstack/react-table';
@@ -25,8 +24,7 @@ export default function ProductsPage() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // Modal states
-  const [showAuditModal, setShowAuditModal] = useState(false);
+  // Modal states - Audit modal removed, moved to price-lists
 
   useEffect(() => {
     fetchProducts();
@@ -395,12 +393,6 @@ export default function ProductsPage() {
           description="Gestiona el inventario de productos y servicios"
           secondaryActions={[
             {
-              label: 'Ver Auditoría',
-              onClick: () => setShowAuditModal(true),
-              variant: 'outline' as const,
-              icon: History,
-            },
-            {
               label: 'Importar Productos',
               onClick: goToImporter,
               variant: 'outline' as const,
@@ -439,7 +431,7 @@ export default function ProductsPage() {
                 onClick={() => openMovementsModal(product)}
                 title="Ver historial"
               >
-                <History className="h-4 w-4" />
+                <Clock className="h-4 w-4" />
               </Button>
               <Button variant="ghost" size="sm" onClick={() => openEditDialog(product)} title="Editar producto">
                 <Edit2 className="h-4 w-4" />
@@ -485,12 +477,6 @@ export default function ProductsPage() {
         product={selectedProductForMovements}
         movements={movements}
         loading={movementsLoading}
-      />
-
-      {/* Audit Modal */}
-      <ProductAuditModal
-        open={showAuditModal}
-        onClose={() => setShowAuditModal(false)}
       />
     </>
   );

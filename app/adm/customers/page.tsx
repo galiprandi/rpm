@@ -94,8 +94,8 @@ export default function CustomersPage() {
         accessorKey: "vehicles",
         header: "Vehículos",
         cell: ({ row }) => {
-          const vehicles = row.original.vehicles;
-          if (vehicles.length === 0) {
+          const vehicles = row.original.vehicles || [];
+          if (!vehicles || vehicles.length === 0) {
             return <span className="text-sm text-muted-foreground">Sin vehículos</span>;
           }
           return (

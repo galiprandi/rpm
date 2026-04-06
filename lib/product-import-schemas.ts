@@ -67,6 +67,7 @@ export const ProductCreateSchema = z.object({
   minStock: z.number().int().min(0).default(0),
   barcode: z.string().trim().optional().nullable(),
   location: z.string().trim().optional().nullable(),
+  supplierId: z.string().trim().optional().nullable(),
   isActive: z.boolean().default(true),
   // categoryId se asigna después de procesar categorías
 });
