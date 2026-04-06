@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { toast } from 'sonner';
 import { Header } from '@/components/adm/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +9,7 @@ import { ThemeSelector } from '@/components/ui/ThemeSelector';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { SettingItem } from '@/components/settings/SettingItem';
+import { CreditCard, ChevronRight } from 'lucide-react';
 
 export default function SettingsPage() {
   const [minimumMargin, setMinimumMargin] = useState<string>('15.0');
@@ -111,6 +113,29 @@ export default function SettingsPage() {
               {saving ? '...' : 'Guardar'}
             </Button>
           </SettingItem>
+        </CardContent>
+      </Card>
+
+      {/* Métodos de Pago - Solo ADMIN */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle>Finanzas</CardTitle>
+          <CardDescription>
+            Configuración de métodos de pago y opciones de cobro.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <Link href="/adm/payment-methods">
+            <SettingItem
+              title="Métodos de Pago"
+              description="Administra las formas de pago disponibles (Efectivo, Transferencia, QR, etc.)"
+            >
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <CreditCard className="h-4 w-4" />
+                <ChevronRight className="h-4 w-4" />
+              </div>
+            </SettingItem>
+          </Link>
         </CardContent>
       </Card>
     </div>

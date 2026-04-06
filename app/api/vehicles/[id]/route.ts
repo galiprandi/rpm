@@ -12,9 +12,9 @@ export async function GET(
       where: { id },
       include: {
         customer: true,
-        make: true,
-        model: true,
-        workOrders: {
+        vehicle_make: true,
+        vehicle_model: true,
+        work_order: {
           orderBy: { createdAt: "desc" },
           take: 10,
         },
@@ -75,8 +75,8 @@ export async function PUT(
       },
       include: {
         customer: true,
-        make: true,
-        model: true,
+        vehicle_make: true,
+        vehicle_model: true,
       },
     });
 

@@ -254,11 +254,27 @@ PENDIENTE → APROBADO → OT GENERADA
 │  (agendada) │   │ (en taller) │   │ (trabajando)│   │ (revisión)  │
 └─────────────┘   └─────────────┘   └─────────────┘   └──────┬──────┘
                                                             │
-┌─────────────┐   ┌─────────────┐   ┌─────────────┐           │
-│  ENTREGADA  │◄──│   PAGADA    │◄──│    LISTO    │◄──────────┘
-│  (cerrada)  │   │ (cierre)    │   │ (para retiro)│
-└─────────────┘   └─────────────┘   └─────────────┘
+┌─────────────┐                                       ┌─────────────┐
+│  ENTREGADA  │◄──────────────────────────────────────│    LISTO    │
+│  (cerrada)  │                                       │ (para retiro)│
+└─────────────┘                                       └─────────────┘
 ```
+
+> **Nota**: El estado "PAGADA" ya no existe como columna Kanban. El estado de pago se muestra mediante código de colores en el importe de cada tarjeta de OT, calculado desde los pagos registrados.
+
+#### Visualización de Estado de Pago en Kanban:
+Cada tarjeta de OT en el Kanban muestra el importe con código de colores según el estado de pago:
+- **Verde** (`text-green-600`) - Totalmente pagada (totalPaid >= total)
+- **Amarillo** (`text-yellow-600`) - Parcialmente pagada (0 < totalPaid < total)
+- **Gris** (`text-gray-600`) - Sin pagar (totalPaid = 0)
+
+#### Iconos de Categoría en Kanban:
+Cada tarjeta de OT muestra un icono junto al identificador del vehículo/equipamiento para identificar rápidamente el tipo:
+- 🚗 **Car** - Auto/Camioneta/SUV/Pickup (icono Car)
+- 🚚 **Truck** - Camión (icono Truck)
+- 🔧 **Motorcycle** - Moto (icono Wrench)
+- 🎧 **Audio Equipment** - Equipo de audio (icono Headphones)
+- 📦 **Trailer/Other** - Trailer u otros equipos (icono Package)
 
 #### Campos OT:
 ```typescript
@@ -287,12 +303,10 @@ interface WorkOrder {
   completedAt?: Date;
   deliveredAt?: Date;
   
-  // Pago (MVP - sin facturación AFIP aún)
-  payment?: {
-    total: number;               // Total cobrado
-    method: 'CASH' | 'TRANSFER' | 'QR' | 'CARD' | 'OTHER';  // Forma de pago
-    notes?: string;              // Referencia transferencia, etc.
-  };
+  // Pago - Modelo de pagos múltiples (sustituye payment simple)
+  payments?: Payment[];          // Pagos registrados
+  totalPaid?: number;            // Suma de todos los pagos
+  isFullyPaid?: boolean;         // true si totalPaid >= total
   
   // Facturación (futuro - cuando se implemente AFIP)
   invoiceId?: string;            // Factura emitida (opcional)
@@ -303,6 +317,28 @@ interface WorkOrder {
   total: number;
   
   notes: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface Payment {
+  id: string;
+  workOrderId: string;
+  paymentMethodId: string;
+  amount: number;
+  notes?: string;                // Referencia transferencia, últimos dígitos tarjeta
+  createdAt: Date;
+  createdBy: string;             // Usuario que registró
+  paymentMethod: PaymentMethod;
+}
+
+interface PaymentMethod {
+  id: string;
+  name: string;                  // "Efectivo", "Transferencia", "QR MercadoPago"
+  code: string;                  // "CASH", "TRANSFER", "QR" (único, uppercase)
+  description?: string;
+  isActive: boolean;
+  sortOrder: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -333,6 +369,81 @@ const generateEntryChecklist = (category: VehicleCategory) => {
   return items;
 };
 ```
+
+#### Edición de Kilometraje y Combustible en Vista de Detalle
+
+Desde la vista de detalle de la OT (`/adm/work-orders/[id]`), en la sección de Checklists:
+- Se muestran kilometraje y nivel de combustible si fueron definidos al crear el checklist
+- Botón "Editar" permite modificar estos valores en línea
+- **Combustible**: Usa componente `FuelLevelSlider` (reusable)
+  - Slider con rango 0-100% y pasos de 5%
+  - Etiqueta muestra valor actual en tiempo real
+  - Indicadores visuales: "Vacío" (con icono Droplet) a la izquierda, "Lleno" (con icono Droplet) a la derecha
+  - Estilos personalizados: track `h-2`, range `bg-blue-700`, thumb `bg-gray-600` con borde `border-gray-700`, tamaño `w-4 h-4`
+- Los cambios se guardan mediante endpoint `PUT /api/work-orders/[id]/checklist`
+- Valores se almacenan en el JSON del checklist correspondiente (entryChecklist o exitChecklist)
+
+```typescript
+// Componente reusable: /components/work-orders/FuelLevelSlider.tsx
+interface FuelLevelSliderProps {
+  value: number;
+  onChange: (value: number) => void;
+  label?: string;
+}
+
+// Estructura del checklist con datos adicionales
+interface ChecklistWithData {
+  items: Array<{ id: string; label: string; checked: boolean }>;
+  completedAt: string;
+  odometerValue?: number;   // Kilometraje en km
+  fuelLevel?: number;       // Nivel de combustible en % (0-100)
+}
+```
+
+#### Edición de Fecha Agendada y Notas en Vista de Detalle
+
+Desde la vista de detalle de la OT (`/adm/work-orders/[id]`):
+- **Fecha Agendada**: Se muestra en el header si está definida, con botón "Editar" para modificarla
+  - Formato: datetime-local para edición
+  - Se guarda mediante `PUT /api/work-orders/[id]` con campo `scheduledDate`
+- **Notas**: Se muestra en una card separada si existen, con botón "Editar" para modificarlas
+  - Formato: Textarea multilinea para edición
+  - Se guarda mediante `PUT /api/work-orders/[id]` con campo `notes`
+
+```typescript
+// Campos editables en WorkOrder
+interface WorkOrderEditable {
+  scheduledDate?: Date;   // Fecha y hora agendada
+  notes?: string;         // Notas generales de la OT
+}
+```
+
+#### Sistema de Auditoría de Cambios
+
+**Modelo de Datos:**
+- `work_order_audit_log` - Tabla que registra cambios en las OTs
+  - `fieldName`: Campo que cambió (status, notes, scheduledDate, paymentMethod, paymentNotes)
+  - `oldValue`: Valor anterior
+  - `newValue`: Valor nuevo
+  - `changedBy`: Usuario que hizo el cambio (email o userId)
+  - `changedAt`: Timestamp del cambio
+  - `ipAddress`: IP del cliente (opcional)
+  - `userAgent`: User agent del cliente (opcional)
+
+**Servicios:**
+- `logWorkOrderChange(entry)` - Registra un cambio en el historial
+- `getWorkOrderAuditLogs(workOrderId)` - Obtiene el historial de cambios de una OT (últimos 100)
+
+**API Endpoints:**
+- `PUT /api/work-orders/[id]` - Actualiza OT y registra cambios automáticamente
+- `GET /api/work-orders/[id]/audit-logs` - Obtiene historial de cambios de una OT
+
+**Campos Auditados:**
+- status
+- notes
+- scheduledDate
+- paymentMethod
+- paymentNotes
 
 ---
 
@@ -880,6 +991,29 @@ export async function POST(request: Request) {
   scheduledDate?: string;
   source?: 'IN_PERSON' | 'WEB'; // Default: 'IN_PERSON'
 }
+
+// GET /api/work-orders/:id/payments - Response
+{
+  payments: [{
+    id: string;
+    amount: number;
+    notes: string | null;
+    createdAt: string;
+    createdBy: string;
+    paymentMethod: { id: string; name: string; code: string };
+  }];
+  totalPaid: number;
+  pendingAmount: number;
+  isFullyPaid: boolean;
+  workOrderTotal: number;
+}
+
+// POST /api/work-orders/:id/payments - Request Body
+{
+  paymentMethodId: string;     // ID del método de pago
+  amount: number;               // Monto a pagar
+  notes?: string;               // Referencia, últimos dígitos tarjeta, etc.
+}
 ```
 
 **Endpoints:**
@@ -894,7 +1028,42 @@ export async function POST(request: Request) {
 | `/api/work-orders/:id/assign` | POST | Asignar técnico | ADMIN |
 | `/api/work-orders/:id/photos` | POST | Subir fotos | TECHNICIAN, ADMIN |
 | `/api/work-orders/:id/checklist` | POST | Completar checklist | TECHNICIAN, ADMIN |
+| `/api/work-orders/:id/payments` | GET | Listar pagos de OT | SELLER, TECHNICIAN, ADMIN |
+| `/api/work-orders/:id/payments` | POST | Registrar pago | SELLER, ADMIN |
 | `/api/work-orders/my` | GET | Mis OTs asignadas | TECHNICIAN |
+
+### Métodos de Pago (Payment Methods)
+
+**Schema:**
+```typescript
+// POST /api/payment-methods - Request Body
+{
+  name: string;                 // "Efectivo", "Transferencia"
+  code: string;                  // "CASH", "TRANSFER" (uppercase, unique)
+  description?: string;
+  sortOrder?: number;            // Orden de visualización
+}
+
+// PUT /api/payment-methods/:id - Request Body
+{
+  name?: string;
+  description?: string;
+  isActive?: boolean;
+  sortOrder?: number;
+}
+```
+
+**Endpoints:**
+
+| Endpoint | Método | Descripción | Roles |
+|----------|--------|-------------|-------|
+| `/api/payment-methods` | GET | Listar métodos de pago | Todos |
+| `/api/payment-methods` | POST | Crear método de pago | ADMIN |
+| `/api/payment-methods/:id` | GET | Obtener método | Todos |
+| `/api/payment-methods/:id` | PUT | Actualizar método | ADMIN |
+| `/api/payment-methods/:id` | DELETE | Eliminar método (solo si sin pagos) | ADMIN |
+
+> **Nota**: Los métodos de pago configurables permiten adaptar el sistema sin cambios de código. Se crean por defecto: Efectivo, Transferencia, QR MercadoPago, Tarjeta de Crédito, Tarjeta de Débito.
 
 ### Técnicos
 | Endpoint | Método | Descripción | Roles |

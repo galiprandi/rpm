@@ -27,11 +27,11 @@ export async function GET(request: NextRequest) {
             phone: true,
           },
         },
-        make: true,
-        model: true,
+        vehicle_make: true,
+        vehicle_model: true,
         _count: {
           select: {
-            workOrders: true,
+            work_order: true,
           },
         },
       },
@@ -113,8 +113,8 @@ export async function POST(request: NextRequest) {
       },
       include: {
         customer: true,
-        make: true,
-        model: true,
+        vehicle_make: true,
+        vehicle_model: true,
       },
     });
 

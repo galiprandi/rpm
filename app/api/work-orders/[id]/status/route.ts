@@ -40,7 +40,7 @@ export async function PUT(
       updateData.deliveredAt = new Date();
     }
 
-    const workOrder = await prisma.workOrder.update({
+    const workOrder = await prisma.work_order.update({
       where: { id },
       data: updateData,
       include: {

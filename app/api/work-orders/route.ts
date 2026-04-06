@@ -60,6 +60,11 @@ export async function GET(request: NextRequest) {
           },
         },
         photo: true,
+        payments: {
+          select: {
+            amount: true,
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
       take: limit,
@@ -68,7 +73,20 @@ export async function GET(request: NextRequest) {
 
     const total = await prisma.work_order.count({ where });
 
-    return NextResponse.json({ workOrders, total, limit, offset });
+    // Calculate payment status for each work order
+    const workOrdersWithPaymentStatus = workOrders.map((wo) => {
+      const totalPaid = wo.payments.reduce(
+        (sum, p) => sum + Number(p.amount),
+        0
+      );
+      return {
+        ...wo,
+        totalPaid,
+        isFullyPaid: totalPaid >= Number(wo.total),
+      };
+    });
+
+    return NextResponse.json({ workOrders: workOrdersWithPaymentStatus, total, limit, offset });
   } catch (error) {
     console.error("Error fetching work orders:", error);
     return NextResponse.json(
@@ -301,14 +319,24 @@ export async function POST(request: NextRequest) {
       console.log("Creating WorkOrderItems:", workOrderItems);
       console.log("WorkOrder ID:", workOrder.id);
       
-      await prisma.work_order_item.createMany({
-        data: workOrderItems.map((item: { productId: string; quantity: number; unitPrice: number; type: string }) => ({
-          ...item,
-          workOrderId: workOrder.id,
-        })),
-      });
-      
-      console.log("WorkOrderItems created successfully");
+      try {
+        await prisma.work_order_item.createMany({
+          data: workOrderItems.map((item: { type: string; productId?: string; serviceId?: string; quantity: number; unitPrice: number; subtotal: number }) => ({
+            id: crypto.randomUUID(),
+            type: item.type,
+            productId: item.productId || null,
+            serviceId: item.serviceId || null,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            subtotal: item.subtotal,
+            workOrderId: workOrder.id,
+          })),
+        });
+        console.log("WorkOrderItems created successfully");
+      } catch (itemError) {
+        console.error("Error creating WorkOrderItems:", itemError);
+        // No fallar la creación de la OT, pero loguear el error
+      }
     }
 
     return NextResponse.json(workOrder, { status: 201 });

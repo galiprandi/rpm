@@ -137,6 +137,11 @@ export type verification = Prisma.verificationModel
  */
 export type work_order = Prisma.work_orderModel
 /**
+ * Model work_order_audit_log
+ * 
+ */
+export type work_order_audit_log = Prisma.work_order_audit_logModel
+/**
  * Model work_order_item
  * 
  */
@@ -146,3 +151,13 @@ export type work_order_item = Prisma.work_order_itemModel
  * 
  */
 export type cost_update_batch = Prisma.cost_update_batchModel
+/**
+ * Model PaymentMethod
+ * 
+ */
+export type PaymentMethod = Prisma.PaymentMethodModel
+/**
+ * Model Payment
+ * 
+ */
+export type Payment = Prisma.PaymentModel

@@ -380,6 +380,8 @@ export type work_orderWhereInput = {
   customer?: Prisma.XOR<Prisma.CustomerScalarRelationFilter, Prisma.customerWhereInput>
   vehicle?: Prisma.XOR<Prisma.VehicleScalarRelationFilter, Prisma.vehicleWhereInput>
   work_order_item?: Prisma.Work_order_itemListRelationFilter
+  payments?: Prisma.PaymentListRelationFilter
+  auditLogs?: Prisma.Work_order_audit_logListRelationFilter
 }
 
 export type work_orderOrderByWithRelationInput = {
@@ -412,6 +414,8 @@ export type work_orderOrderByWithRelationInput = {
   customer?: Prisma.customerOrderByWithRelationInput
   vehicle?: Prisma.vehicleOrderByWithRelationInput
   work_order_item?: Prisma.work_order_itemOrderByRelationAggregateInput
+  payments?: Prisma.PaymentOrderByRelationAggregateInput
+  auditLogs?: Prisma.work_order_audit_logOrderByRelationAggregateInput
 }
 
 export type work_orderWhereUniqueInput = Prisma.AtLeast<{
@@ -447,6 +451,8 @@ export type work_orderWhereUniqueInput = Prisma.AtLeast<{
   customer?: Prisma.XOR<Prisma.CustomerScalarRelationFilter, Prisma.customerWhereInput>
   vehicle?: Prisma.XOR<Prisma.VehicleScalarRelationFilter, Prisma.vehicleWhereInput>
   work_order_item?: Prisma.Work_order_itemListRelationFilter
+  payments?: Prisma.PaymentListRelationFilter
+  auditLogs?: Prisma.Work_order_audit_logListRelationFilter
 }, "id">
 
 export type work_orderOrderByWithAggregationInput = {
@@ -541,6 +547,8 @@ export type work_orderCreateInput = {
   customer: Prisma.customerCreateNestedOneWithoutWork_orderInput
   vehicle: Prisma.vehicleCreateNestedOneWithoutWork_orderInput
   work_order_item?: Prisma.work_order_itemCreateNestedManyWithoutWork_orderInput
+  payments?: Prisma.PaymentCreateNestedManyWithoutWorkOrderInput
+  auditLogs?: Prisma.work_order_audit_logCreateNestedManyWithoutWork_orderInput
 }
 
 export type work_orderUncheckedCreateInput = {
@@ -571,6 +579,8 @@ export type work_orderUncheckedCreateInput = {
   odometerValue?: number | null
   photo?: Prisma.photoUncheckedCreateNestedManyWithoutWork_orderInput
   work_order_item?: Prisma.work_order_itemUncheckedCreateNestedManyWithoutWork_orderInput
+  payments?: Prisma.PaymentUncheckedCreateNestedManyWithoutWorkOrderInput
+  auditLogs?: Prisma.work_order_audit_logUncheckedCreateNestedManyWithoutWork_orderInput
 }
 
 export type work_orderUpdateInput = {
@@ -601,6 +611,8 @@ export type work_orderUpdateInput = {
   customer?: Prisma.customerUpdateOneRequiredWithoutWork_orderNestedInput
   vehicle?: Prisma.vehicleUpdateOneRequiredWithoutWork_orderNestedInput
   work_order_item?: Prisma.work_order_itemUpdateManyWithoutWork_orderNestedInput
+  payments?: Prisma.PaymentUpdateManyWithoutWorkOrderNestedInput
+  auditLogs?: Prisma.work_order_audit_logUpdateManyWithoutWork_orderNestedInput
 }
 
 export type work_orderUncheckedUpdateInput = {
@@ -631,6 +643,8 @@ export type work_orderUncheckedUpdateInput = {
   odometerValue?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   photo?: Prisma.photoUncheckedUpdateManyWithoutWork_orderNestedInput
   work_order_item?: Prisma.work_order_itemUncheckedUpdateManyWithoutWork_orderNestedInput
+  payments?: Prisma.PaymentUncheckedUpdateManyWithoutWorkOrderNestedInput
+  auditLogs?: Prisma.work_order_audit_logUncheckedUpdateManyWithoutWork_orderNestedInput
 }
 
 export type work_orderCreateManyInput = {
@@ -938,6 +952,20 @@ export type work_orderUpdateexitPhotosInput = {
   push?: string | string[]
 }
 
+export type work_orderCreateNestedOneWithoutAuditLogsInput = {
+  create?: Prisma.XOR<Prisma.work_orderCreateWithoutAuditLogsInput, Prisma.work_orderUncheckedCreateWithoutAuditLogsInput>
+  connectOrCreate?: Prisma.work_orderCreateOrConnectWithoutAuditLogsInput
+  connect?: Prisma.work_orderWhereUniqueInput
+}
+
+export type work_orderUpdateOneRequiredWithoutAuditLogsNestedInput = {
+  create?: Prisma.XOR<Prisma.work_orderCreateWithoutAuditLogsInput, Prisma.work_orderUncheckedCreateWithoutAuditLogsInput>
+  connectOrCreate?: Prisma.work_orderCreateOrConnectWithoutAuditLogsInput
+  upsert?: Prisma.work_orderUpsertWithoutAuditLogsInput
+  connect?: Prisma.work_orderWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.work_orderUpdateToOneWithWhereWithoutAuditLogsInput, Prisma.work_orderUpdateWithoutAuditLogsInput>, Prisma.work_orderUncheckedUpdateWithoutAuditLogsInput>
+}
+
 export type work_orderCreateNestedOneWithoutWork_order_itemInput = {
   create?: Prisma.XOR<Prisma.work_orderCreateWithoutWork_order_itemInput, Prisma.work_orderUncheckedCreateWithoutWork_order_itemInput>
   connectOrCreate?: Prisma.work_orderCreateOrConnectWithoutWork_order_itemInput
@@ -950,6 +978,20 @@ export type work_orderUpdateOneRequiredWithoutWork_order_itemNestedInput = {
   upsert?: Prisma.work_orderUpsertWithoutWork_order_itemInput
   connect?: Prisma.work_orderWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.work_orderUpdateToOneWithWhereWithoutWork_order_itemInput, Prisma.work_orderUpdateWithoutWork_order_itemInput>, Prisma.work_orderUncheckedUpdateWithoutWork_order_itemInput>
+}
+
+export type work_orderCreateNestedOneWithoutPaymentsInput = {
+  create?: Prisma.XOR<Prisma.work_orderCreateWithoutPaymentsInput, Prisma.work_orderUncheckedCreateWithoutPaymentsInput>
+  connectOrCreate?: Prisma.work_orderCreateOrConnectWithoutPaymentsInput
+  connect?: Prisma.work_orderWhereUniqueInput
+}
+
+export type work_orderUpdateOneRequiredWithoutPaymentsNestedInput = {
+  create?: Prisma.XOR<Prisma.work_orderCreateWithoutPaymentsInput, Prisma.work_orderUncheckedCreateWithoutPaymentsInput>
+  connectOrCreate?: Prisma.work_orderCreateOrConnectWithoutPaymentsInput
+  upsert?: Prisma.work_orderUpsertWithoutPaymentsInput
+  connect?: Prisma.work_orderWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.work_orderUpdateToOneWithWhereWithoutPaymentsInput, Prisma.work_orderUpdateWithoutPaymentsInput>, Prisma.work_orderUncheckedUpdateWithoutPaymentsInput>
 }
 
 export type work_orderCreateWithoutCustomerInput = {
@@ -979,6 +1021,8 @@ export type work_orderCreateWithoutCustomerInput = {
   photo?: Prisma.photoCreateNestedManyWithoutWork_orderInput
   vehicle: Prisma.vehicleCreateNestedOneWithoutWork_orderInput
   work_order_item?: Prisma.work_order_itemCreateNestedManyWithoutWork_orderInput
+  payments?: Prisma.PaymentCreateNestedManyWithoutWorkOrderInput
+  auditLogs?: Prisma.work_order_audit_logCreateNestedManyWithoutWork_orderInput
 }
 
 export type work_orderUncheckedCreateWithoutCustomerInput = {
@@ -1008,6 +1052,8 @@ export type work_orderUncheckedCreateWithoutCustomerInput = {
   odometerValue?: number | null
   photo?: Prisma.photoUncheckedCreateNestedManyWithoutWork_orderInput
   work_order_item?: Prisma.work_order_itemUncheckedCreateNestedManyWithoutWork_orderInput
+  payments?: Prisma.PaymentUncheckedCreateNestedManyWithoutWorkOrderInput
+  auditLogs?: Prisma.work_order_audit_logUncheckedCreateNestedManyWithoutWork_orderInput
 }
 
 export type work_orderCreateOrConnectWithoutCustomerInput = {
@@ -1094,6 +1140,8 @@ export type work_orderCreateWithoutPhotoInput = {
   customer: Prisma.customerCreateNestedOneWithoutWork_orderInput
   vehicle: Prisma.vehicleCreateNestedOneWithoutWork_orderInput
   work_order_item?: Prisma.work_order_itemCreateNestedManyWithoutWork_orderInput
+  payments?: Prisma.PaymentCreateNestedManyWithoutWorkOrderInput
+  auditLogs?: Prisma.work_order_audit_logCreateNestedManyWithoutWork_orderInput
 }
 
 export type work_orderUncheckedCreateWithoutPhotoInput = {
@@ -1123,6 +1171,8 @@ export type work_orderUncheckedCreateWithoutPhotoInput = {
   fuelLevel?: number | null
   odometerValue?: number | null
   work_order_item?: Prisma.work_order_itemUncheckedCreateNestedManyWithoutWork_orderInput
+  payments?: Prisma.PaymentUncheckedCreateNestedManyWithoutWorkOrderInput
+  auditLogs?: Prisma.work_order_audit_logUncheckedCreateNestedManyWithoutWork_orderInput
 }
 
 export type work_orderCreateOrConnectWithoutPhotoInput = {
@@ -1168,6 +1218,8 @@ export type work_orderUpdateWithoutPhotoInput = {
   customer?: Prisma.customerUpdateOneRequiredWithoutWork_orderNestedInput
   vehicle?: Prisma.vehicleUpdateOneRequiredWithoutWork_orderNestedInput
   work_order_item?: Prisma.work_order_itemUpdateManyWithoutWork_orderNestedInput
+  payments?: Prisma.PaymentUpdateManyWithoutWorkOrderNestedInput
+  auditLogs?: Prisma.work_order_audit_logUpdateManyWithoutWork_orderNestedInput
 }
 
 export type work_orderUncheckedUpdateWithoutPhotoInput = {
@@ -1197,6 +1249,8 @@ export type work_orderUncheckedUpdateWithoutPhotoInput = {
   fuelLevel?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   odometerValue?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   work_order_item?: Prisma.work_order_itemUncheckedUpdateManyWithoutWork_orderNestedInput
+  payments?: Prisma.PaymentUncheckedUpdateManyWithoutWorkOrderNestedInput
+  auditLogs?: Prisma.work_order_audit_logUncheckedUpdateManyWithoutWork_orderNestedInput
 }
 
 export type work_orderCreateWithoutVehicleInput = {
@@ -1226,6 +1280,8 @@ export type work_orderCreateWithoutVehicleInput = {
   photo?: Prisma.photoCreateNestedManyWithoutWork_orderInput
   customer: Prisma.customerCreateNestedOneWithoutWork_orderInput
   work_order_item?: Prisma.work_order_itemCreateNestedManyWithoutWork_orderInput
+  payments?: Prisma.PaymentCreateNestedManyWithoutWorkOrderInput
+  auditLogs?: Prisma.work_order_audit_logCreateNestedManyWithoutWork_orderInput
 }
 
 export type work_orderUncheckedCreateWithoutVehicleInput = {
@@ -1255,6 +1311,8 @@ export type work_orderUncheckedCreateWithoutVehicleInput = {
   odometerValue?: number | null
   photo?: Prisma.photoUncheckedCreateNestedManyWithoutWork_orderInput
   work_order_item?: Prisma.work_order_itemUncheckedCreateNestedManyWithoutWork_orderInput
+  payments?: Prisma.PaymentUncheckedCreateNestedManyWithoutWorkOrderInput
+  auditLogs?: Prisma.work_order_audit_logUncheckedCreateNestedManyWithoutWork_orderInput
 }
 
 export type work_orderCreateOrConnectWithoutVehicleInput = {
@@ -1281,6 +1339,146 @@ export type work_orderUpdateWithWhereUniqueWithoutVehicleInput = {
 export type work_orderUpdateManyWithWhereWithoutVehicleInput = {
   where: Prisma.work_orderScalarWhereInput
   data: Prisma.XOR<Prisma.work_orderUpdateManyMutationInput, Prisma.work_orderUncheckedUpdateManyWithoutVehicleInput>
+}
+
+export type work_orderCreateWithoutAuditLogsInput = {
+  id: string
+  status: string
+  technicianId?: string | null
+  entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  exitChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  entryPhotos?: Prisma.work_orderCreateentryPhotosInput | string[]
+  exitPhotos?: Prisma.work_orderCreateexitPhotosInput | string[]
+  scheduledDate?: Date | string | null
+  startedAt?: Date | string | null
+  completedAt?: Date | string | null
+  deliveredAt?: Date | string | null
+  paymentMethod?: string | null
+  paymentNotes?: string | null
+  total: runtime.Decimal | runtime.DecimalJsLike | number | string
+  totalProducts: runtime.Decimal | runtime.DecimalJsLike | number | string
+  totalServices: runtime.Decimal | runtime.DecimalJsLike | number | string
+  invoiceId?: string | null
+  notes: string
+  createdAt?: Date | string
+  updatedAt: Date | string
+  source?: string
+  fuelLevel?: number | null
+  odometerValue?: number | null
+  photo?: Prisma.photoCreateNestedManyWithoutWork_orderInput
+  customer: Prisma.customerCreateNestedOneWithoutWork_orderInput
+  vehicle: Prisma.vehicleCreateNestedOneWithoutWork_orderInput
+  work_order_item?: Prisma.work_order_itemCreateNestedManyWithoutWork_orderInput
+  payments?: Prisma.PaymentCreateNestedManyWithoutWorkOrderInput
+}
+
+export type work_orderUncheckedCreateWithoutAuditLogsInput = {
+  id: string
+  status: string
+  customerId: string
+  vehicleId: string
+  technicianId?: string | null
+  entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  exitChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  entryPhotos?: Prisma.work_orderCreateentryPhotosInput | string[]
+  exitPhotos?: Prisma.work_orderCreateexitPhotosInput | string[]
+  scheduledDate?: Date | string | null
+  startedAt?: Date | string | null
+  completedAt?: Date | string | null
+  deliveredAt?: Date | string | null
+  paymentMethod?: string | null
+  paymentNotes?: string | null
+  total: runtime.Decimal | runtime.DecimalJsLike | number | string
+  totalProducts: runtime.Decimal | runtime.DecimalJsLike | number | string
+  totalServices: runtime.Decimal | runtime.DecimalJsLike | number | string
+  invoiceId?: string | null
+  notes: string
+  createdAt?: Date | string
+  updatedAt: Date | string
+  source?: string
+  fuelLevel?: number | null
+  odometerValue?: number | null
+  photo?: Prisma.photoUncheckedCreateNestedManyWithoutWork_orderInput
+  work_order_item?: Prisma.work_order_itemUncheckedCreateNestedManyWithoutWork_orderInput
+  payments?: Prisma.PaymentUncheckedCreateNestedManyWithoutWorkOrderInput
+}
+
+export type work_orderCreateOrConnectWithoutAuditLogsInput = {
+  where: Prisma.work_orderWhereUniqueInput
+  create: Prisma.XOR<Prisma.work_orderCreateWithoutAuditLogsInput, Prisma.work_orderUncheckedCreateWithoutAuditLogsInput>
+}
+
+export type work_orderUpsertWithoutAuditLogsInput = {
+  update: Prisma.XOR<Prisma.work_orderUpdateWithoutAuditLogsInput, Prisma.work_orderUncheckedUpdateWithoutAuditLogsInput>
+  create: Prisma.XOR<Prisma.work_orderCreateWithoutAuditLogsInput, Prisma.work_orderUncheckedCreateWithoutAuditLogsInput>
+  where?: Prisma.work_orderWhereInput
+}
+
+export type work_orderUpdateToOneWithWhereWithoutAuditLogsInput = {
+  where?: Prisma.work_orderWhereInput
+  data: Prisma.XOR<Prisma.work_orderUpdateWithoutAuditLogsInput, Prisma.work_orderUncheckedUpdateWithoutAuditLogsInput>
+}
+
+export type work_orderUpdateWithoutAuditLogsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  technicianId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  exitChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  entryPhotos?: Prisma.work_orderUpdateentryPhotosInput | string[]
+  exitPhotos?: Prisma.work_orderUpdateexitPhotosInput | string[]
+  scheduledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deliveredAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  paymentMethod?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentNotes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  total?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  totalProducts?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  totalServices?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  invoiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  source?: Prisma.StringFieldUpdateOperationsInput | string
+  fuelLevel?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  odometerValue?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  photo?: Prisma.photoUpdateManyWithoutWork_orderNestedInput
+  customer?: Prisma.customerUpdateOneRequiredWithoutWork_orderNestedInput
+  vehicle?: Prisma.vehicleUpdateOneRequiredWithoutWork_orderNestedInput
+  work_order_item?: Prisma.work_order_itemUpdateManyWithoutWork_orderNestedInput
+  payments?: Prisma.PaymentUpdateManyWithoutWorkOrderNestedInput
+}
+
+export type work_orderUncheckedUpdateWithoutAuditLogsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  customerId?: Prisma.StringFieldUpdateOperationsInput | string
+  vehicleId?: Prisma.StringFieldUpdateOperationsInput | string
+  technicianId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  exitChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  entryPhotos?: Prisma.work_orderUpdateentryPhotosInput | string[]
+  exitPhotos?: Prisma.work_orderUpdateexitPhotosInput | string[]
+  scheduledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deliveredAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  paymentMethod?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentNotes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  total?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  totalProducts?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  totalServices?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  invoiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  source?: Prisma.StringFieldUpdateOperationsInput | string
+  fuelLevel?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  odometerValue?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  photo?: Prisma.photoUncheckedUpdateManyWithoutWork_orderNestedInput
+  work_order_item?: Prisma.work_order_itemUncheckedUpdateManyWithoutWork_orderNestedInput
+  payments?: Prisma.PaymentUncheckedUpdateManyWithoutWorkOrderNestedInput
 }
 
 export type work_orderCreateWithoutWork_order_itemInput = {
@@ -1310,6 +1508,8 @@ export type work_orderCreateWithoutWork_order_itemInput = {
   photo?: Prisma.photoCreateNestedManyWithoutWork_orderInput
   customer: Prisma.customerCreateNestedOneWithoutWork_orderInput
   vehicle: Prisma.vehicleCreateNestedOneWithoutWork_orderInput
+  payments?: Prisma.PaymentCreateNestedManyWithoutWorkOrderInput
+  auditLogs?: Prisma.work_order_audit_logCreateNestedManyWithoutWork_orderInput
 }
 
 export type work_orderUncheckedCreateWithoutWork_order_itemInput = {
@@ -1339,6 +1539,8 @@ export type work_orderUncheckedCreateWithoutWork_order_itemInput = {
   fuelLevel?: number | null
   odometerValue?: number | null
   photo?: Prisma.photoUncheckedCreateNestedManyWithoutWork_orderInput
+  payments?: Prisma.PaymentUncheckedCreateNestedManyWithoutWorkOrderInput
+  auditLogs?: Prisma.work_order_audit_logUncheckedCreateNestedManyWithoutWork_orderInput
 }
 
 export type work_orderCreateOrConnectWithoutWork_order_itemInput = {
@@ -1384,6 +1586,8 @@ export type work_orderUpdateWithoutWork_order_itemInput = {
   photo?: Prisma.photoUpdateManyWithoutWork_orderNestedInput
   customer?: Prisma.customerUpdateOneRequiredWithoutWork_orderNestedInput
   vehicle?: Prisma.vehicleUpdateOneRequiredWithoutWork_orderNestedInput
+  payments?: Prisma.PaymentUpdateManyWithoutWorkOrderNestedInput
+  auditLogs?: Prisma.work_order_audit_logUpdateManyWithoutWork_orderNestedInput
 }
 
 export type work_orderUncheckedUpdateWithoutWork_order_itemInput = {
@@ -1413,6 +1617,148 @@ export type work_orderUncheckedUpdateWithoutWork_order_itemInput = {
   fuelLevel?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   odometerValue?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   photo?: Prisma.photoUncheckedUpdateManyWithoutWork_orderNestedInput
+  payments?: Prisma.PaymentUncheckedUpdateManyWithoutWorkOrderNestedInput
+  auditLogs?: Prisma.work_order_audit_logUncheckedUpdateManyWithoutWork_orderNestedInput
+}
+
+export type work_orderCreateWithoutPaymentsInput = {
+  id: string
+  status: string
+  technicianId?: string | null
+  entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  exitChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  entryPhotos?: Prisma.work_orderCreateentryPhotosInput | string[]
+  exitPhotos?: Prisma.work_orderCreateexitPhotosInput | string[]
+  scheduledDate?: Date | string | null
+  startedAt?: Date | string | null
+  completedAt?: Date | string | null
+  deliveredAt?: Date | string | null
+  paymentMethod?: string | null
+  paymentNotes?: string | null
+  total: runtime.Decimal | runtime.DecimalJsLike | number | string
+  totalProducts: runtime.Decimal | runtime.DecimalJsLike | number | string
+  totalServices: runtime.Decimal | runtime.DecimalJsLike | number | string
+  invoiceId?: string | null
+  notes: string
+  createdAt?: Date | string
+  updatedAt: Date | string
+  source?: string
+  fuelLevel?: number | null
+  odometerValue?: number | null
+  photo?: Prisma.photoCreateNestedManyWithoutWork_orderInput
+  customer: Prisma.customerCreateNestedOneWithoutWork_orderInput
+  vehicle: Prisma.vehicleCreateNestedOneWithoutWork_orderInput
+  work_order_item?: Prisma.work_order_itemCreateNestedManyWithoutWork_orderInput
+  auditLogs?: Prisma.work_order_audit_logCreateNestedManyWithoutWork_orderInput
+}
+
+export type work_orderUncheckedCreateWithoutPaymentsInput = {
+  id: string
+  status: string
+  customerId: string
+  vehicleId: string
+  technicianId?: string | null
+  entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  exitChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  entryPhotos?: Prisma.work_orderCreateentryPhotosInput | string[]
+  exitPhotos?: Prisma.work_orderCreateexitPhotosInput | string[]
+  scheduledDate?: Date | string | null
+  startedAt?: Date | string | null
+  completedAt?: Date | string | null
+  deliveredAt?: Date | string | null
+  paymentMethod?: string | null
+  paymentNotes?: string | null
+  total: runtime.Decimal | runtime.DecimalJsLike | number | string
+  totalProducts: runtime.Decimal | runtime.DecimalJsLike | number | string
+  totalServices: runtime.Decimal | runtime.DecimalJsLike | number | string
+  invoiceId?: string | null
+  notes: string
+  createdAt?: Date | string
+  updatedAt: Date | string
+  source?: string
+  fuelLevel?: number | null
+  odometerValue?: number | null
+  photo?: Prisma.photoUncheckedCreateNestedManyWithoutWork_orderInput
+  work_order_item?: Prisma.work_order_itemUncheckedCreateNestedManyWithoutWork_orderInput
+  auditLogs?: Prisma.work_order_audit_logUncheckedCreateNestedManyWithoutWork_orderInput
+}
+
+export type work_orderCreateOrConnectWithoutPaymentsInput = {
+  where: Prisma.work_orderWhereUniqueInput
+  create: Prisma.XOR<Prisma.work_orderCreateWithoutPaymentsInput, Prisma.work_orderUncheckedCreateWithoutPaymentsInput>
+}
+
+export type work_orderUpsertWithoutPaymentsInput = {
+  update: Prisma.XOR<Prisma.work_orderUpdateWithoutPaymentsInput, Prisma.work_orderUncheckedUpdateWithoutPaymentsInput>
+  create: Prisma.XOR<Prisma.work_orderCreateWithoutPaymentsInput, Prisma.work_orderUncheckedCreateWithoutPaymentsInput>
+  where?: Prisma.work_orderWhereInput
+}
+
+export type work_orderUpdateToOneWithWhereWithoutPaymentsInput = {
+  where?: Prisma.work_orderWhereInput
+  data: Prisma.XOR<Prisma.work_orderUpdateWithoutPaymentsInput, Prisma.work_orderUncheckedUpdateWithoutPaymentsInput>
+}
+
+export type work_orderUpdateWithoutPaymentsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  technicianId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  exitChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  entryPhotos?: Prisma.work_orderUpdateentryPhotosInput | string[]
+  exitPhotos?: Prisma.work_orderUpdateexitPhotosInput | string[]
+  scheduledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deliveredAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  paymentMethod?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentNotes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  total?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  totalProducts?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  totalServices?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  invoiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  source?: Prisma.StringFieldUpdateOperationsInput | string
+  fuelLevel?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  odometerValue?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  photo?: Prisma.photoUpdateManyWithoutWork_orderNestedInput
+  customer?: Prisma.customerUpdateOneRequiredWithoutWork_orderNestedInput
+  vehicle?: Prisma.vehicleUpdateOneRequiredWithoutWork_orderNestedInput
+  work_order_item?: Prisma.work_order_itemUpdateManyWithoutWork_orderNestedInput
+  auditLogs?: Prisma.work_order_audit_logUpdateManyWithoutWork_orderNestedInput
+}
+
+export type work_orderUncheckedUpdateWithoutPaymentsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  customerId?: Prisma.StringFieldUpdateOperationsInput | string
+  vehicleId?: Prisma.StringFieldUpdateOperationsInput | string
+  technicianId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  entryChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  exitChecklist?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  entryPhotos?: Prisma.work_orderUpdateentryPhotosInput | string[]
+  exitPhotos?: Prisma.work_orderUpdateexitPhotosInput | string[]
+  scheduledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deliveredAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  paymentMethod?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentNotes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  total?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  totalProducts?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  totalServices?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  invoiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  source?: Prisma.StringFieldUpdateOperationsInput | string
+  fuelLevel?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  odometerValue?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  photo?: Prisma.photoUncheckedUpdateManyWithoutWork_orderNestedInput
+  work_order_item?: Prisma.work_order_itemUncheckedUpdateManyWithoutWork_orderNestedInput
+  auditLogs?: Prisma.work_order_audit_logUncheckedUpdateManyWithoutWork_orderNestedInput
 }
 
 export type work_orderCreateManyCustomerInput = {
@@ -1469,6 +1815,8 @@ export type work_orderUpdateWithoutCustomerInput = {
   photo?: Prisma.photoUpdateManyWithoutWork_orderNestedInput
   vehicle?: Prisma.vehicleUpdateOneRequiredWithoutWork_orderNestedInput
   work_order_item?: Prisma.work_order_itemUpdateManyWithoutWork_orderNestedInput
+  payments?: Prisma.PaymentUpdateManyWithoutWorkOrderNestedInput
+  auditLogs?: Prisma.work_order_audit_logUpdateManyWithoutWork_orderNestedInput
 }
 
 export type work_orderUncheckedUpdateWithoutCustomerInput = {
@@ -1498,6 +1846,8 @@ export type work_orderUncheckedUpdateWithoutCustomerInput = {
   odometerValue?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   photo?: Prisma.photoUncheckedUpdateManyWithoutWork_orderNestedInput
   work_order_item?: Prisma.work_order_itemUncheckedUpdateManyWithoutWork_orderNestedInput
+  payments?: Prisma.PaymentUncheckedUpdateManyWithoutWorkOrderNestedInput
+  auditLogs?: Prisma.work_order_audit_logUncheckedUpdateManyWithoutWork_orderNestedInput
 }
 
 export type work_orderUncheckedUpdateManyWithoutCustomerInput = {
@@ -1581,6 +1931,8 @@ export type work_orderUpdateWithoutVehicleInput = {
   photo?: Prisma.photoUpdateManyWithoutWork_orderNestedInput
   customer?: Prisma.customerUpdateOneRequiredWithoutWork_orderNestedInput
   work_order_item?: Prisma.work_order_itemUpdateManyWithoutWork_orderNestedInput
+  payments?: Prisma.PaymentUpdateManyWithoutWorkOrderNestedInput
+  auditLogs?: Prisma.work_order_audit_logUpdateManyWithoutWork_orderNestedInput
 }
 
 export type work_orderUncheckedUpdateWithoutVehicleInput = {
@@ -1610,6 +1962,8 @@ export type work_orderUncheckedUpdateWithoutVehicleInput = {
   odometerValue?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   photo?: Prisma.photoUncheckedUpdateManyWithoutWork_orderNestedInput
   work_order_item?: Prisma.work_order_itemUncheckedUpdateManyWithoutWork_orderNestedInput
+  payments?: Prisma.PaymentUncheckedUpdateManyWithoutWorkOrderNestedInput
+  auditLogs?: Prisma.work_order_audit_logUncheckedUpdateManyWithoutWork_orderNestedInput
 }
 
 export type work_orderUncheckedUpdateManyWithoutVehicleInput = {
@@ -1647,11 +2001,15 @@ export type work_orderUncheckedUpdateManyWithoutVehicleInput = {
 export type Work_orderCountOutputType = {
   photo: number
   work_order_item: number
+  payments: number
+  auditLogs: number
 }
 
 export type Work_orderCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   photo?: boolean | Work_orderCountOutputTypeCountPhotoArgs
   work_order_item?: boolean | Work_orderCountOutputTypeCountWork_order_itemArgs
+  payments?: boolean | Work_orderCountOutputTypeCountPaymentsArgs
+  auditLogs?: boolean | Work_orderCountOutputTypeCountAuditLogsArgs
 }
 
 /**
@@ -1676,6 +2034,20 @@ export type Work_orderCountOutputTypeCountPhotoArgs<ExtArgs extends runtime.Type
  */
 export type Work_orderCountOutputTypeCountWork_order_itemArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.work_order_itemWhereInput
+}
+
+/**
+ * Work_orderCountOutputType without action
+ */
+export type Work_orderCountOutputTypeCountPaymentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.PaymentWhereInput
+}
+
+/**
+ * Work_orderCountOutputType without action
+ */
+export type Work_orderCountOutputTypeCountAuditLogsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.work_order_audit_logWhereInput
 }
 
 
@@ -1709,6 +2081,8 @@ export type work_orderSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
   customer?: boolean | Prisma.customerDefaultArgs<ExtArgs>
   vehicle?: boolean | Prisma.vehicleDefaultArgs<ExtArgs>
   work_order_item?: boolean | Prisma.work_order$work_order_itemArgs<ExtArgs>
+  payments?: boolean | Prisma.work_order$paymentsArgs<ExtArgs>
+  auditLogs?: boolean | Prisma.work_order$auditLogsArgs<ExtArgs>
   _count?: boolean | Prisma.Work_orderCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["work_order"]>
 
@@ -1806,6 +2180,8 @@ export type work_orderInclude<ExtArgs extends runtime.Types.Extensions.InternalA
   customer?: boolean | Prisma.customerDefaultArgs<ExtArgs>
   vehicle?: boolean | Prisma.vehicleDefaultArgs<ExtArgs>
   work_order_item?: boolean | Prisma.work_order$work_order_itemArgs<ExtArgs>
+  payments?: boolean | Prisma.work_order$paymentsArgs<ExtArgs>
+  auditLogs?: boolean | Prisma.work_order$auditLogsArgs<ExtArgs>
   _count?: boolean | Prisma.Work_orderCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type work_orderIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1824,6 +2200,8 @@ export type $work_orderPayload<ExtArgs extends runtime.Types.Extensions.Internal
     customer: Prisma.$customerPayload<ExtArgs>
     vehicle: Prisma.$vehiclePayload<ExtArgs>
     work_order_item: Prisma.$work_order_itemPayload<ExtArgs>[]
+    payments: Prisma.$PaymentPayload<ExtArgs>[]
+    auditLogs: Prisma.$work_order_audit_logPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -2249,6 +2627,8 @@ export interface Prisma__work_orderClient<T, Null = never, ExtArgs extends runti
   customer<T extends Prisma.customerDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.customerDefaultArgs<ExtArgs>>): Prisma.Prisma__customerClient<runtime.Types.Result.GetResult<Prisma.$customerPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   vehicle<T extends Prisma.vehicleDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.vehicleDefaultArgs<ExtArgs>>): Prisma.Prisma__vehicleClient<runtime.Types.Result.GetResult<Prisma.$vehiclePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   work_order_item<T extends Prisma.work_order$work_order_itemArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.work_order$work_order_itemArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$work_order_itemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  payments<T extends Prisma.work_order$paymentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.work_order$paymentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PaymentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  auditLogs<T extends Prisma.work_order$auditLogsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.work_order$auditLogsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$work_order_audit_logPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2749,6 +3129,54 @@ export type work_order$work_order_itemArgs<ExtArgs extends runtime.Types.Extensi
   take?: number
   skip?: number
   distinct?: Prisma.Work_order_itemScalarFieldEnum | Prisma.Work_order_itemScalarFieldEnum[]
+}
+
+/**
+ * work_order.payments
+ */
+export type work_order$paymentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Payment
+   */
+  select?: Prisma.PaymentSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Payment
+   */
+  omit?: Prisma.PaymentOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.PaymentInclude<ExtArgs> | null
+  where?: Prisma.PaymentWhereInput
+  orderBy?: Prisma.PaymentOrderByWithRelationInput | Prisma.PaymentOrderByWithRelationInput[]
+  cursor?: Prisma.PaymentWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.PaymentScalarFieldEnum | Prisma.PaymentScalarFieldEnum[]
+}
+
+/**
+ * work_order.auditLogs
+ */
+export type work_order$auditLogsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the work_order_audit_log
+   */
+  select?: Prisma.work_order_audit_logSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the work_order_audit_log
+   */
+  omit?: Prisma.work_order_audit_logOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.work_order_audit_logInclude<ExtArgs> | null
+  where?: Prisma.work_order_audit_logWhereInput
+  orderBy?: Prisma.work_order_audit_logOrderByWithRelationInput | Prisma.work_order_audit_logOrderByWithRelationInput[]
+  cursor?: Prisma.work_order_audit_logWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.Work_order_audit_logScalarFieldEnum | Prisma.Work_order_audit_logScalarFieldEnum[]
 }
 
 /**

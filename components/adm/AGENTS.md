@@ -218,6 +218,7 @@ className="bg-slate-900 text-white hover:bg-slate-800 border border-slate-900 sh
 | Stats cards en vista de detalle | Stats solo en listados con CrudAdmin |
 | Mostrar UUIDs en headers | Mostrar nombres legibles |
 | `onClick={() => router.back()}` manual | Usar `showBackButton` del Header |
+| **Usar Header + CrudAdmin juntos** | **Solo CrudAdmin** (ya tiene header integrado) |
 
 ---
 

@@ -13,14 +13,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Slider } from "@/components/ui/slider";
+import { FuelLevelSlider } from "@/components/work-orders/FuelLevelSlider";
 import { Badge } from "@/components/ui/badge";
 import { Header } from "@/components/adm/Header";
 import { WorkOrderStepper } from "@/components/ui/stepper";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
 import { QuickServiceDialog } from "@/components/work-orders/QuickServiceDialog";
 import { useUI } from "@/components/ui/UIProvider";
-import { Save, Plus, Trash2, Search, Car, User, CheckCircle, Edit, Fuel, Droplet } from "lucide-react";
+import { Save, Plus, Trash2, Search, Car, User, CheckCircle, Edit } from "lucide-react";
 
 const VEHICLE_CATEGORIES = [
   { value: "CAR", label: "Auto/Camioneta", icon: "🚗" },
@@ -997,24 +997,11 @@ export default function NewWorkOrderPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Nivel de Combustible: {fuelLevel}%</Label>
-                  <Slider
-                    value={[fuelLevel]}
-                    onValueChange={(value: number[]) => setFuelLevel(value[0])}
-                    max={100}
-                    step={5}
-                    className="py-4 [&_[data-slot=slider-track]]:h-2 [&_[data-slot=slider-range]]:bg-blue-700 [&_[data-slot=slider-thumb]]:bg-gray-600 [&_[data-slot=slider-thumb]]:border-gray-700 [&_[data-slot=slider-thumb]]:w-4 [&_[data-slot=slider-thumb]]:h-4"
+                  <FuelLevelSlider
+                    value={fuelLevel}
+                    onChange={setFuelLevel}
+                    label={`Nivel de Combustible: ${fuelLevel}%`}
                   />
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Droplet className="h-3 w-3" />
-                      Vacío
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Fuel className="h-3 w-3" />
-                      Lleno
-                    </span>
-                  </div>
                 </div>
               </div>
 

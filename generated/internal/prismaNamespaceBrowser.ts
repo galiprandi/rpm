@@ -70,8 +70,11 @@ export const ModelName = {
   vehicle_model: 'vehicle_model',
   verification: 'verification',
   work_order: 'work_order',
+  work_order_audit_log: 'work_order_audit_log',
   work_order_item: 'work_order_item',
-  cost_update_batch: 'cost_update_batch'
+  cost_update_batch: 'cost_update_batch',
+  PaymentMethod: 'PaymentMethod',
+  Payment: 'Payment'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -394,6 +397,21 @@ export const Work_orderScalarFieldEnum = {
 export type Work_orderScalarFieldEnum = (typeof Work_orderScalarFieldEnum)[keyof typeof Work_orderScalarFieldEnum]
 
 
+export const Work_order_audit_logScalarFieldEnum = {
+  id: 'id',
+  workOrderId: 'workOrderId',
+  fieldName: 'fieldName',
+  oldValue: 'oldValue',
+  newValue: 'newValue',
+  changedBy: 'changedBy',
+  changedAt: 'changedAt',
+  ipAddress: 'ipAddress',
+  userAgent: 'userAgent'
+} as const
+
+export type Work_order_audit_logScalarFieldEnum = (typeof Work_order_audit_logScalarFieldEnum)[keyof typeof Work_order_audit_logScalarFieldEnum]
+
+
 export const Work_order_itemScalarFieldEnum = {
   id: 'id',
   workOrderId: 'workOrderId',
@@ -422,6 +440,33 @@ export const Cost_update_batchScalarFieldEnum = {
 } as const
 
 export type Cost_update_batchScalarFieldEnum = (typeof Cost_update_batchScalarFieldEnum)[keyof typeof Cost_update_batchScalarFieldEnum]
+
+
+export const PaymentMethodScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  code: 'code',
+  description: 'description',
+  isActive: 'isActive',
+  sortOrder: 'sortOrder',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PaymentMethodScalarFieldEnum = (typeof PaymentMethodScalarFieldEnum)[keyof typeof PaymentMethodScalarFieldEnum]
+
+
+export const PaymentScalarFieldEnum = {
+  id: 'id',
+  workOrderId: 'workOrderId',
+  paymentMethodId: 'paymentMethodId',
+  amount: 'amount',
+  notes: 'notes',
+  createdAt: 'createdAt',
+  createdBy: 'createdBy'
+} as const
+
+export type PaymentScalarFieldEnum = (typeof PaymentScalarFieldEnum)[keyof typeof PaymentScalarFieldEnum]
 
 
 export const SortOrder = {

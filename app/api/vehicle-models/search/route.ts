@@ -18,12 +18,12 @@ export async function GET(request: NextRequest) {
     const normalizedQuery = query.trim().toLowerCase();
 
     // 1. Buscar en DB local
-    const localModels = await prisma.vehicleModel.findMany({
+    const localModels = await prisma.vehicle_model.findMany({
       where: {
         ...(makeId && { makeId }),
         normalizedName: { contains: normalizedQuery },
       },
-      include: { make: true },
+      include: { vehicle_make: true },
       take: 10,
     });
 
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     let externalModels: Array<{ Model_Name: string }> = [];
     if (localModels.length < 5 && makeId) {
       try {
-        const make = await prisma.vehicleMake.findUnique({
+        const make = await prisma.vehicle_make.findUnique({
           where: { id: makeId },
         });
         if (make) {

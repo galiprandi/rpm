@@ -18,11 +18,11 @@ export async function GET(
       },
       include: {
         customer: true,
-        make: true,
-        model: true,
+        vehicle_make: true,
+        vehicle_model: true,
         _count: {
           select: {
-            workOrders: true,
+            work_order: true,
           },
         },
       },

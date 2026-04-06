@@ -403,8 +403,11 @@ export const ModelName = {
   vehicle_model: 'vehicle_model',
   verification: 'verification',
   work_order: 'work_order',
+  work_order_audit_log: 'work_order_audit_log',
   work_order_item: 'work_order_item',
-  cost_update_batch: 'cost_update_batch'
+  cost_update_batch: 'cost_update_batch',
+  PaymentMethod: 'PaymentMethod',
+  Payment: 'Payment'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -420,7 +423,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "account" | "category" | "customer" | "photo" | "price_list" | "price_list_item" | "product" | "service" | "session" | "setting" | "stock_movement" | "supplier" | "user" | "user_role" | "vehicle" | "vehicle_make" | "vehicle_model" | "verification" | "work_order" | "work_order_item" | "cost_update_batch"
+    modelProps: "account" | "category" | "customer" | "photo" | "price_list" | "price_list_item" | "product" | "service" | "session" | "setting" | "stock_movement" | "supplier" | "user" | "user_role" | "vehicle" | "vehicle_make" | "vehicle_model" | "verification" | "work_order" | "work_order_audit_log" | "work_order_item" | "cost_update_batch" | "paymentMethod" | "payment"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1830,6 +1833,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    work_order_audit_log: {
+      payload: Prisma.$work_order_audit_logPayload<ExtArgs>
+      fields: Prisma.work_order_audit_logFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.work_order_audit_logFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$work_order_audit_logPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.work_order_audit_logFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$work_order_audit_logPayload>
+        }
+        findFirst: {
+          args: Prisma.work_order_audit_logFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$work_order_audit_logPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.work_order_audit_logFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$work_order_audit_logPayload>
+        }
+        findMany: {
+          args: Prisma.work_order_audit_logFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$work_order_audit_logPayload>[]
+        }
+        create: {
+          args: Prisma.work_order_audit_logCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$work_order_audit_logPayload>
+        }
+        createMany: {
+          args: Prisma.work_order_audit_logCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.work_order_audit_logCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$work_order_audit_logPayload>[]
+        }
+        delete: {
+          args: Prisma.work_order_audit_logDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$work_order_audit_logPayload>
+        }
+        update: {
+          args: Prisma.work_order_audit_logUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$work_order_audit_logPayload>
+        }
+        deleteMany: {
+          args: Prisma.work_order_audit_logDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.work_order_audit_logUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.work_order_audit_logUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$work_order_audit_logPayload>[]
+        }
+        upsert: {
+          args: Prisma.work_order_audit_logUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$work_order_audit_logPayload>
+        }
+        aggregate: {
+          args: Prisma.Work_order_audit_logAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateWork_order_audit_log>
+        }
+        groupBy: {
+          args: Prisma.work_order_audit_logGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.Work_order_audit_logGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.work_order_audit_logCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.Work_order_audit_logCountAggregateOutputType> | number
+        }
+      }
+    }
     work_order_item: {
       payload: Prisma.$work_order_itemPayload<ExtArgs>
       fields: Prisma.work_order_itemFieldRefs
@@ -1975,6 +2052,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.cost_update_batchCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.Cost_update_batchCountAggregateOutputType> | number
+        }
+      }
+    }
+    PaymentMethod: {
+      payload: Prisma.$PaymentMethodPayload<ExtArgs>
+      fields: Prisma.PaymentMethodFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.PaymentMethodFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PaymentMethodPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.PaymentMethodFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PaymentMethodPayload>
+        }
+        findFirst: {
+          args: Prisma.PaymentMethodFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PaymentMethodPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.PaymentMethodFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PaymentMethodPayload>
+        }
+        findMany: {
+          args: Prisma.PaymentMethodFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PaymentMethodPayload>[]
+        }
+        create: {
+          args: Prisma.PaymentMethodCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PaymentMethodPayload>
+        }
+        createMany: {
+          args: Prisma.PaymentMethodCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.PaymentMethodCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PaymentMethodPayload>[]
+        }
+        delete: {
+          args: Prisma.PaymentMethodDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PaymentMethodPayload>
+        }
+        update: {
+          args: Prisma.PaymentMethodUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PaymentMethodPayload>
+        }
+        deleteMany: {
+          args: Prisma.PaymentMethodDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.PaymentMethodUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.PaymentMethodUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PaymentMethodPayload>[]
+        }
+        upsert: {
+          args: Prisma.PaymentMethodUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PaymentMethodPayload>
+        }
+        aggregate: {
+          args: Prisma.PaymentMethodAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregatePaymentMethod>
+        }
+        groupBy: {
+          args: Prisma.PaymentMethodGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PaymentMethodGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.PaymentMethodCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PaymentMethodCountAggregateOutputType> | number
+        }
+      }
+    }
+    Payment: {
+      payload: Prisma.$PaymentPayload<ExtArgs>
+      fields: Prisma.PaymentFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.PaymentFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PaymentPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.PaymentFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PaymentPayload>
+        }
+        findFirst: {
+          args: Prisma.PaymentFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PaymentPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.PaymentFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PaymentPayload>
+        }
+        findMany: {
+          args: Prisma.PaymentFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PaymentPayload>[]
+        }
+        create: {
+          args: Prisma.PaymentCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PaymentPayload>
+        }
+        createMany: {
+          args: Prisma.PaymentCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.PaymentCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PaymentPayload>[]
+        }
+        delete: {
+          args: Prisma.PaymentDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PaymentPayload>
+        }
+        update: {
+          args: Prisma.PaymentUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PaymentPayload>
+        }
+        deleteMany: {
+          args: Prisma.PaymentDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.PaymentUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.PaymentUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PaymentPayload>[]
+        }
+        upsert: {
+          args: Prisma.PaymentUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PaymentPayload>
+        }
+        aggregate: {
+          args: Prisma.PaymentAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregatePayment>
+        }
+        groupBy: {
+          args: Prisma.PaymentGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PaymentGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.PaymentCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PaymentCountAggregateOutputType> | number
         }
       }
     }
@@ -2321,6 +2546,21 @@ export const Work_orderScalarFieldEnum = {
 export type Work_orderScalarFieldEnum = (typeof Work_orderScalarFieldEnum)[keyof typeof Work_orderScalarFieldEnum]
 
 
+export const Work_order_audit_logScalarFieldEnum = {
+  id: 'id',
+  workOrderId: 'workOrderId',
+  fieldName: 'fieldName',
+  oldValue: 'oldValue',
+  newValue: 'newValue',
+  changedBy: 'changedBy',
+  changedAt: 'changedAt',
+  ipAddress: 'ipAddress',
+  userAgent: 'userAgent'
+} as const
+
+export type Work_order_audit_logScalarFieldEnum = (typeof Work_order_audit_logScalarFieldEnum)[keyof typeof Work_order_audit_logScalarFieldEnum]
+
+
 export const Work_order_itemScalarFieldEnum = {
   id: 'id',
   workOrderId: 'workOrderId',
@@ -2349,6 +2589,33 @@ export const Cost_update_batchScalarFieldEnum = {
 } as const
 
 export type Cost_update_batchScalarFieldEnum = (typeof Cost_update_batchScalarFieldEnum)[keyof typeof Cost_update_batchScalarFieldEnum]
+
+
+export const PaymentMethodScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  code: 'code',
+  description: 'description',
+  isActive: 'isActive',
+  sortOrder: 'sortOrder',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PaymentMethodScalarFieldEnum = (typeof PaymentMethodScalarFieldEnum)[keyof typeof PaymentMethodScalarFieldEnum]
+
+
+export const PaymentScalarFieldEnum = {
+  id: 'id',
+  workOrderId: 'workOrderId',
+  paymentMethodId: 'paymentMethodId',
+  amount: 'amount',
+  notes: 'notes',
+  createdAt: 'createdAt',
+  createdBy: 'createdBy'
+} as const
+
+export type PaymentScalarFieldEnum = (typeof PaymentScalarFieldEnum)[keyof typeof PaymentScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -2609,8 +2876,11 @@ export type GlobalOmitConfig = {
   vehicle_model?: Prisma.vehicle_modelOmit
   verification?: Prisma.verificationOmit
   work_order?: Prisma.work_orderOmit
+  work_order_audit_log?: Prisma.work_order_audit_logOmit
   work_order_item?: Prisma.work_order_itemOmit
   cost_update_batch?: Prisma.cost_update_batchOmit
+  paymentMethod?: Prisma.PaymentMethodOmit
+  payment?: Prisma.PaymentOmit
 }
 
 /* Types for Logging */

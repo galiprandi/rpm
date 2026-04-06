@@ -28,6 +28,7 @@ export async function POST(
     // Create photo record
     const photo = await prisma.photo.create({
       data: {
+        id: crypto.randomUUID(),
         workOrderId: id,
         type,
         url,
@@ -37,14 +38,14 @@ export async function POST(
 
     // Update work order photo arrays
     if (type === "ENTRY") {
-      await prisma.workOrder.update({
+      await prisma.work_order.update({
         where: { id },
         data: {
           entryPhotos: { push: url },
         },
       });
     } else {
-      await prisma.workOrder.update({
+      await prisma.work_order.update({
         where: { id },
         data: {
           exitPhotos: { push: url },

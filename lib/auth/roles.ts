@@ -31,13 +31,13 @@ export const getUserRole = async (email: string): Promise<UserRole> => {
   const normalizedEmail = email.toLowerCase().trim();
 
   // Check database for explicit role
-  const userRoleRecord = await prisma.userRole.findUnique({
+  const user_roleRecord = await prisma.user_role.findUnique({
     where: { email: normalizedEmail },
   });
 
-  if (userRoleRecord?.isActive) {
+  if (user_roleRecord?.isActive) {
     // Map database role to enum (handles both old and new role names)
-    const role = userRoleRecord.role.toUpperCase();
+    const role = user_roleRecord.role.toUpperCase();
     if (role === 'ADMIN' || role === 'SELLER' || role === 'TECHNICIAN' || role === 'CASHIER') {
       return UserRole.ADMIN;
     }
@@ -87,7 +87,7 @@ export const isValidEmailForRole = (email: string): boolean => {
  * @returns Array of admin email addresses
  */
 export const getAdminEmails = async (): Promise<string[]> => {
-  const admins = await prisma.userRole.findMany({
+  const admins = await prisma.user_role.findMany({
     where: {
       role: { in: ['ADMIN', 'SELLER', 'TECHNICIAN', 'CASHIER'] },
       isActive: true,
@@ -120,7 +120,7 @@ export const setUserRole = async (
   name?: string,
   notes?: string
 ): Promise<void> => {
-  await prisma.userRole.upsert({
+  await prisma.user_role.upsert({
     where: { email },
     update: {
       role,
@@ -129,11 +129,33 @@ export const setUserRole = async (
       isActive: true,
     },
     create: {
+      id: crypto.randomUUID(),
       email,
       role,
       name: name ?? null,
       notes: notes ?? null,
       isActive: true,
+      updatedAt: new Date(),
     },
   });
 };
+
+/**
+ * Checks if a user has a specific role
+ * 
+ * @param userId - User ID to check
+ * @param role - Role to check for
+ * @returns boolean indicating if user has the role
+ */
+export const hasRole = async (userId: string, role: UserRole): Promise<boolean> => {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { email: true },
+  });
+
+  if (!user?.email) return false;
+
+  const user_role = await getUserRole(user.email);
+  return user_role === role;
+};
+

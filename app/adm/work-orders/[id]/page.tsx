@@ -3,7 +3,12 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PaymentDialog } from "@/components/work-orders/PaymentDialog";
+import { FuelLevelSlider } from "@/components/work-orders/FuelLevelSlider";
 import { Badge } from "@/components/ui/badge";
 import { useUI } from "@/components/ui/UIProvider";
 import {
@@ -80,7 +85,6 @@ const STATUSES = [
   { id: "IN_PROGRESS", label: "En Proceso", color: "bg-orange-100" },
   { id: "QC_CHECK", label: "Control QC", color: "bg-purple-100" },
   { id: "READY", label: "Listo", color: "bg-green-100" },
-  { id: "PAID", label: "Pagada", color: "bg-emerald-100" },
   { id: "DELIVERED", label: "Entregada", color: "bg-gray-100" },
 ];
 
@@ -118,7 +122,7 @@ interface WorkOrderDetail {
     color?: string;
   };
   technicianId?: string;
-  items: Array<{
+  work_order_item: Array<{
     id: string;
     type: string;
     name: string;
@@ -131,10 +135,14 @@ interface WorkOrderDetail {
   entryChecklist?: {
     items: Array<{ id: string; label: string; checked: boolean }>;
     completedAt: string;
+    odometerValue?: number;
+    fuelLevel?: number;
   };
   exitChecklist?: {
     items: Array<{ id: string; label: string; checked: boolean }>;
     completedAt: string;
+    odometerValue?: number;
+    fuelLevel?: number;
   };
   entryPhotos: string[];
   exitPhotos: string[];
@@ -145,6 +153,8 @@ interface WorkOrderDetail {
   paymentMethod?: string;
   paymentNotes?: string;
   total: number;
+  odometerValue?: number;
+  fuelLevel?: number;
   totalProducts: number;
   totalServices: number;
   notes: string;
@@ -159,6 +169,23 @@ export default function WorkOrderDetailPage() {
   const [workOrder, setWorkOrder] = useState<WorkOrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+  const [payments, setPayments] = useState<Array<{
+    id: string;
+    amount: number;
+    notes: string | null;
+    createdAt: string;
+    paymentMethod: { name: string };
+  }>>([]);
+  const [totalPaid, setTotalPaid] = useState(0);
+  const [editingChecklist, setEditingChecklist] = useState<'entry' | 'exit' | null>(null);
+  const [editingOdometer, setEditingOdometer] = useState<number | undefined>(undefined);
+  const [editingFuelLevel, setEditingFuelLevel] = useState<number | undefined>(undefined);
+  const [savingChecklist, setSavingChecklist] = useState(false);
+  const [editingScheduledDate, setEditingScheduledDate] = useState(false);
+  const [editingNotes, setEditingNotes] = useState(false);
+  const [newScheduledDate, setNewScheduledDate] = useState<string>('');
+  const [newNotes, setNewNotes] = useState<string>('');
 
   const fetchWorkOrder = useCallback(async () => {
     try {
@@ -173,9 +200,23 @@ export default function WorkOrderDetailPage() {
     }
   }, [workOrderId]);
 
+  const fetchPayments = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/work-orders/${workOrderId}/payments`);
+      if (response.ok) {
+        const data = await response.json();
+        setPayments(data.payments || []);
+        setTotalPaid(data.totalPaid || 0);
+      }
+    } catch (error) {
+      console.error("Error fetching payments:", error);
+    }
+  }, [workOrderId]);
+
   useEffect(() => {
     fetchWorkOrder();
-  }, [fetchWorkOrder]);
+    fetchPayments();
+  }, [fetchWorkOrder, fetchPayments]);
 
   const handleStatusChange = async (newStatus: string) => {
     setUpdatingStatus(true);
@@ -200,6 +241,121 @@ export default function WorkOrderDetailPage() {
     } finally {
       setUpdatingStatus(false);
     }
+  };
+
+  const handleSaveChecklistData = async () => {
+    if (!editingChecklist) return;
+    
+    setSavingChecklist(true);
+    try {
+      const response = await fetch(`/api/work-orders/${workOrderId}/checklist`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: editingChecklist,
+          odometerValue: editingOdometer,
+          fuelLevel: editingFuelLevel,
+        }),
+      });
+
+      if (!response.ok) throw new Error("Failed to update checklist data");
+
+      const updated = await response.json();
+      setWorkOrder((prev) => (prev ? { ...prev, ...updated } : null));
+      setEditingChecklist(null);
+      setEditingOdometer(undefined);
+      setEditingFuelLevel(undefined);
+      
+      await alert({
+        title: 'Éxito',
+        description: 'Datos actualizados correctamente',
+        variant: 'success',
+      });
+    } catch (error) {
+      console.error("Error updating checklist data:", error);
+      await alert({
+        title: 'Error',
+        description: 'Error al actualizar datos. Por favor intente nuevamente.',
+        variant: 'error',
+      });
+    } finally {
+      setSavingChecklist(false);
+    }
+  };
+
+  const startEditingChecklist = (type: 'entry' | 'exit') => {
+    const checklist = type === 'entry' ? workOrder?.entryChecklist : workOrder?.exitChecklist;
+    setEditingChecklist(type);
+    setEditingOdometer(checklist?.odometerValue ?? workOrder?.odometerValue);
+    setEditingFuelLevel(checklist?.fuelLevel ?? workOrder?.fuelLevel);
+  };
+
+  const handleUpdateScheduledDate = async () => {
+    try {
+      const response = await fetch(`/api/work-orders/${workOrderId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scheduledDate: newScheduledDate }),
+      });
+
+      if (!response.ok) throw new Error("Failed to update scheduled date");
+
+      const updated = await response.json();
+      setWorkOrder((prev) => (prev ? { ...prev, ...updated } : null));
+      setEditingScheduledDate(false);
+      
+      await alert({
+        title: 'Éxito',
+        description: 'Fecha agendada actualizada',
+        variant: 'success',
+      });
+    } catch (error) {
+      console.error("Error updating scheduled date:", error);
+      await alert({
+        title: 'Error',
+        description: 'Error al actualizar fecha agendada',
+        variant: 'error',
+      });
+    }
+  };
+
+  const handleUpdateNotes = async () => {
+    try {
+      const response = await fetch(`/api/work-orders/${workOrderId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ notes: newNotes }),
+      });
+
+      if (!response.ok) throw new Error("Failed to update notes");
+
+      const updated = await response.json();
+      setWorkOrder((prev) => (prev ? { ...prev, ...updated } : null));
+      setEditingNotes(false);
+      
+      await alert({
+        title: 'Éxito',
+        description: 'Notas actualizadas',
+        variant: 'success',
+      });
+    } catch (error) {
+      console.error("Error updating notes:", error);
+      await alert({
+        title: 'Error',
+        description: 'Error al actualizar notas',
+        variant: 'error',
+      });
+    }
+  };
+
+  const startEditingScheduledDate = () => {
+    setNewScheduledDate(workOrder?.scheduledDate ? new Date(workOrder.scheduledDate).toISOString().slice(0, 16) : '');
+    setEditingScheduledDate(true);
+  };
+
+  const startEditingNotes = () => {
+    setNewNotes(workOrder?.notes || '');
+    setEditingNotes(true);
   };
 
   if (loading) {
@@ -243,7 +399,44 @@ export default function WorkOrderDetailPage() {
           {[workOrder.vehicle.make?.name, workOrder.vehicle.model?.name, workOrder.vehicle.year, workOrder.vehicle.color].filter(Boolean).join(" ")}
         </div>
         
-        {/* Línea 2: Contacto del cliente */}
+        {/* Línea 2: Fecha agendada si existe */}
+        {workOrder.scheduledDate && (
+          <div className="text-sm mt-1">
+            {editingScheduledDate ? (
+              <div className="flex items-center gap-2">
+                <Input
+                  type="datetime-local"
+                  value={newScheduledDate}
+                  onChange={(e) => setNewScheduledDate(e.target.value)}
+                  className="h-8 w-48"
+                />
+                <Button size="sm" onClick={handleUpdateScheduledDate}>
+                  Guardar
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => setEditingScheduledDate(false)}>
+                  Cancelar
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground">
+                  📅 Agendado: {new Date(workOrder.scheduledDate).toLocaleString("es-AR", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
+                <Button variant="ghost" size="sm" onClick={() => startEditingScheduledDate()}>
+                  Editar
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+        
+        {/* Línea 3: Contacto del cliente */}
         <div className="flex flex-wrap items-center gap-3 text-sm mt-1">
           <a
             href={`tel:${workOrder.customer?.phone}`}
@@ -285,14 +478,14 @@ export default function WorkOrderDetailPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {workOrder.items.length === 0 ? (
+              {workOrder.work_order_item.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                     Sin items registrados
                   </TableCell>
                 </TableRow>
               ) : (
-                workOrder.items.map((item) => (
+                workOrder.work_order_item.map((item) => (
                   <TableRow key={item.id}>
                     <TableCell className="font-medium">
                       {item.product?.name || item.service?.name || item.name}
@@ -315,7 +508,7 @@ export default function WorkOrderDetailPage() {
             </TableBody>
           </Table>
 
-          {workOrder.items.length > 0 && (
+          {workOrder.work_order_item.length > 0 && (
             <div className="mt-4 flex justify-end pt-4 border-t">
               <div className="text-right space-y-1">
                 <div className="text-sm text-muted-foreground">
@@ -332,6 +525,73 @@ export default function WorkOrderDetailPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Payment Summary Card */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <DollarSign className="h-5 w-5" />
+            Pagos
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex gap-6">
+              <div>
+                <p className="text-sm text-muted-foreground">Total OT</p>
+                <p className="text-lg font-semibold">${Number(workOrder.total).toLocaleString("es-AR")}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Pagado</p>
+                <p className="text-lg font-semibold text-green-600">${totalPaid.toLocaleString("es-AR")}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Pendiente</p>
+                <p className={`text-lg font-semibold ${totalPaid >= workOrder.total ? 'text-green-600' : 'text-orange-600'}`}>
+                  ${Math.max(0, workOrder.total - totalPaid).toLocaleString("es-AR")}
+                </p>
+              </div>
+            </div>
+            <Button onClick={() => setIsPaymentDialogOpen(true)}>
+              <DollarSign className="h-4 w-4 mr-2" />
+              Registrar Pago
+            </Button>
+          </div>
+
+          {/* Payment History */}
+          {payments.length > 0 && (
+            <div className="mt-6 pt-4 border-t">
+              <p className="text-sm font-medium mb-3">Historial de Pagos</p>
+              <div className="space-y-2">
+                {payments.map((payment) => (
+                  <div key={payment.id} className="flex justify-between items-center p-3 bg-muted rounded-md">
+                    <div>
+                      <p className="font-medium">${Number(payment.amount).toLocaleString("es-AR")}</p>
+                      <p className="text-xs text-muted-foreground">{payment.paymentMethod.name}</p>
+                      {payment.notes && <p className="text-xs text-muted-foreground">{payment.notes}</p>}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(payment.createdAt).toLocaleDateString("es-AR")}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Payment Dialog */}
+      <PaymentDialog
+        isOpen={isPaymentDialogOpen}
+        onClose={() => setIsPaymentDialogOpen(false)}
+        workOrderId={workOrderId}
+        workOrderTotal={workOrder.total}
+        onPaymentRegistered={() => {
+          fetchPayments();
+          fetchWorkOrder();
+        }}
+      />
 
       {/* Tabs Section */}
       <Tabs defaultValue="checklists" className="w-full">
@@ -355,14 +615,69 @@ export default function WorkOrderDetailPage() {
           <div className="grid md:grid-cols-2 gap-4">
             <Card className="border-l-4 border-l-blue-500">
               <CardHeader className="pb-2">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-blue-500" />
-                  Checklist de Ingreso
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-blue-500" />
+                    Checklist de Ingreso
+                  </CardTitle>
+                  {workOrder.entryChecklist && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => startEditingChecklist('entry')}
+                    >
+                      Editar
+                    </Button>
+                  )}
+                </div>
               </CardHeader>
               <CardContent>
                 {workOrder.entryChecklist ? (
                   <div className="space-y-3">
+                    {/* Odometer and Fuel Level */}
+                    <div className="p-3 bg-muted/50 rounded-lg space-y-2">
+                      {editingChecklist === 'entry' ? (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <label className="text-xs font-medium w-24">Kilometraje:</label>
+                            <Input
+                              type="number"
+                              value={editingOdometer ?? ''}
+                              onChange={(e) => setEditingOdometer(e.target.value ? parseInt(e.target.value) : undefined)}
+                              placeholder="km"
+                              className="h-8"
+                            />
+                          </div>
+                          <FuelLevelSlider
+                            value={editingFuelLevel ?? 0}
+                            onChange={setEditingFuelLevel}
+                          />
+                          <div className="flex gap-2 mt-2">
+                            <Button size="sm" onClick={handleSaveChecklistData} disabled={savingChecklist}>
+                              {savingChecklist ? 'Guardando...' : 'Guardar'}
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => setEditingChecklist(null)}>
+                              Cancelar
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-1">
+                          {(workOrder.entryChecklist.odometerValue ?? workOrder.odometerValue) && (
+                            <div className="text-xs">
+                              <span className="font-medium">Kilometraje:</span> {workOrder.entryChecklist.odometerValue ?? workOrder.odometerValue} km
+                            </div>
+                          )}
+                          {(workOrder.entryChecklist.fuelLevel ?? workOrder.fuelLevel) && (
+                            <div className="text-xs">
+                              <span className="font-medium">Combustible:</span> {workOrder.entryChecklist.fuelLevel ?? workOrder.fuelLevel}%
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Checklist Items */}
                     {workOrder.entryChecklist.items.map((item, index) => (
                       <div key={index} className="flex items-start gap-3">
                         <input type="checkbox" checked={item.checked} readOnly className="rounded mt-0.5" />
@@ -383,14 +698,69 @@ export default function WorkOrderDetailPage() {
 
             <Card className="border-l-4 border-l-green-500">
               <CardHeader className="pb-2">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                  Checklist de Calidad (Salida)
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    Checklist de Calidad (Salida)
+                  </CardTitle>
+                  {workOrder.exitChecklist && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => startEditingChecklist('exit')}
+                    >
+                      Editar
+                    </Button>
+                  )}
+                </div>
               </CardHeader>
               <CardContent>
                 {workOrder.exitChecklist ? (
                   <div className="space-y-3">
+                    {/* Odometer and Fuel Level */}
+                    <div className="p-3 bg-muted/50 rounded-lg space-y-2">
+                      {editingChecklist === 'exit' ? (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <label className="text-xs font-medium w-24">Kilometraje:</label>
+                            <Input
+                              type="number"
+                              value={editingOdometer ?? ''}
+                              onChange={(e) => setEditingOdometer(e.target.value ? parseInt(e.target.value) : undefined)}
+                              placeholder="km"
+                              className="h-8"
+                            />
+                          </div>
+                          <FuelLevelSlider
+                            value={editingFuelLevel ?? 0}
+                            onChange={setEditingFuelLevel}
+                          />
+                          <div className="flex gap-2 mt-2">
+                            <Button size="sm" onClick={handleSaveChecklistData} disabled={savingChecklist}>
+                              {savingChecklist ? 'Guardando...' : 'Guardar'}
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => setEditingChecklist(null)}>
+                              Cancelar
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-1">
+                          {(workOrder.exitChecklist.odometerValue ?? workOrder.odometerValue) && (
+                            <div className="text-xs">
+                              <span className="font-medium">Kilometraje:</span> {workOrder.exitChecklist.odometerValue ?? workOrder.odometerValue} km
+                            </div>
+                          )}
+                          {(workOrder.exitChecklist.fuelLevel ?? workOrder.fuelLevel) && (
+                            <div className="text-xs">
+                              <span className="font-medium">Combustible:</span> {workOrder.exitChecklist.fuelLevel ?? workOrder.fuelLevel}%
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Checklist Items */}
                     {workOrder.exitChecklist.items.map((item, index) => (
                       <div key={index} className="flex items-start gap-3">
                         <input type="checkbox" checked={item.checked} readOnly className="rounded mt-0.5" />
@@ -524,13 +894,41 @@ export default function WorkOrderDetailPage() {
             {workOrder.notes && (
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <FileText className="h-4 w-4" />
-                    Notas
-                  </CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      Notas
+                    </CardTitle>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => startEditingNotes()}
+                    >
+                      Editar
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm whitespace-pre-wrap text-muted-foreground">{workOrder.notes}</p>
+                  {editingNotes ? (
+                    <div className="space-y-2">
+                      <Textarea
+                        value={newNotes}
+                        onChange={(e) => setNewNotes(e.target.value)}
+                        placeholder="Agregar notas..."
+                        rows={4}
+                      />
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={handleUpdateNotes}>
+                          Guardar
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => setEditingNotes(false)}>
+                          Cancelar
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm whitespace-pre-wrap text-muted-foreground">{workOrder.notes}</p>
+                  )}
                 </CardContent>
               </Card>
             )}

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, LayoutGrid, List, ArrowUpDown } from "lucide-react";
+import { Plus, LayoutGrid, List, ArrowUpDown, Car, Truck, Wrench, Headphones, Package } from "lucide-react";
 import { Header } from "@/components/adm/Header";
 import { cn } from "@/lib/utils";
 
@@ -19,6 +19,8 @@ interface WorkOrder {
   scheduledDate?: string;
   createdAt: string;
   startedAt?: string;
+  totalPaid?: number;
+  isFullyPaid?: boolean;
 }
 
 const STATUSES = [
@@ -27,7 +29,6 @@ const STATUSES = [
   { id: "IN_PROGRESS", label: "En Proceso", color: "bg-orange-50 border-orange-200" },
   { id: "QC_CHECK", label: "Control QC", color: "bg-purple-50 border-purple-200" },
   { id: "READY", label: "Listo", color: "bg-green-50 border-green-200" },
-  { id: "PAID", label: "Pagada", color: "bg-emerald-50 border-emerald-200" },
   { id: "DELIVERED", label: "Entregada", color: "bg-gray-50 border-gray-200" },
 ];
 
@@ -60,6 +61,32 @@ export default function WorkOrdersPage() {
         {statusConfig?.label || status}
       </Badge>
     );
+  };
+
+  const getPaymentColorClass = (wo: WorkOrder) => {
+    if (wo.isFullyPaid) return "text-green-600";
+    if (wo.totalPaid && wo.totalPaid > 0) return "text-yellow-600";
+    return "text-gray-600";
+  };
+
+  const getCategoryIcon = (category: string) => {
+    const normalizedCategory = category?.toUpperCase() || '';
+    switch (normalizedCategory) {
+      case 'CAR':
+      case 'SUV':
+      case 'PICKUP':
+        return <Car className="h-4 w-4" />;
+      case 'TRUCK':
+        return <Truck className="h-4 w-4" />;
+      case 'MOTORCYCLE':
+        return <Wrench className="h-4 w-4" />;
+      case 'AUDIO_EQUIPMENT':
+        return <Headphones className="h-4 w-4" />;
+      case 'TRAILER':
+      case 'OTHER_EQUIPMENT':
+      default:
+        return <Package className="h-4 w-4" />;
+    }
   };
 
   // Check if OT is delayed (more than 3 days in current status without progress)
@@ -141,45 +168,44 @@ export default function WorkOrdersPage() {
                     </div>
                   </div>
                   {/* Scrollable Column */}
-                  <div className="bg-muted/30 rounded-b-lg p-2 flex-1 overflow-y-auto space-y-2 border border-t-0">
+                  <div className="bg-muted/30 rounded-b-lg p-2 flex-1 overflow-y-auto space-y-3 border border-t-0">
                     {status.items.map((wo) => (
                       <Link key={wo.id} href={`/adm/work-orders/${wo.id}`}>
                         <Card className={cn(
                           "cursor-pointer hover:shadow-md transition-all border-l-4",
                           isDelayed(wo) ? "border-l-red-500 bg-red-50/30" : "border-l-transparent"
                         )}>
-                          <CardContent className="p-3 space-y-2">
+                          <CardContent className="p-3 space-y-1.5">
                             {/* Vehicle Info - Primary */}
-                            <div className="font-semibold text-sm">
-                              {wo.vehicle.identifier}
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2 font-semibold text-sm">
+                                {getCategoryIcon(wo.vehicle.category)}
+                                {wo.vehicle.identifier}
+                              </div>
+                              <span className={cn("text-xs font-medium", getPaymentColorClass(wo))}>
+                                ${Number(wo.total).toLocaleString("es-AR")}
+                              </span>
                             </div>
                             <div className="text-xs text-muted-foreground">
                               {wo.vehicle.make?.name} {wo.vehicle.model?.name}
                             </div>
                             
                             {/* Customer - Secondary */}
-                            <div className="text-xs text-muted-foreground pt-1 border-t">
-                              {wo.customer.name}
-                            </div>
-                            
-                            {/* Footer: Status & Delay Warning */}
-                            <div className="flex justify-between items-center pt-1">
+                            <div className="flex justify-between items-center text-xs text-muted-foreground pt-0.5 border-t">
+                              <span>{wo.customer.name}</span>
                               {isDelayed(wo) ? (
-                                <span className="text-xs text-red-600 font-medium flex items-center gap-1">
+                                <span className="text-red-600 font-medium flex items-center gap-1">
                                   <ArrowUpDown className="h-3 w-3" />
                                   Atrasada
                                 </span>
                               ) : (
-                                <span className="text-xs text-muted-foreground">
+                                <span>
                                   {new Date(wo.createdAt).toLocaleDateString("es-AR", {
                                     day: "2-digit",
                                     month: "short"
                                   })}
                                 </span>
                               )}
-                              <span className="text-xs font-medium">
-                                ${Number(wo.total).toLocaleString("es-AR")}
-                              </span>
                             </div>
                           </CardContent>
                         </Card>
@@ -204,7 +230,8 @@ export default function WorkOrdersPage() {
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
-                        <div className="font-medium text-lg">
+                        <div className="flex items-center gap-2 font-medium text-lg">
+                          {getCategoryIcon(wo.vehicle.category)}
                           {wo.vehicle.identifier}
                         </div>
                         <div>
@@ -216,7 +243,7 @@ export default function WorkOrdersPage() {
                       </div>
                       <div className="flex items-center gap-4">
                         {getStatusBadge(wo.status)}
-                        <div className="font-medium">
+                        <div className={cn("font-medium", getPaymentColorClass(wo))}>
                           ${Number(wo.total).toLocaleString("es-AR")}
                         </div>
                         <div className="text-sm text-muted-foreground">
