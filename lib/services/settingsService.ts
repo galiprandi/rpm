@@ -46,7 +46,12 @@ export async function setSetting(key: SettingKey, value: string): Promise<Settin
   return await prisma.setting.upsert({
     where: { key },
     update: { value },
-    create: { key, value },
+    create: { 
+      id: crypto.randomUUID(),
+      key, 
+      value,
+      updatedAt: new Date(),
+    },
   });
 }
 
@@ -58,7 +63,12 @@ export async function initializeDefaultSettings(): Promise<void> {
     await prisma.setting.upsert({
       where: { key },
       update: {},
-      create: { key, value },
+      create: { 
+        id: crypto.randomUUID(),
+        key, 
+        value,
+        updatedAt: new Date(),
+      },
     });
   }
 }
