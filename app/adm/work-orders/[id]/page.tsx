@@ -891,8 +891,7 @@ export default function WorkOrderDetailPage() {
               </CardContent>
             </Card>
 
-            {workOrder.notes && (
-              <Card>
+            <Card>
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-base flex items-center gap-2">
@@ -904,7 +903,7 @@ export default function WorkOrderDetailPage() {
                       size="sm"
                       onClick={() => startEditingNotes()}
                     >
-                      Editar
+                      {workOrder.notes ? 'Editar' : 'Agregar'}
                     </Button>
                   </div>
                 </CardHeader>
@@ -927,11 +926,12 @@ export default function WorkOrderDetailPage() {
                       </div>
                     </div>
                   ) : (
-                    <p className="text-sm whitespace-pre-wrap text-muted-foreground">{workOrder.notes}</p>
+                    <p className="text-sm whitespace-pre-wrap text-muted-foreground">
+                      {workOrder.notes || 'Sin notas'}
+                    </p>
                   )}
                 </CardContent>
               </Card>
-            )}
           </div>
         </TabsContent>
       </Tabs>

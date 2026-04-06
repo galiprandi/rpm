@@ -406,8 +406,10 @@ Desde la vista de detalle de la OT (`/adm/work-orders/[id]`):
 - **Fecha Agendada**: Se muestra en el header si está definida, con botón "Editar" para modificarla
   - Formato: datetime-local para edición
   - Se guarda mediante `PUT /api/work-orders/[id]` con campo `scheduledDate`
-- **Notas**: Se muestra en una card separada si existen, con botón "Editar" para modificarlas
+- **Notas**: Se muestra en una card siempre visible
+  - Botón "Agregar" si no hay notas, "Editar" si hay
   - Formato: Textarea multilinea para edición
+  - Muestra "Sin notas" cuando no hay contenido
   - Se guarda mediante `PUT /api/work-orders/[id]` con campo `notes`
 
 ```typescript
@@ -416,6 +418,29 @@ interface WorkOrderEditable {
   scheduledDate?: Date;   // Fecha y hora agendada
   notes?: string;         // Notas generales de la OT
 }
+```
+
+#### Fix: Creación de Items con Servicios
+
+**Bug:** Al crear una OT con servicios, los items no se guardaban en la tabla `work_order_item` porque el typecast solo incluía `productId`.
+
+**Fix aplicado en `POST /api/work-orders`:**
+- Typecast corregido para incluir `serviceId` opcional
+- Campos mapeados explícitamente (type, productId, serviceId, quantity, unitPrice, subtotal)
+- Agregado try-catch específico para loguear errores sin fallar la creación de la OT
+
+```typescript
+// Mapeo corregido en creación de items
+data: workOrderItems.map((item: { type: string; productId?: string; serviceId?: string; quantity: number; unitPrice: number; subtotal: number }) => ({
+  id: crypto.randomUUID(),
+  type: item.type,
+  productId: item.productId || null,
+  serviceId: item.serviceId || null,
+  quantity: item.quantity,
+  unitPrice: item.unitPrice,
+  subtotal: item.subtotal,
+  workOrderId: workOrder.id,
+}))
 ```
 
 #### Sistema de Auditoría de Cambios
