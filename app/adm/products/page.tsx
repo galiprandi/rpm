@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { ProductDialog } from '@/components/products/ProductDialog';
 import { ProductMovementsModal } from '@/components/products/ProductMovementsModal';
 import { ProductPricesModal } from '@/components/products/ProductPricesModal';
+import { ProductAuditModal } from '@/components/products/ProductAuditModal';
 import { useUI } from '@/components/ui/UIProvider';
 import { Header, CrudAdmin, StatItem } from '@/components/adm';
 import { Package, Edit2, Trash2, AlertTriangle, DollarSign, Boxes, History, Upload } from 'lucide-react';
@@ -23,6 +24,9 @@ export default function ProductsPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Modal states
+  const [showAuditModal, setShowAuditModal] = useState(false);
 
   useEffect(() => {
     fetchProducts();
@@ -391,6 +395,12 @@ export default function ProductsPage() {
           description="Gestiona el inventario de productos y servicios"
           secondaryActions={[
             {
+              label: 'Ver Auditoría',
+              onClick: () => setShowAuditModal(true),
+              variant: 'outline' as const,
+              icon: History,
+            },
+            {
               label: 'Importar Productos',
               onClick: goToImporter,
               variant: 'outline' as const,
@@ -475,6 +485,12 @@ export default function ProductsPage() {
         product={selectedProductForMovements}
         movements={movements}
         loading={movementsLoading}
+      />
+
+      {/* Audit Modal */}
+      <ProductAuditModal
+        open={showAuditModal}
+        onClose={() => setShowAuditModal(false)}
       />
     </>
   );

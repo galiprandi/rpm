@@ -105,7 +105,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
     }
 
     // Check if stock is being modified
-    const stockChanged = body.stock !== undefined && body.stock !== existing.stock;
+    const stockChanged = body.stock !== undefined && Number(body.stock) !== existing.stock;
 
     let product;
     if (stockChanged) {

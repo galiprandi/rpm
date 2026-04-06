@@ -141,6 +141,7 @@ export async function POST(request: NextRequest) {
         location: body.location || null,
         categoryId: body.categoryId,
         isActive: true,
+        updatedAt: new Date(),
       },
       include: {
         category: {

@@ -296,12 +296,41 @@ export async function getCostUpdateHistory(
     prisma.cost_update_batch.count(),
   ]);
 
+  // Get all categories and suppliers for name resolution
+  const [categories, suppliers] = await Promise.all([
+    prisma.category.findMany({
+      select: { id: true, name: true }
+    }),
+    prisma.supplier.findMany({
+      select: { id: true, name: true }
+    })
+  ]);
+
+  // Create lookup maps
+  const categoryMap = new Map(categories.map(cat => [cat.id, cat.name]));
+  const supplierMap = new Map(suppliers.map(sup => [sup.id, sup.name]));
+
+  // Helper to enrich filters with names
+  const enrichFilters = (filters: Record<string, unknown>): Record<string, unknown> => {
+    const enriched = { ...filters };
+    
+    if (filters.categoryId && typeof filters.categoryId === 'string') {
+      enriched.categoryId = categoryMap.get(filters.categoryId) || filters.categoryId;
+    }
+    
+    if (filters.supplierId && typeof filters.supplierId === 'string') {
+      enriched.supplierId = supplierMap.get(filters.supplierId) || filters.supplierId;
+    }
+    
+    return enriched;
+  };
+
   return {
     batches: batches.map(batch => ({
       id: batch.id,
       userId: batch.userId,
       userName: batch.userName,
-      filtersApplied: batch.filtersApplied as Record<string, unknown>,
+      filtersApplied: enrichFilters(batch.filtersApplied as Record<string, unknown>),
       adjustmentType: batch.adjustmentType,
       adjustmentValue: Number(batch.adjustmentValue),
       itemsAffected: batch.itemsAffected,

@@ -179,17 +179,20 @@ export async function getProductById(id: string): Promise<Product | null> {
 export async function createProduct(input: CreateProductInput): Promise<Product> {
   const product = await prisma.product.create({
     data: {
+      id: `prod-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       sku: input.sku,
       name: input.name,
       description: input.description || null,
       barcode: input.barcode || null,
       categoryId: input.categoryId,
-      costPrice: new Prisma.Decimal(input.costPrice),
-      replacementCost: new Prisma.Decimal(input.replacementCost),
+      costPrice: Prisma?.Decimal ? new Prisma.Decimal(input.costPrice) : input.costPrice,
+      replacementCost: Prisma?.Decimal ? new Prisma.Decimal(input.replacementCost) : input.replacementCost,
       stock: input.stock,
       minStock: input.minStock,
       supplierId: input.supplierId || null,
       location: input.location || null,
+      isActive: true,
+      updatedAt: new Date(),
     },
     include: { category: true },
   });
@@ -399,8 +402,14 @@ export interface CreateMovementInput {
  * Create a stock movement record (audit trail)
  */
 export async function createStockMovement(input: CreateMovementInput): Promise<StockMovement> {
-  const movement = await prisma.stockMovement.create({
+  // Check if prisma is available
+  if (!prisma) {
+    throw new Error('Database connection not available');
+  }
+  
+  const movement = await prisma.stock_movement.create({
     data: {
+      id: `movement-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       productId: input.productId,
       userId: input.userId || null,
       userName: input.userName || null,
@@ -432,7 +441,7 @@ export async function createStockMovement(input: CreateMovementInput): Promise<S
  * Get all movements for a product
  */
 export async function getProductMovements(productId: string): Promise<StockMovement[]> {
-  const movements = await prisma.stockMovement.findMany({
+  const movements = await prisma.stock_movement.findMany({
     where: { productId },
     orderBy: { createdAt: 'desc' },
   });
