@@ -151,21 +151,21 @@ export function ProductAuditModal({ open, onClose }: ProductAuditModalProps) {
             <Badge variant="outline" className="text-xs">
               {filterCount} filtro{filterCount !== 1 ? 's' : ''}
             </Badge>
-            {filters.search && typeof filters.search === 'string' && (
+            {filters.search && typeof filters.search === 'string' ? (
               <div className="text-xs text-muted-foreground">
                 Búsqueda: &quot;{filters.search}&quot;
               </div>
-            )}
-            {filters.categoryId && typeof filters.categoryId === 'string' && (
+            ) : null}
+            {filters.categoryId && typeof filters.categoryId === 'string' ? (
               <div className="text-xs text-muted-foreground">
                 Categoría: {filters.categoryId}
               </div>
-            )}
-            {filters.supplierId && typeof filters.supplierId === 'string' && (
+            ) : null}
+            {filters.supplierId && typeof filters.supplierId === 'string' ? (
               <div className="text-xs text-muted-foreground">
                 Proveedor: {filters.supplierId}
               </div>
-            )}
+            ) : null}
           </div>
         );
       },
