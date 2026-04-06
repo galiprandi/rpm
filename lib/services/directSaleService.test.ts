@@ -1,5 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createDirectSale, getDirectSalesSummaryForDate } from './directSaleService';
+import { createCashMovement } from './cashMovementService';
 import { prisma } from '@/lib/prisma';
 
 vi.mock('@/lib/prisma', () => ({
@@ -12,17 +14,24 @@ vi.mock('@/lib/prisma', () => ({
     stock_movement: {
       create: vi.fn(),
     },
-    directSale: {
+    direct_sale: {
       create: vi.fn(),
       findMany: vi.fn(),
     },
-    directSaleItem: {
+    direct_sale_item: {
       create: vi.fn(),
     },
-    directSalePayment: {
+    direct_sale_payment: {
       create: vi.fn(),
+    },
+    payment_method: {
+      findUnique: vi.fn(),
     },
   },
+}));
+
+vi.mock('./cashMovementService', () => ({
+  createCashMovement: vi.fn(),
 }));
 
 describe('directSaleService', () => {
@@ -51,9 +60,11 @@ describe('directSaleService', () => {
       vi.mocked(prisma.product.findUnique).mockResolvedValue(mockProduct as any);
       vi.mocked(prisma.product.update).mockResolvedValue({} as any);
       vi.mocked(prisma.stock_movement.create).mockResolvedValue({} as any);
-      vi.mocked(prisma.directSale.create).mockResolvedValue(mockDirectSale as any);
-      vi.mocked(prisma.directSaleItem.create).mockResolvedValue({} as any);
-      vi.mocked(prisma.directSalePayment.create).mockResolvedValue({} as any);
+      vi.mocked(prisma.direct_sale.create).mockResolvedValue(mockDirectSale as any);
+      vi.mocked(prisma.direct_sale_item.create).mockResolvedValue({} as any);
+      vi.mocked(prisma.direct_sale_payment.create).mockResolvedValue({ id: 'payment-id' } as any);
+      vi.mocked(prisma.payment_method.findUnique).mockResolvedValue({ code: 'EFECTIVO' } as any);
+      vi.mocked(createCashMovement).mockResolvedValue({} as any);
 
       const result = await createDirectSale({
         customerName: 'Consumidor final',
@@ -76,7 +87,7 @@ describe('directSaleService', () => {
       });
 
       expect(result).toEqual(mockDirectSale);
-      expect(prisma.directSale.create).toHaveBeenCalled();
+      expect(prisma.direct_sale.create).toHaveBeenCalled();
     });
 
     it('should throw error if payments total does not match sale total', async () => {
@@ -155,9 +166,11 @@ describe('directSaleService', () => {
       vi.mocked(prisma.product.findUnique).mockResolvedValue(mockProduct as any);
       vi.mocked(prisma.product.update).mockResolvedValue({} as any);
       vi.mocked(prisma.stock_movement.create).mockResolvedValue({} as any);
-      vi.mocked(prisma.directSale.create).mockResolvedValue(mockDirectSale as any);
-      vi.mocked(prisma.directSaleItem.create).mockResolvedValue({} as any);
-      vi.mocked(prisma.directSalePayment.create).mockResolvedValue({} as any);
+      vi.mocked(prisma.direct_sale.create).mockResolvedValue(mockDirectSale as any);
+      vi.mocked(prisma.direct_sale_item.create).mockResolvedValue({} as any);
+      vi.mocked(prisma.direct_sale_payment.create).mockResolvedValue({ id: 'payment-id' } as any);
+      vi.mocked(prisma.payment_method.findUnique).mockResolvedValue({ code: 'EFECTIVO' } as any);
+      vi.mocked(createCashMovement).mockResolvedValue({} as any);
 
       await createDirectSale({
         customerName: 'Consumidor final',
@@ -215,7 +228,7 @@ describe('directSaleService', () => {
         },
       ];
 
-      vi.mocked(prisma.directSale.findMany).mockResolvedValue(mockSales as any);
+      vi.mocked(prisma.direct_sale.findMany).mockResolvedValue(mockSales as any);
 
       const result = await getDirectSalesSummaryForDate(new Date());
 
@@ -230,7 +243,7 @@ describe('directSaleService', () => {
     });
 
     it('should return empty summary if no sales', async () => {
-      vi.mocked(prisma.directSale.findMany).mockResolvedValue([]);
+      vi.mocked(prisma.direct_sale.findMany).mockResolvedValue([]);
 
       const result = await getDirectSalesSummaryForDate(new Date());
 

@@ -12,7 +12,7 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const paymentMethods = await prisma.paymentMethod.findMany({
+    const paymentMethods = await prisma.payment_method.findMany({
       orderBy: [
         { isActive: "desc" },
         { sortOrder: "asc" },
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const paymentMethod = await prisma.paymentMethod.create({
+    const paymentMethod = await prisma.payment_method.create({
       data: {
         name,
         code,

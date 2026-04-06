@@ -152,27 +152,37 @@ export type work_order_item = Prisma.work_order_itemModel
  */
 export type cost_update_batch = Prisma.cost_update_batchModel
 /**
- * Model PaymentMethod
+ * Model payment_method
  * 
  */
-export type PaymentMethod = Prisma.PaymentMethodModel
+export type payment_method = Prisma.payment_methodModel
 /**
- * Model Payment
+ * Model payment
  * 
  */
-export type Payment = Prisma.PaymentModel
+export type payment = Prisma.paymentModel
 /**
- * Model DirectSale
+ * Model direct_sale
  * 
  */
-export type DirectSale = Prisma.DirectSaleModel
+export type direct_sale = Prisma.direct_saleModel
 /**
- * Model DirectSaleItem
+ * Model direct_sale_item
  * 
  */
-export type DirectSaleItem = Prisma.DirectSaleItemModel
+export type direct_sale_item = Prisma.direct_sale_itemModel
 /**
- * Model DirectSalePayment
+ * Model direct_sale_payment
  * 
  */
-export type DirectSalePayment = Prisma.DirectSalePaymentModel
+export type direct_sale_payment = Prisma.direct_sale_paymentModel
+/**
+ * Model cash_movement
+ * 
+ */
+export type cash_movement = Prisma.cash_movementModel
+/**
+ * Model invoice
+ * 
+ */
+export type invoice = Prisma.invoiceModel

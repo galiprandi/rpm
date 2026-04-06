@@ -1,5 +1,7 @@
 # 🗄️ Arquitectura de Datos - RPM
 
+> **NOTA**: Este documento es una descripción conceptual de la arquitectura de datos. Para el esquema de base de datos actual y definitivo, consulte `prisma/schema.prisma`. El esquema real utiliza convención **snake_case** para todos los nombres de tablas (ej: `payment_method`, `direct_sale`, `cash_movement`, `invoice`).
+
 ## Entidades Principales y Relaciones
 
 ```
@@ -1174,63 +1176,31 @@ model ChecklistItem {
 }
 
 model Invoice {
-  id               String          @id @default(uuid())
-  invoiceNumber    String          @unique
-  invoiceType      InvoiceType
-  caeCode          String
-  caeExpiryDate    DateTime
+  id               String          @id @default(cuid())
+  number           String          @unique
+  type             String          // FACTURA_A, FACTURA_B, NOTA_CREDITO, RECIBO
+  referenceId      String          // work_order_id o direct_sale_id
+  referenceType    String          // 'work_order', 'direct_sale'
+  customerId       String?
   customerName     String
-  customerDocType  DocumentType?
-  customerDocNumber String?
-  customerAddress  String?
-  sellerName       String
-  sellerCuit       String
-  sellerAddress      String
-  sellerIvaCondition String
-  date             DateTime
   subtotal         Decimal         @db.Decimal(10, 2)
-  taxRate          Decimal         @db.Decimal(5, 2)
-  taxAmount        Decimal         @db.Decimal(10, 2)
+  tax              Decimal?        @db.Decimal(10, 2)
   total            Decimal         @db.Decimal(10, 2)
-  paymentMethod    PaymentMethod
-  paymentMethods   Json?           // Para pagos mixtos
-  status           InvoiceStatus   @default(AUTHORIZED)
-  notes            String?
-  relatedInvoiceId String?
+  afipData         Json?           // CAE, CAE expiration, etc.
+  status           String          // DRAFT, ISSUED, CANCELLED
+  issuedAt         DateTime?
   createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
+  createdBy        String
 
   // Relations
-  customerId  String?
-  customer    Customer?     @relation(fields: [customerId], references: [id])
-  workOrder   WorkOrder?
-  items       InvoiceItem[]
+  customer         Customer?       @relation(fields: [customerId], references: [id])
+  workOrder        WorkOrder?
+  directSale       direct_sale?
+  items            InvoiceItem[]
 
-  @@index([date])
+  @@index([referenceId, referenceType])
   @@index([customerId])
   @@map("invoices")
-}
-
-enum InvoiceType {
-  A
-  B
-  M
-  CREDIT
-  DEBIT
-}
-
-enum InvoiceStatus {
-  PENDING
-  AUTHORIZED
-  CANCELLED
-}
-
-enum PaymentMethod {
-  CASH
-  TRANSFER
-  DEBIT
-  CREDIT
-  MIXED
 }
 
 model InvoiceItem {

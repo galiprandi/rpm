@@ -277,6 +277,8 @@ Tiempo objetivo: < 2 minutos desde búsqueda hasta factura.
 
 ## Modelo de Datos MVP
 
+> **NOTA**: Este diagrama es una representación conceptual del MVP. Para el esquema de base de datos actual y definitivo, consulte `prisma/schema.prisma`. La implementación real utiliza convención **snake_case** para todas las tablas (ej: `payment_method`, `direct_sale`, `cash_movement`, `invoice`). Ver sección "Estado de Implementación" al final de este documento.
+
 ### Entidades Core
 
 ```
@@ -441,3 +443,44 @@ Una vez estable el MVP, agregar:
 3. **Historial de precios** (quién cambió qué y cuándo)
 4. **Reporte simple IVA** mensual
 5. **Clientes frecuentes** con datos guardados
+
+## Estado de Implementación (2026-04-06)
+
+### Tablas de Soporte Implementadas
+
+**cash_movement (Movimientos de Caja):** ✅
+- Registra automáticamente ingresos cuando se crean pagos en ventas
+- Soporta movimientos manuales (apertura, cierre, gastos)
+- Servicio: `lib/services/cashMovementService.ts`
+- API: `/api/cash-movements` (GET, POST), `/api/cash-movements/summary` (GET)
+
+**invoice (Comprobantes):** ✅
+- Tabla lista para integración AFIP
+- Numeración automática por tipo de comprobante
+- Servicio: `lib/services/invoiceService.ts`
+- API: `/api/invoices` (GET, POST), `/api/invoices/[id]` (GET, PATCH)
+
+### Integración con Ventas
+
+**Direct Sales (Ventas Rápidas):**
+- ✅ Al crear un pago → se crea automáticamente un `cash_movement` de tipo INCOME
+- ⏳ Pendiente: Opción para crear `invoice` al finalizar venta
+
+**Work Orders (Ventas desde Taller):**
+- ⏳ Pendiente: Integración similar a direct sales
+
+### Flujo Actual (2026-04-06)
+
+```
+Venta → Pago → cash_movement (INCOME) → Caja actualizada
+          ↓
+      (pendiente) invoice (DRAFT) → AFIP → invoice (ISSUED)
+```
+
+### Próximos Pasos
+
+1. **Cierre de Caja**: Implementar UI que usa `/api/cash-movements/summary`
+2. **Facturación**: Integrar creación de invoice en flujo de ventas
+3. **AFIP**: Implementar servicio que llama a AFIP y actualiza `afipData`
+
+---

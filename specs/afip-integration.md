@@ -97,103 +97,26 @@ export async function verifyAfipConnection(): Promise<boolean> {
 
 ### Entidad Invoice (Factura)
 
+> **NOTA**: El esquema de base de datos actual utiliza convención **snake_case**. Para el esquema completo y actualizado, consulte `prisma/schema.prisma`. El modelo `invoice` actual usa:
+> - Tabla: `invoice`
+> - Campos: `referenceId`, `referenceType` (para work_order o direct_sale), `afipData` (JSON con CAE, etc.)
+> - Pagos se manejan a través de la referencia a work_order/direct_sale que tienen sus propios pagos
+> - Sin enums para tipo/estado (usa String)
+
 ```typescript
-// Prisma schema
-model Invoice {
-  id              String        @id @default(uuid())
-  invoiceNumber   String        @unique // 0001-00000001
-  invoiceType     InvoiceType   // B, A, CREDIT, DEBIT
-  
-  // Datos AFIP
-  caeCode         String        // Código Autorización Electrónica
-  caeExpiryDate   DateTime      // Vencimiento CAE
-  afipQrCode      String?       // QR para verificación
-  
-  // Datos receptor
-  customerId      String?
-  customer        Customer?     @relation(fields: [customerId], references: [id])
-  customerName    String        // Denominación
-  customerDocType DocType?      // DNI, CUIT, CUIL
-  customerDocNumber String?
-  
-  // Totales
-  subtotal        Decimal       @db.Decimal(10, 2)
-  taxRate         Decimal       @default(21.00) @db.Decimal(5, 2)
-  taxAmount       Decimal       @db.Decimal(10, 2)
-  total           Decimal       @db.Decimal(10, 2)
-  
-  // Pago
-  paymentMethod   PaymentMethod // CASH, TRANSFER, DEBIT, CREDIT
-  
-  // Relaciones
-  workOrderId     String?
-  workOrder       WorkOrder?    @relation(fields: [workOrderId], references: [id])
-  items           InvoiceItem[]
-  
-  // Metadata
-  status          InvoiceStatus @default(AUTHORIZED)
-  notes           String?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  
-  @@index([customerId])
-  @@index([workOrderId])
-  @@index([createdAt])
-}
-
-model InvoiceItem {
-  id          String  @id @default(uuid())
-  invoiceId   String
-  invoice     Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  
-  type        ItemType // PRODUCT, SERVICE
-  productId   String?
-  serviceId   String?
-  
-  // Snapshot (precios no cambian)
-  code        String  // SKU o código servicio
-  description String
-  quantity    Int
-  unitPrice   Decimal @db.Decimal(10, 2)
-  subtotal    Decimal @db.Decimal(10, 2)
-  
-  taxRate     Decimal @default(21.00) @db.Decimal(5, 2)
-  taxAmount   Decimal @db.Decimal(10, 2)
-  total       Decimal @db.Decimal(10, 2)
-}
-
-enum InvoiceType {
-  A
-  B
-  M
-  CREDIT
-  DEBIT
-}
-
-enum InvoiceStatus {
-  PENDING     // Antes de enviar a AFIP
-  AUTHORIZED  // Con CAE
-  CANCELLED   // Anulada
-}
-
-enum DocType {
-  DNI
-  CUIT
-  CUIL
-  PASSPORT
-}
-
-enum PaymentMethod {
-  CASH
-  TRANSFER
-  DEBIT
-  CREDIT
-  MIXED
-}
-
-enum ItemType {
-  PRODUCT
-  SERVICE
+// Ejemplo conceptual de interfaz para AFIP (no es el schema actual)
+interface CreateInvoiceInput {
+  invoiceType: 'A' | 'B';
+  customerName?: string;
+  customerDocType?: 'DNI' | 'CUIT' | 'CUIL';
+  customerDocNumber?: string;
+  items: Array<{
+    code: string;
+    description: string;
+    quantity: number;
+    unitPrice: number;
+  }>;
+  // El método de pago se maneja a través del work_order/direct_sale referenciado
 }
 ```
 
@@ -525,6 +448,24 @@ describe('AFIP Sandbox Integration', () => {
 - `/specs/workshop.md` - Facturación desde OTs
 - `/specs/auth.md` - Permisos para facturar
 - `/specs/data-architecture.md` - Modelo de datos Invoice
+
+## Estado de Implementación (2026-04-06)
+
+**Modelo Invoice:** ✅ Implementado
+- Tabla `invoice` creada en Prisma (migración `20260406231455_refactor_naming_add_cash_invoices`)
+- Campos: `number`, `type`, `referenceId`, `referenceType`, `customerId`, `customerName`, `subtotal`, `tax`, `total`, `afipData`, `status`, `issuedAt`
+- Servicio: `lib/services/invoiceService.ts` - CRUD y numeración automática
+- API Endpoints: `/api/invoices` (GET, POST), `/api/invoices/[id]` (GET, PATCH)
+
+**Integración AFIP:** ⏳ Pendiente
+- Modelo de datos listo
+- Falta: Instalar afip.js, configurar certificados, implementar lógica de CAE
+
+**Próximos pasos:**
+1. Setup certificados en AFIP Sandbox
+2. Instalar y configurar afip.js
+3. Implementar servicio `createElectronicInvoice` que llama a AFIP y actualiza `afipData` en el registro
+4. Integrar con flujo de ventas (direct sales y work orders)
 
 ---
 

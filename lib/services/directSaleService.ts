@@ -3,6 +3,7 @@
  */
 import { prisma } from '@/lib/prisma';
 import { randomUUID } from 'crypto';
+import { createCashMovement } from './cashMovementService';
 
 export interface DirectSaleItemInput {
   productId?: string;
@@ -67,7 +68,7 @@ export async function createDirectSale(input: CreateDirectSaleInput) {
   // Create direct sale in a transaction
   const result = await prisma.$transaction(async (tx) => {
     // Create direct sale
-    const directSale = await tx.directSale.create({
+    const directSale = await tx.direct_sale.create({
       data: {
         customerId,
         customerName,
@@ -79,7 +80,7 @@ export async function createDirectSale(input: CreateDirectSaleInput) {
 
     // Create items and update stock
     for (const item of items) {
-      await tx.directSaleItem.create({
+      await tx.direct_sale_item.create({
         data: {
           directSaleId: directSale.id,
           productId: item.productId,
@@ -131,7 +132,7 @@ export async function createDirectSale(input: CreateDirectSaleInput) {
 
     // Create payments
     for (const payment of payments) {
-      await tx.directSalePayment.create({
+      const paymentRecord = await tx.direct_sale_payment.create({
         data: {
           directSaleId: directSale.id,
           paymentMethodId: payment.paymentMethodId,
@@ -140,6 +141,26 @@ export async function createDirectSale(input: CreateDirectSaleInput) {
           createdBy,
         },
       });
+
+      // Get payment method to determine the method code
+      const paymentMethod = await tx.payment_method.findUnique({
+        where: { id: payment.paymentMethodId },
+        select: { code: true },
+      });
+
+      // Create cash movement
+      await createCashMovement(
+        {
+          type: 'INCOME',
+          amount: payment.amount,
+          method: paymentMethod?.code || 'CASH',
+          referenceId: paymentRecord.id,
+          referenceType: 'direct_sale_payment',
+          reason: `Venta directa #${directSale.id.slice(-6)}`,
+          createdBy,
+        },
+        tx
+      );
     }
 
     return directSale;
@@ -152,7 +173,7 @@ export async function createDirectSale(input: CreateDirectSaleInput) {
  * Get direct sales by date range
  */
 export async function getDirectSalesByDateRange(startDate: Date, endDate: Date) {
-  return prisma.directSale.findMany({
+  return prisma.direct_sale.findMany({
     where: {
       createdAt: {
         gte: startDate,
@@ -186,7 +207,7 @@ export async function getDirectSalesSummaryForDate(date: Date) {
   const endOfDay = new Date(date);
   endOfDay.setHours(23, 59, 59, 999);
 
-  const sales = await prisma.directSale.findMany({
+  const sales = await prisma.direct_sale.findMany({
     where: {
       createdAt: {
         gte: startOfDay,

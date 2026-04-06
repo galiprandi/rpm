@@ -73,11 +73,13 @@ export const ModelName = {
   work_order_audit_log: 'work_order_audit_log',
   work_order_item: 'work_order_item',
   cost_update_batch: 'cost_update_batch',
-  PaymentMethod: 'PaymentMethod',
-  Payment: 'Payment',
-  DirectSale: 'DirectSale',
-  DirectSaleItem: 'DirectSaleItem',
-  DirectSalePayment: 'DirectSalePayment'
+  payment_method: 'payment_method',
+  payment: 'payment',
+  direct_sale: 'direct_sale',
+  direct_sale_item: 'direct_sale_item',
+  direct_sale_payment: 'direct_sale_payment',
+  cash_movement: 'cash_movement',
+  invoice: 'invoice'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -445,7 +447,7 @@ export const Cost_update_batchScalarFieldEnum = {
 export type Cost_update_batchScalarFieldEnum = (typeof Cost_update_batchScalarFieldEnum)[keyof typeof Cost_update_batchScalarFieldEnum]
 
 
-export const PaymentMethodScalarFieldEnum = {
+export const Payment_methodScalarFieldEnum = {
   id: 'id',
   name: 'name',
   code: 'code',
@@ -456,7 +458,7 @@ export const PaymentMethodScalarFieldEnum = {
   updatedAt: 'updatedAt'
 } as const
 
-export type PaymentMethodScalarFieldEnum = (typeof PaymentMethodScalarFieldEnum)[keyof typeof PaymentMethodScalarFieldEnum]
+export type Payment_methodScalarFieldEnum = (typeof Payment_methodScalarFieldEnum)[keyof typeof Payment_methodScalarFieldEnum]
 
 
 export const PaymentScalarFieldEnum = {
@@ -472,7 +474,7 @@ export const PaymentScalarFieldEnum = {
 export type PaymentScalarFieldEnum = (typeof PaymentScalarFieldEnum)[keyof typeof PaymentScalarFieldEnum]
 
 
-export const DirectSaleScalarFieldEnum = {
+export const Direct_saleScalarFieldEnum = {
   id: 'id',
   customerId: 'customerId',
   customerName: 'customerName',
@@ -482,10 +484,10 @@ export const DirectSaleScalarFieldEnum = {
   createdBy: 'createdBy'
 } as const
 
-export type DirectSaleScalarFieldEnum = (typeof DirectSaleScalarFieldEnum)[keyof typeof DirectSaleScalarFieldEnum]
+export type Direct_saleScalarFieldEnum = (typeof Direct_saleScalarFieldEnum)[keyof typeof Direct_saleScalarFieldEnum]
 
 
-export const DirectSaleItemScalarFieldEnum = {
+export const Direct_sale_itemScalarFieldEnum = {
   id: 'id',
   directSaleId: 'directSaleId',
   productId: 'productId',
@@ -496,10 +498,10 @@ export const DirectSaleItemScalarFieldEnum = {
   totalPrice: 'totalPrice'
 } as const
 
-export type DirectSaleItemScalarFieldEnum = (typeof DirectSaleItemScalarFieldEnum)[keyof typeof DirectSaleItemScalarFieldEnum]
+export type Direct_sale_itemScalarFieldEnum = (typeof Direct_sale_itemScalarFieldEnum)[keyof typeof Direct_sale_itemScalarFieldEnum]
 
 
-export const DirectSalePaymentScalarFieldEnum = {
+export const Direct_sale_paymentScalarFieldEnum = {
   id: 'id',
   directSaleId: 'directSaleId',
   paymentMethodId: 'paymentMethodId',
@@ -509,7 +511,44 @@ export const DirectSalePaymentScalarFieldEnum = {
   createdBy: 'createdBy'
 } as const
 
-export type DirectSalePaymentScalarFieldEnum = (typeof DirectSalePaymentScalarFieldEnum)[keyof typeof DirectSalePaymentScalarFieldEnum]
+export type Direct_sale_paymentScalarFieldEnum = (typeof Direct_sale_paymentScalarFieldEnum)[keyof typeof Direct_sale_paymentScalarFieldEnum]
+
+
+export const Cash_movementScalarFieldEnum = {
+  id: 'id',
+  type: 'type',
+  amount: 'amount',
+  method: 'method',
+  referenceId: 'referenceId',
+  referenceType: 'referenceType',
+  reason: 'reason',
+  notes: 'notes',
+  createdAt: 'createdAt',
+  createdBy: 'createdBy'
+} as const
+
+export type Cash_movementScalarFieldEnum = (typeof Cash_movementScalarFieldEnum)[keyof typeof Cash_movementScalarFieldEnum]
+
+
+export const InvoiceScalarFieldEnum = {
+  id: 'id',
+  number: 'number',
+  type: 'type',
+  referenceId: 'referenceId',
+  referenceType: 'referenceType',
+  customerId: 'customerId',
+  customerName: 'customerName',
+  subtotal: 'subtotal',
+  tax: 'tax',
+  total: 'total',
+  afipData: 'afipData',
+  status: 'status',
+  issuedAt: 'issuedAt',
+  createdAt: 'createdAt',
+  createdBy: 'createdBy'
+} as const
+
+export type InvoiceScalarFieldEnum = (typeof InvoiceScalarFieldEnum)[keyof typeof InvoiceScalarFieldEnum]
 
 
 export const SortOrder = {

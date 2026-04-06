@@ -118,7 +118,7 @@ export async function POST(
     }
 
     // Verify payment method exists and is active
-    const paymentMethod = await prisma.paymentMethod.findUnique({
+    const paymentMethod = await prisma.payment_method.findUnique({
       where: { id: paymentMethodId },
     });
 

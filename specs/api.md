@@ -618,5 +618,169 @@ Esta spec (`api.md`) define la **arquitectura general**, convenciones y utilidad
 └── admin/         # APIs administrativas
 ```
 
+## Nuevos Endpoints (2026-04-06)
+
+### Cash Movements - Movimientos de Caja
+
+#### `GET /api/cash-movements`
+Lista movimientos de caja con filtros opcionales.
+
+**Query Params:**
+- `startDate` (optional): Fecha inicio
+- `endDate` (optional): Fecha fin
+- `type` (optional): Tipo (INCOME, EXPENSE, OPENING, CLOSING, COUNT)
+- `method` (optional): Método (CASH, CARD, TRANSFER, etc.)
+
+**Response:**
+```json
+{
+  "movements": [
+    {
+      "id": "cuid",
+      "type": "INCOME",
+      "amount": "150.00",
+      "method": "EFECTIVO",
+      "referenceId": "payment-id",
+      "referenceType": "direct_sale_payment",
+      "reason": "Venta directa #abc123",
+      "notes": null,
+      "createdAt": "2026-04-06T20:00:00Z",
+      "createdBy": "user-id"
+    }
+  ]
+}
+```
+
+#### `POST /api/cash-movements`
+Crea un movimiento manual de caja (solo ADMIN).
+
+**Body:**
+```json
+{
+  "type": "EXPENSE",
+  "amount": 50.00,
+  "method": "EFECTIVO",
+  "reason": "Pago de proveedor",
+  "notes": "Compra de insumos"
+}
+```
+
+#### `GET /api/cash-movements/summary`
+Obtiene resumen de caja para una fecha específica.
+
+**Query Params:**
+- `date` (optional): Fecha (default: hoy)
+
+**Response:**
+```json
+{
+  "summary": {
+    "opening": 1000.00,
+    "income": 500.00,
+    "expense": 50.00,
+    "closing": 0.00,
+    "total": 1450.00
+  },
+  "date": "2026-04-06T00:00:00Z"
+}
+```
+
+### Invoices - Comprobantes/Facturas
+
+#### `GET /api/invoices`
+Lista comprobantes con filtros opcionales.
+
+**Query Params:**
+- `startDate` (optional): Fecha inicio
+- `endDate` (optional): Fecha fin
+- `type` (optional): Tipo (FACTURA_A, FACTURA_B, NOTA_CREDITO, RECIBO)
+- `status` (optional): Estado (DRAFT, ISSUED, CANCELLED)
+- `customerId` (optional): ID del cliente
+
+**Response:**
+```json
+{
+  "invoices": [
+    {
+      "id": "cuid",
+      "number": "0001-00000001",
+      "type": "FACTURA_B",
+      "referenceId": "direct-sale-id",
+      "referenceType": "direct_sale",
+      "customerId": "customer-id",
+      "customerName": "Juan Pérez",
+      "subtotal": "1000.00",
+      "tax": "210.00",
+      "total": "1210.00",
+      "afipData": null,
+      "status": "DRAFT",
+      "issuedAt": null,
+      "createdAt": "2026-04-06T20:00:00Z",
+      "createdBy": "user-id",
+      "customer": {
+        "name": "Juan Pérez",
+        "phone": "1234567890"
+      }
+    }
+  ]
+}
+```
+
+#### `POST /api/invoices`
+Crea un nuevo comprobante (solo ADMIN). Genera número automáticamente.
+
+**Body:**
+```json
+{
+  "type": "FACTURA_B",
+  "referenceId": "direct-sale-id",
+  "referenceType": "direct_sale",
+  "customerId": "customer-id",
+  "customerName": "Juan Pérez",
+  "subtotal": 1000.00,
+  "tax": 210.00,
+  "total": 1210.00,
+  "status": "DRAFT"
+}
+```
+
+#### `GET /api/invoices/[id]`
+Obtiene un comprobante por ID.
+
+**Response:**
+```json
+{
+  "invoice": {
+    "id": "cuid",
+    "number": "0001-00000001",
+    "type": "FACTURA_B",
+    ...
+  }
+}
+```
+
+#### `PATCH /api/invoices/[id]`
+Actualiza el estado de un comprobante (emitir/cancelar).
+
+**Body:**
+```json
+{
+  "status": "ISSUED",
+  "issuedAt": "2026-04-06T20:00:00Z"
+}
+```
+
+**Response:**
+```json
+{
+  "invoice": {
+    "id": "cuid",
+    "status": "ISSUED",
+    "issuedAt": "2026-04-06T20:00:00Z",
+    ...
+  }
+}
+```
+
 **Last Updated:** 2026-03-28  
 **Status:** ✅ Core API architecture defined, endpoints moved to domain specs

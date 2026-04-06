@@ -26,7 +26,7 @@ Proveer una vista unificada y accionable del estado operativo del negocio, permi
 
 **Fuera de alcance (Fase 1):**
 - Turnos Web (falta modelo WebAppointment en DB)
-- Facturación AFIP (falta modelo Invoice en DB - métricas basadas en work_orders)
+- Facturación AFIP (modelo Invoice implementado - integración AFIP pendiente)
 - Edición de datos desde el dashboard (solo lectura + navegación)
 - Gráficos complejos o analítica histórica profunda (van a reportes)
 - Notificaciones push (solo badges visuales)

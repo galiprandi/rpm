@@ -17,7 +17,7 @@ export async function GET(
 
     const { id } = await params;
 
-    const paymentMethod = await prisma.paymentMethod.findUnique({
+    const paymentMethod = await prisma.payment_method.findUnique({
       where: { id },
       include: {
         _count: {
@@ -67,7 +67,7 @@ export async function PUT(
     const { name, description, isActive, sortOrder } = body;
 
     // Check if payment method exists
-    const existing = await prisma.paymentMethod.findUnique({
+    const existing = await prisma.payment_method.findUnique({
       where: { id },
     });
 
@@ -78,7 +78,7 @@ export async function PUT(
       );
     }
 
-    const paymentMethod = await prisma.paymentMethod.update({
+    const paymentMethod = await prisma.payment_method.update({
       where: { id },
       data: {
         name,
@@ -120,7 +120,7 @@ export async function DELETE(
     const { id } = await params;
 
     // Check if payment method exists
-    const existing = await prisma.paymentMethod.findUnique({
+    const existing = await prisma.payment_method.findUnique({
       where: { id },
       include: {
         _count: {
@@ -147,7 +147,7 @@ export async function DELETE(
       );
     }
 
-    await prisma.paymentMethod.delete({
+    await prisma.payment_method.delete({
       where: { id },
     });
 

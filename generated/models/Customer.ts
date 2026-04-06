@@ -220,7 +220,8 @@ export type customerWhereInput = {
   name?: Prisma.StringFilter<"customer"> | string
   vehicle?: Prisma.VehicleListRelationFilter
   work_order?: Prisma.Work_orderListRelationFilter
-  directSales?: Prisma.DirectSaleListRelationFilter
+  direct_sales?: Prisma.Direct_saleListRelationFilter
+  invoices?: Prisma.InvoiceListRelationFilter
 }
 
 export type customerOrderByWithRelationInput = {
@@ -236,7 +237,8 @@ export type customerOrderByWithRelationInput = {
   name?: Prisma.SortOrder
   vehicle?: Prisma.vehicleOrderByRelationAggregateInput
   work_order?: Prisma.work_orderOrderByRelationAggregateInput
-  directSales?: Prisma.DirectSaleOrderByRelationAggregateInput
+  direct_sales?: Prisma.direct_saleOrderByRelationAggregateInput
+  invoices?: Prisma.invoiceOrderByRelationAggregateInput
 }
 
 export type customerWhereUniqueInput = Prisma.AtLeast<{
@@ -255,7 +257,8 @@ export type customerWhereUniqueInput = Prisma.AtLeast<{
   name?: Prisma.StringFilter<"customer"> | string
   vehicle?: Prisma.VehicleListRelationFilter
   work_order?: Prisma.Work_orderListRelationFilter
-  directSales?: Prisma.DirectSaleListRelationFilter
+  direct_sales?: Prisma.Direct_saleListRelationFilter
+  invoices?: Prisma.InvoiceListRelationFilter
 }, "id">
 
 export type customerOrderByWithAggregationInput = {
@@ -303,7 +306,8 @@ export type customerCreateInput = {
   name: string
   vehicle?: Prisma.vehicleCreateNestedManyWithoutCustomerInput
   work_order?: Prisma.work_orderCreateNestedManyWithoutCustomerInput
-  directSales?: Prisma.DirectSaleCreateNestedManyWithoutCustomerInput
+  direct_sales?: Prisma.direct_saleCreateNestedManyWithoutCustomerInput
+  invoices?: Prisma.invoiceCreateNestedManyWithoutCustomerInput
 }
 
 export type customerUncheckedCreateInput = {
@@ -319,7 +323,8 @@ export type customerUncheckedCreateInput = {
   name: string
   vehicle?: Prisma.vehicleUncheckedCreateNestedManyWithoutCustomerInput
   work_order?: Prisma.work_orderUncheckedCreateNestedManyWithoutCustomerInput
-  directSales?: Prisma.DirectSaleUncheckedCreateNestedManyWithoutCustomerInput
+  direct_sales?: Prisma.direct_saleUncheckedCreateNestedManyWithoutCustomerInput
+  invoices?: Prisma.invoiceUncheckedCreateNestedManyWithoutCustomerInput
 }
 
 export type customerUpdateInput = {
@@ -335,7 +340,8 @@ export type customerUpdateInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   vehicle?: Prisma.vehicleUpdateManyWithoutCustomerNestedInput
   work_order?: Prisma.work_orderUpdateManyWithoutCustomerNestedInput
-  directSales?: Prisma.DirectSaleUpdateManyWithoutCustomerNestedInput
+  direct_sales?: Prisma.direct_saleUpdateManyWithoutCustomerNestedInput
+  invoices?: Prisma.invoiceUpdateManyWithoutCustomerNestedInput
 }
 
 export type customerUncheckedUpdateInput = {
@@ -351,7 +357,8 @@ export type customerUncheckedUpdateInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   vehicle?: Prisma.vehicleUncheckedUpdateManyWithoutCustomerNestedInput
   work_order?: Prisma.work_orderUncheckedUpdateManyWithoutCustomerNestedInput
-  directSales?: Prisma.DirectSaleUncheckedUpdateManyWithoutCustomerNestedInput
+  direct_sales?: Prisma.direct_saleUncheckedUpdateManyWithoutCustomerNestedInput
+  invoices?: Prisma.invoiceUncheckedUpdateManyWithoutCustomerNestedInput
 }
 
 export type customerCreateManyInput = {
@@ -468,20 +475,36 @@ export type customerUpdateOneRequiredWithoutWork_orderNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.customerUpdateToOneWithWhereWithoutWork_orderInput, Prisma.customerUpdateWithoutWork_orderInput>, Prisma.customerUncheckedUpdateWithoutWork_orderInput>
 }
 
-export type customerCreateNestedOneWithoutDirectSalesInput = {
-  create?: Prisma.XOR<Prisma.customerCreateWithoutDirectSalesInput, Prisma.customerUncheckedCreateWithoutDirectSalesInput>
-  connectOrCreate?: Prisma.customerCreateOrConnectWithoutDirectSalesInput
+export type customerCreateNestedOneWithoutDirect_salesInput = {
+  create?: Prisma.XOR<Prisma.customerCreateWithoutDirect_salesInput, Prisma.customerUncheckedCreateWithoutDirect_salesInput>
+  connectOrCreate?: Prisma.customerCreateOrConnectWithoutDirect_salesInput
   connect?: Prisma.customerWhereUniqueInput
 }
 
-export type customerUpdateOneWithoutDirectSalesNestedInput = {
-  create?: Prisma.XOR<Prisma.customerCreateWithoutDirectSalesInput, Prisma.customerUncheckedCreateWithoutDirectSalesInput>
-  connectOrCreate?: Prisma.customerCreateOrConnectWithoutDirectSalesInput
-  upsert?: Prisma.customerUpsertWithoutDirectSalesInput
+export type customerUpdateOneWithoutDirect_salesNestedInput = {
+  create?: Prisma.XOR<Prisma.customerCreateWithoutDirect_salesInput, Prisma.customerUncheckedCreateWithoutDirect_salesInput>
+  connectOrCreate?: Prisma.customerCreateOrConnectWithoutDirect_salesInput
+  upsert?: Prisma.customerUpsertWithoutDirect_salesInput
   disconnect?: Prisma.customerWhereInput | boolean
   delete?: Prisma.customerWhereInput | boolean
   connect?: Prisma.customerWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.customerUpdateToOneWithWhereWithoutDirectSalesInput, Prisma.customerUpdateWithoutDirectSalesInput>, Prisma.customerUncheckedUpdateWithoutDirectSalesInput>
+  update?: Prisma.XOR<Prisma.XOR<Prisma.customerUpdateToOneWithWhereWithoutDirect_salesInput, Prisma.customerUpdateWithoutDirect_salesInput>, Prisma.customerUncheckedUpdateWithoutDirect_salesInput>
+}
+
+export type customerCreateNestedOneWithoutInvoicesInput = {
+  create?: Prisma.XOR<Prisma.customerCreateWithoutInvoicesInput, Prisma.customerUncheckedCreateWithoutInvoicesInput>
+  connectOrCreate?: Prisma.customerCreateOrConnectWithoutInvoicesInput
+  connect?: Prisma.customerWhereUniqueInput
+}
+
+export type customerUpdateOneWithoutInvoicesNestedInput = {
+  create?: Prisma.XOR<Prisma.customerCreateWithoutInvoicesInput, Prisma.customerUncheckedCreateWithoutInvoicesInput>
+  connectOrCreate?: Prisma.customerCreateOrConnectWithoutInvoicesInput
+  upsert?: Prisma.customerUpsertWithoutInvoicesInput
+  disconnect?: Prisma.customerWhereInput | boolean
+  delete?: Prisma.customerWhereInput | boolean
+  connect?: Prisma.customerWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.customerUpdateToOneWithWhereWithoutInvoicesInput, Prisma.customerUpdateWithoutInvoicesInput>, Prisma.customerUncheckedUpdateWithoutInvoicesInput>
 }
 
 export type customerCreateWithoutVehicleInput = {
@@ -496,7 +519,8 @@ export type customerCreateWithoutVehicleInput = {
   billingData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   name: string
   work_order?: Prisma.work_orderCreateNestedManyWithoutCustomerInput
-  directSales?: Prisma.DirectSaleCreateNestedManyWithoutCustomerInput
+  direct_sales?: Prisma.direct_saleCreateNestedManyWithoutCustomerInput
+  invoices?: Prisma.invoiceCreateNestedManyWithoutCustomerInput
 }
 
 export type customerUncheckedCreateWithoutVehicleInput = {
@@ -511,7 +535,8 @@ export type customerUncheckedCreateWithoutVehicleInput = {
   billingData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   name: string
   work_order?: Prisma.work_orderUncheckedCreateNestedManyWithoutCustomerInput
-  directSales?: Prisma.DirectSaleUncheckedCreateNestedManyWithoutCustomerInput
+  direct_sales?: Prisma.direct_saleUncheckedCreateNestedManyWithoutCustomerInput
+  invoices?: Prisma.invoiceUncheckedCreateNestedManyWithoutCustomerInput
 }
 
 export type customerCreateOrConnectWithoutVehicleInput = {
@@ -542,7 +567,8 @@ export type customerUpdateWithoutVehicleInput = {
   billingData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   name?: Prisma.StringFieldUpdateOperationsInput | string
   work_order?: Prisma.work_orderUpdateManyWithoutCustomerNestedInput
-  directSales?: Prisma.DirectSaleUpdateManyWithoutCustomerNestedInput
+  direct_sales?: Prisma.direct_saleUpdateManyWithoutCustomerNestedInput
+  invoices?: Prisma.invoiceUpdateManyWithoutCustomerNestedInput
 }
 
 export type customerUncheckedUpdateWithoutVehicleInput = {
@@ -557,7 +583,8 @@ export type customerUncheckedUpdateWithoutVehicleInput = {
   billingData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   name?: Prisma.StringFieldUpdateOperationsInput | string
   work_order?: Prisma.work_orderUncheckedUpdateManyWithoutCustomerNestedInput
-  directSales?: Prisma.DirectSaleUncheckedUpdateManyWithoutCustomerNestedInput
+  direct_sales?: Prisma.direct_saleUncheckedUpdateManyWithoutCustomerNestedInput
+  invoices?: Prisma.invoiceUncheckedUpdateManyWithoutCustomerNestedInput
 }
 
 export type customerCreateWithoutWork_orderInput = {
@@ -572,7 +599,8 @@ export type customerCreateWithoutWork_orderInput = {
   billingData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   name: string
   vehicle?: Prisma.vehicleCreateNestedManyWithoutCustomerInput
-  directSales?: Prisma.DirectSaleCreateNestedManyWithoutCustomerInput
+  direct_sales?: Prisma.direct_saleCreateNestedManyWithoutCustomerInput
+  invoices?: Prisma.invoiceCreateNestedManyWithoutCustomerInput
 }
 
 export type customerUncheckedCreateWithoutWork_orderInput = {
@@ -587,7 +615,8 @@ export type customerUncheckedCreateWithoutWork_orderInput = {
   billingData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   name: string
   vehicle?: Prisma.vehicleUncheckedCreateNestedManyWithoutCustomerInput
-  directSales?: Prisma.DirectSaleUncheckedCreateNestedManyWithoutCustomerInput
+  direct_sales?: Prisma.direct_saleUncheckedCreateNestedManyWithoutCustomerInput
+  invoices?: Prisma.invoiceUncheckedCreateNestedManyWithoutCustomerInput
 }
 
 export type customerCreateOrConnectWithoutWork_orderInput = {
@@ -618,7 +647,8 @@ export type customerUpdateWithoutWork_orderInput = {
   billingData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   name?: Prisma.StringFieldUpdateOperationsInput | string
   vehicle?: Prisma.vehicleUpdateManyWithoutCustomerNestedInput
-  directSales?: Prisma.DirectSaleUpdateManyWithoutCustomerNestedInput
+  direct_sales?: Prisma.direct_saleUpdateManyWithoutCustomerNestedInput
+  invoices?: Prisma.invoiceUpdateManyWithoutCustomerNestedInput
 }
 
 export type customerUncheckedUpdateWithoutWork_orderInput = {
@@ -633,10 +663,11 @@ export type customerUncheckedUpdateWithoutWork_orderInput = {
   billingData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   name?: Prisma.StringFieldUpdateOperationsInput | string
   vehicle?: Prisma.vehicleUncheckedUpdateManyWithoutCustomerNestedInput
-  directSales?: Prisma.DirectSaleUncheckedUpdateManyWithoutCustomerNestedInput
+  direct_sales?: Prisma.direct_saleUncheckedUpdateManyWithoutCustomerNestedInput
+  invoices?: Prisma.invoiceUncheckedUpdateManyWithoutCustomerNestedInput
 }
 
-export type customerCreateWithoutDirectSalesInput = {
+export type customerCreateWithoutDirect_salesInput = {
   id?: string
   phone?: string | null
   phoneAlt?: string | null
@@ -649,9 +680,10 @@ export type customerCreateWithoutDirectSalesInput = {
   name: string
   vehicle?: Prisma.vehicleCreateNestedManyWithoutCustomerInput
   work_order?: Prisma.work_orderCreateNestedManyWithoutCustomerInput
+  invoices?: Prisma.invoiceCreateNestedManyWithoutCustomerInput
 }
 
-export type customerUncheckedCreateWithoutDirectSalesInput = {
+export type customerUncheckedCreateWithoutDirect_salesInput = {
   id?: string
   phone?: string | null
   phoneAlt?: string | null
@@ -664,25 +696,26 @@ export type customerUncheckedCreateWithoutDirectSalesInput = {
   name: string
   vehicle?: Prisma.vehicleUncheckedCreateNestedManyWithoutCustomerInput
   work_order?: Prisma.work_orderUncheckedCreateNestedManyWithoutCustomerInput
+  invoices?: Prisma.invoiceUncheckedCreateNestedManyWithoutCustomerInput
 }
 
-export type customerCreateOrConnectWithoutDirectSalesInput = {
+export type customerCreateOrConnectWithoutDirect_salesInput = {
   where: Prisma.customerWhereUniqueInput
-  create: Prisma.XOR<Prisma.customerCreateWithoutDirectSalesInput, Prisma.customerUncheckedCreateWithoutDirectSalesInput>
+  create: Prisma.XOR<Prisma.customerCreateWithoutDirect_salesInput, Prisma.customerUncheckedCreateWithoutDirect_salesInput>
 }
 
-export type customerUpsertWithoutDirectSalesInput = {
-  update: Prisma.XOR<Prisma.customerUpdateWithoutDirectSalesInput, Prisma.customerUncheckedUpdateWithoutDirectSalesInput>
-  create: Prisma.XOR<Prisma.customerCreateWithoutDirectSalesInput, Prisma.customerUncheckedCreateWithoutDirectSalesInput>
+export type customerUpsertWithoutDirect_salesInput = {
+  update: Prisma.XOR<Prisma.customerUpdateWithoutDirect_salesInput, Prisma.customerUncheckedUpdateWithoutDirect_salesInput>
+  create: Prisma.XOR<Prisma.customerCreateWithoutDirect_salesInput, Prisma.customerUncheckedCreateWithoutDirect_salesInput>
   where?: Prisma.customerWhereInput
 }
 
-export type customerUpdateToOneWithWhereWithoutDirectSalesInput = {
+export type customerUpdateToOneWithWhereWithoutDirect_salesInput = {
   where?: Prisma.customerWhereInput
-  data: Prisma.XOR<Prisma.customerUpdateWithoutDirectSalesInput, Prisma.customerUncheckedUpdateWithoutDirectSalesInput>
+  data: Prisma.XOR<Prisma.customerUpdateWithoutDirect_salesInput, Prisma.customerUncheckedUpdateWithoutDirect_salesInput>
 }
 
-export type customerUpdateWithoutDirectSalesInput = {
+export type customerUpdateWithoutDirect_salesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phoneAlt?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -695,9 +728,10 @@ export type customerUpdateWithoutDirectSalesInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   vehicle?: Prisma.vehicleUpdateManyWithoutCustomerNestedInput
   work_order?: Prisma.work_orderUpdateManyWithoutCustomerNestedInput
+  invoices?: Prisma.invoiceUpdateManyWithoutCustomerNestedInput
 }
 
-export type customerUncheckedUpdateWithoutDirectSalesInput = {
+export type customerUncheckedUpdateWithoutDirect_salesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phoneAlt?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -710,6 +744,87 @@ export type customerUncheckedUpdateWithoutDirectSalesInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   vehicle?: Prisma.vehicleUncheckedUpdateManyWithoutCustomerNestedInput
   work_order?: Prisma.work_orderUncheckedUpdateManyWithoutCustomerNestedInput
+  invoices?: Prisma.invoiceUncheckedUpdateManyWithoutCustomerNestedInput
+}
+
+export type customerCreateWithoutInvoicesInput = {
+  id?: string
+  phone?: string | null
+  phoneAlt?: string | null
+  email?: string | null
+  address?: string | null
+  notes?: string | null
+  createdAt?: Date | string
+  updatedAt: Date | string
+  billingData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  name: string
+  vehicle?: Prisma.vehicleCreateNestedManyWithoutCustomerInput
+  work_order?: Prisma.work_orderCreateNestedManyWithoutCustomerInput
+  direct_sales?: Prisma.direct_saleCreateNestedManyWithoutCustomerInput
+}
+
+export type customerUncheckedCreateWithoutInvoicesInput = {
+  id?: string
+  phone?: string | null
+  phoneAlt?: string | null
+  email?: string | null
+  address?: string | null
+  notes?: string | null
+  createdAt?: Date | string
+  updatedAt: Date | string
+  billingData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  name: string
+  vehicle?: Prisma.vehicleUncheckedCreateNestedManyWithoutCustomerInput
+  work_order?: Prisma.work_orderUncheckedCreateNestedManyWithoutCustomerInput
+  direct_sales?: Prisma.direct_saleUncheckedCreateNestedManyWithoutCustomerInput
+}
+
+export type customerCreateOrConnectWithoutInvoicesInput = {
+  where: Prisma.customerWhereUniqueInput
+  create: Prisma.XOR<Prisma.customerCreateWithoutInvoicesInput, Prisma.customerUncheckedCreateWithoutInvoicesInput>
+}
+
+export type customerUpsertWithoutInvoicesInput = {
+  update: Prisma.XOR<Prisma.customerUpdateWithoutInvoicesInput, Prisma.customerUncheckedUpdateWithoutInvoicesInput>
+  create: Prisma.XOR<Prisma.customerCreateWithoutInvoicesInput, Prisma.customerUncheckedCreateWithoutInvoicesInput>
+  where?: Prisma.customerWhereInput
+}
+
+export type customerUpdateToOneWithWhereWithoutInvoicesInput = {
+  where?: Prisma.customerWhereInput
+  data: Prisma.XOR<Prisma.customerUpdateWithoutInvoicesInput, Prisma.customerUncheckedUpdateWithoutInvoicesInput>
+}
+
+export type customerUpdateWithoutInvoicesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phoneAlt?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  billingData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  vehicle?: Prisma.vehicleUpdateManyWithoutCustomerNestedInput
+  work_order?: Prisma.work_orderUpdateManyWithoutCustomerNestedInput
+  direct_sales?: Prisma.direct_saleUpdateManyWithoutCustomerNestedInput
+}
+
+export type customerUncheckedUpdateWithoutInvoicesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phoneAlt?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  billingData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  vehicle?: Prisma.vehicleUncheckedUpdateManyWithoutCustomerNestedInput
+  work_order?: Prisma.work_orderUncheckedUpdateManyWithoutCustomerNestedInput
+  direct_sales?: Prisma.direct_saleUncheckedUpdateManyWithoutCustomerNestedInput
 }
 
 
@@ -720,13 +835,15 @@ export type customerUncheckedUpdateWithoutDirectSalesInput = {
 export type CustomerCountOutputType = {
   vehicle: number
   work_order: number
-  directSales: number
+  direct_sales: number
+  invoices: number
 }
 
 export type CustomerCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   vehicle?: boolean | CustomerCountOutputTypeCountVehicleArgs
   work_order?: boolean | CustomerCountOutputTypeCountWork_orderArgs
-  directSales?: boolean | CustomerCountOutputTypeCountDirectSalesArgs
+  direct_sales?: boolean | CustomerCountOutputTypeCountDirect_salesArgs
+  invoices?: boolean | CustomerCountOutputTypeCountInvoicesArgs
 }
 
 /**
@@ -756,8 +873,15 @@ export type CustomerCountOutputTypeCountWork_orderArgs<ExtArgs extends runtime.T
 /**
  * CustomerCountOutputType without action
  */
-export type CustomerCountOutputTypeCountDirectSalesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.DirectSaleWhereInput
+export type CustomerCountOutputTypeCountDirect_salesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.direct_saleWhereInput
+}
+
+/**
+ * CustomerCountOutputType without action
+ */
+export type CustomerCountOutputTypeCountInvoicesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.invoiceWhereInput
 }
 
 
@@ -774,7 +898,8 @@ export type customerSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   name?: boolean
   vehicle?: boolean | Prisma.customer$vehicleArgs<ExtArgs>
   work_order?: boolean | Prisma.customer$work_orderArgs<ExtArgs>
-  directSales?: boolean | Prisma.customer$directSalesArgs<ExtArgs>
+  direct_sales?: boolean | Prisma.customer$direct_salesArgs<ExtArgs>
+  invoices?: boolean | Prisma.customer$invoicesArgs<ExtArgs>
   _count?: boolean | Prisma.CustomerCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["customer"]>
 
@@ -821,7 +946,8 @@ export type customerOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs =
 export type customerInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   vehicle?: boolean | Prisma.customer$vehicleArgs<ExtArgs>
   work_order?: boolean | Prisma.customer$work_orderArgs<ExtArgs>
-  directSales?: boolean | Prisma.customer$directSalesArgs<ExtArgs>
+  direct_sales?: boolean | Prisma.customer$direct_salesArgs<ExtArgs>
+  invoices?: boolean | Prisma.customer$invoicesArgs<ExtArgs>
   _count?: boolean | Prisma.CustomerCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type customerIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -832,7 +958,8 @@ export type $customerPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
   objects: {
     vehicle: Prisma.$vehiclePayload<ExtArgs>[]
     work_order: Prisma.$work_orderPayload<ExtArgs>[]
-    directSales: Prisma.$DirectSalePayload<ExtArgs>[]
+    direct_sales: Prisma.$direct_salePayload<ExtArgs>[]
+    invoices: Prisma.$invoicePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1241,7 +1368,8 @@ export interface Prisma__customerClient<T, Null = never, ExtArgs extends runtime
   readonly [Symbol.toStringTag]: "PrismaPromise"
   vehicle<T extends Prisma.customer$vehicleArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.customer$vehicleArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$vehiclePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   work_order<T extends Prisma.customer$work_orderArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.customer$work_orderArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$work_orderPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  directSales<T extends Prisma.customer$directSalesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.customer$directSalesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DirectSalePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  direct_sales<T extends Prisma.customer$direct_salesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.customer$direct_salesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$direct_salePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  invoices<T extends Prisma.customer$invoicesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.customer$invoicesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$invoicePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1722,27 +1850,51 @@ export type customer$work_orderArgs<ExtArgs extends runtime.Types.Extensions.Int
 }
 
 /**
- * customer.directSales
+ * customer.direct_sales
  */
-export type customer$directSalesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type customer$direct_salesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the DirectSale
+   * Select specific fields to fetch from the direct_sale
    */
-  select?: Prisma.DirectSaleSelect<ExtArgs> | null
+  select?: Prisma.direct_saleSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the DirectSale
+   * Omit specific fields from the direct_sale
    */
-  omit?: Prisma.DirectSaleOmit<ExtArgs> | null
+  omit?: Prisma.direct_saleOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.DirectSaleInclude<ExtArgs> | null
-  where?: Prisma.DirectSaleWhereInput
-  orderBy?: Prisma.DirectSaleOrderByWithRelationInput | Prisma.DirectSaleOrderByWithRelationInput[]
-  cursor?: Prisma.DirectSaleWhereUniqueInput
+  include?: Prisma.direct_saleInclude<ExtArgs> | null
+  where?: Prisma.direct_saleWhereInput
+  orderBy?: Prisma.direct_saleOrderByWithRelationInput | Prisma.direct_saleOrderByWithRelationInput[]
+  cursor?: Prisma.direct_saleWhereUniqueInput
   take?: number
   skip?: number
-  distinct?: Prisma.DirectSaleScalarFieldEnum | Prisma.DirectSaleScalarFieldEnum[]
+  distinct?: Prisma.Direct_saleScalarFieldEnum | Prisma.Direct_saleScalarFieldEnum[]
+}
+
+/**
+ * customer.invoices
+ */
+export type customer$invoicesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the invoice
+   */
+  select?: Prisma.invoiceSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the invoice
+   */
+  omit?: Prisma.invoiceOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.invoiceInclude<ExtArgs> | null
+  where?: Prisma.invoiceWhereInput
+  orderBy?: Prisma.invoiceOrderByWithRelationInput | Prisma.invoiceOrderByWithRelationInput[]
+  cursor?: Prisma.invoiceWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.InvoiceScalarFieldEnum | Prisma.InvoiceScalarFieldEnum[]
 }
 
 /**

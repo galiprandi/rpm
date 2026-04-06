@@ -634,6 +634,95 @@ curl https://rpm-wheat.vercel.app/api/health/db
   - **Response**: Variables cargadas y estado
   - **Usage**: `curl https://rpm-wheat.vercel.app/api/debug/env`
 
+## Nuevas Tablas (2026-04-06)
+
+### Tabla `cash_movement` - Movimientos de Caja
+
+Registra todos los movimientos de entrada/salida de caja, incluyendo aperturas, cierres y arqueos.
+
+```prisma
+model cash_movement {
+  id             String   @id @default(cuid())
+  type           String   // INCOME, EXPENSE, OPENING, CLOSING, COUNT
+  amount         Decimal  @db.Decimal(10, 2)
+  method         String   // CASH, CARD, TRANSFER, etc.
+  referenceId    String?  // Referencia a payment/direct_sale_payment
+  referenceType  String?  // 'work_order_payment', 'direct_sale_payment', 'manual'
+  reason         String?
+  notes          String?
+  createdAt      DateTime @default(now())
+  createdBy      String
+
+  @@index([type])
+  @@index([createdAt])
+  @@index([referenceId])
+}
+```
+
+**Relaciones:**
+- Referencia polimórfica a `payment` (work_order) o `direct_sale_payment` (venta directa)
+- Se crea automáticamente cuando se registra un pago en una venta
+
+**Servicios:**
+- `lib/services/cashMovementService.ts` - CRUD y resumen de caja
+
+**API Endpoints:**
+- `GET /api/cash-movements` - Listar movimientos con filtros
+- `POST /api/cash-movements` - Crear movimiento manual (solo admin)
+- `GET /api/cash-movements/summary` - Resumen de caja por fecha
+
+### Tabla `invoice` - Comprobantes/Facturas
+
+Registra comprobantes fiscales emitidos por ventas.
+
+```prisma
+model invoice {
+  id             String   @id @default(cuid())
+  number         String   @unique
+  type           String   // FACTURA_A, FACTURA_B, NOTA_CREDITO, RECIBO
+  referenceId    String   // work_order_id o direct_sale_id
+  referenceType  String   // 'work_order', 'direct_sale'
+  customerId     String?
+  customerName   String
+  subtotal       Decimal  @db.Decimal(10, 2)
+  tax            Decimal? @db.Decimal(10, 2)
+  total          Decimal  @db.Decimal(10, 2)
+  afipData       Json?    // CAE, CAE expiration, etc.
+  status         String   // DRAFT, ISSUED, CANCELLED
+  issuedAt       DateTime?
+  createdAt      DateTime @default(now())
+  createdBy      String
+
+  customer       customer? @relation(fields: [customerId], references: [id])
+
+  @@index([number])
+  @@index([referenceId])
+  @@index([status])
+}
+```
+
+**Relaciones:**
+- Referencia polimórfica a `work_order` o `direct_sale`
+- Relación a `customer` para datos del cliente
+
+**Servicios:**
+- `lib/services/invoiceService.ts` - CRUD y numeración automática
+
+**API Endpoints:**
+- `GET /api/invoices` - Listar comprobantes con filtros
+- `POST /api/invoices` - Crear comprobante (solo admin)
+- `GET /api/invoices/[id]` - Obtener comprobante por ID
+- `PATCH /api/invoices/[id]` - Actualizar estado (emitir/cancelar)
+
+### Convención de Naming
+
+**Estado actual (2026-04-06):**
+- Todos los modelos en **snake_case** (unificado)
+- Ejemplos: `direct_sale`, `direct_sale_item`, `direct_sale_payment`, `payment_method`, `cash_movement`, `invoice`
+
+**Migración aplicada:**
+- `20260406231455_refactor_naming_add_cash_invoices` - Renombrado de PascalCase a snake_case + nuevas tablas
+
 ## Mantenimiento
 
 ### Regular Updates
