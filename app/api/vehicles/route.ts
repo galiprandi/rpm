@@ -1,6 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+interface CreateVehicleInput {
+  identifier: string;
+  category: string;
+  customerId: string;
+  makeId?: string;
+  modelId?: string;
+  year?: number;
+  color?: string;
+  equipmentName?: string;
+  equipmentType?: string;
+  description?: string;
+  notes?: string;
+}
+
 // GET /api/vehicles - List vehicles with optional filters
 export async function GET(request: NextRequest) {
   try {
@@ -55,7 +69,7 @@ export async function GET(request: NextRequest) {
 // POST /api/vehicles - Create vehicle/asset
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const body: CreateVehicleInput = await request.json();
     const {
       identifier,
       category,
@@ -99,6 +113,7 @@ export async function POST(request: NextRequest) {
 
     const vehicle = await prisma.vehicle.create({
       data: {
+        id: crypto.randomUUID(),
         identifier: identifier.toUpperCase(),
         category,
         customerId,
@@ -110,6 +125,7 @@ export async function POST(request: NextRequest) {
         equipmentType,
         description,
         notes,
+        updatedAt: new Date(),
       },
       include: {
         customer: true,
