@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "dev:debug": "DEBUG_AUTH_ENABLED=true next dev",
-    "build": "npx prisma migrate deploy && next build",
+    "build": "npx prisma generate && next build",
+    "build:local": "npx prisma migrate deploy && next build",
     "start": "next start",
     "start:debug": "DEBUG_AUTH_ENABLED=true next start",
     "lint": "eslint",
