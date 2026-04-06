@@ -133,6 +133,14 @@ Categorías iniciales sugeridas:
 - Atajos de teclado
 - Búsqueda predictiva
 
+#### Estado de Implementación
+- ✅ **Componente QuickSaleModal** implementado en `/components/dashboard/QuickSaleModal.tsx`
+- ✅ **Acceso desde Dashboard**: Botón "Venta Rápida" en header del dashboard (`/adm`)
+- ✅ **Acceso desde CRUD Productos**: Botón "Venta Rápida" en header del CRUD de productos (`/adm/products`)
+- ✅ **Flujo completo**: Búsqueda → Selección → Carrito → Cliente → Pagos → Confirmación
+- ✅ **Integración con Cash Movement**: Cada pago genera automáticamente un registro en `cash_movement`
+- ✅ **Soporte para listas de precios**: Cálculo dinámico de precios según lista seleccionada
+
 ### 5. Auditoría de Stock (Traza)
 
 | Feature | Prioridad | Descripción |

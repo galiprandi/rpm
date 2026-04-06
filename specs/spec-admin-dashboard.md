@@ -1,11 +1,11 @@
 ---
 title: Dashboard de Administrador RPM - Especificación de UI/UX
-version: 1.1
+version: 1.2
 date_created: 2026-04-05
 date_updated: 2026-04-06
 owner: Equipo de Desarrollo
 tags: [app, design, ui, dashboard, admin, rpm]
-status: � En implementación (feature branch)
+status: ✅ En implementación (feature branch)
 ---
 
 # Dashboard de Administrador RPM
@@ -19,10 +19,11 @@ Proveer una vista unificada y accionable del estado operativo del negocio, permi
 
 **Alcance:**
 - Panel principal único accesible desde `/adm` (reemplaza dashboard actual)
-- 5 secciones de métricas clave (Ventas, Taller, Stock, Listos para Entrega, Movimientos)
+- 7 secciones de métricas clave (Ventas, Taller, Stock, Listos para Entrega, Arqueo de Caja, Movimientos de Caja, Movimientos de Productos)
 - Componentes interactivos con acciones directas (click-to-call, navegación rápida)
 - Actualización en tiempo real o caché breve (5 min máximo)
 - Diseño responsive prioritario para desktop (admin trabaja en PC/tablet)
+- Botón de "Venta Rápida" en header para acceso directo a ventas de mostrador
 
 **Fuera de alcance (Fase 1):**
 - Turnos Web (falta modelo WebAppointment en DB)
@@ -86,21 +87,22 @@ Proveer una vista unificada y accionable del estado operativo del negocio, permi
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
+│  Header: Dashboard                           [Venta Rápida 🛒]│
+├─────────────────────────────────────────────────────────────┤
 │  [1] VENTAS HOY    │  [2] OTs ACTIVAS    │  [3] ALERTAS STOCK│
 │  $485.000          │  8 (3→2→3)          │  5 productos 🔴   │
 │  12 facturas       │  ↗ 2 nuevas         │  [Ver lista]      │
 ├─────────────────────────────────────────────────────────────┤
 │  [4] TALLER (Kanban)         │  [5] LISTOS PARA ENTREGA      │
-│  [Pend:3][Prog:2][List:3]   │                                │
-│                              │  🚗 Hilux - Juan Pérez         │
-│                              │     #1234 · $85.000 · 📞       │
-│                              │  🚙 Ranger - María Gómez       │
-│                              │     #1235 · $120.000 · 📞      │
+│  [Pend:3][Prog:2][List:3]   │  [6] ARQUEO DE CAJA            │
+│                              │  Efectivo: $250.000            │
+│                              │  Tarjeta: $180.000             │
+│                              │  Transferencia: $55.000        │
 ├─────────────────────────────────────────────────────────────┤
-│  [6] MOVIMIENTOS RECIENTES                                   │
-│  - Salida: 2x Polarizado     │                                 │
-│  - Ajuste: +5 Limpia         │                                 │
-│  - Entrada: +10 LED          │                                 │
+│  [7] MOVIMIENTOS DE CAJA      │  [8] MOVIMIENTOS DE PRODUCTOS │
+│  Ingreso Efectivo $500       │  Salida: 2x Polarizado         │
+│  Egreso Tarjeta $200         │  Ajuste: +5 Limpia             │
+│  Apertura Caja $100.000      │  Entrada: +10 LED              │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -109,11 +111,11 @@ Proveer una vista unificada y accionable del estado operativo del negocio, permi
 ```typescript
 // GET /api/dashboard/summary
 interface DashboardSummary {
-  // Sección 1: Ventas (basado en work_orders completadas)
+  // Sección 1: Ventas (basado en work_orders completadas + direct_sales)
   sales: {
     today: {
-      total: number;           // $485000 (sum de work_orders completadas hoy)
-      workOrderCount: number;  // 12 (cantidad de work_orders completadas hoy)
+      total: number;           // $485000 (sum de work_orders + direct_sales del día)
+      workOrderCount: number;  // 12 (cantidad de work_orders completadas + direct_sales del día)
       vsYesterday: number;     // +15%
     };
     ticketAverage: number;      // $40416 (total / count)
@@ -159,7 +161,28 @@ interface DashboardSummary {
     invoiceStatus: 'ISSUED' | 'PENDING';
   }>;
 
-  // Sección 6: Movimientos
+  // Sección 6: Arqueo de Caja por Método (basado en cash_movement)
+  paymentsByMethod: Array<{
+    code: string;               // "CASH"
+    name: string;               // "Efectivo"
+    total: number;              // 250000 (neto: ingresos - egresos)
+  }>;
+
+  // Sección 7: Movimientos de Caja (cash_movement)
+  cashMovements: Array<{
+    id: string;
+    type: 'INCOME' | 'EXPENSE' | 'OPENING' | 'CLOSING';
+    amount: number;
+    method: string;             // "CASH"
+    methodName: string;         // "Efectivo"
+    referenceId?: string;
+    referenceType?: string;
+    reason?: string;
+    createdAt: string;
+    createdBy: string;
+  }>;
+
+  // Sección 8: Movimientos de Productos (stock_movement)
   recentMovements: Array<{
     type: 'IN' | 'OUT' | 'ADJUSTMENT';
     productName: string;
@@ -212,14 +235,31 @@ La ausencia de gráficos históricos es intencional: el admin puede acceder a re
 - **EXT-002**: Prisma ORM - queries optimizadas con select/aggregations
 
 ### Data Dependencies
-- **DAT-001**: WorkOrder - estado, totales, relación cliente/vehículo (fuente de ventas)
-- **DAT-002**: Product - stock, stock mínimo
-- **DAT-003**: Customer - nombre, teléfono (enmascarado)
-- **DAT-004**: StockMovement - últimos 5 movimientos
+- **DAT-001**: WorkOrder - estado, totales, relación cliente/vehículo (fuente de ventas de taller)
+- **DAT-002**: DirectSale - ventas rápidas de mostrador (fuente complementaria de ventas)
+- **DAT-003**: Product - stock, stock mínimo
+- **DAT-004**: Customer - nombre, teléfono (enmascarado)
+- **DAT-005**: StockMovement - movimientos de productos (entradas, salidas, ajustes)
+- **DAT-006**: CashMovement - movimientos de caja para arqueo (fuente de verdad para caja)
+- **DAT-007**: PaymentMethod - mapeo de códigos a nombres de métodos de pago
 
 ---
 
 ## 9. Examples & Edge Cases
+
+### Nota Importante: Fuente de Datos para Arqueo de Caja
+
+**Decisión de Arquitectura:**
+- El arqueo de caja (`paymentsByMethod` y `cashMovements`) se basa en la tabla `cash_movement` como fuente de verdad
+- `cash_movement` se crea automáticamente cuando se registran pagos (tanto de work_orders como direct_sales)
+- Esto permite trazabilidad completa de todos los movimientos de dinero, incluyendo apertura/cierre de caja
+- Los pagos directos (`payment` y `direct_sale_payment`) son la fuente para crear los `cash_movement`, no para el dashboard
+
+**Beneficios:**
+- Unificación de todas las operaciones de caja en una sola tabla
+- Facilita implementación futura de funcionalidad de arqueo de caja
+- Permite registrar movimientos manuales (apertura, cierre, ajustes) fuera del contexto de ventas
+- Historial completo de operaciones de caja por usuario
 
 ### Ejemplo: Card "Listos para Entrega"
 

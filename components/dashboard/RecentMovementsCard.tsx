@@ -36,14 +36,14 @@ export function RecentMovementsCard({
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground">
-            Movimientos Recientes
+            Movimientos de Productos
           </CardTitle>
           <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
           <div className="text-center py-4">
             <p className="text-sm text-muted-foreground">
-              No hay movimientos recientes
+              No hay movimientos de productos
             </p>
           </div>
         </CardContent>
@@ -55,7 +55,7 @@ export function RecentMovementsCard({
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground">
-          Movimientos Recientes
+          Movimientos de Productos
         </CardTitle>
         <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
       </CardHeader>

@@ -782,5 +782,70 @@ Actualiza el estado de un comprobante (emitir/cancelar).
 }
 ```
 
-**Last Updated:** 2026-03-28  
+---
+
+### Dashboard Endpoints
+
+#### `GET /api/dashboard/summary`
+Obtiene el resumen del dashboard con métricas de ventas, OTs, stock, arqueo de caja y movimientos.
+
+**Authentication:** Requiere rol `ADMIN` o `STAFF`
+
+**Response:**
+```json
+{
+  "sales": {
+    "today": {
+      "total": 485000,
+      "workOrderCount": 12,
+      "vsYesterday": 15
+    },
+    "ticketAverage": 40416
+  },
+  "workOrders": {
+    "active": {
+      "total": 8,
+      "byStatus": {
+        "pending": 3,
+        "inProgress": 2,
+        "ready": 3
+      },
+      "newToday": 2
+    }
+  },
+  "stock": {
+    "lowStockCount": 5,
+    "lowStockItems": [...]
+  },
+  "readyForDelivery": [...],
+  "paymentsByMethod": [
+    {
+      "code": "CASH",
+      "name": "Efectivo",
+      "total": 250000
+    }
+  ],
+  "cashMovements": [
+    {
+      "id": "cuid",
+      "type": "INCOME",
+      "amount": 500,
+      "method": "CASH",
+      "methodName": "Efectivo",
+      "reason": "Venta mostrador",
+      "createdAt": "2026-04-06T20:00:00Z",
+      "createdBy": "user@email.com"
+    }
+  ],
+  "recentMovements": [...],
+  "generatedAt": "2026-04-06T20:00:00Z"
+}
+```
+
+**Notes:**
+- Ventas incluyen `work_orders` completadas + `direct_sales`
+- Arqueo de caja se calcula desde `cash_movement` (fuente de verdad)
+- Nombres de métodos de pago se mapean desde tabla `payment_method`
+
+**Last Updated:** 2026-04-06
 **Status:** ✅ Core API architecture defined, endpoints moved to domain specs

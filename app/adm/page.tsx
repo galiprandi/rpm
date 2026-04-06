@@ -9,6 +9,7 @@ import { WorkshopKanbanCard } from '@/components/dashboard/WorkshopKanbanCard';
 import { ReadyForDeliveryCard } from '@/components/dashboard/ReadyForDeliveryCard';
 import { RecentMovementsCard } from '@/components/dashboard/RecentMovementsCard';
 import { PaymentMethodsCard } from '@/components/dashboard/PaymentMethodsCard';
+import { CashMovementsCard } from '@/components/dashboard/CashMovementsCard';
 import { QuickSaleModal } from '@/components/dashboard/QuickSaleModal';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, ShoppingCart } from 'lucide-react';
@@ -68,6 +69,18 @@ interface DashboardSummary {
     code: string;
     name: string;
     total: number;
+  }>;
+  cashMovements?: Array<{
+    id: string;
+    type: 'INCOME' | 'EXPENSE' | 'OPENING' | 'CLOSING';
+    amount: number;
+    method: string;
+    methodName: string;
+    referenceId?: string;
+    referenceType?: string;
+    reason?: string;
+    createdAt: string;
+    createdBy: string;
   }>;
   generatedAt: string;
 }
@@ -179,9 +192,10 @@ export default function AdminDashboard() {
         <PaymentMethodsCard paymentsByMethod={data.paymentsByMethod} />
       </div>
 
-      {/* Fila 3: Movimientos Recientes */}
-      <div className="grid gap-4 md:grid-cols-1">
+      {/* Fila 3: Movimientos Recientes y Movimientos de Caja */}
+      <div className="grid gap-4 md:grid-cols-2">
         <RecentMovementsCard recentMovements={data.recentMovements} />
+        <CashMovementsCard cashMovements={data.cashMovements} />
       </div>
 
       <QuickSaleModal

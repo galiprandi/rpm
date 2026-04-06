@@ -50,7 +50,7 @@ export async function GET() {
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
 
-    // 1. Ventas del día (basado en work_orders completadas)
+    // 1. Ventas del día (basado en work_orders completadas y direct_sales)
     const todayWorkOrders = await prisma.work_order.findMany({
       where: {
         status: { in: ['DELIVERED', 'READY'] },
@@ -62,8 +62,19 @@ export async function GET() {
       },
     });
 
-    const todayTotal = todayWorkOrders.reduce((sum, wo) => sum + decimalToNumber(wo.total), 0);
-    const todayCount = todayWorkOrders.length;
+    const todayDirectSales = await prisma.direct_sale.findMany({
+      where: {
+        createdAt: { gte: today },
+      },
+      select: {
+        total: true,
+        createdAt: true,
+      },
+    });
+
+    const todayTotal = todayWorkOrders.reduce((sum, wo) => sum + decimalToNumber(wo.total), 0) +
+                       todayDirectSales.reduce((sum, ds) => sum + decimalToNumber(ds.total), 0);
+    const todayCount = todayWorkOrders.length + todayDirectSales.length;
     const ticketAverage = todayCount > 0 ? todayTotal / todayCount : 0;
 
     // Ventas de ayer para comparación
@@ -75,7 +86,15 @@ export async function GET() {
       select: { total: true },
     });
 
-    const yesterdayTotal = yesterdayWorkOrders.reduce((sum, wo) => sum + decimalToNumber(wo.total), 0);
+    const yesterdayDirectSales = await prisma.direct_sale.findMany({
+      where: {
+        createdAt: { gte: yesterday, lt: today },
+      },
+      select: { total: true },
+    });
+
+    const yesterdayTotal = yesterdayWorkOrders.reduce((sum, wo) => sum + decimalToNumber(wo.total), 0) +
+                           yesterdayDirectSales.reduce((sum, ds) => sum + decimalToNumber(ds.total), 0);
     const vsYesterday = yesterdayTotal > 0 
       ? ((todayTotal - yesterdayTotal) / yesterdayTotal) * 100 
       : 0;
@@ -164,40 +183,85 @@ export async function GET() {
       userName: m.userName || 'Sistema',
     }));
 
-    // 6. Ingresos por medio de pago (del día)
-    const paymentsByMethod = await prisma.payment.findMany({
+    // 6. Arqueo de caja por método (del día) - basado en cash_movement
+    // Usamos cash_movement porque es la fuente de verdad para arqueos de caja
+    const todayCashMovements = await prisma.cash_movement.findMany({
       where: {
         createdAt: { gte: today },
+        type: { in: ['INCOME', 'EXPENSE'] }, // Solo ingresos y egresos para el resumen
       },
-      include: {
-        paymentMethod: {
-          select: { name: true, code: true },
-        },
+      orderBy: {
+        createdAt: 'desc',
       },
     });
 
-    const paymentsByMethodGrouped = paymentsByMethod.reduce((acc, payment) => {
-      const methodCode = payment.paymentMethod.code;
-      const amount = decimalToNumber(payment.amount);
-      
-      if (!acc[methodCode]) {
-        acc[methodCode] = {
-          name: payment.paymentMethod.name,
+    // Obtener todos los métodos de pago para mapear códigos a nombres
+    const paymentMethods = await prisma.payment_method.findMany({
+      select: {
+        code: true,
+        name: true,
+      },
+    });
+
+    const methodCodeToName = paymentMethods.reduce((acc, pm) => {
+      acc[pm.code] = pm.name;
+      return acc;
+    }, {} as Record<string, string>);
+
+    // Agrupar por método
+    const paymentsByMethodGrouped = todayCashMovements.reduce((acc: Record<string, { name: string; total: number }>, movement: { method: string; type: string; amount: unknown }) => {
+      const method = movement.method;
+      const amount = decimalToNumber(movement.amount);
+
+      if (!acc[method]) {
+        acc[method] = {
+          name: methodCodeToName[method] || method, // Usar nombre real del payment_method, fallback al código
           total: 0,
         };
       }
-      acc[methodCode].total += amount;
-      
+
+      // Restar egresos, sumar ingresos
+      if (movement.type === 'EXPENSE') {
+        acc[method].total -= amount;
+      } else {
+        acc[method].total += amount;
+      }
+
       return acc;
     }, {} as Record<string, { name: string; total: number }>);
 
     const paymentsByMethodArray = Object.entries(paymentsByMethodGrouped)
+      .filter(([, data]) => data.total !== 0) // Solo métodos con movimiento
       .map(([code, data]) => ({
         code,
         name: data.name,
         total: data.total,
       }))
       .sort((a, b) => b.total - a.total);
+
+    // 7. Movimientos de caja del día (cash_movement) - lista detallada
+    const allCashMovements = await prisma.cash_movement.findMany({
+      where: {
+        createdAt: { gte: today },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      take: 20,
+    });
+
+    const cashMovementsFormatted = allCashMovements.map(m => ({
+      id: m.id,
+      type: m.type as 'INCOME' | 'EXPENSE' | 'OPENING' | 'CLOSING',
+      amount: decimalToNumber(m.amount),
+      method: m.method,
+      methodName: methodCodeToName[m.method] || m.method, // Nombre real del método
+      referenceId: m.referenceId,
+      referenceType: m.referenceType,
+      reason: m.reason,
+      createdAt: m.createdAt.toISOString(),
+      createdBy: m.createdBy,
+    }));
 
     // Response
     const response = {
@@ -228,6 +292,7 @@ export async function GET() {
       readyForDelivery,
       recentMovements: recentMovementsFormatted,
       paymentsByMethod: paymentsByMethodArray,
+      cashMovements: cashMovementsFormatted,
       generatedAt: new Date().toISOString(),
     };
 

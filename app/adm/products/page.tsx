@@ -6,9 +6,10 @@ import { Badge } from '@/components/ui/badge';
 import { ProductDialog } from '@/components/products/ProductDialog';
 import { ProductMovementsModal } from '@/components/products/ProductMovementsModal';
 import { ProductPricesModal } from '@/components/products/ProductPricesModal';
+import { QuickSaleModal } from '@/components/dashboard/QuickSaleModal';
 import { useUI } from '@/components/ui/UIProvider';
 import { Header, CrudAdmin, StatItem } from '@/components/adm';
-import { Package, Edit2, Trash2, AlertTriangle, DollarSign, Boxes, Upload, Clock } from 'lucide-react';
+import { Package, Edit2, Trash2, AlertTriangle, DollarSign, Boxes, Upload, Clock, ShoppingCart } from 'lucide-react';
 import { PriceDisplay } from '@/components/ui/price-display';
 import { StockDisplay } from '@/components/ui/stock-display';
 import { type ColumnDef } from '@tanstack/react-table';
@@ -105,6 +106,13 @@ export default function ProductsPage() {
   // Prices modal state
   const [pricesModalOpen, setPricesModalOpen] = useState(false);
   const [selectedProductForPrices, setSelectedProductForPrices] = useState<Product | null>(null);
+
+  // Quick sale modal state
+  const [quickSaleModalOpen, setQuickSaleModalOpen] = useState(false);
+
+  const handleQuickSaleSuccess = () => {
+    fetchProducts(); // Refresh products after sale
+  };
 
   const openMovementsModal = async (product: Product) => {
     setSelectedProductForMovements(product);
@@ -398,6 +406,12 @@ export default function ProductsPage() {
               variant: 'outline' as const,
               icon: Upload,
             },
+            {
+              label: 'Venta Rápida',
+              onClick: () => setQuickSaleModalOpen(true),
+              variant: 'default' as const,
+              icon: ShoppingCart,
+            },
           ]}
         />
 
@@ -477,6 +491,13 @@ export default function ProductsPage() {
         product={selectedProductForMovements}
         movements={movements}
         loading={movementsLoading}
+      />
+
+      {/* Quick Sale Modal */}
+      <QuickSaleModal
+        open={quickSaleModalOpen}
+        onOpenChange={setQuickSaleModalOpen}
+        onSuccess={handleQuickSaleSuccess}
       />
     </>
   );
