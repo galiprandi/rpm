@@ -1,56 +1,143 @@
 'use client';
 
-import type { Session } from '@/lib/auth-client';
-import { authClient } from '@/lib/auth-client';
 import { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Header } from '@/components/adm/Header';
-import { Package, Users, Settings, TrendingUp } from 'lucide-react';
+import { SalesCard } from '@/components/dashboard/SalesCard';
+import { WorkOrdersCard } from '@/components/dashboard/WorkOrdersCard';
+import { StockAlertCard } from '@/components/dashboard/StockAlertCard';
+import { WorkshopKanbanCard } from '@/components/dashboard/WorkshopKanbanCard';
+import { ReadyForDeliveryCard } from '@/components/dashboard/ReadyForDeliveryCard';
+import { RecentMovementsCard } from '@/components/dashboard/RecentMovementsCard';
+import { PaymentMethodsCard } from '@/components/dashboard/PaymentMethodsCard';
+import { Card, CardContent } from '@/components/ui/card';
+import { RefreshCw } from 'lucide-react';
+
+interface DashboardSummary {
+  sales: {
+    today: {
+      total: number;
+      workOrderCount: number;
+      vsYesterday: number;
+    };
+    ticketAverage: number;
+  };
+  workOrders: {
+    active: {
+      total: number;
+      byStatus: {
+        pending: number;
+        inProgress: number;
+        ready: number;
+      };
+      newToday: number;
+    };
+  };
+  stock: {
+    lowStockCount: number;
+    lowStockItems: Array<{
+      id: string;
+      name: string;
+      stock: number;
+      minStock: number;
+    }>;
+  };
+  readyForDelivery: Array<{
+    workOrderId: string;
+    vehicle: {
+      type: 'COMPACT' | 'SEDAN' | 'SUV' | 'PICKUP' | 'TRUCK';
+      description: string;
+    };
+    customer: {
+      name: string;
+      phone: string;
+    };
+    total: number;
+    completedAt: string;
+    invoiceStatus: 'ISSUED' | 'PENDING';
+  }>;
+  recentMovements: Array<{
+    type: 'IN' | 'OUT' | 'ADJUSTMENT';
+    productName: string;
+    quantity: number;
+    reason: string;
+    timestamp: string;
+    userName: string;
+  }>;
+  paymentsByMethod?: Array<{
+    code: string;
+    name: string;
+    total: number;
+  }>;
+  generatedAt: string;
+}
 
 export default function AdminDashboard() {
-  const [session, setSession] = useState<Session | null>(null);
+  const [data, setData] = useState<DashboardSummary | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+
+  const fetchDashboardData = async () => {
+    try {
+      setError(null);
+      const response = await fetch('/api/dashboard/summary');
+      
+      if (!response.ok) {
+        throw new Error('Error al cargar datos del dashboard');
+      }
+      
+      const dashboardData = await response.json();
+      setData(dashboardData);
+      setLastUpdated(new Date());
+    } catch (err) {
+      console.error('Error fetching dashboard data:', err);
+      setError('Error al cargar datos del dashboard');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const checkSession = async () => {
-      try {
-        const sessionData = await authClient.getSession();
-        setSession(sessionData.data);
-      } catch (error) {
-        console.error('Error checking session:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+    fetchDashboardData();
 
-    checkSession();
+    // Polling cada 60 segundos
+    const interval = setInterval(fetchDashboardData, 60000);
+
+    return () => clearInterval(interval);
   }, []);
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-foreground">Cargando...</div>
+      <div className="space-y-6">
+        <Header
+          title="Dashboard"
+          description="Cargando datos del dashboard..."
+        />
+        <div className="flex items-center justify-center h-64">
+          <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
       </div>
     );
   }
 
-  if (!session) {
+  if (error || !data) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-foreground mb-4">
-            No autorizado
-          </h2>
-          <p className="text-muted-foreground mb-6">
-            Debes iniciar sesión para acceder a esta página.
-          </p>
-          <a
-            href="/login"
-            className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2"
-          >
-            Iniciar sesión
-          </a>
-        </div>
+      <div className="space-y-6">
+        <Header
+          title="Dashboard"
+          description="Error al cargar datos"
+        />
+        <Card>
+          <CardContent className="p-6">
+            <p className="text-red-600">{error || 'No se pudieron cargar los datos'}</p>
+            <button
+              onClick={fetchDashboardData}
+              className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-md"
+            >
+              Reintentar
+            </button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -59,106 +146,38 @@ export default function AdminDashboard() {
     <div className="space-y-6">
       <Header
         title="Dashboard"
-        description="Bienvenido al panel de administración de RPM Accesorios"
+        description={`Última actualización: ${lastUpdated?.toLocaleTimeString('es-AR')}`}
       />
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Productos
-            </CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">0</div>
-            <p className="text-xs text-muted-foreground">
-              Total de productos
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Usuarios
-            </CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">1</div>
-            <p className="text-xs text-muted-foreground">
-              Usuarios registrados
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Ventas
-            </CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">$0</div>
-            <p className="text-xs text-muted-foreground">
-              Ventas del mes
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Configuración
-            </CardTitle>
-            <Settings className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">✓</div>
-            <p className="text-xs text-muted-foreground">
-              Sistema operativo
-            </p>
-          </CardContent>
-        </Card>
+      {/* Fila 1: 3 cards principales */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <SalesCard
+          total={data.sales.today.total}
+          workOrderCount={data.sales.today.workOrderCount}
+          vsYesterday={data.sales.today.vsYesterday}
+          ticketAverage={data.sales.ticketAverage}
+        />
+        <WorkOrdersCard
+          total={data.workOrders.active.total}
+          byStatus={data.workOrders.active.byStatus}
+          newToday={data.workOrders.active.newToday}
+        />
+        <StockAlertCard
+          lowStockCount={data.stock.lowStockCount}
+          lowStockItems={data.stock.lowStockItems}
+        />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Actividad Reciente</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="text-sm text-muted-foreground">
-                No hay actividad reciente
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Fila 2: Taller Kanban, Listos para Entrega y Medios de Pago */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <WorkshopKanbanCard byStatus={data.workOrders.active.byStatus} />
+        <ReadyForDeliveryCard readyForDelivery={data.readyForDelivery} />
+        <PaymentMethodsCard paymentsByMethod={data.paymentsByMethod} />
+      </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Estado del Sistema</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>Base de datos</span>
-                <span className="text-green-600">Conectada</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span>API</span>
-                <span className="text-green-600">Operativa</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span>Storage</span>
-                <span className="text-green-600">Disponible</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Fila 3: Movimientos Recientes */}
+      <div className="grid gap-4 md:grid-cols-1">
+        <RecentMovementsCard recentMovements={data.recentMovements} />
       </div>
     </div>
   );

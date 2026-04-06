@@ -1,10 +1,11 @@
 ---
 title: Dashboard de Administrador RPM - Especificación de UI/UX
-version: 1.0
+version: 1.1
 date_created: 2026-04-05
+date_updated: 2026-04-06
 owner: Equipo de Desarrollo
 tags: [app, design, ui, dashboard, admin, rpm]
-status: 🔴 Pendiente
+status: � En implementación (feature branch)
 ---
 
 # Dashboard de Administrador RPM
@@ -17,13 +18,15 @@ Esta especificación detalla el diseño, arquitectura y requerimientos del dashb
 Proveer una vista unificada y accionable del estado operativo del negocio, permitiendo al administrador monitorear métricas críticas, identificar alertas que requieren atención inmediata, y tomar decisiones rápidas sin navegar múltiples pantallas.
 
 **Alcance:**
-- Panel principal único accesible desde `/adm/dashboard`
-- 6 secciones de métricas clave (Ventas, Taller, Stock, Finanzas, Web, Alertas)
+- Panel principal único accesible desde `/adm` (reemplaza dashboard actual)
+- 5 secciones de métricas clave (Ventas, Taller, Stock, Listos para Entrega, Movimientos)
 - Componentes interactivos con acciones directas (click-to-call, navegación rápida)
 - Actualización en tiempo real o caché breve (5 min máximo)
 - Diseño responsive prioritario para desktop (admin trabaja en PC/tablet)
 
-**Fuera de alcance:**
+**Fuera de alcance (Fase 1):**
+- Turnos Web (falta modelo WebAppointment en DB)
+- Facturación AFIP (falta modelo Invoice en DB - métricas basadas en work_orders)
 - Edición de datos desde el dashboard (solo lectura + navegación)
 - Gráficos complejos o analítica histórica profunda (van a reportes)
 - Notificaciones push (solo badges visuales)
@@ -94,10 +97,10 @@ Proveer una vista unificada y accionable del estado operativo del negocio, permi
 │                              │  🚙 Ranger - María Gómez       │
 │                              │     #1235 · $120.000 · 📞      │
 ├─────────────────────────────────────────────────────────────┤
-│  [6] MOVIMIENTOS RECIENTES   │  [7] TURNOS WEB                │
-│  - Salida: 2x Polarizado     │  Hoy: 3 confirmados            │
-│  - Ajuste: +5 Limpia         │  Mañana: 5 pendientes          │
-│  - Entrada: +10 LED          │                                │
+│  [6] MOVIMIENTOS RECIENTES                                   │
+│  - Salida: 2x Polarizado     │                                 │
+│  - Ajuste: +5 Limpia         │                                 │
+│  - Entrada: +10 LED          │                                 │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -106,14 +109,14 @@ Proveer una vista unificada y accionable del estado operativo del negocio, permi
 ```typescript
 // GET /api/dashboard/summary
 interface DashboardSummary {
-  // Sección 1: Ventas
+  // Sección 1: Ventas (basado en work_orders completadas)
   sales: {
     today: {
-      total: number;           // $485000
-      invoiceCount: number;    // 12
+      total: number;           // $485000 (sum de work_orders completadas hoy)
+      workOrderCount: number;  // 12 (cantidad de work_orders completadas hoy)
       vsYesterday: number;     // +15%
     };
-    ticketAverage: number;      // $40416
+    ticketAverage: number;      // $40416 (total / count)
   };
 
   // Sección 2: OTs
@@ -121,9 +124,9 @@ interface DashboardSummary {
     active: {
       total: number;           // 8
       byStatus: {
-        pending: number;       // 3
-        inProgress: number;    // 2
-        ready: number;         // 3
+        pending: number;       // 3 (CONFIRMED)
+        inProgress: number;    // 2 (IN_PROGRESS)
+        ready: number;         // 3 (READY)
       };
       newToday: number;        // 2
     };
@@ -165,18 +168,6 @@ interface DashboardSummary {
     timestamp: string;
     userName: string;
   }>;
-
-  // Sección 7: Turnos Web
-  appointments: {
-    today: {
-      confirmed: number;        // 3
-      pending: number;          // 0
-    };
-    tomorrow: {
-      confirmed: number;
-      pending: number;          // 5
-    };
-  };
 
   // Meta
   generatedAt: string;          // ISO timestamp para freshness indicator
@@ -221,12 +212,10 @@ La ausencia de gráficos históricos es intencional: el admin puede acceder a re
 - **EXT-002**: Prisma ORM - queries optimizadas con select/aggregations
 
 ### Data Dependencies
-- **DAT-001**: WorkOrder - estado, totales, relación cliente/vehículo
+- **DAT-001**: WorkOrder - estado, totales, relación cliente/vehículo (fuente de ventas)
 - **DAT-002**: Product - stock, stock mínimo
-- **DAT-003**: Invoice - totales por día
-- **DAT-004**: Customer - nombre, teléfono (enmascarado)
-- **DAT-005**: StockMovement - últimos 5 movimientos
-- **DAT-006**: WebAppointment - turnos confirmados/pendientes
+- **DAT-003**: Customer - nombre, teléfono (enmascarado)
+- **DAT-004**: StockMovement - últimos 5 movimientos
 
 ---
 

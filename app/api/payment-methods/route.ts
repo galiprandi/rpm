@@ -39,7 +39,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user is ADMIN
-    if (!(await hasRole(session.user.id, UserRole.ADMIN))) {
+    const userRole = await hasRole(session.user.id, UserRole.ADMIN);
+    console.log('[PaymentMethods] User ID:', session.user.id);
+    console.log('[PaymentMethods] Has ADMIN role:', userRole);
+    if (!userRole) {
       return NextResponse.json(
         { error: "Only ADMIN can create payment methods" },
         { status: 403 }

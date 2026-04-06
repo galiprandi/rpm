@@ -34,7 +34,16 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(customer);
+    // Transform Prisma field names to match frontend interface
+    const transformedCustomer = {
+      ...customer,
+      vehicles: customer.vehicle || [],
+      workOrders: customer.work_order || [],
+      vehicle: undefined,
+      work_order: undefined,
+    };
+
+    return NextResponse.json(transformedCustomer);
   } catch (error) {
     console.error("Error fetching customer:", error);
     return NextResponse.json(

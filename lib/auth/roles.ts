@@ -35,6 +35,8 @@ export const getUserRole = async (email: string): Promise<UserRole> => {
     where: { email: normalizedEmail },
   });
 
+  console.log('[getUserRole] Email:', normalizedEmail, 'DB Record:', user_roleRecord);
+
   if (user_roleRecord?.isActive) {
     // Map database role to enum (handles both old and new role names)
     const role = user_roleRecord.role.toUpperCase();
@@ -49,10 +51,12 @@ export const getUserRole = async (email: string): Promise<UserRole> => {
 
   // Domain-based fallback for company emails
   if (STAFF_DOMAINS.some(domain => email.endsWith(`@${domain}`))) {
+    console.log('[getUserRole] Using STAFF domain fallback for:', email);
     return UserRole.STAFF;
   }
 
   // Default: regular user
+  console.log('[getUserRole] Default USER role for:', email);
   return UserRole.USER;
 };
 
@@ -153,9 +157,13 @@ export const hasRole = async (userId: string, role: UserRole): Promise<boolean> 
     select: { email: true },
   });
 
-  if (!user?.email) return false;
+  if (!user?.email) {
+    console.log('[hasRole] User not found or no email:', userId);
+    return false;
+  }
 
   const user_role = await getUserRole(user.email);
+  console.log('[hasRole] Email:', user.email, 'Role:', user_role, 'Expected:', role);
   return user_role === role;
 };
 
