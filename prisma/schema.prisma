@@ -363,3 +363,18 @@ model work_order_item {
   @@index([serviceId])
   @@index([workOrderId])
 }
+
+model cost_update_batch {
+  id             String   @id @default(uuid())
+  userId         String
+  userName       String?
+  filtersApplied Json
+  adjustmentType String
+  adjustmentValue Decimal @db.Decimal(10, 2)
+  itemsAffected  Int
+  createdAt      DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([userId])
+  @@map("cost_update_batch")
+}

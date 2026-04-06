@@ -43,7 +43,7 @@ export async function getCategories(includeInactive: boolean = false): Promise<C
     where: includeInactive ? {} : { isActive: true },
     include: {
       _count: {
-        select: { products: true },
+        select: { product: true },
       },
     },
     orderBy: { name: 'asc' },
@@ -52,7 +52,7 @@ export async function getCategories(includeInactive: boolean = false): Promise<C
   return {
     categories: categories.map(c => ({
       ...c,
-      productCount: c._count.products,
+      productCount: c._count.product,
     })),
     total: categories.length,
   };
@@ -66,7 +66,7 @@ export async function getCategoryById(id: string): Promise<Category | null> {
     where: { id },
     include: {
       _count: {
-        select: { products: true },
+        select: { product: true },
       },
     },
   });
@@ -87,7 +87,7 @@ export async function getCategoryByName(name: string): Promise<Category | null> 
     where: { name },
     include: {
       _count: {
-        select: { products: true },
+        select: { product: true },
       },
     },
   });
@@ -113,7 +113,7 @@ export async function createCategory(input: CreateCategoryInput): Promise<Catego
     },
     include: {
       _count: {
-        select: { products: true },
+        select: { product: true },
       },
     },
   });
@@ -140,7 +140,7 @@ export async function updateCategory(id: string, input: UpdateCategoryInput): Pr
     data,
     include: {
       _count: {
-        select: { products: true },
+        select: { product: true },
       },
     },
   });

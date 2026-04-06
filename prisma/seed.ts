@@ -12,6 +12,9 @@ const defaultCategory = {
   defaultMarginPercent: 30,
   color: '#6b7280',
   sortOrder: 0,
+  isActive: true,
+  createdAt: new Date(),
+  updatedAt: new Date(),
 };
 
 const defaultSupplier = {
@@ -22,6 +25,9 @@ const defaultSupplier = {
   email: null,
   address: null,
   notes: 'Proveedor por defecto para productos sin proveedor específico',
+  isActive: true,
+  createdAt: new Date(),
+  updatedAt: new Date(),
 };
 
 const adminUser = {
@@ -31,14 +37,19 @@ const adminUser = {
   emailVerified: true,
   image: null,
   role: 'ADMIN',
+  createdAt: new Date(),
+  updatedAt: new Date(),
 };
 
 const adminRole = {
+  id: 'role-admin',
   email: 'galiprandi@gmail.com',
   role: 'ADMIN',
   name: 'Germán Aliprandi',
   notes: 'Administrador del sistema',
   isActive: true,
+  createdAt: new Date(),
+  updatedAt: new Date(),
 };
 
 const defaultPriceList = {
@@ -48,6 +59,8 @@ const defaultPriceList = {
   isActive: true,
   baseMarginPercentage: 40.00,
   roundingRule: 'SMART_HUNDREDS',
+  createdAt: new Date(),
+  updatedAt: new Date(),
 };
 
 async function seed() {
@@ -81,7 +94,7 @@ async function seed() {
   console.log('✅ Usuario administrador creado (Germán Aliprandi)');
 
   // Crear rol ADMIN para el usuario
-  await prisma.userRole.upsert({
+  await prisma.user_role.upsert({
     where: { email: adminRole.email },
     update: adminRole,
     create: adminRole,
@@ -91,16 +104,18 @@ async function seed() {
   // Crear configuración de margen mínimo global
   await prisma.setting.upsert({
     where: { key: 'MINIMUM_MARGIN_PERCENTAGE' },
-    update: { value: '15.0' },
+    update: { value: '15.0', updatedAt: new Date() },
     create: {
+      id: 'setting-min-margin',
       key: 'MINIMUM_MARGIN_PERCENTAGE',
       value: '15.0',
+      updatedAt: new Date(),
     },
   });
   console.log('✅ Configuración de margen mínimo creada (15%)');
 
   // Crear lista de precios por defecto
-  await prisma.priceList.upsert({
+  await prisma.price_list.upsert({
     where: { id: defaultPriceList.id },
     update: defaultPriceList,
     create: defaultPriceList,

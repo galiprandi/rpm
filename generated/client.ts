@@ -141,3 +141,8 @@ export type work_order = Prisma.work_orderModel
  * 
  */
 export type work_order_item = Prisma.work_order_itemModel
+/**
+ * Model cost_update_batch
+ * 
+ */
+export type cost_update_batch = Prisma.cost_update_batchModel

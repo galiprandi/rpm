@@ -134,6 +134,66 @@
 </Button>
 ```
 
+### 2.5 Ubicación de Botones en CRUDs
+
+> **Referencia:** Ver `@[.windsurf/skills/ui-view-and-component/SKILL.md]` para implementación técnica de vistas admin.
+
+**Principio:** Separar acciones por contexto — las operaciones sobre items van en la tabla, las acciones complementarias van en el header del CRUD.
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  HEADER CRUD (CrudAdmin)                                 │
+│  ├── Izquierda: Título + Subtítulo                      │
+│  └── Derecha: Acciones COMPLEMENTARIAS                  │
+│      (Ej: "Actualizar Costos", filtros globales)        │
+├─────────────────────────────────────────────────────────┤
+│  TABLA (DataTable)                                      │
+│  ├── Izquierda: Acciones sobre ITEMS                    │
+│  │   (Ej: "Exportar", "Importar")                       │
+│  └── Derecha: CTA PRIMARIO — Crear Item                 │
+│      (siempre visible, incluso en empty state)          │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Reglas de Ubicación:**
+
+| Ubicación | Tipo de Acción | Ejemplos |
+|-----------|----------------|----------|
+| **Header CRUD** | Complementarias (no operan sobre items específicos) | Actualizar Costos, Importar masivo, Filtros globales |
+| **Header DataTable** | Sobre items (operan sobre la colección) | Exportar, Eliminar seleccionados |
+| **Header DataTable (derecha)** | CTA Primario | + Nuevo Item, + Lista, + Producto |
+| **Empty State** | Solo CTA Primario | + Crear primero |
+
+**⚠️ REGLA CRÍTICA:**
+> El CTA primario debe duplicarse en el **empty state**. Cuando no hay items, la tabla no se renderiza y perderíamos la única forma de crear el primer elemento.
+
+**Ejemplo: Listas de Precios**
+```typescript
+// Header CRUD — Acciones complementarias
+<CrudAdmin
+  secondaryActions={[{
+    label: 'Actualizar Costos',  // No opera sobre items
+    onClick: () => openCostUpdate(),
+    variant: 'outline'
+  }]}
+/>
+
+// Header DataTable — Acciones sobre items + CTA
+<DataTable
+  headerActions={[
+    { label: 'Exportar', variant: 'outline', icon: Download },  // Sobre items
+    { label: '+ Lista', variant: 'default', icon: Plus }     // CTA primario
+  ]}
+/>
+
+// Empty State — Solo CTA primario
+{items.length === 0 && (
+  <EmptyState>
+    <Button variant="default">+ Lista</Button>  // CTA primario
+  </EmptyState>
+)}
+```
+
 ### 3. Modales vs Forms Inline
 
 **❌ PROHIBIDO: Form inline en la página**

@@ -70,7 +70,8 @@ export const ModelName = {
   vehicle_model: 'vehicle_model',
   verification: 'verification',
   work_order: 'work_order',
-  work_order_item: 'work_order_item'
+  work_order_item: 'work_order_item',
+  cost_update_batch: 'cost_update_batch'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -409,6 +410,20 @@ export const Work_order_itemScalarFieldEnum = {
 export type Work_order_itemScalarFieldEnum = (typeof Work_order_itemScalarFieldEnum)[keyof typeof Work_order_itemScalarFieldEnum]
 
 
+export const Cost_update_batchScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  userName: 'userName',
+  filtersApplied: 'filtersApplied',
+  adjustmentType: 'adjustmentType',
+  adjustmentValue: 'adjustmentValue',
+  itemsAffected: 'itemsAffected',
+  createdAt: 'createdAt'
+} as const
+
+export type Cost_update_batchScalarFieldEnum = (typeof Cost_update_batchScalarFieldEnum)[keyof typeof Cost_update_batchScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -423,6 +438,13 @@ export const NullableJsonNullValueInput = {
 } as const
 
 export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
+
+
+export const JsonNullValueInput = {
+  JsonNull: JsonNull
+} as const
+
+export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
 
 
 export const QueryMode = {

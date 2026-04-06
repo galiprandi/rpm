@@ -50,7 +50,7 @@ export async function getSuppliers(includeInactive: boolean = false): Promise<Su
     orderBy: { name: 'asc' },
     include: {
       _count: {
-        select: { products: true },
+        select: { product: true },
       },
     },
   });
@@ -58,7 +58,7 @@ export async function getSuppliers(includeInactive: boolean = false): Promise<Su
   return {
     suppliers: suppliers.map(s => ({
       ...s,
-      productCount: s._count.products,
+      productCount: s._count.product,
     })),
     total: suppliers.length,
   };
@@ -72,7 +72,7 @@ export async function getSupplierById(id: string): Promise<Supplier | null> {
     where: { id },
     include: {
       _count: {
-        select: { products: true },
+        select: { product: true },
       },
     },
   });
@@ -93,7 +93,7 @@ export async function getSupplierByName(name: string): Promise<Supplier | null> 
     where: { name },
     include: {
       _count: {
-        select: { products: true },
+        select: { product: true },
       },
     },
   });
@@ -123,7 +123,7 @@ export async function createSupplier(input: CreateSupplierInput): Promise<Suppli
     },
     include: {
       _count: {
-        select: { products: true },
+        select: { product: true },
       },
     },
   });
@@ -152,7 +152,7 @@ export async function updateSupplier(id: string, input: UpdateSupplierInput): Pr
     data,
     include: {
       _count: {
-        select: { products: true },
+        select: { product: true },
       },
     },
   });
@@ -173,7 +173,7 @@ export async function deactivateSupplier(id: string): Promise<Supplier> {
     data: { isActive: false },
     include: {
       _count: {
-        select: { products: true },
+        select: { product: true },
       },
     },
   });
@@ -192,7 +192,7 @@ export async function hasAssociatedProducts(id: string): Promise<boolean> {
     where: { id },
     include: {
       _count: {
-        select: { products: true },
+        select: { product: true },
       },
     },
   });

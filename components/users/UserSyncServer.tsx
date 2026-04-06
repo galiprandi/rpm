@@ -16,19 +16,23 @@ export async function UserSyncServer() {
   if (session?.user?.email) {
     try {
       // Upsert: create if not exists, always update fields
-      await prisma.userRole.upsert({
+      await prisma.user_role.upsert({
         where: { email: session.user.email },
         create: {
+          id: `role-${session.user.email}`,
           email: session.user.email,
           role: 'USER',
           name: session.user.name || session.user.email.split('@')[0],
           image: session.user.image || null,
           isActive: true,
           lastLogin: new Date(),
+          createdAt: new Date(),
+          updatedAt: new Date(),
         },
         update: {
           // Always update on every request to keep data fresh
           lastLogin: new Date(),
+          updatedAt: new Date(),
           // Update name if provided by Better Auth
           name: session.user.name || undefined,
           // Update image if provided by Better Auth

@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useUI } from '@/components/ui/UIProvider';
 import { PriceListDialog } from '@/components/price-lists/PriceListDialog';
+import { CostUpdateDialog } from '@/components/cost-updates/CostUpdateDialog';
 import { type PriceListFormData } from '@/components/price-lists/PriceListForm';
 import { CrudAdmin, StatItem } from '@/components/adm';
-import { DollarSign, Edit2, Trash2, List, Percent, Layers } from 'lucide-react';
+import { DollarSign, Edit2, Trash2, List, Percent, Layers, TrendingUp } from 'lucide-react';
 import { type ColumnDef } from '@tanstack/react-table';
 
 interface PriceList {
@@ -34,6 +35,7 @@ export default function PriceListsPage() {
   const [editingPriceList, setEditingPriceList] = useState<PriceList | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isCostUpdateDialogOpen, setIsCostUpdateDialogOpen] = useState(false);
   const [editForm, setEditForm] = useState<PriceListFormData>({
     name: '',
     baseMarginPercentage: 40,
@@ -264,6 +266,14 @@ export default function PriceListsPage() {
         onCreate={() => setIsCreateDialogOpen(true)}
         columns={columns}
         stats={stats}
+        secondaryActions={[
+          {
+            label: 'Actualizar Costos',
+            onClick: () => setIsCostUpdateDialogOpen(true),
+            variant: 'outline',
+            icon: TrendingUp,
+          },
+        ]}
         emptyIcon={<List className="h-12 w-12 mx-auto text-muted-foreground mb-4" />}
         emptyMessage="No hay listas de precios. Haz clic en '+ Lista' para crear la primera."
         createButtonText="Lista"
@@ -307,6 +317,15 @@ export default function PriceListsPage() {
         onSubmit={(e) => {
           e?.preventDefault();
           handleCreatePriceList();
+        }}
+      />
+      {/* Cost Update Dialog */}
+      <CostUpdateDialog
+        open={isCostUpdateDialogOpen}
+        onClose={() => setIsCostUpdateDialogOpen(false)}
+        onSuccess={() => {
+          // Refresh price lists to recalculate prices
+          fetchPriceLists();
         }}
       />
     </>

@@ -86,22 +86,22 @@ export function CrudAdmin<T extends { id: string }>({
   };
 
   const headerActions = [
-    ...(enableExport && items.length > 0
-      ? [{
-          label: 'Exportar',
-          onClick: handleExport,
-          variant: 'outline' as const,
-          icon: Download,
-        }]
-      : []),
     ...(secondaryActions || []),
-    {
-      label: createButtonText,
-      onClick: onCreate,
-      variant: 'default' as const,
-      icon: Plus,
-    },
   ];
+
+  const createAction = {
+    label: createButtonText,
+    onClick: onCreate,
+    variant: 'default' as const,
+    icon: Plus,
+  };
+
+  const exportAction = {
+    label: 'Exportar',
+    onClick: handleExport,
+    variant: 'outline' as const,
+    icon: Download,
+  };
 
   if (loading) {
     return (
@@ -124,6 +124,23 @@ export function CrudAdmin<T extends { id: string }>({
             </div>
           )}
         </div>
+        <div className="flex items-center gap-2">
+          {headerActions.map((action, index) => (
+            <Button
+              key={index}
+              onClick={action.onClick}
+              variant={action.variant || 'default'}
+              className={
+                (action.variant || 'default') === 'default'
+                  ? 'bg-slate-900 text-white hover:bg-slate-800 border border-slate-900 shadow-lg hover:shadow-xl transition-all font-semibold'
+                  : undefined
+              }
+            >
+              {action.icon && <action.icon className="h-4 w-4 mr-2" />}
+              {action.label}
+            </Button>
+          ))}
+        </div>
       </div>
 
       {/* Items Table */}
@@ -137,7 +154,7 @@ export function CrudAdmin<T extends { id: string }>({
               enableGlobalFilter={enableSearch}
               globalFilterPlaceholder={searchPlaceholder}
               emptyMessage={emptyMessage}
-              headerActions={headerActions}
+              headerActions={[...(enableExport && items.length > 0 ? [exportAction] : []), createAction]}
               rowActions={rowActions}
             />
           </div>

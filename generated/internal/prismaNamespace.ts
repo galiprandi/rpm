@@ -403,7 +403,8 @@ export const ModelName = {
   vehicle_model: 'vehicle_model',
   verification: 'verification',
   work_order: 'work_order',
-  work_order_item: 'work_order_item'
+  work_order_item: 'work_order_item',
+  cost_update_batch: 'cost_update_batch'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -419,7 +420,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "account" | "category" | "customer" | "photo" | "price_list" | "price_list_item" | "product" | "service" | "session" | "setting" | "stock_movement" | "supplier" | "user" | "user_role" | "vehicle" | "vehicle_make" | "vehicle_model" | "verification" | "work_order" | "work_order_item"
+    modelProps: "account" | "category" | "customer" | "photo" | "price_list" | "price_list_item" | "product" | "service" | "session" | "setting" | "stock_movement" | "supplier" | "user" | "user_role" | "vehicle" | "vehicle_make" | "vehicle_model" | "verification" | "work_order" | "work_order_item" | "cost_update_batch"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1903,6 +1904,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    cost_update_batch: {
+      payload: Prisma.$cost_update_batchPayload<ExtArgs>
+      fields: Prisma.cost_update_batchFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.cost_update_batchFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$cost_update_batchPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.cost_update_batchFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$cost_update_batchPayload>
+        }
+        findFirst: {
+          args: Prisma.cost_update_batchFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$cost_update_batchPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.cost_update_batchFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$cost_update_batchPayload>
+        }
+        findMany: {
+          args: Prisma.cost_update_batchFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$cost_update_batchPayload>[]
+        }
+        create: {
+          args: Prisma.cost_update_batchCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$cost_update_batchPayload>
+        }
+        createMany: {
+          args: Prisma.cost_update_batchCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.cost_update_batchCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$cost_update_batchPayload>[]
+        }
+        delete: {
+          args: Prisma.cost_update_batchDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$cost_update_batchPayload>
+        }
+        update: {
+          args: Prisma.cost_update_batchUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$cost_update_batchPayload>
+        }
+        deleteMany: {
+          args: Prisma.cost_update_batchDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.cost_update_batchUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.cost_update_batchUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$cost_update_batchPayload>[]
+        }
+        upsert: {
+          args: Prisma.cost_update_batchUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$cost_update_batchPayload>
+        }
+        aggregate: {
+          args: Prisma.Cost_update_batchAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateCost_update_batch>
+        }
+        groupBy: {
+          args: Prisma.cost_update_batchGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.Cost_update_batchGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.cost_update_batchCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.Cost_update_batchCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -2262,6 +2337,20 @@ export const Work_order_itemScalarFieldEnum = {
 export type Work_order_itemScalarFieldEnum = (typeof Work_order_itemScalarFieldEnum)[keyof typeof Work_order_itemScalarFieldEnum]
 
 
+export const Cost_update_batchScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  userName: 'userName',
+  filtersApplied: 'filtersApplied',
+  adjustmentType: 'adjustmentType',
+  adjustmentValue: 'adjustmentValue',
+  itemsAffected: 'itemsAffected',
+  createdAt: 'createdAt'
+} as const
+
+export type Cost_update_batchScalarFieldEnum = (typeof Cost_update_batchScalarFieldEnum)[keyof typeof Cost_update_batchScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -2276,6 +2365,13 @@ export const NullableJsonNullValueInput = {
 } as const
 
 export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
+
+
+export const JsonNullValueInput = {
+  JsonNull: JsonNull
+} as const
+
+export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
 
 
 export const QueryMode = {
@@ -2514,6 +2610,7 @@ export type GlobalOmitConfig = {
   verification?: Prisma.verificationOmit
   work_order?: Prisma.work_orderOmit
   work_order_item?: Prisma.work_order_itemOmit
+  cost_update_batch?: Prisma.cost_update_batchOmit
 }
 
 /* Types for Logging */

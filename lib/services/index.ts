@@ -82,3 +82,19 @@ export {
   type PriceListResult,
   type CalculatedPrice,
 } from './priceListService';
+
+// Cost Update Service
+export {
+  previewCostUpdate,
+  applyCostUpdate,
+  getCostUpdateHistory,
+  calculateNewCost,
+  calculateVariationPercent,
+  isWarningVariation,
+  type AdjustmentType,
+  type CostUpdateFilters,
+  type CostUpdateAdjustment,
+  type CostUpdatePreviewItem,
+  type CostUpdatePreviewResult,
+  type CostUpdateBatch,
+} from './costUpdateService';

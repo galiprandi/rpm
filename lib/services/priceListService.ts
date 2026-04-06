@@ -106,12 +106,12 @@ export interface CalculatedPrice {
 
 // GET all price lists
 export async function getPriceLists(includeInactive: boolean = false): Promise<PriceListResult> {
-  const priceLists = await prisma.priceList.findMany({
+  const priceLists = await prisma.price_list.findMany({
     where: includeInactive ? {} : { isActive: true },
     orderBy: { name: 'asc' },
     include: {
       _count: {
-        select: { items: true },
+        select: { price_list_item: true },
       },
     },
   });
@@ -121,7 +121,7 @@ export async function getPriceLists(includeInactive: boolean = false): Promise<P
       ...pl,
       baseMarginPercentage: Number(pl.baseMarginPercentage),
       roundingRule: pl.roundingRule as RoundingRule,
-      itemCount: pl._count.items,
+      itemCount: pl._count.price_list_item,
     })),
     total: priceLists.length,
   };
@@ -129,10 +129,10 @@ export async function getPriceLists(includeInactive: boolean = false): Promise<P
 
 // GET price list by ID with items
 export async function getPriceListById(id: string): Promise<PriceListDetail | null> {
-  const priceList = await prisma.priceList.findUnique({
+  const priceList = await prisma.price_list.findUnique({
     where: { id },
     include: {
-      items: {
+      price_list_item: {
         include: {
           product: {
             select: {
@@ -145,7 +145,7 @@ export async function getPriceListById(id: string): Promise<PriceListDetail | nu
         },
       },
       _count: {
-        select: { items: true },
+        select: { price_list_item: true },
       },
     },
   });
@@ -155,7 +155,7 @@ export async function getPriceListById(id: string): Promise<PriceListDetail | nu
   const minimumMargin = await getMinimumMargin();
 
   // Transform items with calculated prices and margins
-  const items: PriceListItem[] = priceList.items.map(item => {
+  const items: PriceListItem[] = priceList.price_list_item.map(item => {
     const replacementCost = item.product?.replacementCost
       ? Number(item.product.replacementCost)
       : 0;
@@ -196,18 +196,18 @@ export async function getPriceListById(id: string): Promise<PriceListDetail | nu
     ...priceList,
     baseMarginPercentage: Number(priceList.baseMarginPercentage),
     roundingRule: priceList.roundingRule as RoundingRule,
-    itemCount: priceList._count.items,
-    items,
+    itemCount: priceList._count.price_list_item,
+    items: priceList.price_list_item,
   };
 }
 
 // GET price list by name (for uniqueness validation)
 export async function getPriceListByName(name: string): Promise<PriceList | null> {
-  const priceList = await prisma.priceList.findFirst({
+  const priceList = await prisma.price_list.findFirst({
     where: { name },
     include: {
       _count: {
-        select: { items: true },
+        select: { price_list_item: true },
       },
     },
   });
@@ -218,13 +218,13 @@ export async function getPriceListByName(name: string): Promise<PriceList | null
     ...priceList,
     baseMarginPercentage: Number(priceList.baseMarginPercentage),
     roundingRule: priceList.roundingRule as RoundingRule,
-    itemCount: priceList._count.items,
+    itemCount: priceList._count.price_list_item,
   };
 }
 
 // CREATE price list
 export async function createPriceList(input: CreatePriceListInput): Promise<PriceList> {
-  const priceList = await prisma.priceList.create({
+  const priceList = await prisma.price_list.create({
     data: {
       name: input.name,
       isPublic: input.isPublic ?? false,
@@ -236,7 +236,7 @@ export async function createPriceList(input: CreatePriceListInput): Promise<Pric
     },
     include: {
       _count: {
-        select: { items: true },
+        select: { price_list_item: true },
       },
     },
   });
@@ -245,13 +245,13 @@ export async function createPriceList(input: CreatePriceListInput): Promise<Pric
     ...priceList,
     baseMarginPercentage: Number(priceList.baseMarginPercentage),
     roundingRule: priceList.roundingRule as RoundingRule,
-    itemCount: priceList._count?.items ?? 0,
+    itemCount: priceList._count?.price_list_item ?? 0,
   };
 }
 
 // UPDATE price list
 export async function updatePriceList(id: string, input: UpdatePriceListInput): Promise<PriceList> {
-  const data: Prisma.PriceListUpdateInput = {};
+  const data: Prisma.price_listUpdateInput = {};
 
   if (input.name !== undefined) data.name = input.name;
   if (input.isPublic !== undefined) data.isPublic = input.isPublic;
@@ -261,12 +261,12 @@ export async function updatePriceList(id: string, input: UpdatePriceListInput): 
   if (input.baseMarginPercentage !== undefined) data.baseMarginPercentage = input.baseMarginPercentage;
   if (input.roundingRule !== undefined) data.roundingRule = input.roundingRule;
 
-  const priceList = await prisma.priceList.update({
+  const priceList = await prisma.price_list.update({
     where: { id },
     data,
     include: {
       _count: {
-        select: { items: true },
+        select: { price_list_item: true },
       },
     },
   });
@@ -275,13 +275,13 @@ export async function updatePriceList(id: string, input: UpdatePriceListInput): 
     ...priceList,
     baseMarginPercentage: Number(priceList.baseMarginPercentage),
     roundingRule: priceList.roundingRule as RoundingRule,
-    itemCount: priceList._count.items,
+    itemCount: priceList._count.price_list_item,
   };
 }
 
 // DELETE price list (hard delete with cascade)
 export async function deletePriceList(id: string): Promise<void> {
-  await prisma.priceList.delete({
+  await prisma.price_list.delete({
     where: { id },
   });
 }
@@ -292,7 +292,7 @@ export async function createPriceListItem(
   input: CreatePriceListItemInput
 ): Promise<PriceListItem> {
   // Verify the price list exists
-  const priceList = await prisma.priceList.findUnique({
+  const priceList = await prisma.price_list.findUnique({
     where: { id: priceListId },
   });
 
@@ -312,7 +312,7 @@ export async function createPriceListItem(
   const replacementCost = getProductBaseCost(product.replacementCost, product.costPrice);
 
   // Create the item
-  const item = await prisma.priceListItem.create({
+  const item = await prisma.price_list_item.create({
     data: {
       priceListId,
       productId: input.productId,
@@ -368,7 +368,7 @@ export async function createPriceListItem(
 
 // DELETE price list item
 export async function deletePriceListItem(id: string): Promise<void> {
-  await prisma.priceListItem.delete({
+  await prisma.price_list_item.delete({
     where: { id },
   });
 }
@@ -378,7 +378,7 @@ export async function calculateProductPrice(
   productId: string,
   priceListId: string
 ): Promise<CalculatedPrice | null> {
-  const priceList = await prisma.priceList.findUnique({
+  const priceList = await prisma.price_list.findUnique({
     where: { id: priceListId },
   });
 
@@ -393,7 +393,7 @@ export async function calculateProductPrice(
   const replacementCost = getProductBaseCost(product.replacementCost, product.costPrice);
 
   // Check for exception
-  const exception = await prisma.priceListItem.findUnique({
+  const exception = await prisma.price_list_item.findUnique({
     where: {
       priceListId_productId: {
         priceListId,
