@@ -54,6 +54,7 @@ model customer {
   name        String
   vehicle     vehicle[]
   work_order  work_order[]
+  directSales DirectSale[]
 
   @@index([name])
   @@index([phone])
@@ -127,6 +128,7 @@ model product {
   supplier        supplier?         @relation(fields: [supplierId], references: [id])
   stock_movement  stock_movement[]
   work_order_item work_order_item[]
+  directSaleItems DirectSaleItem[]
 
   @@index([categoryId])
   @@index([isActive])
@@ -148,6 +150,7 @@ model service {
   createdAt       DateTime          @default(now())
   updatedAt       DateTime
   work_order_item work_order_item[]
+  directSaleItems DirectSaleItem[]
 
   @@index([isActive])
 }
@@ -410,6 +413,7 @@ model PaymentMethod {
   updatedAt   DateTime
 
   payments    Payment[]
+  directSalePayments DirectSalePayment[]
 
   @@index([isActive])
   @@index([sortOrder])
@@ -428,5 +432,57 @@ model Payment {
   paymentMethod   PaymentMethod @relation(fields: [paymentMethodId], references: [id])
 
   @@index([workOrderId])
+  @@index([paymentMethodId])
+}
+
+model DirectSale {
+  id              String        @id @default(cuid())
+  customerId      String?
+  customerName    String        // "Consumidor final" o nombre del cliente
+  total           Decimal       @db.Decimal(10, 2)
+  notes           String?
+  createdAt       DateTime      @default(now())
+  createdBy       String
+
+  customer        customer?     @relation(fields: [customerId], references: [id])
+  items           DirectSaleItem[]
+  payments        DirectSalePayment[]
+
+  @@index([customerId])
+  @@index([createdAt])
+}
+
+model DirectSaleItem {
+  id            String     @id @default(cuid())
+  directSaleId  String
+  productId     String?
+  serviceId     String?
+  name          String     // Nombre del producto/servicio
+  quantity      Int
+  unitPrice     Decimal    @db.Decimal(10, 2)
+  totalPrice    Decimal    @db.Decimal(10, 2)
+
+  directSale    DirectSale @relation(fields: [directSaleId], references: [id], onDelete: Cascade)
+  product       product?   @relation(fields: [productId], references: [id])
+  service       service?   @relation(fields: [serviceId], references: [id])
+
+  @@index([directSaleId])
+  @@index([productId])
+  @@index([serviceId])
+}
+
+model DirectSalePayment {
+  id              String        @id @default(cuid())
+  directSaleId    String
+  paymentMethodId String
+  amount          Decimal       @db.Decimal(10, 2)
+  notes           String?
+  createdAt       DateTime      @default(now())
+  createdBy       String
+
+  directSale      DirectSale    @relation(fields: [directSaleId], references: [id], onDelete: Cascade)
+  paymentMethod   PaymentMethod @relation(fields: [paymentMethodId], references: [id])
+
+  @@index([directSaleId])
   @@index([paymentMethodId])
 }

@@ -161,3 +161,18 @@ export type PaymentMethod = Prisma.PaymentMethodModel
  * 
  */
 export type Payment = Prisma.PaymentModel
+/**
+ * Model DirectSale
+ * 
+ */
+export type DirectSale = Prisma.DirectSaleModel
+/**
+ * Model DirectSaleItem
+ * 
+ */
+export type DirectSaleItem = Prisma.DirectSaleItemModel
+/**
+ * Model DirectSalePayment
+ * 
+ */
+export type DirectSalePayment = Prisma.DirectSalePaymentModel

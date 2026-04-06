@@ -74,7 +74,10 @@ export const ModelName = {
   work_order_item: 'work_order_item',
   cost_update_batch: 'cost_update_batch',
   PaymentMethod: 'PaymentMethod',
-  Payment: 'Payment'
+  Payment: 'Payment',
+  DirectSale: 'DirectSale',
+  DirectSaleItem: 'DirectSaleItem',
+  DirectSalePayment: 'DirectSalePayment'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -467,6 +470,46 @@ export const PaymentScalarFieldEnum = {
 } as const
 
 export type PaymentScalarFieldEnum = (typeof PaymentScalarFieldEnum)[keyof typeof PaymentScalarFieldEnum]
+
+
+export const DirectSaleScalarFieldEnum = {
+  id: 'id',
+  customerId: 'customerId',
+  customerName: 'customerName',
+  total: 'total',
+  notes: 'notes',
+  createdAt: 'createdAt',
+  createdBy: 'createdBy'
+} as const
+
+export type DirectSaleScalarFieldEnum = (typeof DirectSaleScalarFieldEnum)[keyof typeof DirectSaleScalarFieldEnum]
+
+
+export const DirectSaleItemScalarFieldEnum = {
+  id: 'id',
+  directSaleId: 'directSaleId',
+  productId: 'productId',
+  serviceId: 'serviceId',
+  name: 'name',
+  quantity: 'quantity',
+  unitPrice: 'unitPrice',
+  totalPrice: 'totalPrice'
+} as const
+
+export type DirectSaleItemScalarFieldEnum = (typeof DirectSaleItemScalarFieldEnum)[keyof typeof DirectSaleItemScalarFieldEnum]
+
+
+export const DirectSalePaymentScalarFieldEnum = {
+  id: 'id',
+  directSaleId: 'directSaleId',
+  paymentMethodId: 'paymentMethodId',
+  amount: 'amount',
+  notes: 'notes',
+  createdAt: 'createdAt',
+  createdBy: 'createdBy'
+} as const
+
+export type DirectSalePaymentScalarFieldEnum = (typeof DirectSalePaymentScalarFieldEnum)[keyof typeof DirectSalePaymentScalarFieldEnum]
 
 
 export const SortOrder = {

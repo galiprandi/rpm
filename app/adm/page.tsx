@@ -9,8 +9,9 @@ import { WorkshopKanbanCard } from '@/components/dashboard/WorkshopKanbanCard';
 import { ReadyForDeliveryCard } from '@/components/dashboard/ReadyForDeliveryCard';
 import { RecentMovementsCard } from '@/components/dashboard/RecentMovementsCard';
 import { PaymentMethodsCard } from '@/components/dashboard/PaymentMethodsCard';
-import { Card, CardContent } from '@/components/ui/card';
-import { RefreshCw } from 'lucide-react';
+import { QuickSaleModal } from '@/components/dashboard/QuickSaleModal';
+import { Button } from '@/components/ui/button';
+import { RefreshCw, ShoppingCart } from 'lucide-react';
 
 interface DashboardSummary {
   sales: {
@@ -75,7 +76,7 @@ export default function AdminDashboard() {
   const [data, setData] = useState<DashboardSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [quickSaleModalOpen, setQuickSaleModalOpen] = useState(false);
 
   const fetchDashboardData = async () => {
     try {
@@ -88,7 +89,6 @@ export default function AdminDashboard() {
       
       const dashboardData = await response.json();
       setData(dashboardData);
-      setLastUpdated(new Date());
     } catch (err) {
       console.error('Error fetching dashboard data:', err);
       setError('Error al cargar datos del dashboard');
@@ -111,7 +111,7 @@ export default function AdminDashboard() {
       <div className="space-y-6">
         <Header
           title="Dashboard"
-          description="Cargando datos del dashboard..."
+          description="Bienvenido al panel de administración de RPM Accesorios"
         />
         <div className="flex items-center justify-center h-64">
           <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -125,29 +125,33 @@ export default function AdminDashboard() {
       <div className="space-y-6">
         <Header
           title="Dashboard"
-          description="Error al cargar datos"
+          description="Bienvenido al panel de administración de RPM Accesorios"
         />
-        <Card>
-          <CardContent className="p-6">
-            <p className="text-red-600">{error || 'No se pudieron cargar los datos'}</p>
-            <button
-              onClick={fetchDashboardData}
-              className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-md"
-            >
-              Reintentar
-            </button>
-          </CardContent>
-        </Card>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <p className="text-muted-foreground mb-4">{error || 'Error al cargar datos'}</p>
+            <Button onClick={fetchDashboardData}>Reintentar</Button>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <Header
-        title="Dashboard"
-        description={`Última actualización: ${lastUpdated?.toLocaleTimeString('es-AR')}`}
-      />
+      <div className="flex items-center justify-between">
+        <Header
+          title="Dashboard"
+          description="Bienvenido al panel de administración de RPM Accesorios"
+        />
+        <Button
+          onClick={() => setQuickSaleModalOpen(true)}
+          className="gap-2"
+        >
+          <ShoppingCart className="h-4 w-4" />
+          Venta Rápida
+        </Button>
+      </div>
 
       {/* Fila 1: 3 cards principales */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -179,6 +183,12 @@ export default function AdminDashboard() {
       <div className="grid gap-4 md:grid-cols-1">
         <RecentMovementsCard recentMovements={data.recentMovements} />
       </div>
+
+      <QuickSaleModal
+        open={quickSaleModalOpen}
+        onOpenChange={setQuickSaleModalOpen}
+        onSuccess={fetchDashboardData}
+      />
     </div>
   );
 }

@@ -257,6 +257,7 @@ export type serviceWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"service"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"service"> | Date | string
   work_order_item?: Prisma.Work_order_itemListRelationFilter
+  directSaleItems?: Prisma.DirectSaleItemListRelationFilter
 }
 
 export type serviceOrderByWithRelationInput = {
@@ -270,6 +271,7 @@ export type serviceOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   work_order_item?: Prisma.work_order_itemOrderByRelationAggregateInput
+  directSaleItems?: Prisma.DirectSaleItemOrderByRelationAggregateInput
 }
 
 export type serviceWhereUniqueInput = Prisma.AtLeast<{
@@ -286,6 +288,7 @@ export type serviceWhereUniqueInput = Prisma.AtLeast<{
   createdAt?: Prisma.DateTimeFilter<"service"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"service"> | Date | string
   work_order_item?: Prisma.Work_order_itemListRelationFilter
+  directSaleItems?: Prisma.DirectSaleItemListRelationFilter
 }, "id" | "name">
 
 export type serviceOrderByWithAggregationInput = {
@@ -331,6 +334,7 @@ export type serviceCreateInput = {
   createdAt?: Date | string
   updatedAt: Date | string
   work_order_item?: Prisma.work_order_itemCreateNestedManyWithoutServiceInput
+  directSaleItems?: Prisma.DirectSaleItemCreateNestedManyWithoutServiceInput
 }
 
 export type serviceUncheckedCreateInput = {
@@ -344,6 +348,7 @@ export type serviceUncheckedCreateInput = {
   createdAt?: Date | string
   updatedAt: Date | string
   work_order_item?: Prisma.work_order_itemUncheckedCreateNestedManyWithoutServiceInput
+  directSaleItems?: Prisma.DirectSaleItemUncheckedCreateNestedManyWithoutServiceInput
 }
 
 export type serviceUpdateInput = {
@@ -357,6 +362,7 @@ export type serviceUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   work_order_item?: Prisma.work_order_itemUpdateManyWithoutServiceNestedInput
+  directSaleItems?: Prisma.DirectSaleItemUpdateManyWithoutServiceNestedInput
 }
 
 export type serviceUncheckedUpdateInput = {
@@ -370,6 +376,7 @@ export type serviceUncheckedUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   work_order_item?: Prisma.work_order_itemUncheckedUpdateManyWithoutServiceNestedInput
+  directSaleItems?: Prisma.DirectSaleItemUncheckedUpdateManyWithoutServiceNestedInput
 }
 
 export type serviceCreateManyInput = {
@@ -477,6 +484,22 @@ export type serviceUpdateOneWithoutWork_order_itemNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.serviceUpdateToOneWithWhereWithoutWork_order_itemInput, Prisma.serviceUpdateWithoutWork_order_itemInput>, Prisma.serviceUncheckedUpdateWithoutWork_order_itemInput>
 }
 
+export type serviceCreateNestedOneWithoutDirectSaleItemsInput = {
+  create?: Prisma.XOR<Prisma.serviceCreateWithoutDirectSaleItemsInput, Prisma.serviceUncheckedCreateWithoutDirectSaleItemsInput>
+  connectOrCreate?: Prisma.serviceCreateOrConnectWithoutDirectSaleItemsInput
+  connect?: Prisma.serviceWhereUniqueInput
+}
+
+export type serviceUpdateOneWithoutDirectSaleItemsNestedInput = {
+  create?: Prisma.XOR<Prisma.serviceCreateWithoutDirectSaleItemsInput, Prisma.serviceUncheckedCreateWithoutDirectSaleItemsInput>
+  connectOrCreate?: Prisma.serviceCreateOrConnectWithoutDirectSaleItemsInput
+  upsert?: Prisma.serviceUpsertWithoutDirectSaleItemsInput
+  disconnect?: Prisma.serviceWhereInput | boolean
+  delete?: Prisma.serviceWhereInput | boolean
+  connect?: Prisma.serviceWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.serviceUpdateToOneWithWhereWithoutDirectSaleItemsInput, Prisma.serviceUpdateWithoutDirectSaleItemsInput>, Prisma.serviceUncheckedUpdateWithoutDirectSaleItemsInput>
+}
+
 export type serviceCreateWithoutWork_order_itemInput = {
   id: string
   name: string
@@ -487,6 +510,7 @@ export type serviceCreateWithoutWork_order_itemInput = {
   isActive?: boolean
   createdAt?: Date | string
   updatedAt: Date | string
+  directSaleItems?: Prisma.DirectSaleItemCreateNestedManyWithoutServiceInput
 }
 
 export type serviceUncheckedCreateWithoutWork_order_itemInput = {
@@ -499,6 +523,7 @@ export type serviceUncheckedCreateWithoutWork_order_itemInput = {
   isActive?: boolean
   createdAt?: Date | string
   updatedAt: Date | string
+  directSaleItems?: Prisma.DirectSaleItemUncheckedCreateNestedManyWithoutServiceInput
 }
 
 export type serviceCreateOrConnectWithoutWork_order_itemInput = {
@@ -527,6 +552,7 @@ export type serviceUpdateWithoutWork_order_itemInput = {
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  directSaleItems?: Prisma.DirectSaleItemUpdateManyWithoutServiceNestedInput
 }
 
 export type serviceUncheckedUpdateWithoutWork_order_itemInput = {
@@ -539,6 +565,75 @@ export type serviceUncheckedUpdateWithoutWork_order_itemInput = {
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  directSaleItems?: Prisma.DirectSaleItemUncheckedUpdateManyWithoutServiceNestedInput
+}
+
+export type serviceCreateWithoutDirectSaleItemsInput = {
+  id: string
+  name: string
+  description?: string | null
+  baseCost: runtime.Decimal | runtime.DecimalJsLike | number | string
+  timeMinutes?: number
+  vehicleFactor?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  isActive?: boolean
+  createdAt?: Date | string
+  updatedAt: Date | string
+  work_order_item?: Prisma.work_order_itemCreateNestedManyWithoutServiceInput
+}
+
+export type serviceUncheckedCreateWithoutDirectSaleItemsInput = {
+  id: string
+  name: string
+  description?: string | null
+  baseCost: runtime.Decimal | runtime.DecimalJsLike | number | string
+  timeMinutes?: number
+  vehicleFactor?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  isActive?: boolean
+  createdAt?: Date | string
+  updatedAt: Date | string
+  work_order_item?: Prisma.work_order_itemUncheckedCreateNestedManyWithoutServiceInput
+}
+
+export type serviceCreateOrConnectWithoutDirectSaleItemsInput = {
+  where: Prisma.serviceWhereUniqueInput
+  create: Prisma.XOR<Prisma.serviceCreateWithoutDirectSaleItemsInput, Prisma.serviceUncheckedCreateWithoutDirectSaleItemsInput>
+}
+
+export type serviceUpsertWithoutDirectSaleItemsInput = {
+  update: Prisma.XOR<Prisma.serviceUpdateWithoutDirectSaleItemsInput, Prisma.serviceUncheckedUpdateWithoutDirectSaleItemsInput>
+  create: Prisma.XOR<Prisma.serviceCreateWithoutDirectSaleItemsInput, Prisma.serviceUncheckedCreateWithoutDirectSaleItemsInput>
+  where?: Prisma.serviceWhereInput
+}
+
+export type serviceUpdateToOneWithWhereWithoutDirectSaleItemsInput = {
+  where?: Prisma.serviceWhereInput
+  data: Prisma.XOR<Prisma.serviceUpdateWithoutDirectSaleItemsInput, Prisma.serviceUncheckedUpdateWithoutDirectSaleItemsInput>
+}
+
+export type serviceUpdateWithoutDirectSaleItemsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  baseCost?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  timeMinutes?: Prisma.IntFieldUpdateOperationsInput | number
+  vehicleFactor?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  work_order_item?: Prisma.work_order_itemUpdateManyWithoutServiceNestedInput
+}
+
+export type serviceUncheckedUpdateWithoutDirectSaleItemsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  baseCost?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  timeMinutes?: Prisma.IntFieldUpdateOperationsInput | number
+  vehicleFactor?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  work_order_item?: Prisma.work_order_itemUncheckedUpdateManyWithoutServiceNestedInput
 }
 
 
@@ -548,10 +643,12 @@ export type serviceUncheckedUpdateWithoutWork_order_itemInput = {
 
 export type ServiceCountOutputType = {
   work_order_item: number
+  directSaleItems: number
 }
 
 export type ServiceCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   work_order_item?: boolean | ServiceCountOutputTypeCountWork_order_itemArgs
+  directSaleItems?: boolean | ServiceCountOutputTypeCountDirectSaleItemsArgs
 }
 
 /**
@@ -571,6 +668,13 @@ export type ServiceCountOutputTypeCountWork_order_itemArgs<ExtArgs extends runti
   where?: Prisma.work_order_itemWhereInput
 }
 
+/**
+ * ServiceCountOutputType without action
+ */
+export type ServiceCountOutputTypeCountDirectSaleItemsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DirectSaleItemWhereInput
+}
+
 
 export type serviceSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -583,6 +687,7 @@ export type serviceSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   createdAt?: boolean
   updatedAt?: boolean
   work_order_item?: boolean | Prisma.service$work_order_itemArgs<ExtArgs>
+  directSaleItems?: boolean | Prisma.service$directSaleItemsArgs<ExtArgs>
   _count?: boolean | Prisma.ServiceCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["service"]>
 
@@ -625,6 +730,7 @@ export type serviceSelectScalar = {
 export type serviceOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "baseCost" | "timeMinutes" | "vehicleFactor" | "isActive" | "createdAt" | "updatedAt", ExtArgs["result"]["service"]>
 export type serviceInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   work_order_item?: boolean | Prisma.service$work_order_itemArgs<ExtArgs>
+  directSaleItems?: boolean | Prisma.service$directSaleItemsArgs<ExtArgs>
   _count?: boolean | Prisma.ServiceCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type serviceIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -634,6 +740,7 @@ export type $servicePayload<ExtArgs extends runtime.Types.Extensions.InternalArg
   name: "service"
   objects: {
     work_order_item: Prisma.$work_order_itemPayload<ExtArgs>[]
+    directSaleItems: Prisma.$DirectSaleItemPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1040,6 +1147,7 @@ readonly fields: serviceFieldRefs;
 export interface Prisma__serviceClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   work_order_item<T extends Prisma.service$work_order_itemArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.service$work_order_itemArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$work_order_itemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  directSaleItems<T extends Prisma.service$directSaleItemsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.service$directSaleItemsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DirectSaleItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1492,6 +1600,30 @@ export type service$work_order_itemArgs<ExtArgs extends runtime.Types.Extensions
   take?: number
   skip?: number
   distinct?: Prisma.Work_order_itemScalarFieldEnum | Prisma.Work_order_itemScalarFieldEnum[]
+}
+
+/**
+ * service.directSaleItems
+ */
+export type service$directSaleItemsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DirectSaleItem
+   */
+  select?: Prisma.DirectSaleItemSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DirectSaleItem
+   */
+  omit?: Prisma.DirectSaleItemOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DirectSaleItemInclude<ExtArgs> | null
+  where?: Prisma.DirectSaleItemWhereInput
+  orderBy?: Prisma.DirectSaleItemOrderByWithRelationInput | Prisma.DirectSaleItemOrderByWithRelationInput[]
+  cursor?: Prisma.DirectSaleItemWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DirectSaleItemScalarFieldEnum | Prisma.DirectSaleItemScalarFieldEnum[]
 }
 
 /**
