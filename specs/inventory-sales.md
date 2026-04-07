@@ -111,6 +111,51 @@ Categorías iniciales sugeridas:
 | **Cierre caja** | P0 | Arqueo: ventas - gastos = efectivo |
 | **Reporte simple** | P1 | PDF del cierre |
 
+#### Flujo de Negocio del Cierre de Caja
+
+**1. Apertura de Caja (Inicio del día)**
+- El administrador abre la caja con un monto inicial
+- Se registra movimiento de tipo `OPENING` con el efectivo inicial
+- Ejemplo: "Hoy abro la caja con $50,000"
+
+**2. Durante el día (Operación normal)**
+- **Ventas automáticas**: Cada venta (mostrador o taller) crea movimiento `INCOME` automáticamente
+- **Gastos manuales**: Gastos menores (envases, delivery, café) se registran como `EXPENSE`
+
+**3. Cierre de Caja (Fin del día)**
+
+**Arqueo (Cuentas claras):**
+```
+Total ingresos (ventas del día)
+- Total gastos registrados
++ Monto inicial de apertura
+= Monto que DEBERÍA haber en caja física
+```
+
+**Conteo físico:**
+- Se cuenta el efectivo real en la caja
+- Si (Efectivo real = Efectivo esperado) → ✅ Cierre correcto
+- Si (Efectivo real ≠ Efectivo esperado) → ⚠️ Diferencia (falta o sobra)
+
+**Registro del cierre:**
+- Se crea movimiento de tipo `CLOSING` con el monto final
+- Se genera reporte (PDF) con resumen del día
+- La caja queda "cerrada" para el siguiente día
+
+**4. Reporte del Cierre**
+El reporte muestra:
+- Monto inicial de apertura
+- Total de ventas por método de pago (efectivo, transferencia, etc.)
+- Total de gastos registrados
+- Diferencias (si las hay)
+- Monto final de cierre
+
+**Propósito:**
+- **Control**: Saber cuánto dinero entró y salió
+- **Auditoría**: Tener registro de todos los movimientos
+- **Detección de errores**: Encontrar diferencias rápidamente
+- **Cierre administrativo**: Preparar caja para el siguiente día
+
 #### Métodos de Pago (MVP):
 - Efectivo
 - Transferencia
