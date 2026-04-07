@@ -1,5 +1,3 @@
-'use client';
-
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowUpDown, ArrowDown, ArrowUp, Minus } from 'lucide-react';
 import { relativeTime } from '@/lib/utils/format';

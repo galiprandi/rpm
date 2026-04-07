@@ -1,5 +1,3 @@
-'use client';
-
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DollarSign, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
 import { formatARS } from '@/lib/utils/format';
