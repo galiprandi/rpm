@@ -133,6 +133,7 @@ export function AdminClientLayout({ children, user }: AdminClientLayoutProps) {
               {children}
             </main>
           </SidebarInset>
+          <ChatFloating />
         </>
       )}
     </SidebarProvider>
