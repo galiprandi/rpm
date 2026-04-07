@@ -39,7 +39,13 @@ En lugar de crear UIs específicas para cada nueva funcionalidad, desarrollamos:
 - **Acceso**: Según rol del usuario (técnico solo ve sus cosas)
 
 ### Formas de Invocarlo
-El staff puede llamarlo de cualquier forma natural:
+
+**UI de Acceso:**
+- **Desktop**: Botón en el sidebar/aside que abre un chat flotante (siempre accesible, se puede abrir/cerrar)
+- **Móvil**: Botón en el sidebar/aside que ocupa toda la pantalla al abrirse (modal full-screen)
+- El bot está siempre disponible, no se cierra automáticamente
+
+**El staff puede llamarlo de cualquier forma natural:**
 - "Ger, dame mis tareas"
 - "Che, ¿qué tengo pendiente?"
 - "Bot, pasá la 1245 a lista"
@@ -89,24 +95,35 @@ Antes de:
 Ger: "¿Confirmás pasar la OT #1245 a 'Lista'?"
       [Confirmar] [Cancelar] [Ver detalle primero]
 ```
+- **URL actual de la vista** (especialmente importante en desktop para entender contexto de la página donde está el usuario)
 
 #### 3. Context Awareness
 Ger recuerda:
-- Última OT consultada
+- Última OT consultadaiendo en /adm/work-orders/1245?"
+```
+
+```
+Usuaro  /am/prductspage=2: "¿Hay stock?"
+Ger: "Viendo que estás en la página de productos (página 2)...
 - Checklist en progreso
 - Conversación reciente (últimos 5 min)
 
 ```
 Juan: "Pasar a lista"
-Ger: "¿La #1245 (Hilux) que estabas viendo?"
+Ger: "¿La #1245 (Hilux) q numeradasue estabas viendo?"
 ```
 
 #### 4. Fallbacks Gráciles
 Si no entiende:
 1. Intenta interpretar lo más probable
+       1. Hilux #1245
+       2. Ranger #1246
 2. Ofrece opciones claras
 3. Nunca deja al usuario sin salida
-
+ué qhce con?
+      1. Psara  para entrega
+     2. Sots del rabaj
+       3. Ver detalle
 ```
 Usuario: "La otra"
 Ger: "¿La Hilux #1245 o la Ranger #1246?"
@@ -691,7 +708,82 @@ Ger:
 ```
 Ger:
 "✅ **Guardado**: GPS TomTom + Cargador USB
+Stack Tecnológico
 
+**AI SDK**: Vercel AI SDK (https://ai-sdk.dev/docs/introduction)
+- Core: `ai` package para generación de texto, streaming, tool calling
+- UI: `@ai-sdk/react` para hooks como `useChat`, `useCompletion`
+- Providers: OpenAI, Anthropic, Google, etc.
+
+**Por qué Vercel AI SDK:**
+- Streaming nativo para respuestas en tiempo real
+- Tool calling integrado y type-safe
+- Hooks de UI optimizados para React
+- Soporte para múltiples providers sin cambiar código
+
+### System Prompts por Rol
+
+Ger usa diferentes system prompts según el rol del usuario:
+
+**ADMIN:**
+- Acceso completo a todas las operaciones
+- Puede modificar configuración, precios, usuarios
+- Tiene acceso a reportes y métricas avanzadas
+- Prompt incluye capacidades de administración
+
+**STAFF (Técnicos/Vendedores):**
+- Acceso limitado a operaciones de su rol
+- Técnicos: OTs asignadas, checklists, stock
+- Vendedores: Ventas, stock, precios
+- Prompt restringe acciones no autorizadas
+
+**EJEMPLO:**
+```typescript
+const getSystemPrompt = (role: UserRole) => {
+  const basePrompt = "Eres Ger, asistente de operaciones...";
+  const roleSpecific = {
+    ADMIN: "Tienes acceso completo al sistema...",
+    STAFF: "Solo puedes operar sobre tus propias OTs y funciones de staff...",
+  };
+  return basePrompt + roleSpecific[role];
+};
+```
+
+### Contexto desde URL
+
+Ger lee la URL actual para entender el contexto:
+
+```typescript
+const urlContext = {
+  path: window.location.pathname,      // /adm/work-orders/1245
+  search: window.location.search,      // ?status=in_progress
+  hash: window.location.hash,          // #checklist
+};
+
+// Enviar al LLM como parte del contexto
+const message = {
+  role: 'system',
+  content: `Usuario está en ${urlContext.path} con parámetros ${urlContext.search}...`
+};
+```
+
+### Roadmap de Implementación
+
+**Fase 1: Bot en Admin Desktop**
+- Chat flotante en sidebar
+- System prompt para rol ADMIN
+- Tools básicas: check_stock, get_daily_sales, search_products
+- Contexto desde URL
+
+**Fase 2: Bot para otros usuarios**
+- Mobile full-screen
+- System prompts por rol (STAFF, TÉCNICO, VENDEDOR)
+- Tools avanzadas por rol
+- Integración con work orders, ventas
+
+---
+
+### 
 # 📋 Checklist de Ingreso - OT #1235
 
 **Progreso**: 4 de 4 ✅ COMPLETO
