@@ -1,4 +1,3 @@
-import { Header } from '@/components/adm/Header';
 import { SalesCard } from '@/components/dashboard/SalesCard';
 import { WorkOrdersCard } from '@/components/dashboard/WorkOrdersCard';
 import { StockAlertCard } from '@/components/dashboard/StockAlertCard';
@@ -29,10 +28,6 @@ export default async function AdminDashboard() {
 
   return (
     <div className="space-y-6">
-      <Header
-        title="Dashboard"
-        description="Bienvenido al panel de administración de RPM Accesorios"
-      />
       <DashboardClient />
 
       {/* Fila 1: 3 cards principales */}
