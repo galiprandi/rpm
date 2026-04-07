@@ -25,6 +25,7 @@ interface AdminClientLayoutProps {
 export function AdminClientLayout({ children, user }: AdminClientLayoutProps) {
   const { confirm } = useUI();
   const [mounted, setMounted] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
   const [defaultOpen] = useState<boolean>(() => {
     if (typeof document === 'undefined') return true;
     const match = document.cookie.match(/sidebar_state=([^;]+)/);
@@ -125,7 +126,7 @@ export function AdminClientLayout({ children, user }: AdminClientLayoutProps) {
         </div>
       ) : (
         <>
-          <AppSidebar user={user} onSignOut={handleSignOut} />
+          <AppSidebar user={user} onSignOut={handleSignOut} onOpenChat={() => setChatOpen(true)} />
           <SidebarInset>
             <main className="flex-1 p-6">
               <div className="md:hidden flex items-center -mt-4 -mx-2 mb-2">
@@ -134,7 +135,7 @@ export function AdminClientLayout({ children, user }: AdminClientLayoutProps) {
               {children}
             </main>
           </SidebarInset>
-          <ChatFloating />
+          <ChatFloating isOpen={chatOpen} onOpenChange={setChatOpen} />
         </>
       )}
     </SidebarProvider>

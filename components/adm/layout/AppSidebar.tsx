@@ -17,6 +17,7 @@ import {
   ClipboardList,
   Handshake,
   CircleDollarSign,
+  MessageSquare,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -63,9 +64,10 @@ interface AppSidebarProps {
     role?: string;
   };
   onSignOut: () => void;
+  onOpenChat?: () => void;
 }
 
-export function AppSidebar({ user, onSignOut }: AppSidebarProps) {
+export function AppSidebar({ user, onSignOut, onOpenChat }: AppSidebarProps) {
   const pathname = usePathname();
   const { isMobile, toggleSidebar, state } = useSidebar();
   const isCollapsed = state === "collapsed";
@@ -97,6 +99,21 @@ export function AppSidebar({ user, onSignOut }: AppSidebarProps) {
       </SidebarContent>
 
       <SidebarFooter className="pb-4 gap-2">
+        {/* Chat button - mobile only */}
+        {isMobile && onOpenChat && (
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={onOpenChat}
+                tooltip="Asistente Ger"
+                className="hover:bg-transparent hover:text-sidebar-foreground"
+              >
+                <MessageSquare className="size-5" />
+                <span>Asistente Ger</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        )}
         {/* Toggle first */}
         <SidebarMenu>
           <SidebarMenuItem>
