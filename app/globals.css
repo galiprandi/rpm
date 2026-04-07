@@ -174,3 +174,10 @@
     color: hsl(var(--foreground));
   }
 }
+
+/* Fix: Prevent focus ring from being clipped in modals */
+[data-slot="dialog-content"] input:focus-visible,
+[data-slot="dialog-content"] textarea:focus-visible,
+[data-slot="dialog-content"] select:focus-visible {
+  outline-offset: -2px;
+}
