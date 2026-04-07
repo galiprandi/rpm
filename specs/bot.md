@@ -9,6 +9,20 @@ En lugar de crear UIs específicas para cada nueva funcionalidad, desarrollamos:
 2. **Tools** que expone esos servicios al bot
 3. **Prompts del sistema** compuestos: base común + instrucciones específicas del rol + tools disponibles
 
+## Estado de Implementación (2026-04-06)
+
+**❌ NO IMPLEMENTADO**
+
+### Pendiente
+- No hay directorio `lib/bot/`
+- No hay dependencias de AI SDK en package.json
+- No hay implementación del agente Ger
+- Solo especificación completa en este documento
+
+### Roadmap
+- **Fase 2 (Semana 7-8)**: Setup LLM + Tools básicas + Chat interface mobile
+- Dependencia: Requiere FASE 2 (Taller) completada
+
 ---
 
 ## Identidad del Empleado Virtual

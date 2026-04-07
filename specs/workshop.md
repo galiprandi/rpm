@@ -6,6 +6,67 @@ Digitalizar la operación del taller: órdenes de trabajo, presupuestos, instala
 ## Dependencia
 **REQUIERE FASE 1 completada y estable**
 
+## Estado de Implementación (2026-04-06)
+
+**✅ COMPLETAMENTE IMPLEMENTADO**
+
+### Modelo de Datos
+- ✅ `customer` - Clientes con datos de contacto y facturación
+- ✅ `vehicle` - Vehículos/equipos con categorías flexibles
+- ✅ `vehicle_make` - Marcas normalizadas
+- ✅ `vehicle_model` - Modelos normalizados
+- ✅ `work_order` - Órdenes de trabajo con estados
+- ✅ `work_order_item` - Items de productos y servicios
+- ✅ `work_order_audit_log` - Auditoría de cambios
+- ✅ `payment` - Pagos múltiples por OT
+- ✅ `photo` - Registro fotográfico
+
+### API Endpoints
+- ✅ `/api/work-orders` - GET (listar con filtros), POST (crear)
+- ✅ `/api/work-orders/[id]` - GET, PUT (actualizar), DELETE
+- ✅ `/api/work-orders/[id]/checklist` - PUT (actualizar checklists)
+- ✅ `/api/customers` - CRUD completo
+- ✅ `/api/vehicles` - CRUD completo
+- ✅ `/api/vehicles/by-identifier/[identifier]` - Búsqueda por patente/código
+- ✅ `/api/vehicle-models/search` - Búsqueda con integración NHTSA
+
+### UI Implementada
+- ✅ `/app/adm/work-orders/page.tsx` - Lista de OTs con filtros
+- ✅ `/app/adm/work-orders/[id]/page.tsx` - Vista detalle de OT
+- ✅ `/app/adm/work-orders/new/page.tsx` - Creación de nueva OT
+- ✅ `/app/adm/customers/page.tsx` - CRUD de clientes
+- ✅ `/app/adm/vehicles/page.tsx` - CRUD de vehículos
+- ✅ `/app/adm/vehicles/new/page.tsx` - Nuevo vehículo con búsqueda NHTSA
+
+### Componentes
+- ✅ `components/work-orders/PaymentDialog.tsx` - Registro de pagos
+- ✅ `components/work-orders/FuelLevelSlider.tsx` - Slider de nivel de combustible
+- ✅ `components/work-orders/QuickServiceDialog.tsx` - Servicio rápido
+- ✅ `components/customers/CustomerForm.tsx` - Formulario de cliente
+- ✅ `components/dashboard/WorkOrdersCard.tsx` - Card de OTs en dashboard
+- ✅ `components/dashboard/WorkshopKanbanCard.tsx` - Kanban de taller
+- ✅ `components/dashboard/ReadyForDeliveryCard.tsx` - Listos para entrega
+
+### Funcionalidades Implementadas
+- ✅ Kanban de estados (CONFIRMED → WAITING → IN_PROGRESS → READY → DELIVERED)
+- ✅ Visualización de estado de pago con código de colores
+- ✅ Iconos de categoría en tarjetas de OT
+- ✅ Checklists de ingreso/salida condicionales por categoría
+- ✅ Edición de kilometraje y combustible en vista detalle
+- ✅ Edición de fecha agendada y notas
+- ✅ Sistema de auditoría de cambios
+- ✅ Pagos múltiples por OT
+- ✅ Búsqueda de vehículos por patente/código
+- ✅ Integración con NHTSA para búsqueda de modelos
+- ✅ Creación automática de marca/modelo si no existen
+- ✅ Soporte para vehículos y equipos genéricos (audio, scooters, etc.)
+
+### Pendientes (Mejoras Futuras)
+- ⏳ Presupuestos (actualmente solo flujo express OT directa)
+- ⏳ Agenda/Turnos interna
+- ⏳ Gestión de técnicos
+- ⏳ Reportes de taller
+
 ---
 
 ## Módulos Incluidos

@@ -473,9 +473,12 @@ Una vez estable el MVP, agregar:
 **Direct Sales (Ventas Rápidas):**
 - ✅ Al crear un pago → se crea automáticamente un `cash_movement` de tipo INCOME
 - ⏳ Pendiente: Opción para crear `invoice` al finalizar venta
+- ⏳ Pendiente: Integración AFIP para facturación fiscal
 
 **Work Orders (Ventas desde Taller):**
-- ⏳ Pendiente: Integración similar a direct sales
+- ✅ Pagos crean `cash_movement` automáticamente
+- ✅ Sistema de pagos múltiples implementado
+- ⏳ Pendiente: Opción para crear `invoice` al cerrar OT
 
 ### Flujo Actual (2026-04-06)
 
@@ -485,10 +488,29 @@ Venta → Pago → cash_movement (INCOME) → Caja actualizada
       (pendiente) invoice (DRAFT) → AFIP → invoice (ISSUED)
 ```
 
-### Próximos Pasos
+### Pendientes Críticos
 
-1. **Cierre de Caja**: Implementar UI que usa `/api/cash-movements/summary`
-2. **Facturación**: Integrar creación de invoice en flujo de ventas
-3. **AFIP**: Implementar servicio que llama a AFIP y actualiza `afipData`
+1. **Cierre de Caja (UI)**: Implementar interfaz que usa `/api/cash-movements/summary`
+   - Backend listo (`cashMovementService.ts`)
+   - Falta UI de arqueo en `/app/adm`
+
+2. **Facturación AFIP**: Integrar creación de invoice en flujo de ventas
+   - Modelo listo
+   - Falta: Instalar afip.js, configurar certificados, implementar servicio CAE
+
+3. **Ventas Rápidas (Carrito)**: Mejorar flujo actual
+   - ✅ Modal básico implementado
+   - ⏳ Pendiente: Carrito persistente, checkout completo
+
+### Implementado
+
+- ✅ Productos CRUD completo
+- ✅ Categorías CRUD completo
+- ✅ Proveedores CRUD completo
+- ✅ Ventas rápidas (modal básico)
+- ✅ Auditoría de stock (StockMovement)
+- ✅ Listas de precios dinámicas
+- ✅ Actualización masiva de costos
+- ✅ Movimientos de caja (backend)
 
 ---

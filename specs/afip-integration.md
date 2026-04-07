@@ -457,13 +457,14 @@ describe('AFIP Sandbox Integration', () => {
 - Servicio: `lib/services/invoiceService.ts` - CRUD y numeración automática
 - API Endpoints: `/api/invoices` (GET, POST), `/api/invoices/[id]` (GET, PATCH)
 
-**Integración AFIP:** ⏳ Pendiente
+**Integración AFIP:** ❌ NO Implementado
 - Modelo de datos listo
 - Falta: Instalar afip.js, configurar certificados, implementar lógica de CAE
+- Sin dependencia afip.js en package.json
 
 **Próximos pasos:**
-1. Setup certificados en AFIP Sandbox
-2. Instalar y configurar afip.js
+1. Instalar afip.js (npm install afip.js)
+2. Setup certificados en AFIP Sandbox
 3. Implementar servicio `createElectronicInvoice` que llama a AFIP y actualiza `afipData` en el registro
 4. Integrar con flujo de ventas (direct sales y work orders)
 
