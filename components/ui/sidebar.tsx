@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { usePathname } from "next/navigation"
 import { cva, type VariantProps } from "class-variance-authority"
 import { Slot } from "radix-ui"
 
@@ -9,13 +10,6 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   Tooltip,
@@ -27,7 +21,6 @@ import { PanelLeftIcon } from "lucide-react"
 const SIDEBAR_COOKIE_NAME = "sidebar_state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
 const SIDEBAR_WIDTH = "16rem"
-const SIDEBAR_WIDTH_MOBILE = "18rem"
 const SIDEBAR_WIDTH_ICON = "4rem"
 const SIDEBAR_KEYBOARD_SHORTCUT = "b"
 
@@ -154,7 +147,6 @@ function Sidebar({
   collapsible = "offcanvas",
   className,
   children,
-  dir,
   ...props
 }: React.ComponentProps<"div"> & {
   side?: "left" | "right"
@@ -162,6 +154,15 @@ function Sidebar({
   collapsible?: "offcanvas" | "icon" | "none"
 }) {
   const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
+  const pathname = usePathname()
+  const previousPathname = React.useRef(pathname)
+
+  React.useEffect(() => {
+    if (isMobile && previousPathname.current !== pathname && openMobile) {
+      setOpenMobile(false)
+    }
+    previousPathname.current = pathname
+  }, [pathname, isMobile, openMobile, setOpenMobile])
 
   if (collapsible === "none") {
     return (
@@ -180,27 +181,32 @@ function Sidebar({
 
   if (isMobile) {
     return (
-      <Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
-        <SheetContent
-          dir={dir}
-          data-sidebar="sidebar"
-          data-slot="sidebar"
-          data-mobile="true"
-          className="w-(--sidebar-width) !bg-white p-0 text-sidebar-foreground border-r-2 border-gray-300 shadow-2xl [&>button]:hidden"
-          style={
-            {
-              "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
-            } as React.CSSProperties
-          }
-          side={side}
-        >
-          <SheetHeader className="sr-only">
-            <SheetTitle>Sidebar</SheetTitle>
-            <SheetDescription>Displays the mobile sidebar.</SheetDescription>
-          </SheetHeader>
-          <div className="flex h-full w-full flex-col shadow-[4px_0_24px_rgba(0,0,0,0.15)]">{children}</div>
-        </SheetContent>
-      </Sheet>
+      <>
+        {openMobile && (
+          <div
+            data-sidebar="sidebar"
+            data-slot="sidebar"
+            data-mobile="true"
+            className="fixed inset-y-0 left-0 z-50 w-[18rem] bg-sidebar text-sidebar-foreground border-r border-sidebar-border shadow-2xl p-0"
+          >
+            <div className="flex h-full w-full flex-col">
+              <button
+                onClick={() => setOpenMobile(false)}
+                className="absolute top-3 right-3 p-1 rounded-md hover:bg-sidebar-accent"
+              >
+                <PanelLeftIcon className="size-4" />
+              </button>
+              {children}
+            </div>
+          </div>
+        )}
+        {openMobile && (
+          <div
+            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+            onClick={() => setOpenMobile(false)}
+          />
+        )}
+      </>
     )
   }
 
