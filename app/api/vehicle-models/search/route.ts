@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 // GET /api/vehicle-models/search?q=query&makeId=id - Search models with NHTSA fallback
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = request.nextUrl;
     const query = searchParams.get("q");
     const makeId = searchParams.get("makeId");
 

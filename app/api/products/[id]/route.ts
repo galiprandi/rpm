@@ -5,8 +5,9 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { adjustStock, updateProduct } from '@/lib/services/productService';
+import { adjustStock, updateProduct, deactivateProduct, getProductById } from '@/lib/services/productService';
 import { auth } from '@/lib/auth';
+import { revalidatePath } from 'next/cache';
 
 interface Params {
   params: Promise<{ id: string }>;
@@ -17,14 +18,7 @@ export async function GET(request: NextRequest, { params }: Params) {
   try {
     const { id } = await params;
     
-    const product = await prisma.product.findUnique({
-      where: { id },
-      include: {
-        category: {
-          select: { id: true, name: true, color: true },
-        },
-      },
-    });
+    const product = await getProductById(id);
 
     if (!product) {
       return NextResponse.json(
@@ -33,20 +27,7 @@ export async function GET(request: NextRequest, { params }: Params) {
       );
     }
 
-    const costPrice = Number(product.costPrice);
-    const replacementCost = Number(product.replacementCost);
-
-    return NextResponse.json({
-      product: {
-        ...product,
-        costPrice,
-        replacementCost,
-        margin: costPrice > 0
-          ? Number(((replacementCost - costPrice) / costPrice * 100).toFixed(2))
-          : 0,
-        isLowStock: product.stock <= product.minStock,
-      },
-    });
+    return NextResponse.json({ product });
   } catch (error) {
     console.error('Error fetching product:', error);
     return NextResponse.json(
@@ -131,6 +112,10 @@ export async function PUT(request: NextRequest, { params }: Params) {
       product = await updateProduct(id, body);
     }
 
+    // Revalidate cache on-demand
+    revalidatePath('/adm/products');
+    revalidatePath('/adm/dashboard');
+
     return NextResponse.json({ product });
   } catch (error) {
     console.error('Error updating product:', error);
@@ -159,14 +144,14 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     }
 
     // Soft delete: desactivar en lugar de borrar
-    const product = await prisma.product.update({
-      where: { id },
-      data: { isActive: false },
-    });
+    await deactivateProduct(id);
+
+    // Revalidate cache on-demand
+    revalidatePath('/adm/products');
+    revalidatePath('/adm/dashboard');
 
     return NextResponse.json({ 
       message: 'Producto desactivado exitosamente',
-      product 
     });
   } catch (error) {
     console.error('Error deleting product:', error);

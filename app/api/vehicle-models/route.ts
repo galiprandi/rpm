@@ -9,7 +9,7 @@ const capitalizeText = (text: string): string =>
 // GET /api/vehicle-models - List models (optionally filtered by makeId)
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = request.nextUrl;
     const makeId = searchParams.get("makeId");
     const search = searchParams.get("search");
 

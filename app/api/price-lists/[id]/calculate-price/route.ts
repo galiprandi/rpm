@@ -15,7 +15,7 @@ interface Params {
 export async function GET(request: NextRequest, { params }: Params) {
   try {
     const { id } = await params;
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = request.nextUrl;
     const productId = searchParams.get('productId');
 
     if (!productId) {

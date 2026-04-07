@@ -9,7 +9,7 @@ const capitalizeText = (text: string): string =>
 // GET /api/work-orders - List work orders with filters
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = request.nextUrl;
     const status = searchParams.get("status");
     const customerId = searchParams.get("customerId");
     const vehicleId = searchParams.get("vehicleId");

@@ -70,7 +70,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = request.nextUrl;
     const type = searchParams.get("type");
 
     const where: Record<string, unknown> = { workOrderId: id };

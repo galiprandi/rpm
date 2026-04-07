@@ -18,7 +18,7 @@ interface CreateVehicleInput {
 // GET /api/vehicles - List vehicles with optional filters
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = request.nextUrl;
     const customerId = searchParams.get("customerId");
     const identifier = searchParams.get("identifier");
     const category = searchParams.get("category");

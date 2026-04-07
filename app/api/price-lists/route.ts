@@ -15,7 +15,7 @@ import type { RoundingRule } from '@/lib/utils/rounding';
 // GET /api/price-lists - List price lists
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = request.nextUrl;
     const includeInactive = searchParams.get('includeInactive') === 'true';
 
     const result = await getPriceLists(includeInactive);
