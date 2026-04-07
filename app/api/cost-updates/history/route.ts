@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Pagination params
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = request.nextUrl;
     const page = Math.max(1, Number(searchParams.get('page')) || 1);
     const pageSize = Math.min(100, Math.max(1, Number(searchParams.get('pageSize')) || 20));
 

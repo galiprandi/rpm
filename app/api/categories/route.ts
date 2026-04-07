@@ -9,7 +9,7 @@ import { getCategories, createCategory, getCategoryByName } from '@/lib/services
 // GET /api/categories - List categories
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = request.nextUrl;
     const includeInactive = searchParams.get('includeInactive') === 'true';
 
     const result = await getCategories(includeInactive);

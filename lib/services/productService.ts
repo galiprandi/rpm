@@ -453,26 +453,3 @@ export async function getProductMovements(productId: string): Promise<StockMovem
     salePrice: m.salePrice ? Number(m.salePrice) : null,
   }));
 }
-
-/**
- * Get obsolete products (stock > 0, stock <= minStock, no movement in 90 days)
- */
-export async function getObsoleteProducts(): Promise<Product[]> {
-  const ninetyDaysAgo = new Date();
-  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
-
-  const products = await prisma.product.findMany({
-    where: {
-      isActive: true,
-      stock: { gt: 0, lte: prisma.product.fields.minStock },
-      OR: [
-        { lastMovementAt: { lt: ninetyDaysAgo } },
-        { lastMovementAt: null },
-      ],
-    },
-    include: { category: true },
-    orderBy: { stock: 'desc' },
-  });
-
-  return products.map(transformProduct);
-}

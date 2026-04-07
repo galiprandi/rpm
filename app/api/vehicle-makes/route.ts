@@ -10,7 +10,7 @@ const capitalizeText = (text: string): string =>
 // GET /api/vehicle-makes - List all makes
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = request.nextUrl;
     const search = searchParams.get("search");
     const category = searchParams.get("category");
 

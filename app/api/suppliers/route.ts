@@ -9,7 +9,7 @@ import { getSuppliers, createSupplier, getSupplierByName } from '@/lib/services/
 // GET /api/suppliers - Listar proveedores
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = request.nextUrl;
     const includeInactive = searchParams.get('includeInactive') === 'true';
 
     const result = await getSuppliers(includeInactive);

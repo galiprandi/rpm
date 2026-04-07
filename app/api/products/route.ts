@@ -5,66 +5,31 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth-server';
-import { getProducts, createStockMovement } from '@/lib/services/productService';
-import { Prisma } from '@/generated/client';
-import { prisma } from '@/lib/prisma';
-import { randomUUID } from 'crypto';
+import { getProducts, createProduct, createStockMovement, type MovementReason } from '@/lib/services/productService';
+import { revalidatePath } from 'next/cache';
+
+// Renderizado on-demand sin revalidate periódico
+export const dynamic = 'force-dynamic';
 
 // GET /api/products - Listar productos
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = request.nextUrl;
     
     // Filtros opcionales
     const categoryId = searchParams.get('categoryId');
     const search = searchParams.get('search');
     const lowStock = searchParams.get('lowStock');
     const isActive = searchParams.get('isActive') !== 'false'; // default true
-    
-    const where: Prisma.productWhereInput = { isActive };
-    
-    if (categoryId) {
-      where.categoryId = categoryId;
-    }
-    
-    if (search) {
-      where.OR = [
-        { name: { contains: search, mode: 'insensitive' as const } },
-        { sku: { contains: search, mode: 'insensitive' as const } },
-        { barcode: { contains: search, mode: 'insensitive' as const } },
-      ];
-    }
-    
-    if (lowStock === 'true') {
-      where.stock = { lte: prisma.product.fields.minStock };
-    }
 
-    const products = await prisma.product.findMany({
-      where,
-      include: {
-        category: {
-          select: { id: true, name: true, color: true },
-        },
-      },
-      orderBy: { name: 'asc' },
+    const result = await getProducts({
+      search: search || undefined,
+      categoryId: categoryId || undefined,
+      lowStock: lowStock === 'true',
+      isActive,
     });
 
-    // Calcular margen para cada producto
-    const productsWithMargin = products.map(p => {
-      const costPrice = Number(p.costPrice);
-      const replacementCost = Number(p.replacementCost);
-      return {
-        ...p,
-        costPrice,
-        replacementCost,
-        margin: costPrice > 0 
-          ? Number(((replacementCost - costPrice) / costPrice * 100).toFixed(2))
-          : 0,
-        isLowStock: p.stock <= p.minStock,
-      };
-    });
-
-    return NextResponse.json({ products: productsWithMargin });
+    return NextResponse.json({ products: result.products });
   } catch (error) {
     console.error('Error fetching products:', error);
     return NextResponse.json(
@@ -114,38 +79,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verificar SKU único solo si se proporciona
-    if (sku) {
-      const existing = await prisma.product.findUnique({
-        where: { sku: sku },
-      });
-
-      if (existing) {
-        return NextResponse.json(
-          { error: 'Ya existe un producto con ese SKU' },
-          { status: 409 }
-        );
-      }
-    }
-
     try {
-      const product = await prisma.product.create({
-        data: {
-          id: randomUUID(),
-          sku: sku,
-          name: body.name,
-          description: body.description || null,
-          costPrice: body.costPrice,
-          replacementCost: body.replacementCost,
-          stock: body.stock || 0,
-          minStock: body.minStock || 0,
-          supplierId: body.supplierId || null,
-          barcode: body.barcode || null,
-          location: body.location || null,
-          categoryId: body.categoryId,
-          isActive: true,
-          updatedAt: new Date(),
-        },
+      const product = await createProduct({
+        sku,
+        name: body.name,
+        description: body.description,
+        barcode: body.barcode,
+        categoryId: body.categoryId,
+        costPrice: body.costPrice,
+        replacementCost: body.replacementCost,
+        stock: body.stock || 0,
+        minStock: body.minStock || 0,
+        supplierId: body.supplierId,
+        location: body.location,
       });
 
       // Create stock movement record if initial stock > 0
@@ -159,19 +105,26 @@ export async function POST(request: NextRequest) {
           quantity: initialStock,
           previousStock: 0,
           newStock: initialStock,
-          reason: 'INITIAL_STOCK' as any,
+          reason: 'CARGA_INICIAL' as MovementReason,
           salePrice: undefined,
         });
       }
 
+      // Revalidate cache on-demand
+      revalidatePath('/adm/products');
+      revalidatePath('/adm/dashboard');
+
       return NextResponse.json(product, { status: 201 });
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Handle Prisma unique constraint errors
-      if (error.code === 'P2002' && error.meta?.target?.includes('sku')) {
-        return NextResponse.json(
-          { error: 'Ya existe un producto con ese SKU' },
-          { status: 409 }
-        );
+      if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
+        const prismaError = error as { meta?: { target?: string[] } };
+        if (prismaError.meta?.target?.includes('sku')) {
+          return NextResponse.json(
+            { error: 'Ya existe un producto con ese SKU' },
+            { status: 409 }
+          );
+        }
       }
       
       console.error('Error creating product:', error);
