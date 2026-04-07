@@ -9,6 +9,7 @@ import {
   SidebarInset,
   SidebarTrigger,
 } from '@/components/ui/sidebar';
+import { ChatFloating } from '@/components/bot/ChatFloating';
 
 interface AdminClientLayoutProps {
   children: React.ReactNode;
