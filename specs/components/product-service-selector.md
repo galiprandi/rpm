@@ -247,6 +247,77 @@ app/api/products-services/search/
 
 ---
 
+## Testing
+
+### Unit Tests (Jest)
+
+Ubicación: `components/ui/ProductServiceSelector.test.tsx`
+
+**Casos a cubrir:**
+
+| Test | Descripción |
+|------|-------------|
+| `renders with default props` | Renderiza sin props opcionales |
+| `renders price list selector when enabled` | Muestra selector de lista cuando `showPriceListSelector=true` |
+| `renders category filter when enabled` | Muestra filtro de categoría cuando `showCategoryFilter=true` |
+| `searches on input change` | Llama al endpoint con debounce al escribir |
+| `displays mixed results` | Muestra productos y servicios con iconos diferenciadores |
+| `adds item to cart on click` | Agrega item al carrito al hacer click en resultado |
+| `increments quantity for existing item` | Incrementa cantidad si item ya existe en carrito |
+| `updates quantity with controls` | [+]/[-] actualizan cantidad correctamente |
+| `removes item from cart` | Botón de eliminar remueve el item |
+| `updates price on list change` | Recalcula precios al cambiar lista de precios |
+| `preserves manual prices on list change` | No modifica precios marcados como manuales |
+| `calls onSelectionChange` | Notifica al parent cuando cambia el carrito |
+| `calls onQuickCreate` | Llama callback al hacer click en "Crear servicio rápido" |
+| `limits selection when maxSelection set` | Bloquea agregar más items cuando se alcanza el límite |
+
+### Integration Tests (Playwright)
+
+Ubicación: `tests/playwright/product-service-selector.spec.ts`
+
+**Flujos a cubrir:**
+
+```typescript
+test.describe('ProductServiceSelector', () => {
+  test('quick sale flow - add products and complete sale', async () => {
+    // Buscar producto, agregar al carrito, verificar precios
+  });
+  
+  test('work order flow - add items with manual price edit', async () => {
+    // Agregar items, editar precio manualmente, verificar badge "Manual"
+  });
+  
+  test('price list change updates prices', async () => {
+    // Seleccionar lista, agregar items, cambiar lista, verificar recálculo
+  });
+  
+  test('category filter shows only products', async () => {
+    // Seleccionar categoría, verificar que solo aparecen productos
+  });
+  
+  test('quantity controls work correctly', async () => {
+    // Probar incremento, decremento, input directo
+  });
+});
+```
+
+### Storybook Tests
+
+Ubicación: `components/ui/ProductServiceSelector.stories.tsx`
+
+**Stories requeridas:**
+
+- `Default` - Estado inicial vacío
+- `WithInitialItems` - Precargado con items
+- `WithPriceListSelector` - Mostrando selector de lista
+- `WithCategoryFilter` - Mostrando filtro de categoría
+- `WithQuickCreate` - Mostrando botón de crear servicio
+- `WithManualPrices` - Items con precios editados manualmente
+- `MaxSelectionReached` - Estado cuando se alcanza el límite
+- `LoadingState` - Mientras carga resultados
+- `EmptyResults` - Sin resultados de búsqueda
+
 ## Checklist de Implementación
 
 - [ ] Crear especificación (este documento)
@@ -257,6 +328,8 @@ app/api/products-services/search/
 - [ ] Implementar carrito con cantidades
 - [ ] Implementar edición de precios manuales
 - [ ] Implementar servicios rápidos
+- [ ] **Crear tests unitarios (Jest)**
+- [ ] **Crear tests de integración (Playwright)**
 - [ ] Crear stories en Storybook
 - [ ] Migrar QuickSaleModal
 - [ ] Migrar Nueva OT - Paso 2
