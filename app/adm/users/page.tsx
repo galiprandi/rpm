@@ -1,29 +1,21 @@
-import { headers } from 'next/headers';
 import UsersClient from './UsersClient';
+import { getUsers } from '@/lib/services/userService';
+import { requireAuth } from '@/lib/auth-server';
+import { UserRole } from '@/lib/auth/roles';
 
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  image: string | null;
-  role: string;
-  isActive: boolean;
-  notes: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
+export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 export default async function UsersPage() {
-  const headersList = await headers();
-  const host = headersList.get('host') || 'localhost:3000';
-  const protocol = host.includes('localhost') ? 'http' : 'https';
-  const baseUrl = `${protocol}://${host}`;
+  const session = await requireAuth();
+  const userRole = (session.user as { role?: string }).role as UserRole || UserRole.USER;
 
-  const res = await fetch(`${baseUrl}/api/users?includeInactive=true`, {
-    cache: 'no-store',
-  });
-  const data = await res.json();
-  const users: User[] = data.users || [];
+  if (userRole !== UserRole.ADMIN) {
+    throw new Error('Acceso denegado');
+  }
+
+  const data = await getUsers(true);
+  const users = data.users;
 
   return <UsersClient initialUsers={users} />;
 }

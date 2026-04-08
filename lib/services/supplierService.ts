@@ -20,7 +20,7 @@ export interface Supplier {
   address: string | null;
   notes: string | null;
   isActive: boolean;
-  productCount?: number;
+  productCount: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -48,12 +48,17 @@ export async function getSuppliers(includeInactive: boolean = false): Promise<Su
   const suppliers = await prisma.supplier.findMany({
     where: includeInactive ? {} : { isActive: true },
     orderBy: { name: 'asc' },
+    include: {
+      _count: {
+        select: { product: true },
+      },
+    },
   });
 
   return {
     suppliers: suppliers.map(s => ({
       ...s,
-      productCount: 0, // Temporarily hardcoded
+      productCount: s._count.product,
     })),
     total: suppliers.length,
   };

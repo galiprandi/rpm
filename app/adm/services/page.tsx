@@ -1,29 +1,22 @@
-import { headers } from 'next/headers';
 import ServicesClient from './ServicesClient';
+import { prisma } from '@/lib/prisma';
+import { requireAuth } from '@/lib/auth-server';
+import { UserRole } from '@/lib/auth/roles';
 
-interface Service {
-  id: string;
-  name: string;
-  description: string | null;
-  baseCost: number;
-  timeMinutes: number;
-  vehicleFactor: number;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
+export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 export default async function ServicesPage() {
-  const headersList = await headers();
-  const host = headersList.get('host') || 'localhost:3000';
-  const protocol = host.includes('localhost') ? 'http' : 'https';
-  const baseUrl = `${protocol}://${host}`;
+  const session = await requireAuth();
+  const userRole = (session.user as { role?: string }).role as UserRole || UserRole.USER;
 
-  const res = await fetch(`${baseUrl}/api/services`, {
-    cache: 'no-store',
+  if (userRole !== UserRole.ADMIN && userRole !== UserRole.STAFF) {
+    throw new Error('Acceso denegado');
+  }
+
+  const services = await prisma.service.findMany({
+    orderBy: { name: 'asc' },
   });
-  const data = await res.json();
-  const services: Service[] = data.services || [];
 
-  return <ServicesClient initialServices={services} />;
+  return <ServicesClient initialServices={services as any} />;
 }

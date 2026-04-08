@@ -22,7 +22,7 @@ import { Prisma } from '@/generated/client';
 // Types
 export interface Product {
   id: string;
-  sku: string | null;  // SKU opcional
+  sku: string;
   name: string;
   description: string | null;
   barcode: string | null;
@@ -39,6 +39,10 @@ export interface Product {
   isLowStock: boolean;
   margin: number;
   supplierId: string | null;
+  supplier: {
+    id: string;
+    name: string;
+  } | null;
   location: string | null;
   lastMovementAt: Date | null;
   isActive: boolean;
@@ -89,7 +93,7 @@ function isLowStock(stock: number, minStock: number): boolean {
 // Helper: Transform Prisma product to Product type
 type PrismaProductWithCategory = Prisma.productGetPayload<{ include: { category: true } }>;
 
-function transformProduct(product: PrismaProductWithCategory): Product {
+function transformProduct(product: PrismaProductWithCategory & { supplier?: { id: string; name: string } | null }): Product {
   const cost = product.costPrice?.toNumber ? product.costPrice.toNumber() : Number(product.costPrice) || 0;
   const replacement = product.replacementCost?.toNumber ? product.replacementCost.toNumber() : Number(product.replacementCost) || 0;
   return {
@@ -99,7 +103,8 @@ function transformProduct(product: PrismaProductWithCategory): Product {
     margin: calculateMargin(cost, replacement),
     isLowStock: isLowStock(product.stock, product.minStock),
     supplierId: product.supplierId,
-    sku: product.sku,
+    supplier: product.supplier || null,
+    sku: product.sku || '',
     lastMovementAt: product.lastMovementAt,
   };
 }
@@ -134,7 +139,10 @@ export async function getProducts(filters: ProductFilters = {}): Promise<Product
   const [products, total, lowStockCount] = await Promise.all([
     prisma.product.findMany({
       where,
-      include: { category: true },
+      include: { 
+        category: true,
+        supplier: { select: { id: true, name: true } },
+      },
       orderBy: { name: 'asc' },
     }),
     prisma.product.count({ where }),

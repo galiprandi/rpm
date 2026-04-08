@@ -1,29 +1,10 @@
-import { headers } from 'next/headers';
 import PriceListDetailClient from './PriceListDetailClient';
+import { getPriceListById } from '@/lib/services/priceListService';
+import { requireAuth } from '@/lib/auth-server';
+import { UserRole } from '@/lib/auth/roles';
 
-interface PriceListItem {
-  id: string;
-  productId: string | null;
-  productName?: string;
-  productSku?: string;
-  replacementCost?: number;
-  overrideMarginPercentage: number | null;
-  fixedPrice: number | null;
-  finalPrice: number;
-  actualMargin: number;
-  isBelowMinimum: boolean;
-}
-
-interface PriceListDetail {
-  id: string;
-  name: string;
-  isPublic: boolean;
-  isActive: boolean;
-  baseMarginPercentage: number;
-  roundingRule: string;
-  itemCount: number;
-  items: PriceListItem[];
-}
+export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 interface PriceListPageProps {
   params: Promise<{
@@ -32,18 +13,19 @@ interface PriceListPageProps {
 }
 
 export default async function PriceListDetailPage({ params }: PriceListPageProps) {
-  // Next.js 15: params is a Promise
-  const { id } = await params;
-  const headersList = await headers();
-  const host = headersList.get('host') || 'localhost:3000';
-  const protocol = host.includes('localhost') ? 'http' : 'https';
-  const baseUrl = `${protocol}://${host}`;
+  const session = await requireAuth();
+  const userRole = (session.user as { role?: string }).role as UserRole || UserRole.USER;
 
-  const res = await fetch(`${baseUrl}/api/price-lists/${id}`, {
-    cache: 'no-store',
-  });
-  const data = await res.json();
-  const priceList: PriceListDetail = data.priceList;
+  if (userRole !== UserRole.ADMIN && userRole !== UserRole.STAFF) {
+    throw new Error('Acceso denegado');
+  }
+
+  const { id } = await params;
+  const priceList = await getPriceListById(id);
+
+  if (!priceList) {
+    throw new Error('Lista de precios no encontrada');
+  }
 
   return <PriceListDetailClient initialPriceList={priceList} />;
 }

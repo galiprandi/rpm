@@ -391,7 +391,6 @@ export default function PriceListDetailClient({ initialPriceList }: PriceListDet
                 id="overrideMargin"
                 type="number"
                 min={0}
-                max={100}
                 step={0.1}
                 value={overrideMargin}
                 onChange={(e) => setOverrideMargin(e.target.value)}

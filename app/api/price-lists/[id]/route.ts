@@ -70,9 +70,9 @@ export async function PUT(request: NextRequest, { params }: Params) {
 
     // Validate margin percentage
     if (body.baseMarginPercentage !== undefined) {
-      if (body.baseMarginPercentage < 0 || body.baseMarginPercentage > 100) {
+      if (body.baseMarginPercentage < 0) {
         return NextResponse.json(
-          { error: 'Base margin percentage must be between 0 and 100' },
+          { error: 'Base margin percentage must be greater than or equal to 0' },
           { status: 400 }
         );
       }

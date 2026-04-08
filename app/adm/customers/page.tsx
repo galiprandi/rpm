@@ -1,40 +1,43 @@
-import { headers } from 'next/headers';
 import CustomersClient from './CustomersClient';
+import { prisma } from '@/lib/prisma';
+import { requireAuth } from '@/lib/auth-server';
+import { UserRole } from '@/lib/auth/roles';
 
-interface Customer {
-  id: string;
-  name: string;
-  phone: string;
-  phoneAlt?: string;
-  email?: string;
-  billingData?: {
-    cuit: string;
-    invoiceType: string;
-  };
-  vehicles: Array<{
-    id: string;
-    identifier: string;
-    category: string;
-  }>;
-  _count: {
-    workOrders: number;
-  };
-}
+export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 export default async function CustomersPage() {
-  const headersList = await headers();
-  const host = headersList.get('host') || 'localhost:3000';
-  const protocol = host.includes('localhost') ? 'http' : 'https';
-  const baseUrl = `${protocol}://${host}`;
+  const session = await requireAuth();
+  const userRole = (session.user as { role?: string }).role as UserRole || UserRole.USER;
 
-  const params = new URLSearchParams();
-  params.set('limit', '50');
+  if (userRole !== UserRole.ADMIN && userRole !== UserRole.STAFF) {
+    throw new Error('Acceso denegado');
+  }
 
-  const res = await fetch(`${baseUrl}/api/customers?${params}`, {
-    cache: 'no-store',
+  const customers = await prisma.customer.findMany({
+    take: 50,
+    include: {
+      vehicle: {
+        select: {
+          id: true,
+          identifier: true,
+          category: true,
+        },
+      },
+      _count: {
+        select: { work_order: true },
+      },
+    },
+    orderBy: { name: 'asc' },
   });
-  const data = await res.json();
-  const customers: Customer[] = data.customers || [];
 
-  return <CustomersClient initialCustomers={customers} />;
+  const customersWithVehicles = customers.map(c => ({
+    ...c,
+    vehicles: c.vehicle,
+    _count: {
+      workOrders: c._count.work_order,
+    },
+  }));
+
+  return <CustomersClient initialCustomers={customersWithVehicles as any} />;
 }
