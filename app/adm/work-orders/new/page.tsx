@@ -645,7 +645,7 @@ export default function NewWorkOrderPage() {
                   <div className="border rounded-lg p-4 space-y-4">
                     <h4 className="font-medium flex items-center gap-2">
                       <User className="h-4 w-4" />
-                      Seleccionar Dueño
+                      Seleccionar Cliente
                     </h4>
 
                     {!selectedCustomerId && !creatingCustomer && (
@@ -732,10 +732,15 @@ export default function NewWorkOrderPage() {
                       <div className="p-3 bg-green-50 rounded border">
                         <div className="flex items-center gap-2">
                           <CheckCircle className="h-4 w-4 text-green-600" />
-                          <span className="font-medium">Cliente seleccionado</span>
+                          <span className="font-medium">
+                            {foundCustomers.find(c => c.id === selectedCustomerId)?.name || 'Cliente seleccionado'}
+                          </span>
+                        </div>
+                        <div className="text-sm text-muted-foreground ml-6">
+                          {foundCustomers.find(c => c.id === selectedCustomerId)?.phone}
                         </div>
                         <Button
-                          variant="ghost"
+                          variant="outline"
                           size="sm"
                           onClick={() => setSelectedCustomerId(null)}
                           className="mt-2"
