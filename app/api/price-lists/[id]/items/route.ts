@@ -50,9 +50,9 @@ export async function POST(request: NextRequest, { params }: Params) {
 
     // Validate margin override if provided
     if (body.overrideMarginPercentage !== undefined && body.overrideMarginPercentage !== null) {
-      if (body.overrideMarginPercentage < 0 || body.overrideMarginPercentage > 100) {
+      if (body.overrideMarginPercentage < 0) {
         return NextResponse.json(
-          { error: 'Override margin percentage must be between 0 and 100' },
+          { error: 'Override margin percentage must be greater than or equal to 0' },
           { status: 400 }
         );
       }

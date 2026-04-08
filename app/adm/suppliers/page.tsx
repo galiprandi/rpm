@@ -1,29 +1,21 @@
-import { headers } from 'next/headers';
 import SuppliersClient from './SuppliersClient';
+import { getSuppliers } from '@/lib/services/supplierService';
+import { requireAuth } from '@/lib/auth-server';
+import { UserRole } from '@/lib/auth/roles';
 
-interface Supplier {
-  id: string;
-  name: string;
-  contactName: string | null;
-  phone: string | null;
-  email: string | null;
-  address: string | null;
-  notes: string | null;
-  isActive: boolean;
-  productCount: number;
-}
+export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 export default async function SuppliersPage() {
-  const headersList = await headers();
-  const host = headersList.get('host') || 'localhost:3000';
-  const protocol = host.includes('localhost') ? 'http' : 'https';
-  const baseUrl = `${protocol}://${host}`;
+  const session = await requireAuth();
+  const userRole = (session.user as { role?: string }).role as UserRole || UserRole.USER;
 
-  const res = await fetch(`${baseUrl}/api/suppliers?includeInactive=true`, {
-    cache: 'no-store',
-  });
-  const data = await res.json();
-  const suppliers: Supplier[] = data.suppliers || [];
+  if (userRole !== UserRole.ADMIN && userRole !== UserRole.STAFF) {
+    throw new Error('Acceso denegado');
+  }
+
+  const data = await getSuppliers(true);
+  const suppliers = data.suppliers;
 
   return <SuppliersClient initialSuppliers={suppliers} />;
 }

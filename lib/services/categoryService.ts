@@ -17,7 +17,9 @@ export interface Category {
   description: string | null;
   color: string | null;
   defaultMarginPercent: number;
-  productCount?: number;
+  sortOrder: number;
+  isActive: boolean;
+  productCount: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -43,12 +45,17 @@ export async function getCategories(includeInactive: boolean = false): Promise<C
   const categories = await prisma.category.findMany({
     where: includeInactive ? {} : { isActive: true },
     orderBy: { name: 'asc' },
+    include: {
+      _count: {
+        select: { product: true },
+      },
+    },
   });
 
   return {
     categories: categories.map(c => ({
       ...c,
-      productCount: 0, // Temporarily hardcoded
+      productCount: c._count.product,
     })),
     total: categories.length,
   };

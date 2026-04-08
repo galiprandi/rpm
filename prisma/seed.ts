@@ -41,6 +41,59 @@ const defaultPriceList = {
   updatedAt: new Date(),
 };
 
+const defaultPaymentMethods = [
+  {
+    id: 'pm-efectivo',
+    code: 'EFECTIVO',
+    name: 'Efectivo',
+    description: 'Pago en efectivo',
+    sortOrder: 1,
+    isActive: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+  {
+    id: 'pm-tarjeta-credito',
+    code: 'TARJETA_CREDITO',
+    name: 'Tarjeta de Crédito',
+    description: 'Pago con tarjeta de crédito',
+    sortOrder: 2,
+    isActive: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+  {
+    id: 'pm-tarjeta-debito',
+    code: 'TARJETA_DEBITO',
+    name: 'Tarjeta de Débito',
+    description: 'Pago con tarjeta de débito',
+    sortOrder: 3,
+    isActive: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+  {
+    id: 'pm-transferencia',
+    code: 'TRANSFERENCIA',
+    name: 'Transferencia Bancaria',
+    description: 'Pago por transferencia bancaria',
+    sortOrder: 4,
+    isActive: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+  {
+    id: 'pm-mp',
+    code: 'MERCADO_PAGO',
+    name: 'Mercado Pago',
+    description: 'Pago a través de Mercado Pago',
+    sortOrder: 5,
+    isActive: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+];
+
 async function seed() {
   console.log('🌱 Iniciando seed mínimo...');
 
@@ -83,6 +136,16 @@ async function seed() {
     create: defaultPriceList,
   });
   console.log('✅ Lista de precios por defecto creada (Lista General)');
+
+  // Crear métodos de pago por defecto
+  for (const pm of defaultPaymentMethods) {
+    await prisma.payment_method.upsert({
+      where: { id: pm.id },
+      update: pm,
+      create: pm,
+    });
+  }
+  console.log('✅ Métodos de pago por defecto creados (5 métodos)');
 
   console.log('🎉 Seed completado! (0 productos creados - base de datos lista para desarrollo)');
 }

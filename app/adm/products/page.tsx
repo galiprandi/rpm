@@ -1,30 +1,32 @@
 import { ProductsClient } from '@/components/products/ProductsClient';
 import { type Product } from '@/components/products/types';
-import { headers } from 'next/headers';
+import { getProducts } from '@/lib/services/productService';
+import { getCategories } from '@/lib/services/categoryService';
+import { getSuppliers } from '@/lib/services/supplierService';
+import { requireAuth } from '@/lib/auth-server';
+import { UserRole } from '@/lib/auth/roles';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 export default async function ProductsPage() {
-  // Get base URL from headers for server-side fetch
-  const headersList = await headers();
-  const host = headersList.get('host') || 'localhost:3000';
-  const protocol = host.includes('localhost') ? 'http' : 'https';
-  const baseUrl = `${protocol}://${host}`;
+  const session = await requireAuth();
+  const userRole = (session.user as { role?: string }).role as UserRole || UserRole.USER;
 
-  // Fetch data from server in parallel
-  const [productsRes, categoriesRes, suppliersRes] = await Promise.all([
-    fetch(`${baseUrl}/api/products`, { cache: 'no-store' }),
-    fetch(`${baseUrl}/api/categories`, { cache: 'no-store' }),
-    fetch(`${baseUrl}/api/suppliers`, { cache: 'no-store' }),
-  ]);
+  if (userRole !== UserRole.ADMIN && userRole !== UserRole.STAFF) {
+    throw new Error('Acceso denegado');
+  }
 
+  // Fetch data from services in parallel
   const [productsData, categoriesData, suppliersData] = await Promise.all([
-    productsRes.json(),
-    categoriesRes.json(),
-    suppliersRes.json(),
+    getProducts(),
+    getCategories(),
+    getSuppliers(),
   ]);
 
-  const products: Product[] = productsData.products || [];
-  const categories = categoriesData.categories || [];
-  const suppliers = suppliersData.suppliers || [];
+  const products = productsData.products as Product[];
+  const categories = categoriesData.categories;
+  const suppliers = suppliersData.suppliers;
 
   // Calculate stats on server
   const lowStockCount = products.filter((p) => p.isLowStock).length;

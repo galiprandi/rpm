@@ -53,7 +53,6 @@ export function PriceListForm({
           id="baseMarginPercentage"
           type="number"
           min={0}
-          max={100}
           step={0.1}
           value={formData.baseMarginPercentage}
           onChange={(e) =>

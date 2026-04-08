@@ -1,27 +1,21 @@
-import { headers } from 'next/headers';
 import PriceListsClient from './PriceListsClient';
+import { getPriceLists } from '@/lib/services/priceListService';
+import { requireAuth } from '@/lib/auth-server';
+import { UserRole } from '@/lib/auth/roles';
 
-interface PriceList {
-  id: string;
-  name: string;
-  isPublic: boolean;
-  isActive: boolean;
-  baseMarginPercentage: number;
-  roundingRule: string;
-  itemCount: number;
-}
+export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 export default async function PriceListsPage() {
-  const headersList = await headers();
-  const host = headersList.get('host') || 'localhost:3000';
-  const protocol = host.includes('localhost') ? 'http' : 'https';
-  const baseUrl = `${protocol}://${host}`;
+  const session = await requireAuth();
+  const userRole = (session.user as { role?: string }).role as UserRole || UserRole.USER;
 
-  const res = await fetch(`${baseUrl}/api/price-lists?includeInactive=true`, {
-    cache: 'no-store',
-  });
-  const data = await res.json();
-  const priceLists: PriceList[] = data.priceLists || [];
+  if (userRole !== UserRole.ADMIN && userRole !== UserRole.STAFF) {
+    throw new Error('Acceso denegado');
+  }
+
+  const data = await getPriceLists(true);
+  const priceLists = data.priceLists;
 
   return <PriceListsClient initialPriceLists={priceLists} />;
 }

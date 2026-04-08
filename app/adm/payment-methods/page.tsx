@@ -1,29 +1,26 @@
-import { headers } from 'next/headers';
 import PaymentMethodsClient from './PaymentMethodsClient';
+import { prisma } from '@/lib/prisma';
+import { requireAuth } from '@/lib/auth-server';
+import { UserRole } from '@/lib/auth/roles';
 
-interface PaymentMethod {
-  id: string;
-  name: string;
-  code: string;
-  description: string | null;
-  isActive: boolean;
-  sortOrder: number;
-  _count?: {
-    payments: number;
-  };
-}
+export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 export default async function PaymentMethodsPage() {
-  const headersList = await headers();
-  const host = headersList.get('host') || 'localhost:3000';
-  const protocol = host.includes('localhost') ? 'http' : 'https';
-  const baseUrl = `${protocol}://${host}`;
+  const session = await requireAuth();
+  const userRole = (session.user as { role?: string }).role as UserRole || UserRole.USER;
 
-  const res = await fetch(`${baseUrl}/api/payment-methods`, {
-    cache: 'no-store',
+  if (userRole !== UserRole.ADMIN) {
+    throw new Error('Acceso denegado');
+  }
+
+  const paymentMethods = await prisma.payment_method.findMany({
+    orderBy: [
+      { isActive: 'desc' },
+      { sortOrder: 'asc' },
+      { name: 'asc' },
+    ],
   });
-  const data = await res.json();
-  const paymentMethods: PaymentMethod[] = data.paymentMethods || [];
 
   return <PaymentMethodsClient initialPaymentMethods={paymentMethods} />;
 }
