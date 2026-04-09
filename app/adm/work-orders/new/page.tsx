@@ -17,9 +17,9 @@ import { FuelLevelSlider } from "@/components/work-orders/FuelLevelSlider";
 import { Badge } from "@/components/ui/badge";
 import { Header } from "@/components/adm/Header";
 import { WorkOrderStepper } from "@/components/ui/stepper";
-import { SearchableSelect } from "@/components/ui/SearchableSelect";
 import { QuickServiceDialog } from "@/components/work-orders/QuickServiceDialog";
 import { useUI } from "@/components/ui/UIProvider";
+import { ProductServiceSelector } from "@/components/ui/ProductServiceSelector";
 import { Save, Plus, Trash2, Search, Car, User, CheckCircle, Edit } from "lucide-react";
 
 const VEHICLE_CATEGORIES = [
@@ -138,13 +138,11 @@ export default function NewWorkOrderPage() {
   });
 
   // Step 2: Items
-  const [services, setServices] = useState<Service[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
   const [items, setItems] = useState<WorkOrderItem[]>([]);
-  const [showQuickServiceDialog, setShowQuickServiceDialog] = useState(false);
   const [selectedPriceList, setSelectedPriceList] = useState<string>("");
   const [priceLists, setPriceLists] = useState<Array<{ id: string; name: string; baseMarginPercentage: number }>>([]);
   const [minimumMargin, setMinimumMargin] = useState<number>(15); // Default 15%
+  const [showQuickServiceDialog, setShowQuickServiceDialog] = useState(false);
 
   // Step 3: Checklist & Notes
   const [checklist, setChecklist] = useState<Record<string, boolean>>({});
@@ -153,23 +151,13 @@ export default function NewWorkOrderPage() {
   const [notes, setNotes] = useState("");
   const [scheduledDate, setScheduledDate] = useState("");
 
-  // Fetch services, products and price lists on mount
+  // Fetch price lists and settings on mount
   useEffect(() => {
     const fetchData = async () => {
-      const [servicesRes, productsRes, priceListsRes, settingsRes] = await Promise.all([
-        fetch("/api/services"),
-        fetch("/api/products"),
+      const [priceListsRes, settingsRes] = await Promise.all([
         fetch("/api/price-lists"),
         fetch("/api/settings"),
       ]);
-      if (servicesRes.ok) {
-        const data = await servicesRes.json();
-        setServices(data.services);
-      }
-      if (productsRes.ok) {
-        const data = await productsRes.json();
-        setProducts(data.products || []);
-      }
       if (priceListsRes.ok) {
         const data = await priceListsRes.json();
         const lists = data.priceLists || [];
@@ -790,65 +778,47 @@ export default function NewWorkOrderPage() {
                 </Button>
               </div>
 
-              {/* Price List Selector */}
-              {priceLists.length > 0 && (
-                <div className="space-y-2">
-                  <Label>Lista de Precios</Label>
-                  <Select
-                    value={selectedPriceList}
-                    onValueChange={setSelectedPriceList}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona una lista de precios" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {priceLists.map((pl) => (
-                        <SelectItem key={pl.id} value={pl.id}>
-                          {pl.name} (Margen: {pl.baseMarginPercentage}%)
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <Label>Agregar Servicio</Label>
-                <SearchableSelect
-                  placeholder="Buscar y seleccionar servicio..."
-                  searchPlaceholder="Escribe para buscar servicios..."
-                  emptyMessage="No se encontraron servicios"
-                  createButtonText="+ Crear servicio rápido"
-                  apiUrl="/api/services"
-                  onSelect={(item) => {
-                    const service = {
-                      id: item.id,
-                      name: item.name,
-                      baseCost: item.price,
-                    } as Service;
-                    addItem("SERVICE", service);
-                  }}
-                  onCreateNew={() => setShowQuickServiceDialog(true)}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Agregar Producto</Label>
-                <SearchableSelect
-                  placeholder="Buscar y seleccionar producto..."
-                  searchPlaceholder="Escribe para buscar productos..."
-                  emptyMessage="No se encontraron productos"
-                  apiUrl="/api/products"
-                  onSelect={async (item) => {
-                    const product = {
-                      id: item.id,
-                      name: item.name,
-                      replacementCost: item.price,
-                    } as Product;
-                    await addItem("PRODUCT", product);
-                  }}
-                />
-              </div>
+              {/* Product and Service Selector */}
+              <ProductServiceSelector
+                showPriceListSelector
+                showCategoryFilter
+                showQuickCreate
+                showSelectedTable={false}
+                allowMultiple
+                searchEndpoint="/api/products-services/search"
+                categories={[]}
+                priceLists={priceLists}
+                defaultPriceListId={selectedPriceList}
+                initialItems={items.map(item => ({
+                  id: item.productId || item.serviceId || '',
+                  type: item.type === 'PRODUCT' ? 'product' : 'service',
+                  name: item.name,
+                  quantity: item.quantity,
+                  unitPrice: item.unitPrice,
+                  originalPrice: item.originalPrice || item.unitPrice,
+                  isManualPrice: item.isManualPrice || false,
+                  priceListId: item.priceListId,
+                }))}
+                onSelectionChange={(selectedItems) => {
+                  // Convert component items to WorkOrderItem format
+                  const workOrderItems: WorkOrderItem[] = selectedItems.map(item => ({
+                    type: item.type === 'product' ? 'PRODUCT' : 'SERVICE',
+                    ...(item.type === 'product'
+                      ? { productId: item.id }
+                      : { serviceId: item.id }
+                    ),
+                    name: item.name,
+                    quantity: item.quantity,
+                    unitPrice: item.unitPrice,
+                    priceListId: item.priceListId,
+                    isManualPrice: item.isManualPrice,
+                    originalPrice: item.originalPrice,
+                    replacementCost: item.type === 'product' ? item.originalPrice : undefined,
+                  }));
+                  setItems(workOrderItems);
+                }}
+                onQuickCreate={() => setShowQuickServiceDialog(true)}
+              />
 
               {items.length > 0 && (
                 <div className="border rounded-md">
