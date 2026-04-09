@@ -16,8 +16,6 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest --coverage",
-    "test:e2e": "DEBUG_AUTH_ENABLED=true playwright test --reporter=line",
-    "test:e2e:ui": "DEBUG_AUTH_ENABLED=true playwright test --ui",
     "db:studio": "npx prisma studio",
     "db:generate": "npx prisma generate",
     "db:migrate": "npx prisma migrate dev",
@@ -62,7 +60,6 @@
     "zustand": "^5.0.12"
   },
   "devDependencies": {
-    "@playwright/test": "^1.58.2",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
