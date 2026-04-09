@@ -136,12 +136,6 @@ export function PaymentDialog({
         setPaymentMethodId('');
         setAmount('');
         setNotes('');
-        
-        await alert({
-          title: 'Pago registrado',
-          description: `Se registró el pago de $${paymentAmount.toFixed(2)}`,
-          variant: 'success',
-        });
 
         if (data.isFullyPaid) {
           await alert({
