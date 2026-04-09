@@ -30,8 +30,8 @@ interface SearchResult {
   categoryName?: string;
   // Servicios
   description?: string;
-  // Precios calculados para todas las listas (cuando includeAllPrices=true)
-  allPrices?: Record<string, PriceInfo>;
+  // Precios calculados para todas las listas
+  allPrices: Record<string, PriceInfo>;
   minimumPrice?: number;
 }
 
@@ -43,36 +43,27 @@ export async function GET(request: NextRequest) {
     const q = searchParams.get('q')?.trim();
     const categoryId = searchParams.get('categoryId');
     const priceListId = searchParams.get('priceListId');
-    const includeAllPrices = searchParams.get('includeAllPrices') === 'true';
     const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 50);
 
-    // Obtener lista de precios si se especificó
+    // Obtener lista de precios seleccionada y todas las listas activas (siempre cacheamos todos los precios)
     let priceList: { id: string; baseMarginPercentage: number; roundingRule: RoundingRule } | null = null;
-    if (priceListId) {
-      const pl = await prisma.price_list.findUnique({
-        where: { id: priceListId },
-      });
-      if (pl) {
-        priceList = {
-          id: pl.id,
-          baseMarginPercentage: Number(pl.baseMarginPercentage),
-          roundingRule: pl.roundingRule as RoundingRule,
-        };
-      }
-    }
-
-    // Obtener todas las listas activas si se solicita includeAllPrices
-    let allActivePriceLists: Array<{ id: string; baseMarginPercentage: number; roundingRule: RoundingRule }> = [];
-    if (includeAllPrices) {
-      const lists = await prisma.price_list.findMany({
-        where: { isActive: true },
-        orderBy: { name: 'asc' },
-      });
-      allActivePriceLists = lists.map(pl => ({
+    const allActivePriceLists: Array<{ id: string; baseMarginPercentage: number; roundingRule: RoundingRule }> = [];
+    
+    const lists = await prisma.price_list.findMany({
+      where: { isActive: true },
+      orderBy: { name: 'asc' },
+    });
+    
+    for (const pl of lists) {
+      const listData = {
         id: pl.id,
         baseMarginPercentage: Number(pl.baseMarginPercentage),
         roundingRule: pl.roundingRule as RoundingRule,
-      }));
+      };
+      allActivePriceLists.push(listData);
+      if (pl.id === priceListId) {
+        priceList = listData;
+      }
     }
 
     // Buscar productos
@@ -148,10 +139,10 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Obtener excepciones para TODAS las listas si se solicita includeAllPrices
+    // Obtener excepciones para TODAS las listas
     const allExceptions: Map<string, Map<string, { fixedPrice: number | null; overrideMarginPercentage: number | null }>> = new Map();
     
-    if (includeAllPrices && products.length > 0 && allActivePriceLists.length > 0) {
+    if (products.length > 0 && allActivePriceLists.length > 0) {
       const productIds = products.map(p => p.id);
       const allListIds = allActivePriceLists.map(pl => pl.id);
       
@@ -163,13 +154,15 @@ export async function GET(request: NextRequest) {
       });
       
       for (const ex of exceptions) {
-        if (!allExceptions.has(ex.priceListId)) {
-          allExceptions.set(ex.priceListId, new Map());
+        if (ex.productId) {
+          if (!allExceptions.has(ex.priceListId)) {
+            allExceptions.set(ex.priceListId, new Map());
+          }
+          allExceptions.get(ex.priceListId)!.set(ex.productId, {
+            fixedPrice: ex.fixedPrice !== null ? Number(ex.fixedPrice) : null,
+            overrideMarginPercentage: ex.overrideMarginPercentage !== null ? Number(ex.overrideMarginPercentage) : null,
+          });
         }
-        allExceptions.get(ex.priceListId)!.set(ex.productId, {
-          fixedPrice: ex.fixedPrice !== null ? Number(ex.fixedPrice) : null,
-          overrideMarginPercentage: ex.overrideMarginPercentage !== null ? Number(ex.overrideMarginPercentage) : null,
-        });
       }
     }
 
@@ -230,10 +223,9 @@ export async function GET(request: NextRequest) {
         isBelowMinimum = actualMargin < minimumMargin;
       }
 
-      // Calcular allPrices si se solicita
-      let allPrices: Record<string, PriceInfo> | undefined;
-      if (includeAllPrices && allActivePriceLists.length > 0) {
-        allPrices = {};
+      // Calcular allPrices para todas las listas
+      const allPrices: Record<string, PriceInfo> = {};
+      if (allActivePriceLists.length > 0) {
         for (const list of allActivePriceLists) {
           const listExceptions = allExceptions.get(list.id);
           const exception = listExceptions?.get(product.id);
@@ -257,13 +249,14 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    // Transformar servicios (no tienen lista de precios)
+    // Transformar servicios (precio fijo, no depende de listas)
     const serviceResults: SearchResult[] = services.map(service => ({
       id: service.id,
       type: 'service',
       name: service.name,
       basePrice: service.baseCost as number,
       description: service.description || undefined,
+      allPrices: {}, // Servicios no tienen precios variables por lista
     }));
 
     // Combinar y ordenar resultados (si hay búsqueda, ordenar por relevancia)

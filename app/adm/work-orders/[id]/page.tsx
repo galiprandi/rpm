@@ -28,7 +28,11 @@ import {
   Check,
   Phone,
   Mail,
+  Edit,
+  X,
+  Loader2,
 } from "lucide-react";
+import { ProductServiceSelector, SelectedItem } from "@/components/ui/ProductServiceSelector";
 import Image from "next/image";
 import { Header } from "@/components/adm/Header";
 import { cn } from "@/lib/utils";
@@ -129,6 +133,10 @@ interface WorkOrderDetail {
     quantity: number;
     unitPrice: number;
     subtotal: number;
+    priceListId?: string;
+    productId?: string;
+    serviceId?: string;
+    isManualPrice: boolean;
     product?: { name: string };
     service?: { name: string };
   }>;
@@ -186,6 +194,12 @@ export default function WorkOrderDetailPage() {
   const [editingNotes, setEditingNotes] = useState(false);
   const [newScheduledDate, setNewScheduledDate] = useState<string>('');
   const [newNotes, setNewNotes] = useState<string>('');
+  
+  // Items editing state
+  const [isEditingItems, setIsEditingItems] = useState(false);
+  const [editableItems, setEditableItems] = useState<SelectedItem[]>([]);
+  const [priceLists, setPriceLists] = useState<{ id: string; name: string; baseMarginPercentage: number }[]>([]);
+  const [savingItems, setSavingItems] = useState(false);
 
   const fetchWorkOrder = useCallback(async () => {
     try {
@@ -212,6 +226,22 @@ export default function WorkOrderDetailPage() {
       console.error("Error fetching payments:", error);
     }
   }, [workOrderId]);
+
+  // Fetch price lists for item editing
+  useEffect(() => {
+    const fetchPriceLists = async () => {
+      try {
+        const response = await fetch('/api/price-lists');
+        if (response.ok) {
+          const data = await response.json();
+          setPriceLists(data.priceLists || []);
+        }
+      } catch (error) {
+        console.error('Error fetching price lists:', error);
+      }
+    };
+    fetchPriceLists();
+  }, []);
 
   useEffect(() => {
     fetchWorkOrder();
@@ -288,6 +318,56 @@ export default function WorkOrderDetailPage() {
     setEditingChecklist(type);
     setEditingOdometer(checklist?.odometerValue ?? workOrder?.odometerValue);
     setEditingFuelLevel(checklist?.fuelLevel ?? workOrder?.fuelLevel);
+  };
+
+  // Items editing handlers
+  const startEditingItems = () => {
+    if (!workOrder) return;
+    
+    // Map work_order_item to SelectedItem format
+    const mappedItems = workOrder.work_order_item.map(item => ({
+      id: item.type === 'PRODUCT' ? item.productId! : item.serviceId!,
+      type: item.type.toLowerCase() as 'product' | 'service',
+      name: item.product?.name || item.service?.name || item.name,
+      quantity: item.quantity,
+      unitPrice: Number(item.unitPrice),
+      originalPrice: Number(item.unitPrice),
+      isManualPrice: item.isManualPrice,
+      priceListId: item.priceListId,
+    }));
+    
+    setEditableItems(mappedItems);
+    setIsEditingItems(true);
+  };
+
+  const handleSaveItems = async () => {
+    setSavingItems(true);
+    try {
+      const response = await fetch(`/api/work-orders/${workOrderId}/items`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: editableItems }),
+      });
+
+      if (!response.ok) throw new Error('Failed to update items');
+      
+      setIsEditingItems(false);
+      fetchWorkOrder(); // Refresh data
+    } catch (error) {
+      console.error('Error updating items:', error);
+      await alert({
+        title: 'Error',
+        description: 'Error al actualizar items. Por favor intente nuevamente.',
+        variant: 'error',
+      });
+    } finally {
+      setSavingItems(false);
+    }
+  };
+
+  const handleCancelItems = () => {
+    setIsEditingItems(false);
+    setEditableItems([]);
   };
 
   const handleUpdateScheduledDate = async () => {
@@ -458,70 +538,116 @@ export default function WorkOrderDetailPage() {
         </div>
       </Header>
 
-      {/* Servicios y Productos - Sección separada */}
+      {/* Servicios y Productos - Editable con ProductServiceSelector */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <DollarSign className="h-5 w-5" />
-            Servicios y Productos
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <DollarSign className="h-5 w-5" />
+              Servicios y Productos
+            </CardTitle>
+            {!isEditingItems && workOrder.status !== 'DELIVERED' && (
+              <Button variant="outline" size="sm" onClick={startEditingItems}>
+                <Edit className="h-4 w-4 mr-2" />
+                Editar Items
+              </Button>
+            )}
+            {workOrder.status === 'DELIVERED' && (
+              <Badge variant="secondary" className="text-muted-foreground">
+                OT Entregada - No editable
+              </Badge>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Item</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead className="text-right">Cantidad</TableHead>
-                <TableHead className="text-right">Precio Unit.</TableHead>
-                <TableHead className="text-right">Subtotal</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {workOrder.work_order_item.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                    Sin items registrados
-                  </TableCell>
-                </TableRow>
-              ) : (
-                workOrder.work_order_item.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell className="font-medium">
-                      {item.product?.name || item.service?.name || item.name}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={item.type === "PRODUCT" ? "default" : "secondary"}>
-                        {item.type === "PRODUCT" ? "Producto" : "Servicio"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">{item.quantity}</TableCell>
-                    <TableCell className="text-right">
-                      ${Number(item.unitPrice).toLocaleString("es-AR")}
-                    </TableCell>
-                    <TableCell className="text-right font-medium">
-                      ${Number(item.subtotal).toLocaleString("es-AR")}
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-
-          {workOrder.work_order_item.length > 0 && (
-            <div className="mt-4 flex justify-end pt-4 border-t">
-              <div className="text-right space-y-1">
-                <div className="text-sm text-muted-foreground">
-                  Productos: ${Number(workOrder.totalProducts).toLocaleString("es-AR")}
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  Servicios: ${Number(workOrder.totalServices).toLocaleString("es-AR")}
-                </div>
-                <div className="text-2xl font-bold pt-1">
-                  Total: ${Number(workOrder.total).toLocaleString("es-AR")}
-                </div>
+          {isEditingItems ? (
+            <div className="space-y-4">
+              <ProductServiceSelector
+                showPriceListSelector
+                priceLists={priceLists}
+                defaultPriceListId={workOrder.work_order_item[0]?.priceListId}
+                initialItems={editableItems}
+                onSelectionChange={setEditableItems}
+              />
+              <div className="flex justify-end gap-2 pt-4 border-t">
+                <Button variant="outline" onClick={handleCancelItems} disabled={savingItems}>
+                  <X className="h-4 w-4 mr-2" />
+                  Cancelar
+                </Button>
+                <Button onClick={handleSaveItems} disabled={savingItems}>
+                  {savingItems ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Guardando...
+                    </>
+                  ) : (
+                    <>
+                      <Check className="h-4 w-4 mr-2" />
+                      Guardar Cambios
+                    </>
+                  )}
+                </Button>
               </div>
             </div>
+          ) : (
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Item</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead className="text-right">Cantidad</TableHead>
+                    <TableHead className="text-right">Precio Unit.</TableHead>
+                    <TableHead className="text-right">Subtotal</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {workOrder.work_order_item.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                        Sin items registrados
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    workOrder.work_order_item.map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell className="font-medium">
+                          {item.product?.name || item.service?.name || item.name}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={item.type === "PRODUCT" ? "default" : "secondary"}>
+                            {item.type === "PRODUCT" ? "Producto" : "Servicio"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">{item.quantity}</TableCell>
+                        <TableCell className="text-right">
+                          ${Number(item.unitPrice).toLocaleString("es-AR")}
+                        </TableCell>
+                        <TableCell className="text-right font-medium">
+                          ${Number(item.subtotal).toLocaleString("es-AR")}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+
+              {workOrder.work_order_item.length > 0 && (
+                <div className="mt-4 flex justify-end pt-4 border-t">
+                  <div className="text-right space-y-1">
+                    <div className="text-sm text-muted-foreground">
+                      Productos: ${Number(workOrder.totalProducts).toLocaleString("es-AR")}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      Servicios: ${Number(workOrder.totalServices).toLocaleString("es-AR")}
+                    </div>
+                    <div className="text-2xl font-bold pt-1">
+                      Total: ${Number(workOrder.total).toLocaleString("es-AR")}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,6 +15,42 @@ import { cn } from '@/lib/utils';
 import { formatARS } from '@/lib/utils/format';
 import { Badge } from '@/components/ui/badge';
 
+/**
+ * ProductServiceSelector
+ *
+ * Search and selection component for products and services with integrated cart.
+ * Cart state is ephemeral (lives only in memory during the session).
+ *
+ * @example
+ * // Basic usage in QuickSaleModal
+ * <ProductServiceSelector
+ *   showPriceListSelector
+ *   showCategoryFilter
+ *   priceLists={priceLists}
+ *   categories={categories}
+ *   onSelectionChange={(items) => setCartItems(items)}
+ *   onQuickCreate={() => setShowQuickServiceDialog(true)}
+ * />
+ *
+ * @example
+ * // Usage in Work Order with initial items
+ * <ProductServiceSelector
+ *   showPriceListSelector
+ *   priceLists={priceLists}
+ *   defaultPriceListId={selectedPriceListId}
+ *   initialItems={existingItems}
+ *   onSelectionChange={(items) => setWorkOrderItems(items)}
+ * />
+ *
+ * @example
+ * // Without selected table (parent handles its own UI)
+ * <ProductServiceSelector
+ *   showSelectedTable={false}
+ *   priceLists={priceLists}
+ *   onSelectionChange={(items) => setSelectedItems(items)}
+ * />
+ */
+
 // Types
 export interface SelectedItem {
   id: string;
@@ -26,7 +62,6 @@ export interface SelectedItem {
   isManualPrice: boolean;
   priceListId?: string;
   sku?: string;
-  ean?: string;
   stock?: number;
   categoryId?: string;
   categoryName?: string;
@@ -46,7 +81,6 @@ interface SearchResult {
   isBelowMinimum?: boolean;
   allPrices?: Record<string, PriceInfo>;
   sku?: string;
-  ean?: string;
   stock?: number;
   categoryId?: string;
   categoryName?: string;
@@ -70,8 +104,6 @@ interface ProductServiceSelectorProps {
   showCategoryFilter?: boolean;
   showQuickCreate?: boolean;
   showSelectedTable?: boolean;
-  allowMultiple?: boolean;
-  maxSelection?: number;
   initialItems?: SelectedItem[];
   onSelectionChange: (items: SelectedItem[]) => void;
   onQuickCreate?: () => void;
@@ -86,8 +118,6 @@ export function ProductServiceSelector({
   showCategoryFilter = false,
   showQuickCreate = false,
   showSelectedTable = true,
-  allowMultiple = true,
-  maxSelection,
   initialItems = [],
   onSelectionChange,
   onQuickCreate,
@@ -105,61 +135,13 @@ export function ProductServiceSelector({
 
   // Filters
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('none');
-  // Find default price list
-  const getDefaultPriceListId = useCallback(() => {
-    if (defaultPriceListId) return defaultPriceListId;
-    if (priceLists.length === 0) return '';
-    return priceLists[0]?.id || '';
-  }, [defaultPriceListId, priceLists]);
-
-  const [selectedPriceListId, setSelectedPriceListId] = useState<string>('');
   
-  // Sync selected price list when lists change or default is provided
-  useEffect(() => {
-    const defaultId = getDefaultPriceListId();
-    if (defaultId) {
-      setSelectedPriceListId(prev => prev !== defaultId ? defaultId : prev);
-    }
-  }, [getDefaultPriceListId, priceLists.length, defaultPriceListId]);
+  // Default price list: prop > first in list > empty
+  const defaultPriceList = defaultPriceListId || priceLists[0]?.id || '';
+  const [selectedPriceListId, setSelectedPriceListId] = useState<string>(defaultPriceList);
 
-  // Cart state - use ref to avoid re-renders triggering effects
+  // Cart state - efímero, solo vive en memoria durante la sesión
   const [cartItems, setCartItems] = useState<SelectedItem[]>(initialItems);
-  const cartItemsRef = useRef<SelectedItem[]>(initialItems);
-  const isInitialMountRef = useRef(true);
-  const isProcessingRef = useRef(false);
-  const prevCartItemsRef = useRef<SelectedItem[]>(initialItems);
-  
-  // Sync cartItems ref whenever it changes for functions that need current value
-  useEffect(() => {
-    cartItemsRef.current = cartItems;
-  }, [cartItems]);
-  
-  // Mark initial mount complete after first render
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      isInitialMountRef.current = false;
-    }, 0);
-    return () => clearTimeout(timeout);
-  }, []);
-
-  // Track last initialItems to detect real changes from parent
-  const lastInitialItemsRef = useRef<SelectedItem[]>(initialItems);
-  
-  // Sync initialItems from parent - only when IDs actually change
-  useEffect(() => {
-    // Skip during initial mount
-    if (isInitialMountRef.current) return;
-    
-    const lastIds = lastInitialItemsRef.current.map(i => i.id).join(',');
-    const newIds = initialItems.map(i => i.id).join(',');
-    
-    // Only update if the items IDs are actually different
-    if (lastIds !== newIds) {
-      setCartItems(initialItems);
-      prevCartItemsRef.current = initialItems;
-      lastInitialItemsRef.current = initialItems;
-    }
-  }, [initialItems]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -172,107 +154,62 @@ export function ProductServiceSelector({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
   
-  // Helper to update cart and notify parent in one go
-  const updateCartAndNotify = useCallback((newItems: SelectedItem[]) => {
-    // Skip if processing
-    if (isProcessingRef.current) {
-      console.log('[ProductServiceSelector] Skipping update - already processing');
-      return;
-    }
-    
-    // Compare with previous items to avoid unnecessary updates
-    const prevItems = prevCartItemsRef.current;
-    const hasChanges = !(prevItems.length === newItems.length && 
-        prevItems.every((item, idx) => 
-          item.id === newItems[idx]?.id &&
-          item.quantity === newItems[idx]?.quantity &&
-          item.unitPrice === newItems[idx]?.unitPrice
-        ));
-    
-    if (!hasChanges) {
-      console.log('[ProductServiceSelector] Skipping update - no changes detected');
-      return; // No change, skip update
-    }
-    
-    console.log('[ProductServiceSelector] Updating cart:', newItems.length, 'items');
-    
-    isProcessingRef.current = true;
-    prevCartItemsRef.current = newItems;
-    
+  // Helper simple para actualizar carrito y notificar al parent
+  const updateCartAndNotify = (newItems: SelectedItem[]) => {
     setCartItems(newItems);
-    
-    // Always notify parent of changes
-    console.log('[ProductServiceSelector] Notifying parent with', newItems.length, 'items');
     onSelectionChange(newItems);
-    
-    // Reset after this execution cycle
-    setTimeout(() => {
-      isProcessingRef.current = false;
-    }, 0);
-  }, [onSelectionChange]);
+  };
 
   // Cache for all prices by product ID
   const priceCacheRef = useRef<Map<string, Record<string, PriceInfo>>>(new Map());
 
-  // Stable search function using useCallback
-  const performSearch = useCallback(async (term: string, category: string, priceList: string) => {
-    if (term.length < 2) return;
-    
-    setSearchLoading(true);
-    
-    const params = new URLSearchParams();
-    params.set('q', term);
-    if (category && category !== 'none') params.set('categoryId', category);
-    if (priceList && priceList !== 'none') params.set('priceListId', priceList);
-    params.set('limit', '20');
-    params.set('includeAllPrices', 'true'); // Always get all prices for caching
-
-    try {
-      const response = await fetch(`${searchEndpoint}?${params.toString()}`);
-      const data = await response.json();
-      
-      // Cache all prices for each product
-      for (const result of data.results || []) {
-        if (result.allPrices) {
-          priceCacheRef.current.set(result.id, result.allPrices);
-        }
-      }
-      
-      setSearchResults(data.results || []);
-    } catch (err) {
-      console.error('Search error:', err);
-      setSearchResults([]);
-    } finally {
-      setSearchLoading(false);
-    }
-  }, [searchEndpoint]);
-
-  // Debounced search - triggers when searchTerm changes
+  // Debounced search - search function defined inside effect to avoid dependency issues
   useEffect(() => {
-    if (!isInitialMountRef.current) {
-      isInitialMountRef.current = true;
-      return;
-    }
-
     if (searchTerm.length < 2) {
       setSearchResults([]);
       setSearchLoading(false);
       return;
     }
     
-    // Show loading immediately when typing starts
     setSearchLoading(true);
     
     if (debounceRef.current) clearTimeout(debounceRef.current);
     
-    debounceRef.current = setTimeout(() => {
-      performSearch(searchTerm, selectedCategoryId, selectedPriceListId);
+    debounceRef.current = setTimeout(async () => {
+      const params = new URLSearchParams();
+      params.set('q', searchTerm);
+      if (selectedCategoryId && selectedCategoryId !== 'none') {
+        params.set('categoryId', selectedCategoryId);
+      }
+      if (selectedPriceListId && selectedPriceListId !== 'none') {
+        params.set('priceListId', selectedPriceListId);
+      }
+      params.set('limit', '20');
+
+      try {
+        const response = await fetch(`${searchEndpoint}?${params.toString()}`);
+        const data = await response.json();
+        
+        // Cache all prices for each product
+        for (const result of data.results || []) {
+          if (result.allPrices) {
+            priceCacheRef.current.set(result.id, result.allPrices);
+          }
+        }
+        
+        setSearchResults(data.results || []);
+      } catch (err) {
+        console.error('Search error:', err);
+        setSearchResults([]);
+      } finally {
+        setSearchLoading(false);
+      }
     }, 300);
 
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [searchTerm, performSearch, selectedCategoryId, selectedPriceListId]);
+  }, [searchTerm, selectedCategoryId, selectedPriceListId, searchEndpoint]);
 
   // Update prices when price list changes (use cache if available)
   useEffect(() => {
@@ -299,44 +236,15 @@ export function ProductServiceSelector({
   }, [selectedPriceListId]);
 
   const addToCart = (result: SearchResult) => {
-    // Use ref to get current cart state and avoid stale closure
-    const currentCart = cartItemsRef.current;
-    
-    if (!allowMultiple) {
-      const newItem: SelectedItem = {
-        id: result.id,
-        type: result.type,
-        name: result.name,
-        quantity: 1,
-        unitPrice: result.basePrice,
-        originalPrice: result.basePrice,
-        isManualPrice: false,
-        priceListId: selectedPriceListId !== 'none' ? selectedPriceListId : undefined,
-        sku: result.sku,
-        ean: result.ean,
-        stock: result.stock,
-        categoryId: result.categoryId,
-        categoryName: result.categoryName,
-      };
-      updateCartAndNotify([newItem]);
-      setShowResults(false);
-      return;
-    }
-
-    // Check max selection
-    if (maxSelection && currentCart.length >= maxSelection) {
-      return;
-    }
-
-    const existingIndex = currentCart.findIndex(item => item.id === result.id);
+    const existingIndex = cartItems.findIndex(item => item.id === result.id);
     
     if (existingIndex >= 0) {
-      // Increment quantity
-      const updated = [...currentCart];
+      // Incrementar cantidad
+      const updated = [...cartItems];
       updated[existingIndex].quantity += 1;
       updateCartAndNotify(updated);
     } else {
-      // Add new item
+      // Agregar nuevo item
       const newItem: SelectedItem = {
         id: result.id,
         type: result.type,
@@ -347,12 +255,11 @@ export function ProductServiceSelector({
         isManualPrice: false,
         priceListId: selectedPriceListId !== 'none' ? selectedPriceListId : undefined,
         sku: result.sku,
-        ean: result.ean,
         stock: result.stock,
         categoryId: result.categoryId,
         categoryName: result.categoryName,
       };
-      updateCartAndNotify([...currentCart, newItem]);
+      updateCartAndNotify([...cartItems, newItem]);
     }
 
     setSearchTerm('');
@@ -361,48 +268,29 @@ export function ProductServiceSelector({
   };
 
   const removeFromCart = (index: number) => {
-    const currentCart = cartItemsRef.current;
-    updateCartAndNotify(currentCart.filter((_, i) => i !== index));
+    updateCartAndNotify(cartItems.filter((_, i) => i !== index));
   };
 
   const updateQuantity = (index: number, delta: number) => {
-    const currentCart = cartItemsRef.current;
-    console.log('[updateQuantity] Current cart length:', currentCart.length, 'index:', index, 'delta:', delta);
+    if (index < 0 || index >= cartItems.length) return;
     
-    if (index < 0 || index >= currentCart.length) {
-      console.log('[updateQuantity] Invalid index');
-      return;
-    }
-    
-    const item = currentCart[index];
+    const item = cartItems[index];
     const newQuantity = item.quantity + delta;
     
-    console.log('[updateQuantity] Item:', item.name, 'current qty:', item.quantity, 'new qty:', newQuantity, 'stock:', item.stock);
-    
     if (newQuantity <= 0) {
-      console.log('[updateQuantity] Removing item');
-      updateCartAndNotify(currentCart.filter((_, i) => i !== index));
+      updateCartAndNotify(cartItems.filter((_, i) => i !== index));
       return;
     }
 
-    // Check stock limit for products (only if stock is a positive number)
-    if (item.type === 'product' && typeof item.stock === 'number' && item.stock > 0 && newQuantity > item.stock) {
-      console.log('[updateQuantity] Blocked by stock limit');
-      return; // Don't allow exceeding stock
-    }
-
-    // Create new item with updated quantity (don't mutate original)
-    const updated = [...currentCart];
+    const updated = [...cartItems];
     updated[index] = { ...item, quantity: newQuantity };
-    
-    console.log('[updateQuantity] Updating with new quantity:', newQuantity);
     updateCartAndNotify(updated);
   };
 
   const updatePrice = (index: number, newPrice: number) => {
-    const currentCart = cartItemsRef.current;
-    const item = currentCart[index];
-    const updated = [...currentCart];
+    if (index < 0 || index >= cartItems.length) return;
+    const item = cartItems[index];
+    const updated = [...cartItems];
     updated[index] = { ...item, unitPrice: Math.max(0, newPrice), isManualPrice: true };
     updateCartAndNotify(updated);
   };
@@ -619,8 +507,6 @@ export function ProductServiceSelector({
                     size="icon"
                     className="h-7 w-7"
                     onClick={() => updateQuantity(index, 1)}
-                    disabled={item.type === 'product' && typeof item.stock === 'number' && item.stock > 0 && item.quantity >= item.stock}
-                    title={item.type === 'product' && typeof item.stock === 'number' && item.stock > 0 && item.quantity >= item.stock ? 'Stock máximo alcanzado' : undefined}
                   >
                     <PlusIcon className="h-3 w-3" />
                   </Button>

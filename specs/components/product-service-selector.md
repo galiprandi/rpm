@@ -43,19 +43,20 @@ interface ProductServiceSelectorProps {
   // Configuración visual
   showPriceListSelector?: boolean;      // default: false
   showCategoryFilter?: boolean;         // default: false
-  showQuickCreate?: boolean;            // Muestra "+ Crear servicio rápido"
+  showQuickCreate?: boolean;           // Muestra "+ Crear servicio rápido"
+  showSelectedTable?: boolean;          // default: true - Muestra tabla de items seleccionados
   
   // Valores iniciales
   defaultPriceListId?: string;
-  initialItems?: SelectedItem[];
-  
-  // Restricciones
-  allowMultiple?: boolean;              // default: true
-  maxSelection?: number;
+  initialItems?: SelectedItem[];        // Solo se usa en mount inicial
   
   // Callbacks
   onSelectionChange: (items: SelectedItem[]) => void;
   onQuickCreate?: () => void;           // Abre modal de creación
+  
+  // Datos para filtros (opcional - si no se pasan, los selectores no funcionan)
+  categories?: Category[];              // Lista de categorías para el filtro
+  priceLists?: PriceList[];             // Lista de listas de precios para el selector
   
   // Endpoint personalizado (opcional)
   searchEndpoint?: string;              // default: '/api/products-services/search'
@@ -67,19 +68,18 @@ interface SelectedItem {
   name: string;
   quantity: number;
   unitPrice: number;
-  originalPrice: number;              // Precio calculado antes de edición manual
+  originalPrice: number;                // Precio calculado antes de edición manual
   isManualPrice: boolean;
   priceListId?: string;                 // Lista usada para el cálculo
   
   // Productos específicos
   sku?: string;
-  ean?: string;
-  stock?: number;
+  stock?: number;                       // Info de stock (no bloquea cantidades)
   categoryId?: string;
   categoryName?: string;
   
   // Servicios específicos
-  code?: string;
+  description?: string;
 }
 ```
 
@@ -122,10 +122,12 @@ interface SelectedItem {
 **Query Parameters:**
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `q` | string | Término de búsqueda (name, sku, ean, code) |
+| `q` | string | Término de búsqueda (name, sku, barcode) |
 | `categoryId` | string? | Filtrar productos por categoría |
-| `priceListId` | string? | Lista de precios para cálculo |
+| `priceListId` | string? | Lista de precios seleccionada para precio base |
 | `limit` | number | Límite de resultados (default: 20) |
+
+**Nota:** El backend siempre devuelve `allPrices` con los precios calculados para todas las listas activas, permitiendo cambio instantáneo de lista sin nueva petición.
 
 **Response:**
 ```typescript
@@ -136,17 +138,23 @@ interface SelectedItem {
       id: string;
       type: 'product' | 'service';
       name: string;
-      basePrice: number;           // Precio calculado según lista
+      basePrice: number;           // Precio calculado según lista seleccionada
+      allPrices: {                 // Precios para TODAS las listas (para caché)
+        [priceListId: string]: {
+          finalPrice: number;
+          isBelowMinimum: boolean;
+        }
+      };
+      minimumPrice?: number;      // Precio mínimo permitido (margen mínimo)
+      isBelowMinimum?: boolean;   // Si el precio está bajo el mínimo
       
       // Productos
       sku?: string;
-      ean?: string;
       stock?: number;
       categoryId?: string;
       categoryName?: string;
       
       // Servicios
-      code?: string;
       description?: string;
     }
   ]
@@ -165,7 +173,7 @@ interface SelectedItem {
 ### Agregar Item al Carrito
 1. Si el item ya existe → incrementa cantidad en 1
 2. Si es nuevo → agrega con `quantity: 1`, `isManualPrice: false`
-3. Productos: verificar stock disponible (solo UI, no bloquea)
+3. Stock: solo informativo, no bloquea cantidades (permite stock negativo)
 
 ### Edición de Precio
 1. Input editable en cada línea del carrito
@@ -270,7 +278,6 @@ Ubicación: `components/ui/ProductServiceSelector.test.tsx`
 | `preserves manual prices on list change` | No modifica precios marcados como manuales |
 | `calls onSelectionChange` | Notifica al parent cuando cambia el carrito |
 | `calls onQuickCreate` | Llama callback al hacer click en "Crear servicio rápido" |
-| `limits selection when maxSelection set` | Bloquea agregar más items cuando se alcanza el límite |
 
 ### Integration Tests (Playwright)
 
