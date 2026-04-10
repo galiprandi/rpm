@@ -1,4 +1,5 @@
 import { config } from 'dotenv';
+import { vi } from 'vitest';
 
 // Load environment variables from .env.local
 config({ path: '.env.local' });
@@ -35,4 +36,15 @@ Object.defineProperty(process, 'memoryUsage', {
     heapUsed: 1024 * 1024 * 50, // 50MB
     heapTotal: 1024 * 1024 * 100, // 100MB
   }),
+});
+
+// Mock localStorage
+const localStorageMock = {
+  getItem: vi.fn(),
+  setItem: vi.fn(),
+  removeItem: vi.fn(),
+  clear: vi.fn(),
+};
+Object.defineProperty(global, 'localStorage', {
+  value: localStorageMock,
 });
