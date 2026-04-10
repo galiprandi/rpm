@@ -3,7 +3,7 @@
  */
 
 import { renderHook, act } from '@testing-library/react';
-import { useConfiguration } from './useConfiguration';
+import { useConfiguration } from '@/app/adm/products/import/hooks/useConfiguration';
 
 // Mock localStorage for persistence
 const localStorageMock = (() => {

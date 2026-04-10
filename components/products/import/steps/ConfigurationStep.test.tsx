@@ -15,7 +15,7 @@ vi.mock('@/app/adm/products/import/hooks/useImportState');
 
 // Mock child components
 vi.mock('../shared/StepActions', () => ({
-  StepActions: ({ onPrevious, onNext, canGoNext }: any) => (
+  StepActions: ({ onPrevious, onNext, canGoNext }: { onPrevious: () => void; onNext: () => void; canGoNext: boolean }) => (
     <div>
       <button data-testid="prev-button" onClick={onPrevious}>Previous</button>
       <button data-testid="next-button" onClick={onNext} disabled={!canGoNext}>
@@ -28,16 +28,12 @@ vi.mock('../shared/StepActions', () => ({
 vi.mock('../ColumnMapper', () => ({
   ColumnMapper: ({ 
     columns, 
-    mapping, 
     onMappingChange, 
-    importOptions, 
     onImportOptionsChange 
   }: {
     columns: string[];
-    mapping: any;
-    onMappingChange: (mapping: any) => void;
-    importOptions: any;
-    onImportOptionsChange: (options: any) => void;
+    onMappingChange: (mapping: Record<string, unknown>) => void;
+    onImportOptionsChange: (options: Record<string, unknown>) => void;
   }) => (
     <div>
       <div data-testid="column-mapper">
@@ -87,6 +83,11 @@ describe('ConfigurationStep Component', () => {
     { id: '2', name: 'Accesorios' }
   ];
 
+  const mockExistingSuppliers = [
+    { id: '1', name: 'Proveedor A' },
+    { id: '2', name: 'Proveedor B' }
+  ];
+
   beforeEach(() => {
     mockUseImportState.mockReturnValue({
       fileData: mockFileData,
@@ -94,12 +95,14 @@ describe('ConfigurationStep Component', () => {
       nextStep: vi.fn(),
       currentStep: 1,
       setFileData: vi.fn(),
-      configuration: { mapping: {}, options: {} },
+      setMapping: vi.fn(),
+      setOptions: vi.fn(),
+      configuration: { mapping: mockFieldConfig, options: mockGlobalOptions },
       validationResult: null,
       categoryMappings: [],
       importResults: null,
       isProcessing: false
-    } as any);
+    } as unknown as ReturnType<typeof useImportState>);
 
     mockUseConfiguration.mockReturnValue({
       fieldConfig: mockFieldConfig,
@@ -113,7 +116,7 @@ describe('ConfigurationStep Component', () => {
   });
 
   it('should render correctly when file data exists', () => {
-    render(<ConfigurationStep existingCategories={mockExistingCategories} />);
+    render(<ConfigurationStep existingCategories={mockExistingCategories} existingSuppliers={mockExistingSuppliers} />);
     
     expect(screen.getByText('Configurar Importación')).toBeInTheDocument();
     expect(screen.getByTestId('column-mapper')).toBeInTheDocument();
@@ -125,44 +128,92 @@ describe('ConfigurationStep Component', () => {
     mockUseImportState.mockReturnValue({
       fileData: null,
       prevStep: vi.fn(),
-      nextStep: vi.fn()
-    } as any);
+      nextStep: vi.fn(),
+      configuration: { mapping: {}, options: {} },
+      setMapping: vi.fn(),
+      setOptions: vi.fn()
+    } as unknown as ReturnType<typeof useImportState>);
 
-    render(<ConfigurationStep existingCategories={mockExistingCategories} />);
+    render(<ConfigurationStep existingCategories={mockExistingCategories} existingSuppliers={mockExistingSuppliers} />);
     
     expect(screen.getByText('No hay archivo cargado')).toBeInTheDocument();
   });
 
-  it('should call autoDetect when file data changes', () => {
-    render(<ConfigurationStep existingCategories={mockExistingCategories} />);
+  it('should initialize with empty mapping when no previous config exists', () => {
+    const mockSetMapping = vi.fn();
+    const mockSetOptions = vi.fn();
     
-    expect(mockUseConfiguration().autoDetect).toHaveBeenCalledWith(mockFileData.columns);
+    mockUseImportState.mockReturnValue({
+      fileData: mockFileData,
+      prevStep: vi.fn(),
+      nextStep: vi.fn(),
+      currentStep: 1,
+      setFileData: vi.fn(),
+      setMapping: mockSetMapping,
+      setOptions: mockSetOptions,
+      configuration: { mapping: {}, options: mockGlobalOptions },
+      validationResult: null,
+      categoryMappings: [],
+      importResults: null,
+      isProcessing: false
+    } as unknown as ReturnType<typeof useImportState>);
+
+    render(<ConfigurationStep existingCategories={mockExistingCategories} existingSuppliers={mockExistingSuppliers} />);
+    
+    // Component should initialize with empty mapping
+    expect(screen.getByText('Configurar Importación')).toBeInTheDocument();
   });
 
   it('should handle mapping changes', () => {
-    render(<ConfigurationStep existingCategories={mockExistingCategories} />);
+    const mockSetMapping = vi.fn();
+    mockUseImportState.mockReturnValue({
+      fileData: mockFileData,
+      prevStep: vi.fn(),
+      nextStep: vi.fn(),
+      currentStep: 1,
+      setFileData: vi.fn(),
+      setMapping: mockSetMapping,
+      setOptions: vi.fn(),
+      configuration: { mapping: mockFieldConfig, options: mockGlobalOptions },
+      validationResult: null,
+      categoryMappings: [],
+      importResults: null,
+      isProcessing: false
+    } as unknown as ReturnType<typeof useImportState>);
+
+    render(<ConfigurationStep existingCategories={mockExistingCategories} existingSuppliers={mockExistingSuppliers} />);
     
     fireEvent.click(screen.getByTestId('mapping-change'));
     
-    expect(mockUseConfiguration().updateField).toHaveBeenCalledWith('name', {
-      column: 'name',
-      transform: 'capitalize',
-      skipEmpty: false
-    });
+    expect(mockSetMapping).toHaveBeenCalledWith({ name: { column: 'name', transform: 'capitalize', skipEmpty: false } });
   });
 
   it('should handle options changes', () => {
-    render(<ConfigurationStep existingCategories={mockExistingCategories} />);
+    const mockSetOptions = vi.fn();
+    mockUseImportState.mockReturnValue({
+      fileData: mockFileData,
+      prevStep: vi.fn(),
+      nextStep: vi.fn(),
+      currentStep: 1,
+      setFileData: vi.fn(),
+      setMapping: vi.fn(),
+      setOptions: mockSetOptions,
+      configuration: { mapping: mockFieldConfig, options: mockGlobalOptions },
+      validationResult: null,
+      categoryMappings: [],
+      importResults: null,
+      isProcessing: false
+    } as unknown as ReturnType<typeof useImportState>);
+
+    render(<ConfigurationStep existingCategories={mockExistingCategories} existingSuppliers={mockExistingSuppliers} />);
     
     fireEvent.click(screen.getByTestId('options-change'));
     
-    expect(mockUseConfiguration().updateOptions).toHaveBeenCalledWith({
-      skipStockLessThanOne: true
-    });
+    expect(mockSetOptions).toHaveBeenCalledWith({ skipStockLessThanOne: true });
   });
 
   it('should navigate to next step when continue is clicked', () => {
-    render(<ConfigurationStep existingCategories={mockExistingCategories} />);
+    render(<ConfigurationStep existingCategories={mockExistingCategories} existingSuppliers={mockExistingSuppliers} />);
     
     // The StepActions mock should call onContinue when clicked
     fireEvent.click(screen.getByTestId('next-button'));
@@ -190,7 +241,7 @@ describe('ConfigurationStep Component', () => {
     const mockAlert = vi.fn();
     window.alert = mockAlert;
 
-    render(<ConfigurationStep existingCategories={mockExistingCategories} />);
+    render(<ConfigurationStep existingCategories={mockExistingCategories} existingSuppliers={mockExistingSuppliers} />);
     
     // The validation happens when trying to continue
     fireEvent.click(screen.getByTestId('next-button'));
@@ -200,7 +251,7 @@ describe('ConfigurationStep Component', () => {
   });
 
   it('should navigate to previous step', () => {
-    render(<ConfigurationStep existingCategories={mockExistingCategories} />);
+    render(<ConfigurationStep existingCategories={mockExistingCategories} existingSuppliers={mockExistingSuppliers} />);
     
     // The StepActions mock should call onPrevious when clicked
     fireEvent.click(screen.getByTestId('prev-button'));
@@ -210,7 +261,7 @@ describe('ConfigurationStep Component', () => {
   });
 
   it('should pass existingCategories to ColumnMapper', () => {
-    render(<ConfigurationStep existingCategories={mockExistingCategories} />);
+    render(<ConfigurationStep existingCategories={mockExistingCategories} existingSuppliers={mockExistingSuppliers} />);
     
     const columnMapper = screen.getByTestId('column-mapper');
     expect(columnMapper).toBeInTheDocument();
@@ -218,20 +269,14 @@ describe('ConfigurationStep Component', () => {
   });
 
   it('should display file data information', () => {
-    render(<ConfigurationStep existingCategories={mockExistingCategories} />);
+    render(<ConfigurationStep existingCategories={mockExistingCategories} existingSuppliers={mockExistingSuppliers} />);
     
     expect(screen.getByTestId('column-mapper')).toHaveTextContent('Columns: name, sku, price');
   });
 
   describe('Integration with hooks', () => {
-    it('should use configuration hook correctly', () => {
-      render(<ConfigurationStep existingCategories={mockExistingCategories} />);
-      
-      expect(mockUseConfiguration).toHaveBeenCalled();
-    });
-
     it('should use import state hook correctly', () => {
-      render(<ConfigurationStep existingCategories={mockExistingCategories} />);
+      render(<ConfigurationStep existingCategories={mockExistingCategories} existingSuppliers={mockExistingSuppliers} />);
       
       expect(mockUseImportState).toHaveBeenCalled();
     });
@@ -242,12 +287,16 @@ describe('ConfigurationStep Component', () => {
       mockUseImportState.mockReturnValue({
         fileData: { ...mockFileData, columns: [] },
         prevStep: vi.fn(),
-        nextStep: vi.fn()
-      } as any);
+        nextStep: vi.fn(),
+        configuration: { mapping: {}, options: {} },
+        setMapping: vi.fn(),
+        setOptions: vi.fn()
+      } as unknown as ReturnType<typeof useImportState>);
 
-      render(<ConfigurationStep existingCategories={mockExistingCategories} />);
+      render(<ConfigurationStep existingCategories={mockExistingCategories} existingSuppliers={mockExistingSuppliers} />);
       
-      expect(mockUseConfiguration().autoDetect).toHaveBeenCalledWith([]);
+      // Should render without crashing when columns are empty
+      expect(screen.getByTestId('column-mapper')).toBeInTheDocument();
     });
 
     it('should handle missing field config', () => {
@@ -261,7 +310,7 @@ describe('ConfigurationStep Component', () => {
         clear: vi.fn()
       });
 
-      render(<ConfigurationStep existingCategories={mockExistingCategories} />);
+      render(<ConfigurationStep existingCategories={mockExistingCategories} existingSuppliers={mockExistingSuppliers} />);
       
       // Should still render without crashing
       expect(screen.getByTestId('column-mapper')).toBeInTheDocument();

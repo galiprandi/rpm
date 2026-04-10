@@ -4,7 +4,7 @@
 
 import { renderHook, act } from '@testing-library/react';
 import { vi } from 'vitest';
-import { useFileUpload } from './useFileUpload';
+import { useFileUpload } from '@/app/adm/products/import/hooks/useFileUpload';
 
 // Mock fetch
 const mockFetch = vi.fn();
@@ -12,8 +12,9 @@ global.fetch = mockFetch;
 
 // Mock FormData
 global.FormData = class FormData {
-  append(name: string, value: any) {}
-} as any;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  append(_name: string, _value: File | string) {}
+} as unknown as typeof FormData;
 
 describe('useFileUpload Hook', () => {
   beforeEach(() => {
@@ -86,7 +87,7 @@ describe('useFileUpload Hook', () => {
     await act(async () => {
       try {
         await result.current.uploadFile(file);
-      } catch (err) {
+      } catch {
         // Expected to throw
       }
     });
@@ -101,7 +102,7 @@ describe('useFileUpload Hook', () => {
     await act(async () => {
       try {
         await result.current.uploadFile(file);
-      } catch (err) {
+      } catch {
         // Expected to throw
       }
     });
@@ -117,7 +118,7 @@ describe('useFileUpload Hook', () => {
     await act(async () => {
       try {
         await result.current.uploadFile(largeFile);
-      } catch (err) {
+      } catch {
         // Expected to throw
       }
     });

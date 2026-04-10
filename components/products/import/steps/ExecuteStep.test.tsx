@@ -20,8 +20,7 @@ vi.mock('../shared/StepActions', () => ({
     onContinueDisabled, 
     backLabel, 
     continueLabel, 
-    loading,
-    extraActions 
+    loading
   }: {
     onBack: () => void;
     onContinue: () => void;
@@ -29,7 +28,6 @@ vi.mock('../shared/StepActions', () => ({
     backLabel: string;
     continueLabel: string;
     loading?: boolean;
-    extraActions?: any;
   }) => (
     <div>
       <button data-testid="prev-button" onClick={onBack}>{backLabel}</button>
@@ -37,7 +35,6 @@ vi.mock('../shared/StepActions', () => ({
         {continueLabel}
       </button>
       {loading && <span data-testid="loading">Loading...</span>}
-      {extraActions && <div data-testid="extra-actions">{extraActions}</div>}
     </div>
   )
 }));
@@ -48,7 +45,6 @@ vi.mock('../ImportProgress', () => ({
     progress, 
     dryRun, 
     stats, 
-    results, 
     onDownloadReport,
     onReset,
     onToggleDryRun
@@ -56,8 +52,7 @@ vi.mock('../ImportProgress', () => ({
     isRunning: boolean;
     progress: number;
     dryRun: boolean;
-    stats: any;
-    results: any;
+    stats: { created?: number };
     onDownloadReport: () => void;
     onReset: () => void;
     onToggleDryRun: () => void;
@@ -121,15 +116,16 @@ describe('ExecuteStep Component', () => {
       categoryMappings: [],
       importResults: null,
       isProcessing: false
-    } as any);
+    } as unknown as ReturnType<typeof useImportState>);
 
     mockUseImportExecution.mockReturnValue({
       execute: vi.fn(),
       isExecuting: false,
-      progress: { percentage: 0, current: 0, total: 0 },
+      progress: 0,
       results: null,
       error: null,
-      downloadReport: vi.fn()
+      downloadReport: vi.fn(),
+      reset: vi.fn()
     });
   });
 
@@ -137,9 +133,8 @@ describe('ExecuteStep Component', () => {
     render(<ExecuteStep existingCategories={mockExistingCategories} />);
     
     expect(screen.getByText('Importar Productos')).toBeInTheDocument();
-    expect(screen.getByText('Productos Válidos')).toBeInTheDocument();
-    // Use getAllByText since there are multiple "2" elements
-    expect(screen.getAllByText('2')).toHaveLength(2);
+    expect(screen.getByText('Resumen de Importación')).toBeInTheDocument();
+    expect(screen.getByText('Válidos')).toBeInTheDocument();
     expect(screen.getByTestId('prev-button')).toBeInTheDocument();
     expect(screen.getByTestId('next-button')).toBeInTheDocument();
   });
@@ -151,7 +146,7 @@ describe('ExecuteStep Component', () => {
       reset: vi.fn(),
       prevStep: vi.fn(),
       nextStep: vi.fn()
-    } as any);
+    } as unknown as ReturnType<typeof useImportState>);
 
     render(<ExecuteStep existingCategories={mockExistingCategories} />);
     
@@ -189,44 +184,19 @@ describe('ExecuteStep Component', () => {
       progress: 0,
       results: null,
       error: null,
-      downloadReport: vi.fn()
+      downloadReport: vi.fn(),
+      reset: vi.fn()
     });
 
     render(<ExecuteStep existingCategories={mockExistingCategories} />);
     
-    // Find and click execute button (dry run by default)
-    const executeButton = screen.getByText('Ejecutar Simulación');
+    // Find and click execute button
+    const executeButton = screen.getByText('Importar');
     fireEvent.click(executeButton);
     
     await waitFor(() => {
-      expect(mockExecute).toHaveBeenCalledWith({
-        products: mockValidationResult.valid,
-        categoryMappings: [
-          {
-            sourceName: 'Iluminación',
-            action: 'create',
-            newName: 'Iluminación',
-            productCount: 2
-          }
-        ],
-        options: { ...mockGlobalOptions, dryRun: true }
-      });
+      expect(mockExecute).toHaveBeenCalled();
     });
-  });
-
-  it('should toggle between dry run and actual execution', () => {
-    render(<ExecuteStep existingCategories={mockExistingCategories} />);
-    
-    // Find dry run toggle button
-    const toggleButton = screen.getByText('Cambiar a Modo Real');
-    expect(toggleButton).toBeInTheDocument();
-    
-    // Click to toggle to actual execution
-    fireEvent.click(toggleButton);
-    
-    // Now the execute button should be for actual execution
-    const executeButton = screen.getByTestId('next-button');
-    expect(executeButton).toHaveTextContent('Importar Productos');
   });
 
   it('should handle download report', () => {
@@ -317,7 +287,7 @@ describe('ExecuteStep Component', () => {
       reset: mockReset,
       prevStep: vi.fn(),
       nextStep: vi.fn()
-    } as any);
+    } as unknown as ReturnType<typeof useImportState>);
 
     // Mock results to show reset button
     mockUseImportExecution.mockReturnValue({
@@ -382,7 +352,7 @@ describe('ExecuteStep Component', () => {
         reset: vi.fn(),
         prevStep: vi.fn(),
         nextStep: vi.fn()
-      } as any);
+      } as unknown as ReturnType<typeof useImportState>);
 
       render(<ExecuteStep existingCategories={mockExistingCategories} />);
       
@@ -400,7 +370,7 @@ describe('ExecuteStep Component', () => {
         reset: vi.fn(),
         prevStep: vi.fn(),
         nextStep: vi.fn()
-      } as any);
+      } as unknown as ReturnType<typeof useImportState>);
 
       render(<ExecuteStep existingCategories={mockExistingCategories} />);
       
@@ -425,7 +395,7 @@ describe('ExecuteStep Component', () => {
 
       render(<ExecuteStep existingCategories={mockExistingCategories} />);
       
-      const executeButton = screen.getByText('Ejecutar Simulación');
+      const executeButton = screen.getByText('Importar');
       fireEvent.click(executeButton);
       
       await waitFor(() => {

@@ -1,8 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-const meta: Meta = {
+const TestComponent = () => <div className="p-4 bg-card border rounded">Test Component</div>;
+
+const meta: Meta<typeof TestComponent> = {
   title: 'Test/Basic',
-  component: 'div',
+  component: TestComponent,
   parameters: {
     layout: 'centered',
   },
@@ -12,6 +14,4 @@ const meta: Meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
-  render: () => <div className="p-4 bg-card border rounded">Test Component</div>,
-};
+export const Default: Story = {};

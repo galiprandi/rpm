@@ -37,12 +37,15 @@ async function createTestSupplier() {
 async function createTestProduct(categoryId: string, supplierId: string) {
   return await prisma.product.create({
     data: {
+      id: `test-prod-${Date.now()}`,
       name: `Test-Product-${Date.now()}`,
       costPrice: 100,
       replacementCost: 150,
       categoryId,
       supplierId,
       stock: 10,
+      isActive: true,
+      updatedAt: new Date(),
     },
   });
 }
@@ -73,8 +76,8 @@ describe('PriceList Service', () => {
 
   afterAll(async () => {
     // Cleanup
-    await prisma.priceListItem.deleteMany({});
-    await prisma.priceList.deleteMany({
+    await prisma.price_list_item.deleteMany({});
+    await prisma.price_list.deleteMany({
       where: { name: { startsWith: 'Test-' } },
     });
   });

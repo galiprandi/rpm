@@ -3,7 +3,7 @@
  */
 
 import { renderHook, act } from '@testing-library/react';
-import { useImportState } from './useImportState';
+import { useImportState } from '@/app/adm/products/import/hooks/useImportState';
 
 // Mock localStorage
 const localStorageMock = (() => {

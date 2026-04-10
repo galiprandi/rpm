@@ -41,21 +41,13 @@ jobs:
     - name: Install dependencies
       run: pnpm install --frozen-lockfile
       
-    - name: Reset Database
-      run: pnpm prisma migrate reset --force --skip-generate
-      env:
-        DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
-      continue-on-error: true
+    - name: Lint & Type Check
+      run: |
+        pnpm lint
+        pnpm type-check
       
-    - name: Lint
-      run: pnpm lint
-      
-    - name: Type check
-      run: pnpm run type-check
-      
-    - name: Run unit tests
-      run: pnpm run test:unit
+    - name: Run tests
+      run: pnpm test
       
     - name: Build
       run: pnpm build

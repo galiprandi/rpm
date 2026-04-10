@@ -159,9 +159,9 @@ describe('ProductForm', () => {
       expect(screen.getByLabelText(/Producto/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/Categoría/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/Proveedor/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/Costo/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/Costo \*/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/Costo de Reposición/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/Stock/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/Stock \*/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/Mínimo/i)).toBeInTheDocument();
       
       // Optional fields

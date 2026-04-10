@@ -784,7 +784,6 @@ export default function NewWorkOrderPage() {
                 showCategoryFilter
                 showQuickCreate
                 showSelectedTable={false}
-                allowMultiple
                 searchEndpoint="/api/products-services/search"
                 categories={[]}
                 priceLists={priceLists}
