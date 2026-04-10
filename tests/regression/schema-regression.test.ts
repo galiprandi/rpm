@@ -22,9 +22,11 @@ describe('Schema Regression Tests', () => {
       // Crear customer
       const customer = await prisma.customer.create({
         data: {
+          id: 'test-cust-1',
           name: 'Test Customer',
           phone: '123456789',
           email: 'test@example.com',
+          updatedAt: new Date(),
         },
       });
 
@@ -73,20 +75,33 @@ describe('Schema Regression Tests', () => {
     it('should create product with supplier and category', async () => {
       // Crear categoría y proveedor de prueba
       const category = await prisma.category.create({
-        data: { name: 'Test Category' },
+        data: { 
+          id: 'test-cat-1',
+          name: 'Test Category',
+          updatedAt: new Date(),
+        },
       });
 
       const supplier = await prisma.supplier.create({
-        data: { name: 'Test Supplier' },
+        data: { 
+          id: 'test-sup-1',
+          name: 'Test Supplier',
+          updatedAt: new Date(),
+        },
       });
 
       // Crear producto
       const product = await prisma.product.create({
         data: {
+          id: 'test-prod-schema',
           name: 'Test Product',
           costPrice: 100,
+          replacementCost: 150,
           categoryId: category.id,
           supplierId: supplier.id,
+          stock: 10,
+          isActive: true,
+          updatedAt: new Date(),
         },
       });
 
@@ -149,13 +164,21 @@ async function setupTestData() {
   const defaultCategory = await prisma.category.upsert({
     where: { name: 'Sin categoría' },
     update: {},
-    create: { name: 'Sin categoría' },
+    create: { 
+      id: 'default-cat',
+      name: 'Sin categoría',
+      updatedAt: new Date(),
+    },
   });
 
   const defaultSupplier = await prisma.supplier.upsert({
     where: { name: 'Sin especificar' },
     update: {},
-    create: { name: 'Sin especificar' },
+    create: { 
+      id: 'default-sup',
+      name: 'Sin especificar',
+      updatedAt: new Date(),
+    },
   });
 }
 

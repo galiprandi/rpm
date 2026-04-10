@@ -65,7 +65,7 @@ describe('Prisma Client', () => {
   describe('Query Operations', () => {
     it('should execute raw queries successfully', async () => {
       try {
-        const result = await prisma.$queryRaw`SELECT version() as version`;
+        const result = await prisma.$queryRaw`SELECT version() as version` as unknown[];
         expect(Array.isArray(result)).toBe(true);
         if (result.length > 0) {
           expect(result[0]).toHaveProperty('version');
@@ -78,7 +78,7 @@ describe('Prisma Client', () => {
 
     it('should handle query parameters correctly', async () => {
       try {
-        const result = await prisma.$queryRaw`SELECT ${1} as test_number`;
+        const result = await prisma.$queryRaw`SELECT ${1} as test_number` as unknown[];
         expect(Array.isArray(result)).toBe(true);
         expect(result[0]).toEqual({ test_number: 1 });
       } catch (paramError) {
@@ -199,7 +199,7 @@ describe('Prisma Client', () => {
         
         results.forEach((result, index) => {
           expect(Array.isArray(result)).toBe(true);
-          expect(result[0]).toEqual({ concurrent_test: index + 1 });
+          expect((result as unknown[])[0]).toEqual({ concurrent_test: index + 1 });
         });
       } catch (concurrentError) {
         console.warn('Concurrent operations test skipped - database not available');

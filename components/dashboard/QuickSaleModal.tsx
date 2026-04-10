@@ -273,7 +273,6 @@ export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModal
               showPriceListSelector={true}
               showCategoryFilter={true}
               showQuickCreate={false}
-              allowMultiple={true}
               onSelectionChange={handleSelectionChange}
               categories={memoizedCategories}
               priceLists={memoizedPriceLists}

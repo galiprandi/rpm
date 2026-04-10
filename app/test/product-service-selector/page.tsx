@@ -77,7 +77,6 @@ export default function TestProductServiceSelectorPage() {
             showPriceListSelector={true}
             showCategoryFilter={true}
             showQuickCreate={true}
-            allowMultiple={true}
             onSelectionChange={handleSelectionChange}
             onQuickCreate={handleQuickCreate}
             categories={categories}

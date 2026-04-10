@@ -26,7 +26,12 @@ describe('Settings Service', () => {
     await prisma.setting.upsert({
       where: { key: 'MINIMUM_MARGIN_PERCENTAGE' },
       update: { value: '15.0' },
-      create: { key: 'MINIMUM_MARGIN_PERCENTAGE', value: '15.0' },
+      create: { 
+        id: 'default-margin',
+        key: 'MINIMUM_MARGIN_PERCENTAGE', 
+        value: '15.0',
+        updatedAt: new Date(),
+      },
     });
   });
 
@@ -45,7 +50,12 @@ describe('Settings Service', () => {
 
     it('should return saved value from database', async () => {
       await prisma.setting.create({
-        data: { key: testKey, value: 'test-value' },
+        data: { 
+          id: 'test-setting-1',
+          key: testKey, 
+          value: 'test-value',
+          updatedAt: new Date(),
+        },
       });
 
       const value = await getSetting(testKey);
@@ -75,7 +85,12 @@ describe('Settings Service', () => {
 
     it('should update existing setting', async () => {
       await prisma.setting.create({
-        data: { key: testKey, value: 'original' },
+        data: { 
+          id: 'test-setting-2',
+          key: testKey, 
+          value: 'original',
+          updatedAt: new Date(),
+        },
       });
 
       const updated = await setSetting(testKey, 'updated');
@@ -104,7 +119,12 @@ describe('Settings Service', () => {
       await prisma.setting.upsert({
         where: { key: 'MINIMUM_MARGIN_PERCENTAGE' },
         update: { value: '25.0' },
-        create: { key: 'MINIMUM_MARGIN_PERCENTAGE', value: '25.0' },
+        create: { 
+          id: 'margin-test-1',
+          key: 'MINIMUM_MARGIN_PERCENTAGE', 
+          value: '25.0',
+          updatedAt: new Date(),
+        },
       });
 
       await initializeDefaultSettings();

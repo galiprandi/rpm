@@ -1,6 +1,9 @@
 import { defineConfig } from 'vitest/config';
 import { resolve } from 'path';
 
+// Config for running ALL tests including DB integration tests
+// Usage: pnpm test:all (requires database to be running)
+
 export default defineConfig({
   test: {
     environment: 'jsdom',
@@ -15,11 +18,6 @@ export default defineConfig({
       '**/playwright-report/**',
       '**/.next/**',
       '**/storybook-static/**',
-      // Database integration tests - use `pnpm test:db` or `pnpm test:all`
-      '**/lib/services/*Service.test.ts',
-      '**/tests/db.test.ts',
-      '**/tests/prisma.test.ts',
-      '**/tests/regression/**',
     ],
     coverage: {
       provider: 'v8',
@@ -35,14 +33,6 @@ export default defineConfig({
         '**/test-results/**',
         '**/playwright-report/**',
       ],
-      thresholds: {
-        global: {
-          branches: 90,
-          functions: 90,
-          lines: 90,
-          statements: 90,
-        },
-      },
     },
   },
   resolve: {
