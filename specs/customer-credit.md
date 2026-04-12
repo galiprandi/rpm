@@ -218,14 +218,14 @@ Al consultar deudores:
 
 ## Criterios de Aceptación
 
-- [ ] Campo balance existe en cliente y se actualiza automáticamente
-- [ ] QuickSaleModal requiere cliente seleccionado para habilitar "Vender"
-- [ ] Lista de OTs tiene filtro "Pendientes de pago"
-- [ ] Perfil de cliente muestra saldo y lista de OTs impagas
-- [ ] Usuario puede registrar pago genérico que descuente del balance
-- [ ] Reporte de deudores ordenable por monto/fecha
-- [ ] Cuando balance llega a 0, OTs se marcan como pagadas
-- [ ] Filtros de OTs son extensibles para futuros criterios
+- [x] Campo balance existe en cliente y se actualiza automáticamente
+- [x] QuickSaleModal permite venta a cuenta corriente con checkbox
+- [x] Lista de OTs tiene filtro "Pendientes de pago"
+- [x] Lista de clientes muestra saldo deudor
+- [x] Usuario puede registrar pago genérico que descuente del balance
+- [x] Reporte de deudores ordenable por monto/fecha
+- [x] Cuando balance llega a 0, OTs se marcan como pagadas
+- [x] API /api/direct-sales soporta sellOnCredit y remainingAmount
 
 ## Dependencias
 - Modelo customer existente

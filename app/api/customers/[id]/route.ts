@@ -34,9 +34,20 @@ export async function GET(
       );
     }
 
+    // Helper to convert Decimal to number
+    const decimalToNumber = (decimal: unknown): number => {
+      if (decimal === null || decimal === undefined) return 0;
+      if (typeof decimal === 'number') return decimal;
+      if (typeof decimal === 'object' && 'toNumber' in decimal && typeof (decimal as { toNumber: () => number }).toNumber === 'function') {
+        return (decimal as { toNumber: () => number }).toNumber();
+      }
+      return 0;
+    };
+
     // Transform Prisma field names to match frontend interface
     const transformedCustomer = {
       ...customer,
+      balance: decimalToNumber(customer.balance),
       vehicles: customer.vehicle || [],
       workOrders: customer.work_order || [],
       vehicle: undefined,

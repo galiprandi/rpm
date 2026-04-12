@@ -55,7 +55,7 @@ export default function ProductsPage() {
   ]}
   primaryAction={{
     label: 'Crear Vehículo',
-    href: `/adm/vehicles/new?customerId=${customer.id}`,
+    onClick: () => setIsVehicleModalOpen(true),
     icon: Plus
   }}
 >

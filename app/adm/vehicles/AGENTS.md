@@ -12,7 +12,7 @@ Gestión de vehículos de clientes con categorías flexibles que soportan tanto 
 
 ## Key Components
 
-- `new/page.tsx` - Formulario de alta de vehículo con categorías
+- `VehicleDialog` (`@/components/vehicles/VehicleDialog`) - Modal reutilizable para crear vehículos
 - `[id]/page.tsx` - Vista detalle y edición del vehículo
 - Formularios adaptativos según categoría (automotor vs equipo)
 
@@ -25,9 +25,11 @@ Gestión de vehículos de clientes con categorías flexibles que soportan tanto 
 
 ## Development Notes
 
+- **VehicleDialog**: Modal reutilizable para crear vehículos desde:
+  - Vista de cliente (cliente preseleccionado)
+  - Creación de OT (con buscador de cliente integrado)
 - Formulario adaptable según tipo de vehículo
 - Identificador único: patente para automotores, N° serie para equipos
-- Integración con clientes (pre-selección desde URL params)
 - Soporte para equipos no motorizados (audio, trailers, etc.)
 - Vinculado con cálculos de costos de servicios por factor vehículo
 - Historial de servicios a través de órdenes de trabajo

@@ -52,6 +52,7 @@ model customer {
   updatedAt   DateTime
   billingData Json?
   name        String
+  balance     Decimal      @db.Decimal(10, 2) @default(0) // Saldo deudor (positivo = debe)
   vehicle     vehicle[]
   work_order  work_order[]
   direct_sales direct_sale[]
@@ -59,6 +60,7 @@ model customer {
 
   @@index([name])
   @@index([phone])
+  @@index([balance])
 }
 
 model photo {

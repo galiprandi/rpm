@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -36,6 +36,7 @@ export default function WorkOrdersPage() {
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"kanban" | "list">("kanban");
+  const [paymentFilter, setPaymentFilter] = useState<"all" | "pending">("all");
 
   const fetchWorkOrders = useCallback(async () => {
     try {
@@ -99,9 +100,17 @@ export default function WorkOrdersPage() {
     return daysInStatus > 3 && ["WAITING", "IN_PROGRESS"].includes(wo.status);
   };
 
+  // Filter work orders by payment status
+  const filteredWorkOrders = useMemo(() => {
+    if (paymentFilter === "pending") {
+      return workOrders.filter((wo) => !wo.isFullyPaid);
+    }
+    return workOrders;
+  }, [workOrders, paymentFilter]);
+
   const workOrdersByStatus = STATUSES.map((status) => ({
     ...status,
-    items: workOrders.filter((wo) => wo.status === status.id),
+    items: filteredWorkOrders.filter((wo) => wo.status === status.id),
   }));
 
   if (loading) {
@@ -139,6 +148,20 @@ export default function WorkOrdersPage() {
           >
             <List className="h-4 w-4 mr-2" />
             Lista
+          </Button>
+          <div className="w-px h-6 bg-border mx-1" />
+          <Button
+            variant={paymentFilter === "pending" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setPaymentFilter(paymentFilter === "pending" ? "all" : "pending")}
+            className={paymentFilter === "pending" ? "bg-amber-600 hover:bg-amber-700" : ""}
+          >
+            Pendientes de Pago
+            {paymentFilter === "pending" && (
+              <span className="ml-2 text-xs bg-white/20 px-1.5 py-0.5 rounded">
+                {filteredWorkOrders.length}
+              </span>
+            )}
           </Button>
         </div>
       </Header>

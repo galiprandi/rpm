@@ -20,12 +20,30 @@ export async function POST(request: NextRequest) {
       items,
       payments,
       notes,
+      sellOnCredit,
+      remainingAmount,
     } = body;
 
     // Validate required fields
-    if (!customerName || !items || !payments || items.length === 0 || payments.length === 0) {
+    if (!customerName || !items || items.length === 0) {
       return NextResponse.json(
         { error: 'Faltan campos requeridos' },
+        { status: 400 }
+      );
+    }
+
+    // For non-credit sales, require at least one payment
+    if (!sellOnCredit && (!payments || payments.length === 0)) {
+      return NextResponse.json(
+        { error: 'Debe agregar al menos un pago o activar venta a cuenta corriente' },
+        { status: 400 }
+      );
+    }
+
+    // For credit sales, require customer selection
+    if (sellOnCredit && !customerId) {
+      return NextResponse.json(
+        { error: 'Debe seleccionar un cliente para venta a cuenta corriente' },
         { status: 400 }
       );
     }
@@ -61,8 +79,10 @@ export async function POST(request: NextRequest) {
       customerId,
       customerName,
       items,
-      payments,
+      payments: payments || [],
       notes,
+      sellOnCredit: sellOnCredit || false,
+      remainingAmount: remainingAmount || 0,
       createdBy: session.user.id,
     });
 

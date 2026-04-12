@@ -75,7 +75,7 @@ export interface HeaderProps {
  *   ]}
  *   primaryAction={{
  *     label: 'Crear Vehículo',
- *     href: `/adm/vehicles/new?customerId=${id}`,
+ *     onClick: () => setIsVehicleModalOpen(true),
  *     icon: Plus
  *   }}
  * >

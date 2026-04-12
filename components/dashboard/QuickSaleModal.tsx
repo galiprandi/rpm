@@ -62,17 +62,20 @@ export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModal
   const [priceLists, setPriceLists] = useState<PriceList[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [customerSearch, setCustomerSearch] = useState('');
-  const [foundCustomers, setFoundCustomers] = useState<Array<{ id: string; name: string; phone: string }>>([]);
+  const [foundCustomers, setFoundCustomers] = useState<Array<{ id: string; name: string; phone: string; balance?: number }>>([]);
+  const [customerBalance, setCustomerBalance] = useState<number>(0);
   const [creatingCustomer, setCreatingCustomer] = useState(false);
   const [newCustomerData, setNewCustomerData] = useState({
     name: '',
     phone: '',
     email: '',
   });
+  const [sellOnCredit, setSellOnCredit] = useState(false);
 
   const total = cart.reduce((sum, item) => sum + item.totalPrice, 0);
   const totalPaid = payments.reduce((sum, payment) => sum + payment.amount, 0);
   const remaining = total - totalPaid;
+  const newBalanceIfCredit = customerBalance + remaining;
 
   // Fetch payment methods, price lists and categories on mount
   useEffect(() => {
@@ -194,12 +197,16 @@ export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModal
 
   const handleSubmit = async () => {
     if (cart.length === 0) return;
-    if (payments.length === 0) {
-      setError('Debe agregar al menos un pago');
+    
+    // For cash sales (not credit), require full payment
+    if (!sellOnCredit && totalPaid < total) {
+      setError('El monto pagado es insuficiente. Active "Venta a cuenta corriente" si desea dejar saldo pendiente.');
       return;
     }
-    if (totalPaid < total) {
-      setError('El monto pagado es insuficiente');
+    
+    // For credit sales, require customer selection
+    if (sellOnCredit && !customerId) {
+      setError('Debe seleccionar un cliente para venta a cuenta corriente');
       return;
     }
 
@@ -222,6 +229,8 @@ export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModal
             totalPrice: item.totalPrice,
           })),
           payments: payments,
+          sellOnCredit,
+          remainingAmount: sellOnCredit ? remaining : 0,
         }),
       });
 
@@ -244,8 +253,10 @@ export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModal
       setCart([]);
       setCustomerId('');
       setCustomerName('Consumidor final');
+      setCustomerBalance(0);
       setPayments([]);
       setPaymentAmount(0);
+      setSellOnCredit(false);
       setStep('search');
       setError(null);
       onOpenChange(false);
@@ -327,6 +338,7 @@ export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModal
                           onClick={() => {
                             setCustomerId(customer.id);
                             setCustomerName(customer.name);
+                            setCustomerBalance(customer.balance || 0);
                             setFoundCustomers([]);
                             setCustomerSearch('');
                           }}
@@ -334,6 +346,11 @@ export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModal
                         >
                           <div className="font-medium">{customer.name}</div>
                           <div className="text-sm text-muted-foreground">{customer.phone}</div>
+                          {customer.balance && customer.balance > 0 && (
+                            <div className="text-xs text-red-600 mt-1">
+                              Saldo pendiente: {formatARS(customer.balance)}
+                            </div>
+                          )}
                         </button>
                       ))}
                     </div>
@@ -436,7 +453,39 @@ export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModal
                   {formatARS(remaining)}
                 </span>
               </div>
+              
+              {/* Customer Balance Info */}
+              {customerId && customerBalance > 0 && (
+                <div className="mt-3 pt-3 border-t border-slate-200">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">Saldo actual cliente:</span>
+                    <span className="text-red-600 font-medium">{formatARS(customerBalance)}</span>
+                  </div>
+                  {sellOnCredit && remaining > 0 && (
+                    <div className="flex justify-between items-center text-sm mt-1">
+                      <span className="text-muted-foreground">Nuevo saldo sería:</span>
+                      <span className="text-red-600 font-bold">{formatARS(newBalanceIfCredit)}</span>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
+
+            {/* Credit Sale Option */}
+            {customerId && remaining > 0 && (
+              <div className="flex items-center gap-2 p-3 border rounded-md bg-amber-50 border-amber-200">
+                <input
+                  type="checkbox"
+                  id="sellOnCredit"
+                  checked={sellOnCredit}
+                  onChange={(e) => setSellOnCredit(e.target.checked)}
+                  className="h-4 w-4 rounded border-amber-300 text-amber-600 focus:ring-amber-500"
+                />
+                <label htmlFor="sellOnCredit" className="text-sm font-medium text-amber-900 cursor-pointer">
+                  Venta a cuenta corriente (dejar saldo pendiente)
+                </label>
+              </div>
+            )}
 
             {/* Add Payment Form */}
             <div>
@@ -503,9 +552,10 @@ export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModal
               </Button>
               <Button
                 onClick={handleSubmit}
-                disabled={payments.length === 0 || totalPaid < total || loading}
+                disabled={loading || (!sellOnCredit && (payments.length === 0 || totalPaid < total))}
+                className={sellOnCredit ? 'bg-amber-600 hover:bg-amber-700' : ''}
               >
-                Confirmar Venta
+                {sellOnCredit ? 'Confirmar Venta a Cuenta Corriente' : 'Confirmar Venta'}
               </Button>
             </div>
           </div>

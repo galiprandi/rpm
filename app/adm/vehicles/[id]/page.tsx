@@ -310,11 +310,11 @@ export default function VehicleDetailPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Wrench className="h-5 w-5" />
-            Historial de Órdenes de Trabajo ({vehicle.workOrders.length})
+            Historial de Órdenes de Trabajo ({vehicle.workOrders?.length ?? 0})
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {vehicle.workOrders.length === 0 ? (
+          {(vehicle.workOrders?.length ?? 0) === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               No hay órdenes de trabajo registradas
             </div>
