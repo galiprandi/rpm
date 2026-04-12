@@ -490,7 +490,7 @@ model direct_sale_payment {
 
 model cash_movement {
   id             String   @id @default(cuid())
-  type           String   // INCOME, EXPENSE, OPENING, CLOSING, COUNT
+  type           String   // INCOME, EXPENSE, OPENING, CLOSING, ADJUSTMENT
   amount         Decimal  @db.Decimal(10, 2)
   method         String   // CASH, CARD, TRANSFER, etc.
   referenceId    String?  // Referencia a payment/direct_sale_payment
@@ -498,11 +498,13 @@ model cash_movement {
   reason         String?
   notes          String?
   createdAt      DateTime @default(now())
-  createdBy      String
+  createdBy      String   // Usuario que ejecutó la acción (auditoría técnica)
+  responsibleId  String?  // Cajero/Responsable operativo de turno
 
   @@index([type])
   @@index([createdAt])
   @@index([referenceId])
+  @@index([responsibleId])
 }
 
 model invoice {

@@ -187,6 +187,38 @@ await alert({ title: 'Éxito', description: 'Producto guardado', variant: 'succe
 const confirmed = await confirm({ title: 'Eliminar', description: '¿Estás seguro?', variant: 'destructive' });
 ```
 
+### ❌ PROHIBIDO: Modal sobre modal
+
+**Nunca mostrar una alerta/confirmación de éxito inmediatamente después de cerrar un modal.**
+
+```typescript
+// ❌ MAL: Alerta de éxito bloquea la UI después de cerrar modal
+<ModalBase isOpen={isOpen} onClose={() => setIsOpen(false)}>
+  <form>...</form>
+</ModalBase>
+
+const handleSave = async () => {
+  await api.save();
+  setIsOpen(false);           // Cierra modal
+  await alert({               // ❌ Modal sobre modal - MAL
+    title: 'Éxito',
+    description: 'Guardado correctamente',
+  });
+};
+
+// ✅ BIEN: Solo cerrar el modal, el éxito es implícito
+const handleSave = async () => {
+  await api.save();
+  setIsOpen(false);           // Solo cerrar, el usuario ve el resultado
+  fetchData();                // Refrescar datos para mostrar cambio
+};
+```
+
+**Excepciones válidas para alertas post-modal:**
+- Errores que impiden completar la acción
+- Advertencias que requieren atención (diferencias, conflictos)
+- Confirmaciones de efectos secundarios importantes
+
 ---
 
 ## 🪟 Construcción de Modales

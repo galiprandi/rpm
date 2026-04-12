@@ -18,17 +18,45 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getSession();
 
-    // Only ADMIN can list users
-    if (!session?.user || session.user.role !== UserRole.ADMIN) {
+    // Only ADMIN or STAFF can list users
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const userRole = session.user.role as UserRole;
+    if (userRole !== UserRole.ADMIN && userRole !== UserRole.STAFF) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     const { searchParams } = request.nextUrl;
     const includeInactive = searchParams.get('includeInactive') === 'true';
+    const roleFilter = searchParams.get('role'); // e.g., "staff,admin" or "staff" or "admin"
+    const activeOnly = searchParams.get('active') === 'true';
 
     const result = await getUsers(includeInactive);
+    let users = result.users;
 
-    return NextResponse.json({ users: result.users });
+    // Filter by role if specified
+    if (roleFilter) {
+      const allowedRoles = roleFilter.split(',').map(r => r.trim().toUpperCase());
+      users = users.filter(user => allowedRoles.includes(user.role?.toUpperCase() || ''));
+    }
+
+    // Filter active only if specified
+    if (activeOnly) {
+      users = users.filter(user => user.isActive !== false);
+    }
+
+    // Return simplified user info (only needed fields)
+    const simplifiedUsers = users.map(user => ({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      isActive: user.isActive,
+    }));
+
+    return NextResponse.json({ users: simplifiedUsers });
   } catch (error) {
     console.error('Error fetching users:', error);
     return NextResponse.json(

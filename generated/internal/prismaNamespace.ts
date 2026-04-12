@@ -3043,7 +3043,8 @@ export const Cash_movementScalarFieldEnum = {
   reason: 'reason',
   notes: 'notes',
   createdAt: 'createdAt',
-  createdBy: 'createdBy'
+  createdBy: 'createdBy',
+  responsibleId: 'responsibleId'
 } as const
 
 export type Cash_movementScalarFieldEnum = (typeof Cash_movementScalarFieldEnum)[keyof typeof Cash_movementScalarFieldEnum]
