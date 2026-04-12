@@ -1,7 +1,7 @@
-import { streamText } from 'ai';
+import { streamText, convertToModelMessages } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
 import { composeSystemPrompt, type BotContext, type UserRole } from '@/lib/bot/promptComposer';
-import { botTools } from '@/lib/bot/tools';
+import { getToolsForRole } from '@/lib/bot/toolsByRole';
 
 // Configure OpenAI (using Vercel AI Gateway or direct OpenAI)
 const openai = createOpenAI({
@@ -32,12 +32,18 @@ export async function POST(req: Request) {
 
     const systemPrompt = composeSystemPrompt(botContext);
 
+    // Convert UI messages to Model messages (required for AI SDK v6)
+    const modelMessages = await convertToModelMessages(messages);
+
+    // Get tools filtered by user role (empty for now - TODO: add new tools)
+    const roleTools = getToolsForRole(userRole);
+
     // Stream response with tools
     const result = streamText({
-      model: openai('gpt-4o-mini'),
+      model: openai(process.env.OPENAI_MODEL || 'gpt-4o-mini'),
       system: systemPrompt,
-      messages,
-      tools: botTools,
+      messages: modelMessages,
+      tools: roleTools,
       temperature: 0.7,
     });
 

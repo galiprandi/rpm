@@ -45,6 +45,7 @@ export type Cash_movementMinAggregateOutputType = {
   notes: string | null
   createdAt: Date | null
   createdBy: string | null
+  responsibleId: string | null
 }
 
 export type Cash_movementMaxAggregateOutputType = {
@@ -58,6 +59,7 @@ export type Cash_movementMaxAggregateOutputType = {
   notes: string | null
   createdAt: Date | null
   createdBy: string | null
+  responsibleId: string | null
 }
 
 export type Cash_movementCountAggregateOutputType = {
@@ -71,6 +73,7 @@ export type Cash_movementCountAggregateOutputType = {
   notes: number
   createdAt: number
   createdBy: number
+  responsibleId: number
   _all: number
 }
 
@@ -94,6 +97,7 @@ export type Cash_movementMinAggregateInputType = {
   notes?: true
   createdAt?: true
   createdBy?: true
+  responsibleId?: true
 }
 
 export type Cash_movementMaxAggregateInputType = {
@@ -107,6 +111,7 @@ export type Cash_movementMaxAggregateInputType = {
   notes?: true
   createdAt?: true
   createdBy?: true
+  responsibleId?: true
 }
 
 export type Cash_movementCountAggregateInputType = {
@@ -120,6 +125,7 @@ export type Cash_movementCountAggregateInputType = {
   notes?: true
   createdAt?: true
   createdBy?: true
+  responsibleId?: true
   _all?: true
 }
 
@@ -220,6 +226,7 @@ export type Cash_movementGroupByOutputType = {
   notes: string | null
   createdAt: Date
   createdBy: string
+  responsibleId: string | null
   _count: Cash_movementCountAggregateOutputType | null
   _avg: Cash_movementAvgAggregateOutputType | null
   _sum: Cash_movementSumAggregateOutputType | null
@@ -256,6 +263,7 @@ export type cash_movementWhereInput = {
   notes?: Prisma.StringNullableFilter<"cash_movement"> | string | null
   createdAt?: Prisma.DateTimeFilter<"cash_movement"> | Date | string
   createdBy?: Prisma.StringFilter<"cash_movement"> | string
+  responsibleId?: Prisma.StringNullableFilter<"cash_movement"> | string | null
 }
 
 export type cash_movementOrderByWithRelationInput = {
@@ -269,6 +277,7 @@ export type cash_movementOrderByWithRelationInput = {
   notes?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   createdBy?: Prisma.SortOrder
+  responsibleId?: Prisma.SortOrderInput | Prisma.SortOrder
 }
 
 export type cash_movementWhereUniqueInput = Prisma.AtLeast<{
@@ -285,6 +294,7 @@ export type cash_movementWhereUniqueInput = Prisma.AtLeast<{
   notes?: Prisma.StringNullableFilter<"cash_movement"> | string | null
   createdAt?: Prisma.DateTimeFilter<"cash_movement"> | Date | string
   createdBy?: Prisma.StringFilter<"cash_movement"> | string
+  responsibleId?: Prisma.StringNullableFilter<"cash_movement"> | string | null
 }, "id">
 
 export type cash_movementOrderByWithAggregationInput = {
@@ -298,6 +308,7 @@ export type cash_movementOrderByWithAggregationInput = {
   notes?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   createdBy?: Prisma.SortOrder
+  responsibleId?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.cash_movementCountOrderByAggregateInput
   _avg?: Prisma.cash_movementAvgOrderByAggregateInput
   _max?: Prisma.cash_movementMaxOrderByAggregateInput
@@ -319,6 +330,7 @@ export type cash_movementScalarWhereWithAggregatesInput = {
   notes?: Prisma.StringNullableWithAggregatesFilter<"cash_movement"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"cash_movement"> | Date | string
   createdBy?: Prisma.StringWithAggregatesFilter<"cash_movement"> | string
+  responsibleId?: Prisma.StringNullableWithAggregatesFilter<"cash_movement"> | string | null
 }
 
 export type cash_movementCreateInput = {
@@ -332,6 +344,7 @@ export type cash_movementCreateInput = {
   notes?: string | null
   createdAt?: Date | string
   createdBy: string
+  responsibleId?: string | null
 }
 
 export type cash_movementUncheckedCreateInput = {
@@ -345,6 +358,7 @@ export type cash_movementUncheckedCreateInput = {
   notes?: string | null
   createdAt?: Date | string
   createdBy: string
+  responsibleId?: string | null
 }
 
 export type cash_movementUpdateInput = {
@@ -358,6 +372,7 @@ export type cash_movementUpdateInput = {
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdBy?: Prisma.StringFieldUpdateOperationsInput | string
+  responsibleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type cash_movementUncheckedUpdateInput = {
@@ -371,6 +386,7 @@ export type cash_movementUncheckedUpdateInput = {
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdBy?: Prisma.StringFieldUpdateOperationsInput | string
+  responsibleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type cash_movementCreateManyInput = {
@@ -384,6 +400,7 @@ export type cash_movementCreateManyInput = {
   notes?: string | null
   createdAt?: Date | string
   createdBy: string
+  responsibleId?: string | null
 }
 
 export type cash_movementUpdateManyMutationInput = {
@@ -397,6 +414,7 @@ export type cash_movementUpdateManyMutationInput = {
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdBy?: Prisma.StringFieldUpdateOperationsInput | string
+  responsibleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type cash_movementUncheckedUpdateManyInput = {
@@ -410,6 +428,7 @@ export type cash_movementUncheckedUpdateManyInput = {
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdBy?: Prisma.StringFieldUpdateOperationsInput | string
+  responsibleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type cash_movementCountOrderByAggregateInput = {
@@ -423,6 +442,7 @@ export type cash_movementCountOrderByAggregateInput = {
   notes?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   createdBy?: Prisma.SortOrder
+  responsibleId?: Prisma.SortOrder
 }
 
 export type cash_movementAvgOrderByAggregateInput = {
@@ -440,6 +460,7 @@ export type cash_movementMaxOrderByAggregateInput = {
   notes?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   createdBy?: Prisma.SortOrder
+  responsibleId?: Prisma.SortOrder
 }
 
 export type cash_movementMinOrderByAggregateInput = {
@@ -453,6 +474,7 @@ export type cash_movementMinOrderByAggregateInput = {
   notes?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   createdBy?: Prisma.SortOrder
+  responsibleId?: Prisma.SortOrder
 }
 
 export type cash_movementSumOrderByAggregateInput = {
@@ -472,6 +494,7 @@ export type cash_movementSelect<ExtArgs extends runtime.Types.Extensions.Interna
   notes?: boolean
   createdAt?: boolean
   createdBy?: boolean
+  responsibleId?: boolean
 }, ExtArgs["result"]["cash_movement"]>
 
 export type cash_movementSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -485,6 +508,7 @@ export type cash_movementSelectCreateManyAndReturn<ExtArgs extends runtime.Types
   notes?: boolean
   createdAt?: boolean
   createdBy?: boolean
+  responsibleId?: boolean
 }, ExtArgs["result"]["cash_movement"]>
 
 export type cash_movementSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -498,6 +522,7 @@ export type cash_movementSelectUpdateManyAndReturn<ExtArgs extends runtime.Types
   notes?: boolean
   createdAt?: boolean
   createdBy?: boolean
+  responsibleId?: boolean
 }, ExtArgs["result"]["cash_movement"]>
 
 export type cash_movementSelectScalar = {
@@ -511,9 +536,10 @@ export type cash_movementSelectScalar = {
   notes?: boolean
   createdAt?: boolean
   createdBy?: boolean
+  responsibleId?: boolean
 }
 
-export type cash_movementOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "type" | "amount" | "method" | "referenceId" | "referenceType" | "reason" | "notes" | "createdAt" | "createdBy", ExtArgs["result"]["cash_movement"]>
+export type cash_movementOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "type" | "amount" | "method" | "referenceId" | "referenceType" | "reason" | "notes" | "createdAt" | "createdBy" | "responsibleId", ExtArgs["result"]["cash_movement"]>
 
 export type $cash_movementPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "cash_movement"
@@ -529,6 +555,7 @@ export type $cash_movementPayload<ExtArgs extends runtime.Types.Extensions.Inter
     notes: string | null
     createdAt: Date
     createdBy: string
+    responsibleId: string | null
   }, ExtArgs["result"]["cash_movement"]>
   composites: {}
 }
@@ -962,6 +989,7 @@ export interface cash_movementFieldRefs {
   readonly notes: Prisma.FieldRef<"cash_movement", 'String'>
   readonly createdAt: Prisma.FieldRef<"cash_movement", 'DateTime'>
   readonly createdBy: Prisma.FieldRef<"cash_movement", 'String'>
+  readonly responsibleId: Prisma.FieldRef<"cash_movement", 'String'>
 }
     
 
