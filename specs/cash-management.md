@@ -142,11 +142,6 @@ Total Faltante: $200 | Total Sobrante: $100 | Diferencia Neta: -$100
 - Faltante en Transferencia: Desvío a otra cuenta, transferencia no registrada
 - Faltante en MP/Tarjeta: Cancelación/estorno no registrado, fraude
 
-Detección de robos/desvíos:
-  - Faltante en Efectivo: Posible robo, error de cambio, venta sin registrar
-  - Faltante en Transferencia: Desvío a otra cuenta, transferencia no registrada
-  - Faltante en MP/Tarjeta: Cancelación/estorno no registrado, fraude
-```
 
 ## Interfaz de Usuario
 
@@ -191,8 +186,9 @@ Tabla de arqueos previos:
 
 #### Modal: Abrir Caja ✅
 - Input monto inicial
+- **Selector de responsable** con dropdown de usuarios STAFF/ADMIN
 - Sugerencia pre-llenada con cierre anterior
-- Validación: no permite abrir si ya está abierta
+- Validación: no permite abrir si ya está abierta, valida responsable
 
 #### Modal: Registrar Egreso ✅
 - Monto, Método de pago (dropdown), Motivo (requerido), Notas (opcional)
@@ -261,27 +257,32 @@ Tabla de arqueos previos:
 //         Crea ADJUSTMENT automático por cada diferencia
 ```
 
-### Endpoints Pendientes ⏳
+### Endpoints Implementados (continuación) ✅
 
 ```typescript
 // GET /api/cash/history?limit=30&page=1
-// Response: Array<{
-//   id: string,
-//   date: string,
-//   openedBy: string,        // Quién ejecutó la apertura
-//   responsibleBy: string,   // Quién opera la caja (responsable de turno)
-//   closedBy: string,
-//   difference: number,
-//   differenceReason?: string,
-//   totalIncome: number,
-//   totalExpense: number
-// }>
+// Response: {
+//   history: Array<{
+//     id: string,
+//     date: string,
+//     openedBy: string,        // Quién ejecutó la apertura
+//     responsibleBy: string,     // Quién opera la caja (responsable de turno)
+//     closedBy: string,
+//     difference: number,
+//     differenceReason?: string,
+//     totalIncome: number,
+//     totalExpense: number,
+//     isClosed: boolean,
+//     status: 'BALANCED' | 'SURPLUS' | 'SHORTAGE' | 'OPEN'
+//   }>,
+//   pagination: { page, limit, totalCount, totalPages, hasMore }
+// }
 // Para: Tab "Historial de Arqueos" en la vista
 
 // GET /api/users?role=staff,admin&active=true
 // Response: { users: Array<{ id, name, email, role, isActive }> }
 // Para: Selector de responsable en modal de apertura
-// Permisos: STAFF o ADMIN (cualquier miembro del staff puede ver a otros)
+// Permisos: STAFF o ADMIN
 ```
 
 ## Reglas de Negocio
@@ -290,21 +291,25 @@ Tabla de arqueos previos:
 2. **Cierre obligatorio**: Solo ADMIN puede forzar apertura sobre caja sin cerrar del día anterior
 3. **Egresos limitados**: No se puede registrar egreso en efectivo si excede saldo disponible
 4. **Auditoría**: Toda diferencia debe tener motivo documentado
-5. **Permisos**: 
+5. **Permisos**:
    - Abrir/Cerrar: ADMIN, STAFF
-   - Registrar egresos: ADMIN, STAFF
-   - Ver historial completo: ADMIN
+   - Registrar ingresos/egresos: ADMIN, STAFF
+   - Ver historial completo: ADMIN, STAFF
+   - Ver usuarios STAFF/ADMIN: ADMIN, STAFF
 
 ## Criterios de Aceptación
 
 - [x] Usuario puede abrir caja ingresando monto inicial
+- [x] **Usuario puede seleccionar responsable/cajero de turno al abrir**
+- [x] **Usuario puede registrar ingresos manuales con motivo**
 - [x] Usuario puede registrar egresos con motivo
 - [x] Sistema muestra desglose por método de pago en tiempo real
 - [x] Usuario puede cerrar caja ingresando conteo físico
 - [x] Sistema calcula y muestra diferencias antes de confirmar cierre
 - [x] Diferencias se registran con motivo obligatorio
-- [x] Historial de arqueos accesible desde la vista
-- [x] Sin caja abierta, no se pueden registrar egresos manuales
+- [x] Historial de arqueos accesible desde la vista con paginación
+- [x] Trazabilidad dual: createdBy vs responsibleBy visible en historial
+- [x] Sin caja abierta, no se pueden registrar egresos/ingresos manuales
 
 ## Dependencias
 - Modelo `cash_movement` existente
