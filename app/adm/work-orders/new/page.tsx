@@ -20,6 +20,7 @@ import { WorkOrderStepper } from "@/components/ui/stepper";
 import { QuickServiceDialog } from "@/components/work-orders/QuickServiceDialog";
 import { useUI } from "@/components/ui/UIProvider";
 import { ProductServiceSelector } from "@/components/ui/ProductServiceSelector";
+import { VehicleDialog } from "@/components/vehicles/VehicleDialog";
 import { Save, Plus, Trash2, Search, Car, User, CheckCircle, Edit } from "lucide-react";
 
 const VEHICLE_CATEGORIES = [
@@ -114,6 +115,8 @@ export default function NewWorkOrderPage() {
   const [searching, setSearching] = useState(false);
   const [foundVehicle, setFoundVehicle] = useState<VehicleWithCustomer | null>(null);
   const [showCreateVehicle, setShowCreateVehicle] = useState(false);
+  const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
+  const [selectedCustomerForNewVehicle, setSelectedCustomerForNewVehicle] = useState<string | null>(null);
 
   // Step 1b: Create new vehicle (if not found)
   const [newVehicleData, setNewVehicleData] = useState({
@@ -217,6 +220,10 @@ export default function NewWorkOrderPage() {
           setFoundVehicle(null);
           setShowCreateVehicle(true);
           setNewVehicleData(prev => ({ ...prev, identifier: plateSearch.toUpperCase() }));
+          // Pre-select customer if we already have one from previous search
+          if (selectedCustomerId) {
+            setSelectedCustomerForNewVehicle(selectedCustomerId);
+          }
         }
       }
     } catch (error) {
@@ -510,233 +517,14 @@ export default function NewWorkOrderPage() {
                 </div>
               )}
 
-              {/* Create New Vehicle */}
+              {/* Create New Vehicle - Use Modal */}
               {showCreateVehicle && (
                 <div className="space-y-4">
                   <div className="text-center">
                     <p className="text-muted-foreground">
                       No se encontró vehículo con patente <strong>{plateSearch}</strong>
                     </p>
-                    <p className="text-sm">Complete los datos para crear el vehículo y la orden</p>
-                  </div>
-
-                  <div className="border rounded-lg p-4 space-y-4">
-                    <h4 className="font-medium flex items-center gap-2">
-                      <Car className="h-4 w-4" />
-                      Datos del Vehículo
-                    </h4>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Categoría *</Label>
-                        <Select
-                          value={newVehicleData.category}
-                          onValueChange={(value) =>
-                            setNewVehicleData((prev) => ({ ...prev, category: value }))
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {VEHICLE_CATEGORIES.map((cat) => (
-                              <SelectItem key={cat.value} value={cat.value}>
-                                {cat.icon} {cat.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Patente/Identificador *</Label>
-                        <Input
-                          value={newVehicleData.identifier}
-                          onChange={(e) =>
-                            setNewVehicleData((prev) => ({ ...prev, identifier: e.target.value.toUpperCase() }))
-                          }
-                          placeholder="AB123CD"
-                        />
-                      </div>
-                    </div>
-
-                    {isMotorVehicle(newVehicleData.category) ? (
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label>Marca</Label>
-                          <Input
-                            value={newVehicleData.makeName}
-                            onChange={(e) =>
-                              setNewVehicleData((prev) => ({ ...prev, makeName: e.target.value }))
-                            }
-                            placeholder="Toyota"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Modelo</Label>
-                          <Input
-                            value={newVehicleData.modelName}
-                            onChange={(e) =>
-                              setNewVehicleData((prev) => ({ ...prev, modelName: e.target.value }))
-                            }
-                            placeholder="Hilux"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Año</Label>
-                          <Input
-                            value={newVehicleData.year}
-                            onChange={(e) =>
-                              setNewVehicleData((prev) => ({ ...prev, year: e.target.value }))
-                            }
-                            placeholder="2024"
-                            type="number"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Color</Label>
-                          <Input
-                            value={newVehicleData.color}
-                            onChange={(e) =>
-                              setNewVehicleData((prev) => ({ ...prev, color: e.target.value }))
-                            }
-                            placeholder="Blanco"
-                          />
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <Label>Nombre del Equipo *</Label>
-                          <Input
-                            value={newVehicleData.equipmentName}
-                            onChange={(e) =>
-                              setNewVehicleData((prev) => ({ ...prev, equipmentName: e.target.value }))
-                            }
-                            placeholder="Parlante Sony GTK-XB90"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Tipo de Equipo *</Label>
-                          <Input
-                            value={newVehicleData.equipmentType}
-                            onChange={(e) =>
-                              setNewVehicleData((prev) => ({ ...prev, equipmentType: e.target.value }))
-                            }
-                            placeholder="Equipo de audio portátil"
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Customer Selection */}
-                  <div className="border rounded-lg p-4 space-y-4">
-                    <h4 className="font-medium flex items-center gap-2">
-                      <User className="h-4 w-4" />
-                      Seleccionar Cliente
-                    </h4>
-
-                    {!selectedCustomerId && !creatingCustomer && (
-                      <>
-                        <div className="flex gap-2">
-                          <Input
-                            placeholder="Buscar cliente por nombre o teléfono..."
-                            value={newCustomerSearch}
-                            onChange={(e) => setNewCustomerSearch(e.target.value)}
-                            onKeyDown={(e) => e.key === "Enter" && searchCustomersForNewVehicle()}
-                            className="flex-1"
-                          />
-                          <Button onClick={searchCustomersForNewVehicle}>
-                            <Search className="h-4 w-4 mr-2" />
-                            Buscar
-                          </Button>
-                        </div>
-
-                        {foundCustomers.length > 0 && (
-                          <div className="border rounded-md divide-y">
-                            {foundCustomers.map((customer) => (
-                              <button
-                                key={customer.id}
-                                onClick={() => setSelectedCustomerId(customer.id)}
-                                className="w-full p-3 text-left hover:bg-muted transition-colors"
-                              >
-                                <div className="font-medium">{customer.name}</div>
-                                <div className="text-sm text-muted-foreground">{customer.phone}</div>
-                              </button>
-                            ))}
-                          </div>
-                        )}
-
-                        <div className="text-center">
-                          <Button variant="outline" onClick={() => setCreatingCustomer(true)}>
-                            <Plus className="h-4 w-4 mr-2" />
-                            Crear Nuevo Cliente
-                          </Button>
-                        </div>
-                      </>
-                    )}
-
-                    {creatingCustomer && (
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label>Nombre *</Label>
-                            <Input
-                              value={newCustomerData.name}
-                              onChange={(e) => setNewCustomerData(prev => ({ ...prev, name: e.target.value }))}
-                              placeholder="Juan Pérez"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label>Teléfono *</Label>
-                            <Input
-                              value={newCustomerData.phone}
-                              onChange={(e) => setNewCustomerData(prev => ({ ...prev, phone: e.target.value }))}
-                              placeholder="+54 11 1234-5678"
-                            />
-                          </div>
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Email</Label>
-                          <Input
-                            value={newCustomerData.email}
-                            onChange={(e) => setNewCustomerData(prev => ({ ...prev, email: e.target.value }))}
-                            placeholder="juan@ejemplo.com"
-                            type="email"
-                          />
-                        </div>
-                        <div className="flex gap-2">
-                          <Button onClick={createCustomerInline} disabled={!newCustomerData.name || !newCustomerData.phone || loading}>
-                            {loading ? "Creando..." : "Crear Cliente"}
-                          </Button>
-                          <Button variant="outline" onClick={() => setCreatingCustomer(false)}>
-                            Cancelar
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-
-                    {selectedCustomerId && (
-                      <div className="p-3 bg-green-50 rounded border">
-                        <div className="flex items-center gap-2">
-                          <CheckCircle className="h-4 w-4 text-green-600" />
-                          <span className="font-medium">
-                            {foundCustomers.find(c => c.id === selectedCustomerId)?.name || 'Cliente seleccionado'}
-                          </span>
-                        </div>
-                        <div className="text-sm text-muted-foreground ml-6">
-                          {foundCustomers.find(c => c.id === selectedCustomerId)?.phone}
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setSelectedCustomerId(null)}
-                          className="mt-2"
-                        >
-                          Cambiar cliente
-                        </Button>
-                      </div>
-                    )}
+                    <p className="text-sm">Haga clic para crear el vehículo y la orden</p>
                   </div>
 
                   <div className="flex gap-2">
@@ -744,16 +532,15 @@ export default function NewWorkOrderPage() {
                       Cancelar
                     </Button>
                     <Button
-                      onClick={() => setStep(2)}
-                      disabled={
-                        !selectedCustomerId ||
-                        !newVehicleData.identifier ||
-                        (!isMotorVehicle(newVehicleData.category) &&
-                          (!newVehicleData.equipmentName || !newVehicleData.equipmentType))
-                      }
+                      onClick={() => {
+                        // Pre-fill the identifier and open modal
+                        setNewVehicleData(prev => ({ ...prev, identifier: plateSearch.toUpperCase() }));
+                        setIsVehicleModalOpen(true);
+                      }}
                       className="flex-1"
                     >
-                      Continuar
+                      <Plus className="h-4 w-4 mr-2" />
+                      Crear Vehículo
                     </Button>
                   </div>
                 </div>
@@ -1019,6 +806,22 @@ export default function NewWorkOrderPage() {
             </div>
           )}
         </div>
+
+        {/* Vehicle Dialog Modal */}
+        <VehicleDialog
+          open={isVehicleModalOpen}
+          onOpenChange={(open) => {
+            setIsVehicleModalOpen(open);
+            if (!open) setSelectedCustomerForNewVehicle(null);
+          }}
+          customerId={selectedCustomerForNewVehicle || undefined}
+          preselectedIdentifier={plateSearch || undefined}
+          onSuccess={(vehicle) => {
+            setFoundVehicle(vehicle as VehicleWithCustomer);
+            setShowCreateVehicle(false);
+          }}
+        />
       </div>
+    </div>
   );
 }

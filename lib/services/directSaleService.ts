@@ -27,22 +27,38 @@ export interface CreateDirectSaleInput {
   payments: DirectSalePaymentInput[];
   notes?: string;
   createdBy: string;
+  sellOnCredit?: boolean;
+  remainingAmount?: number;
 }
 
 /**
  * Create a direct sale with items and payments
  * Also updates stock for products
+ * Supports credit sales (account balance) for registered customers
  */
 export async function createDirectSale(input: CreateDirectSaleInput) {
-  const { customerId, customerName, items, payments, notes, createdBy } = input;
+  const { customerId, customerName, items, payments, notes, createdBy, sellOnCredit, remainingAmount } = input;
 
   // Calculate total
   const total = items.reduce((sum, item) => sum + item.totalPrice, 0);
 
-  // Validate payments match total
+  // Calculate payments total
   const paymentsTotal = payments.reduce((sum, payment) => sum + payment.amount, 0);
-  if (Math.abs(paymentsTotal - total) > 0.01) {
+  const remaining = total - paymentsTotal;
+
+  // For non-credit sales, validate full payment
+  if (!sellOnCredit && Math.abs(paymentsTotal - total) > 0.01) {
     throw new Error('El total de pagos no coincide con el total de la venta');
+  }
+
+  // For credit sales, validate customer exists and remaining amount matches
+  if (sellOnCredit) {
+    if (!customerId) {
+      throw new Error('Debe seleccionar un cliente para venta a cuenta corriente');
+    }
+    if (Math.abs(remaining - (remainingAmount || 0)) > 0.01) {
+      throw new Error('El monto pendiente no coincide con el calculado');
+    }
   }
 
   // Validate stock for products
@@ -161,6 +177,41 @@ export async function createDirectSale(input: CreateDirectSaleInput) {
         },
         tx
       );
+    }
+
+    // For credit sales, update customer balance
+    if (sellOnCredit && customerId && remaining > 0) {
+      const customer = await tx.customer.findUnique({
+        where: { id: customerId },
+        select: { balance: true, name: true },
+      });
+
+      if (!customer) {
+        throw new Error('Cliente no encontrado');
+      }
+
+      // Helper to convert Decimal to number
+      const decimalToNumber = (decimal: unknown): number => {
+        if (decimal === null || decimal === undefined) return 0;
+        if (typeof decimal === 'number') return decimal;
+        if (typeof decimal === 'object' && 'toNumber' in decimal && typeof (decimal as { toNumber: () => number }).toNumber === 'function') {
+          return (decimal as { toNumber: () => number }).toNumber();
+        }
+        return 0;
+      };
+
+      const currentBalance = decimalToNumber(customer.balance);
+      const newBalance = currentBalance + remaining;
+
+      await tx.customer.update({
+        where: { id: customerId },
+        data: {
+          balance: newBalance,
+        },
+      });
+
+      // Note: The remaining debt is tracked in customer.balance
+      // No separate payment record needed - the balance is the source of truth
     }
 
     return directSale;

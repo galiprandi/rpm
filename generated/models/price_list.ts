@@ -471,14 +471,6 @@ export type Price_listScalarRelationFilter = {
   isNot?: Prisma.price_listWhereInput
 }
 
-export type DecimalFieldUpdateOperationsInput = {
-  set?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  increment?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  decrement?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  multiply?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  divide?: runtime.Decimal | runtime.DecimalJsLike | number | string
-}
-
 export type price_listCreateNestedOneWithoutPrice_list_itemInput = {
   create?: Prisma.XOR<Prisma.price_listCreateWithoutPrice_list_itemInput, Prisma.price_listUncheckedCreateWithoutPrice_list_itemInput>
   connectOrCreate?: Prisma.price_listCreateOrConnectWithoutPrice_list_itemInput

@@ -13,13 +13,14 @@ import { useRouter } from "next/navigation";
 interface Customer {
   id: string;
   name: string;
-  phone: string;
-  phoneAlt?: string;
-  email?: string;
+  phone: string | null;
+  phoneAlt?: string | null;
+  email?: string | null;
+  balance: number;
   billingData?: {
     cuit: string;
     invoiceType: string;
-  };
+  } | null;
   vehicles: Array<{
     id: string;
     identifier: string;
@@ -115,6 +116,24 @@ export default function CustomersClient({ initialCustomers }: CustomersClientPro
                 </span>
               )}
             </div>
+          );
+        },
+      },
+      {
+        accessorKey: "balance",
+        header: "Saldo",
+        cell: ({ row }) => {
+          const balance = row.original.balance;
+          if (balance <= 0) {
+            return <span className="text-muted-foreground">-</span>;
+          }
+          return (
+            <span className="font-medium text-red-600">
+              {new Intl.NumberFormat('es-AR', {
+                style: 'currency',
+                currency: 'ARS',
+              }).format(balance)}
+            </span>
           );
         },
       },

@@ -1,12 +1,15 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { DataTable } from "@/components/ui/data-table";
 import { ColumnDef } from "@tanstack/react-table";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Phone,
   Mail,
@@ -17,6 +20,8 @@ import {
   Wrench,
   Pencil,
   Eye,
+  Wallet,
+  ArrowDownLeft,
 } from "lucide-react";
 import Link from "next/link";
 import { Header } from "@/components/adm/Header";
@@ -28,6 +33,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { CustomerForm } from "@/components/customers/CustomerForm";
+import { VehicleDialog } from "@/components/vehicles/VehicleDialog";
 
 interface Vehicle {
   id: string;
@@ -59,6 +65,7 @@ interface CustomerDetail {
     invoiceType: string;
   };
   createdAt: string;
+  balance: number;
   vehicles: Vehicle[];
   workOrders: WorkOrder[];
 }
@@ -71,9 +78,21 @@ export default function CustomerDetailPage() {
   const [loading, setLoading] = useState(true);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('CASH');
+  const [paymentNotes, setPaymentNotes] = useState('');
   const [vehicleFilter, setVehicleFilter] = useState('');
   const [workOrderFilter, setWorkOrderFilter] = useState('');
-  const router = useRouter();
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('es-AR', {
+      style: 'currency',
+      currency: 'ARS',
+    }).format(value);
+  };
 
   const fetchCustomer = useCallback(async () => {
     try {
@@ -198,6 +217,14 @@ export default function CustomerDetailPage() {
           onClick: () => setIsEditModalOpen(true),
           icon: Pencil,
         }}
+        secondaryActions={[
+          {
+            label: "+ Vehículo",
+            onClick: () => setIsVehicleModalOpen(true),
+            icon: Plus,
+            variant: "outline",
+          },
+        ]}
       >
         {/* Contactos clickeables */}
         <div className="flex flex-wrap gap-4 mt-2">
@@ -237,6 +264,79 @@ export default function CustomerDetailPage() {
           )}
         </div>
       </Header>
+
+      {/* Cuenta Corriente - Solo visible si hay saldo pendiente o a favor */}
+      {customer.balance !== 0 && (
+        <Card className={customer.balance > 0 ? "border-red-200 bg-red-50/30" : "border-green-200 bg-green-50/30"}>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Wallet className="h-4 w-4" />
+              Cuenta Corriente
+            </CardTitle>
+            <Button
+              onClick={() => setIsPaymentModalOpen(true)}
+              size="sm"
+              className={customer.balance > 0 ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"}
+            >
+              <ArrowDownLeft className="h-4 w-4 mr-1" />
+              Registrar Pago
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-sm text-muted-foreground">Saldo Actual</div>
+              <div className={`text-3xl font-bold ${customer.balance > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                {formatCurrency(customer.balance)}
+              </div>
+              <div className="text-xs text-muted-foreground mt-1">
+                {customer.balance > 0 
+                  ? 'Cliente con deuda pendiente'
+                  : customer.balance < 0
+                  ? 'Cliente con saldo a favor'
+                  : 'Cliente al día'
+                }
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-sm text-muted-foreground">OTs Impagas</div>
+              <div className="text-2xl font-semibold">
+                {customer.workOrders.filter(wo => wo.status !== 'PAID' && wo.status !== 'DELIVERED' && wo.status !== 'CANCELLED').length}
+              </div>
+            </div>
+          </div>
+
+          {/* Lista de OTs con saldo pendiente */}
+          {customer.workOrders.filter(wo => wo.status !== 'PAID' && wo.status !== 'CANCELLED').length > 0 && (
+            <div className="mt-4 pt-4 border-t">
+              <div className="text-sm font-medium mb-2">Órdenes de trabajo con saldo:</div>
+              <div className="space-y-2">
+                {customer.workOrders
+                  .filter(wo => wo.status !== 'PAID' && wo.status !== 'CANCELLED')
+                  .map(wo => (
+                    <div key={wo.id} className="flex items-center justify-between p-2 bg-white rounded border">
+                      <div>
+                        <Link href={`/adm/work-orders/${wo.id}`} className="text-sm font-medium hover:underline">
+                          OT #{wo.id.slice(-6)} - {wo.vehicle.identifier}
+                        </Link>
+                        <div className="text-xs text-muted-foreground">
+                          {new Date(wo.createdAt).toLocaleDateString('es-AR')}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium">{formatCurrency(wo.total)}</span>
+                        {getStatusBadge(wo.status)}
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+      )}
 
       {/* Notas */}
       {customer.notes && (
@@ -281,8 +381,8 @@ export default function CustomerDetailPage() {
           }
           headerActions={[
             {
-              label: "Agregar",
-              onClick: () => router.push(`/adm/vehicles/new?customerId=${customerId}`),
+              label: "+ Vehículo",
+              onClick: () => setIsVehicleModalOpen(true),
               icon: Plus,
             },
           ]}
@@ -339,6 +439,129 @@ export default function CustomerDetailPage() {
           )}
         />
       )}
+
+      {/* Modal de Pago */}
+      <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Registrar Pago</DialogTitle>
+            <DialogDescription>
+              Cliente: {customer?.name}
+              <br />
+              Saldo actual: {customer && formatCurrency(customer.balance)}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label>Monto a Abonar *</Label>
+              <Input
+                type="number"
+                step="0.01"
+                min="0.01"
+                max={customer?.balance}
+                placeholder="Ej: 5000"
+                value={paymentAmount}
+                onChange={(e) => setPaymentAmount(e.target.value)}
+              />
+              {customer && customer.balance > 0 && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Máximo: {formatCurrency(customer.balance)}
+                </p>
+              )}
+            </div>
+            <div>
+              <Label>Método de Pago *</Label>
+              <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccione método" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="CASH">Efectivo</SelectItem>
+                  <SelectItem value="TRANSFER">Transferencia</SelectItem>
+                  <SelectItem value="CARD">Tarjeta</SelectItem>
+                  <SelectItem value="CHECK">Cheque</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Notas (opcional)</Label>
+              <Input
+                placeholder="Referencia, comprobante, etc."
+                value={paymentNotes}
+                onChange={(e) => setPaymentNotes(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsPaymentModalOpen(false);
+                setPaymentAmount('');
+                setPaymentNotes('');
+              }}
+              disabled={isSubmittingPayment}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={async () => {
+                const amount = parseFloat(paymentAmount);
+                if (!amount || amount <= 0) {
+                  alert('Ingrese un monto válido');
+                  return;
+                }
+                if (customer && amount > customer.balance) {
+                  alert('El monto no puede superar el saldo pendiente');
+                  return;
+                }
+
+                setIsSubmittingPayment(true);
+                try {
+                  const res = await fetch(`/api/customers/${customerId}/payments`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      amount,
+                      method: paymentMethod,
+                      notes: paymentNotes,
+                    }),
+                  });
+
+                  if (res.ok) {
+                    const data = await res.json();
+                    setIsPaymentModalOpen(false);
+                    setPaymentAmount('');
+                    setPaymentNotes('');
+                    fetchCustomer(); // Refresh customer data
+                    alert(`Pago registrado exitosamente. Nuevo saldo: ${formatCurrency(data.customer.newBalance)}`);
+                  } else {
+                    const error = await res.json();
+                    alert(error.error || 'Error al registrar pago');
+                  }
+                } catch (error) {
+                  console.error('Error:', error);
+                  alert('Error al registrar pago');
+                } finally {
+                  setIsSubmittingPayment(false);
+                }
+              }}
+              disabled={isSubmittingPayment || !paymentAmount}
+            >
+              {isSubmittingPayment ? 'Procesando...' : 'Confirmar Pago'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Vehículo */}
+      <VehicleDialog
+        open={isVehicleModalOpen}
+        onOpenChange={setIsVehicleModalOpen}
+        customerId={customerId}
+        customerName={customer?.name || ''}
+        onSuccess={fetchCustomer}
+      />
 
       {/* Modal de edición */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>

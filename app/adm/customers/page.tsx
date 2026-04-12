@@ -31,13 +31,24 @@ export default async function CustomersPage() {
     orderBy: { name: 'asc' },
   });
 
+  // Helper para convertir Decimal a number
+  const decimalToNumber = (decimal: unknown): number => {
+    if (decimal === null || decimal === undefined) return 0;
+    if (typeof decimal === 'number') return decimal;
+    if (typeof decimal === 'object' && 'toNumber' in decimal && typeof (decimal as { toNumber: () => number }).toNumber === 'function') {
+      return (decimal as { toNumber: () => number }).toNumber();
+    }
+    return 0;
+  };
+
   const customersWithVehicles = customers.map(c => ({
     ...c,
+    balance: decimalToNumber(c.balance),
     vehicles: c.vehicle,
     _count: {
       workOrders: c._count.work_order,
     },
   }));
 
-  return <CustomersClient initialCustomers={customersWithVehicles as any} />;
+  return <CustomersClient initialCustomers={customersWithVehicles as unknown as any} />;
 }
