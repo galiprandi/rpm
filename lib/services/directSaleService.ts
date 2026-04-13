@@ -139,7 +139,7 @@ export async function createDirectSale(input: CreateDirectSaleInput) {
             type: 'OUT',
             previousStock,
             newStock,
-            reason: `Venta directa #${directSale.id.slice(-6)}`,
+            reason: `Venta directa - ${customerName || 'Consumidor final'}`,
             userName: createdBy,
           },
         });
@@ -172,7 +172,7 @@ export async function createDirectSale(input: CreateDirectSaleInput) {
           method: paymentMethod?.code || 'CASH',
           referenceId: paymentRecord.id,
           referenceType: 'direct_sale_payment',
-          reason: `Venta directa #${directSale.id.slice(-6)}`,
+          reason: `Venta directa - ${customerName || 'Consumidor final'}`,
           createdBy,
         },
         tx
