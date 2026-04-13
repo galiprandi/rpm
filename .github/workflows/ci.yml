@@ -174,12 +174,10 @@ jobs:
     - name: Install dependencies
       run: pnpm install --frozen-lockfile
 
-    - name: Apply Database Migrations
+    - name: Build with Migrations
       env:
         DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      run: |
-        pnpm prisma migrate deploy
-        pnpm prisma generate
+      run: pnpm vercel-build
 
     - name: Deploy to Vercel
       uses: amondnet/vercel-action@v25
