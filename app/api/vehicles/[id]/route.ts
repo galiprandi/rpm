@@ -28,7 +28,18 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(vehicle);
+    // Transform Prisma field names to match frontend interface
+    const transformedVehicle = {
+      ...vehicle,
+      workOrders: vehicle.work_order || [],
+      work_order: undefined,
+      vehicle_make: undefined,
+      vehicle_model: undefined,
+      make: vehicle.vehicle_make,
+      model: vehicle.vehicle_model,
+    };
+
+    return NextResponse.json(transformedVehicle);
   } catch (error) {
     console.error("Error fetching vehicle:", error);
     return NextResponse.json(

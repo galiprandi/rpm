@@ -222,6 +222,7 @@ Al consultar deudores:
 - [x] QuickSaleModal permite venta a cuenta corriente con checkbox
 - [x] Lista de OTs tiene filtro "Pendientes de pago"
 - [x] Lista de clientes muestra saldo deudor
+- [x] Lista de clientes tiene filtro "Solo con Saldo" + exportación a CSV
 - [x] Usuario puede registrar pago genérico que descuente del balance
 - [x] Reporte de deudores ordenable por monto/fecha
 - [x] Cuando balance llega a 0, OTs se marcan como pagadas

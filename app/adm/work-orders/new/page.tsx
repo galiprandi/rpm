@@ -822,6 +822,5 @@ export default function NewWorkOrderPage() {
           }}
         />
       </div>
-    </div>
   );
 }

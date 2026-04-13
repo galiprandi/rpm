@@ -82,22 +82,8 @@ export async function POST(
       );
     }
 
-    // Check if customer has balance to pay
+    // Get current balance
     const currentBalance = decimalToNumber(customer.balance);
-    if (currentBalance <= 0) {
-      return NextResponse.json(
-        { error: 'Customer has no outstanding balance' },
-        { status: 400 }
-      );
-    }
-
-    // Validate payment amount doesn't exceed balance (optional, can allow overpayment)
-    if (amount > currentBalance) {
-      return NextResponse.json(
-        { error: `Payment amount exceeds balance. Max allowed: ${currentBalance}` },
-        { status: 400 }
-      );
-    }
 
     // Calculate new balance
     const newBalance = currentBalance - amount;
@@ -126,8 +112,9 @@ export async function POST(
         },
       });
 
-      // If balance is now 0 or negative, mark all pending work orders as PAID
-      if (newBalance <= 0) {
+      // If balance is now exactly 0, mark all pending work orders as PAID
+      // Note: If balance is negative, customer has credit - keep OTs pending
+      if (newBalance === 0) {
         await tx.work_order.updateMany({
           where: {
             customerId: id,
@@ -149,6 +136,8 @@ export async function POST(
     revalidatePath('/adm/customers');
     revalidatePath('/adm/work-orders');
 
+    const finalNewBalance = decimalToNumber(result.updatedCustomer.balance);
+
     return NextResponse.json(
       {
         success: true,
@@ -163,7 +152,8 @@ export async function POST(
           id: result.updatedCustomer.id,
           name: result.updatedCustomer.name,
           previousBalance: currentBalance,
-          newBalance: decimalToNumber(result.updatedCustomer.balance),
+          newBalance: finalNewBalance,
+          hasCredit: finalNewBalance < 0, // True if customer has credit (negative balance)
         },
       },
       { status: 201 }
