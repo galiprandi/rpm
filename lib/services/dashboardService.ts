@@ -272,7 +272,7 @@ export async function getDashboardData(): Promise<DashboardData> {
   const recentMovementsFormatted = recentMovements.map(m => ({
     type: m.type as 'IN' | 'OUT' | 'ADJUSTMENT',
     productName: m.product.name,
-    quantity: m.quantity,
+    quantity: Math.abs(m.quantity),
     reason: m.reason,
     timestamp: m.createdAt.toISOString(),
     userName: m.userName || 'Sistema',
