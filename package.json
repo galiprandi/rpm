@@ -6,6 +6,7 @@
     "dev": "next dev",
     "dev:debug": "DEBUG_AUTH_ENABLED=true next dev",
     "build": "prisma generate && next build",
+    "vercel-build": "prisma generate && prisma migrate deploy && next build",
     "start": "next start",
     "start:debug": "DEBUG_AUTH_ENABLED=true next start",
     "lint": "eslint",
