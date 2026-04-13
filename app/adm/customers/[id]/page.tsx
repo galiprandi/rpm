@@ -383,23 +383,14 @@ export default function CustomerDetailPage() {
             {
               label: "+ Vehículo",
               onClick: () => setIsVehicleModalOpen(true),
-              icon: Plus,
             },
           ]}
           rowActions={(vehicle) => (
-            <div className="flex gap-2">
-              <Link href={`/adm/vehicles/${vehicle.id}`}>
-                <Button variant="ghost" size="sm">
-                  <Eye className="h-4 w-4" />
-                </Button>
-              </Link>
-              <Link href={`/adm/work-orders/new?vehicleId=${vehicle.id}`}>
-                <Button size="sm">
-                  <Plus className="h-4 w-4 mr-1" />
-                  OT
-                </Button>
-              </Link>
-            </div>
+            <Link href={`/adm/vehicles/${vehicle.id}`}>
+              <Button variant="ghost" size="sm">
+                <Eye className="h-4 w-4" />
+              </Button>
+            </Link>
           )}
         />
       )}
@@ -430,6 +421,12 @@ export default function CustomerDetailPage() {
               Historial de Órdenes de Trabajo ({customer.workOrders.length})
             </span>
           }
+          headerActions={[
+            {
+              label: "+ OT",
+              onClick: () => window.location.href = `/adm/work-orders/new?customerId=${customerId}`,
+            },
+          ]}
           rowActions={(workOrder) => (
             <Link href={`/adm/work-orders/${workOrder.id}`}>
               <Button variant="ghost" size="sm">
@@ -511,10 +508,6 @@ export default function CustomerDetailPage() {
                   alert('Ingrese un monto válido');
                   return;
                 }
-                if (customer && amount > customer.balance) {
-                  alert('El monto no puede superar el saldo pendiente');
-                  return;
-                }
 
                 setIsSubmittingPayment(true);
                 try {
@@ -529,12 +522,10 @@ export default function CustomerDetailPage() {
                   });
 
                   if (res.ok) {
-                    const data = await res.json();
                     setIsPaymentModalOpen(false);
                     setPaymentAmount('');
                     setPaymentNotes('');
                     fetchCustomer(); // Refresh customer data
-                    alert(`Pago registrado exitosamente. Nuevo saldo: ${formatCurrency(data.customer.newBalance)}`);
                   } else {
                     const error = await res.json();
                     alert(error.error || 'Error al registrar pago');

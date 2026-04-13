@@ -339,6 +339,29 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // 7. Update customer balance - add total as debt
+    try {
+      const customer = await prisma.customer.findUnique({
+        where: { id: customerId },
+        select: { balance: true },
+      });
+      
+      if (customer) {
+        const currentBalance = Number(customer.balance) || 0;
+        const newBalance = currentBalance + total;
+        
+        await prisma.customer.update({
+          where: { id: customerId },
+          data: { balance: newBalance },
+        });
+        
+        console.log("Customer balance updated:", { customerId, oldBalance: currentBalance, newBalance, added: total });
+      }
+    } catch (balanceError) {
+      console.error("Error updating customer balance:", balanceError);
+      // No fallar la creación de la OT, pero loguear el error
+    }
+
     return NextResponse.json(workOrder, { status: 201 });
   } catch (error) {
     console.error("Error creating work order:", error);

@@ -3,7 +3,7 @@
 import { useState, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { CrudAdmin } from "@/components/adm";
-import { Phone, User, Eye } from "lucide-react";
+import { Phone, User, Eye, TrendingDown } from "lucide-react";
 import Link from "next/link";
 import { type ColumnDef } from "@tanstack/react-table";
 import { CustomerDialog } from "@/components/customers/CustomerDialog";
@@ -41,6 +41,13 @@ export default function CustomersClient({ initialCustomers }: CustomersClientPro
   const [loading, setLoading] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [showOnlyWithBalance, setShowOnlyWithBalance] = useState(false);
+
+  // Filter customers based on balance
+  const filteredCustomers = useMemo(() => {
+    if (!showOnlyWithBalance) return customers;
+    return customers.filter(c => c.balance > 0);
+  }, [customers, showOnlyWithBalance]);
 
   const fetchCustomers = useCallback(async () => {
     setLoading(true);
@@ -185,7 +192,7 @@ export default function CustomersClient({ initialCustomers }: CustomersClientPro
       <CrudAdmin
         title="Clientes"
         description="Gestiona las fichas de tus clientes"
-        items={customers}
+        items={filteredCustomers}
         loading={loading}
         onCreate={handleCreate}
         columns={columns}
@@ -194,6 +201,14 @@ export default function CustomersClient({ initialCustomers }: CustomersClientPro
         createButtonText="Cliente"
         tableTitle="Listado de Clientes"
         searchPlaceholder="Buscar por nombre o teléfono..."
+        secondaryActions={[
+          {
+            label: showOnlyWithBalance ? 'Ver Todos' : 'Solo con Saldo',
+            onClick: () => setShowOnlyWithBalance(!showOnlyWithBalance),
+            variant: 'outline',
+            icon: TrendingDown,
+          },
+        ]}
         rowActions={(customer) => (
           <Link href={`/adm/customers/${customer.id}`}>
             <Button variant="ghost" size="sm" title="Ver detalle">
