@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { capitalizeText } from "@/lib/utils/format";
 
 // GET /api/customers/[id] - Get customer by ID
 export async function GET(
@@ -94,7 +95,7 @@ export async function PUT(
     const customer = await prisma.customer.update({
       where: { id },
       data: {
-        name,
+        name: capitalizeText(name) || name,
         phone,
         phoneAlt,
         email,

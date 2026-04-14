@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { capitalizeText } from "@/lib/utils/format";
 
 interface CreateVehicleInput {
   identifier: string;
@@ -120,7 +121,7 @@ export async function POST(request: NextRequest) {
         makeId,
         modelId,
         year,
-        color,
+        color: color ? capitalizeText(color) : null,
         equipmentName,
         equipmentType,
         description,
