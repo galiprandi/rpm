@@ -3,6 +3,26 @@
  */
 
 /**
+ * Capitalize each word in a string
+ * @param text - Text to capitalize
+ * @returns Capitalized text (e.g., "juan perez" -> "Juan Perez")
+ */
+export function capitalizeText(text: string | null | undefined): string {
+  if (!text) return '';
+  return text.trim().replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+/**
+ * Normalize text for case-insensitive comparison
+ * @param text - Text to normalize
+ * @returns Lowercase trimmed text
+ */
+export function normalizeText(text: string | null | undefined): string {
+  if (!text) return '';
+  return text.trim().toLowerCase();
+}
+
+/**
  * Format number as ARS currency
  * @param amount - Amount to format
  * @returns Formatted string (e.g., "$485.000")

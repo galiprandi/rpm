@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { randomUUID } from "crypto";
+import { capitalizeText } from "@/lib/utils/format";
 
 // GET /api/customers - List customers with optional search
 export async function GET(request: NextRequest) {
@@ -87,7 +88,7 @@ export async function POST(request: NextRequest) {
     const customer = await prisma.customer.create({
       data: {
         id: randomUUID(),
-        name,
+        name: capitalizeText(name) || name,
         phone,
         phoneAlt,
         email,

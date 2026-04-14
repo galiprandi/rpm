@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { capitalizeText } from "@/lib/utils/format";
 
 // GET /api/vehicles/[id] - Get vehicle by ID
 export async function GET(
@@ -78,7 +79,7 @@ export async function PUT(
         makeId,
         modelId,
         year,
-        color,
+        color: color ? capitalizeText(color) : null,
         equipmentName,
         equipmentType,
         description,

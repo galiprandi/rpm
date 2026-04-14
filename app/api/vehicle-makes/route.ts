@@ -1,11 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { randomUUID } from "crypto";
-
-// Helper functions for text normalization
-const normalizeText = (text: string): string => text.trim().toLowerCase();
-const capitalizeText = (text: string): string =>
-  text.trim().replace(/\b\w/g, (char) => char.toUpperCase());
+import { capitalizeText, normalizeText } from "@/lib/utils/format";
 
 // GET /api/vehicle-makes - List all makes
 export async function GET(request: NextRequest) {
