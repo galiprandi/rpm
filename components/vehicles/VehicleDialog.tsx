@@ -19,7 +19,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
-import { Save, Car, User } from 'lucide-react';
+import { Save, Car, User, Plus, X } from 'lucide-react';
 
 const VEHICLE_CATEGORIES = [
   { value: 'CAR', label: 'Auto/Camioneta', icon: '🚗' },
@@ -62,6 +62,13 @@ export function VehicleDialog({
   const [customerSearch, setCustomerSearch] = useState('');
   const [foundCustomers, setFoundCustomers] = useState<Customer[]>([]);
   const [searchingCustomers, setSearchingCustomers] = useState(false);
+  const [isCreatingCustomer, setIsCreatingCustomer] = useState(false);
+  const [creatingCustomer, setCreatingCustomer] = useState(false);
+  const [newCustomerData, setNewCustomerData] = useState({
+    name: '',
+    phone: '',
+    email: '',
+  });
 
   const [formData, setFormData] = useState({
     identifier: preselectedIdentifier || '',
@@ -95,6 +102,8 @@ export function VehicleDialog({
       });
       setCustomerSearch('');
       setFoundCustomers([]);
+      setIsCreatingCustomer(false);
+      setNewCustomerData({ name: '', phone: '', email: '' });
     }
   }, [open, customerIdProp, customerNameProp, preselectedIdentifier]);
 
@@ -115,6 +124,33 @@ export function VehicleDialog({
       console.error('Error searching customers:', error);
     } finally {
       setSearchingCustomers(false);
+    }
+  };
+
+  const createCustomerInline = async () => {
+    if (!newCustomerData.name || !newCustomerData.phone) return;
+    setCreatingCustomer(true);
+    try {
+      const res = await fetch('/api/customers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newCustomerData),
+      });
+      if (res.ok) {
+        const customer = await res.json();
+        setCustomerId(customer.id);
+        setCustomerName(customer.name);
+        setIsCreatingCustomer(false);
+        setNewCustomerData({ name: '', phone: '', email: '' });
+      } else {
+        const error = await res.json();
+        alert(error.error || 'Error al crear cliente');
+      }
+    } catch (error) {
+      console.error('Error creating customer:', error);
+      alert('Error al crear cliente');
+    } finally {
+      setCreatingCustomer(false);
     }
   };
 
@@ -182,12 +218,24 @@ export function VehicleDialog({
 
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           {/* Customer Selection - Only show if no customer pre-selected */}
-          {!customerId && !customerIdProp && (
+          {!customerId && !customerIdProp && !isCreatingCustomer && (
             <div className="space-y-3 p-4 border rounded-lg bg-muted/50">
-              <Label className="flex items-center gap-2">
-                <User className="h-4 w-4" />
-                Buscar Cliente *
-              </Label>
+              <div className="flex items-center justify-between">
+                <Label className="flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  Buscar Cliente *
+                </Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsCreatingCustomer(true)}
+                  className="text-primary"
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Crear nuevo
+                </Button>
+              </div>
               <div className="flex gap-2">
                 <Input
                   placeholder="Buscar por nombre..."
@@ -224,6 +272,90 @@ export function VehicleDialog({
                   ))}
                 </div>
               )}
+              {foundCustomers.length === 0 && customerSearch.trim() && !searchingCustomers && (
+                <div className="text-sm text-muted-foreground text-center py-2">
+                  No se encontraron clientes.{' '}
+                  <button
+                    type="button"
+                    onClick={() => setIsCreatingCustomer(true)}
+                    className="text-primary hover:underline"
+                  >
+                    Crear nuevo cliente
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Create New Customer Form */}
+          {!customerId && !customerIdProp && isCreatingCustomer && (
+            <div className="space-y-3 p-4 border rounded-lg bg-muted/50">
+              <div className="flex items-center justify-between">
+                <Label className="flex items-center gap-2">
+                  <Plus className="h-4 w-4" />
+                  Crear Nuevo Cliente
+                </Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setIsCreatingCustomer(false);
+                    setNewCustomerData({ name: '', phone: '', email: '' });
+                  }}
+                >
+                  <X className="h-4 w-4 mr-1" />
+                  Cancelar
+                </Button>
+              </div>
+              <div className="space-y-3">
+                <div>
+                  <Label htmlFor="new-customer-name">
+                    Nombre <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="new-customer-name"
+                    value={newCustomerData.name}
+                    onChange={(e) =>
+                      setNewCustomerData((prev) => ({ ...prev, name: e.target.value }))
+                    }
+                    placeholder="Ej: Juan Pérez"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="new-customer-phone">
+                    Teléfono <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="new-customer-phone"
+                    value={newCustomerData.phone}
+                    onChange={(e) =>
+                      setNewCustomerData((prev) => ({ ...prev, phone: e.target.value }))
+                    }
+                    placeholder="Ej: 1123456789"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="new-customer-email">Email</Label>
+                  <Input
+                    id="new-customer-email"
+                    type="email"
+                    value={newCustomerData.email}
+                    onChange={(e) =>
+                      setNewCustomerData((prev) => ({ ...prev, email: e.target.value }))
+                    }
+                    placeholder="Ej: cliente@email.com"
+                  />
+                </div>
+                <Button
+                  type="button"
+                  onClick={createCustomerInline}
+                  disabled={creatingCustomer || !newCustomerData.name || !newCustomerData.phone}
+                  className="w-full"
+                >
+                  {creatingCustomer ? 'Creando...' : 'Crear Cliente'}
+                </Button>
+              </div>
             </div>
           )}
 

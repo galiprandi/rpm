@@ -32,13 +32,37 @@ Esta especificación detalla el proceso de despliegue, configuración y monitori
 ```json
 {
   "framework": "nextjs",
-  "buildCommand": "npm run build",
-  "devCommand": "npm run dev", 
-  "installCommand": "npm install",
+  "buildCommand": "pnpm vercel-build",
+  "devCommand": "npm run dev",
+  "installCommand": "pnpm install",
   "outputDirectory": ".next",
   "nodeVersion": "24.x"
 }
 ```
+
+#### Database Migrations (Prisma ORM)
+
+El despliegue incluye migraciones automáticas de base de datos usando Prisma ORM.
+
+**Build Command Personalizado:**
+- **Script**: `vercel-build` en `package.json`
+- **Comando**: `prisma generate && prisma migrate deploy && next build`
+- **Configuración**: `vercel.json` con `"buildCommand": "pnpm vercel-build"`
+
+**Flujo de Migraciones:**
+```
+Build Start → Prisma Generate → Migrate Deploy → Next Build → Deploy
+     │              │                │              │          │
+     └──────────────┴────────────────┴──────────────┴──────────┘
+```
+
+**Referencias:**
+- Documentación Prisma: [Deploy to Vercel](https://www.prisma.io/docs/orm/prisma-client/deployment/serverless/deploy-to-vercel)
+- Script: `package.json` → `"vercel-build": "prisma generate && prisma migrate deploy && next build"`
+- Config: `vercel.json` → `{"buildCommand": "pnpm vercel-build"}`
+
+**Variables de Entorno Requeridas:**
+- `DATABASE_URL`: Connection string a PostgreSQL
 
 #### Environment Variables
 - **Development**: Variables descargadas automáticamente
@@ -65,10 +89,12 @@ GitHub Push → Vercel Webhook → Build Process → Deploy → Health Check →
 ```
 
 #### Build Process
-1. **Install Dependencies**: `npm install` (o `pnpm install`)
-2. **Build Application**: `npm run build`
-3. **Optimize Assets**: Optimización automática de Vercel
-4. **Deploy**: Despliegue a Edge Network
+1. **Install Dependencies**: `pnpm install` (via Vercel)
+2. **Generate Prisma Client**: `prisma generate`
+3. **Database Migrations**: `prisma migrate deploy` (aplica migraciones pendientes)
+4. **Build Application**: `next build`
+5. **Optimize Assets**: Optimización automática de Vercel
+6. **Deploy**: Despliegue a Edge Network
 
 #### Deployment Types
 - **Production**: `main` branch → https://rpm-wheat.vercel.app
@@ -324,7 +350,9 @@ git remote -v
 - Cobertura: 80% (objetivo >90%)
 
 ### Actualización de Especificación
-- **Last Updated**: 2025-03-25
-- **Next Review**: 2025-04-25
-- **Version**: 1.0.0
+- **Last Updated**: 2025-04-13
+- **Next Review**: 2025-05-13
+- **Version**: 1.1.0
 - **Status**: Active
+- **Changelog**:
+  - v1.1.0 (2025-04-13): Agregado soporte para migraciones automáticas de Prisma ORM en builds de Vercel
