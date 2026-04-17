@@ -1,0 +1,16 @@
+🚀 Novedades del Sistema
+
+🗓️ 17 de Abril de 2026
+• ✨ Ventas Rápidas: El botón de pago ahora dice "Registrar pago" para mayor claridad.
+
+🗓️ 14 de Abril de 2026
+• ✨ Clientes: Los nombres de clientes y colores de vehículos ahora se muestran con formato correcto (mayúsculas/minúsculas).
+• 🎉 Vehículos: Ahora puedes crear un cliente nuevo directamente desde el diálogo de vehículos, sin salir de la pantalla.
+
+🗓️ 13 de Abril de 2026
+• ✨ Ventas Rápidas: Las ventas se actualizan inmediatamente en la lista después de registrar un pago.
+• 🎨 Movimientos: Mejoras en las descripciones de los movimientos de caja para mayor claridad.
+
+🗓️ 12 de Abril de 2026
+• 🎉 Clientes: Ahora puedes registrar pagos de clientes y consultar su saldo pendiente directamente desde la ficha del cliente.
+• 🔍 Clientes: Filtro para ver solo clientes con saldo pendiente de pago.
