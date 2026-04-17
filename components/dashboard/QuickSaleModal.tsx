@@ -511,7 +511,7 @@ export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModal
                   className="w-32"
                 />
                 <Button onClick={addPayment} disabled={!paymentMethodId || paymentAmount <= 0}>
-                  Agregar
+                  Registrar pago
                 </Button>
               </div>
             </div>
