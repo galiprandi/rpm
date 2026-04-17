@@ -17,6 +17,23 @@ Componente agnóstico y reusable para buscar, seleccionar y gestionar productos 
 - Búsqueda en tiempo real con debounce (300ms)
 - Resultados unificados con flag diferenciador `type: 'product' | 'service'`
 
+#### Sintaxis Avanzada de Búsqueda
+
+| Sintaxis | Significado | Ejemplo | Encuentra |
+|----------|-------------|---------|-----------|
+| `term1+term2` | **AND** - Ambos términos obligatorios | `led+cronos` | Items con "led" **Y** "cronos" |
+| `term1 term2` | **OR** - Cualquiera de los términos | `filtro aire` | Items con "filtro" **O** "aire" |
+| `"frase exacta"` | **Exact** - Substring exacto | `"LED-123"` | Items con exactamente "LED-123" |
+| `term1+term2 term3` | **AND + OR** combinado | `paragolpe+delantero` | Items con "paragolpe" **Y** "delantero" |
+
+**Casos de uso típicos:**
+- `779123+barra` → Busca producto por código de barras + nombre
+- `paragolpe+delantero+kangoo` → Producto específico con múltiples términos
+- `"LED-001"` → Búsqueda exacta por SKU
+- `filtro aire` → Búsqueda amplia (cualquier palabra)
+
+> ⚠️ **Regresión a prevenir:** El operador `+` es **separador**, no prefijo. `+kangoo` no es válido, usar `led+kangoo`.
+
 ### Filtros
 - **Categoría**: Selector opcional que filtra solo productos
 - **Lista de Precios**: Selector opcional que afecta el precio mostrado y calculado
@@ -258,6 +275,29 @@ app/api/products-services/search/
 ## Testing
 
 ### Unit Tests (Jest)
+
+#### Search Query Parser Tests
+
+Ubicación: `lib/utils/searchQueryParser.test.ts`
+
+**Casos CRÍTICOS (regresiones a prevenir):**
+
+| Test | Descripción | Regresión Prevenida |
+|------|-------------|---------------------|
+| `parseSearchQuery: + as separator` | `led+cronos` → required: ['led', 'cronos'] | `+` debe ser separador, no prefijo |
+| `parseSearchQuery: space as OR` | `filtro aire` → optional: ['filtro', 'aire'] | Espacios = OR, no AND |
+| `parseSearchQuery: quotes as exact` | `"LED-123"` → phrases: ['led-123'] | Frases exactas deben preservarse |
+| `parseSearchQuery: multi-word segments` | `paragolpe delantero+kangoo` → required: ['paragolpe delantero', 'kangoo'] | Segmentos multi-palabra = frases required |
+| `parseSearchQuery: trim around +` | `led + cronos` → required: ['led', 'cronos'] | Espacios alrededor de + deben ignorarse |
+| `parseSearchQuery: case insensitive` | `LED+CRONOS` → required: ['led', 'cronos'] | Búsqueda debe ser case-insensitive |
+
+**Casos Edge:**
+- Empty string, whitespace only
+- `+` at start/end: `+led`, `led+`
+- Consecutive `+`: `led++cronos`
+- Empty quotes: `""`
+
+#### Component Tests
 
 Ubicación: `components/ui/ProductServiceSelector.test.tsx`
 

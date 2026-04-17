@@ -350,7 +350,7 @@ export function ProductServiceSelector({
         <div className="relative w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar por nombre, SKU o código de barras..."
+            placeholder="Buscar: led+cronos (ambas) o filtro aire (cualquiera)"
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
@@ -365,12 +365,14 @@ export function ProductServiceSelector({
         <div className="border rounded-md shadow-lg bg-popover z-50 h-[35vh] max-h-80 overflow-hidden w-full">
           <div className="h-full overflow-y-auto overflow-x-hidden">
             {!showResults ? (
-              <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
-                Escribe para buscar...
+              <div className="h-full flex flex-col items-center justify-center text-sm text-muted-foreground px-4 text-center">
+                <span>Escribe para buscar productos o servicios</span>
+                <span className="text-xs mt-1 opacity-70">led+cronos (ambas) · &quot;LED-123&quot; (exacto) · filtro aire (cualquiera)</span>
               </div>
             ) : searchTerm.length < 2 ? (
-              <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
-                Escribe al menos 2 caracteres...
+              <div className="h-full flex flex-col items-center justify-center text-sm text-muted-foreground px-4 text-center">
+                <span>Escribe al menos 2 caracteres</span>
+                <span className="text-xs mt-1 opacity-70">led+cronos (ambas) · fiat cronos (cualquiera) · &quot;ABC-123&quot; (exacto)</span>
               </div>
             ) : searchLoading ? (
               <div className="h-full flex flex-col items-center justify-center gap-2 text-muted-foreground">
