@@ -1,6 +1,7 @@
 🚀 Novedades del Sistema
 
 🗓️ 17 de Abril de 2026
+• 🔍 Búsqueda de Productos: Ahora puedes usar búsqueda avanzada. Escribe `led+cronos` para encontrar productos que contengan ambas palabras, o `filtro aire` para buscar cualquiera de las dos. También puedes usar comillas para búsqueda exacta como `"LED-123"`.
 • ✨ Ventas Rápidas: El botón de pago ahora dice "Registrar pago" para mayor claridad.
 
 🗓️ 14 de Abril de 2026
