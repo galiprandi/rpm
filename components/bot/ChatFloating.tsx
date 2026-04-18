@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
-import { MessageSquare, X, Send, Plus, FileImage, Camera as CameraIcon, Maximize2, Minimize2 } from 'lucide-react';
+import { MessageSquare, X, Send, Plus, FileImage, Camera as CameraIcon, Maximize2, Minimize2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -25,8 +25,9 @@ export function ChatFloating({ isOpen: controlledIsOpen, onOpenChange }: { isOpe
   const [isExpanded, setIsExpanded] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const { messages, sendMessage } = useChat({
+  const { messages, sendMessage, status, stop } = useChat({
     transport: new DefaultChatTransport({ 
       api: '/api/bot/chat',
       // Send only the last message to the server (SDK pattern)
@@ -38,6 +39,11 @@ export function ChatFloating({ isOpen: controlledIsOpen, onOpenChange }: { isOpe
       }),
     }),
   });
+
+  // Auto scroll to bottom when new messages arrive
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -161,6 +167,16 @@ export function ChatFloating({ isOpen: controlledIsOpen, onOpenChange }: { isOpe
                   </div>
                 </div>
               ))}
+              {/* Loading indicator */}
+              {(status === 'submitted' || status === 'streaming') && (
+                <div className="flex justify-start">
+                  <div className="bg-muted rounded-lg p-3 flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="text-sm text-muted-foreground">Ger está pensando...</span>
+                  </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
             </div>
           </div>
 
@@ -217,10 +233,17 @@ export function ChatFloating({ isOpen: controlledIsOpen, onOpenChange }: { isOpe
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Escribe tu mensaje..."
                 className="flex-1"
+                disabled={status !== 'ready'}
               />
-              <Button type="submit" size="icon" disabled={!input.trim() && !attachedFile}>
-                <Send className="h-4 w-4" />
-              </Button>
+              {(status === 'submitted' || status === 'streaming') ? (
+                <Button type="button" variant="ghost" size="icon" onClick={() => stop()}>
+                  <X className="h-4 w-4" />
+                </Button>
+              ) : (
+                <Button type="submit" size="icon" disabled={!input.trim() && !attachedFile}>
+                  <Send className="h-4 w-4" />
+                </Button>
+              )}
             </div>
           </form>
         </div>
