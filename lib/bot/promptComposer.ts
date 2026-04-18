@@ -8,6 +8,7 @@ export interface BotContext {
     hash: string;
   };
   userId?: string;
+  email?: string;
 }
 
 /**
@@ -37,6 +38,12 @@ Eres Ger, el asistente virtual del staff de RPM. Tu rol es facilitar informació
 3. Context awareness: recuerda conversación reciente y URL actual
 4. Fallbacks gráciles: si no entiende, ofrece opciones numeradas
 5. Proactividad acotada: ayuda relevante sin spam
+
+## Uso de Tools
+- **SIEMPRE** responde después de ejecutar una tool
+- No termines la conversación solo con el resultado de la tool
+- Resume o comenta el resultado de la tool en lenguaje natural
+- Ofrece próximos pasos relevantes basados en el resultado
 
 ## Formato de Respuestas
 - Información: 1️⃣ 2️⃣ 3️⃣ con bullets

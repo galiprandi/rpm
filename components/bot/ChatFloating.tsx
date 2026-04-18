@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Streamdown } from 'streamdown';
 
 export function ChatFloating({ isOpen: controlledIsOpen, onOpenChange }: { isOpen?: boolean; onOpenChange?: (open: boolean) => void } = {}) {
   const isMobile = useIsMobile();
@@ -26,15 +27,25 @@ export function ChatFloating({ isOpen: controlledIsOpen, onOpenChange }: { isOpe
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const { messages, sendMessage } = useChat({
-    transport: new DefaultChatTransport({ api: '/api/bot/chat' }),
+    transport: new DefaultChatTransport({ 
+      api: '/api/bot/chat',
+      // Send only the last message to the server (SDK pattern)
+      prepareSendMessagesRequest: ({ messages }) => ({
+        body: { 
+          message: messages[messages.length - 1], 
+          context: { role: 'ADMIN' }, // TODO: get from session (userId, email)
+        },
+      }),
+    }),
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (input.trim() || attachedFile) {
       const messageContent = input.trim();
+
       if (attachedFile) {
-        sendMessage({ 
+        sendMessage({
           text: messageContent || `[Archivo adjuntado: ${attachedFile.name}]`,
         });
         setAttachedFile(null);
@@ -137,6 +148,13 @@ export function ChatFloating({ isOpen: controlledIsOpen, onOpenChange }: { isOpe
                     {message.parts.map((part, i) => {
                       if (part.type === 'text') {
                         return <p key={i} className="text-sm whitespace-pre-wrap">{part.text}</p>;
+                      }
+                      if (part.type === 'tool-get_product' && part.state === 'output-available') {
+                        return (
+                          <div key={i} className="text-sm prose prose-sm max-w-none">
+                            <Streamdown>{part.output as string}</Streamdown>
+                          </div>
+                        );
                       }
                       return null;
                     })}

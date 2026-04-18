@@ -1,33 +1,25 @@
-import type { Tool } from 'ai';
-import { UserRole } from './promptComposer';
+import { type UserRole } from './promptComposer';
+import { getProductTool } from './tools/get-product';
 
 /**
  * Tools available for each user role
- * This ensures users can only access tools appropriate to their permissions
  */
-export const toolsByRole: Record<UserRole, Record<string, Tool>> = {
+export const toolsByRole: Record<UserRole, Record<string, any>> = {
   ADMIN: {
-    // Tools will be added here following new architecture
+    get_product: getProductTool,
   },
-
   SELLER: {
-    // Tools will be added here following new architecture
+    get_product: getProductTool,
   },
-
-  TECHNICIAN: {
-    // Tools will be added here following new architecture
-  },
-
+  TECHNICIAN: {},
   STAFF: {
-    // Tools will be added here following new architecture
+    get_product: getProductTool,
   },
 };
 
 /**
- * Get tools filtered by user role
- * @param role - The user's role
- * @returns Object containing only the tools available for that role
+ * Get tools available for a specific role
  */
-export function getToolsForRole(role: UserRole): Record<string, Tool> {
-  return toolsByRole[role] || toolsByRole.STAFF;
+export function getToolsForRole(role: UserRole): Record<string, any> {
+  return toolsByRole[role] || {};
 }

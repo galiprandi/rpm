@@ -1,6 +1,6 @@
 # Tool: `get_product`
 
-> **Estado**: 🟡 Definición completa - Pendiente implementación  
+> **Estado**: ✅ Implementado  
 > **Fase**: Fase 2 - Bot Ger Core Tools  
 > **Dependencias**: `productService`, `searchProducts` (fallback)
 
@@ -19,7 +19,8 @@ lib/bot/tools/get-product/
 ├── description.md          # Prompt/description editable de la tool
 ├── index.ts                # Implementación principal
 ├── parser.ts               # Convierte Product → Markdown
-└── parser.test.ts          # Tests del formato MD
+├── parser.test.ts          # Tests del formato MD
+└── execute.ts              # Lógica de ejecución
 ```
 
 ---
@@ -47,22 +48,46 @@ interface BotContext {
 
 ## Comportamiento
 
-### 1. Búsqueda Exacta → Fuzzy Fallback
+### 1. Búsqueda con Fuzzy Fallback Inteligente
 
-| Escenario | Acción |
-|-----------|--------|
-| EAN exacto encontrado | Devuelve 1 producto |
-| SKU exacto encontrado | Devuelve 1 producto |
-| 0 resultados exactos | **Auto-ejecuta** `searchProducts` con mismo query (fuzzy) |
-| Fuzzy encuentra resultados | Devuelve hasta 5 + mensaje de refinamiento |
-| Fuzzy = 0 resultados | Mensaje: *"No encontré productos. ¿Probás con otro código?"* |
+La tool `get_product` decide cuándo invocar `searchService` internamente:
+
+| Tipo de Query | Resultados | Acción |
+|--------------|------------|--------|
+| **SKU exacto** (match en `sku` field) | Cualquier cantidad | Devuelve tal cual (no fuzzy) |
+| **Query genérica** (nombre/descripción) | >= 1 resultados | Devuelve tal cual (suficiente variedad) |
+| **Query genérica** (nombre/descripción) | 0 resultados | **Invoca** `searchService` (fuzzy más amplio) |
+
+**Lógica de detección:**
+1. Primero intenta match exacto en `sku` field
+2. Si match, es SKU → no fuzzy (identificador único)
+3. Si no match, es query genérica → aplica lógica de 0 resultados
 
 ### 2. Límite de Resultados
 
 - **Máximo**: 5 productos
 - **Mensaje al alcanzar límite**: *"Encontré 5 productos. Si no ves el que buscás, refiná la búsqueda o usá la tool `search_products` para más opciones."*
 
-### 3. Filtro de Datos por Rol
+### 3. Singularización y Normalización de Queries
+
+**IMPORTANTE**: La tool implementa automáticamente singularización y normalización de acentos antes de buscar:
+
+```typescript
+const singularQuery = query
+  .replace(/es$/, '')      // "baterías" → "batería"
+  .replace(/s$/, '')       // "aceites" → "aceite"
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '');  // "batería" → "bateria"
+```
+
+Esto aumenta la tasa de match porque:
+- Los nombres de productos en la DB están en singular
+- La búsqueda es accent-insensitive
+- El usuario puede usar plural y la tool lo singulariza automáticamente
+
+**Nota**: La descripción de la tool indica que el modelo debería singularizar, pero la implementación final lo hace en código para mayor confiabilidad.
+
+### 4. Filtro de Datos por Rol
 
 | Campo | ADMIN | SELLER | TECHNICIAN | STAFF |
 |-------|-------|--------|------------|-------|
@@ -206,4 +231,42 @@ describe('productToMarkdown', () => {
 | Fecha | Versión | Cambio | Autor |
 |-------|---------|--------|-------|
 | 2026-04-17 | 1.0 | Definición inicial | User |
+| 2026-04-17 | 1.1 | Implementación completa con singularización y normalización en código | User |
+| 2026-04-17 | 1.2 | Corrección de lógica de fallback (0 resultados en lugar de < 2) | User |
+| 2026-04-18 | 1.3 | Implementación de historial de conversación (SDK pattern) | User |
+
+---
+
+## Mejoras Pendientes
+
+### 🔴 Prioridad Alta: Migrar almacenamiento a DB
+
+**Estado:** Actualmente en memoria (`Map<string, string[]>` en `app/api/bot/chat/route.ts`)
+
+**Problema:** El historial se pierde al reiniciar el servidor.
+
+**Solución requerida:**
+1. Crear tabla `ChatConversations` en Prisma:
+   ```prisma
+   model ChatConversation {
+     id        String   @id @default(cuid())
+     chatId    String   @unique
+     userId    String?
+     createdAt DateTime @default(now())
+     updatedAt DateTime @updatedAt
+     messages  ChatMessage[]
+   }
+
+   model ChatMessage {
+     id        String   @id @default(cuid())
+     role      String   // "user" | "assistant"
+     content   String
+     conversationId String
+     conversation ChatConversation @relation(fields: [conversationId], references: [id])
+     createdAt DateTime @default(now())
+   }
+   ```
+
+2. Implementar `loadChat(id)` y `saveChat({ chatId, messages })` usando Prisma
+3. Agregar cleanup de conversaciones antiguas (ej: > 30 días)
 
