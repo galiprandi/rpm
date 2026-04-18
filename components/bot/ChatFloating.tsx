@@ -149,7 +149,7 @@ export function ChatFloating({ isOpen: controlledIsOpen, onOpenChange }: { isOpe
                       if (part.type === 'text') {
                         return <p key={i} className="text-sm whitespace-pre-wrap">{part.text}</p>;
                       }
-                      if (part.type === 'tool-get_product' && part.state === 'output-available') {
+                      if (part.type === 'tool-consultarStock' && part.state === 'output-available') {
                         return (
                           <div key={i} className="text-sm prose prose-sm max-w-none">
                             <Streamdown>{part.output as string}</Streamdown>

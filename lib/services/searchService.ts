@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { Product } from './productService';
-import { UserRole } from '@/lib/bot/promptComposer';
-import { BotContext } from '@/lib/bot/types';
+import { UserRole } from '@/lib/agents/utils/promptComposer';
+import { BotContext } from '@/lib/agents/utils/types';
 
 export interface SearchServiceInput {
   query: string;

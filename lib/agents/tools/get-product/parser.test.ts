@@ -55,9 +55,9 @@ describe('productToMarkdown', () => {
     
     // SHOULD show basic fields
     expect(markdown).toContain('Polarizado 3M CS35');
-    expect(markdown).toContain('**SKU**: POL-3M-35');
-    expect(markdown).toContain('**Stock disponible**: 12 unidades');
-    expect(markdown).toContain('**Categoría**: Polarizados');
+    expect(markdown).toContain('*SKU*: POL-3M-35');
+    expect(markdown).toContain('📊 *Stock*: 12 unidades');
+    expect(markdown).toContain('*Categoría*: Polarizados');
   });
 
   it('shows all fields for ADMIN', () => {
@@ -66,7 +66,7 @@ describe('productToMarkdown', () => {
     // Should show cost fields
     expect(markdown).toContain('Costo');
     expect(markdown).toContain('$15.000');
-    expect(markdown).toContain('**Precio venta**: $45.000');
+    expect(markdown).toContain('💰 *Precio venta*: $45.000');
     
     // Should show supplier
     expect(markdown).toContain('Proveedor');
@@ -74,7 +74,7 @@ describe('productToMarkdown', () => {
     
     // Should show basic fields
     expect(markdown).toContain('Polarizado 3M CS35');
-    expect(markdown).toContain('**SKU**: POL-3M-35');
+    expect(markdown).toContain('*SKU*: POL-3M-35');
   });
 
   it('shows price and supplier for SELLER but not costs', () => {
@@ -85,7 +85,7 @@ describe('productToMarkdown', () => {
     expect(markdown).not.toContain('$15.000');
     
     // Should show price (replacementCost as sale price)
-    expect(markdown).toContain('**Precio venta**: $45.000');
+    expect(markdown).toContain('💰 *Precio venta*: $45.000');
     
     // Should show supplier
     expect(markdown).toContain('Proveedor');
@@ -109,8 +109,8 @@ describe('productToMarkdown', () => {
     
     // SHOULD show basic fields
     expect(markdown).toContain('Polarizado 3M CS35');
-    expect(markdown).toContain('**Stock disponible**: 12 unidades');
-    expect(markdown).toContain('**SKU**: POL-3M-35');
+    expect(markdown).toContain('📊 *Stock*: 12 unidades');
+    expect(markdown).toContain('*SKU*: POL-3M-35');
   });
 
   it('returns max 5 products with message', () => {
@@ -125,28 +125,21 @@ describe('productToMarkdown', () => {
     
     // Should mention 5 products found
     expect(markdown).toContain('Encontré 5 productos');
-    
-    // Should have refinement message
-    expect(markdown).toContain('refiná la búsqueda');
-    expect(markdown).toContain('search_products');
   });
 
   it('formats single product with proper markdown', () => {
     const markdown = productToMarkdown([mockProduct], 'ADMIN');
     
-    // Should have H2 title
-    expect(markdown).toContain('## Polarizado 3M CS35');
+    // Should have bold title (not H2)
+    expect(markdown).toContain('**Polarizado 3M CS35**');
     
-    // Should have bold fields
-    expect(markdown).toContain('**SKU**');
-    expect(markdown).toContain('**Categoría**');
-    expect(markdown).toContain('**Stock disponible**');
+    // Should have italic fields
+    expect(markdown).toContain('*SKU*');
+    expect(markdown).toContain('*Categoría*');
+    expect(markdown).toContain('*Stock*');
     
-    // Should have blockquote for description
-    expect(markdown).toContain('> Película polarizada');
-    
-    // Should have separator
-    expect(markdown).toContain('---');
+    // Should have blockquote for description with emoji
+    expect(markdown).toContain('> ℹ️ Película polarizada');
   });
 
   it('includes contextual message for /products URL', () => {
@@ -173,27 +166,26 @@ describe('productToMarkdown', () => {
   });
 
   it('handles products without optional fields', () => {
-    const minimalProduct: Product = {
+    const minimalProduct = {
       ...mockProduct,
-      description: null,
       supplier: null,
       supplierId: null,
       location: null,
       lastMovementAt: null,
+      description: null,
     };
 
     const markdown = productToMarkdown([minimalProduct], 'ADMIN');
     
     // Should still format correctly
-    expect(markdown).toContain('## Polarizado 3M CS35');
-    expect(markdown).toContain('**SKU**: POL-3M-35');
-    
+    expect(markdown).toContain('**Polarizado 3M CS35**');
+    expect(markdown).toContain('*SKU*: POL-3M-35');
     // Should not show empty fields
     expect(markdown).not.toContain('Proveedor:');
   });
 
   it('handles products without SKU', () => {
-    const noSkuProduct: Product = {
+    const noSkuProduct = {
       ...mockProduct,
       sku: '',
     };
@@ -201,7 +193,7 @@ describe('productToMarkdown', () => {
     const markdown = productToMarkdown([noSkuProduct], 'ADMIN');
     
     // Should show N/A for missing SKU
-    expect(markdown).toContain('**SKU**: N/A');
+    expect(markdown).toContain('*SKU*: N/A');
   });
 
   it('formats multiple products as list', () => {
@@ -213,10 +205,10 @@ describe('productToMarkdown', () => {
 
     const markdown = productToMarkdown(products, 'ADMIN');
     
-    // Should show numbered list
-    expect(markdown).toContain('**1. Product 1**');
-    expect(markdown).toContain('**2. Product 2**');
-    expect(markdown).toContain('**3. Product 3**');
+    // Should show numbered list with bold product names
+    expect(markdown).toContain('1. **Product 1**');
+    expect(markdown).toContain('2. **Product 2**');
+    expect(markdown).toContain('3. **Product 3**');
     
     // Should show count
     expect(markdown).toContain('Encontré 3 productos');

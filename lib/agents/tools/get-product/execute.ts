@@ -1,7 +1,7 @@
 import { getProducts } from '@/lib/services/productService';
 import { searchProducts } from '@/lib/services/searchService';
 import { productToMarkdown } from './parser';
-import type { BotContext } from '../../types';
+import type { BotContext } from '../../utils/types';
 import { getPriceLists, calculateProductPrice } from '@/lib/services/priceListService';
 
 /**

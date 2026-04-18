@@ -1,25 +1,27 @@
 import { type UserRole } from './promptComposer';
-import { getProductTool } from './tools/get-product';
+import { consultarStockTool } from '../stock/consultarStock';
 
 /**
  * Tools available for each user role
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const toolsByRole: Record<UserRole, Record<string, any>> = {
   ADMIN: {
-    get_product: getProductTool,
+    consultarStock: consultarStockTool,
   },
   SELLER: {
-    get_product: getProductTool,
+    consultarStock: consultarStockTool,
   },
   TECHNICIAN: {},
   STAFF: {
-    get_product: getProductTool,
+    consultarStock: consultarStockTool,
   },
 };
 
 /**
  * Get tools available for a specific role
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getToolsForRole(role: UserRole): Record<string, any> {
   return toolsByRole[role] || {};
 }

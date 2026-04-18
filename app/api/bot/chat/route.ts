@@ -1,8 +1,8 @@
 import { streamText, convertToModelMessages, validateUIMessages } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
-import { composeSystemPrompt, type BotContext, type UserRole } from '@/lib/bot/promptComposer';
-import { getToolsForRole } from '@/lib/bot/toolsByRole';
-import { loadChat, saveChat, type ChatMessage } from '@/lib/bot/chatHistory';
+import { composeSystemPrompt, type BotContext, type UserRole } from '@/lib/agents/utils/promptComposer';
+import { getToolsForRole } from '@/lib/agents/utils/toolsByRole';
+import { loadChat, saveChat, type ChatMessage } from '@/lib/agents/utils/chatHistory';
 
 // Configure OpenAI (using Vercel AI Gateway or direct OpenAI)
 const openai = createOpenAI({
