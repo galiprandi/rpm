@@ -1,6 +1,8 @@
 // In-memory message storage for chat history
 // TODO: migrate to DB (see specs/bot-tools/get-product.md)
 
+import logger from './logger';
+
 const chatHistory = new Map<string, string[]>();
 
 export interface ChatMessage {
@@ -26,7 +28,7 @@ export interface SaveChatOptions {
  */
 export async function loadChat(id: string): Promise<string[]> {
   const messages = chatHistory.get(id) || [];
-  console.log(`📂 Loaded ${messages.length} text messages for chat ${id}`);
+  logger.debug({ chatId: id, messageCount: messages.length }, 'Loaded chat history');
   return messages;
 }
 
@@ -36,7 +38,7 @@ export async function loadChat(id: string): Promise<string[]> {
  * @param options - Chat ID and UI messages to save
  */
 export async function saveChat({ chatId, messages }: SaveChatOptions): Promise<void> {
-  console.log(`💾 Saving ${messages.length} messages for chat ${chatId}`);
+  logger.debug({ chatId, messageCount: messages.length }, 'Saving chat history');
   
   // Extract plain text from messages (user text + tool outputs)
   const newTextMessages: string[] = [];
@@ -66,7 +68,7 @@ export async function saveChat({ chatId, messages }: SaveChatOptions): Promise<v
   // Limit to last 10 messages to prevent memory issues
   const limitedHistory = updatedHistory.slice(-10);
   
-  console.log(`💾 Extracted ${newTextMessages.length} text messages, total history: ${limitedHistory.length}`);
+  logger.debug({ extracted: newTextMessages.length, total: limitedHistory.length }, 'Extracted text messages');
   chatHistory.set(chatId, limitedHistory);
 }
 
@@ -76,7 +78,7 @@ export async function saveChat({ chatId, messages }: SaveChatOptions): Promise<v
  */
 export async function clearChat(id: string): Promise<void> {
   chatHistory.delete(id);
-  console.log(`🗑️ Cleared history for chat ${id}`);
+  logger.debug({ chatId: id }, 'Cleared chat history');
 }
 
 /**
@@ -92,5 +94,5 @@ export async function getAllChatIds(): Promise<string[]> {
  */
 export async function clearAllHistory(): Promise<void> {
   chatHistory.clear();
-  console.log('🗑️ Cleared all chat history');
+  logger.debug('Cleared all chat history');
 }

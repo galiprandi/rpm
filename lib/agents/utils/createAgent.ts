@@ -2,6 +2,7 @@ import { ToolLoopAgent } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import logger from './logger';
 
 const openai = createOpenAI({
   baseURL: process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1',
@@ -32,7 +33,7 @@ export function createAgent(options: {
       const fullPath = join(process.cwd(), options.instructions);
       systemPrompt = readFileSync(fullPath, 'utf-8');
     } catch (error) {
-      console.error(`Error reading instructions from ${options.instructions}:`, error);
+      logger.error({ instructions: options.instructions, error }, 'Error reading instructions from file');
       // Fallback to the original string if file read fails
       systemPrompt = options.instructions;
     }

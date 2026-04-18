@@ -364,6 +364,41 @@ Verificar:
 - La respuesta es correcta
 - El contexto de conversación se mantiene
 
+## Logging
+
+### Logger Centralizado
+
+Usar `logger` de `lib/agents/utils/logger.ts` en lugar de `console.log`:
+
+```typescript
+import logger from './logger';
+
+// Debug level (solo en modo debug)
+logger.debug({ chatId, messageCount }, 'Saving chat history');
+
+// Error level (siempre visible)
+logger.error({ error }, 'Operation failed');
+```
+
+### Habilitar Modo Debug
+
+Para ver logs de debug en desarrollo:
+
+```bash
+# Método 1: Variable de entorno DEBUG
+DEBUG=true pnpm dev
+
+# Método 2: Variable específica para agentes
+DEBUG_AGENTS=true pnpm dev
+```
+
+### Convenciones de Logging
+
+- **`logger.debug()`**: Para información de desarrollo (cargas, guardados, etc.)
+- **`logger.info()`**: Para eventos importantes del sistema
+- **`logger.error()`**: Para errores y excepciones
+- **Estructurar datos**: Usar objetos como primer parámetro para contexto estructurado
+
 ## Notas Importantes
 
 - **Idioma:** Todo el código en inglés, prompts en español
@@ -371,3 +406,4 @@ Verificar:
 - **Streaming:** Actualmente usando llamadas directas a `execute` por problemas con ToolLoopAgent
 - **Contexto:** El orchestrator maneja el contexto, los subagentes son stateless
 - **Validación:** Validar con `curl` después de cambios críticos
+- **Logging:** Usar `logger` en lugar de `console.log` para mejor estructura y control
