@@ -9,18 +9,32 @@ En lugar de crear UIs específicas para cada nueva funcionalidad, desarrollamos:
 2. **Tools** que expone esos servicios al bot
 3. **Prompts del sistema** compuestos: base común + instrucciones específicas del rol + tools disponibles
 
-## Estado de Implementación (2026-04-06)
+## Estado de Implementación (2026-04-17)
 
-**❌ NO IMPLEMENTADO**
+**🟡 PARCIALMENTE IMPLEMENTADO**
 
-### Pendiente
-- No hay directorio `lib/bot/`
-- No hay dependencias de AI SDK en package.json
-- No hay implementación del agente Ger
-- Solo especificación completa en este documento
+### ✅ Implementado
+- [x] Directorio `lib/bot/` con arquitectura base
+- [x] Integración Vercel AI SDK
+- [x] Chat flotante UI (desktop/mobile)
+- [x] Tools básicas: `checkStock`, `searchProducts`, `getDailySales`
+- [x] Filtrado de tools por rol ([`toolsByRole.ts`](../lib/bot/toolsByRole.ts))
+- [x] System prompt dinámico por rol ([`promptComposer.ts`](../lib/bot/promptComposer.ts))
+- [x] Variable de entorno `OPENAI_MODEL` configurable
+
+### 🚧 En Progreso / Definición
+- [ ] **Tool Core: `get_product`** - [Ver Spec](./bot-tools/get-product.md)
+  - Contexto inyectado (role + currentUrl)
+  - Descripciones en `.md` con cache
+  - Parser service→Markdown
+  - Filtro de datos por rol
+  - Fallback a búsqueda fuzzy
+- [ ] Tools de Taller: `getMyWorkOrders`, `updateWorkOrderStatus`
+- [ ] Tools de Ventas: `createQuickQuote`, `getCustomerHistory`
 
 ### Roadmap
 - **Fase 2 (Semana 7-8)**: Setup LLM + Tools básicas + Chat interface mobile
+- **Fase 2+ (Semana 9-10)**: Tools avanzadas con contexto y formatos ricos
 - Dependencia: Requiere FASE 2 (Taller) completada
 
 ---
@@ -294,6 +308,28 @@ Ger: "📦 Stock Polarizados 3M:
 
 Cada tool es una función que el LLM puede llamar. Están organizados por dominio y disponibilidad según rol.
 
+> **Specs Detalladas**: Las tools core tienen especificaciones individuales en [`/specs/bot-tools/`](../specs/bot-tools/)
+> - [`get_product`](./bot-tools/get-product.md) - Consulta de productos con contexto y filtros por rol
+
+### Estructura de Tools Core
+
+Las tools avanzadas siguen esta arquitectura:
+```
+lib/bot/tools/[tool-name]/
+├── description.md          # Prompt editable + cache
+├── index.ts                # Implementación
+├── parser.ts               # Service → Markdown
+└── parser.test.ts          # Tests de formato
+```
+
+**Patrones obligatorios**:
+- Todas reciben `context: BotContext` inyectado por el backend
+- Descripción cargada desde `.md` (no hardcodeada)
+- Respuesta en Markdown (parser testeado)
+- Datos filtrados según `context.role`
+
+---
+
 ### Categoría: Órdenes de Trabajo
 
 ```typescript
@@ -360,6 +396,8 @@ const completeChecklistItem = {
 ```
 
 ### Categoría: Consultas Generales
+
+> **Spec detallada**: [`get_product`](./bot-tools/get-product.md) - Tool core con contexto, parser MD, y filtros por rol.
 
 ```typescript
 // tools/queryTools.ts

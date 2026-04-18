@@ -35,7 +35,7 @@ export async function POST(req: Request) {
     // Convert UI messages to Model messages (required for AI SDK v6)
     const modelMessages = await convertToModelMessages(messages);
 
-    // Get tools filtered by user role (empty for now - TODO: add new tools)
+    // Get tools filtered by user role
     const roleTools = getToolsForRole(userRole);
 
     // Stream response with tools

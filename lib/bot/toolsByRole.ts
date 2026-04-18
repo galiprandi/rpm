@@ -4,25 +4,22 @@ import { UserRole } from './promptComposer';
 /**
  * Tools available for each user role
  * This ensures users can only access tools appropriate to their permissions
- *
- * TODO: Populate with new tools following spec:
- * - /specs/bot-tools/get-product.md
  */
 export const toolsByRole: Record<UserRole, Record<string, Tool>> = {
   ADMIN: {
-    // TODO: Add tools following new architecture
+    // Tools will be added here following new architecture
   },
 
   SELLER: {
-    // TODO: Add tools following new architecture
+    // Tools will be added here following new architecture
   },
 
   TECHNICIAN: {
-    // TODO: Add tools following new architecture
+    // Tools will be added here following new architecture
   },
 
   STAFF: {
-    // TODO: Add tools following new architecture
+    // Tools will be added here following new architecture
   },
 };
 
