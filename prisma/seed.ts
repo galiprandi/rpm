@@ -18,24 +18,35 @@ const defaultCategory = {
 };
 
 const defaultSupplier = {
-  id: 'sup-default',
-  name: 'Sin especificar',
-  contactName: null,
-  phone: null,
+  id: 'rpm',
+  name: 'RPM',
+  contactName: "Augusto Bordier",
+  phone: "3813199647",
   email: null,
-  address: null,
-  notes: 'Proveedor por defecto para productos sin proveedor específico',
+  address: "San Lorenzo 1462, T4000 San Miguel de Tucumán",
+  notes: '',
   isActive: true,
   createdAt: new Date(),
   updatedAt: new Date(),
 };
 
 const defaultPriceList = {
-  id: 'pl-default',
-  name: 'Lista General',
+  id: 'pl-contado',
+  name: 'Contado',
   isPublic: true,
   isActive: true,
-  baseMarginPercentage: 40.00,
+  baseMarginPercentage: 60.00,
+  roundingRule: 'SMART_HUNDREDS',
+  createdAt: new Date(),
+  updatedAt: new Date(),
+};
+
+const cardsPriceList = {
+  id: 'pl-cards',
+  name: 'Tarjetas',
+  isPublic: true,
+  isActive: true,
+  baseMarginPercentage: 196.00,
   roundingRule: 'SMART_HUNDREDS',
   createdAt: new Date(),
   updatedAt: new Date(),
@@ -43,55 +54,15 @@ const defaultPriceList = {
 
 const defaultPaymentMethods = [
   {
-    id: 'pm-efectivo',
-    code: 'EFECTIVO',
+    id: 'pm-cash',
+    code: 'CASH',
     name: 'Efectivo',
     description: 'Pago en efectivo',
     sortOrder: 1,
     isActive: true,
     createdAt: new Date(),
     updatedAt: new Date(),
-  },
-  {
-    id: 'pm-tarjeta-credito',
-    code: 'TARJETA_CREDITO',
-    name: 'Tarjeta de Crédito',
-    description: 'Pago con tarjeta de crédito',
-    sortOrder: 2,
-    isActive: true,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: 'pm-tarjeta-debito',
-    code: 'TARJETA_DEBITO',
-    name: 'Tarjeta de Débito',
-    description: 'Pago con tarjeta de débito',
-    sortOrder: 3,
-    isActive: true,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: 'pm-transferencia',
-    code: 'TRANSFERENCIA',
-    name: 'Transferencia Bancaria',
-    description: 'Pago por transferencia bancaria',
-    sortOrder: 4,
-    isActive: true,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: 'pm-mp',
-    code: 'MERCADO_PAGO',
-    name: 'Mercado Pago',
-    description: 'Pago a través de Mercado Pago',
-    sortOrder: 5,
-    isActive: true,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
+  }
 ];
 
 async function seed() {
@@ -103,7 +74,7 @@ async function seed() {
     update: defaultCategory,
     create: defaultCategory,
   });
-  console.log('✅ Categoría por defecto creada');
+  console.log(`✅ Categoría por defecto creada (${defaultCategory.name})`);
 
   // Crear proveedor por defecto
   await prisma.supplier.upsert({
@@ -114,7 +85,7 @@ async function seed() {
       id: defaultSupplier.id,
     },
   });
-  console.log('✅ Proveedor por defecto creado');
+  console.log(`✅ Proveedor ${defaultSupplier.name} creado`);
 
   // Crear configuración de margen mínimo global
   await prisma.setting.upsert({
@@ -135,7 +106,15 @@ async function seed() {
     update: defaultPriceList,
     create: defaultPriceList,
   });
-  console.log('✅ Lista de precios por defecto creada (Lista General)');
+  console.log(`✅ Lista de precios por defecto creada (${defaultPriceList.name})`);
+
+  // Crear lista de precios para tarjetas
+  await prisma.price_list.upsert({
+    where: { id: cardsPriceList.id },
+    update: cardsPriceList,
+    create: cardsPriceList,
+  });
+  console.log(`✅ Lista de precios para tarjetas creada (${cardsPriceList.name} - ${cardsPriceList.baseMarginPercentage}%)`);
 
   // Crear métodos de pago por defecto
   for (const pm of defaultPaymentMethods) {
@@ -145,7 +124,7 @@ async function seed() {
       create: pm,
     });
   }
-  console.log('✅ Métodos de pago por defecto creados (5 métodos)');
+  console.log(`✅ Métodos de pago por defecto creados (${defaultPaymentMethods.length} método${defaultPaymentMethods.length !== 1 ? 's' : ''})`);
 
   console.log('🎉 Seed completado! (0 productos creados - base de datos lista para desarrollo)');
 }
