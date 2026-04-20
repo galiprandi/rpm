@@ -192,18 +192,43 @@ export function ProductsClient({
         body: JSON.stringify(payload),
       });
 
-      if (response.ok) {
-        setIsDialogOpen(false);
-        resetForm();
-        router.refresh();
-      } else {
+      if (!response.ok) {
         const error = await response.json();
         await alert({
           title: 'Error',
           description: error.error || 'Error al guardar producto',
           variant: 'error',
         });
+        return;
       }
+
+      const result = await response.json();
+      const productId = result.product?.id || editingProduct?.id;
+
+      // Upload image if provided
+      if (formData.imageFile && productId) {
+        const formDataImage = new FormData();
+        formDataImage.append('file', formData.imageFile);
+        
+        const imageResponse = await fetch(`/api/products/${productId}/image`, {
+          method: 'POST',
+          body: formDataImage,
+        });
+
+        if (!imageResponse.ok) {
+          const imageError = await imageResponse.json();
+          console.error('Error uploading image:', imageError);
+          await alert({
+            title: 'Advertencia',
+            description: `Producto guardado pero la imagen no se pudo subir: ${imageError.error || 'Error desconocido'}`,
+            variant: 'warning',
+          });
+        }
+      }
+
+      setIsDialogOpen(false);
+      resetForm();
+      router.refresh();
     } catch (error) {
       console.error('Error saving product:', error);
       await alert({
@@ -284,6 +309,23 @@ export function ProductsClient({
   ];
 
   const columns: ColumnDef<Product>[] = [
+    {
+      accessorKey: 'imageUrl',
+      header: 'Imagen',
+      cell: ({ row }) => (
+        row.original.imageUrl ? (
+          <img
+            src={`/api/products/${row.original.id}/image`}
+            alt={row.original.name}
+            className="w-10 h-10 object-cover rounded"
+          />
+        ) : (
+          <div className="w-10 h-10 bg-muted rounded flex items-center justify-center">
+            <span className="text-xs text-muted-foreground">-</span>
+          </div>
+        )
+      ),
+    },
     {
       accessorKey: 'sku',
       header: 'SKU',

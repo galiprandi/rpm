@@ -23,6 +23,9 @@ export interface Product {
   } | null;
   margin: number;
   isLowStock: boolean;
+  imageUrl?: string | null;
+  imageCommit?: string | null;
+  imageBranch?: string | null;
 }
 
 export interface ProductFormData {
@@ -37,6 +40,7 @@ export interface ProductFormData {
   supplierId: string;
   barcode: string;
   location: string;
+  imageFile?: File;
 }
 
 export interface Category {

@@ -52,6 +52,7 @@ export function ProductDialog({
         categories={categories}
         suppliers={suppliers}
         isValid={isValid}
+        currentImageUrl={editingProduct?.imageUrl || null}
       />
     </ModalBase>
   );
