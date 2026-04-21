@@ -23,4 +23,5 @@ export const prisma =
     log: ['error'],
   });
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
+// Enable singleton in all environments to prevent connection pool exhaustion in Vercel
+globalForPrisma.prisma = prisma;
