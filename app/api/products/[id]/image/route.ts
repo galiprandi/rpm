@@ -293,6 +293,7 @@ export async function POST(request: NextRequest, { params }: Params) {
 
     // Upload to GitHub
     const { imageUrl, commitSha } = await uploadToGitHub(processedBuffer, id, config, config.branch);
+    console.log('Image uploaded to GitHub:', { imageUrl, commitSha });
 
     // Update product in database
     await prisma.product.update({
@@ -303,6 +304,7 @@ export async function POST(request: NextRequest, { params }: Params) {
         imageBranch: config.branch,
       },
     });
+    console.log('Product updated in database:', { id, imageUrl, imageCommit: commitSha });
 
     // Revalidate cache
     revalidatePath('/adm/products');
