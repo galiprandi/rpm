@@ -27,35 +27,33 @@ export async function GET() {
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    // Check for today's opening
-    const todayOpening = await prisma.cash_movement.findFirst({
+    // Find the absolute latest OPENING or CLOSING movement
+    const lastMovement = await prisma.cash_movement.findFirst({
       where: {
-        type: 'OPENING',
-        createdAt: {
-          gte: today,
-          lt: tomorrow,
+        type: {
+          in: ['OPENING', 'CLOSING'],
         },
       },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    const isOpen = lastMovement?.type === 'OPENING';
+    const lastOpening = isOpen ? lastMovement : await prisma.cash_movement.findFirst({
+      where: { type: 'OPENING' },
       orderBy: { createdAt: 'desc' },
     });
 
-    // Check if there's a closing after the opening
-    let todayClosing = null;
-    if (todayOpening) {
-      todayClosing = await prisma.cash_movement.findFirst({
-        where: {
-          type: 'CLOSING',
-          createdAt: {
-            gte: todayOpening.createdAt,
-            lt: tomorrow,
-          },
-        },
-        orderBy: { createdAt: 'desc' },
-      });
-    }
-
-    // Determine status
-    const isOpen = todayOpening && !todayClosing;
+    const lastClosingAtOpening = lastOpening ? await prisma.cash_movement.findFirst({
+      where: {
+        type: 'CLOSING',
+        createdAt: {
+          gte: lastOpening.createdAt
+        }
+      },
+      orderBy: { createdAt: 'desc' },
+    }) : null;
 
     // Get all payment methods for the summary
     const paymentMethods = await prisma.payment_method.findMany({
@@ -77,13 +75,12 @@ export async function GET() {
       summary[method] = { opening: 0, income: 0, expense: 0, expected: 0 };
     });
 
-    if (isOpen && todayOpening) {
+    if (isOpen && lastOpening) {
       // Get all movements since opening
       const movements = await prisma.cash_movement.findMany({
         where: {
           createdAt: {
-            gte: todayOpening.createdAt,
-            lt: tomorrow,
+            gte: lastOpening.createdAt,
           },
         },
       });
@@ -128,9 +125,9 @@ export async function GET() {
 
     return NextResponse.json({
       status: isOpen ? 'OPEN' : 'CLOSED',
-      openedAt: todayOpening?.createdAt?.toISOString() || null,
-      openedBy: todayOpening?.createdBy || null,
-      closedAt: todayClosing?.createdAt?.toISOString() || null,
+      openedAt: lastOpening?.createdAt?.toISOString() || null,
+      openedBy: lastOpening?.createdBy || null,
+      closedAt: lastClosingAtOpening?.createdAt?.toISOString() || null,
       summary,
       suggestedOpeningAmount: lastClosing ? decimalToNumber(lastClosing.amount) : 0,
     });

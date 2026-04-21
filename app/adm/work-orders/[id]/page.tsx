@@ -194,6 +194,7 @@ export default function WorkOrderDetailPage() {
   const [editingNotes, setEditingNotes] = useState(false);
   const [newScheduledDate, setNewScheduledDate] = useState<string>('');
   const [newNotes, setNewNotes] = useState<string>('');
+  const [isCashOpen, setIsCashOpen] = useState<boolean | null>(null);
   
   // Items editing state
   const [isEditingItems, setIsEditingItems] = useState(false);
@@ -221,6 +222,13 @@ export default function WorkOrderDetailPage() {
         const data = await response.json();
         setPayments(data.payments || []);
         setTotalPaid(data.totalPaid || 0);
+      }
+
+      // Check cash status
+      const cashRes = await fetch('/api/cash/status');
+      if (cashRes.ok) {
+        const data = await cashRes.json();
+        setIsCashOpen(data.status === 'OPEN');
       }
     } catch (error) {
       console.error("Error fetching payments:", error);
@@ -678,7 +686,11 @@ export default function WorkOrderDetailPage() {
                 </p>
               </div>
             </div>
-            <Button onClick={() => setIsPaymentDialogOpen(true)}>
+            <Button
+              onClick={() => setIsPaymentDialogOpen(true)}
+              disabled={isCashOpen === false}
+              title={isCashOpen === false ? 'Debe abrir la caja para registrar pagos' : undefined}
+            >
               <DollarSign className="h-4 w-4 mr-2" />
               Registrar Pago
             </Button>

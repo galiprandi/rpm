@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/adm/Header';
 import { QuickSaleModal } from '@/components/dashboard/QuickSaleModal';
@@ -9,6 +9,22 @@ import { ShoppingCart } from 'lucide-react';
 export function DashboardClient({ onQuickSaleSuccess }: { onQuickSaleSuccess?: () => void }) {
   const router = useRouter();
   const [quickSaleModalOpen, setQuickSaleModalOpen] = useState(false);
+  const [isCashOpen, setIsCashOpen] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const checkCashStatus = async () => {
+      try {
+        const res = await fetch('/api/cash/status');
+        if (res.ok) {
+          const data = await res.json();
+          setIsCashOpen(data.status === 'OPEN');
+        }
+      } catch (error) {
+        console.error('Error checking cash status:', error);
+      }
+    };
+    checkCashStatus();
+  }, []);
 
   const handleSuccess = () => {
     onQuickSaleSuccess?.();
@@ -26,6 +42,8 @@ export function DashboardClient({ onQuickSaleSuccess }: { onQuickSaleSuccess?: (
           label: 'Venta Rápida',
           onClick: () => setQuickSaleModalOpen(true),
           icon: ShoppingCart,
+          disabled: isCashOpen === false,
+          title: isCashOpen === false ? 'Debe abrir la caja para realizar ventas' : undefined,
         }}
       />
       <QuickSaleModal

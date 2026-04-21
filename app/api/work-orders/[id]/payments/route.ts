@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { hasRole, UserRole } from "@/lib/auth/roles";
+import { isCashRegisterOpen } from "@/lib/services/cashMovementService";
 
 // GET /api/work-orders/[id]/payments - List payments with totals
 export async function GET(
@@ -89,6 +90,15 @@ export async function POST(
       return NextResponse.json(
         { error: "Only staff can register payments" },
         { status: 403 }
+      );
+    }
+
+    // Check if cash register is open
+    const isOpen = await isCashRegisterOpen();
+    if (!isOpen) {
+      return NextResponse.json(
+        { error: "La caja está cerrada. Debe abrir la caja para registrar pagos." },
+        { status: 400 }
       );
     }
 

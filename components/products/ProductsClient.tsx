@@ -74,6 +74,23 @@ export function ProductsClient({
 
   // Quick sale modal state
   const [quickSaleModalOpen, setQuickSaleModalOpen] = useState(false);
+  const [isCashOpen, setIsCashOpen] = useState<boolean | null>(null);
+
+  // Check cash status on mount
+  useEffect(() => {
+    const checkCashStatus = async () => {
+      try {
+        const res = await fetch('/api/cash/status');
+        if (res.ok) {
+          const data = await res.json();
+          setIsCashOpen(data.status === 'OPEN');
+        }
+      } catch (error) {
+        console.error('Error checking cash status:', error);
+      }
+    };
+    checkCashStatus();
+  }, []);
 
   const handleQuickSaleSuccess = () => {
     router.refresh();
@@ -357,6 +374,8 @@ export function ProductsClient({
               onClick: () => setQuickSaleModalOpen(true),
               variant: 'default' as const,
               icon: ShoppingCart,
+              disabled: isCashOpen === false,
+              title: isCashOpen === false ? 'Debe abrir la caja para realizar ventas' : undefined,
             },
           ]}
         />

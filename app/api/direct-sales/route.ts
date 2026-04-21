@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth-server';
 import { createDirectSale } from '@/lib/services/directSaleService';
+import { isCashRegisterOpen } from '@/lib/services/cashMovementService';
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,6 +11,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'No autorizado' },
         { status: 401 }
+      );
+    }
+
+    // Check if cash register is open
+    const isOpen = await isCashRegisterOpen();
+    if (!isOpen) {
+      return NextResponse.json(
+        { error: 'La caja está cerrada. Debe abrir la caja para realizar ventas.' },
+        { status: 400 }
       );
     }
 

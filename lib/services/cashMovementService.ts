@@ -101,3 +101,27 @@ export async function getCashMovementSummary(date: Date) {
 
   return summary;
 }
+
+/**
+ * Checks if there is an open cash register.
+ * A register is open if the latest OPENING/CLOSING movement is an OPENING.
+ */
+export async function isCashRegisterOpen(): Promise<boolean> {
+  // Find the absolute latest OPENING or CLOSING movement
+  const lastMovement = await prisma.cash_movement.findFirst({
+    where: {
+      type: {
+        in: ['OPENING', 'CLOSING'],
+      },
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
+
+  // If no opening/closing ever happened, it's closed
+  if (!lastMovement) return false;
+
+  // If the last movement was an opening, it's still open
+  return lastMovement.type === 'OPENING';
+}

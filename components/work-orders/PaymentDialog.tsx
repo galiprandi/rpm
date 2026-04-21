@@ -55,6 +55,7 @@ export function PaymentDialog({
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [totalPaid, setTotalPaid] = useState(0);
+  const [isCashOpen, setIsCashOpen] = useState<boolean | null>(null);
 
   // Fetch payment methods and existing payments
   useEffect(() => {
@@ -74,6 +75,13 @@ export function PaymentDialog({
         const data = await paymentsRes.json();
         setPayments(data.payments || []);
         setTotalPaid(data.totalPaid || 0);
+      }
+
+      // Check cash status
+      const cashRes = await fetch('/api/cash/status');
+      if (cashRes.ok) {
+        const data = await cashRes.json();
+        setIsCashOpen(data.status === 'OPEN');
       }
     };
 
@@ -239,6 +247,11 @@ export function PaymentDialog({
         {/* Payment Form */}
         {!isFullyPaid && (
           <form onSubmit={handleSubmit} className="space-y-4">
+            {isCashOpen === false && (
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-md text-amber-800 text-sm">
+                <strong>Caja cerrada:</strong> Debe abrir la caja para poder registrar pagos.
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="paymentMethod">Método de Pago *</Label>
               <Select
@@ -291,8 +304,9 @@ export function PaymentDialog({
 
             <Button 
               type="submit" 
-              disabled={loading || !paymentMethodId || !amount}
+              disabled={loading || !paymentMethodId || !amount || isCashOpen === false}
               className="w-full"
+              title={isCashOpen === false ? 'Debe abrir la caja para registrar pagos' : undefined}
             >
               <Plus className="h-4 w-4 mr-2" />
               {loading ? 'Registrando...' : 'Registrar Pago'}

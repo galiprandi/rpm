@@ -11,6 +11,8 @@ export interface HeaderAction {
   variant?: 'default' | 'outline' | 'ghost' | 'secondary' | 'destructive' | 'link';
   icon?: LucideIcon;
   className?: string;
+  disabled?: boolean;
+  title?: string;
 }
 
 export interface HeaderProps {
@@ -131,13 +133,15 @@ export function Header({
               size="sm"
               onClick={action.onClick}
               className={action.className}
+              disabled={action.disabled}
+              title={action.title}
             >
               {Icon && <Icon className="h-4 w-4 mr-2" />}
               {action.label}
             </Button>
           );
 
-          if (action.href) {
+          if (action.href && !action.disabled) {
             return (
               <a key={index} href={action.href}>
                 {button}
@@ -155,9 +159,11 @@ export function Header({
                 variant={primaryAction.variant || 'default'}
                 size="sm"
                 onClick={primaryAction.onClick}
+                disabled={primaryAction.disabled}
+                title={primaryAction.title}
                 className={
                   primaryAction.className ||
-                  'bg-slate-900 text-white hover:bg-slate-800 border border-slate-900 shadow-lg hover:shadow-xl transition-all font-semibold px-4 py-2 h-10'
+                  `bg-slate-900 text-white hover:bg-slate-800 border border-slate-900 shadow-lg hover:shadow-xl transition-all font-semibold px-4 py-2 h-10 ${primaryAction.disabled ? 'opacity-50 cursor-not-allowed shadow-none hover:shadow-none' : ''}`
                 }
               >
                 {primaryAction.icon && (
@@ -167,7 +173,7 @@ export function Header({
               </Button>
             );
 
-            if (primaryAction.href) {
+            if (primaryAction.href && !primaryAction.disabled) {
               return <a href={primaryAction.href}>{button}</a>;
             }
             return button;

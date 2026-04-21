@@ -245,6 +245,7 @@ const MOVEMENT_REASONS = [
 - Editar stock desde formulario de producto = ajuste automático con motivo `AJUSTE_INVENTARIO`
 - Motivos `VENTA` solo generados automáticamente por el sistema
 - Movimientos son **inmutables** (no editar/eliminar)
+- **Ventas bloqueadas sin caja**: No se pueden realizar ventas si la caja no está abierta. El BFF debe retornar error y la UI debe deshabilitar el botón de venta rápida.
 
 #### Permisos
 

@@ -290,8 +290,9 @@ Tabla de arqueos previos:
 1. **Solo una caja abierta**: No se puede abrir si ya existe OPENING del día sin CLOSING
 2. **Cierre obligatorio**: Solo ADMIN puede forzar apertura sobre caja sin cerrar del día anterior
 3. **Egresos limitados**: No se puede registrar egreso en efectivo si excede saldo disponible
-4. **Auditoría**: Toda diferencia debe tener motivo documentado
-5. **Permisos**:
+4. **Bloqueo por caja cerrada**: Con la caja cerrada (o sin abrir) no se pueden realizar ventas ni registrar pagos de OTs. El sistema debe bloquear estas operaciones tanto en el BFF como en la UI.
+5. **Auditoría**: Toda diferencia debe tener motivo documentado
+6. **Permisos**:
    - Abrir/Cerrar: ADMIN, STAFF
    - Registrar ingresos/egresos: ADMIN, STAFF
    - Ver historial completo: ADMIN, STAFF
@@ -310,6 +311,7 @@ Tabla de arqueos previos:
 - [x] Historial de arqueos accesible desde la vista con paginación
 - [x] Trazabilidad dual: createdBy vs responsibleBy visible en historial
 - [x] Sin caja abierta, no se pueden registrar egresos/ingresos manuales
+- [ ] **Bloqueo preventivo**: El botón de "Venta Rápida" y el registro de pagos de OTs deben estar deshabilitados si la caja no está abierta.
 
 ## Dependencias
 - Modelo `cash_movement` existente
