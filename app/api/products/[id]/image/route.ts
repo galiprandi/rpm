@@ -5,7 +5,12 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { promisify } from 'util';
+import { exec } from 'child_process';
 import { revalidatePath } from 'next/cache';
+import sharp from 'sharp';
+
+const execAsync = promisify(exec);
 
 interface Params {
   params: Promise<{ id: string }>;
@@ -15,11 +20,7 @@ interface Params {
 function validateEnv() {
   const required = [
     'PRODUCT_IMAGES_REPO',
-    'GITHUB_TOKEN',
-    'PRODUCT_IMAGE_MAX_WIDTH',
-    'PRODUCT_IMAGE_MAX_HEIGHT',
-    'PRODUCT_IMAGE_QUALITY',
-    'PRODUCT_IMAGE_FORMAT',
+    'PRODUCT_IMAGES_TOKEN',
   ];
 
   const missing = required.filter(key => !process.env[key]);
@@ -27,15 +28,17 @@ function validateEnv() {
     throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
   }
 
-  return {
+  const config = {
     repo: process.env.PRODUCT_IMAGES_REPO!,
-    token: process.env.GITHUB_TOKEN!,
-    maxWidth: parseInt(process.env.PRODUCT_IMAGE_MAX_WIDTH!, 10),
-    maxHeight: parseInt(process.env.PRODUCT_IMAGE_MAX_HEIGHT!, 10),
-    quality: parseInt(process.env.PRODUCT_IMAGE_QUALITY!, 10),
-    format: process.env.PRODUCT_IMAGE_FORMAT!,
+    token: process.env.PRODUCT_IMAGES_TOKEN!,
+    maxWidth: parseInt(process.env.PRODUCT_IMAGE_MAX_WIDTH || '500', 10),
+    maxHeight: parseInt(process.env.PRODUCT_IMAGE_MAX_HEIGHT || '500', 10),
+    quality: parseInt(process.env.PRODUCT_IMAGE_QUALITY || '85', 10),
+    format: process.env.PRODUCT_IMAGE_FORMAT || 'jpeg',
     branch: process.env.PRODUCT_IMAGES_BRANCH || 'main',
   };
+
+  return config;
 }
 
 // Helper function to build jsDelivr URL
@@ -43,7 +46,7 @@ function buildJsDelivrUrl(owner: string, repo: string, branch: string, productId
   return `https://cdn.jsdelivr.net/gh/${owner}/${repo}@${branch}/products/${productId}.${format}`;
 }
 
-// Helper function to upload image to GitHub
+// Helper function to upload image to GitHub using curl (only method that works in Next.js)
 async function uploadToGitHub(
   file: Buffer,
   productId: string,
@@ -53,59 +56,94 @@ async function uploadToGitHub(
   const path = `products/${productId}.${config.format}`;
   const message = `Upload product image: ${productId}`;
 
-  // GitHub API: Create or update file
   const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
   const content = file.toString('base64');
 
-  // First, check if file exists to get its SHA
+  // Check if file exists using curl GET
   let sha: string | undefined;
   try {
-    const existingResponse = await fetch(url, {
-      headers: {
-        Authorization: `token ${config.token}`,
-        Accept: 'application/vnd.github.v3+json',
-      },
-    });
-    if (existingResponse.ok) {
-      const existing = await existingResponse.json();
-      sha = existing.sha;
+    const checkCmd = `curl -s -w "\\nHTTP_CODE:%{http_code}" \
+      "${url}" \
+      -H "Authorization: Bearer ${config.token}" \
+      -H "Accept: application/vnd.github+json" \
+      -H "X-GitHub-Api-Version: 2022-11-28" \
+      -H "User-Agent: RPM-Image-Upload/1.0"`;
+
+    const { stdout: checkStdout, stderr: checkStderr } = await execAsync(checkCmd);
+    if (checkStderr) {
+      console.error('Curl check stderr:', checkStderr);
     }
-  } catch {
-    // File doesn't exist, that's okay
+
+    const httpCodeMatch = checkStdout.match(/HTTP_CODE:(\d+)$/);
+    const httpCode = httpCodeMatch ? parseInt(httpCodeMatch[1], 10) : 0;
+    const responseBody = checkStdout.replace(/\nHTTP_CODE:\d+$/, '');
+
+    if (httpCode === 200) {
+      const fileData = JSON.parse(responseBody);
+      sha = fileData.sha;
+    } else if (httpCode === 404) {
+      // File does not exist, will create new
+    } else {
+      console.error('Unexpected status checking file:', httpCode, responseBody.substring(0, 200));
+    }
+  } catch (e) {
+    console.error('Error checking file existence:', e);
   }
 
-  const body = {
+  // Build request body
+  const body: Record<string, string> = {
     message,
     content,
     branch: config.branch,
-    ...(sha && { sha }),
   };
-
-  const response = await fetch(url, {
-    method: 'PUT',
-    headers: {
-      Authorization: `token ${config.token}`,
-      'Content-Type': 'application/json',
-      Accept: 'application/vnd.github.v3+json',
-    },
-    body: JSON.stringify(body),
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(`GitHub API error: ${error.message}`);
+  if (sha) {
+    body.sha = sha;
   }
 
-  const result = await response.json();
+  // Use curl for PUT request (only reliable method in Next.js)
+  const curlCmd = `curl -s -X PUT "${url}" \
+    -H "Authorization: Bearer ${config.token}" \
+    -H "Accept: application/vnd.github+json" \
+    -H "Content-Type: application/json" \
+    -H "X-GitHub-Api-Version: 2022-11-28" \
+    -H "User-Agent: RPM-Image-Upload/1.0" \
+    -d '${JSON.stringify(body).replace(/'/g, "'\"'\"'")}'`;
+
+  const { stdout, stderr } = await execAsync(curlCmd);
+
+  if (stderr) {
+    console.error('Curl stderr:', stderr);
+  }
+
+  if (!stdout) {
+    throw new Error('Curl request failed: no output');
+  }
+
+  const result = JSON.parse(stdout);
+
+  // Handle GitHub API errors
+  if (result.message || result.status === '404') {
+    console.error('GitHub API error:', result);
+    throw new Error(`GitHub API: ${result.message || 'Repository or path not found. Check token permissions.'}`);
+  }
+
+  // Handle both response structures (create vs update)
+  const commitSha = result.commit?.sha || result.content?.sha;
+
+  if (!commitSha) {
+    console.error('Unexpected response structure:', Object.keys(result));
+    throw new Error('GitHub API response missing commit SHA');
+  }
+
   const imageUrl = buildJsDelivrUrl(owner, repo, config.branch, productId, config.format);
 
   return {
     imageUrl,
-    commitSha: result.commit.sha,
+    commitSha,
   };
 }
 
-// Helper function to delete image from GitHub
+// Helper function to delete image from GitHub using curl
 async function deleteFromGitHub(
   productId: string,
   config: ReturnType<typeof validateEnv>
@@ -116,19 +154,26 @@ async function deleteFromGitHub(
 
   const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
 
-  // Get current file SHA
-  const existingResponse = await fetch(url, {
-    headers: {
-      Authorization: `token ${config.token}`,
-      Accept: 'application/vnd.github.v3+json',
-    },
-  });
+  // Get current file SHA using curl
+  const getCmd = `curl -s "${url}" \
+    -H "Authorization: Bearer ${config.token}" \
+    -H "Accept: application/vnd.github+json" \
+    -H "X-GitHub-Api-Version: 2022-11-28" \
+    -H "User-Agent: RPM-Image-Upload/1.0"`;
 
-  if (!existingResponse.ok) {
+  const { stdout: getStdout } = await execAsync(getCmd);
+
+  if (!getStdout) {
     throw new Error('File not found in GitHub');
   }
 
-  const existing = await existingResponse.json();
+  let existing;
+  try {
+    existing = JSON.parse(getStdout);
+  } catch {
+    throw new Error('File not found in GitHub');
+  }
+
   const sha = existing.sha;
 
   const body = {
@@ -137,22 +182,26 @@ async function deleteFromGitHub(
     branch: config.branch,
   };
 
-  const response = await fetch(url, {
-    method: 'DELETE',
-    headers: {
-      Authorization: `token ${config.token}`,
-      'Content-Type': 'application/json',
-      Accept: 'application/vnd.github.v3+json',
-    },
-    body: JSON.stringify(body),
-  });
+  // Delete using curl
+  const deleteCmd = `curl -s -X DELETE "${url}" \
+    -H "Authorization: Bearer ${config.token}" \
+    -H "Accept: application/vnd.github+json" \
+    -H "Content-Type: application/json" \
+    -H "X-GitHub-Api-Version: 2022-11-28" \
+    -H "User-Agent: RPM-Image-Upload/1.0" \
+    -d '${JSON.stringify(body).replace(/'/g, "'\"'\"'")}'`;
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(`GitHub API error: ${error.message}`);
+  const { stdout: deleteStdout, stderr } = await execAsync(deleteCmd);
+
+  if (stderr) {
+    console.error('Curl delete stderr:', stderr);
   }
 
-  const result = await response.json();
+  if (!deleteStdout) {
+    throw new Error('Delete request failed: no output');
+  }
+
+  const result = JSON.parse(deleteStdout);
   return { deletedCommit: result.commit.sha };
 }
 
@@ -200,11 +249,26 @@ export async function POST(request: NextRequest, { params }: Params) {
     // Convert file to buffer
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    // TODO: Add image resizing with Sharp here
-    // For now, upload as-is (will add Sharp in next step)
+    // Resize and compress image with Sharp
+    let processedBuffer = buffer;
+    try {
+      const sharpBuffer = await sharp(buffer)
+        .resize(config.maxWidth, config.maxHeight, {
+          fit: 'inside',
+          withoutEnlargement: true,
+        })
+        .jpeg({ quality: config.quality })
+        .toBuffer();
+
+      processedBuffer = Buffer.from(sharpBuffer);
+    } catch (error) {
+      console.error('Error processing image with Sharp:', error);
+      // Fallback to original buffer if Sharp fails
+      processedBuffer = buffer;
+    }
 
     // Upload to GitHub
-    const { imageUrl, commitSha } = await uploadToGitHub(buffer, id, config);
+    const { imageUrl, commitSha } = await uploadToGitHub(processedBuffer, id, config);
 
     // Update product in database
     await prisma.product.update({

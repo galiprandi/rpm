@@ -41,6 +41,11 @@ interface ProductFormProps {
   onSubmit?: (e: React.FormEvent) => void;
   isValid?: boolean;
   currentImageUrl?: string | null;
+  productId?: string | null;
+  onDeleteImage?: (productId: string) => void;
+  isDeletingImage?: boolean;
+  onImageDeleteStart?: () => void;
+  onImageDeleteEnd?: () => void;
 }
 
 export function ProductForm({
@@ -50,7 +55,19 @@ export function ProductForm({
   suppliers,
   onSubmit,
   currentImageUrl,
+  productId,
+  onDeleteImage,
+  isDeletingImage = false,
+  onImageDeleteStart,
+  onImageDeleteEnd,
 }: ProductFormProps) {
+  const [localImageUrl, setLocalImageUrl] = React.useState<string | null>(currentImageUrl || null);
+
+  // Sync localImageUrl when currentImageUrl changes (e.g., when opening different product)
+  React.useEffect(() => {
+    setLocalImageUrl(currentImageUrl || null);
+  }, [currentImageUrl]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit?.(e);
@@ -63,13 +80,25 @@ export function ProductForm({
     }
   };
 
-  const handleRemoveImage = () => {
+  const handleRemoveImage = async () => {
+    // If there's a current image (product already has an image), delete it from server
+    if (currentImageUrl && productId && onDeleteImage) {
+      onImageDeleteStart?.();
+      try {
+        await onDeleteImage(productId);
+        // Clear local preview after successful deletion
+        setLocalImageUrl(null);
+      } finally {
+        onImageDeleteEnd?.();
+      }
+    }
+    // Clear the selected file from form
     setFormData({ ...formData, imageFile: undefined });
   };
 
   const imagePreview = formData.imageFile
     ? URL.createObjectURL(formData.imageFile)
-    : currentImageUrl || null;
+    : localImageUrl || null;
 
   return (
     <form id="product-form" onSubmit={handleSubmit} className="space-y-4">
@@ -246,10 +275,20 @@ export function ProductForm({
                 variant="outline"
                 size="sm"
                 onClick={handleRemoveImage}
+                disabled={isDeletingImage}
                 className="mb-2"
               >
-                <X className="h-4 w-4 mr-2" />
-                Eliminar imagen
+                {isDeletingImage ? (
+                  <>
+                    <div className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                    Eliminando...
+                  </>
+                ) : (
+                  <>
+                    <X className="h-4 w-4 mr-2" />
+                    Eliminar imagen
+                  </>
+                )}
               </Button>
               <p className="text-xs text-muted-foreground">
                 {formData.imageFile ? 'Nueva imagen seleccionada' : 'Imagen actual'}

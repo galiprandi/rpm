@@ -75,6 +75,31 @@ export function ProductsClient({
   // Quick sale modal state
   const [quickSaleModalOpen, setQuickSaleModalOpen] = useState(false);
 
+  // Image upload state
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+
+  const handleDeleteImage = async (productId: string) => {
+    try {
+      const response = await fetch(`/api/products/${productId}/image`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Error al eliminar imagen');
+      }
+
+      router.refresh();
+    } catch (error) {
+      console.error('Error deleting image:', error);
+      await alert({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Error al eliminar imagen',
+        variant: 'error',
+      });
+    }
+  };
+
   const handleQuickSaleSuccess = () => {
     router.refresh();
   };
@@ -207,6 +232,7 @@ export function ProductsClient({
 
       // Upload image if provided
       if (formData.imageFile && productId) {
+        setIsUploadingImage(true);
         const formDataImage = new FormData();
         formDataImage.append('file', formData.imageFile);
         
@@ -214,6 +240,8 @@ export function ProductsClient({
           method: 'POST',
           body: formDataImage,
         });
+
+        setIsUploadingImage(false);
 
         if (!imageResponse.ok) {
           const imageError = await imageResponse.json();
@@ -461,6 +489,8 @@ export function ProductsClient({
         categories={categories}
         suppliers={suppliers}
         isValid={formValid}
+        isUploadingImage={isUploadingImage}
+        onDeleteImage={handleDeleteImage}
       />
 
       <ProductPricesModal
