@@ -24,26 +24,33 @@ const DEFAULT_OPTIONS: ImportOptions = {
 };
 
 export function useConfiguration(): UseConfigurationReturn {
-  const [fieldConfig, setFieldConfig] = useState<Record<string, ColumnMapping>>({});
-  const [globalOptions, setGlobalOptions] = useState<ImportOptions>(DEFAULT_OPTIONS);
-
-  // Load saved configuration on mount
-  useEffect(() => {
+  const [fieldConfig, setFieldConfig] = useState<Record<string, ColumnMapping>>(() => {
+    if (typeof window === 'undefined') return {};
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (parsed.fieldConfig) {
-          setFieldConfig(parsed.fieldConfig);
-        }
-        if (parsed.globalOptions) {
-          setGlobalOptions(parsed.globalOptions);
-        }
+        return parsed.fieldConfig || {};
       } catch {
-        // Ignore parse errors
+        return {};
       }
     }
-  }, []);
+    return {};
+  });
+
+  const [globalOptions, setGlobalOptions] = useState<ImportOptions>(() => {
+    if (typeof window === 'undefined') return DEFAULT_OPTIONS;
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        return parsed.globalOptions || DEFAULT_OPTIONS;
+      } catch {
+        return DEFAULT_OPTIONS;
+      }
+    }
+    return DEFAULT_OPTIONS;
+  });
 
   // Save configuration when it changes (debounced)
   useEffect(() => {

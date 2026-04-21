@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
     // Check if tables exist
     const tables = await prisma.$queryRaw`
@@ -9,9 +9,9 @@ export async function POST(request: NextRequest) {
       FROM information_schema.tables 
       WHERE table_schema = 'public' 
       AND table_name IN ('user', 'account', 'session', 'verification')
-    `;
+    ` as Array<{ table_name: string }>;
 
-    const existingTables = (tables as any[]).map((t: any) => t.table_name);
+    const existingTables = tables.map((t) => t.table_name);
     
     if (existingTables.length === 4) {
       return NextResponse.json({ 
@@ -121,9 +121,10 @@ export async function POST(request: NextRequest) {
       AND table_name IN ('user', 'account', 'session', 'verification')
     `;
 
+    const finalTables = newTables as Array<{ table_name: string }>;
     return NextResponse.json({ 
       message: 'Database setup completed successfully',
-      tables: (newTables as any[]).map((t: any) => t.table_name)
+      tables: finalTables.map((t) => t.table_name)
     });
 
   } catch (error) {

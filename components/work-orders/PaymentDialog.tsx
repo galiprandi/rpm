@@ -92,6 +92,7 @@ export function PaymentDialog({
   useEffect(() => {
     const remaining = Math.max(0, workOrderTotal - totalPaid);
     if (remaining > 0 && isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setAmount(remaining.toString());
     }
   }, [totalPaid, workOrderTotal, isOpen]);
