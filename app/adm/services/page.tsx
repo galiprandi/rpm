@@ -18,5 +18,11 @@ export default async function ServicesPage() {
     orderBy: { name: 'asc' },
   });
 
-  return <ServicesClient initialServices={services as any} />;
+  return <ServicesClient initialServices={services.map(s => ({
+    ...s,
+    baseCost: Number(s.baseCost),
+    vehicleFactor: Number(s.vehicleFactor),
+    createdAt: s.createdAt.toISOString(),
+    updatedAt: s.updatedAt.toISOString(),
+  }))} />;
 }

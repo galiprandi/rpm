@@ -89,8 +89,8 @@ export function AdminClientLayout({ children, user }: AdminClientLayoutProps) {
       };
 
       // Asignar a window
-      (window as any).switchUser = switchUser;
-      (window as any).showDebugHelp = showHelp;
+      (window as unknown as { switchUser: typeof switchUser }).switchUser = switchUser;
+      (window as unknown as { showDebugHelp: typeof showHelp }).showDebugHelp = showHelp;
       
       // Mostrar ayuda
       console.log('🔐 Debug Auth Helper cargado. Ejecuta showDebugHelp() para ver ayuda.');
