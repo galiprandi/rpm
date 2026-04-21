@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { withAdmin } from "@/lib/api-middleware";
 import { prisma } from "@/lib/prisma";
 import { randomUUID } from "crypto";
 import { capitalizeText } from "@/lib/utils/format";
 
-// GET /api/customers - List customers with optional search
-export async function GET(request: NextRequest) {
+// GET /api/customers - List customers with optional search (requiere ADMIN)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const GET = withAdmin(async (request: NextRequest, _session) => {
   try {
     const { searchParams } = request.nextUrl;
     const search = searchParams.get("search");
@@ -52,10 +54,11 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
 
-// POST /api/customers - Create customer
-export async function POST(request: NextRequest) {
+// POST /api/customers - Create customer (requiere ADMIN)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const POST = withAdmin(async (request: NextRequest, _session) => {
   try {
     const body = await request.json();
     const { name, phone, phoneAlt, email, address, notes, billingData } = body;
@@ -107,4 +110,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

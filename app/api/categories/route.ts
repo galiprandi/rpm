@@ -4,10 +4,12 @@
  * Spec: /specs/inventory-sales.md
  */
 import { NextRequest, NextResponse } from 'next/server';
+import { withAdmin } from '@/lib/api-middleware';
 import { getCategories, createCategory, getCategoryByName } from '@/lib/services/categoryService';
 
-// GET /api/categories - List categories
-export async function GET(request: NextRequest) {
+// GET /api/categories - List categories (requiere ADMIN)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const GET = withAdmin(async (request: NextRequest, _session) => {
   try {
     const { searchParams } = request.nextUrl;
     const includeInactive = searchParams.get('includeInactive') === 'true';
@@ -22,10 +24,11 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
 
-// POST /api/categories - Create category
-export async function POST(request: NextRequest) {
+// POST /api/categories - Create category (requiere ADMIN)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const POST = withAdmin(async (request: NextRequest, _session) => {
   try {
     const body = await request.json();
 
@@ -62,4 +65,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

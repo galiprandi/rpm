@@ -5,6 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { withAdmin } from '@/lib/api-middleware';
 import { prisma } from '@/lib/prisma';
 import { randomUUID } from 'crypto';
 import {
@@ -184,7 +185,8 @@ async function createCategories(
 // Main Handler
 // ============================================================================
 
-export async function POST(request: NextRequest) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const POST = withAdmin(async (request: NextRequest, _session) => {
   try {
     const body = await request.json();
 
@@ -262,4 +264,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

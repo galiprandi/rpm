@@ -4,6 +4,7 @@
  * Spec: /specs/spec-price-lists.md (REQ-005)
  */
 import { NextRequest, NextResponse } from 'next/server';
+import { withAdmin } from '@/lib/api-middleware';
 import { getMinimumMargin, setSetting } from '@/lib/services';
 import { z } from 'zod';
 
@@ -11,8 +12,9 @@ const updateSettingsSchema = z.object({
   minimumMarginPercentage: z.number().min(0).max(100),
 });
 
-// GET /api/settings - Get global settings
-export async function GET() {
+// GET /api/settings - Get global settings (requiere ADMIN)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const GET = withAdmin(async (request: NextRequest, _session) => {
   try {
     const minimumMarginPercentage = await getMinimumMargin();
 
@@ -26,10 +28,11 @@ export async function GET() {
       { status: 500 }
     );
   }
-}
+});
 
-// PUT /api/settings - Update global settings
-export async function PUT(request: NextRequest) {
+// PUT /api/settings - Update global settings (requiere ADMIN)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const PUT = withAdmin(async (request: NextRequest, _session) => {
   try {
     const body = await request.json();
 
@@ -55,4 +58,4 @@ export async function PUT(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

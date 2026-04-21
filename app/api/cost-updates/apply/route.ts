@@ -4,22 +4,13 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getSession } from '@/lib/auth-server';
+import { withAdmin } from '@/lib/api-middleware';
 import { applyCostUpdate, type CostUpdateFilters, type CostUpdateAdjustment, type AdjustmentType } from '@/lib/services';
 
 const VALID_ADJUSTMENT_TYPES: AdjustmentType[] = ['PERCENTAGE_INC', 'PERCENTAGE_DEC', 'FIXED_INC', 'FIXED_DEC'];
 
-export async function POST(request: NextRequest) {
+export const POST = withAdmin(async (request: NextRequest, session) => {
   try {
-    // Check authentication
-    const session = await getSession();
-    if (!session?.user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
     const body = await request.json();
 
     // Validate filters
@@ -75,4 +66,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

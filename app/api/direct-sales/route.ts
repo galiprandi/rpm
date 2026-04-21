@@ -1,19 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSession } from '@/lib/auth-server';
+import { withAdmin } from '@/lib/api-middleware';
 import { createDirectSale } from '@/lib/services/directSaleService';
 import { isCashRegisterOpen } from '@/lib/services/cashMovementService';
 
-export async function POST(request: NextRequest) {
+export const POST = withAdmin(async (request: NextRequest, session) => {
   try {
-    const session = await getSession();
-    
-    if (!session) {
-      return NextResponse.json(
-        { error: 'No autorizado' },
-        { status: 401 }
-      );
-    }
-
     // Check if cash register is open
     const isOpen = await isCashRegisterOpen();
     if (!isOpen) {
@@ -112,4 +103,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

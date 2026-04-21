@@ -4,18 +4,19 @@
  * Spec: /specs/inventory-sales.md
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { getSession } from '@/lib/auth-server';
+import { withAdmin } from '@/lib/api-middleware';
 import { getProducts, createProduct, createStockMovement, type MovementReason } from '@/lib/services/productService';
 import { revalidatePath } from 'next/cache';
 
 // Renderizado on-demand sin revalidate periódico
 export const dynamic = 'force-dynamic';
 
-// GET /api/products - Listar productos
-export async function GET(request: NextRequest) {
+// GET /api/products - Listar productos (requiere ADMIN)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const GET = withAdmin(async (request: NextRequest, _session) => {
   try {
     const { searchParams } = request.nextUrl;
-    
+
     // Filtros opcionales
     const categoryId = searchParams.get('categoryId');
     const search = searchParams.get('search');
@@ -37,16 +38,13 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
 
-// POST /api/products - Crear producto
-export async function POST(request: NextRequest) {
+// POST /api/products - Crear producto (requiere ADMIN)
+export const POST = withAdmin(async (request: NextRequest, session) => {
   try {
     const body = await request.json();
-    
-    // Get user session for audit trail
-    const session = await getSession();
-    
+
     // Validaciones básicas
     if (!body.name || !body.categoryId) {
       return NextResponse.json(
@@ -99,8 +97,8 @@ export async function POST(request: NextRequest) {
       if (initialStock > 0) {
         await createStockMovement({
           productId: product.id,
-          userId: session?.user?.id,
-          userName: session?.user?.name || session?.user?.email || 'Sistema',
+          userId: session.user.id,
+          userName: session.user.name || session.user.email || 'Sistema',
           type: 'IN',
           quantity: initialStock,
           previousStock: 0,
@@ -126,7 +124,7 @@ export async function POST(request: NextRequest) {
           );
         }
       }
-      
+
       console.error('Error creating product:', error);
       return NextResponse.json(
         { error: 'Error creando producto' },
@@ -140,4 +138,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

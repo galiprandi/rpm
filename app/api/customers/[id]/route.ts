@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
+import { withAdminDynamic } from "@/lib/api-middleware";
 import { prisma } from "@/lib/prisma";
 import { capitalizeText } from "@/lib/utils/format";
 
-// GET /api/customers/[id] - Get customer by ID
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+interface Params {
+  params: Promise<{ id: string }>;
+}
+
+// GET /api/customers/[id] - Get customer by ID (requiere ADMIN)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const GET = withAdminDynamic(async (request: NextRequest, { params }: Params, _session) => {
   try {
     const { id } = await params;
     const customer = await prisma.customer.findUnique({
@@ -63,13 +66,11 @@ export async function GET(
       { status: 500 }
     );
   }
-}
+});
 
-// PUT /api/customers/[id] - Update customer
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+// PUT /api/customers/[id] - Update customer (requiere ADMIN)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const PUT = withAdminDynamic(async (request: NextRequest, { params }: Params, _session) => {
   try {
     const { id } = await params;
     const body = await request.json();
@@ -113,13 +114,11 @@ export async function PUT(
       { status: 500 }
     );
   }
-}
+});
 
-// DELETE /api/customers/[id] - Delete customer
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+// DELETE /api/customers/[id] - Delete customer (requiere ADMIN)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const DELETE = withAdminDynamic(async (request: NextRequest, { params }: Params, _session) => {
   try {
     const { id } = await params;
     await prisma.customer.delete({
@@ -134,4 +133,4 @@ export async function DELETE(
       { status: 500 }
     );
   }
-}
+});

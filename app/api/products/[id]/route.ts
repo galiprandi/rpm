@@ -4,20 +4,21 @@
  * Spec: /specs/inventory-sales.md
  */
 import { NextRequest, NextResponse } from 'next/server';
+import { withAdminDynamic } from '@/lib/api-middleware';
 import { prisma } from '@/lib/prisma';
 import { adjustStock, updateProduct, deactivateProduct, getProductById } from '@/lib/services/productService';
-import { auth } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
 
 interface Params {
   params: Promise<{ id: string }>;
 }
 
-// GET /api/products/[id] - Obtener producto por ID
-export async function GET(request: NextRequest, { params }: Params) {
+// GET /api/products/[id] - Obtener producto por ID (requiere ADMIN)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const GET = withAdminDynamic(async (request: NextRequest, { params }: Params, _session) => {
   try {
     const { id } = await params;
-    
+
     const product = await getProductById(id);
 
     if (!product) {
@@ -35,16 +36,13 @@ export async function GET(request: NextRequest, { params }: Params) {
       { status: 500 }
     );
   }
-}
+});
 
-// PUT /api/products/[id] - Actualizar producto
-export async function PUT(request: NextRequest, { params }: Params) {
+// PUT /api/products/[id] - Actualizar producto (requiere ADMIN)
+export const PUT = withAdminDynamic(async (request: NextRequest, { params }: Params, session) => {
   try {
     const { id } = await params;
     const body = await request.json();
-
-    // Get user session for audit trail
-    const session = await auth.api.getSession({ headers: request.headers });
 
     // Verificar que el producto existe
     const existing = await prisma.product.findUnique({
@@ -95,8 +93,8 @@ export async function PUT(request: NextRequest, { params }: Params) {
         id,
         'set',
         body.stock,
-        session?.user?.id,
-        session?.user?.name || session?.user?.email || 'Sistema',
+        session.user.id,
+        session.user.name || session.user.email || 'Sistema',
         'AJUSTE_INVENTARIO',
         `Ajuste manual de stock: ${existing.stock} → ${body.stock}`
       );
@@ -124,10 +122,11 @@ export async function PUT(request: NextRequest, { params }: Params) {
       { status: 500 }
     );
   }
-}
+});
 
-// DELETE /api/products/[id] - Desactivar producto (soft delete)
-export async function DELETE(request: NextRequest, { params }: Params) {
+// DELETE /api/products/[id] - Desactivar producto (soft delete) (requiere ADMIN)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const DELETE = withAdminDynamic(async (request: NextRequest, { params }: Params, _session) => {
   try {
     const { id } = await params;
 
@@ -150,7 +149,7 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     revalidatePath('/adm/products');
     revalidatePath('/adm/dashboard');
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       message: 'Producto desactivado exitosamente',
     });
   } catch (error) {
@@ -160,4 +159,4 @@ export async function DELETE(request: NextRequest, { params }: Params) {
       { status: 500 }
     );
   }
-}
+});
