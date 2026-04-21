@@ -15,7 +15,7 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "incremental": true,
     "plugins": [
       {
@@ -35,7 +35,10 @@
       "@/public/*": [
         "./components/public/*"
       ]
-    }
+    },
+    "types": [
+      "node"
+    ]
   },
   "include": [
     "next-env.d.ts",
@@ -45,7 +48,8 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts",
     "types/**/*.d.ts",
-    ".storybook/**/*"
+    ".storybook/**/*",
+    "node_modules/sharp/**/*.d.ts"
   ],
   "exclude": [
     "node_modules"

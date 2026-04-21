@@ -8,7 +8,6 @@ import { prisma } from '@/lib/prisma';
 import { promisify } from 'util';
 import { exec } from 'child_process';
 import { revalidatePath } from 'next/cache';
-import sharp from 'sharp';
 
 const execAsync = promisify(exec);
 
@@ -273,9 +272,11 @@ export async function POST(request: NextRequest, { params }: Params) {
     // Convert file to buffer
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    // Resize and compress image with Sharp
+    // Resize and compress image with Sharp (optional)
     let processedBuffer = buffer;
     try {
+      // Dynamic import to avoid webpack resolution issues
+      const sharp = (await import('sharp')).default;
       const sharpBuffer = await sharp(buffer)
         .resize(config.maxWidth, config.maxHeight, {
           fit: 'inside',

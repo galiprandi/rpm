@@ -1,37 +1,15 @@
-import { PrismaClient } from '../generated/client';
-import { PrismaPg } from '@prisma/adapter-pg';
-import 'dotenv/config';
+import { PrismaClient } from '@prisma/client';
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
-// Use different connection strings based on environment
-const connectionString = process.env.NODE_ENV === 'production'
-  ? process.env.POSTGRES_URL || process.env.DATABASE_URL
-  : process.env.DATABASE_URL;
-
-// Create adapter for PostgreSQL
-const adapter = new PrismaPg({
-  connectionString,
-});
-
 export const prisma =
   globalForPrisma.prisma ??
   new PrismaClient({
-    adapter,
-    log: ['error'],
+    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
   });
 
-// Enable singleton in development
 if (process.env.NODE_ENV !== 'production') {
   globalForPrisma.prisma = prisma;
-}
-
-// In Vercel/production, disconnect after each request to prevent connection pool exhaustion
-if (process.env.NODE_ENV === 'production') {
-  // Add cleanup for Vercel serverless functions
-  process.on('beforeExit', async () => {
-    await prisma.$disconnect();
-  });
 }

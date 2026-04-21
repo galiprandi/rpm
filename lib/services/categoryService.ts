@@ -7,7 +7,7 @@
  */
 
 import { prisma } from '@/lib/prisma';
-import { Prisma } from '@/generated/client';
+import { Prisma } from '@prisma/client';
 import { randomUUID } from 'crypto';
 
 // Types

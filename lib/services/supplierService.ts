@@ -8,7 +8,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { randomUUID } from 'crypto';
-import { Prisma } from '@/generated/client';
+import { Prisma } from '@prisma/client';
 
 // Types
 export interface Supplier {
