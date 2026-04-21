@@ -4,10 +4,49 @@
  * Tests for getDashboardData() function
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { getDashboardData } from './dashboardService';
+import { prisma } from '@/lib/prisma';
+
+vi.mock('@/lib/prisma', () => ({
+  prisma: {
+    work_order: {
+      findMany: vi.fn(),
+    },
+    direct_sale: {
+      findMany: vi.fn(),
+    },
+    product: {
+      findMany: vi.fn(),
+      fields: {
+        minStock: 'minStock',
+      },
+    },
+    stock_movement: {
+      findMany: vi.fn(),
+    },
+    cash_movement: {
+      findMany: vi.fn(),
+    },
+    payment_method: {
+      findMany: vi.fn(),
+    },
+  },
+}));
 
 describe('Dashboard Service', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    // Default mocks to return empty arrays
+    vi.mocked(prisma.work_order.findMany).mockResolvedValue([]);
+    vi.mocked(prisma.direct_sale.findMany).mockResolvedValue([]);
+    vi.mocked(prisma.product.findMany).mockResolvedValue([]);
+    vi.mocked(prisma.stock_movement.findMany).mockResolvedValue([]);
+    vi.mocked(prisma.cash_movement.findMany).mockResolvedValue([]);
+    vi.mocked(prisma.payment_method.findMany).mockResolvedValue([]);
+  });
+
   describe('getDashboardData', () => {
     it('should return dashboard data structure', async () => {
       const result = await getDashboardData();
