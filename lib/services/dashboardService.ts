@@ -107,18 +107,13 @@ export async function getDashboardData(): Promise<DashboardData> {
   yesterday.setDate(yesterday.getDate() - 1);
 
   // Ejecutar queries en paralelo para reducir latencia
+  // Reducido a 5 queries simultáneas para evitar agotamiento de conexiones en Vercel
   const [
     todayWorkOrders,
     todayDirectSales,
     yesterdayWorkOrders,
     yesterdayDirectSales,
-    activeWorkOrders,
-    lowStockProducts,
-    readyWorkOrders,
-    recentMovements,
-    todayCashMovements,
-    paymentMethods,
-    allCashMovements
+    activeWorkOrders
   ] = await Promise.all([
     // 1. Ventas del día - Work Orders
     prisma.work_order.findMany({
@@ -163,75 +158,76 @@ export async function getDashboardData(): Promise<DashboardData> {
       },
       select: { status: true, createdAt: true },
     }),
-    // 6. Stock crítico
-    prisma.product.findMany({
-      where: {
-        isActive: true,
-        stock: { lte: prisma.product.fields.minStock },
-      },
-      select: {
-        id: true,
-        name: true,
-        stock: true,
-        minStock: true,
-      },
-      take: 5,
-      orderBy: { stock: 'asc' },
-    }),
-    // 7. Listos para entrega
-    prisma.work_order.findMany({
-      where: {
-        status: 'READY',
-      },
-      include: {
-        customer: {
-          select: { name: true, phone: true },
-        },
-        vehicle: {
-          select: { category: true, description: true },
-        },
-      },
-      take: 5,
-      orderBy: { completedAt: 'desc' },
-    }),
-    // 8. Movimientos recientes
-    prisma.stock_movement.findMany({
-      include: {
-        product: {
-          select: { name: true },
-        },
-      },
-      take: 5,
-      orderBy: { createdAt: 'desc' },
-    }),
-    // 9. Movimientos de caja del día (para arqueo)
-    prisma.cash_movement.findMany({
-      where: {
-        createdAt: { gte: today },
-        type: { in: ['INCOME', 'EXPENSE'] },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    }),
-    // 10. Payment methods (para mapeo de nombres)
-    prisma.payment_method.findMany({
-      select: {
-        code: true,
-        name: true,
-      },
-    }),
-    // 11. Todos los movimientos de caja del día (lista detallada)
-    prisma.cash_movement.findMany({
-      where: {
-        createdAt: { gte: today },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-      take: 20,
-    }),
   ]);
+
+  // Ejecutar queries restantes secuencialmente para reducir carga de conexiones
+  const lowStockProducts = await prisma.product.findMany({
+    where: {
+      isActive: true,
+      stock: { lte: prisma.product.fields.minStock },
+    },
+    select: {
+      id: true,
+      name: true,
+      stock: true,
+      minStock: true,
+    },
+    take: 5,
+    orderBy: { stock: 'asc' },
+  });
+
+  const readyWorkOrders = await prisma.work_order.findMany({
+    where: {
+      status: 'READY',
+    },
+    include: {
+      customer: {
+        select: { name: true, phone: true },
+      },
+      vehicle: {
+        select: { category: true, description: true },
+      },
+    },
+    take: 5,
+    orderBy: { completedAt: 'desc' },
+  });
+
+  const recentMovements = await prisma.stock_movement.findMany({
+    include: {
+      product: {
+        select: { name: true },
+      },
+    },
+    take: 5,
+    orderBy: { createdAt: 'desc' },
+  });
+
+  const todayCashMovements = await prisma.cash_movement.findMany({
+    where: {
+      createdAt: { gte: today },
+      type: { in: ['INCOME', 'EXPENSE'] },
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
+
+  const paymentMethods = await prisma.payment_method.findMany({
+    select: {
+      code: true,
+      name: true,
+    },
+  });
+
+  const allCashMovements = await prisma.cash_movement.findMany({
+    where: {
+      createdAt: { gte: today },
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+    take: 20,
+  });
 
   // Calcular métricas de ventas
   const todayTotal = todayWorkOrders.reduce((sum, wo) => sum + decimalToNumber(wo.total), 0) +

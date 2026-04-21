@@ -92,6 +92,31 @@ export function ProductsClient({
     checkCashStatus();
   }, []);
 
+  // Image upload state
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+
+  const handleDeleteImage = async (productId: string) => {
+    try {
+      const response = await fetch(`/api/products/${productId}/image`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Error al eliminar imagen');
+      }
+
+      router.refresh();
+    } catch (error) {
+      console.error('Error deleting image:', error);
+      await alert({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Error al eliminar imagen',
+        variant: 'error',
+      });
+    }
+  };
+
   const handleQuickSaleSuccess = () => {
     router.refresh();
   };
@@ -209,18 +234,46 @@ export function ProductsClient({
         body: JSON.stringify(payload),
       });
 
-      if (response.ok) {
-        setIsDialogOpen(false);
-        resetForm();
-        router.refresh();
-      } else {
+      if (!response.ok) {
         const error = await response.json();
         await alert({
           title: 'Error',
           description: error.error || 'Error al guardar producto',
           variant: 'error',
         });
+        return;
       }
+
+      const result = await response.json();
+      const productId = result.product?.id || editingProduct?.id;
+
+      // Upload image if provided
+      if (formData.imageFile && productId) {
+        setIsUploadingImage(true);
+        const formDataImage = new FormData();
+        formDataImage.append('file', formData.imageFile);
+
+        const imageResponse = await fetch(`/api/products/${productId}/image`, {
+          method: 'POST',
+          body: formDataImage,
+        });
+
+        setIsUploadingImage(false);
+
+        if (!imageResponse.ok) {
+          const imageError = await imageResponse.json();
+          console.error('Error uploading image:', imageError);
+          await alert({
+            title: 'Advertencia',
+            description: `Producto guardado pero la imagen no se pudo subir: ${imageError.error || 'Error desconocido'}`,
+            variant: 'warning',
+          });
+        }
+      }
+
+      setIsDialogOpen(false);
+      resetForm();
+      router.refresh();
     } catch (error) {
       console.error('Error saving product:', error);
       await alert({
@@ -301,6 +354,23 @@ export function ProductsClient({
   ];
 
   const columns: ColumnDef<Product>[] = [
+    {
+      accessorKey: 'imageUrl',
+      header: 'Imagen',
+      cell: ({ row }) => (
+        row.original.imageUrl ? (
+          <img
+            src={`/api/products/${row.original.id}/image`}
+            alt={row.original.name}
+            className="w-10 h-10 object-cover rounded"
+          />
+        ) : (
+          <div className="w-10 h-10 bg-muted rounded flex items-center justify-center">
+            <span className="text-xs text-muted-foreground">-</span>
+          </div>
+        )
+      ),
+    },
     {
       accessorKey: 'sku',
       header: 'SKU',
@@ -438,6 +508,8 @@ export function ProductsClient({
         categories={categories}
         suppliers={suppliers}
         isValid={formValid}
+        isUploadingImage={isUploadingImage}
+        onDeleteImage={handleDeleteImage}
       />
 
       <ProductPricesModal

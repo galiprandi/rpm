@@ -1,5 +1,6 @@
 'use client';
 
+import * as React from 'react';
 import { ModalBase, ModalBaseFooter } from '@/components/ui/ModalBase';
 import { ProductForm } from './ProductForm';
 
@@ -15,6 +16,8 @@ interface ProductDialogProps {
   categories: Category[];
   suppliers: Supplier[];
   isValid: boolean;
+  isUploadingImage?: boolean;
+  onDeleteImage?: (productId: string) => void;
 }
 
 export function ProductDialog({
@@ -27,7 +30,19 @@ export function ProductDialog({
   categories,
   suppliers,
   isValid,
+  isUploadingImage = false,
+  onDeleteImage,
 }: ProductDialogProps) {
+  const [isDeletingImage, setIsDeletingImage] = React.useState(false);
+
+  const handleImageDeleteStart = React.useCallback(() => {
+    setIsDeletingImage(true);
+  }, []);
+
+  const handleImageDeleteEnd = React.useCallback(() => {
+    setIsDeletingImage(false);
+  }, []);
+
   return (
     <ModalBase
       isOpen={isOpen}
@@ -41,17 +56,23 @@ export function ProductDialog({
         <ModalBaseFooter
           onCancel={onClose}
           onSave={onSubmit}
-          saveText={editingProduct ? 'Guardar Cambios' : 'Crear Producto'}
-          disabled={!isValid}
+          saveText={isUploadingImage ? 'Subiendo imagen...' : (editingProduct ? 'Guardar Cambios' : 'Crear Producto')}
+          disabled={!isValid || isUploadingImage || isDeletingImage}
         />
       }
     >
-      <ProductForm 
+      <ProductForm
         formData={formData}
         setFormData={setFormData}
         categories={categories}
         suppliers={suppliers}
         isValid={isValid}
+        currentImageUrl={editingProduct?.imageUrl || null}
+        productId={editingProduct?.id || null}
+        onDeleteImage={onDeleteImage}
+        isDeletingImage={isDeletingImage}
+        onImageDeleteStart={handleImageDeleteStart}
+        onImageDeleteEnd={handleImageDeleteEnd}
       />
     </ModalBase>
   );

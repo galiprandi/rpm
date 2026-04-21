@@ -127,6 +127,9 @@ model product {
   supplierId      String?
   lastMovementAt  DateTime?
   replacementCost Decimal           @db.Decimal(10, 2)
+  imageUrl        String?           // URL completa (jsDelivr CDN)
+  imageCommit     String?           // SHA del commit para tracking/rollback
+  imageBranch     String?           @default("main") // Branch donde se almacenó
   price_list_item price_list_item[]
   category        category          @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   supplier        supplier?         @relation(fields: [supplierId], references: [id])
@@ -136,6 +139,7 @@ model product {
 
   @@index([categoryId])
   @@index([isActive])
+  @@index([imageUrl])
   @@index([lastMovementAt])
   @@index([name])
   @@index([sku])

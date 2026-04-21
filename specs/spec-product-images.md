@@ -11,6 +11,8 @@ tags: ["infrastructure", "design", "app"]
 
 Esta especificación define el sistema de almacenamiento y serving de imágenes para productos, utilizando GitHub como repositorio de almacenamiento y jsDelivr como CDN global para serving. El sistema permite a los usuarios asociar una imagen opcional a cada producto, con redimensionamiento automático y configuración vía variables de entorno.
 
+> **⚠️ Migration Notice:** This legacy system will be migrated to use the new **[GitHub CDN Service](./github-cdn-service.md)** which provides a unified bucket for all file types (products, vehicles, receipts, documents). The new service offers better compression, category-based processing, and a simpler API.
+
 ## 1. Purpose & Scope
 
 **Purpose:** Proporcionar un sistema de imágenes de productos con costo cero, escalabilidad y control total, utilizando la infraestructura gratuita de GitHub y jsDelivr.
@@ -97,6 +99,81 @@ PRODUCT_IMAGE_MAX_HEIGHT=500
 PRODUCT_IMAGE_QUALITY=85
 PRODUCT_IMAGE_FORMAT=jpeg
 ```
+
+### Cómo Crear el GitHub Token
+
+**Paso 1: Acceder a Settings de GitHub**
+1. Inicia sesión en GitHub
+2. Haz clic en tu avatar en la esquina superior derecha
+3. Selecciona "Settings"
+
+**Paso 2: Crear un Personal Access Token (Classic)**
+1. En el menú izquierdo, haz clic en "Developer settings"
+2. Selecciona "Personal access tokens"
+3. Haz clic en "Tokens (classic)"
+4. Haz clic en "Generate new token (classic)"
+
+**Paso 3: Configurar el Token**
+1. **Note**: Ingresa una descripción, ej: "RPM Product Images"
+2. **Expiration**: Selecciona "No expiration" o una fecha futura
+3. **Scopes**: Marca las siguientes opciones:
+   - ✅ `repo` (permite acceso completo a repositorios privados y públicos)
+   - O alternativamente: ✅ `public_repo` (si el repo es público, esto es suficiente)
+
+**Paso 4: Generar y Copiar**
+1. Haz clic en "Generate token"
+2. **IMPORTANTE**: Copia el token inmediatamente (empieza con `ghp_`)
+3. El token solo se muestra una vez. Si lo pierdes, debes crear uno nuevo.
+
+**Paso 5: Agregar a Variables de Entorno**
+Agrega el token a tu archivo `.env.local`:
+```bash
+GITHUB_TOKEN=ghp_xxxxxxxxxxxx
+```
+
+**Nota de Seguridad:**
+- Nunca commitear el token a Git
+- Usar `.gitignore` para archivos `.env.local`
+- Rotar el token si se compromete
+- Usar tokens específicos por entorno (dev/staging/prod)
+
+### Image Deletion
+
+Users can delete product images from the UI. The deletion process includes:
+
+**Frontend Flow:**
+1. User clicks "Eliminar imagen" button in ProductForm
+2. Button shows loading state (spinner + "Eliminando...")
+3. ProductDialog disables save button during deletion
+4. DELETE request is sent to `/api/products/[id]/image`
+5. On success, local preview is cleared immediately
+6. Page refreshes to show updated data
+
+**API Behavior:**
+- Deletes file from GitHub repository
+- Clears `imageUrl`, `imageCommit`, `imageBranch` from database
+- Revalidates cache for `/adm/products` and `/adm/dashboard`
+
+**Error Handling:**
+- Shows error alert if deletion fails
+- Button re-enables on error
+- User can retry deletion
+
+### Image Upload Feedback
+
+Users receive visual feedback during image upload:
+
+**Frontend Flow:**
+1. User selects image file
+2. "Guardar Cambios" button shows "Subiendo imagen..."
+3. Button is disabled during upload
+4. On success, image preview updates
+5. On error, alert is shown with error message
+
+**Processing Feedback (Server):**
+- Images are automatically resized and compressed with Sharp
+- Server logs compression ratio (original vs processed size)
+- Typical compression: 70-90% size reduction
 
 ### Schema Prisma
 
@@ -436,8 +513,57 @@ Cache-Control: public, max-age=3600
 - **VAL-007**: El sistema maneja rate limits de GitHub API con retries
 - **VAL-008**: El sistema soporta hasta 20,000 imágenes sin exceder 1GB
 
-## 11. Related Specifications / Further Reading
+## 11. Migration to GitHub CDN Service
 
+This legacy endpoint (`/api/products/[id]/image`) will be replaced by the unified **[GitHub CDN Service](./github-cdn-service.md)**.
+
+### Migration Path
+
+| Aspect | Legacy System | New GitHub CDN Service |
+|--------|--------------|------------------------|
+| **Endpoint** | `/api/products/[id]/image` | `/api/files/upload` |
+| **Repository** | `PRODUCT_IMAGES_REPO` | `GITHUB_CDN_REPO` (unified) |
+| **Storage Path** | `products/{id}.{ext}` | `files/products/{id}.{ext}` |
+| **Categories** | Only products | products, vehicles, receipts, documents, general |
+| **Processing** | Fixed 500x500, JPEG 85% | Category-based optimization |
+| **Upload Method** | curl via child_process | curl via service (same technique) |
+| **Response** | `{ imageUrl, commitSha }` | `{ urls: { cdn, github }, sizes, compressionRatio }` |
+
+### New Upload Example
+
+```bash
+# Old way (legacy)
+POST /api/products/prod_123/image
+Content-Type: multipart/form-data
+file: [binary]
+
+# New way (CDN Service)
+POST /api/files/upload
+Content-Type: multipart/form-data
+category: products
+id: prod_123
+file: [binary]
+process: true  # Enable Sharp compression
+```
+
+### Benefits of Migration
+
+1. **Unified Storage**: One repo for all file types (products, vehicles, receipts, documents)
+2. **Better Compression**: Category-optimized settings (e.g., vehicles need higher resolution than products)
+3. **URL Upload**: Can download from external URLs and re-upload to CDN
+4. **Compression Stats**: Know exactly how much storage you're saving
+5. **Simpler API**: One endpoint for everything
+
+### Compatibility
+
+During migration, both systems can coexist:
+- Old images continue serving from old repo
+- New uploads use the CDN service
+- Gradual migration script can move old images to new structure
+
+## 12. Related Specifications / Further Reading
+
+- **[GitHub CDN Service](./github-cdn-service.md)** - New unified file storage system ⭐
 - [Database Schema](./SYSTEM_SPEC.md) - Schema de Prisma
 - [API Documentation](./api.md) - Endpoints de la API
 - [Components Specification](./components.md) - Componentes UI

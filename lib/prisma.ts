@@ -7,7 +7,7 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 // Use different connection strings based on environment
-const connectionString = process.env.NODE_ENV === 'production' 
+const connectionString = process.env.NODE_ENV === 'production'
   ? process.env.POSTGRES_URL || process.env.DATABASE_URL
   : process.env.DATABASE_URL;
 
@@ -23,4 +23,15 @@ export const prisma =
     log: ['error'],
   });
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
+// Enable singleton in development
+if (process.env.NODE_ENV !== 'production') {
+  globalForPrisma.prisma = prisma;
+}
+
+// In Vercel/production, disconnect after each request to prevent connection pool exhaustion
+if (process.env.NODE_ENV === 'production') {
+  // Add cleanup for Vercel serverless functions
+  process.on('beforeExit', async () => {
+    await prisma.$disconnect();
+  });
+}

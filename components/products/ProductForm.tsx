@@ -5,6 +5,8 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
+import { Button } from '@/components/ui/button';
+import { X, Upload } from 'lucide-react';
 
 export interface ProductFormData {
   barcode: string;
@@ -18,6 +20,7 @@ export interface ProductFormData {
   stock: string;
   minStock: string;
   description: string;
+  imageFile?: File;
 }
 
 interface Category {
@@ -37,6 +40,12 @@ interface ProductFormProps {
   suppliers: Supplier[];
   onSubmit?: (e: React.FormEvent) => void;
   isValid?: boolean;
+  currentImageUrl?: string | null;
+  productId?: string | null;
+  onDeleteImage?: (productId: string) => void;
+  isDeletingImage?: boolean;
+  onImageDeleteStart?: () => void;
+  onImageDeleteEnd?: () => void;
 }
 
 export function ProductForm({
@@ -45,11 +54,51 @@ export function ProductForm({
   categories,
   suppliers,
   onSubmit,
+  currentImageUrl,
+  productId,
+  onDeleteImage,
+  isDeletingImage = false,
+  onImageDeleteStart,
+  onImageDeleteEnd,
 }: ProductFormProps) {
+  const [localImageUrl, setLocalImageUrl] = React.useState<string | null>(currentImageUrl || null);
+
+  // Sync localImageUrl when currentImageUrl changes (e.g., when opening different product)
+  React.useEffect(() => {
+    setLocalImageUrl(currentImageUrl || null);
+  }, [currentImageUrl]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit?.(e);
   };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setFormData({ ...formData, imageFile: file });
+    }
+  };
+
+  const handleRemoveImage = async () => {
+    // If there's a current image (product already has an image), delete it from server
+    if (currentImageUrl && productId && onDeleteImage) {
+      onImageDeleteStart?.();
+      try {
+        await onDeleteImage(productId);
+        // Clear local preview after successful deletion
+        setLocalImageUrl(null);
+      } finally {
+        onImageDeleteEnd?.();
+      }
+    }
+    // Clear the selected file from form
+    setFormData({ ...formData, imageFile: undefined });
+  };
+
+  const imagePreview = formData.imageFile
+    ? URL.createObjectURL(formData.imageFile)
+    : localImageUrl || null;
 
   return (
     <form id="product-form" onSubmit={handleSubmit} className="space-y-4">
@@ -206,6 +255,69 @@ export function ProductForm({
           placeholder="Descripción del producto..."
           rows={2}
         />
+      </div>
+
+      {/* Fila 6: Imagen */}
+      <div className="space-y-2">
+        <Label htmlFor="image">Imagen (opcional)</Label>
+        {imagePreview ? (
+          <div className="flex items-start gap-4">
+            <div className="relative w-24 h-24 rounded-lg overflow-hidden border border-border">
+              <img
+                src={imagePreview}
+                alt="Preview"
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className="flex-1">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleRemoveImage}
+                disabled={isDeletingImage}
+                className="mb-2"
+              >
+                {isDeletingImage ? (
+                  <>
+                    <div className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                    Eliminando...
+                  </>
+                ) : (
+                  <>
+                    <X className="h-4 w-4 mr-2" />
+                    Eliminar imagen
+                  </>
+                )}
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                {formData.imageFile ? 'Nueva imagen seleccionada' : 'Imagen actual'}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="border-2 border-dashed border-border rounded-lg p-6">
+            <input
+              id="image"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={handleImageChange}
+              className="hidden"
+            />
+            <label
+              htmlFor="image"
+              className="flex flex-col items-center justify-center cursor-pointer"
+            >
+              <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+              <span className="text-sm text-muted-foreground">
+                Click para subir imagen
+              </span>
+              <span className="text-xs text-muted-foreground mt-1">
+                JPEG, PNG o WebP (máx 10MB)
+              </span>
+            </label>
+          </div>
+        )}
       </div>
     </form>
   );
