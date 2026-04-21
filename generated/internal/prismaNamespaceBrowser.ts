@@ -51,7 +51,7 @@ export const AnyNull = runtime.AnyNull
 
 
 export const ModelName = {
-  account: 'account',
+  Account: 'Account',
   category: 'category',
   customer: 'customer',
   photo: 'photo',
@@ -59,16 +59,16 @@ export const ModelName = {
   price_list_item: 'price_list_item',
   product: 'product',
   service: 'service',
-  session: 'session',
+  Session: 'Session',
   setting: 'setting',
   stock_movement: 'stock_movement',
   supplier: 'supplier',
-  user: 'user',
+  User: 'User',
   user_role: 'user_role',
   vehicle: 'vehicle',
   vehicle_make: 'vehicle_make',
   vehicle_model: 'vehicle_model',
-  verification: 'verification',
+  Verification: 'Verification',
   work_order: 'work_order',
   work_order_audit_log: 'work_order_audit_log',
   work_order_item: 'work_order_item',

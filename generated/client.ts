@@ -42,10 +42,10 @@ export type PrismaClient<LogOpts extends Prisma.LogLevel = never, OmitOpts exten
 export { Prisma }
 
 /**
- * Model account
+ * Model Account
  * 
  */
-export type account = Prisma.accountModel
+export type Account = Prisma.AccountModel
 /**
  * Model category
  * 
@@ -82,10 +82,10 @@ export type product = Prisma.productModel
  */
 export type service = Prisma.serviceModel
 /**
- * Model session
+ * Model Session
  * 
  */
-export type session = Prisma.sessionModel
+export type Session = Prisma.SessionModel
 /**
  * Model setting
  * 
@@ -102,10 +102,10 @@ export type stock_movement = Prisma.stock_movementModel
  */
 export type supplier = Prisma.supplierModel
 /**
- * Model user
+ * Model User
  * 
  */
-export type user = Prisma.userModel
+export type User = Prisma.UserModel
 /**
  * Model user_role
  * 
@@ -127,10 +127,10 @@ export type vehicle_make = Prisma.vehicle_makeModel
  */
 export type vehicle_model = Prisma.vehicle_modelModel
 /**
- * Model verification
+ * Model Verification
  * 
  */
-export type verification = Prisma.verificationModel
+export type Verification = Prisma.VerificationModel
 /**
  * Model work_order
  * 

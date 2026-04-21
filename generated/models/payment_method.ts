@@ -434,11 +434,6 @@ export type Payment_methodScalarRelationFilter = {
   isNot?: Prisma.payment_methodWhereInput
 }
 
-export type Payment_methodNullableScalarRelationFilter = {
-  is?: Prisma.payment_methodWhereInput | null
-  isNot?: Prisma.payment_methodWhereInput | null
-}
-
 export type payment_methodCreateNestedOneWithoutPaymentsInput = {
   create?: Prisma.XOR<Prisma.payment_methodCreateWithoutPaymentsInput, Prisma.payment_methodUncheckedCreateWithoutPaymentsInput>
   connectOrCreate?: Prisma.payment_methodCreateOrConnectWithoutPaymentsInput
@@ -459,12 +454,10 @@ export type payment_methodCreateNestedOneWithoutDirectSalePaymentsInput = {
   connect?: Prisma.payment_methodWhereUniqueInput
 }
 
-export type payment_methodUpdateOneWithoutDirectSalePaymentsNestedInput = {
+export type payment_methodUpdateOneRequiredWithoutDirectSalePaymentsNestedInput = {
   create?: Prisma.XOR<Prisma.payment_methodCreateWithoutDirectSalePaymentsInput, Prisma.payment_methodUncheckedCreateWithoutDirectSalePaymentsInput>
   connectOrCreate?: Prisma.payment_methodCreateOrConnectWithoutDirectSalePaymentsInput
   upsert?: Prisma.payment_methodUpsertWithoutDirectSalePaymentsInput
-  disconnect?: Prisma.payment_methodWhereInput | boolean
-  delete?: Prisma.payment_methodWhereInput | boolean
   connect?: Prisma.payment_methodWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.payment_methodUpdateToOneWithWhereWithoutDirectSalePaymentsInput, Prisma.payment_methodUpdateWithoutDirectSalePaymentsInput>, Prisma.payment_methodUncheckedUpdateWithoutDirectSalePaymentsInput>
 }
