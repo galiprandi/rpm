@@ -65,11 +65,112 @@ export async function GET(request: NextRequest) {
 
 # ⚠️ REGLA CRÍTICA: Prisma ORM v7 y Variables de Entorno
 
-## Cambio Breaking en Prisma v7
+## ⚠️ ESTE PROYECTO USA PRISMA v6 (NO v7)
+
+### Estado Actual (Abril 2026)
+
+**IMPORTANTE:** Este proyecto usa **Prisma v6.19.3**, NO v7. Prisma v7 es incompatible con Next.js 16 debido a cambios breaking en el manejo de módulos nativos.
+
+### Motivo del Downgrade (Historial de Regresión)
+
+**Problema:** Prisma v7 introduce un cambio breaking que requiere usar adapters (como `PrismaPg`) para conexiones directas. Estos adapters dependen de módulos nativos (`pg`) que Next.js 16 no puede bundear correctamente con webpack/Turbopack.
+
+**Intentos fallidos:**
+- Prisma v7.0.0 con `PrismaPg` adapter → Error: `Module not found: Can't resolve 'pg'`
+- Prisma v7.6.0 con configuración de `prisma.config.ts` → Mismo error
+- Prisma v7.7.0 con `serverExternalPackages` → No funciona con Turbopack
+- Webpack externals para `pg` → Runtime error
+
+**Solución:** Downgrade a Prisma v6.19.3 que:
+- No requiere adapters
+- Usa el output default `@prisma/client`
+- Es compatible con Next.js 16
+- No tiene cambios breaking en el datasource URL
+
+### Configuración Actual
+
+```typescript
+// ✅ CORRECTO: Prisma v6 sin adapter
+import { PrismaClient } from '@prisma/client';
+
+export const prisma = new PrismaClient({
+  log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+});
+```
+
+```prisma
+// ✅ CORRECTO: URL en schema (Prisma v6)
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+```
+
+### Archivos Eliminados (Prisma v7 específicos)
+
+- `prisma.config.ts` - Eliminado (específico de Prisma v7)
+- `generated/` - Eliminado (output personalizado de Prisma v7)
+
+### Dependencias Removidas
+
+- `@prisma/adapter-pg` - Ya no necesario con Prisma v6
+- `@types/pg` - Ya no necesario con Prisma v6
+
+### Cambio en Imports
+
+**Antes (Prisma v7 con output personalizado):**
+```typescript
+import { Prisma } from '@/generated/client';
+```
+
+**Ahora (Prisma v6 con output default):**
+```typescript
+import { Prisma } from '@prisma/client';
+```
+
+### ⚠️ PROHIBIDO: Intentar Actualizar a Prisma v7
+
+**NO actualizar a Prisma v7** sin:
+1. Verificar compatibilidad con Next.js 16
+2. Resolver problemas de bundling de módulos nativos
+3. Validar que el build complete exitosamente
+4. Probar todas las rutas de API que usan Prisma
+
+### Sharp: Módulo Nativo Opcional
+
+**Problema:** `sharp` es un módulo nativo que Next.js no puede bundear correctamente.
+
+**Solución:** Importación dinámica con fallback
+
+```typescript
+// ✅ CORRECTO: Importación dinámica
+async function processImage(buffer: Buffer) {
+  try {
+    const sharp = (await import('sharp')).default;
+    const processed = await sharp(buffer).resize(800, 800).toBuffer();
+    return processed;
+  } catch (error) {
+    console.error('Sharp not available, using original buffer');
+    return buffer; // Fallback
+  }
+}
+```
+
+**Archivos afectados:**
+- `app/api/files/upload/route.ts`
+- `app/api/products/[id]/image/route.ts`
+
+**Advertencia de build:** Las advertencias sobre `sharp` son esperadas y no bloquean el build.
+
+---
+
+## Cambio Breaking en Prisma v7 (Información Histórica)
 
 En **Prisma ORM 7.0.0**, las variables de entorno **NO se cargan automáticamente** por defecto. A diferencia de versiones anteriores, el CLI de Prisma ya no lee automáticamente archivos `.env`.
 
-### Solución Obligatoria
+**NOTA:** Esta sección es solo informativa. Este proyecto usa Prisma v6, por lo que estas reglas NO aplican.
+
+### Solución Obligatoria (SOLO si se usa Prisma v7)
 
 **SIEMPRE** incluir `import "dotenv/config"` al inicio de `prisma.config.ts`:
 

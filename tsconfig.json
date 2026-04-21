@@ -23,7 +23,8 @@
       "@/admin/*": ["./components/adm/*"],
       "@/adm/*": ["./components/adm/*"],
       "@/public/*": ["./components/public/*"]
-    }
+    },
+    "types": ["node"]
   },
   "include": [
     "next-env.d.ts",
@@ -33,7 +34,8 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts",
     "types/**/*.d.ts",
-    ".storybook/**/*"
+    ".storybook/**/*",
+    "node_modules/sharp/**/*.d.ts"
   ],
   "exclude": ["node_modules"]
 }

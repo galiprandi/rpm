@@ -6,9 +6,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { uploadFile, FileCategory } from '@/lib/services/githubCdnService';
-import sharp from 'sharp';
 
- 
 const ALLOWED_CATEGORIES: FileCategory[] = ['products', 'vehicles', 'receipts', 'documents', 'general'];
 
 const ALLOWED_MIME_TYPES = [
@@ -42,36 +40,43 @@ async function processImage(buffer: Buffer, category: FileCategory, originalMime
   }
 
   const config = IMAGE_CONFIG[category] || IMAGE_CONFIG.general;
-  
-  let pipeline = sharp(buffer);
-  
-  // Resize if dimensions specified
-  if (config.width || config.height) {
-    pipeline = pipeline.resize(config.width, config.height, {
-      fit: 'inside',
-      withoutEnlargement: true,
-    });
-  }
 
-  // Convert to target format
-  switch (config.format) {
-    case 'jpeg':
-      pipeline = pipeline.jpeg({ quality: config.quality, progressive: true });
-      break;
-    case 'png':
-      pipeline = pipeline.png({ quality: config.quality });
-      break;
-    case 'webp':
-      pipeline = pipeline.webp({ quality: config.quality });
-      break;
-  }
+  try {
+    // Dynamic import to avoid webpack resolution issues
+    const sharp = (await import('sharp')).default;
+    let pipeline = sharp(buffer);
 
-  const processed = await pipeline.toBuffer();
-  
-  return {
-    buffer: processed,
-    mimeType: `image/${config.format}`,
-  };
+    // Resize if dimensions specified
+    if (config.width || config.height) {
+      pipeline = pipeline.resize(config.width, config.height, {
+        fit: 'inside',
+        withoutEnlargement: true,
+      });
+    }
+
+    // Convert to target format
+    switch (config.format) {
+      case 'jpeg':
+        pipeline = pipeline.jpeg({ quality: config.quality, progressive: true });
+        break;
+      case 'png':
+        pipeline = pipeline.png({ quality: config.quality });
+        break;
+      case 'webp':
+        pipeline = pipeline.webp({ quality: config.quality });
+        break;
+    }
+
+    const processed = await pipeline.toBuffer();
+
+    return {
+      buffer: processed,
+      mimeType: `image/${config.format}`,
+    };
+  } catch (error) {
+    console.error('Error processing image with Sharp:', error);
+    return { buffer, mimeType: originalMime };
+  }
 }
 
 /**

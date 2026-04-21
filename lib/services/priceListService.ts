@@ -6,7 +6,7 @@
  */
 
 import { prisma } from '@/lib/prisma';
-import { Prisma } from '@/generated/client';
+import { Prisma } from '@prisma/client';
 import { calculateFinalPrice, calculateMarginPercentage, type RoundingRule } from '@/lib/utils/rounding';
 import { getMinimumMargin } from './settingsService';
 import { randomUUID } from 'crypto';
