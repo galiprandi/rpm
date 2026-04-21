@@ -235,7 +235,7 @@ export function ProductsClient({
         setIsUploadingImage(true);
         const formDataImage = new FormData();
         formDataImage.append('file', formData.imageFile);
-        
+
         const imageResponse = await fetch(`/api/products/${productId}/image`, {
           method: 'POST',
           body: formDataImage,

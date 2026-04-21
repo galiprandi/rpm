@@ -194,7 +194,7 @@ export type direct_sale_paymentGroupByArgs<ExtArgs extends runtime.Types.Extensi
 export type Direct_sale_paymentGroupByOutputType = {
   id: string
   directSaleId: string
-  paymentMethodId: string | null
+  paymentMethodId: string
   amount: runtime.Decimal
   notes: string | null
   createdAt: Date
@@ -227,19 +227,19 @@ export type direct_sale_paymentWhereInput = {
   NOT?: Prisma.direct_sale_paymentWhereInput | Prisma.direct_sale_paymentWhereInput[]
   id?: Prisma.StringFilter<"direct_sale_payment"> | string
   directSaleId?: Prisma.StringFilter<"direct_sale_payment"> | string
-  paymentMethodId?: Prisma.StringNullableFilter<"direct_sale_payment"> | string | null
+  paymentMethodId?: Prisma.StringFilter<"direct_sale_payment"> | string
   amount?: Prisma.DecimalFilter<"direct_sale_payment"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   notes?: Prisma.StringNullableFilter<"direct_sale_payment"> | string | null
   createdAt?: Prisma.DateTimeFilter<"direct_sale_payment"> | Date | string
   createdBy?: Prisma.StringFilter<"direct_sale_payment"> | string
   directSale?: Prisma.XOR<Prisma.Direct_saleScalarRelationFilter, Prisma.direct_saleWhereInput>
-  paymentMethod?: Prisma.XOR<Prisma.Payment_methodNullableScalarRelationFilter, Prisma.payment_methodWhereInput> | null
+  paymentMethod?: Prisma.XOR<Prisma.Payment_methodScalarRelationFilter, Prisma.payment_methodWhereInput>
 }
 
 export type direct_sale_paymentOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   directSaleId?: Prisma.SortOrder
-  paymentMethodId?: Prisma.SortOrderInput | Prisma.SortOrder
+  paymentMethodId?: Prisma.SortOrder
   amount?: Prisma.SortOrder
   notes?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -254,19 +254,19 @@ export type direct_sale_paymentWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.direct_sale_paymentWhereInput[]
   NOT?: Prisma.direct_sale_paymentWhereInput | Prisma.direct_sale_paymentWhereInput[]
   directSaleId?: Prisma.StringFilter<"direct_sale_payment"> | string
-  paymentMethodId?: Prisma.StringNullableFilter<"direct_sale_payment"> | string | null
+  paymentMethodId?: Prisma.StringFilter<"direct_sale_payment"> | string
   amount?: Prisma.DecimalFilter<"direct_sale_payment"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   notes?: Prisma.StringNullableFilter<"direct_sale_payment"> | string | null
   createdAt?: Prisma.DateTimeFilter<"direct_sale_payment"> | Date | string
   createdBy?: Prisma.StringFilter<"direct_sale_payment"> | string
   directSale?: Prisma.XOR<Prisma.Direct_saleScalarRelationFilter, Prisma.direct_saleWhereInput>
-  paymentMethod?: Prisma.XOR<Prisma.Payment_methodNullableScalarRelationFilter, Prisma.payment_methodWhereInput> | null
+  paymentMethod?: Prisma.XOR<Prisma.Payment_methodScalarRelationFilter, Prisma.payment_methodWhereInput>
 }, "id">
 
 export type direct_sale_paymentOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   directSaleId?: Prisma.SortOrder
-  paymentMethodId?: Prisma.SortOrderInput | Prisma.SortOrder
+  paymentMethodId?: Prisma.SortOrder
   amount?: Prisma.SortOrder
   notes?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -284,7 +284,7 @@ export type direct_sale_paymentScalarWhereWithAggregatesInput = {
   NOT?: Prisma.direct_sale_paymentScalarWhereWithAggregatesInput | Prisma.direct_sale_paymentScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"direct_sale_payment"> | string
   directSaleId?: Prisma.StringWithAggregatesFilter<"direct_sale_payment"> | string
-  paymentMethodId?: Prisma.StringNullableWithAggregatesFilter<"direct_sale_payment"> | string | null
+  paymentMethodId?: Prisma.StringWithAggregatesFilter<"direct_sale_payment"> | string
   amount?: Prisma.DecimalWithAggregatesFilter<"direct_sale_payment"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   notes?: Prisma.StringNullableWithAggregatesFilter<"direct_sale_payment"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"direct_sale_payment"> | Date | string
@@ -298,13 +298,13 @@ export type direct_sale_paymentCreateInput = {
   createdAt?: Date | string
   createdBy: string
   directSale: Prisma.direct_saleCreateNestedOneWithoutPaymentsInput
-  paymentMethod?: Prisma.payment_methodCreateNestedOneWithoutDirectSalePaymentsInput
+  paymentMethod: Prisma.payment_methodCreateNestedOneWithoutDirectSalePaymentsInput
 }
 
 export type direct_sale_paymentUncheckedCreateInput = {
   id?: string
   directSaleId: string
-  paymentMethodId?: string | null
+  paymentMethodId: string
   amount: runtime.Decimal | runtime.DecimalJsLike | number | string
   notes?: string | null
   createdAt?: Date | string
@@ -318,13 +318,13 @@ export type direct_sale_paymentUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdBy?: Prisma.StringFieldUpdateOperationsInput | string
   directSale?: Prisma.direct_saleUpdateOneRequiredWithoutPaymentsNestedInput
-  paymentMethod?: Prisma.payment_methodUpdateOneWithoutDirectSalePaymentsNestedInput
+  paymentMethod?: Prisma.payment_methodUpdateOneRequiredWithoutDirectSalePaymentsNestedInput
 }
 
 export type direct_sale_paymentUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   directSaleId?: Prisma.StringFieldUpdateOperationsInput | string
-  paymentMethodId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentMethodId?: Prisma.StringFieldUpdateOperationsInput | string
   amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -334,7 +334,7 @@ export type direct_sale_paymentUncheckedUpdateInput = {
 export type direct_sale_paymentCreateManyInput = {
   id?: string
   directSaleId: string
-  paymentMethodId?: string | null
+  paymentMethodId: string
   amount: runtime.Decimal | runtime.DecimalJsLike | number | string
   notes?: string | null
   createdAt?: Date | string
@@ -352,7 +352,7 @@ export type direct_sale_paymentUpdateManyMutationInput = {
 export type direct_sale_paymentUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   directSaleId?: Prisma.StringFieldUpdateOperationsInput | string
-  paymentMethodId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentMethodId?: Prisma.StringFieldUpdateOperationsInput | string
   amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -541,7 +541,7 @@ export type direct_sale_paymentScalarWhereInput = {
   NOT?: Prisma.direct_sale_paymentScalarWhereInput | Prisma.direct_sale_paymentScalarWhereInput[]
   id?: Prisma.StringFilter<"direct_sale_payment"> | string
   directSaleId?: Prisma.StringFilter<"direct_sale_payment"> | string
-  paymentMethodId?: Prisma.StringNullableFilter<"direct_sale_payment"> | string | null
+  paymentMethodId?: Prisma.StringFilter<"direct_sale_payment"> | string
   amount?: Prisma.DecimalFilter<"direct_sale_payment"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   notes?: Prisma.StringNullableFilter<"direct_sale_payment"> | string | null
   createdAt?: Prisma.DateTimeFilter<"direct_sale_payment"> | Date | string
@@ -554,12 +554,12 @@ export type direct_sale_paymentCreateWithoutDirectSaleInput = {
   notes?: string | null
   createdAt?: Date | string
   createdBy: string
-  paymentMethod?: Prisma.payment_methodCreateNestedOneWithoutDirectSalePaymentsInput
+  paymentMethod: Prisma.payment_methodCreateNestedOneWithoutDirectSalePaymentsInput
 }
 
 export type direct_sale_paymentUncheckedCreateWithoutDirectSaleInput = {
   id?: string
-  paymentMethodId?: string | null
+  paymentMethodId: string
   amount: runtime.Decimal | runtime.DecimalJsLike | number | string
   notes?: string | null
   createdAt?: Date | string
@@ -630,7 +630,7 @@ export type direct_sale_paymentUncheckedUpdateManyWithoutPaymentMethodInput = {
 
 export type direct_sale_paymentCreateManyDirectSaleInput = {
   id?: string
-  paymentMethodId?: string | null
+  paymentMethodId: string
   amount: runtime.Decimal | runtime.DecimalJsLike | number | string
   notes?: string | null
   createdAt?: Date | string
@@ -643,12 +643,12 @@ export type direct_sale_paymentUpdateWithoutDirectSaleInput = {
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdBy?: Prisma.StringFieldUpdateOperationsInput | string
-  paymentMethod?: Prisma.payment_methodUpdateOneWithoutDirectSalePaymentsNestedInput
+  paymentMethod?: Prisma.payment_methodUpdateOneRequiredWithoutDirectSalePaymentsNestedInput
 }
 
 export type direct_sale_paymentUncheckedUpdateWithoutDirectSaleInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  paymentMethodId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentMethodId?: Prisma.StringFieldUpdateOperationsInput | string
   amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -657,7 +657,7 @@ export type direct_sale_paymentUncheckedUpdateWithoutDirectSaleInput = {
 
 export type direct_sale_paymentUncheckedUpdateManyWithoutDirectSaleInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  paymentMethodId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentMethodId?: Prisma.StringFieldUpdateOperationsInput | string
   amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -675,7 +675,7 @@ export type direct_sale_paymentSelect<ExtArgs extends runtime.Types.Extensions.I
   createdAt?: boolean
   createdBy?: boolean
   directSale?: boolean | Prisma.direct_saleDefaultArgs<ExtArgs>
-  paymentMethod?: boolean | Prisma.direct_sale_payment$paymentMethodArgs<ExtArgs>
+  paymentMethod?: boolean | Prisma.payment_methodDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["direct_sale_payment"]>
 
 export type direct_sale_paymentSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -687,7 +687,7 @@ export type direct_sale_paymentSelectCreateManyAndReturn<ExtArgs extends runtime
   createdAt?: boolean
   createdBy?: boolean
   directSale?: boolean | Prisma.direct_saleDefaultArgs<ExtArgs>
-  paymentMethod?: boolean | Prisma.direct_sale_payment$paymentMethodArgs<ExtArgs>
+  paymentMethod?: boolean | Prisma.payment_methodDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["direct_sale_payment"]>
 
 export type direct_sale_paymentSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -699,7 +699,7 @@ export type direct_sale_paymentSelectUpdateManyAndReturn<ExtArgs extends runtime
   createdAt?: boolean
   createdBy?: boolean
   directSale?: boolean | Prisma.direct_saleDefaultArgs<ExtArgs>
-  paymentMethod?: boolean | Prisma.direct_sale_payment$paymentMethodArgs<ExtArgs>
+  paymentMethod?: boolean | Prisma.payment_methodDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["direct_sale_payment"]>
 
 export type direct_sale_paymentSelectScalar = {
@@ -715,27 +715,27 @@ export type direct_sale_paymentSelectScalar = {
 export type direct_sale_paymentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "directSaleId" | "paymentMethodId" | "amount" | "notes" | "createdAt" | "createdBy", ExtArgs["result"]["direct_sale_payment"]>
 export type direct_sale_paymentInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   directSale?: boolean | Prisma.direct_saleDefaultArgs<ExtArgs>
-  paymentMethod?: boolean | Prisma.direct_sale_payment$paymentMethodArgs<ExtArgs>
+  paymentMethod?: boolean | Prisma.payment_methodDefaultArgs<ExtArgs>
 }
 export type direct_sale_paymentIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   directSale?: boolean | Prisma.direct_saleDefaultArgs<ExtArgs>
-  paymentMethod?: boolean | Prisma.direct_sale_payment$paymentMethodArgs<ExtArgs>
+  paymentMethod?: boolean | Prisma.payment_methodDefaultArgs<ExtArgs>
 }
 export type direct_sale_paymentIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   directSale?: boolean | Prisma.direct_saleDefaultArgs<ExtArgs>
-  paymentMethod?: boolean | Prisma.direct_sale_payment$paymentMethodArgs<ExtArgs>
+  paymentMethod?: boolean | Prisma.payment_methodDefaultArgs<ExtArgs>
 }
 
 export type $direct_sale_paymentPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "direct_sale_payment"
   objects: {
     directSale: Prisma.$direct_salePayload<ExtArgs>
-    paymentMethod: Prisma.$payment_methodPayload<ExtArgs> | null
+    paymentMethod: Prisma.$payment_methodPayload<ExtArgs>
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     directSaleId: string
-    paymentMethodId: string | null
+    paymentMethodId: string
     amount: runtime.Decimal
     notes: string | null
     createdAt: Date
@@ -1135,7 +1135,7 @@ readonly fields: direct_sale_paymentFieldRefs;
 export interface Prisma__direct_sale_paymentClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   directSale<T extends Prisma.direct_saleDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.direct_saleDefaultArgs<ExtArgs>>): Prisma.Prisma__direct_saleClient<runtime.Types.Result.GetResult<Prisma.$direct_salePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-  paymentMethod<T extends Prisma.direct_sale_payment$paymentMethodArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.direct_sale_payment$paymentMethodArgs<ExtArgs>>): Prisma.Prisma__payment_methodClient<runtime.Types.Result.GetResult<Prisma.$payment_methodPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  paymentMethod<T extends Prisma.payment_methodDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.payment_methodDefaultArgs<ExtArgs>>): Prisma.Prisma__payment_methodClient<runtime.Types.Result.GetResult<Prisma.$payment_methodPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1570,25 +1570,6 @@ export type direct_sale_paymentDeleteManyArgs<ExtArgs extends runtime.Types.Exte
    * Limit how many direct_sale_payments to delete.
    */
   limit?: number
-}
-
-/**
- * direct_sale_payment.paymentMethod
- */
-export type direct_sale_payment$paymentMethodArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the payment_method
-   */
-  select?: Prisma.payment_methodSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the payment_method
-   */
-  omit?: Prisma.payment_methodOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.payment_methodInclude<ExtArgs> | null
-  where?: Prisma.payment_methodWhereInput
 }
 
 /**

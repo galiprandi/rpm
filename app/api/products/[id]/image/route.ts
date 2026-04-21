@@ -50,11 +50,13 @@ function buildJsDelivrUrl(owner: string, repo: string, branch: string, productId
 async function uploadToGitHub(
   file: Buffer,
   productId: string,
-  config: ReturnType<typeof validateEnv>
+  config: ReturnType<typeof validateEnv>,
+  branch?: string
 ): Promise<{ imageUrl: string; commitSha: string }> {
   const [owner, repo] = config.repo.split('/');
   const path = `products/${productId}.${config.format}`;
   const message = `Upload product image: ${productId}`;
+  const targetBranch = branch || config.branch;
 
   const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
   const content = file.toString('base64');
@@ -94,7 +96,7 @@ async function uploadToGitHub(
   const body: Record<string, string> = {
     message,
     content,
-    branch: config.branch,
+    branch: targetBranch,
   };
   if (sha) {
     body.sha = sha;
@@ -135,7 +137,7 @@ async function uploadToGitHub(
     throw new Error('GitHub API response missing commit SHA');
   }
 
-  const imageUrl = buildJsDelivrUrl(owner, repo, config.branch, productId, config.format);
+  const imageUrl = buildJsDelivrUrl(owner, repo, targetBranch, productId, config.format);
 
   return {
     imageUrl,
@@ -146,7 +148,8 @@ async function uploadToGitHub(
 // Helper function to delete image from GitHub using curl
 async function deleteFromGitHub(
   productId: string,
-  config: ReturnType<typeof validateEnv>
+  config: ReturnType<typeof validateEnv>,
+  branch: string
 ): Promise<{ deletedCommit: string }> {
   const [owner, repo] = config.repo.split('/');
   const path = `products/${productId}.${config.format}`;
@@ -154,14 +157,18 @@ async function deleteFromGitHub(
 
   const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
 
-  // Get current file SHA using curl
-  const getCmd = `curl -s "${url}" \
+  // Get current file SHA using curl (specify branch)
+  const getCmd = `curl -s "${url}?ref=${branch}" \
     -H "Authorization: Bearer ${config.token}" \
     -H "Accept: application/vnd.github+json" \
     -H "X-GitHub-Api-Version: 2022-11-28" \
     -H "User-Agent: RPM-Image-Upload/1.0"`;
 
-  const { stdout: getStdout } = await execAsync(getCmd);
+  const { stdout: getStdout, stderr: getStderr } = await execAsync(getCmd);
+
+  if (getStderr) {
+    console.error('Curl get stderr:', getStderr);
+  }
 
   if (!getStdout) {
     throw new Error('File not found in GitHub');
@@ -171,15 +178,17 @@ async function deleteFromGitHub(
   try {
     existing = JSON.parse(getStdout);
   } catch {
+    console.error('Failed to parse GET response:', getStdout);
     throw new Error('File not found in GitHub');
   }
 
   const sha = existing.sha;
+  console.log('File SHA from GitHub (branch:', branch + '):', sha);
 
   const body = {
     message,
     sha,
-    branch: config.branch,
+    branch,
   };
 
   // Delete using curl
@@ -202,7 +211,22 @@ async function deleteFromGitHub(
   }
 
   const result = JSON.parse(deleteStdout);
-  return { deletedCommit: result.commit.sha };
+
+  // Handle GitHub API errors
+  if (result.message) {
+    console.error('GitHub API delete error:', result);
+    throw new Error(`GitHub API: ${result.message}`);
+  }
+
+  // Handle both response structures
+  const deletedCommit = result.commit?.sha;
+
+  if (!deletedCommit) {
+    console.error('GitHub delete unexpected response:', Object.keys(result));
+    throw new Error('GitHub API: Missing commit SHA in delete response');
+  }
+
+  return { deletedCommit };
 }
 
 // POST /api/products/[id]/image - Upload image
@@ -268,7 +292,7 @@ export async function POST(request: NextRequest, { params }: Params) {
     }
 
     // Upload to GitHub
-    const { imageUrl, commitSha } = await uploadToGitHub(processedBuffer, id, config);
+    const { imageUrl, commitSha } = await uploadToGitHub(processedBuffer, id, config, config.branch);
 
     // Update product in database
     await prisma.product.update({
@@ -312,7 +336,7 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     // Get product to check if it has an image
     const product = await prisma.product.findUnique({
       where: { id },
-      select: { imageUrl: true, imageCommit: true },
+      select: { imageUrl: true, imageCommit: true, imageBranch: true },
     });
 
     if (!product) {
@@ -322,15 +346,15 @@ export async function DELETE(request: NextRequest, { params }: Params) {
       );
     }
 
-    if (!product.imageUrl || !product.imageCommit) {
+    if (!product.imageUrl || !product.imageCommit || !product.imageBranch) {
       return NextResponse.json(
         { error: 'Producto no tiene imagen' },
         { status: 400 }
       );
     }
 
-    // Delete from GitHub
-    const { deletedCommit } = await deleteFromGitHub(id, config);
+    // Delete from GitHub (use the branch from database)
+    const { deletedCommit } = await deleteFromGitHub(id, config, product.imageBranch);
 
     // Update product in database
     await prisma.product.update({
