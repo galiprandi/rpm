@@ -2,6 +2,7 @@
 
 🗓️ 21 de Abril de 2026
 • 🎉 Archivos: Nuevo sistema de carga de archivos universal con compresión automática de imágenes. Ahora puedes subir archivos para productos, vehículos, recibos y documentos con optimización automática.
+• 🎨 Sistema: Se agregó el logo del sistema y se generó el favicon circular para identificar la aplicación en el navegador.
 
 🗓️ 20 de Abril de 2026
 • 🎉 Productos: Ahora puedes agregar imágenes a los productos desde el formulario de edición. Las imágenes se muestran en la tabla de productos y se almacenan en la nube con CDN global.
