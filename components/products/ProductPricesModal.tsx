@@ -27,6 +27,7 @@ interface ProductPriceInfo {
   finalPrice: number;
   actualMargin: number;
   isBelowMinimum: boolean;
+  fixedPrice: number | null;
 }
 
 interface Product {
@@ -95,6 +96,7 @@ export function ProductPricesModal({ isOpen, onClose, product }: ProductPricesMo
               finalPrice: priceData.finalPrice,
               actualMargin: priceData.actualMargin,
               isBelowMinimum: priceData.isBelowMinimum,
+              fixedPrice: priceData.fixedPrice || null,
             };
           }
           return null;
@@ -264,6 +266,11 @@ export function ProductPricesModal({ isOpen, onClose, product }: ProductPricesMo
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <span className="font-medium">{row.original.priceListName}</span>
+          {row.original.fixedPrice !== null && (
+            <Badge variant="default" className="text-xs bg-blue-500">
+              Precio fijo
+            </Badge>
+          )}
           {row.original.isBelowMinimum && (
             <Badge variant="destructive" className="text-xs">
               <AlertTriangle className="h-3 w-3 mr-1" />
