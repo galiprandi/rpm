@@ -19,7 +19,6 @@ import {
   CheckCircle2,
   XCircle,
   History,
-  List,
   LayoutDashboard,
   ChevronLeft,
   ChevronRight,
@@ -39,6 +38,29 @@ interface CashStatus {
   closedAt: string | null;
   summary: Record<string, CashSummary>;
   suggestedOpeningAmount: number;
+}
+
+interface HistoryRecord {
+  id: string;
+  date: string;
+  openedAt: string;
+  openedBy: string;
+  openedById: string;
+  responsibleBy: string;
+  responsibleById: string;
+  closedAt: string | null;
+  closedBy: string | null;
+  closedById: string | null;
+  openingAmount: number;
+  totalIncome: number;
+  totalExpense: number;
+  totalAdjustments: number;
+  closingAmount: number | null;
+  expectedAmount: number;
+  difference: number;
+  differenceReason: string | null;
+  status: 'BALANCED' | 'SURPLUS' | 'SHORTAGE' | 'OPEN';
+  isClosed: boolean;
 }
 
 interface PaymentMethod {
@@ -78,11 +100,16 @@ export default function CashClient() {
 
   // Tabs and history state
   const [activeTab, setActiveTab] = useState('status');
-  const [history, setHistory] = useState<any[]>([]);
-  const [recentMovements, setRecentMovements] = useState<any[]>([]);
+  const [history, setHistory] = useState<HistoryRecord[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyPage, setHistoryPage] = useState(1);
-  const [historyPagination, setHistoryPagination] = useState<any>(null);
+  const [historyPagination, setHistoryPagination] = useState<{
+    page: number;
+    limit: number;
+    totalCount: number;
+    totalPages: number;
+    hasMore: boolean;
+  } | null>(null);
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -158,22 +185,6 @@ export default function CashClient() {
     }
   }, []);
 
-  const fetchRecentMovements = useCallback(async () => {
-    if (!cashStatus?.openedAt) return;
-    
-    try {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      
-      // This would need a new endpoint or we can filter from a general endpoint
-      // For now, we'll show placeholder logic
-      setRecentMovements([]);
-    } catch (error) {
-      console.error('Error fetching recent movements:', error);
-    }
-  }, [cashStatus?.openedAt]);
 
   useEffect(() => {
     fetchStatus();
@@ -454,7 +465,21 @@ export default function CashClient() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Arqueo de Caja</h1>
           <p className="text-muted-foreground">
-            Gestión de apertura, cierre y movimientos de caja
+            {cashStatus?.openedAt && `Abierta desde: ${new Date(cashStatus.openedAt).toLocaleString('es-AR', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            })}`}
+            {cashStatus?.closedAt && `Cerrada el: ${new Date(cashStatus.closedAt).toLocaleString('es-AR', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            })}`}
+            {!cashStatus?.openedAt && !cashStatus?.closedAt && 'Gestión de apertura, cierre y movimientos de caja'}
           </p>
         </div>
         <div className="flex items-center gap-4">
@@ -949,7 +974,17 @@ export default function CashClient() {
                     <tbody>
                       {history.map((record) => (
                         <tr key={record.id} className="border-t">
-                          <td className="py-3 px-4">{record.date}</td>
+                          <td className="py-3 px-4">
+                            <div className="font-medium">{record.date}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {record.openedAt && `Abierta: ${new Date(record.openedAt).toLocaleString('es-AR', {
+                                day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
+                              })}`}
+                              {record.closedAt && ` - Cerrada: ${new Date(record.closedAt).toLocaleString('es-AR', {
+                                day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
+                              })}`}
+                            </div>
+                          </td>
                           <td className="py-3 px-4">
                             <div className="font-medium">{record.responsibleBy}</div>
                             {record.openedBy !== record.responsibleBy && (

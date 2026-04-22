@@ -66,44 +66,27 @@ export async function POST(request: NextRequest) {
       finalResponsibleId = session.user.id;
     }
 
-    // Check if cash is already open today
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    // Find the most recent opening today
-    const todayOpening = await prisma.cash_movement.findFirst({
-      where: {
-        type: 'OPENING',
-        createdAt: {
-          gte: today,
-          lt: tomorrow,
-        },
-      },
+    // Check if ANY cash register is currently open (global validation)
+    const lastOpening = await prisma.cash_movement.findFirst({
+      where: { type: 'OPENING' },
       orderBy: { createdAt: 'desc' },
     });
 
-    // If there's an opening today, check if it was closed
-    if (todayOpening) {
-      const closingAfterOpening = await prisma.cash_movement.findFirst({
+    if (lastOpening) {
+      const lastClosing = await prisma.cash_movement.findFirst({
         where: {
           type: 'CLOSING',
-          createdAt: {
-            gte: todayOpening.createdAt,
-            lt: tomorrow,
-          },
+          createdAt: { gte: lastOpening.createdAt },
         },
+        orderBy: { createdAt: 'desc' },
       });
 
-      // If not closed, can't open again
-      if (!closingAfterOpening) {
+      if (!lastClosing) {
         return NextResponse.json(
-          { error: 'Cash register is already open today' },
+          { error: 'Cash register is already open (opened on ' + lastOpening.createdAt.toISOString().split('T')[0] + ')' },
           { status: 400 }
         );
       }
-      // If closed, we can open again (fall through to create new opening)
     }
 
     // Create opening movement

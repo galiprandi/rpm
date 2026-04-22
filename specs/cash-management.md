@@ -287,12 +287,11 @@ Tabla de arqueos previos:
 
 ## Reglas de Negocio
 
-1. **Solo una caja abierta**: No se puede abrir si ya existe OPENING del día sin CLOSING
-2. **Cierre obligatorio**: Solo ADMIN puede forzar apertura sobre caja sin cerrar del día anterior
-3. **Egresos limitados**: No se puede registrar egreso en efectivo si excede saldo disponible
-4. **Bloqueo por caja cerrada**: Con la caja cerrada (o sin abrir) no se pueden realizar ventas ni registrar pagos de OTs. El sistema debe bloquear estas operaciones tanto en el BFF como en la UI.
-5. **Auditoría**: Toda diferencia debe tener motivo documentado
-6. **Permisos**:
+1. **Solo una caja abierta**: No se puede abrir si existe cualquier OPENING sin CLOSING correspondiente (sin importar la fecha)
+2. **Egresos limitados**: No se puede registrar egreso en efectivo si excede saldo disponible
+3. **Bloqueo por caja cerrada**: Con la caja cerrada (o sin abrir) no se pueden realizar ventas ni registrar pagos de OTs. El sistema debe bloquear estas operaciones tanto en el BFF como en la UI.
+4. **Auditoría**: Toda diferencia debe tener motivo documentado
+5. **Permisos**:
    - Abrir/Cerrar: ADMIN, STAFF
    - Registrar ingresos/egresos: ADMIN, STAFF
    - Ver historial completo: ADMIN, STAFF
