@@ -103,6 +103,7 @@ export interface CalculatedPrice {
   finalPrice: number;
   actualMargin: number;
   isBelowMinimum: boolean;
+  fixedPrice: number | null;
 }
 
 // GET all price lists
@@ -435,5 +436,8 @@ export async function calculateProductPrice(
     finalPrice,
     actualMargin,
     isBelowMinimum: actualMargin < minimumMargin,
+    fixedPrice: exception?.fixedPrice !== null && exception?.fixedPrice !== undefined
+      ? Number(exception.fixedPrice)
+      : null,
   };
 }
