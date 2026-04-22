@@ -54,17 +54,16 @@ export async function GET(request: NextRequest) {
         const nextDay = new Date(openingDate);
         nextDay.setDate(nextDay.getDate() + 1);
 
-        // Find closing for this opening
+        // Find closing for this opening (no date restriction, just after opening)
         const closing = await prisma.cash_movement.findFirst({
           where: {
             type: 'CLOSING',
             createdAt: {
               gte: openingDate,
-              lt: nextDay,
             },
           },
           orderBy: {
-            createdAt: 'desc',
+            createdAt: 'asc',
           },
         });
 

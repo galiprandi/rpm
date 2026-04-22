@@ -14,10 +14,10 @@ BEGIN
 
     -- Loop through all OPENING movements
     FOR opening_record IN
-        SELECT id, "createdAt", amount
+        SELECT id, "createdAt", amount, "createdBy"
         FROM cash_movement
         WHERE type = 'OPENING'
-        ORDER BY "createdAt" DESC
+        ORDER BY "createdAt" ASC
     LOOP
         -- Check if there's a CLOSING after this OPENING
         SELECT EXISTS(
@@ -66,14 +66,15 @@ BEGIN
                 'CASH',
                 'manual',
                 'Cierre forzado por migración',
-                'Cierre automático de caja abierta el ' || opening_record."createdAt",
+                'Cierre automático de caja abierta el ' || opening_record."createdAt" || ' (Original: $' || opening_record.amount || ')',
                 NOW(),
-                'SYSTEM_MIGRATION'
+                COALESCE(opening_record."createdBy", 'SYSTEM_MIGRATION')
             );
 
-            RAISE NOTICE '✅ Cerrada caja abierta el % - Monto: $%',
+            RAISE NOTICE '✅ Cerrada caja abierta el % - Monto esperado: $% (Apertura: $%)',
                 opening_record."createdAt",
-                expected_amount;
+                expected_amount,
+                opening_record.amount;
         END IF;
     END LOOP;
 
