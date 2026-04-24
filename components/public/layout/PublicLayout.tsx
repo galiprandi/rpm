@@ -1,5 +1,6 @@
 import { ReactNode } from 'react';
-import { AuthStatus } from '@/components/ui/auth-status';
+import { PublicHeader } from './PublicHeader';
+import { PublicFooter } from './PublicFooter';
 
 interface PublicLayoutProps {
   children: ReactNode;
@@ -7,13 +8,12 @@ interface PublicLayoutProps {
 
 export function PublicLayout({ children }: PublicLayoutProps) {
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center">
-      <div className="absolute top-4 right-4">
-        <AuthStatus variant="link" />
-      </div>
-      <div className="text-center">
+    <div className="min-h-screen bg-black text-white flex flex-col selection:bg-brand selection:text-white">
+      <PublicHeader />
+      <main className="flex-grow">
         {children}
-      </div>
+      </main>
+      <PublicFooter />
     </div>
   );
 }
