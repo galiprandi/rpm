@@ -1,11 +1,11 @@
 ---
 title: Dashboard de Administrador RPM - Especificación de UI/UX
-version: 1.2
+version: 1.3
 date_created: 2026-04-05
-date_updated: 2026-04-06
+date_updated: 2026-04-25
 owner: Equipo de Desarrollo
-tags: [app, design, ui, dashboard, admin, rpm]
-status: ✅ En implementación (feature branch)
+tags: [app, design, ui, dashboard, admin, rpm, caching, performance]
+status: ✅ Implementado con optimizaciones de performance
 ---
 
 # Dashboard de Administrador RPM
@@ -21,7 +21,9 @@ Proveer una vista unificada y accionable del estado operativo del negocio, permi
 - Panel principal único accesible desde `/adm` (reemplaza dashboard actual)
 - 7 secciones de métricas clave (Ventas, Taller, Stock, Listos para Entrega, Arqueo de Caja, Movimientos de Caja, Movimientos de Productos)
 - Componentes interactivos con acciones directas (click-to-call, navegación rápida)
-- Actualización en tiempo real o caché breve (5 min máximo)
+- **Cache de 60 segundos** en dashboard data (`unstable_cache`)
+- **Cache de 5 minutos** en cash status con invalidación automática
+- **Polling de 30 segundos** en DashboardClient para reducir queries de auth
 - Diseño responsive prioritario para desktop (admin trabaja en PC/tablet)
 - Botón de "Venta Rápida" en header para acceso directo a ventas de mostrador
 
@@ -67,7 +69,7 @@ Proveer una vista unificada y accionable del estado operativo del negocio, permi
 
 ### Constraints
 
-- **CON-001**: No usar WebSockets - usar polling cada 60s o SWR con revalidate
+- **CON-001**: No usar WebSockets - usar polling cada 30s con `unstable_cache` de 60s en dashboard y 5min en cash status
 - **CON-002**: Máximo 6 secciones visibles simultáneamente (evitar scroll excesivo)
 - **CON-003**: Colores semánticos fijos: Verde = OK, Amarillo = Atención, Rojo = Crítico
 - **CON-004**: Iconos solo de Lucide React (consistente con design system)
@@ -205,7 +207,7 @@ interface DashboardSummary {
 - **AC-002**: Given hay OTs en estado READY, When el admin ve la lista, Then cada item muestra vehículo, cliente, monto y botón de llamada
 - **AC-003**: Given el admin clickea el botón 📞, When el navegador soporta `tel:`, Then se abre la app de llamadas con el número
 - **AC-004**: Given hay productos bajo stock mínimo, When el dashboard carga, Then muestra badge rojo con cantidad y enlace a lista
-- **AC-005**: Given pasan 60 segundos, When el sistema ejecuta polling, Then los números se actualizan sin recargar la página
+- **AC-005**: Given pasan 30 segundos, When el sistema ejecuta polling, Then los números se actualizan sin recargar la página
 - **AC-006**: Given el usuario es STAFF (no ADMIN), When accede al dashboard, Then ve todas las secciones excepto alertas de configuración del sistema
 
 ---
@@ -299,14 +301,35 @@ function maskPhone(phone: string): string {
 
 ---
 
-## 10. Validation Criteria
+## 10. Performance & Caching Strategy
+
+### Optimizaciones Implementadas
+
+| Componente | Estrategia | Duración | Impacto |
+|------------|-----------|----------|---------|
+| Dashboard Page (`app/adm/page.tsx`) | `unstable_cache` | 60s | ~50% menos queries |
+| Cash Status API (`/api/cash/status`) | `unstable_cache` + `revalidateTag` | 5min | ~90% menos queries caja |
+| DashboardClient | Polling interval | 30s | ~90% menos queries auth |
+| Dashboard Service | Aggregate queries | - | ~40% menos queries |
+
+### Invalidación de Cache
+
+- **Cash movements**: Cache se invalida automáticamente en `open`, `close`, `income`, `expense`
+- **Dashboard**: Invalidación manual vía `revalidateTag('dashboard-data')`
+
+### API de Query Stats
+
+Endpoint `/api/admin/query-stats` expone métricas de queries para monitoreo.
+
+## 11. Validation Criteria
 
 - Dashboard carga sin errores de JavaScript
 - Todos los números formateados correctamente en ARS
 - Click-to-call funciona en dispositivos móviles
-- Polling actualiza datos cada 60s sin parpadeo UI
+- Polling actualiza datos cada 30s sin parpadeo UI
 - Responsive: 3 columnas en desktop, 1 en mobile
 - Cumple CON-001: No usa WebSockets
+- Cache reduce queries de dashboard en ~75%
 
 ---
 

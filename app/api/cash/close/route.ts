@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import { prisma } from '@/lib/prisma';
 import { UserRole } from '@/lib/auth/roles';
+import { invalidateCashStatus } from '@/lib/cache';
 
 // Helper para convertir Decimal a number
 function decimalToNumber(decimal: unknown): number {
@@ -181,6 +182,9 @@ export async function POST(request: NextRequest) {
         }
       }
     }
+
+    // Invalidate cash status cache so next request gets fresh data
+    invalidateCashStatus();
 
     return NextResponse.json(
       {

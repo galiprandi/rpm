@@ -12,10 +12,11 @@ import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth-server';
 import { UserRole } from '@/lib/auth/roles';
 import { getDashboardData } from '@/lib/services/dashboardService';
+import { unstable_cache } from 'next/cache';
 
 // GET /api/dashboard/summary
-export const dynamic = 'force-dynamic';
-export const revalidate = 60; // Cache for 60 seconds
+// Cache for 60 seconds to reduce database operations
+export const revalidate = 60;
 
 export async function GET() {
   try {
@@ -32,8 +33,13 @@ export async function GET() {
       return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
     }
 
-    // Obtener datos del dashboard usando el servicio compartido
-    const data = await getDashboardData();
+    // Obtener datos del dashboard con cache
+    const getCachedDashboardData = unstable_cache(
+      getDashboardData,
+      ['dashboard-api'],
+      { revalidate: 60 }
+    );
+    const data = await getCachedDashboardData();
 
     return NextResponse.json(data);
   } catch (error) {

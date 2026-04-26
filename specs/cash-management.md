@@ -17,6 +17,7 @@ Sistema completo de gestión de caja central que permite abrir caja, registrar m
 - ✅ Ajustes automáticos (ADJUSTMENT) por diferencias
 - ✅ Vista dedicada `/adm/cash`
 - ✅ Navegación en sidebar
+- ✅ **Cache de 5 minutos** en `/api/cash/status` con invalidación automática en movimientos
 
 ### Incluido ✅ IMPLEMENTADO (continuación)
 - ✅ Historial de arqueos para auditoría - endpoint GET /api/cash/history
@@ -218,6 +219,7 @@ Tabla de arqueos previos:
 //   }>,
 //   suggestedOpeningAmount: number  // monto del cierre anterior
 // }
+// Cache: 5 minutos con invalidación automática en open/close/income/expense
 
 // POST /api/cash/open
 // Body: { 

@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import { prisma } from '@/lib/prisma';
+import { unstable_cache } from 'next/cache';
+import { CACHE_TAGS, CACHE_DURATIONS } from '@/lib/cache';
 
 // Helper para convertir Decimal a number
 function decimalToNumber(decimal: unknown): number {
@@ -13,20 +15,9 @@ function decimalToNumber(decimal: unknown): number {
   return 0;
 }
 
-// GET /api/cash/status - Get current cash register status
-export async function GET() {
-  try {
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Get today's date range
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
+// Cached function to get cash status - reduces DB queries
+const getCachedCashStatus = unstable_cache(
+  async () => {
     // Find the absolute latest OPENING or CLOSING movement
     const lastMovement = await prisma.cash_movement.findFirst({
       where: {
@@ -108,8 +99,8 @@ export async function GET() {
 
       // Calculate expected for each method
       Object.keys(summary).forEach(method => {
-        summary[method].expected = summary[method].opening 
-          + summary[method].income 
+        summary[method].expected = summary[method].opening
+          + summary[method].income
           - summary[method].expense;
       });
     }
@@ -123,14 +114,31 @@ export async function GET() {
       orderBy: { createdAt: 'desc' },
     });
 
-    return NextResponse.json({
+    return {
       status: isOpen ? 'OPEN' : 'CLOSED',
       openedAt: lastOpening?.createdAt?.toISOString() || null,
       openedBy: lastOpening?.createdBy || null,
       closedAt: lastClosingAtOpening?.createdAt?.toISOString() || null,
       summary,
       suggestedOpeningAmount: lastClosing ? decimalToNumber(lastClosing.amount) : 0,
-    });
+    };
+  },
+  [CACHE_TAGS.CASH_STATUS],
+  { revalidate: CACHE_DURATIONS.CASH_STATUS, tags: [CACHE_TAGS.CASH_STATUS] }
+);
+
+// GET /api/cash/status - Get current cash register status
+// Cache for 5 minutes - invalidated on cash movements
+export async function GET() {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const data = await getCachedCashStatus();
+
+    return NextResponse.json(data);
   } catch (error) {
     console.error('Error fetching cash status:', error);
     return NextResponse.json(

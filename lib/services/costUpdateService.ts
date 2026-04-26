@@ -226,20 +226,29 @@ export async function applyCostUpdate(
 
   const itemsAffected = productsToUpdate.length;
 
-  // Perform atomic transaction for product updates only
-  await prisma.$transaction(async (tx) => {
-    // Update all products
-    for (const product of productsToUpdate) {
-      const currentCost = getProductBaseCost(product.replacementCost, product.costPrice);
-      const newCost = calculateNewCost(currentCost, adjustment);
+  // Perform batch updates efficiently - avoid N+1 queries
+  // Group products by their new cost value to minimize updateMany calls
+  const costGroups = new Map<number, string[]>();
 
-      await tx.product.update({
-        where: { id: product.id },
-        data: {
-          replacementCost: newCost,
-        },
-      });
-    }
+  for (const product of productsToUpdate) {
+    const currentCost = getProductBaseCost(product.replacementCost, product.costPrice);
+    const newCost = Number(calculateNewCost(currentCost, adjustment).toFixed(2));
+
+    const group = costGroups.get(newCost) || [];
+    group.push(product.id);
+    costGroups.set(newCost, group);
+  }
+
+  // Execute batch updates in parallel
+  await prisma.$transaction(async (tx) => {
+    const updatePromises = Array.from(costGroups.entries()).map(([newCost, productIds]) =>
+      tx.product.updateMany({
+        where: { id: { in: productIds } },
+        data: { replacementCost: newCost },
+      })
+    );
+
+    await Promise.all(updatePromises);
   });
 
   // Create audit record outside transaction (using main prisma client)

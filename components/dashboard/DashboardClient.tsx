@@ -6,6 +6,9 @@ import { Header } from '@/components/adm/Header';
 import { QuickSaleModal } from '@/components/dashboard/QuickSaleModal';
 import { ShoppingCart } from 'lucide-react';
 
+// Poll every 30 seconds instead of on every mount to reduce auth queries
+const CASH_STATUS_POLL_INTERVAL = 30000;
+
 export function DashboardClient({ onQuickSaleSuccess }: { onQuickSaleSuccess?: () => void }) {
   const router = useRouter();
   const [quickSaleModalOpen, setQuickSaleModalOpen] = useState(false);
@@ -23,7 +26,14 @@ export function DashboardClient({ onQuickSaleSuccess }: { onQuickSaleSuccess?: (
         console.error('Error checking cash status:', error);
       }
     };
+
+    // Initial check on mount
     checkCashStatus();
+
+    // Set up polling interval to reduce auth queries vs checking on every mount
+    const interval = setInterval(checkCashStatus, CASH_STATUS_POLL_INTERVAL);
+
+    return () => clearInterval(interval);
   }, []);
 
   const handleSuccess = () => {
