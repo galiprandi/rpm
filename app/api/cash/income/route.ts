@@ -4,6 +4,7 @@ import { headers } from 'next/headers';
 import { prisma } from '@/lib/prisma';
 import { UserRole } from '@/lib/auth/roles';
 import { invalidateCashStatus } from '@/lib/cache';
+import { isCashRegisterOpen } from '@/lib/services/cashMovementService';
 
 // POST /api/cash/income - Register a manual cash income (capital injection, refunds, etc.)
 export async function POST(request: NextRequest) {
@@ -54,43 +55,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if cash register is open
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    const isOpen = await isCashRegisterOpen();
 
-    const todayOpening = await prisma.cash_movement.findFirst({
-      where: {
-        type: 'OPENING',
-        createdAt: {
-          gte: today,
-          lt: tomorrow,
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    if (!todayOpening) {
+    if (!isOpen) {
       return NextResponse.json(
         { error: 'Cash register is not open. Please open it first.' },
-        { status: 400 }
-      );
-    }
-
-    // Check if already closed
-    const todayClosing = await prisma.cash_movement.findFirst({
-      where: {
-        type: 'CLOSING',
-        createdAt: {
-          gte: todayOpening.createdAt,
-          lt: tomorrow,
-        },
-      },
-    });
-
-    if (todayClosing) {
-      return NextResponse.json(
-        { error: 'Cash register is already closed for today' },
         { status: 400 }
       );
     }
