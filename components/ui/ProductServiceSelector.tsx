@@ -59,6 +59,7 @@ export interface SelectedItem {
   quantity: number;
   unitPrice: number;
   originalPrice: number;
+  minimumPrice?: number;
   isManualPrice: boolean;
   priceListId?: string;
   sku?: string;
@@ -132,6 +133,7 @@ export function ProductServiceSelector({
   const [showResults, setShowResults] = useState(false);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Filters
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('none');
@@ -235,8 +237,14 @@ export function ProductServiceSelector({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPriceListId]);
 
-  const addToCart = (result: SearchResult) => {
-    const existingIndex = cartItems.findIndex(item => item.id === result.id);
+  const addToCart = (result: SearchResult, overridePrice?: number, overridePriceListId?: string) => {
+    const priceToUse = overridePrice ?? result.basePrice;
+    const priceListIdToUse = overridePriceListId ?? (selectedPriceListId !== 'none' ? selectedPriceListId : undefined);
+
+    // Si ya existe en el carrito con el MISMO precio, incrementamos cantidad
+    const existingIndex = cartItems.findIndex(item =>
+      item.id === result.id && item.unitPrice === priceToUse
+    );
     
     if (existingIndex >= 0) {
       // Incrementar cantidad
@@ -250,10 +258,11 @@ export function ProductServiceSelector({
         type: result.type,
         name: result.name,
         quantity: 1,
-        unitPrice: result.basePrice,
-        originalPrice: result.basePrice,
+        unitPrice: priceToUse,
+        originalPrice: priceToUse,
+        minimumPrice: result.minimumPrice,
         isManualPrice: false,
-        priceListId: selectedPriceListId !== 'none' ? selectedPriceListId : undefined,
+        priceListId: priceListIdToUse,
         sku: result.sku,
         stock: result.stock,
         categoryId: result.categoryId,
@@ -265,6 +274,11 @@ export function ProductServiceSelector({
     setSearchTerm('');
     setSearchResults([]);
     setShowResults(false);
+
+    // Foco automático al buscador para carga continua
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 0);
   };
 
   const removeFromCart = (index: number) => {
@@ -350,6 +364,7 @@ export function ProductServiceSelector({
         <div className="relative w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
+            ref={inputRef}
             placeholder="Buscar: led+cronos (ambas) o filtro aire (cualquiera)"
             value={searchTerm}
             onChange={(e) => {
@@ -385,60 +400,85 @@ export function ProductServiceSelector({
               </div>
             ) : (
               <>
-                {searchResults.map((result) => (
-                  <button
-                    key={result.id}
-                    className={cn(
-                      'w-full px-4 py-2 text-left hover:bg-accent transition-colors border-b last:border-0',
-                      'grid grid-cols-[1fr_auto] gap-3 items-center'
-                    )}
-                    onClick={() => addToCart(result)}
-                  >
-                    <div className="min-w-0 overflow-hidden">
-                      <div className="flex items-center gap-2">
-                        {result.type === 'product' ? (
-                          <Package className="h-4 w-4 text-blue-500 flex-shrink-0" />
-                        ) : (
-                          <Wrench className="h-4 w-4 text-orange-500 flex-shrink-0" />
-                        )}
-                        <span className="font-medium truncate">{result.name}</span>
+                {searchResults.map((result) => {
+                  const contadoList = priceLists.find(pl => pl.name.toLowerCase() === 'contado');
+                  const tarjetaList = priceLists.find(pl => pl.name.toLowerCase().includes('tarjeta'));
+
+                  const contadoPrice = (contadoList && result.allPrices) ? result.allPrices[contadoList.id]?.finalPrice : null;
+                  const tarjetaPrice = (tarjetaList && result.allPrices) ? result.allPrices[tarjetaList.id]?.finalPrice : null;
+
+                  return (
+                    <div
+                      key={result.id}
+                      className="w-full px-4 py-2 flex items-center justify-between border-b last:border-0 hover:bg-accent/50"
+                    >
+                      <div className="min-w-0 overflow-hidden flex-1 mr-4">
+                        <div className="flex items-center gap-2">
+                          {result.type === 'product' ? (
+                            <Package className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                          ) : (
+                            <Wrench className="h-4 w-4 text-orange-500 flex-shrink-0" />
+                          )}
+                          <span className="font-medium truncate">{result.name}</span>
+                        </div>
+                        <div className="flex items-center gap-2 mt-0.5 pl-6 min-w-0">
+                          <Badge variant="outline" className="text-xs flex-shrink-0 h-5 px-1.5">
+                            {result.type === 'product' ? 'Producto' : 'Servicio'}
+                          </Badge>
+                          {result.type === 'product' ? (
+                            <span className="text-xs text-muted-foreground truncate min-w-0">
+                              {result.sku && <span>SKU: {result.sku}</span>}
+                              {result.stock !== undefined && (
+                                <span className="ml-1.5">Stock: {result.stock}</span>
+                              )}
+                            </span>
+                          ) : (
+                            result.description && (
+                              <span className="text-xs text-muted-foreground truncate min-w-0 flex-1">{result.description}</span>
+                            )
+                          )}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2 mt-0.5 pl-6 min-w-0">
-                        <Badge variant="outline" className="text-xs flex-shrink-0 h-5 px-1.5">
-                          {result.type === 'product' ? 'Producto' : 'Servicio'}
-                        </Badge>
-                        {result.type === 'product' ? (
-                          <span className="text-xs text-muted-foreground truncate min-w-0">
-                            {result.sku && <span>SKU: {result.sku}</span>}
-                            {result.stock !== undefined && (
-                              <span className="ml-1.5">Stock: {result.stock}</span>
+
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {result.type === 'product' && (contadoPrice || tarjetaPrice) ? (
+                          <div className="flex gap-2">
+                            {contadoPrice && (
+                              <Button
+                                size="sm"
+                                className="h-8 px-3 bg-emerald-600 hover:bg-emerald-700 flex flex-col items-center gap-0"
+                                onClick={() => addToCart(result, contadoPrice, contadoList?.id)}
+                              >
+                                <span className="text-[10px] uppercase opacity-80 leading-none">Contado</span>
+                                <span className="font-bold leading-none">{formatARS(contadoPrice)}</span>
+                              </Button>
                             )}
-                          </span>
+                            {tarjetaPrice && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-8 px-3 border-blue-600 text-blue-700 hover:bg-blue-50 flex flex-col items-center gap-0"
+                                onClick={() => addToCart(result, tarjetaPrice, tarjetaList?.id)}
+                              >
+                                <span className="text-[10px] uppercase opacity-80 leading-none">Tarjeta</span>
+                                <span className="font-bold leading-none">{formatARS(tarjetaPrice)}</span>
+                              </Button>
+                            )}
+                          </div>
                         ) : (
-                          result.description && (
-                            <span className="text-xs text-muted-foreground truncate min-w-0 flex-1">{result.description}</span>
-                          )
+                          <Button
+                            size="sm"
+                            className="h-8 flex items-center gap-2"
+                            onClick={() => addToCart(result)}
+                          >
+                            <span className="font-bold">{formatARS(result.basePrice)}</span>
+                            <PlusIcon className="h-4 w-4" />
+                          </Button>
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <div className="flex flex-col items-end">
-                        <span className={cn(
-                          "font-semibold whitespace-nowrap",
-                          result.isBelowMinimum && "text-destructive"
-                        )}>
-                          {formatARS(result.basePrice)}
-                        </span>
-                        {result.isBelowMinimum && result.minimumPrice && (
-                          <span className="text-xs text-destructive">
-                            Mín: {formatARS(result.minimumPrice)}
-                          </span>
-                        )}
-                      </div>
-                      <PlusIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                    </div>
-                  </button>
-                ))}
+                  );
+                })}
               </>
             )}
           </div>
@@ -515,7 +555,7 @@ export function ProductServiceSelector({
                 </div>
 
                 {/* Price input */}
-                <div className="w-24 flex-shrink-0">
+                <div className="w-32 flex-shrink-0 flex flex-col items-end gap-1">
                   <Input
                     type="number"
                     min={0}
@@ -524,9 +564,15 @@ export function ProductServiceSelector({
                     onChange={(e) => updatePrice(index, parseFloat(e.target.value) || 0)}
                     className={cn(
                       'h-8 text-right',
-                      item.isManualPrice && 'border-yellow-400 bg-yellow-50/30'
+                      item.isManualPrice && 'border-yellow-400 bg-yellow-50/30',
+                      item.minimumPrice && item.unitPrice < item.minimumPrice && 'border-red-500 focus-visible:ring-red-500 bg-red-50'
                     )}
                   />
+                  {item.minimumPrice && item.unitPrice < item.minimumPrice && (
+                    <span className="text-[10px] text-red-600 font-medium leading-none text-right">
+                      Bajo margen mín.
+                    </span>
+                  )}
                 </div>
 
                 {/* Subtotal */}
