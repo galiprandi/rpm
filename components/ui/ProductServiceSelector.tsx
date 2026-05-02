@@ -14,11 +14,7 @@ import { Loader2, Plus, Search, Trash2, Package, Wrench, Minus, Plus as PlusIcon
 import { cn } from '@/lib/utils';
 import { formatARS } from '@/lib/utils/format';
 import { Badge } from '@/components/ui/badge';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 /**
  * ProductServiceSelector
@@ -393,6 +389,7 @@ export function ProductServiceSelector({
                 {searchResults.map((result) => (
                   <button
                     key={result.id}
+                    aria-label={`Agregar ${result.name} al carrito`}
                     className={cn(
                       'w-full px-4 py-2 text-left hover:bg-accent transition-colors border-b last:border-0',
                       'grid grid-cols-[1fr_auto] gap-3 items-center'
@@ -514,7 +511,9 @@ export function ProductServiceSelector({
                     </TooltipTrigger>
                     <TooltipContent>Disminuir cantidad</TooltipContent>
                   </Tooltip>
+
                   <span className="w-8 text-center text-sm">{item.quantity}</span>
+
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
