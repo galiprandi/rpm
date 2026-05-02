@@ -22,6 +22,7 @@ import {
   Eye,
   Wallet,
   ArrowDownLeft,
+  Receipt,
 } from "lucide-react";
 import Link from "next/link";
 import { Header } from "@/components/adm/Header";
@@ -34,6 +35,7 @@ import {
 } from "@/components/ui/dialog";
 import { CustomerForm } from "@/components/customers/CustomerForm";
 import { VehicleDialog } from "@/components/vehicles/VehicleDialog";
+import { CustomerCreditNoteDialog } from "@/components/customers/CustomerCreditNoteDialog";
 
 interface Vehicle {
   id: string;
@@ -80,6 +82,7 @@ export default function CustomerDetailPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [isCreditNoteModalOpen, setIsCreditNoteModalOpen] = useState(false);
   const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('CASH');
@@ -274,14 +277,24 @@ export default function CustomerDetailPage() {
               <Wallet className="h-4 w-4" />
               Cuenta Corriente
             </CardTitle>
-            <Button
-              onClick={() => setIsPaymentModalOpen(true)}
-              size="sm"
-              className={customer.balance > 0 ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"}
-            >
-              <ArrowDownLeft className="h-4 w-4 mr-1" />
-              Registrar Pago
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={() => setIsCreditNoteModalOpen(true)}
+                size="sm"
+                variant="outline"
+              >
+                <Receipt className="h-4 w-4 mr-1" />
+                Nota de Crédito
+              </Button>
+              <Button
+                onClick={() => setIsPaymentModalOpen(true)}
+                size="sm"
+                className={customer.balance > 0 ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"}
+              >
+                <ArrowDownLeft className="h-4 w-4 mr-1" />
+                Registrar Pago
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -606,6 +619,15 @@ export default function CustomerDetailPage() {
           />
         </DialogContent>
       </Dialog>
+
+      {/* Modal de Nota de Crédito */}
+      <CustomerCreditNoteDialog
+        open={isCreditNoteModalOpen}
+        onOpenChange={setIsCreditNoteModalOpen}
+        customerId={customerId}
+        customerName={customer.name}
+        onSuccess={fetchCustomer}
+      />
     </div>
   );
 }
