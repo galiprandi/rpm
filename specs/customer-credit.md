@@ -1,18 +1,20 @@
 # Especificación: Cuenta Corriente de Clientes
 
 ## Resumen
-Sistema de cuenta corriente simple que permite registrar OTs con pago pendiente, visualizar saldo deudor por cliente, y realizar pagos genéricos contra la deuda acumulada.
+Sistema de cuenta corriente simple que permite registrar OTs con pago pendiente, visualizar saldo deudor por cliente, realizar pagos genéricos contra la deuda acumulada, y gestionar créditos a favor del cliente por devoluciones (notas de crédito).
 
 ## Alcance
 
 ### Incluido
 - Campo `balance` en cliente (saldo deudor positivo = debe, negativo = a favor)
-- Visualización de saldo pendiente en perfil de cliente
+- Visualización de saldo pendiente o crédito a favor en perfil de cliente
 - Filtro "Solo pendientes de pago" en lista de OTs
 - Reporte de deudores con ordenamiento
 - Registro de pagos genéricos que descuenten del balance
 - Ventas rápidas (`QuickSaleModal`) a clientes en cuenta corriente
 - Habilitar botón "Vender" en QuickSale cuando hay cliente seleccionado (acumula deuda)
+- **Créditos a favor por devolución**: Notas de crédito con `refundMethod='ACCOUNT_CREDIT'` decrementan `balance` (generan saldo negativo = crédito a favor)
+- **Uso de crédito a favor**: En futuras ventas, el sistema puede aplicar automáticamente el crédito disponible
 
 ### Excluido
 - Historial detallado de movimientos (ledger completo)
@@ -20,6 +22,7 @@ Sistema de cuenta corriente simple que permite registrar OTs con pago pendiente,
 - Límites de crédito por cliente
 - Notificaciones automáticas
 - Facturación diferida
+- Conversión automática de crédito a favor en pago de nuevas compras (requiere UI de aplicación manual)
 
 ## Modelo de Datos
 
@@ -27,7 +30,7 @@ Sistema de cuenta corriente simple que permite registrar OTs con pago pendiente,
 ```prisma
 model customer {
   // ... campos existentes ...
-  balance Decimal @db.Decimal(10, 2) @default(0) // Saldo deudor (positivo = debe)
+  balance Decimal @db.Decimal(10, 2) @default(0) // Saldo deudor (positivo = debe, negativo = crédito a favor)
 }
 ```
 
@@ -83,7 +86,27 @@ Sistema:
   - Si balance queda en 0, todas sus OTs pasan a PAID
 ```
 
-### 4. Consulta de Deuda
+### 4. Crédito por Devolución (Nota de Crédito)
+```
+Cliente solicita devolución → Se emite NC con refundMethod='ACCOUNT_CREDIT'
+
+Sistema:
+  - Decrementa customer.balance (hace más negativo = crédito a favor)
+  - NO crea movimiento de caja (el dinero no sale de la caja)
+  - El crédito queda disponible para futuras compras
+
+Ejemplo:
+  - Balance actual: $10,000 (debe)
+  - NC por devolución: $15,000
+  - Nuevo balance: -$5,000 (crédito a favor de $5,000)
+
+Visualización en perfil:
+  - Balance > 0: "Saldo Pendiente: $X 🔴"
+  - Balance = 0: "Al día ✅"
+  - Balance < 0: "Crédito a favor: $X 🟢"
+```
+
+### 5. Consulta de Deuda
 ```
 Usuario → /adm/customers/[id]
 Sección "Cuenta Corriente":
@@ -155,6 +178,7 @@ Click en fila → Perfil del cliente con sus OTs pendientes
 ├─────────────────────────────────────┤
 │                                     │
 │  Saldo Pendiente:      $23,500 🔴   │
+│  // o Crédito a favor: $5,000 🟢     │
 │                                     │
 │  [Registrar Pago]                   │
 │                                     │
@@ -162,6 +186,9 @@ Click en fila → Perfil del cliente con sus OTs pendientes
 │ OTs Impagas:                        │
 │ • #1287 - ABC123     $12,500        │
 │ • #1256 - DEF456     $11,000        │
+│                                     │
+│ Historial NC:                       │
+│ • NC #0001-00000042  $15,000 🟢 (crédito) │
 │                                     │
 │ [Ver Todas las OTs]                │
 └─────────────────────────────────────┘
@@ -193,11 +220,12 @@ Click en fila → Perfil del cliente con sus OTs pendientes
 
 ## Reglas de Negocio
 
-1. **Balance simple**: Un solo número por cliente (suma de todas las deudas menos pagos)
+1. **Balance simple**: Un solo número por cliente. Positivo = deuda, negativo = crédito a favor, cero = al día.
 2. **Pagos genéricos**: No se asignan a OT específica, descuentan del balance total
-3. **Orden de cancelación**: Cuando balance llega a 0, todas las OTs del cliente pasan a PAID
-4. **Visualización prioritarias**: Las OTs con pendientes se muestran primero en Kanban
-5. **Permisos**: Cualquier usuario con acceso a clientes puede registrar pagos
+3. **Créditos por devolución**: Las notas de crédito con `refundMethod='ACCOUNT_CREDIT'` decrementan el balance. Si el balance era positivo (deuda), la deuda se reduce. Si el crédito supera la deuda, el balance queda negativo (crédito a favor).
+4. **Orden de cancelación**: Cuando balance llega a 0, todas sus OTs pasan a PAID
+5. **Visualización prioritarias**: Las OTs con pendientes se muestran primero en Kanban. Clientes con crédito a favor se destacan visualmente.
+6. **Permisos**: Cualquier usuario con acceso a clientes puede registrar pagos
 
 ## Lógica de Cálculo
 
@@ -210,10 +238,20 @@ Al registrar pago genérico:
   if (customer.balance <= 0):
     marcar todas las OTs del cliente como PAID
 
+Al emitir NC con ACCOUNT_CREDIT o MIXED:
+  customer.balance -= NC.accountCreditAmount
+  // Si balance queda negativo, el cliente tiene crédito a favor
+  // Si balance era positivo, la deuda se reduce
+
 Al consultar deudores:
   SELECT customer.*, COUNT(work_order) as otCount
   WHERE customer.balance > 0
   ORDER BY balance DESC (o oldest/newest según filtro)
+
+Al consultar clientes con crédito a favor:
+  SELECT customer.*
+  WHERE customer.balance < 0
+  ORDER BY balance ASC (mayor crédito primero)
 ```
 
 ## Criterios de Aceptación
@@ -221,12 +259,15 @@ Al consultar deudores:
 - [x] Campo balance existe en cliente y se actualiza automáticamente
 - [x] QuickSaleModal permite venta a cuenta corriente con checkbox
 - [x] Lista de OTs tiene filtro "Pendientes de pago"
-- [x] Lista de clientes muestra saldo deudor
+- [x] Lista de clientes muestra saldo deudor o crédito a favor
 - [x] Lista de clientes tiene filtro "Solo con Saldo" + exportación a CSV
 - [x] Usuario puede registrar pago genérico que descuente del balance
 - [x] Reporte de deudores ordenable por monto/fecha
 - [x] Cuando balance llega a 0, OTs se marcan como pagadas
 - [x] API /api/direct-sales soporta sellOnCredit y remainingAmount
+- [ ] **Crédito a favor por NC**: El balance decrementa correctamente al emitir una NC con ACCOUNT_CREDIT
+- [ ] **Visualización de crédito a favor**: El perfil del cliente muestra "Crédito a favor" cuando balance < 0
+- [ ] **Reporte de créditos a favor**: Filtro o vista separada de clientes con saldo negativo (crédito disponible)
 
 ## Dependencias
 - Modelo customer existente

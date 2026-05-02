@@ -9,7 +9,7 @@ Integración con AFIP (ahora ARCA) para emisión de comprobantes electrónicos c
 | Fase | Alcance | Esfuerzo Estimado |
 |------|---------|-------------------|
 | **Fase 1** | Factura B (Consumidor Final) + Sandbox | 16h (2 días) |
-| **Fase 2** | Factura A (Responsables Inscriptos) + Notas de Crédito | 8h (1 día) |
+| **Fase 2** | Factura A (Responsables Inscriptos) + Notas de Crédito AFIP | 8h (1 día) |
 | **Fase 3+** | Cierre Z automático, múltiples puntos de venta | 8h (1 día) |
 
 ## Stack Tecnológico
@@ -431,7 +431,11 @@ describe('AFIP Sandbox Integration', () => {
 ### Fase 2: Completa (8 horas adicionales)
 
 - [ ] Factura A (Responsables Inscriptos)
-- [ ] Notas de Crédito
+- [ ] **Notas de Crédito AFIP**: Integrar con sistema de devoluciones (`/specs/spec-credit-notes.md`)
+  - NC se crea primero en el sistema operativo (stock, caja, balance)
+  - Luego se emite electrónicamente vía AFIP WS
+  - El `afipData` de la NC se guarda en el `invoice` vinculado a `credit_note`
+  - Requiere referencia a comprobante original (factura A/B emitida previamente)
 - [ ] Múltiples puntos de venta
 - [ ] Consulta de comprobantes emitidos
 
@@ -448,14 +452,21 @@ describe('AFIP Sandbox Integration', () => {
 - `/specs/workshop.md` - Facturación desde OTs
 - `/specs/auth.md` - Permisos para facturar
 - `/specs/data-architecture.md` - Modelo de datos Invoice
+- `/specs/spec-credit-notes.md` - Sistema de notas de crédito y devoluciones (proceso operativo previo a emisión AFIP)
 
 ## Estado de Implementación (2026-04-06)
 
 **Modelo Invoice:** ✅ Implementado
 - Tabla `invoice` creada en Prisma (migración `20260406231455_refactor_naming_add_cash_invoices`)
 - Campos: `number`, `type`, `referenceId`, `referenceType`, `customerId`, `customerName`, `subtotal`, `tax`, `total`, `afipData`, `status`, `issuedAt`
+- Type `NOTA_CREDITO` soportado en el enum de `type`
 - Servicio: `lib/services/invoiceService.ts` - CRUD y numeración automática
 - API Endpoints: `/api/invoices` (GET, POST), `/api/invoices/[id]` (GET, PATCH)
+
+**Sistema de Devoluciones (Operativo):** ⏳ Especificado
+- Modelos `credit_note` y `credit_note_item` definidos en `/specs/spec-credit-notes.md`
+- Pendiente implementación de migración Prisma, servicio y APIs
+- El sistema operativo de NC gestiona stock, caja y balance de clientes
 
 **Integración AFIP:** ❌ NO Implementado
 - Modelo de datos listo
@@ -467,8 +478,10 @@ describe('AFIP Sandbox Integration', () => {
 2. Setup certificados en AFIP Sandbox
 3. Implementar servicio `createElectronicInvoice` que llama a AFIP y actualiza `afipData` en el registro
 4. Integrar con flujo de ventas (direct sales y work orders)
+5. Implementar servicio `createElectronicCreditNote` para emisión de NC vía AFIP
+6. Integrar con flujo de devoluciones: `credit_note` → emisión AFIP → `invoice` (NOTA_CREDITO) con `afipData`
 
 ---
 
-**Estado**: Draft - Fase 1 lista para implementación
-**Última actualización**: 2026-03-28
+**Estado**: Draft - Fase 1 lista para implementación. Modelo `invoice` soporta NOTA_CREDITO.
+**Última actualización**: 2026-05-02

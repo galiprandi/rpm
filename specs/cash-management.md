@@ -40,8 +40,10 @@ Sistema completo de gestión de caja central que permite abrir caja, registrar m
 | `OPENING` | Apertura de caja - monto inicial |
 | `CLOSING` | Cierre de caja - conteo final |
 | `INCOME` | Ingreso de dinero (venta, etc) |
-| `EXPENSE` | Egreso de dinero (pago proveedor, gastos) |
+| `EXPENSE` | Egreso de dinero (pago proveedor, gastos, **reintegros por devolución**) |
 | `ADJUSTMENT` | Ajuste por diferencia de arqueo |
+
+> **Nota sobre devoluciones**: Los reintegros por notas de crédito usan `type: 'EXPENSE'` con `referenceType: 'credit_note_refund'` para distinguirlos de gastos operativos. Ver `/specs/spec-credit-notes.md`.
 
 ### Estados de Caja
 | Estado | Condición |
@@ -91,6 +93,29 @@ Inputs:
 Validación: Caja debe estar abierta, fondos suficientes si es CASH
 Resultado: Movimiento EXPENSE creado
 ```
+
+### 2b. Reintegro por Devolución (Nota de Crédito)
+```
+Usuario → /adm/credit-notes → Crear NC → Seleccionar reintegro CASH
+
+Sistema crea automáticamente:
+  - Movimiento EXPENSE con referenceType='credit_note_refund'
+  - Monto igual al reintegro seleccionado
+  - Método de pago igual al elegido en la NC
+  
+Validación: Caja debe estar abierta, fondos suficientes para el reintegro
+Restricción: Si la NC es ACCOUNT_CREDIT o MIXED, solo se crea EXPENSE por la parte CASH
+Resultado: cash_movement EXPENSE creado automáticamente por el servicio creditNoteService
+```
+
+**Diferencias con egreso manual:**
+- El `reason` se genera automáticamente: "Reintegro NC #[número] - [nombre cliente]"
+- El `referenceId` apunta a la `credit_note` correspondiente
+- El `referenceType` es `'credit_note_refund'` en lugar de `'manual'`
+- No aparece en la UI de caja como un egreso manual (viene de proceso de devolución)
+
+**Impacto en arqueo:**
+Los reintegros por NC se incluyen en la columna "Egresos" del desglose por método de pago durante el cierre de caja.
 
 ### 3. Cierre de Caja (Arqueo por Método)
 ```
@@ -291,13 +316,14 @@ Tabla de arqueos previos:
 
 1. **Solo una caja abierta**: No se puede abrir si existe cualquier OPENING sin CLOSING correspondiente (sin importar la fecha)
 2. **Egresos limitados**: No se puede registrar egreso en efectivo si excede saldo disponible
-3. **Bloqueo por caja cerrada**: Con la caja cerrada (o sin abrir) no se pueden realizar ventas ni registrar pagos de OTs. El sistema debe bloquear estas operaciones tanto en el BFF como en la UI.
+3. **Bloqueo por caja cerrada**: Con la caja cerrada (o sin abrir) no se pueden realizar ventas, registrar pagos de OTs, ni emitir notas de crédito con reintegro en efectivo. El sistema debe bloquear estas operaciones tanto en el BFF como en la UI.
 4. **Auditoría**: Toda diferencia debe tener motivo documentado
 5. **Permisos**:
    - Abrir/Cerrar: ADMIN, STAFF
    - Registrar ingresos/egresos: ADMIN, STAFF
    - Ver historial completo: ADMIN, STAFF
    - Ver usuarios STAFF/ADMIN: ADMIN, STAFF
+6. **Reintegros por NC**: Las devoluciones con reintegro en efectivo crean movimientos EXPENSE automáticamente. Deben respetar las mismas reglas de validación de saldo que los egresos manuales.
 
 ## Criterios de Aceptación
 
@@ -312,7 +338,8 @@ Tabla de arqueos previos:
 - [x] Historial de arqueos accesible desde la vista con paginación
 - [x] Trazabilidad dual: createdBy vs responsibleBy visible en historial
 - [x] Sin caja abierta, no se pueden registrar egresos/ingresos manuales
-- [ ] **Bloqueo preventivo**: El botón de "Venta Rápida" y el registro de pagos de OTs deben estar deshabilitados si la caja no está abierta.
+- [ ] **Bloqueo preventivo**: El botón de "Venta Rápida", el registro de pagos de OTs, y la emisión de NC con reintegro CASH deben estar deshabilitados si la caja no está abierta.
+- [ ] **Reintegros por NC**: El sistema crea automáticamente un `cash_movement` EXPENSE cuando una nota de crédito incluye reintegro en efectivo
 
 ## Dependencias
 - Modelo `cash_movement` existente

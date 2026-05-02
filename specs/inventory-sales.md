@@ -498,6 +498,62 @@ Una vez estable el MVP, agregar:
 4. **Reporte simple IVA** mensual
 5. **Clientes frecuentes** con datos guardados
 
+### 6. Devoluciones y Notas de Crédito
+
+| Feature | Prioridad | Descripción |
+|---------|-----------|-------------|
+| **NC contra Venta Directa** | P1 | Devolución de items de una `direct_sale` |
+| **NC contra OT** | P1 | Devolución de items de una `work_order` |
+| **Devolución total y parcial** | P1 | Seleccionar qué items y cantidades se devuelven |
+| **Reintegro en efectivo** | P1 | Egreso de caja (`cash_movement` EXPENSE) |
+| **Crédito a cuenta corriente** | P1 | Acreditación en `customer.balance` (negativo = a favor) |
+| **Devolución mixta** | P2 | Parte en efectivo, parte a cuenta |
+| **Restablecimiento automático de stock** | P1 | `stock_movement` tipo `IN` por producto devuelto |
+| **Comprobante fiscal NC** | P2 | Registro en `invoice` con type `NOTA_CREDITO` |
+
+#### Flujo de Devolución
+
+```
+┌─────────────┐    ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│ Cliente     │───▶│ Buscar venta    │───▶│ Seleccionar     │───▶│ Elegir destino  │
+│ solicita    │    │ original        │    │ items y cant.   │    │ del reintegro   │
+│ devolución  │    │ (DS/OT)         │    │                 │    │                 │
+└─────────────┘    └─────────────────┘    └─────────────────┘    └────────┬────────┘
+                                                                           │
+                              ┌────────────────────────────────────────────┘
+                              ▼
+                       ┌─────────────┐
+                       │   Confirmar  │
+                       │   NC         │
+                       └──────┬──────┘
+                              │
+              ┌───────────────┼───────────────┐
+              ▼               ▼               ▼
+        ┌──────────┐   ┌──────────┐    ┌──────────┐
+        │ Stock + │   │ Caja -   │    │ Balance  │
+        │ (productos)│  │ (si CASH)│    │ (si a/c) │
+        └──────────┘   └──────────┘    └──────────┘
+```
+
+#### Destinos de Reintegro
+
+| Método | Caja | Balance Cliente | Stock | Descripción |
+|--------|------|-----------------|-------|-------------|
+| `CASH` | EXPENSE | Sin cambio | IN | Reintegro inmediato en efectivo/transferencia |
+| `ACCOUNT_CREDIT` | Sin movimiento | Decrementa (crédito a favor) | IN | Acreditación en cuenta corriente |
+| `MIXED` | EXPENSE (parcial) | Decrementa (parcial) | IN | Parte en efectivo, parte a cuenta |
+
+**Restricciones:**
+- Caja debe estar abierta para reintegros en efectivo
+- Cantidad devuelta <= cantidad vendida por item
+- Total NC <= total de la venta original
+- Servicios devueltos no afectan stock
+
+#### Especificación Completa
+Ver `/specs/spec-credit-notes.md` para detalle de modelo de datos, APIs y casos de borde.
+
+---
+
 ## Estado de Implementación (2026-04-06)
 
 ### Tablas de Soporte Implementadas
@@ -532,6 +588,12 @@ Una vez estable el MVP, agregar:
 Venta → Pago → cash_movement (INCOME) → Caja actualizada
           ↓
       (pendiente) invoice (DRAFT) → AFIP → invoice (ISSUED)
+
+Devolución → NC → stock_movement (IN) → Stock actualizado
+          ↓
+      CASH: cash_movement (EXPENSE) → Caja actualizada
+      ACCOUNT_CREDIT: customer.balance ↓ → Crédito a favor
+      MIXED: ambos efectos
 ```
 
 ### Pendientes Críticos
@@ -547,6 +609,12 @@ Venta → Pago → cash_movement (INCOME) → Caja actualizada
 3. **Ventas Rápidas (Carrito)**: Mejorar flujo actual
    - ✅ Modal básico implementado
    - ⏳ Pendiente: Carrito persistente, checkout completo
+
+4. **Notas de Crédito y Devoluciones**: Implementar según `/specs/spec-credit-notes.md`
+   - ⏳ Pendiente: Modelos `credit_note` y `credit_note_item`
+   - ⏳ Pendiente: Servicio `creditNoteService.ts`
+   - ⏳ Pendiente: APIs `POST /api/credit-notes`, `GET /api/credit-notes/:id`
+   - ⏳ Pendiente: UI de búsqueda de venta original y emisión de NC
 
 ### Implementado
 
