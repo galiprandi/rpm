@@ -389,7 +389,6 @@ export function ProductServiceSelector({
                 {searchResults.map((result) => (
                   <button
                     key={result.id}
-                    aria-label={`Agregar ${result.name} al carrito`}
                     className={cn(
                       'w-full px-4 py-2 text-left hover:bg-accent transition-colors border-b last:border-0',
                       'grid grid-cols-[1fr_auto] gap-3 items-center'
