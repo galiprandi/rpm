@@ -19,6 +19,7 @@ import {
   CircleDollarSign,
   Wallet,
   TrendingDown,
+  Receipt,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -53,6 +54,7 @@ const navigation = [
   { name: 'Categorías', href: '/adm/categories', icon: Folder },
   { name: 'Precios', href: '/adm/price-lists', icon: CircleDollarSign },
   { name: 'Arqueo de Caja', href: '/adm/cash', icon: Wallet },
+  { name: 'Notas de Crédito', href: '/adm/credit-notes', icon: Receipt },
   { name: 'Deudores', href: '/adm/reports/debtors', icon: TrendingDown },
   { name: 'Proveedores', href: '/adm/suppliers', icon: Truck },
   { name: 'Usuarios', href: '/adm/users', icon: Users },
