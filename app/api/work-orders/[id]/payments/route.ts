@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { hasRole, UserRole } from "@/lib/auth/roles";
-import { isCashRegisterOpen } from "@/lib/services/cashMovementService";
+import { isCashRegisterOpen, createCashMovement } from "@/lib/services/cashMovementService";
 
 // GET /api/work-orders/[id]/payments - List payments with totals
 export async function GET(
@@ -117,7 +117,7 @@ export async function POST(
     // Verify work order exists
     const workOrder = await prisma.work_order.findUnique({
       where: { id: workOrderId },
-      select: { total: true },
+      select: { total: true, customerId: true },
     });
 
     if (!workOrder) {
@@ -146,24 +146,77 @@ export async function POST(
       );
     }
 
-    // Create payment
-    const payment = await prisma.payment.create({
-      data: {
-        workOrderId,
-        paymentMethodId,
-        amount,
-        notes,
-        createdBy: session.user.id,
-      },
-      include: {
-        paymentMethod: {
-          select: {
-            id: true,
-            name: true,
-            code: true,
+    // Create payment and cash movement in a transaction
+    const payment = await prisma.$transaction(async (tx) => {
+      const newPayment = await tx.payment.create({
+        data: {
+          workOrderId,
+          paymentMethodId,
+          amount,
+          notes,
+          createdBy: session.user.id,
+        },
+        include: {
+          paymentMethod: {
+            select: {
+              id: true,
+              name: true,
+              code: true,
+            },
           },
         },
-      },
+      });
+
+      // Create cash movement
+      await createCashMovement(
+        {
+          type: "INCOME",
+          amount,
+          method: paymentMethod.code,
+          referenceId: newPayment.id,
+          referenceType: "work_order_payment",
+          reason: `Pago OT #${workOrderId.substring(0, 8)}`,
+          createdBy: session.user.id,
+        },
+        tx
+      );
+
+      // Update customer balance if associated with one
+      if (workOrder.customerId) {
+        const customer = await tx.customer.findUnique({
+          where: { id: workOrder.customerId },
+          select: { balance: true },
+        });
+
+        if (customer) {
+          // Helper to convert Decimal to number
+          const decimalToNumber = (decimal: unknown): number => {
+            if (decimal === null || decimal === undefined) return 0;
+            if (typeof decimal === "number") return decimal;
+            if (
+              typeof decimal === "object" &&
+              "toNumber" in decimal &&
+              typeof (decimal as { toNumber: () => number }).toNumber ===
+                "function"
+            ) {
+              return (decimal as { toNumber: () => number }).toNumber();
+            }
+            return 0;
+          };
+
+          const currentBalance = decimalToNumber(customer.balance);
+          const newBalance = currentBalance - amount;
+
+          await tx.customer.update({
+            where: { id: workOrder.customerId },
+            data: {
+              balance: newBalance,
+            },
+          });
+        }
+      }
+
+      return newPayment;
     });
 
     // Calculate updated totals
