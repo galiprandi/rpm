@@ -44,7 +44,7 @@ Flujo:
 3. El usuario marca el checkbox "Restaurar Stock" para los productos físicos que vuelven al estante.
 4. El sistema calcula el total de la NC.
 5. El usuario elige el destino de los fondos:
-   - "Crédito en Cuenta Corriente": Resta del saldo deudor del cliente.
+   - "Crédito en Cuenta Corriente": Resta del saldo deudor del cliente (disminuye su deuda).
    - "Efectivo / Reembolso Manual": Registra una salida de caja.
 6. Confirmar → Envío a AFIP (asociando factura original) → Emisión de NC.
 ```
@@ -59,9 +59,9 @@ Flujo:
 ### 2. Dinero y Cuenta Corriente
 - **Caso A (Cuenta Corriente)**:
     - Se resta el total de la NC de `customer.balance`.
-    - Esto puede dejar un saldo negativo (crédito a favor del cliente) o simplemente reducir su deuda.
+    - Esto reduce la deuda del cliente o puede generar un saldo a favor.
 - **Caso B (Reembolso)**:
-    - Se genera un `cash_movement` de tipo `EXPENSE` (o `CREDIT_NOTE_REFUND`).
+    - Se genera un `cash_movement` de tipo `EXPENSE`.
     - El motivo debe indicar "Reembolso NC #XXXX".
 
 ### 3. AFIP (ARCA)
