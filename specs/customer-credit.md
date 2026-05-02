@@ -205,6 +205,9 @@ Click en fila → Perfil del cliente con sus OTs pendientes
 Al crear OT:
   customer.balance += (OT.total - OT.initialPayment)
 
+Al emitir Nota de Crédito con destino "Cuenta Corriente":
+  customer.balance -= NC.total
+
 Al registrar pago genérico:
   customer.balance -= payment.amount
   if (customer.balance <= 0):

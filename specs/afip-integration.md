@@ -9,7 +9,7 @@ Integración con AFIP (ahora ARCA) para emisión de comprobantes electrónicos c
 | Fase | Alcance | Esfuerzo Estimado |
 |------|---------|-------------------|
 | **Fase 1** | Factura B (Consumidor Final) + Sandbox | 16h (2 días) |
-| **Fase 2** | Factura A (Responsables Inscriptos) + Notas de Crédito | 8h (1 día) |
+| **Fase 2** | Factura A (Responsables Inscriptos) + Notas de Crédito (Ver [Spec NC](./credit-notes.md)) | 8h (1 día) |
 | **Fase 3+** | Cierre Z automático, múltiples puntos de venta | 8h (1 día) |
 
 ## Stack Tecnológico
@@ -431,7 +431,7 @@ describe('AFIP Sandbox Integration', () => {
 ### Fase 2: Completa (8 horas adicionales)
 
 - [ ] Factura A (Responsables Inscriptos)
-- [ ] Notas de Crédito
+- [ ] Notas de Crédito (requiere `CbtesAsoc` en el JSON de AFIP)
 - [ ] Múltiples puntos de venta
 - [ ] Consulta de comprobantes emitidos
 

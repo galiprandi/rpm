@@ -40,7 +40,7 @@ Sistema completo de gestión de caja central que permite abrir caja, registrar m
 | `OPENING` | Apertura de caja - monto inicial |
 | `CLOSING` | Cierre de caja - conteo final |
 | `INCOME` | Ingreso de dinero (venta, etc) |
-| `EXPENSE` | Egreso de dinero (pago proveedor, gastos) |
+| `EXPENSE` | Egreso de dinero (pago proveedor, gastos, reembolsos por NC) |
 | `ADJUSTMENT` | Ajuste por diferencia de arqueo |
 
 ### Estados de Caja

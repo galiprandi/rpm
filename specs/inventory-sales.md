@@ -84,7 +84,7 @@ Categorías iniciales sugeridas:
 |---------|-----------|-------------|
 | **Factura B (CF)** | P0 | Consumidor final - 90% de ventas |
 | **Factura A (RI)** | P1 | Responsables inscriptos |
-| **Nota de Crédito** | P1 | Devoluciones |
+| **Nota de Crédito** | P1 | Devoluciones - Ver [Especificación de Notas de Crédito](./credit-notes.md) |
 | **Integración AFIP WS** | P0 | CAE automático |
 | **Puntos de venta** | P0 | Configurar nro punto venta |
 | **Cierre Z diario** | P1 | Cierre de jornada fiscal |
@@ -224,7 +224,7 @@ El reporte muestra:
 | **Motivo** | Razón del movimiento | `Venta #45` / `Recepción proveedor` |
 
 **Tipos de movimiento:**
-- `Entrada` (verde): Recepción de mercadería, devoluciones
+- `Entrada` (verde): Recepción de mercadería, devoluciones (vía Nota de Crédito)
 - `Salida` (rojo): Ventas, mermas
 - `Ajuste` (amarillo): Correcciones de inventario físico, carga inicial
 
