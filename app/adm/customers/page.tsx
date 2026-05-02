@@ -50,5 +50,5 @@ export default async function CustomersPage() {
     },
   }));
 
-  return <CustomersClient initialCustomers={customersWithVehicles as unknown as any} />;
+  return <CustomersClient initialCustomers={customersWithVehicles} />;
 }

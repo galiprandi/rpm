@@ -26,7 +26,7 @@ interface ProductAuditModalProps {
 
 export function ProductAuditModal({ open, onClose }: ProductAuditModalProps) {
   const [auditData, setAuditData] = useState<CostUpdateBatch[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [_loading, _setLoading] = useState(false);
   const [pagination, setPagination] = useState({
     page: 1,
     pageSize: 20,

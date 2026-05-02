@@ -252,7 +252,7 @@ export default function WorkOrderDetailPage() {
   }, []);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+
     fetchWorkOrder();
     fetchPayments();
   }, [fetchWorkOrder, fetchPayments]);
