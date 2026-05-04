@@ -31,11 +31,13 @@ import {
   Edit,
   X,
   Loader2,
+  Undo2,
 } from "lucide-react";
 import { ProductServiceSelector, SelectedItem } from "@/components/ui/ProductServiceSelector";
 import Image from "next/image";
 import { Header } from "@/components/adm/Header";
 import { cn } from "@/lib/utils";
+import { CustomerCreditNoteDialog } from "@/components/credit-notes/CustomerCreditNoteDialog";
 
 // Timeline Item Component
 function TimelineItem({
@@ -201,6 +203,7 @@ export default function WorkOrderDetailPage() {
   const [editableItems, setEditableItems] = useState<SelectedItem[]>([]);
   const [priceLists, setPriceLists] = useState<{ id: string; name: string; baseMarginPercentage: number }[]>([]);
   const [savingItems, setSavingItems] = useState(false);
+  const [isCreditNoteDialogOpen, setIsCreditNoteDialogOpen] = useState(false);
 
   const fetchWorkOrder = useCallback(async () => {
     try {
@@ -252,7 +255,7 @@ export default function WorkOrderDetailPage() {
   }, []);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+     
     fetchWorkOrder();
     fetchPayments();
   }, [fetchWorkOrder, fetchPayments]);
@@ -468,6 +471,7 @@ export default function WorkOrderDetailPage() {
       {/* Header - Vehículo como protagonista */}
       <Header
         title={workOrder.vehicle.identifier}
+        showBackButton
         leftActions={
           <select
             value={workOrder.status}
@@ -482,6 +486,14 @@ export default function WorkOrderDetailPage() {
             ))}
           </select>
         }
+        secondaryActions={[
+          {
+            label: 'Devolver',
+            onClick: () => setIsCreditNoteDialogOpen(true),
+            variant: 'outline',
+            icon: Undo2,
+          },
+        ]}
       >
         {/* Línea 1: Info del vehículo */}
         <div className="text-muted-foreground">
@@ -1074,6 +1086,20 @@ export default function WorkOrderDetailPage() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {workOrder.customer && (
+        <CustomerCreditNoteDialog
+          open={isCreditNoteDialogOpen}
+          onOpenChange={setIsCreditNoteDialogOpen}
+          customerId={workOrder.customer.id}
+          customerName={workOrder.customer.name}
+          preselectedSaleId={workOrder.id}
+          onSuccess={() => {
+            setIsCreditNoteDialogOpen(false);
+            fetchWorkOrder();
+          }}
+        />
+      )}
     </div>
   );
 }

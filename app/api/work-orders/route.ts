@@ -60,6 +60,7 @@ export async function GET(request: NextRequest) {
         payments: {
           select: {
             amount: true,
+            paymentMethodId: true,
           },
         },
       },

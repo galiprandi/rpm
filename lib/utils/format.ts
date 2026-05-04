@@ -3,13 +3,13 @@
  */
 
 /**
- * Capitalize each word in a string
+ * Capitalize first letter of each name/surname (after spaces only)
  * @param text - Text to capitalize
- * @returns Capitalized text (e.g., "juan perez" -> "Juan Perez")
+ * @returns Capitalized text (e.g., "juan perez" -> "Juan Perez", "martínez" -> "Martínez")
  */
 export function capitalizeText(text: string | null | undefined): string {
   if (!text) return '';
-  return text.trim().replace(/\b\w/g, (char) => char.toUpperCase());
+  return text.trim().replace(/(^|\s)\w/g, (char) => char.toUpperCase());
 }
 
 /**

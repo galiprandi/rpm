@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/dialog";
 import { CustomerForm } from "@/components/customers/CustomerForm";
 import { VehicleDialog } from "@/components/vehicles/VehicleDialog";
-import { CustomerCreditNoteDialog } from "@/components/customers/CustomerCreditNoteDialog";
+import { CustomerCreditNoteDialog } from "@/components/credit-notes/CustomerCreditNoteDialog";
 
 interface Vehicle {
   id: string;

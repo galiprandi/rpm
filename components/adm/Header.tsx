@@ -132,7 +132,7 @@ export function Header({
               variant={action.variant || 'outline'}
               size="sm"
               onClick={action.onClick}
-              className={action.className}
+              className={`${action.className || ''} h-8`}
               disabled={action.disabled}
               title={action.title}
             >
@@ -163,7 +163,7 @@ export function Header({
                 title={primaryAction.title}
                 className={
                   primaryAction.className ||
-                  `bg-slate-900 text-white hover:bg-slate-800 border border-slate-900 shadow-lg hover:shadow-xl transition-all font-semibold px-4 py-2 h-10 ${primaryAction.disabled ? 'opacity-50 cursor-not-allowed shadow-none hover:shadow-none' : ''}`
+                  `bg-slate-900 text-white hover:bg-slate-800 border border-slate-900 shadow-lg hover:shadow-xl transition-all font-semibold px-4 py-2 h-8 ${primaryAction.disabled ? 'opacity-50 cursor-not-allowed shadow-none hover:shadow-none' : ''}`
                 }
               >
                 {primaryAction.icon && (

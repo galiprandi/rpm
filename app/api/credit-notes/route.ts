@@ -6,22 +6,11 @@ import { isCashRegisterOpen } from '@/lib/services/cashMovementService';
 export const POST = withAdmin(async (request: NextRequest, session) => {
   try {
     const body = await request.json();
-    const {
-      originalSaleId,
-      originalSaleType,
-      customerId,
-      items,
-      refundMethod,
-      cashAmount,
-      accountCreditAmount,
-      refundMethodCode,
-      notes,
-    } = body;
+    const { originalSaleId, originalSaleType, items, refundMethod, paymentMethodId, notes } = body;
 
-    // Validate required fields
-    if (!originalSaleId || !originalSaleType || !customerId || !items || items.length === 0) {
+    if (!originalSaleId || !originalSaleType || !items || items.length === 0) {
       return NextResponse.json(
-        { error: 'Faltan campos requeridos: originalSaleId, originalSaleType, customerId, items' },
+        { error: 'Faltan campos requeridos: originalSaleId, originalSaleType, items' },
         { status: 400 }
       );
     }
@@ -33,52 +22,39 @@ export const POST = withAdmin(async (request: NextRequest, session) => {
       );
     }
 
-    if (!['CASH', 'ACCOUNT_CREDIT', 'MIXED'].includes(refundMethod)) {
+    if (!['CASH', 'ACCOUNT_CREDIT'].includes(refundMethod)) {
       return NextResponse.json(
-        { error: 'refundMethod debe ser CASH, ACCOUNT_CREDIT o MIXED' },
+        { error: 'refundMethod debe ser CASH o ACCOUNT_CREDIT' },
         { status: 400 }
       );
     }
 
-    // Validate items
     for (const item of items) {
-      if (!item.name || !item.quantity || !item.unitPrice || !item.totalPrice) {
-        return NextResponse.json(
-          { error: 'Los items deben tener nombre, cantidad, precio unitario y precio total' },
-          { status: 400 }
-        );
-      }
-
       if (!item.productId && !item.serviceId) {
         return NextResponse.json(
           { error: 'Los items deben tener productId o serviceId' },
           { status: 400 }
         );
       }
+      if (!item.quantity || item.quantity <= 0) {
+        return NextResponse.json(
+          { error: 'Los items deben tener quantity mayor a 0' },
+          { status: 400 }
+        );
+      }
     }
 
-    // Check cash register is open if refund method includes CASH
-    if (refundMethod === 'CASH' || refundMethod === 'MIXED') {
+    if (refundMethod === 'CASH') {
       const isOpen = await isCashRegisterOpen();
       if (!isOpen) {
         return NextResponse.json(
-          { error: 'La caja está cerrada. Debe abrir la caja para realizar reintegros en efectivo.' },
+          { error: 'La caja esta cerrada. Debe abrir la caja para realizar reintegros en efectivo.' },
           { status: 400 }
         );
       }
-
-      // Validate refund method code for CASH
-      if (refundMethod === 'CASH' && !refundMethodCode) {
+      if (!paymentMethodId) {
         return NextResponse.json(
-          { error: 'Debe especificar el método de pago para reintegro en efectivo' },
-          { status: 400 }
-        );
-      }
-
-      // Validate refund method code for MIXED
-      if (refundMethod === 'MIXED' && !refundMethodCode) {
-        return NextResponse.json(
-          { error: 'Debe especificar el método de pago para la parte en efectivo' },
+          { error: 'Debe especificar el metodo de pago para reintegro en efectivo' },
           { status: 400 }
         );
       }
@@ -87,12 +63,9 @@ export const POST = withAdmin(async (request: NextRequest, session) => {
     const result = await createCreditNote({
       originalSaleId,
       originalSaleType,
-      customerId,
       items,
       refundMethod,
-      cashAmount,
-      accountCreditAmount,
-      refundMethodCode,
+      paymentMethodId,
       notes,
       createdBy: session.user.id,
     });
@@ -102,20 +75,14 @@ export const POST = withAdmin(async (request: NextRequest, session) => {
     console.error('Error creating credit note:', error);
 
     if (error instanceof Error) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
-    return NextResponse.json(
-      { error: 'Error interno del servidor' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
   }
 });
 
-export const GET = withAdmin(async (request: NextRequest, _session) => {
+export const GET = withAdmin(async (request: NextRequest) => {
   try {
     const { searchParams } = new URL(request.url);
     const customerId = searchParams.get('customerId');

@@ -5,7 +5,7 @@ export interface CashMovementInput {
   amount: number;
   method: string;
   referenceId?: string;
-  referenceType?: 'work_order_payment' | 'direct_sale_payment' | 'manual';
+  referenceType?: 'work_order_payment' | 'direct_sale_payment' | 'credit_note_refund' | 'credit_note_cancelled' | 'manual';
   reason?: string;
   notes?: string;
   createdBy: string;

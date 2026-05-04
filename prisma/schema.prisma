@@ -43,22 +43,22 @@ model category {
 }
 
 model customer {
-  id            String        @id @default(cuid())
-  phone         String?
-  phoneAlt      String?
-  email         String?
-  address       String?
-  notes         String?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime
-  billingData   Json?
-  name          String
-  balance       Decimal       @db.Decimal(10, 2) @default(0) // Saldo deudor (positivo = debe, negativo = crédito a favor)
-  vehicle       vehicle[]
-  work_order    work_order[]
-  direct_sales  direct_sale[]
-  invoices      invoice[]
-  credit_notes  credit_note[]
+  id           String        @id @default(cuid())
+  phone        String?
+  phoneAlt     String?
+  email        String?
+  address      String?
+  notes        String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime
+  billingData  Json?
+  name         String
+  balance      Decimal       @default(0) @db.Decimal(10, 2)
+  credit_notes credit_note[]
+  direct_sales direct_sale[]
+  invoices     invoice[]
+  vehicle      vehicle[]
+  work_order   work_order[]
 
   @@index([name])
   @@index([phone])
@@ -112,32 +112,32 @@ model price_list_item {
 }
 
 model product {
-  id                 String            @id
-  sku                String?           @unique
-  name               String
-  description        String?
-  costPrice          Decimal           @db.Decimal(10, 2)
-  stock              Int               @default(0)
-  minStock           Int               @default(0)
-  barcode            String?
-  location           String?
-  isActive           Boolean           @default(true)
-  createdAt          DateTime          @default(now())
-  updatedAt          DateTime
-  categoryId         String
-  supplierId         String?
-  lastMovementAt     DateTime?
-  replacementCost    Decimal           @db.Decimal(10, 2)
-  imageUrl           String?           // URL completa (jsDelivr CDN)
-  imageCommit        String?           // SHA del commit para tracking/rollback
-  imageBranch        String?           @default("main") // Branch donde se almacenó
-  price_list_item    price_list_item[]
-  category           category          @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  supplier           supplier?         @relation(fields: [supplierId], references: [id])
-  stock_movement     stock_movement[]
-  work_order_item    work_order_item[]
-  direct_sale_items  direct_sale_item[]
-  credit_note_items  credit_note_item[]
+  id                String             @id
+  sku               String?            @unique
+  name              String
+  description       String?
+  costPrice         Decimal            @db.Decimal(10, 2)
+  stock             Int                @default(0)
+  minStock          Int                @default(0)
+  barcode           String?
+  location          String?
+  isActive          Boolean            @default(true)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime
+  categoryId        String
+  supplierId        String?
+  lastMovementAt    DateTime?
+  replacementCost   Decimal            @db.Decimal(10, 2)
+  imageBranch       String?            @default("main")
+  imageCommit       String?
+  imageUrl          String?
+  credit_note_items credit_note_item[]
+  direct_sale_items direct_sale_item[]
+  price_list_item   price_list_item[]
+  category          category           @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  supplier          supplier?          @relation(fields: [supplierId], references: [id])
+  stock_movement    stock_movement[]
+  work_order_item   work_order_item[]
 
   @@index([categoryId])
   @@index([isActive])
@@ -159,9 +159,9 @@ model service {
   isActive          Boolean            @default(true)
   createdAt         DateTime           @default(now())
   updatedAt         DateTime
-  work_order_item   work_order_item[]
-  direct_sale_items direct_sale_item[]
   credit_note_items credit_note_item[]
+  direct_sale_items direct_sale_item[]
+  work_order_item   work_order_item[]
 
   @@index([isActive])
 }
@@ -324,7 +324,7 @@ model Verification {
 }
 
 model work_order {
-  id              String            @id
+  id              String                 @id
   status          String
   customerId      String
   vehicleId       String
@@ -339,22 +339,22 @@ model work_order {
   deliveredAt     DateTime?
   paymentMethod   String?
   paymentNotes    String?
-  total           Decimal           @db.Decimal(10, 2)
-  totalProducts   Decimal           @db.Decimal(10, 2)
-  totalServices   Decimal           @db.Decimal(10, 2)
+  total           Decimal                @db.Decimal(10, 2)
+  totalProducts   Decimal                @db.Decimal(10, 2)
+  totalServices   Decimal                @db.Decimal(10, 2)
   invoiceId       String?
   notes           String
-  createdAt       DateTime          @default(now())
+  createdAt       DateTime               @default(now())
   updatedAt       DateTime
-  source          String            @default("IN_PERSON")
+  source          String                 @default("IN_PERSON")
   fuelLevel       Int?
   odometerValue   Int?
-  photo           photo[]
-  customer        customer          @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  vehicle         vehicle           @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
-  work_order_item work_order_item[]
   payments        payment[]
+  photo           photo[]
+  customer        customer               @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  vehicle         vehicle                @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
   auditLogs       work_order_audit_log[]
+  work_order_item work_order_item[]
 
   @@index([createdAt])
   @@index([customerId])
@@ -365,16 +365,16 @@ model work_order {
 }
 
 model work_order_audit_log {
-  id            String   @id @default(uuid())
-  workOrderId   String
-  fieldName     String   // Campo que cambió (ej: "status", "notes", "fuelLevel")
-  oldValue      String?  // Valor anterior
-  newValue      String?  // Valor nuevo
-  changedBy     String   // Usuario que hizo el cambio (email o userId)
-  changedAt     DateTime @default(now())
-  ipAddress     String?  // IP del cliente (opcional)
-  userAgent     String?  // User agent del cliente (opcional)
-  work_order    work_order @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  id          String     @id @default(uuid())
+  workOrderId String
+  fieldName   String
+  oldValue    String?
+  newValue    String?
+  changedBy   String
+  changedAt   DateTime   @default(now())
+  ipAddress   String?
+  userAgent   String?
+  work_order  work_order @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
 
   @@index([workOrderId])
   @@index([changedAt])
@@ -403,14 +403,14 @@ model work_order_item {
 }
 
 model cost_update_batch {
-  id             String   @id @default(uuid())
-  userId         String
-  userName       String?
-  filtersApplied Json
-  adjustmentType String
-  adjustmentValue Decimal @db.Decimal(10, 2)
-  itemsAffected  Int
-  createdAt      DateTime @default(now())
+  id              String   @id @default(uuid())
+  userId          String
+  userName        String?
+  filtersApplied  Json
+  adjustmentType  String
+  adjustmentValue Decimal  @db.Decimal(10, 2)
+  itemsAffected   Int
+  createdAt       DateTime @default(now())
 
   @@index([createdAt])
   @@index([userId])
@@ -418,68 +418,65 @@ model cost_update_batch {
 }
 
 model payment_method {
-  id          String    @id @default(cuid())
-  name        String    @unique
-  code        String    @unique
-  description String?
-  isActive    Boolean   @default(true)
-  sortOrder   Int       @default(0)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime
-
-  payments    payment[]
+  id                 String                @id @default(cuid())
+  name               String                @unique
+  code               String                @unique
+  description        String?
+  isActive           Boolean               @default(true)
+  sortOrder          Int                   @default(0)
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime
   directSalePayments direct_sale_payment[]
+  payments           payment[]
+  creditNotes        credit_note[]
 
   @@index([isActive])
   @@index([sortOrder])
 }
 
 model payment {
-  id              String        @id @default(cuid())
+  id              String         @id @default(cuid())
   workOrderId     String
   paymentMethodId String
-  amount          Decimal       @db.Decimal(10, 2)
+  amount          Decimal        @db.Decimal(10, 2)
   notes           String?
-  createdAt       DateTime      @default(now())
+  createdAt       DateTime       @default(now())
   createdBy       String
-
-  workOrder       work_order    @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
   paymentMethod   payment_method @relation(fields: [paymentMethodId], references: [id])
+  workOrder       work_order     @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
 
   @@index([workOrderId])
   @@index([paymentMethodId])
 }
 
 model direct_sale {
-  id              String        @id @default(cuid())
-  customerId      String?
-  customerName    String        // "Consumidor final" o nombre del cliente
-  total           Decimal       @db.Decimal(10, 2)
-  notes           String?
-  createdAt       DateTime      @default(now())
-  createdBy       String
-
-  customer        customer?     @relation(fields: [customerId], references: [id])
-  items           direct_sale_item[]
-  payments        direct_sale_payment[]
+  id           String                @id @default(cuid())
+  customerId   String?
+  customerName String
+  total        Decimal               @db.Decimal(10, 2)
+  notes        String?
+  createdAt    DateTime              @default(now())
+  createdBy    String
+  customer     customer?             @relation(fields: [customerId], references: [id])
+  items        direct_sale_item[]
+  payments     direct_sale_payment[]
 
   @@index([customerId])
   @@index([createdAt])
 }
 
 model direct_sale_item {
-  id            String     @id @default(cuid())
-  directSaleId  String
-  productId     String?
-  serviceId     String?
-  name          String     // Nombre del producto/servicio
-  quantity      Int
-  unitPrice     Decimal    @db.Decimal(10, 2)
-  totalPrice    Decimal    @db.Decimal(10, 2)
-
-  directSale    direct_sale @relation(fields: [directSaleId], references: [id], onDelete: Cascade)
-  product       product?   @relation(fields: [productId], references: [id])
-  service       service?   @relation(fields: [serviceId], references: [id])
+  id           String      @id @default(cuid())
+  directSaleId String
+  productId    String?
+  serviceId    String?
+  name         String
+  quantity     Int
+  unitPrice    Decimal     @db.Decimal(10, 2)
+  totalPrice   Decimal     @db.Decimal(10, 2)
+  directSale   direct_sale @relation(fields: [directSaleId], references: [id], onDelete: Cascade)
+  product      product?    @relation(fields: [productId], references: [id])
+  service      service?    @relation(fields: [serviceId], references: [id])
 
   @@index([directSaleId])
   @@index([productId])
@@ -487,14 +484,13 @@ model direct_sale_item {
 }
 
 model direct_sale_payment {
-  id              String        @id @default(cuid())
+  id              String         @id @default(cuid())
   directSaleId    String
   paymentMethodId String
-  amount          Decimal       @db.Decimal(10, 2)
+  amount          Decimal        @db.Decimal(10, 2)
   notes           String?
-  createdAt       DateTime      @default(now())
+  createdAt       DateTime       @default(now())
   createdBy       String
-
   directSale      direct_sale    @relation(fields: [directSaleId], references: [id], onDelete: Cascade)
   paymentMethod   payment_method @relation(fields: [paymentMethodId], references: [id])
 
@@ -503,17 +499,17 @@ model direct_sale_payment {
 }
 
 model cash_movement {
-  id             String   @id @default(cuid())
-  type           String   // INCOME, EXPENSE, OPENING, CLOSING, ADJUSTMENT
-  amount         Decimal  @db.Decimal(10, 2)
-  method         String   // CASH, CARD, TRANSFER, etc.
-  referenceId    String?  // Referencia a payment/direct_sale_payment
-  referenceType  String?  // 'work_order_payment', 'direct_sale_payment', 'manual'
-  reason         String?
-  notes          String?
-  createdAt      DateTime @default(now())
-  createdBy      String   // Usuario que ejecutó la acción (auditoría técnica)
-  responsibleId  String?  // Cajero/Responsable operativo de turno
+  id            String   @id @default(cuid())
+  type          String
+  amount        Decimal  @db.Decimal(10, 2)
+  method        String
+  referenceId   String?
+  referenceType String?
+  reason        String?
+  notes         String?
+  createdAt     DateTime @default(now())
+  createdBy     String
+  responsibleId String?
 
   @@index([type])
   @@index([createdAt])
@@ -522,24 +518,22 @@ model cash_movement {
 }
 
 model invoice {
-  id             String   @id @default(cuid())
-  number         String   @unique
-  type           String   // FACTURA_A, FACTURA_B, NOTA_CREDITO, RECIBO
-  referenceId    String   // work_order_id o direct_sale_id
-  referenceType  String   // 'work_order', 'direct_sale'
-  customerId     String?
-  customerName   String
-  subtotal       Decimal  @db.Decimal(10, 2)
-  tax            Decimal? @db.Decimal(10, 2)
-  total          Decimal  @db.Decimal(10, 2)
-  afipData       Json?    // CAE, CAE expiration, etc.
-  status         String   // DRAFT, ISSUED, CANCELLED
-  issuedAt       DateTime?
-  createdAt      DateTime @default(now())
-  createdBy      String
-
-  customer       customer?     @relation(fields: [customerId], references: [id])
-  creditNote     credit_note?  @relation
+  id            String       @id @default(cuid())
+  number        String       @unique
+  type          String
+  referenceId   String
+  referenceType String
+  customerId    String?
+  customerName  String
+  subtotal      Decimal      @db.Decimal(10, 2)
+  tax           Decimal?     @db.Decimal(10, 2)
+  total         Decimal      @db.Decimal(10, 2)
+  afipData      Json?
+  status        String
+  issuedAt      DateTime?
+  createdAt     DateTime     @default(now())
+  createdBy     String
+  customer      customer?    @relation(fields: [customerId], references: [id])
 
   @@index([number])
   @@index([referenceId])
@@ -547,45 +541,40 @@ model invoice {
 }
 
 model credit_note {
-  id                  String           @id @default(cuid())
-  invoiceId           String?          @unique
-  originalSaleId      String
-  originalSaleType    String           // 'direct_sale' | 'work_order'
-  customerId          String
-  total               Decimal          @db.Decimal(10, 2)
-  refundMethod        String           // 'CASH' | 'ACCOUNT_CREDIT' | 'MIXED'
-  cashAmount          Decimal?         @db.Decimal(10, 2)
-  accountCreditAmount Decimal?         @db.Decimal(10, 2)
-  refundMethodCode    String?          // CASH, TRANSFER, CARD (solo si refundMethod incluye CASH)
-  status              String           @default("DRAFT") // DRAFT, ISSUED, CANCELLED
-  notes               String?
-  createdAt           DateTime         @default(now())
-  createdBy           String
-
-  items               credit_note_item[]
-  customer            customer         @relation(fields: [customerId], references: [id])
-  invoice             invoice?         @relation(fields: [invoiceId], references: [id])
+  id               String             @id @default(cuid())
+  originalSaleId   String
+  originalSaleType String
+  customerId       String
+  total            Decimal            @db.Decimal(10, 2)
+  refundMethod     String             // 'CASH' | 'ACCOUNT_CREDIT'
+  paymentMethodId  String?
+  status           String             @default("ISSUED") // 'ISSUED' | 'CANCELLED'
+  notes            String?
+  createdAt        DateTime           @default(now())
+  createdBy        String
+  customer         customer           @relation(fields: [customerId], references: [id])
+  paymentMethod    payment_method?    @relation(fields: [paymentMethodId], references: [id])
+  items            credit_note_item[]
 
   @@index([customerId])
   @@index([originalSaleId, originalSaleType])
-  @@index([createdAt])
+  @@index([paymentMethodId])
   @@index([status])
   @@map("credit_note")
 }
 
 model credit_note_item {
-  id              String      @id @default(cuid())
-  creditNoteId    String
-  productId       String?
-  serviceId       String?
-  name            String      // Nombre del producto/servicio (snapshot)
-  quantity        Int
-  unitPrice       Decimal     @db.Decimal(10, 2)
-  totalPrice      Decimal     @db.Decimal(10, 2)
-
-  creditNote      credit_note @relation(fields: [creditNoteId], references: [id], onDelete: Cascade)
-  product         product?    @relation(fields: [productId], references: [id])
-  service         service?    @relation(fields: [serviceId], references: [id])
+  id           String      @id @default(cuid())
+  creditNoteId String
+  productId    String?
+  serviceId    String?
+  name         String
+  quantity     Int
+  unitPrice    Decimal     @db.Decimal(10, 2)
+  totalPrice   Decimal     @db.Decimal(10, 2)
+  creditNote   credit_note @relation(fields: [creditNoteId], references: [id], onDelete: Cascade)
+  product      product?    @relation(fields: [productId], references: [id])
+  service      service?    @relation(fields: [serviceId], references: [id])
 
   @@index([creditNoteId])
   @@index([productId])

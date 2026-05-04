@@ -2,6 +2,48 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAdmin } from '@/lib/api-middleware';
 import { createDirectSale } from '@/lib/services/directSaleService';
 import { isCashRegisterOpen } from '@/lib/services/cashMovementService';
+import { prisma } from '@/lib/prisma';
+
+// GET /api/direct-sales - List direct sales with filters
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = request.nextUrl;
+    const customerId = searchParams.get('customerId');
+    const limit = parseInt(searchParams.get('limit') || '50');
+    const offset = parseInt(searchParams.get('offset') || '0');
+
+    const where: Record<string, unknown> = {};
+    if (customerId) where.customerId = customerId;
+
+    const directSales = await prisma.direct_sale.findMany({
+      where,
+      include: {
+        customer: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+          },
+        },
+        items: true,
+        payments: true,
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+      skip: offset,
+    });
+
+    const total = await prisma.direct_sale.count({ where });
+
+    return NextResponse.json({ directSales, total, limit, offset });
+  } catch (error) {
+    console.error('Error fetching direct sales:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch direct sales' },
+      { status: 500 }
+    );
+  }
+}
 
 export const POST = withAdmin(async (request: NextRequest, session) => {
   try {

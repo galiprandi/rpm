@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAdminDynamic } from '@/lib/api-middleware';
 import { getCreditNoteById } from '@/lib/services/creditNoteService';
 
-export const GET = withAdminDynamic(async (request: NextRequest, { params }: { params: { id: string } }, _session) => {
+export const GET = withAdminDynamic(async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     const creditNote = await getCreditNoteById(id);
 

@@ -14,15 +14,11 @@ export default async function CreditNotesPage() {
     throw new Error('Acceso denegado');
   }
 
-  // Fetch credit notes using type assertion for new models
-  const creditNotes = await (prisma as any).credit_note.findMany({
+  const creditNotes = await prisma.credit_note.findMany({
     take: 50,
     include: {
       customer: {
         select: { id: true, name: true, phone: true },
-      },
-      invoice: {
-        select: { id: true, number: true, status: true },
       },
       _count: {
         select: { items: true },
@@ -31,7 +27,6 @@ export default async function CreditNotesPage() {
     orderBy: { createdAt: 'desc' },
   });
 
-  // Helper para convertir Decimal a number
   const decimalToNumber = (decimal: unknown): number => {
     if (decimal === null || decimal === undefined) return 0;
     if (typeof decimal === 'number') return decimal;
@@ -41,12 +36,11 @@ export default async function CreditNotesPage() {
     return 0;
   };
 
-  const creditNotesFormatted = creditNotes.map((cn: any) => ({
+  const creditNotesFormatted = creditNotes.map((cn: typeof creditNotes[number]) => ({
     ...cn,
     total: decimalToNumber(cn.total),
-    cashAmount: cn.cashAmount ? decimalToNumber(cn.cashAmount) : null,
-    accountCreditAmount: cn.accountCreditAmount ? decimalToNumber(cn.accountCreditAmount) : null,
     itemCount: cn._count.items,
+    createdAt: cn.createdAt.toISOString(),
   }));
 
   return <CreditNotesClient initialCreditNotes={creditNotesFormatted} />;
