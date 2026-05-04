@@ -507,9 +507,19 @@ Una vez estable el MVP, agregar:
 | **Devolución total y parcial** | P1 | Seleccionar qué items y cantidades se devuelven |
 | **Reintegro en efectivo** | P1 | Egreso de caja (`cash_movement` EXPENSE) |
 | **Crédito a cuenta corriente** | P1 | Acreditación en `customer.balance` (negativo = a favor) |
-| **Devolución mixta** | P2 | Parte en efectivo, parte a cuenta |
 | **Restablecimiento automático de stock** | P1 | `stock_movement` tipo `IN` por producto devuelto |
-| **Comprobante fiscal NC** | P2 | Registro en `invoice` con type `NOTA_CREDITO` |
+| **Cancelación de NC** | P1 | Revertir efectos de NC emitida |
+
+**Estado de implementación:** ✅ Completamente implementado
+- Modelo: `credit_note`, `credit_note_item` en Prisma
+- Servicio: `lib/services/creditNoteService.ts`
+- API: `POST /api/credit-notes`, `GET /api/credit-notes`, `POST /api/credit-notes/:id/cancel`
+- UI: `CustomerCreditNoteDialog` en perfil de cliente, `CreditNotesClient` en `/adm/credit-notes`
+- Ver spec detallada: `/specs/spec-credit-notes.md`
+
+**No implementado en esta fase:**
+- Devoluciones mixtas (parte efectivo, parte cuenta)
+- Comprobante fiscal NC (integración AFIP)
 
 #### Flujo de Devolución
 
@@ -541,13 +551,13 @@ Una vez estable el MVP, agregar:
 |--------|------|-----------------|-------|-------------|
 | `CASH` | EXPENSE | Sin cambio | IN | Reintegro inmediato en efectivo/transferencia |
 | `ACCOUNT_CREDIT` | Sin movimiento | Decrementa (crédito a favor) | IN | Acreditación en cuenta corriente |
-| `MIXED` | EXPENSE (parcial) | Decrementa (parcial) | IN | Parte en efectivo, parte a cuenta |
 
 **Restricciones:**
 - Caja debe estar abierta para reintegros en efectivo
 - Cantidad devuelta <= cantidad vendida por item
 - Total NC <= total de la venta original
 - Servicios devueltos no afectan stock
+- No hay soporte para devoluciones mixtas en esta implementación
 
 #### Especificación Completa
 Ver `/specs/spec-credit-notes.md` para detalle de modelo de datos, APIs y casos de borde.
@@ -593,7 +603,6 @@ Devolución → NC → stock_movement (IN) → Stock actualizado
           ↓
       CASH: cash_movement (EXPENSE) → Caja actualizada
       ACCOUNT_CREDIT: customer.balance ↓ → Crédito a favor
-      MIXED: ambos efectos
 ```
 
 ### Pendientes Críticos
@@ -610,11 +619,12 @@ Devolución → NC → stock_movement (IN) → Stock actualizado
    - ✅ Modal básico implementado
    - ⏳ Pendiente: Carrito persistente, checkout completo
 
-4. **Notas de Crédito y Devoluciones**: Implementar según `/specs/spec-credit-notes.md`
-   - ⏳ Pendiente: Modelos `credit_note` y `credit_note_item`
-   - ⏳ Pendiente: Servicio `creditNoteService.ts`
-   - ⏳ Pendiente: APIs `POST /api/credit-notes`, `GET /api/credit-notes/:id`
-   - ⏳ Pendiente: UI de búsqueda de venta original y emisión de NC
+4. **Notas de Crédito y Devoluciones**: ✅ Implementado según `/specs/spec-credit-notes.md`
+   - ✅ Modelos `credit_note` y `credit_note_item`
+   - ✅ Servicio `creditNoteService.ts`
+   - ✅ APIs `POST /api/credit-notes`, `GET /api/credit-notes`, `POST /api/credit-notes/:id/cancel`
+   - ✅ UI de búsqueda de venta original y emisión de NC (`CustomerCreditNoteDialog`)
+   - ✅ Lista de NCs (`CreditNotesClient` en `/adm/credit-notes`)
 
 ### Implementado
 

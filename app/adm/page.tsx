@@ -12,8 +12,7 @@ import { UserRole } from '@/lib/auth/roles';
 import { getDashboardData } from '@/lib/services/dashboardService';
 import { unstable_cache } from 'next/cache';
 
-// Cache dashboard data for 60 seconds to reduce database operations
-export const revalidate = 60;
+export const revalidate = 0;
 
 export default async function AdminDashboard() {
   // Validar sesión y rol
@@ -25,6 +24,7 @@ export default async function AdminDashboard() {
   }
 
   // Obtener datos del dashboard con cache para reducir operaciones DB
+  // El cache se invalida selectivamente cuando se crean NCs, ventas, etc.
   const getCachedDashboardData = unstable_cache(
     getDashboardData,
     ['dashboard-data'],

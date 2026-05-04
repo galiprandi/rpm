@@ -3,23 +3,11 @@
  */
 import { prisma } from '@/lib/prisma';
 import { createCashMovement } from './cashMovementService';
-
-export interface CreditNoteItemInput {
-  productId?: string;
-  serviceId?: string;
-  quantity: number;
-}
-
-export interface CreateCreditNoteInput {
-  originalSaleId: string;
-  originalSaleType: 'direct_sale' | 'work_order';
-  items: CreditNoteItemInput[];
-  refundMethod: 'CASH' | 'ACCOUNT_CREDIT';
-  paymentMethodId?: string;
-  paymentMethodCode?: string;
-  notes?: string;
-  createdBy: string;
-}
+import { revalidatePath } from 'next/cache';
+import {
+  validateCreditNoteCreation,
+  type CreateCreditNoteInput,
+} from './creditNoteValidationService';
 
 function decimalToNumber(decimal: unknown): number {
   if (decimal === null || decimal === undefined) return 0;
@@ -30,37 +18,13 @@ function decimalToNumber(decimal: unknown): number {
   return 0;
 }
 
-export async function getAlreadyReturnedQuantities(
-  originalSaleId: string,
-  originalSaleType: 'direct_sale' | 'work_order',
-  tx?: any
-) {
-  const client = tx || prisma;
-  const creditNotes = await client.credit_note.findMany({
-    where: {
-      originalSaleId,
-      originalSaleType,
-      status: 'ISSUED',
-    },
-    include: { items: true },
-  });
-
-  const returned: Record<string, number> = {};
-  for (const cn of creditNotes) {
-    for (const item of cn.items) {
-      const key = item.productId || item.serviceId || item.id;
-      returned[key] = (returned[key] || 0) + item.quantity;
-    }
-  }
-  return returned;
-}
-
 function getOriginalItems(
   saleType: 'direct_sale' | 'work_order',
   sale: any,
 ) {
   if (saleType === 'direct_sale') {
     return sale.items.map((item: any) => ({
+      id: item.id,
       productId: item.productId,
       serviceId: item.serviceId,
       quantity: item.quantity,
@@ -69,6 +33,7 @@ function getOriginalItems(
     }));
   }
   return sale.work_order_item.map((item: any) => ({
+    id: item.id,
     productId: item.productId,
     serviceId: item.serviceId,
     quantity: item.quantity,
@@ -80,23 +45,25 @@ function getOriginalItems(
 export async function createCreditNote(input: CreateCreditNoteInput) {
   const { originalSaleId, originalSaleType, items, refundMethod, paymentMethodId, paymentMethodCode, notes, createdBy } = input;
 
+  // Validate using validation service
+  const validation = await validateCreditNoteCreation(input);
+  if (!validation.valid) {
+    throw new Error(validation.errors.join('; '));
+  }
+
   // Fetch original sale
   let sale: any;
   let customerId: string;
-  let originalPayments: Array<{ paymentMethodId: string; amount: unknown }> = [];
 
   if (originalSaleType === 'direct_sale') {
     sale = await prisma.direct_sale.findUnique({
       where: { id: originalSaleId },
       include: {
         items: { include: { product: { select: { name: true } }, service: { select: { name: true } } } },
-        payments: true,
         customer: true,
       },
     });
-    if (!sale) throw new Error('Venta original no encontrada');
     customerId = sale.customerId;
-    originalPayments = sale.payments;
   } else {
     sale = await prisma.work_order.findUnique({
       where: { id: originalSaleId },
@@ -105,12 +72,8 @@ export async function createCreditNote(input: CreateCreditNoteInput) {
         customer: true,
       },
     });
-    if (!sale) throw new Error('Orden de trabajo original no encontrada');
     customerId = sale.customerId;
   }
-
-  // Fetch already returned quantities
-  const returnedQty = await getAlreadyReturnedQuantities(originalSaleId, originalSaleType);
 
   // Build credit note items with prices from original sale
   const originalItems = getOriginalItems(originalSaleType, sale);
@@ -130,18 +93,6 @@ export async function createCreditNote(input: CreateCreditNoteInput) {
         (itemInput.serviceId && oi.serviceId === itemInput.serviceId)
     );
 
-    if (!original) {
-      throw new Error('Item no encontrado en la venta original');
-    }
-
-    const key = original.productId || original.serviceId || '';
-    const alreadyReturned = returnedQty[key] || 0;
-    const remaining = original.quantity - alreadyReturned;
-
-    if (itemInput.quantity > remaining) {
-      throw new Error(`No puede devolver más de lo vendido: ${original.name}. Vendido: ${original.quantity}, Ya devuelto: ${alreadyReturned}, Disponible: ${remaining}`);
-    }
-
     const unitPrice = decimalToNumber(original.unitPrice);
     const totalPrice = unitPrice * itemInput.quantity;
 
@@ -159,13 +110,6 @@ export async function createCreditNote(input: CreateCreditNoteInput) {
 
   if (total === 0) {
     throw new Error('El total de la nota de credito no puede ser cero');
-  }
-
-  // Validate CASH requirements
-  if (refundMethod === 'CASH') {
-    if (!paymentMethodId) {
-      throw new Error('Debe seleccionar un metodo de pago para reintegro en efectivo');
-    }
   }
 
   // Transaction
@@ -209,6 +153,8 @@ export async function createCreditNote(input: CreateCreditNoteInput) {
         const previousStock = product.stock;
         const newStock = previousStock + item.quantity;
 
+        console.log(`[CreditNote] Updating stock for product ${item.productId}: ${previousStock} -> ${newStock} (+${item.quantity})`);
+
         await tx.product.update({
           where: { id: item.productId },
           data: { stock: newStock, lastMovementAt: new Date() },
@@ -227,6 +173,8 @@ export async function createCreditNote(input: CreateCreditNoteInput) {
             userName: createdBy,
           },
         });
+
+        console.log(`[CreditNote] Stock movement created for NC ${creditNote.id}`);
       }
     }
 
@@ -266,6 +214,9 @@ export async function createCreditNote(input: CreateCreditNoteInput) {
 
     return creditNote;
   });
+
+  // Invalidate dashboard cache to show fresh data
+  revalidatePath('/adm');
 
   return result;
 }
@@ -394,4 +345,5 @@ export async function cancelCreditNote(id: string, reason?: string) {
 
     return updated;
   });
+
 }

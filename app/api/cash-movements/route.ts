@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import { hasRole, UserRole } from '@/lib/auth/roles';
 import { prisma } from '@/lib/prisma';
+import { revalidatePath } from 'next/cache';
 
 // GET /api/cash-movements - List cash movements
 export async function GET(request: NextRequest) {
@@ -82,6 +83,9 @@ export async function POST(request: NextRequest) {
         createdBy: session.user.id,
       },
     });
+
+    // Invalidate dashboard cache to show fresh data
+    revalidatePath('/adm');
 
     return NextResponse.json({ movement }, { status: 201 });
   } catch (error) {

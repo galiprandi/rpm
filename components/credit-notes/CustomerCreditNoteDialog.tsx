@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@tanstack/react-table';
+import { useUI } from '@/components/ui/UIProvider';
 
 interface Sale {
   id: string;
@@ -38,6 +39,7 @@ interface CustomerCreditNoteDialogProps {
 }
 
 export function CustomerCreditNoteDialog({ open, onOpenChange, customerId, customerName, onSuccess, preselectedSaleId }: CustomerCreditNoteDialogProps) {
+  const { alert } = useUI();
   const [sales, setSales] = useState<Sale[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
@@ -172,12 +174,12 @@ export function CustomerCreditNoteDialog({ open, onOpenChange, customerId, custo
       .filter(Boolean) as Array<{ productId?: string; serviceId?: string; quantity: number }>;
 
     if (!items || items.length === 0) {
-      alert('Seleccione al menos un item para devolver');
+      await alert({ title: 'Error', description: 'Seleccione al menos un item para devolver' });
       return;
     }
 
     if (refundMethod === 'CASH' && !selectedPaymentMethodId) {
-      alert('Debe seleccionar un metodo de pago');
+      await alert({ title: 'Error', description: 'Debe seleccionar un metodo de pago' });
       return;
     }
 
@@ -205,7 +207,7 @@ export function CustomerCreditNoteDialog({ open, onOpenChange, customerId, custo
       onSuccess();
     } catch (error) {
       console.error(error);
-      alert(error instanceof Error ? error.message : 'Error al crear nota de credito');
+      await alert({ title: 'Error', description: error instanceof Error ? error.message : 'Error al crear nota de credito' });
     } finally {
       setIsSubmitting(false);
     }

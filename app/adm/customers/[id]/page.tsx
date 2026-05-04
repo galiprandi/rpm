@@ -54,6 +54,14 @@ interface WorkOrder {
   vehicle: { identifier: string };
 }
 
+interface DirectSale {
+  id: string;
+  total: number;
+  createdAt: string;
+  customerName: string;
+  items: Array<{ name: string; quantity: number }>;
+}
+
 interface CustomerDetail {
   id: string;
   name: string;
@@ -70,6 +78,7 @@ interface CustomerDetail {
   balance: number;
   vehicles: Vehicle[];
   workOrders: WorkOrder[];
+  directSales: DirectSale[];
 }
 
 export default function CustomerDetailPage() {
@@ -193,6 +202,35 @@ export default function CustomerDetailPage() {
     []
   );
 
+  // Columnas para DataTable de Ventas Directas
+  const directSaleColumns: ColumnDef<DirectSale>[] = useMemo(
+    () => [
+      {
+        accessorKey: "id",
+        header: "ID",
+        cell: ({ row }) => row.original.id.slice(-6),
+      },
+      {
+        accessorKey: "items",
+        header: "Items",
+        cell: ({ row }) => row.original.items.map((i: { name: string }) => i.name).join(", "),
+      },
+      {
+        accessorKey: "total",
+        header: "Total",
+        cell: ({ row }) =>
+          `$${Number(row.original.total).toLocaleString("es-AR")}`,
+      },
+      {
+        accessorKey: "createdAt",
+        header: "Fecha",
+        cell: ({ row }) =>
+          new Date(row.original.createdAt).toLocaleDateString("es-AR"),
+      },
+    ],
+    []
+  );
+
   if (loading) {
     return (
       <div className="container mx-auto py-6">
@@ -221,6 +259,12 @@ export default function CustomerDetailPage() {
           icon: Pencil,
         }}
         secondaryActions={[
+          {
+            label: "Nota de Crédito",
+            onClick: () => setIsCreditNoteModalOpen(true),
+            icon: Receipt,
+            variant: "outline",
+          },
           {
             label: "+ Vehículo",
             onClick: () => setIsVehicleModalOpen(true),
@@ -277,24 +321,14 @@ export default function CustomerDetailPage() {
               <Wallet className="h-4 w-4" />
               Cuenta Corriente
             </CardTitle>
-            <div className="flex items-center gap-2">
-              <Button
-                onClick={() => setIsCreditNoteModalOpen(true)}
-                size="sm"
-                variant="outline"
-              >
-                <Receipt className="h-4 w-4 mr-1" />
-                Nota de Crédito
-              </Button>
-              <Button
-                onClick={() => setIsPaymentModalOpen(true)}
-                size="sm"
-                className={customer.balance > 0 ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"}
-              >
-                <ArrowDownLeft className="h-4 w-4 mr-1" />
-                Registrar Pago
-              </Button>
-            </div>
+            <Button
+              onClick={() => setIsPaymentModalOpen(true)}
+              size="sm"
+              className={customer.balance > 0 ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"}
+            >
+              <ArrowDownLeft className="h-4 w-4 mr-1" />
+              Registrar Pago
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -444,6 +478,40 @@ export default function CustomerDetailPage() {
             <Link href={`/adm/work-orders/${workOrder.id}`}>
               <Button variant="ghost" size="sm">
                 <Pencil className="h-4 w-4" />
+              </Button>
+            </Link>
+          )}
+        />
+      )}
+
+      {/* Historial de Ventas Directas - DataTable */}
+      {customer.directSales.length === 0 ? (
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <Receipt className="h-5 w-5" />
+            Historial de Ventas Directas (0)
+          </h2>
+          <div className="text-center py-8 text-muted-foreground">
+            No hay ventas directas registradas
+          </div>
+        </div>
+      ) : (
+        <DataTable
+          data={customer.directSales}
+          columns={directSaleColumns}
+          enableGlobalFilter={true}
+          globalFilterPlaceholder="Buscar venta..."
+          pageSize={5}
+          title={
+            <span className="flex items-center gap-2">
+              <Receipt className="h-5 w-5" />
+              Historial de Ventas Directas ({customer.directSales.length})
+            </span>
+          }
+          rowActions={(sale) => (
+            <Link href={`/adm/direct-sales/${sale.id}`}>
+              <Button variant="ghost" size="sm">
+                <Eye className="h-4 w-4" />
               </Button>
             </Link>
           )}

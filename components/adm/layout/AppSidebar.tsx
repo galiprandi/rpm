@@ -47,13 +47,14 @@ import {
 
 const navigation = [
   { name: 'Dashboard', href: '/adm', icon: LayoutDashboard },
-  { name: 'Órdenes de Trabajo', href: '/adm/work-orders', icon: ClipboardList },
   { name: 'Clientes', href: '/adm/customers', icon: UserCircle },
+  { name: 'Órdenes de Trabajo', href: '/adm/work-orders', icon: ClipboardList },
   { name: 'Productos', href: '/adm/products', icon: Package },
   { name: 'Servicios', href: '/adm/services', icon: Handshake },
   { name: 'Categorías', href: '/adm/categories', icon: Folder },
   { name: 'Precios', href: '/adm/price-lists', icon: CircleDollarSign },
   { name: 'Arqueo de Caja', href: '/adm/cash', icon: Wallet },
+  { name: 'Comprobantes', href: '/adm/comprobantes', icon: Receipt },
   { name: 'Deudores', href: '/adm/reports/debtors', icon: TrendingDown },
   { name: 'Proveedores', href: '/adm/suppliers', icon: Truck },
   { name: 'Usuarios', href: '/adm/users', icon: Users },

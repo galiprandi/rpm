@@ -4,6 +4,7 @@
 import { prisma } from '@/lib/prisma';
 import { randomUUID } from 'crypto';
 import { createCashMovement } from './cashMovementService';
+import { revalidatePath } from 'next/cache';
 
 export interface DirectSaleItemInput {
   productId?: string;
@@ -216,6 +217,9 @@ export async function createDirectSale(input: CreateDirectSaleInput) {
 
     return directSale;
   });
+
+  // Invalidate dashboard cache to show fresh data
+  revalidatePath('/adm');
 
   return result;
 }

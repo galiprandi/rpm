@@ -94,6 +94,7 @@ Sistema:
   - Decrementa customer.balance (hace más negativo = crédito a favor)
   - NO crea movimiento de caja (el dinero no sale de la caja)
   - El crédito queda disponible para futuras compras
+  - Stock se restablece para productos devueltos
 
 Ejemplo:
   - Balance actual: $10,000 (debe)
@@ -104,6 +105,12 @@ Visualización en perfil:
   - Balance > 0: "Saldo Pendiente: $X 🔴"
   - Balance = 0: "Al día ✅"
   - Balance < 0: "Crédito a favor: $X 🟢"
+
+**Estado de implementación:** ✅ Completamente implementado
+- Servicio: `lib/services/creditNoteService.ts`
+- API: `POST /api/credit-notes`
+- UI: `CustomerCreditNoteDialog` en perfil de cliente
+- Ver spec detallada: `/specs/spec-credit-notes.md`
 ```
 
 ### 5. Consulta de Deuda
@@ -265,8 +272,8 @@ Al consultar clientes con crédito a favor:
 - [x] Reporte de deudores ordenable por monto/fecha
 - [x] Cuando balance llega a 0, OTs se marcan como pagadas
 - [x] API /api/direct-sales soporta sellOnCredit y remainingAmount
-- [ ] **Crédito a favor por NC**: El balance decrementa correctamente al emitir una NC con ACCOUNT_CREDIT
-- [ ] **Visualización de crédito a favor**: El perfil del cliente muestra "Crédito a favor" cuando balance < 0
+- [x] **Crédito a favor por NC**: El balance decrementa correctamente al emitir una NC con ACCOUNT_CREDIT
+- [x] **Visualización de crédito a favor**: El perfil del cliente muestra "Crédito a favor" cuando balance < 0
 - [ ] **Reporte de créditos a favor**: Filtro o vista separada de clientes con saldo negativo (crédito disponible)
 
 ## Dependencias

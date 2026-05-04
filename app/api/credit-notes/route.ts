@@ -60,6 +60,8 @@ export const POST = withAdmin(async (request: NextRequest, session) => {
       }
     }
 
+    console.log('[CreditNote API] Creating credit note with items:', JSON.stringify(items, null, 2));
+    
     const result = await createCreditNote({
       originalSaleId,
       originalSaleType,
@@ -69,6 +71,8 @@ export const POST = withAdmin(async (request: NextRequest, session) => {
       notes,
       createdBy: session.user.id,
     });
+    
+    console.log('[CreditNote API] Credit note created successfully:', result.id);
 
     return NextResponse.json(result, { status: 201 });
   } catch (error) {

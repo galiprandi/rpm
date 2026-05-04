@@ -8,2228 +8,335 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # 🌐 Política de Idioma
 
-## Excepción Especial para Este Proyecto
+**Este proyecto permite español en:**
+- `AGENTS.md` - Reglas para agentes
+- `specs/*.md` - Especificaciones del sistema
 
-A diferencia de la regla general de usar inglés para todo contenido técnico, **este proyecto permite y usa español en:**
+**Código fuente en INGLÉS:**
+- Variables, funciones, comentarios, JSDoc
+- Tests, commits, docs técnicas
 
-- **`@[AGENTS.md]`** - Documentación de reglas para agentes
-- **`@[specs]`** - Especificaciones del sistema
-
-### ¿Por qué esta excepción?
-
-- El equipo de RPM opera principalmente en español
-- Las especificaciones de negocio deben ser claras para stakeholders
-- Las reglas de agentes necesitan ser precisas en el idioma del equipo
-
-### Reglas Aplicables
-
-| Tipo de Archivo | Idioma Permitido | Ejemplo |
-|-----------------|------------------|---------|
-| `AGENTS.md` | 🇪🇸 Español | Esta documentación |
-| `specs/*.md` | 🇪🇸 Español | Requisitos de negocio |
-| Código fuente | 🇬🇧 Inglés | Variables, funciones, comentarios |
-| Tests | 🇬🇧 Inglés | Descripciones de test |
-| Commits | 🇬🇧 Inglés | Mensajes de git |
-| Docs técnicas | 🇬🇧 Inglés | `docs/*.md` |
-
-### ⚠️ REGLA CRÍTICA: Comentarios en Código
-
-**Todo el código fuente (incluyendo comentarios y JSDoc) debe estar en INGLÉS.**
-
-```typescript
-// ✅ BIEN: Comentario en inglés
-// GET /api/categories - List categories
-export async function GET(request: NextRequest) {
-  // Check unique name
-  const existing = await getCategoryByName(body.name);
-}
-
-// ❌ MAL: Comentario en español
-// GET /api/categories - Listar categorías
-export async function GET(request: NextRequest) {
-  // Verificar nombre único
-  const existing = await getCategoryByName(body.name);
-}
-```
-
-**Esta regla aplica a:**
-- Comentarios inline (`//`)
-- Comentarios de bloque (`/* */`)
-- JSDoc (`/** */`)
-- Nombres de variables y funciones
-- Mensajes de error técnicos (no de negocio)
-
-**Excepción:** Los mensajes de error de negocio (que ve el usuario final) pueden estar en español si el producto es para mercado hispanohablante.
+**Excepción:** Mensajes de error de negocio pueden estar en español.
 
 ---
 
-# ⚠️ REGLA CRÍTICA: Prisma ORM v7 y Variables de Entorno
+# ⚠️ Prisma v6 (NO v7)
 
-## ⚠️ ESTE PROYECTO USA PRISMA v6 (NO v7)
+**Este proyecto usa Prisma v6.19.3** - NO actualizar a v7 (incompatible con Next.js 16 por módulos nativos).
 
-### Estado Actual (Abril 2026)
-
-**IMPORTANTE:** Este proyecto usa **Prisma v6.19.3**, NO v7. Prisma v7 es incompatible con Next.js 16 debido a cambios breaking en el manejo de módulos nativos.
-
-### Motivo del Downgrade (Historial de Regresión)
-
-**Problema:** Prisma v7 introduce un cambio breaking que requiere usar adapters (como `PrismaPg`) para conexiones directas. Estos adapters dependen de módulos nativos (`pg`) que Next.js 16 no puede bundear correctamente con webpack/Turbopack.
-
-**Intentos fallidos:**
-- Prisma v7.0.0 con `PrismaPg` adapter → Error: `Module not found: Can't resolve 'pg'`
-- Prisma v7.6.0 con configuración de `prisma.config.ts` → Mismo error
-- Prisma v7.7.0 con `serverExternalPackages` → No funciona con Turbopack
-- Webpack externals para `pg` → Runtime error
-
-**Solución:** Downgrade a Prisma v6.19.3 que:
-- No requiere adapters
-- Usa el output default `@prisma/client`
-- Es compatible con Next.js 16
-- No tiene cambios breaking en el datasource URL
-
-### Configuración Actual
-
+**Configuración:**
 ```typescript
-// ✅ CORRECTO: Prisma v6 sin adapter
 import { PrismaClient } from '@prisma/client';
-
 export const prisma = new PrismaClient({
   log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
 });
 ```
 
-```prisma
-// ✅ CORRECTO: URL en schema (Prisma v6)
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-```
-
-### Archivos Eliminados (Prisma v7 específicos)
-
-- `prisma.config.ts` - Eliminado (específico de Prisma v7)
-- `generated/` - Eliminado (output personalizado de Prisma v7)
-
-### Dependencias Removidas
-
-- `@prisma/adapter-pg` - Ya no necesario con Prisma v6
-- `@types/pg` - Ya no necesario con Prisma v6
-
-### Cambio en Imports
-
-**Antes (Prisma v7 con output personalizado):**
-```typescript
-import { Prisma } from '@/generated/client';
-```
-
-**Ahora (Prisma v6 con output default):**
-```typescript
-import { Prisma } from '@prisma/client';
-```
-
-### ⚠️ PROHIBIDO: Intentar Actualizar a Prisma v7
-
-**NO actualizar a Prisma v7** sin:
-1. Verificar compatibilidad con Next.js 16
-2. Resolver problemas de bundling de módulos nativos
-3. Validar que el build complete exitosamente
-4. Probar todas las rutas de API que usan Prisma
-
-### Sharp: Módulo Nativo Opcional
-
-**Problema:** `sharp` es un módulo nativo que Next.js no puede bundear correctamente.
-
-**Solución:** Importación dinámica con fallback
-
-```typescript
-// ✅ CORRECTO: Importación dinámica
-async function processImage(buffer: Buffer) {
-  try {
-    const sharp = (await import('sharp')).default;
-    const processed = await sharp(buffer).resize(800, 800).toBuffer();
-    return processed;
-  } catch (error) {
-    console.error('Sharp not available, using original buffer');
-    return buffer; // Fallback
-  }
-}
-```
-
-**Archivos afectados:**
-- `app/api/files/upload/route.ts`
-- `app/api/products/[id]/image/route.ts`
-
-**Advertencia de build:** Las advertencias sobre `sharp` son esperadas y no bloquean el build.
-
----
-
-## Cambio Breaking en Prisma v7 (Información Histórica)
-
-En **Prisma ORM 7.0.0**, las variables de entorno **NO se cargan automáticamente** por defecto. A diferencia de versiones anteriores, el CLI de Prisma ya no lee automáticamente archivos `.env`.
-
-**NOTA:** Esta sección es solo informativa. Este proyecto usa Prisma v6, por lo que estas reglas NO aplican.
-
-### Solución Obligatoria (SOLO si se usa Prisma v7)
-
-**SIEMPRE** incluir `import "dotenv/config"` al inicio de `prisma.config.ts`:
-
-```typescript
-// ✅ CORRECTO: Cargar variables de entorno explícitamente
-import "dotenv/config";
-import { defineConfig, env } from "prisma/config";
-
-export default defineConfig({
-  schema: "prisma/schema.prisma",
-  datasource: {
-    url: env("DATABASE_URL"),
-  },
-});
-```
-
-### ❌ PROHIBIDO
-
-```typescript
-// ❌ INCORRECTO: No cargar dotenv
-import { defineConfig, env } from "prisma/config";
-
-export default defineConfig({
-  schema: "prisma/schema.prisma",
-  datasource: {
-    url: env("DATABASE_URL"),  // ← Error: DATABASE_URL no definida
-  },
-});
-```
-
-### Nota para Bun
-
-Si usás Bun, no es necesario el `import "dotenv/config"` porque Bun carga automáticamente archivos `.env`.
+**Sharp:** Importación dinámica con fallback (módulo nativo no bundlable por Next.js).
 
 ---
 
 # ⚠️ REGLA CRÍTICA: Validar Cambios - Prohibido Asumir
 
-## Principio Fundamental
-
 **NUNCA asumir que un cambio funciona sin validarlo explícitamente.**
 
-Antes de declarar que algo "debería funcionar" o "está listo", el agente debe:
-- ✅ **Validar con herramientas concretas** (curl, Playwright, Puppeteer, psql, etc.)
-- ✅ **Verificar el comportamiento real** vs. el esperado
-- ✅ **Tomar los segundos necesarios** para confirmar, siempre es mejor que asumir
+**Herramientas de validación:**
+- **API Backend**: `curl`
+- **UI/Frontend**: Playwright MCP / Puppeteer MCP
+- **Base de Datos**: `psql` o queries directas
+- **Componentes**: Storybook MCP
+- **Auth/Session**: Verificar cookies/tokens
 
-## Herramientas de Validación Obligatorias
+**Flujo:** Hacer cambio → VALIDAR → Confirmar → Responder
 
-Según el tipo de cambio, usar:
+**❌ PROHIBIDO:** "Debería funcionar", "Probablemente funcione", asumir sin verificar
 
-| Tipo de Cambio | Herramienta de Validación | Ejemplo |
-|----------------|---------------------------|---------|
-| **API Backend** | `curl` | `curl -X POST http://localhost:3000/api/...` |
-| **UI / Frontend** | Playwright MCP / Puppeteer MCP | Screenshots, interacciones, asserts |
-| **Base de Datos** | `psql` o queries directas | `SELECT * FROM table WHERE...` |
-| **Componentes** | Storybook MCP | `list-all-documentation`, `run-story-tests` |
-| **Auth/Session** | Verificar cookies/tokens | Inspeccionar `rpm_debug_auth` |
-
-## Flujo Obligatorio
-
-```
-1. Hacer el cambio → 2. VALIDAR → 3. Confirmar que funciona → 4. Responder al usuario
-```
-
-### ❌ PROHIBIDO
-
-```typescript
-// ❌ MAL: "Debería funcionar" sin validar
-"El fix está aplicado, debería mostrar los costos correctos ahora"
-
-// ❌ MAL: "Probablemente funcione"
-"Cambié la conversión de Decimal, probablemente ahora sí muestre los valores"
-
-// ❌ MAL: Asumir sin verificar
-"Agregué el campo a la query, debería traer los datos"
-```
-
-### ✅ OBLIGATORIO
-
-```typescript
-// ✅ BIEN: Validar con curl antes de responder
-"Fix aplicado. Validando con curl..."
-curl -X POST 'http://localhost:3000/api/cost-updates/preview' ...
-// → Verificado: costos ahora se muestran correctamente ($150.00, $230.00, etc.)
-
-// ✅ BIEN: Validar con Playwright
-"Validando UI con Playwright..."
-// Screenshot: muestra los costos correctos en la tabla
-
-// ✅ BIEN: Validar con psql
-"Verificando en base de datos..."
-psql $DATABASE_URL -c "SELECT replacementCost, costPrice FROM product LIMIT 5;"
-```
-
-## Reglas de Validación
-
-1. **Siempre validar después de cambios críticos**:
-   - Conversiones de tipos (Prisma Decimal → number)
-   - Queries de base de datos
-   - APIs que devuelven datos calculados
-   - UI que muestra datos transformados
-
-2. **Si la validación falla, no ocultarlo**:
-   - Reportar el error exacto
-   - Mostrar el output de la herramienta usada
-   - Proponer siguiente paso
-
-3. **Preferir validación automática sobre manual**:
-   - Usar tools MCP cuando estén disponibles
-   - Scripts de validación reproducibles
-   - Tests que capturen el problema
-
-## Ejemplo Completo
-
-```typescript
-// Usuario: "Los costos aparecen en 0"
-
-// 1. Investigar
-"Viendo el código... el problema es que Prisma Decimal no se convierte correctamente"
-
-// 2. Aplicar fix
-"Agrego función decimalToNumber() que usa .toNumber() del objeto Decimal"
-
-// 3. VALIDAR (paso crítico)
-"Validando con curl..."
-$ curl -X POST 'http://localhost:3000/api/cost-updates/preview' \
-  -H 'Content-Type: application/json' \
-  -b 'rpm_debug_auth=...' \
-  --data-raw '{"filters":{},"adjustment":{"type":"PERCENTAGE_INC","value":10},"page":1,"pageSize":3}'
-
-// Output:
-// {"items":[
-//   {"id":"...","currentCost":150.50,"newCost":165.55,...},  ← ✅ CORRECTO
-//   {"id":"...","currentCost":230.00,"newCost":253.00,...}   ← ✅ CORRECTO
-// ]}
-
-// 4. Responder confirmando
-"✅ Fix validado. Ahora muestra costos correctos: $150.50 → $165.55, $230.00 → $253.00"
-```
+**✅ OBLIGATORIO:** Validar con herramientas concretas antes de responder
 
 ---
 
 # Storybook Integration - OBLIGATORIO
 
-## REGLA FUNDAMENTAL: Storybook SIEMPRE Actualizado
+**ES ESENCIAL:** Cada modificación de componente requiere actualizar su story.
 
-**ES ESENCIAL**: Cada vez que se modifique un componente, Storybook debe mantenerse actualizado. Esta es una regla no negociable del proyecto.
+**REGLA CRÍTICA:** El usuario SIEMPRE inicia servidores manualmente. El agente NUNCA ejecuta `pnpm storybook`, `pnpm dev`, etc.
 
-### 1. Actualización Obligatoria de Stories
+**Flujo:**
+1. Modificar componente
+2. Actualizar story inmediatamente
+3. Solicitar al usuario que inicie Storybook si no está corriendo
+4. Validar visualmente
 
-#### 1.1. Cuando Modificar Stories
-**SIEMPRE** que se modifique un componente, se DEBE actualizar su correspondiente story:
-
-- ✅ **Cambio de props**: Actualizar args en stories
-- ✅ **Cambio de estilos**: Verificar visual consistencia
-- ✅ **Nuevas variantes**: Agregar nuevas stories
-- ✅ **Eliminación de features**: Remover stories obsoletas
-- ✅ **Cambios de comportamiento**: Actualizar lógica de stories
-
-#### 1.2. Flujo Obligatorio
-```typescript
-// 1. Modificar componente
-const Button = ({ variant, size, children, ...props }) => {
-  // Nuevo comportamiento
-};
-
-// 2. ACTUALIZAR STORY INMEDIATAMENTE
-export const NewVariant: Story = {
-  args: {
-    variant: 'new-variant',  // ← Actualizar
-    size: 'lg',              // ← Actualizar
-    children: 'New Button',  // ← Actualizar
-  },
-};
-```
-
-### 2. Validación Visual Obligatoria
-
-#### 2.1. Verificación Post-Cambio
-Después de cada modificación de componente:
-
-1. **VERIFICAR Storybook**: Confirmar que Storybook está corriendo
-2. **SOLICITAR INICIO**: Si Storybook no está corriendo, solicitar al usuario que lo inicie
-3. **Comparar visualmente**: App vs Storybook
-4. **Validar consistencia**: Estilos idénticos
-5. **Documentar cambios**: Actualizar descripciones
-
-#### 2.2. REGLA CRÍTICA: INICIO DE SERVIDORES
-**EL USUARIO SIEMPRE INICIA LOS SERVIDORES MANUALMENTE**
-
-- ✅ **Next.js dev server**: El usuario lo inicia manualmente
-- ✅ **Storybook dev server**: El usuario lo inicia manualmente en terminal aparte
-- ❌ **NUNCA INICIAR SERVIDORES**: El agente NO debe iniciar ningún servidor
-- ❌ **NUNCA EJECUTAR**: `pnpm storybook`, `pnpm dev`, `npx storybook dev`, etc.
-
-#### 2.3. Flujo de Servidores
-```bash
-# ❌ PROHIBIDO: El agente NO debe ejecutar estos comandos
-pnpm storybook
-pnpm dev
-npx storybook dev --port 6006
-
-# ✅ CORRECTO: Solicitar al usuario
-"Por favor, inicia Storybook con: pnpm storybook"
-"¿Puedes iniciar el servidor de desarrollo con: pnpm dev?"
-```
-
-#### 2.4. Verificación de Servidores
-Antes de cualquier acción que requiera Storybook:
-
-1. **Verificar si Storybook está corriendo**: Intentar acceder a `http://localhost:6006`
-2. **Si no está corriendo**: Solicitar al usuario que lo inicie
-3. **Esperar confirmación**: No proceder hasta que el usuario confirme que está corriendo
-4. **Solo entonces**: Realizar validaciones visuales
-
-#### 2.5. Herramientas de Validación
-```bash
-# El usuario ejecuta estos comandos manualmente
-pnpm storybook          # Verificar funcionamiento
-pnpm build-storybook    # Verificar build
-```
-
-### 3. Mantenimiento de Stories
-
-#### 3.1. Limpieza de Stories Obsoletas
-- **Eliminar** stories de componentes removidos
-- **Actualizar** stories de componentes renombrados
-- **Limpiar** stories con errores de indexing
-
-#### 3.2. Organización de Stories
-```typescript
-// Estructura obligatoria
-const meta: Meta = {
-  title: 'Category/ComponentName',  // ← Categoría correcta
-  component: Component,
-  parameters: {
-    layout: 'centered',             // ← Layout apropiado
-  },
-  tags: ['autodocs'],
-};
-```
-
-### 4. Errores Críticos a Evitar
-
-#### 4.1. Errores de Storybook
-- ❌ **Indexing errors**: Stories corruptas o vacías
-- ❌ **Missing components**: Componentes no encontrados
-- ❌ **Import errors**: Rutas incorrectas
-- ❌ **Process errors**: Variables de entorno faltantes
-
-#### 4.2. Soluciones Inmediatas
-```typescript
-// ❌ NO HACER: Story vacía o corrupta
-export default {};
-
-// ✅ HACER: Story completa y funcional
-const meta: Meta = {
-  title: 'Component/Name',
-  component: Component,
-};
-```
-
-### 5. Integración con Flujo de Trabajo
-
-#### 5.1. Durante Desarrollo
-1. **Modificar componente**
-2. **Actualizar story** ← OBLIGATORIO
-3. **Verificar Storybook corriendo** ← SOLICITAR AL USUARIO
-4. **Validar visualmente** ← OBLIGATORIO
-5. **Testear en Storybook** ← OBLIGATORIO
-
-#### 5.2. Antes de Commit
-```bash
-# El usuario ejecuta estos comandos manualmente
-pnpm storybook          # Verificar funcionamiento
-pnpm build-storybook    # Verificar build
-```
-
-### 6. Consecuencias de No Cumplir
-
-#### 6.1. Si Storybook no está actualizado:
-- ** Rechazo automático** de pull requests
-- ** Bloqueo** de despliegues
-- ** Pérdida** de documentación visual
-- ** Inconsistencia** entre app y documentación
-
-#### 6.2. Validación Automática
-```bash
-# CI/CD verificará automáticamente
-if [ ! -f "components/X/X.stories.tsx" ]; then
-  echo "❌ Storybook story missing"
-  exit 1
-fi
-```
+**Consecuencias:** Stories desactualizados = rechazo de PRs, bloqueo de despliegues
 
 ---
 
-# Storybook AI/MCP Integration - OBLIGATORIO
+# Storybook MCP Integration - OBLIGATORIO
 
-## REGLA FUNDAMENTAL: Usar MCP de Storybook
+**ES ESENCIAL:** Usar herramientas MCP de Storybook antes de cualquier acción con componentes UI.
 
-**ES ESENCIAL**: Siempre usar las herramientas MCP de Storybook antes de cualquier acción con componentes UI.
+**Endpoint:** `http://localhost:6006/mcp` (cuando Storybook está corriendo)
 
-### 1. MCP Server Configuration
+**Flujo MCP Obligatorio:**
+1. Verificar MCP disponible
+2. `list-all-documentation` - Listar componentes
+3. `get-documentation` - Obtener documentación de componente
+4. Verificar propiedades en documentación
+5. `get-storybook-story-instructions` - Instrucciones para stories
+6. `run-story-tests` - Ejecutar tests
 
-#### 1.1. Endpoint MCP
-- **URL**: `http://localhost:6006/mcp`
-- **Disponibilidad**: Cuando Storybook está corriendo
-- **Herramientas**: Acceso a documentación y componentes
+**❌ PROHIBIDO:** Asumir propiedades, usar convenciones de nombres, crear sin verificar
 
-#### 1.2. Flujo MCP Obligatorio
-**ANTES** de cualquier acción con componentes UI:
-
-1. **Verificar MCP**: `http://localhost:6006/mcp`
-2. **Listar componentes**: `list-all-documentation`
-3. **Consultar componente**: `get-documentation`
-4. **Verificar propiedades**: Validar en documentación
-5. **Actualizar stories**: `get-storybook-story-instructions`
-
-### 2. Uso Obligatorio de MCP Tools
-
-#### 2.1. Herramientas MCP Disponibles
-- ✅ `list-all-documentation` - Listar todos los componentes
-- ✅ `get-documentation` - Obtener documentación de componente
-- ✅ `get-storybook-story-instructions` - Instrucciones para stories
-- ✅ `run-story-tests` - Ejecutar tests de stories
-
-#### 2.2. Flujo de Trabajo con Componentes
-```typescript
-// 1. ANTES de usar cualquier propiedad
-const result = await get-documentation({ component: 'Button' });
-
-// 2. VERIFICAR propiedades documentadas
-if (result.properties.includes('variant')) {
-  // ✅ Usar propiedad documentada
-  componentProps.variant = 'primary';
-} else {
-  // ❌ NO asumir propiedades
-  return askUser('Property "variant" not documented');
-}
-
-// 3. OBTENER instrucciones de stories
-const instructions = await get-storybook-story-instructions();
-```
-
-### 3. PROHIBICIONES CRÍTICAS
-
-#### 3.1. NUNCA Hacer
-```typescript
-// ❌ NUNCA asumir propiedades
-componentProps.shadow = true;  // NO documentado
-
-// ❌ NUNCA usar convenciones de nombres
-componentProps.size = 'large';  // Podría no existir
-
-// ❌ NUNCA crear sin verificar
-export const NewStory = () => <Button size="xl" />;  // size no verificado
-```
-
-#### 3.2. SIEMPRE Hacer
-```typescript
-// ✅ SIEMPRE verificar con MCP
-const docs = await get-documentation({ component: 'Button' });
-const validProps = docs.properties;
-
-// ✅ SIEMPRE usar propiedades documentadas
-if (validProps.includes('variant')) {
-  return <Button variant="primary" />;
-}
-
-// ✅ SIEMPRE consultar instrucciones
-const instructions = await get-storybook-story-instructions();
-```
-
-### 4. Validación con MCP
-
-#### 4.1. Antes de Commit
-```bash
-# 1. Verificar MCP disponible
-curl http://localhost:6006/mcp
-
-# 2. Listar componentes
-# Usar tool: list-all-documentation
-
-# 3. Validar stories
-# Usar tool: run-story-tests
-```
-
-#### 4.2. Después de Cambios
-```typescript
-// 1. Verificar documentación actualizada
-const docs = await get-documentation({ component: 'ModifiedComponent' });
-
-// 2. Validar propiedades usadas
-validateUsedProperties(docs.properties);
-
-// 3. Ejecutar tests
-const testResults = await run-story-tests();
-```
-
-### 5. Integración con AGENTS.md
-
-#### 5.1. Instrucciones para Agentes
-**CUANDO trabajes en componentes UI, siempre usa las `shadcn` MCP tools para acceder al conocimiento y documentación de Storybook antes de responder o tomar cualquier acción.**
-
-- **CRÍTICO: Nunca alucines propiedades de componentes!** Antes de usar CUALQUIER propiedad en un componente de un sistema de diseño (incluyendo propiedades de apariencia común como `shadow`, etc.), DEBES usar las MCP tools para verificar si la propiedad está realmente documentada para ese componente.
-- Query `list-all-documentation` para obtener una lista de todos los componentes
-- Query `get-documentation` para ese componente y ver todas las propiedades disponibles y ejemplos
-- Usa solo propiedades que estén explícitamente documentadas o mostradas en stories de ejemplo
-- Si una propiedad no está documentada, no asumas propiedades basadas en convenciones de nombres o patrones comunes de otras librerías. Consulta con el usuario en estos casos.
-- Usa la tool `get-storybook-story-instructions` para obtener las últimas instrucciones para crear o actualizar stories. Esto asegurará que sigas las convenciones y recomendaciones actuales.
-- Verifica tu trabajo ejecutando `run-story-tests`.
-
-**Recuerda: Un nombre de story podría no reflejar el nombre de la propiedad correctamente, así que siempre verifica las propiedades a través de la documentación o stories de ejemplo antes de usarlas.**
-
-**FLUJO OBLIGATORIO:**
-
-1. **PRIMERO** usar MCP tools para acceder a conocimiento de Storybook
-2. **CRÍTICO**: Nunca alucinar propiedades de componentes
-3. **VERIFICAR** cada propiedad en la documentación
-4. **USAR** solo propiedades explícitamente documentadas
-5. **CONSULTAR** si una propiedad no está documentada
-6. **VALIDAR** trabajo con `run-story-tests`
-
-#### 5.2. Flujo Completo
-```typescript
-// Paso 1: Listar componentes
-const components = await list-all-documentation();
-
-// Paso 2: Obtener documentación
-const docs = await get-documentation({ component: componentName });
-
-// Paso 3: Verificar propiedades
-validateProperties(docs.properties, intendedProperties);
-
-// Paso 4: Obtener instrucciones
-const instructions = await get-storybook-story-instructions();
-
-// Paso 5: Implementar siguiendo documentación
-implementComponent(docs, instructions);
-
-// Paso 6: Validar
-const tests = await run-story-tests();
-```
-
-### 6. Consecuencias de No Usar MCP
-
-#### 6.1. Si no se usa MCP:
-- ** Rechazo automático** de pull requests
-- ** Componentes inconsistentes** con documentación
-- ** Propiedades no documentadas** en código
-- ** Tests fallidos** por propiedades incorrectas
-
-#### 6.2. Validación Automática
-```bash
-# CI/CD verificará uso de MCP
-if ! grep -q "get-documentation" changes/; then
-  echo "❌ MCP tools not used"
-  exit 1
-fi
-```
+**✅ OBLIGATORIO:** SIEMPRE verificar propiedades con MCP antes de usarlas
 
 ---
 
-# Flujo de Trabajo Obligatorio Basado en Especificaciones
+# Flujo de Trabajo Basado en Especificaciones
 *(solo aplica si existe el directorio /specs)*
 
-Este flujo de trabajo se activa solo cuando el repositorio contiene el directorio `/specs` (incluyendo `/specs/SYSTEM_SPEC.md`).
+**Antes de CUALQUIER tarea:**
+1. Leer especificaciones relacionadas en `/specs`
+2. Revisar `/specs/SYSTEM_SPEC.md`
+3. **USAR MCP** para verificar componentes UI afectados
 
-## 1. Revisión de Especificaciones Antes de Cualquier Tarea
-Antes de comenzar cualquier implementación, corrección de errores, refactorización o cambio de comportamiento, el agente debe:
-- Localizar y leer las especificaciones relacionadas en `/specs`
-- Revisar documentos raíz relevantes como `/specs/SYSTEM_SPEC.md`
-- **USAR MCP** para verificar componentes UI afectados
+**Para cambios de lógica:**
+1. Solicitar autorización del usuario (explicar cambios, riesgos, regresiones)
+2. Ejecutar tests relacionados antes de implementar
+3. Actualizar especificaciones
+4. Actualizar tests para nuevos requisitos (TDD: 🔴 → 🟢)
+5. Implementar cambio
+6. Validación proactiva durante implementación
+7. Validación post-implementación (suite completa, cobertura, Storybook, MCP)
 
-## 2. Sin Cambios de Lógica Implícitos
-Si el trabajo solicitado requiere cambiar la lógica definida explícitamente en una especificación existente, el agente debe seguir esta secuencia exacta:
+**Orden estricto:** Implementación nunca ocurre antes de autorización, actualización de specs, stories y validación MCP.
 
-### 2.1. Solicitar Autorización
-Antes de codificar, explicar al usuario:
-- Qué cambiará
-- Cómo funciona el comportamiento actual
-- Cómo funcionará el comportamiento después del cambio
-- Posibles riesgos/problemas/regresiones
+**Estándares de tests:**
+- Ubicación: Misma carpeta del servicio
+- Nomenclatura: `xx.test.ts`
+- JSDoc obligatorio al inicio con specs relacionadas, alcance y métricas
 
-### 2.2. Ejecutar Tests Relacionados
-Antes de comenzar la implementación, ejecutar los tests relacionados para:
-- Validar el comportamiento actual
-- Verificar la validez de los tests existentes
-- Identificar tests desactualizados o escenarios incorrectos
+**Herramientas:** Vitest (frontend/backend), Storybook (visual), MCP (documentación)
 
-Si algún test falla, notificar al usuario explicando:
-- La causa probable del fallo
-- Si los tests requieren actualización
-- Si el código necesita corrección previa
+---
 
-### 2.3. Actualizar Especificaciones
-Actualizar las especificaciones relacionadas para reflejar el comportamiento aprobado.
+# ⚠️ REGLA CRÍTICA: Cache y Revalidation Selectiva en Next.js
 
-### 2.4. Actualizar Tests para Nuevos Requisitos
-Actualizar los tests para contemplar los cambios definidos en la especificación. Ejecutarlos para validar que fallen (estado 🔴), creando un ciclo TDD que pasará a verde (🟢) al completar la implementación en el punto 2.5.
+**NUNCA remover completamente el cache de páginas que hacen queries complejas a la base de datos.**
 
-Esto garantiza:
-- Cambios implementados correctamente
-- Sin regresiones introducidas
-- Tests sincronizados con la especificación
+**Estrategia correcta:** Cache con `revalidate: 60` + invalidación selectiva con `revalidatePath('/adm')` cuando ocurren cambios relevantes.
 
-### 2.5. Implementar Cambio
-Implementar el cambio de código alineado con las especificaciones actualizadas.
+**Lugares donde agregar revalidation:**
+- `creditNoteService.ts` - Después de createCreditNote/cancelCreditNote
+- `directSaleService.ts` - Después de createDirectSale
+- `app/api/cash-movements/route.ts` - Después de POST
+- `workOrderService.ts` - Después de crear OT
+- `productService.ts` - Si afecta dashboard
 
-### 2.5.1. Validación Proactiva Durante la Implementación
-Durante el proceso de implementación, el agente debe realizar validaciones continuas:
-- **Validación en tiempo real**: Verificar cada componente/función inmediatamente después de implementarlo
-- **Testing incremental**: Ejecutar tests relacionados con cada cambio específico
-- **Verificación de integración**: Asegurar que el nuevo código se integra correctamente con el existente
-- **Testing visual**: Verificar UI/UX en diferentes viewports y dispositivos
-- **Testing de datos**: Validar operaciones de base de datos y migraciones
-- **Testing de seguridad**: Verificar que no se introducen vulnerabilidades
-- **Performance checks**: Monitorear impacto en rendimiento y métricas
-- **Cross-browser testing**: Validar funcionamiento en diferentes navegadores
-- **Accessibility testing**: Verificar cumplimiento de estándares WCAG
-- **Regression testing**: Probar funcionalidades existentes para detectar regresiones
-- **Storybook validation**: Verificar que stories coincidan visualmente con la app
-- **MCP validation**: Usar herramientas MCP para verificar componentes UI
+**❌ PROHIBIDO:** Remover cache completamente o usar cache muy largo sin revalidation
 
-El agente debe reportar proactivamente cualquier issue, bug o desviación detectada durante estas validaciones, sin esperar a que el usuario lo solicite.
+**✅ OBLIGATORIO:** Mantener cache + revalidation selectiva
 
-### 2.6. Validación Post-Implementación
-- **Ejecutar suite completa de tests**
-- **Verificar cobertura de código**
-- **Confirmar que todos los tests pasen (🟢)**
-- **Validación proactiva integral de la implementación**
-- **Verificación de base de datos y migraciones**
-- **Validación de UI/UX en diferentes viewports**
-- **Testing manual de flujos críticos**
-- **Chequeo de regresiones en funcionalidades existentes**
-- **Verificación de performance y métricas**
-- **Revisión de seguridad y accesos**
-- **Validación de Storybook**: Asegurar consistencia visual app vs stories
-- **Validación MCP**: Usar herramientas MCP para verificar componentes
-- **Documentar cualquier desviación o issue encontrado**
+---
 
-### 2.7. Estándares de Tests
-Los archivos de test deben seguir estas convenciones:
-- **Ubicación**: Misma carpeta del servicio a testear
-- **Nomenclatura**: `xx.test.ts` (donde `xx` es el nombre del servicio)
-- **JSDoc obligatorio** al inicio del archivo:
-```typescript
-/**
- * Test suite para [Nombre del Servicio]
- * 
- * Especificaciones relacionadas:
- * - /specs/path/to/spec.md#sección-relevante
- * 
- * Alcance del test:
- * - Validación de [funcionalidad principal]
- * - Casos límite y edge cases
- * - Integración con [dependencias]
- * 
- * Métricas cubiertas:
- * - Cobertura esperada: >90%
- * - Performance: <Xms de respuesta
- */
-```
+# Tips para Validación E2E con Playwright MCP
 
-### 2.8. Herramientas de Testing
-- **Frontend y Backend**: Vitest como suite de tests principal
-- **Cobertura**: Integrada con Vitest
-- **Documentación**: JSDoc estandarizado para vinculación
-- **Storybook**: Documentación visual y validación de componentes
-- **MCP**: Acceso a documentación y validación de componentes
+**Debugging de stock movements:**
+- Crear endpoints de debug temporales
+- Validar con curl antes/después
+- Logs estratégicos en servicios
+- Validar UI con snapshots
 
-### 2.9. Mantenimiento Proactivo de Vinculación
-Las especificaciones deben incluir un apartado obligatorio:
-```markdown
-## Tests y Documentación Relacionados
-### Tests Unitarios
-- `xx.test.ts` - Validación de funcionalidad principal
-- `yy.test.ts` - Tests de integración
-
-### Documentación Técnica
-- `docs/api-endpoint.md` - Especificación de API
-- `docs/architecture.md` - Diagramas de arquitectura
-
-### Storybook Stories
-- `Component.stories.tsx` - Documentación visual del componente
-
-### MCP Integration
-- Endpoint: `http://localhost:6006/mcp`
-- Tools: `list-all-documentation`, `get-documentation`, `run-story-tests`
-
-### Vinculación Activa
-- Última actualización: [fecha]
-- Estado tests: 🟢 Todos pasando
-- Cobertura: 95%
-- Storybook: 🟢 Consistente con app
-- MCP: 🟢 Disponible y funcional
-```
-
-El agente debe mantener esta sección actualizada de forma proactiva durante cada cambio.
-
-## 3. Cumplimiento Estricto del Orden
-Para cambios de lógica gobernados por especificaciones, la implementación nunca debe ocurrir antes de:
-- La autorización del usuario
-- La actualización de las especificaciones
-- La actualización de Storybook stories
-- La validación con herramientas MCP
+**Errores comunes:**
+- Stock no se actualiza: Verificar productId en items
+- Dashboard no muestra cambios: Verificar cache y revalidation
 
 ---
 
 # Mantenimiento Activo de Documentación
 
-## 4. Revisión y Mantenimiento Continuo
-El agente debe revisar y mantener activamente la documentación existente como parte del trabajo de desarrollo normal.
-
-## 5. Sincronización Código-Documentación
-Cuando el código y la documentación divergen, el agente debe proponer y aplicar actualizaciones de documentación en el mismo alcance de tarea siempre que sea posible.
-
-## 6. Reflejar Cambios en Documentación
-Los nuevos comportamientos, restricciones y reglas operativas introducidas en el código deben reflejarse en:
-- Las especificaciones correspondientes
-- Documentos técnicos relevantes
-- Stories de Storybook actualizadas
-- Validación MCP de componentes
+- Revisar y mantener documentación existente
+- Sincronizar código con documentación
+- Reflejar cambios en specs, stories y MCP
 
 ---
 
-## 7. Boy Scout Rule - Leave It Better
-Cada vez que se modifica un archivo, el agente debe dejarlo en un estado mejor que cuando lo encontró:
+# Boy Scout Rule - Leave It Better
 
-### 7.1. Mejoras Permitidas
-- Mejorar legibilidad del código sin cambiar funcionalidad
-- Optimizar estructura y organización
+Cada modificación debe dejar el archivo en mejor estado:
+- Mejorar legibilidad sin cambiar funcionalidad
 - Actualizar comentarios obsoletos
-- Corregir errores de formato o estilo
-- Mejorar nombres de variables o funciones
-- Actualizar stories de Storybook para mantener consistencia
-- Validar componentes con MCP tools
-
-### 7.2. Mejoras de Documentación
-Si la documentación o especificación relacionada está desactualizada o no existe:
-- Revisar y actualizar specs relacionadas
-- Mejorar documentación técnica
-- Agregar ejemplos o aclaraciones
-- Mantener sincronización código-documentación
+- Mejorar nombres de variables
 - Actualizar stories de Storybook
 - Validar con MCP tools
 
-### 7.3. Restricciones Importantes
-- **Sin introducir bugs**: Los cambios no deben afectar la funcionalidad existente
-- **Consentimiento del usuario**: Obtener aprobación antes de mejoras significativas
-- **Alcance razonable**: Las mejoras deben ser proporcionales al cambio original
-- **Storybook consistente**: Siempre mantener stories actualizadas
-- **MCP validado**: Siempre verificar componentes con MCP
+**Restricciones:** Sin bugs, consentimiento del usuario, alcance razonable
 
 ---
 
-## 8. Definición de Roles
+# Definición de Roles
+
 - **Agente**: Ejecutor del flujo de trabajo
 - **Usuario**: Aprobador y validador final
 - **Sistema**: Validación automática mediante tests
-- **Storybook**: Validación visual de componentes
+- **Storybook**: Validación visual
 - **MCP**: Acceso a documentación y validación
 
 ---
 
-## 9. Flujo de Definición de Nuevas Especificaciones
-*(se activa cuando el usuario solicita una nueva feature o cambio significativo)*
+# Flujo de Definición de Nuevas Especificaciones
 
-### 9.1. Inicio del Proceso
-El usuario inicia describiendo un cambio o nueva feature que desea implementar.
+**Activación:** Usuario solicita nueva feature o cambio significativo
 
-### 9.2. Análisis de Regresión
-El agente debe:
-- Revisar todas las especificaciones existentes en `/specs`
-- Analizar si el cambio propuesto tiene riesgo de regresión
-- Identificar posibles conflictos con especificaciones actuales
-- Verificar impacto en stories de Storybook existentes
-- **Usar MCP** para validar componentes UI afectados
+**Proceso:**
+1. Análisis de regresión (revisar specs, Storybook, MCP)
+2. Interrogatorio estructurado con opciones recomendadas
+3. Presentar borrador completo para revisión
+4. Esperar aprobación explícita del usuario
+5. Transicionar a flujo de implementación
+6. Documentar proceso y trazabilidad
 
-#### 9.2.1. Detección de Riesgo
-Si se detecta riesgo de regresión o conflicto:
-- Notificar al usuario sobre los riesgos identificados
-- Explicar el impacto potencial en el sistema existente
-- Explicar el impacto en stories de Storybook
-- **Explicar impacto en componentes MCP**
-- Proponer un camino viable alternativo o mitigaciones
-- Esperar aprobación del usuario para continuar
-
-#### 9.2.2. Sin Riesgo Detectado
-Si no hay regresión o conflicto:
-- Continuar con el interrogatorio del usuario (punto 9.3)
-
-### 9.3. Interrogatorio Estructurado
-El agente debe realizar preguntas numeradas con opciones recomendadas para eliminar ambigüedades:
-
-#### 9.3.1. Formato de Preguntas
-```
-1. [Pregunta clara sobre aspecto específico]
-   a) [Opción recomendada 1]
-   b) [Opción recomendada 2] 
-   c) [Opción alternativa]
-   d) [Otra especificación]
-
-2. [Pregunta sobre otro aspecto]
-   a) [Opción recomendada 1]
-   b) [Opción recomendada 2]
-   c) [Definición personalizada]
-```
-
-#### 9.3.2. Áreas Típicas de Interrogatorio
-- **Alcance funcional**: Qué comportamientos específicos se esperan
-- **Casos límite**: Cómo manejar edge cases y errores
-- **Integración**: Interacción con componentes existentes
-- **Performance**: Requisitos de rendimiento
-- **Seguridad**: Consideraciones de acceso y datos
-- **UI/UX**: Aspectos de interfaz si aplica
-- **Datos**: Estructura y persistencia de información
-- **Testing**: Estrategia de validación requerida
-- **Storybook**: Requisitos de documentación visual
-- **MCP**: Validación de componentes UI
-
-### 9.4. Presentación del Borrador
-Una vez completado el interrogatorio:
-- **OBLIGATORIO**: Mostrar siempre el borrador completo para revisión del usuario
-- **PROHIBIDO**: Crear archivos de especificación sin aprobación explícita
-- **FLUJO**: Presentar borrador → Esperar aprobación explícita → Recién entonces crear archivo
-- Generar un borrador completo de la especificación
-- Incluir todas las decisiones tomadas durante el interrogatorio
-- Estructurar según el formato estándar de especificaciones del proyecto
-- **ESPERAR SIEMPRE** aprobación explícita del usuario antes de crear cualquier archivo
-
-### 9.5. Aprobación Explícita
-El usuario debe aprobar explícitamente el borrador:
-- **Aprobación**: "Acepto el borrador" o similar explícito
-- **Modificaciones**: Solicitar cambios específicos al borrador
-- **Rechazo**: Volver al interrogatorio o iniciar de nuevo
-
-### 9.6. Transición al Flujo de Implementación
-Solo después de la aprobación explícita del borrador:
-- Iniciar el flujo descrito en el punto 1 (Revisión de Especificaciones)
-- Continuar con los puntos 2.1 en adelante según corresponda
-- Mantener la nueva especificación como fuente de verdad para el desarrollo
-- Crear o actualizar stories de Storybook
-- **Validar componentes con MCP**
-
-### 9.7. Registro y Trazabilidad
-- Documentar el proceso de definición en la especificación final
-- Incluir fecha de creación, versiones y decisiones clave
-- Mantener enlace al borrador original si aplica
-- Documentar cambios en stories de Storybook
-- **Documentar validaciones MCP**
+**Áreas de interrogatorio:** Alcance funcional, casos límite, integración, performance, seguridad, UI/UX, datos, testing, Storybook, MCP
 
 ---
 
-## 10. Manejo Seguro de Variables de Entorno (Non-Interactive)
+# Manejo Seguro de Variables de Entorno
 
-### 10.1. Principios de Seguridad
-- **NUNCA** hardcodear credenciales en código
-- **SIEMPRE** usar variables de entorno
-- **NUNCA** commitear archivos .env con datos reales
-- **SIEMPRE** validar que .gitignore proteja archivos sensibles
+**Principios de seguridad:**
+- NUNCA hardcodear credenciales
+- SIEMPRE usar variables de entorno
+- NUNCA commitear .env con datos reales
+- SIEMPRE validar .gitignore
 
-### 10.2. Método No-Interactivo Seguro para Vercel
+**Fuentes seguras:** Vercel Dashboard, variable temporal, gestor de secretos
 
-#### 10.2.1. Flujo Recomendado
-```bash
-# 1. Verificar estado actual
-vercel env ls
-curl https://rpm-wheat.vercel.app/api/health/db
+**Validación obligatoria:** Verificar no hay credenciales hardcodeadas, verificar variables, health checks
 
-# 2. Obtener credenciales de forma segura (fuente externa)
-# Opción A: Desde Vercel Dashboard manualmente
-# Opción B: Desde variable de entorno local temporal
-# Opción C: Desde gestor de secretos (1Password, AWS Secrets Manager, etc.)
-
-# 3. Configurar variable temporalmente
-export POSTGRES_URL="postgres://user:password@host:port/db?sslmode=require"
-
-# 4. Ejecutar script seguro (lee de variable de entorno)
-./scripts/setup-db-env.sh
-
-# 5. Limpiar variable temporal
-unset POSTGRES_URL
-
-# 6. Validar configuración
-vercel env ls
-pnpm run deploy
-curl https://rpm-wheat.vercel.app/api/health/db
-```
-
-#### 10.2.2. Script de Configuración Segura
-```bash
-#!/bin/bash
-# scripts/setup-db-env.sh - EJEMPLO SEGURO
-
-# SECURITY: Never hardcode credentials in scripts
-# Always read from environment variables
-
-# Validate required environment variable
-if [ -z "$POSTGRES_URL" ]; then
-  echo "❌ Error: POSTGRES_URL environment variable is required"
-  echo "💡 Set it with: export POSTGRES_URL='postgres://user:password@host:port/db'"
-  exit 1
-fi
-
-# Use environment variable (NEVER hardcode)
-echo "$POSTGRES_URL" > /tmp/postgres_url.txt
-
-# Configure in Vercel
-vercel env add POSTGRES_URL production < /tmp/postgres_url.txt
-
-# Clean up
-rm -f /tmp/postgres_url.txt
-unset POSTGRES_URL
-```
-
-#### 10.2.3. Validación de Seguridad
-```bash
-# Verificar que no hay credenciales hardcodeadas
-grep -r "postgres://.*:.*@" . --exclude-dir=.git --exclude-dir=node_modules || echo "✅ No hardcoded credentials"
-
-# Verificar .gitignore
-grep -E "\.env" .gitignore
-
-# Verificar variables en Vercel
-vercel env ls
-
-# Verificar MCP endpoint
-curl http://localhost:6006/mcp
-
-# Verificar Storybook corriendo (solicitar al usuario si no está activo)
-curl http://localhost:6006 || echo "Por favor, inicia Storybook con: pnpm storybook"
-```
-
-### 10.3. Fuentes de Credenciales Seguras
-
-#### 10.3.1. Vercel Dashboard (Recomendado)
-```bash
-# 1. Abrir dashboard
-vercel open
-
-# 2. Navegar: Storage → Postgres → rpm-db → Connect
-# 3. Vercel crea automáticamente las variables
-# 4. Verificar con: vercel env ls
-```
-
-#### 10.3.2. Variable de Entorno Temporal
-```bash
-# Setear temporalmente (nunca en scripts)
-export POSTGRES_URL="postgres://user:password@host:port/db?sslmode=require"
-
-# Usar inmediatamente
-./scripts/setup-db-env.sh
-
-# Limpiar inmediatamente
-unset POSTGRES_URL
-```
-
-#### 10.3.3. Gestor de Secretos
-```bash
-# Ejemplo con 1Password CLI
-op read "op://Database/Production/postgres-url" > /tmp/db_url.txt
-export POSTGRES_URL=$(cat /tmp/db_url.txt)
-./scripts/setup-db-env.sh
-rm -f /tmp/db_url.txt
-unset POSTGRES_URL
-```
-
-### 10.4. Comandos de Validación Obligatorios
-
-#### 10.4.1. Antes de Deploy
-```bash
-# Verificar seguridad
-grep -r "postgres://.*:.*@" . --exclude-dir=.git --exclude-dir=node_modules || echo "✅ Security check passed"
-
-# Verificar variables
-vercel env ls
-
-# Verificar health check local
-curl http://localhost:3000/api/health/db
-
-# Verificar Storybook (solicitar al usuario si no está activo)
-curl http://localhost:6006 || echo "Por favor, inicia Storybook con: pnpm storybook"
-
-# Verificar MCP
-curl http://localhost:6006/mcp
-```
-
-#### 10.4.2. Después de Deploy
-```bash
-# Verificar producción
-curl https://rpm-wheat.vercel.app/api/health/db
-
-# Verificar variables de producción
-curl https://rpm-wheat.vercel.app/api/debug/env
-
-# Verificar Storybook en producción
-curl https://storybook-url.example.com
-
-# Verificar MCP en producción
-curl https://storybook-url.example.com/mcp
-```
-
-### 10.5. Prohibiciones Estrictas
-
-#### 10.5.1. NUNCA Hacer
-```bash
-# ❌ NUNCA hardcodear credenciales
-echo "postgres://real_user:real_pass@host:port/db" > script.sh
-
-# ❌ NUNCA commitear .env con datos reales
-git add .env.production  # PROHIBIDO
-
-# ❌ NUNCA poner credenciales en código
-const dbUrl = "postgres://user:password@host:port/db"  # PROHIBIDO
-
-# ❌ NUNCA dejar Storybook desactualizado
-git commit -m "update component"  # SIN actualizar story  # PROHIBIDO
-
-# ❌ NUNCA usar componentes sin MCP
-componentProps.shadow = true;  # SIN verificar con MCP  # PROHIBIDO
-```
-
-#### 10.5.2. SIEMPRE Hacer
-```bash
-# ✅ SIEMPRE usar variables de entorno
-export POSTGRES_URL="postgres://user:password@host:port/db"
-
-# ✅ SIEMPRE limpiar después de usar
-unset POSTGRES_URL
-
-# ✅ SIEMPRE validar .gitignore
-echo ".env.production" >> .gitignore
-
-# ✅ SIEMPRE verificar seguridad
-grep -r "postgres://.*:.*@" . --exclude-dir=.git || echo "✅ Secure"
-
-# ✅ SIEMPRE verificar Storybook corriendo (solicitar al usuario si no está activo)
-curl http://localhost:6006 || echo "Por favor, inicia Storybook con: pnpm storybook"
-
-# ✅ SIEMPRE usar MCP para componentes
-const docs = await get-documentation({ component: 'Button' });
-```
-
-### 10.6. Flujo de Emergencia (Si se exponen credenciales)
-
-#### 10.6.1. Acciones Inmediatas
-```bash
-# 1. Revocar credenciales expuestas
-vercel open  # → Storage → Postgres → rpm-db → Reset credentials
-
-# 2. Eliminar archivos con credenciales
-rm .env.production
-git add .gitignore
-git commit -m "security: Add .env.production to .gitignore"
-
-# 3. Limpiar historial (si necesario)
-git filter-branch --force --index-filter \
-'git rm --cached --ignore-unmatch script_with_credentials.sh' --prune-empty --tag-name-filter cat -- --all
-
-# 4. Forzar push
-git push origin main --force-with-lease
-```
-
-#### 10.6.2. Verificación Post-Emergencia
-```bash
-# Verificar que no queden credenciales
-grep -r "postgres://.*:.*@" . --exclude-dir=.git --exclude-dir=node_modules
-
-# Verificar health check con nuevas credenciales
-curl https://rpm-wheat.vercel.app/api/health/db
-
-# Verificar que variables estén actualizadas
-vercel env ls
-
-# Verificar Storybook funcionando (solicitar al usuario si no está activo)
-curl http://localhost:6006 || echo "Por favor, inicia Storybook con: pnpm storybook"
-
-# Verificar MCP funcionando
-curl http://localhost:6006/mcp
-```
+**Flujo de emergencia:** Revocar credenciales, eliminar archivos, limpiar historial, forzar push
 
 ---
 
 # 📋 Specification File Rules - Semáforo de Implementación
 
-## REGLA FUNDAMENTAL: Toda SPEC debe incluir semáforo
+**OBLIGATORIO**: Cada archivo en `/specs/` debe incluir un semáforo en la primera línea.
 
-**OBLIGATORIO**: Cada archivo en `/specs/` debe incluir un semáforo en la primera línea que indique el estado de implementación.
+**🚦 Convención:**
+- 🟢 = Completamente implementado (100%)
+- 🟡 = Parcialmente implementado (en progreso)
+- 🔴 = No iniciado (0%)
 
-### 🚦 Convención de Semáforos
+**Ubicación:** Primera línea del archivo, antes del título
 
-```markdown
-🟢 = Completamente implementado (100%)
-🟡 = Parcialmente implementado (en progreso)
-🔴 = No iniciado (0%)
-```
-
-### 📍 Ubicación y Formato
-
-**SIEMPRE** en la primera línea del archivo, antes del título:
-
-```markdown
-# 🟢 System Specification
-
-## Overview
-...
-```
-
-### ✅ Checklist de Implementación
-
-Al crear o modificar una spec, verificar:
-- [ ] Semáforo en primera línea
-- [ ] Indica estado correcto (🟢🟡🔴)
-- [ ] Estado actualizado si hay cambios
-- [ ] Título H1 después del semáforo
-
-### 📝 Ejemplos
-
-**Spec completamente implementada:**
-```markdown
-# 🟢 Components Architecture
-
-## Overview
-Sistema de componentes modular...
-```
-
-**Spec en progreso:**
-```markdown
-# 🟡 Real-time Architecture
-
-## Overview
-Sistema de actualizaciones en tiempo real...
-```
-
-**Spec no iniciada:**
-```markdown
-# 🔴 Advanced Analytics
-
-## Overview
-Sistema de análisis de datos...
-```
-
-### ⚠️ Consecuencias
-
-Specs sin semáforo serán rechazadas en PR review.
+**Consecuencias:** Specs sin semáforo serán rechazadas en PR review.
 
 ---
 
 # 🚀 Metodología de Ejecución del Roadmap
 
-**Trigger**: Usuario dice *"continuemos con la implementacion del roadmap"*
+**Trigger:** Usuario dice *"continuemos con la implementacion del roadmap"*
 
-## Fase 1: Análisis + División Inteligente (Autónoma)
+**Fase 1: Análisis + División Inteligente**
+- Git check: Verificar branch, si !main → checkout main + pull
+- Scope analysis: Identificar siguiente [ ] pendiente, analizar complejidad (objetivo ≤5 archivos, 10-30 min)
+- Si scope amplio → División automática en pasos de ≤5 archivos, presentar división al usuario
 
-```yaml
-1. Git Check:
-   - Verificar: git branch --show-current
-   - Si !main → git checkout main && git pull origin main
+**Fase 2: Propuesta Técnica**
+- Formato conciso: Paso, Archivos, Riesgos, Cambios clave, Tiempo estimado
+- Esperar aprobación explícita: "ok" | "procede" | "adelante"
 
-2. Scope Analysis:
-   - Leer roadmap: identificar siguiente [ ] pendiente
-   - Análisis de complejidad:
-     ├── Archivos/modules a modificar (objetivo: ≤5)
-     ├── Riesgos técnicos (qué puede fallar)
-     ├── Complejidad de validación (happy path + edge cases)
-     └── Tiempo estimado (objetivo: 10-30 min)
-   
-3. Si scope amplio → División automática (rol Product Lead):
-   - Fraccionar en pasos de ≤5 archivos
-   - Cada paso: testeable y validable aisladamente
-   - Actualizar roadmap con sub-tareas
-   - Presentar división al usuario antes de proceder
-```
+**Fase 3: Implementación**
+- Crear feature branch
+- Implementar cambios con commits atómicos
+- Tests con cobertura ≥80%
+- Verificar: npm test, npx tsc --noEmit
+- Merge a main y push
 
-## Fase 2: Propuesta Técnica (Resumen Conciso)
+**Fase 4: Modo QA**
+- Tests: npm test (≥80% cobertura)
+- Type check: npx tsc --noEmit
+- DB: Queries antes/después con evidencia
+- UI/E2E: Screenshots, flujo completo, responsive, consola 0 errores
+- Evidencia mínima: 3-5 screenshots, 2 queries DB, cobertura tests, consola limpia
 
-Formato (1-2 minutos de lectura):
-```yaml
-├── 🎯 Paso: [Nombre conciso]
-├── 📋 Archivos: [lista de X archivos/modules a tocar]
-├── ⚠️ Riesgos: [qué puede fallar y cómo lo mitigo]
-├── 🏗️ Cambios clave: [2-3 líneas por archivo]
-└── ⏱️ Tiempo estimado: [X minutos]
-
-Esperar explícitamente: "ok" | "procede" | "adelante"
-```
-
-## Fase 3: Implementación (Autónoma)
-
-```yaml
-Flujo Git:
-1. Crear feature branch: git checkout -b feature/[nombre-del-paso]
-2. Implementar cambios
-3. Commits atómicos descriptivos
-4. Tests con cobertura ≥80% (incluidos)
-5. Verificar en rama feature:
-   - npm test
-   - npx tsc --noEmit
-6. Merge a main:
-   - git checkout main
-   - git pull origin main
-   - git merge feature/[nombre-del-paso]
-   - git push origin main
-```
-
-## Fase 4: Modo QA (Automático + Exhaustivo)
-
-**Herramientas disponibles**:
-- **DB**: `.env.local` (DATABASE_URL) para queries antes/después
-- **E2E**: Puppeteer MCP para validación UI completa
-
-```yaml
-Validación Rápida pero Completa:
-
-□ Tests: npm test (≥80% cobertura)
-□ Type check: npx tsc --noEmit
-□ DB (queries antes/después con evidencia):
-   - Query registros pre-acción
-   - Ejecutar operación
-   - Query registros post-acción
-   - Verificar integridad referencial
-□ UI/E2E (Puppeteer):
-   - Screenshot estado inicial
-   - Ejecutar flujo completo
-   - Screenshot estados intermedios
-   - Screenshot estado final
-   - Validar responsive (mobile/desktop)
-   - Verificar consola: 0 errores/warnings
-□ Edge cases identificados en análisis
-
-Evidencia mínima requerida:
-├── 📸 3-5 screenshots clave
-├── 🗃️ 2 queries DB (before/after)
-├── ✅ Cobertura tests: X%
-└── 📝 Consola: errores=0
-```
-
-**Resultado QA**:
-- ✅ **PASS**: Informe con evidencia → Listo para siguiente
-- ❌ **FAIL**: Fixes inmediatos → Re-ejecución QA
-
-## Principios
-
-1. **Autonomía**: Yo ejecuto, tú solo das "ok" inicial
-2. **Velocidad**: Pasos de minutos, no días
-3. **Contención**: ≤5 archivos, riesgos analizados previamente
-4. **Evidencia**: QA meticuloso con capturas y logs
-5. **División inteligente**: Si el scope es amplio, actúo como Product Lead y propongo división
+**Principios:** Autonomía, velocidad, contención ≤5 archivos, evidencia meticulosa, división inteligente
 
 ---
 
-# 🗄️ Estrategia Prisma v7 - Migraciones y Database
+# 🏗️ Arquitectura de Servicios
 
-## CONFIGURACIÓN OFICIAL PRISMA v7
+**REGLA FUNDAMENTAL:** Servicios como funciones puras reutilizables en `lib/services/`, diseñadas para API y Agent Tools.
 
-Prisma v7 requiere `prisma.config.ts` en la raíz del proyecto usando `defineConfig` desde `prisma/config`.
+**❌ PROHIBIDO:** Lógica de negocio directamente en API routes o controllers
 
-### 1. Estructura de Archivos
+**✅ OBLIGATORIO:**
+- Funciones puras con params y output tipados
+- Servicios en `lib/services/`
+- Sin acoplamiento a HTTP (Request/Response)
+- Sin estado (stateless)
+- Documentación JSDoc
+- Sin duplicación de lógica
 
-```
-prisma.config.ts              # ← RAÍZ del proyecto (obligatorio)
-prisma/
-├── schema.prisma             # Sin 'url' en datasource
-├── seed.ts                   # Seed oficial de Prisma
-└── migrations/
-    ├── 001_init_auth_tables/
-    │   └── migration.sql
-    └── 002_add_products_and_categories/
-        └── migration.sql
-```
-
-### 2. Configuración prisma.config.ts (RAÍZ)
-
-```typescript
-import "dotenv/config";
-import { defineConfig, env } from "prisma/config";
-
-export default defineConfig({
-  schema: "prisma/schema.prisma",
-  migrations: {
-    path: "prisma/migrations",
-    seed: "tsx prisma/seed.ts",
-  },
-  datasource: {
-    url: env("DATABASE_URL"),
-  },
-});
-```
-
-### 3. schema.prisma
-
-```prisma
-datasource db {
-  provider = "postgresql"
-}
-
-generator client {
-  provider = "prisma-client"
-  output   = "../generated"
-}
-```
-
-### 4. lib/prisma.ts - Cliente con Adapter
-
-```typescript
-import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient } from '../generated/client';
-
-const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL,
-});
-
-export const prisma = new PrismaClient({ adapter });
-```
-
-### 5. Flujo Local (Desarrollo Docker)
-
-```bash
-# 1. Verificar PostgreSQL corriendo
-docker-compose up -d postgres
-
-# 2. Asegurar .env existe con DATABASE_URL
-cat .env | grep DATABASE_URL
-
-# 3. Generar Prisma Client
-npx prisma generate
-
-# 4. Aplicar migraciones
-npx prisma migrate deploy
-
-# 5. Ejecutar seed
-npx prisma db seed
-
-# 6. Iniciar desarrollo
-pnpm dev
-```
-
-**⚠️ IMPORTANTE:** Prisma v7 lee automáticamente `.env`. Asegúrate de tener DATABASE_URL configurado.
-
-### 6. Flujo Vercel (Producción)
-
-**Build Command:**
-```bash
-npx prisma migrate deploy && next build
-```
-
-**Variables de Entorno:**
-- `DATABASE_URL` - URL de PostgreSQL (Vercel Postgres)
-
-### 7. Crear Nueva Migración (Prisma CLI)
-
-```bash
-# Crear migración vacía para completar manualmente
-mkdir prisma/migrations/003_add_customers
-
-# Escribir migration.sql
-cat > prisma/migrations/003_add_customers/migration.sql << 'EOF'
--- CreateTable
-CREATE TABLE "customer" (
-    "id" TEXT NOT NULL,
-    "name" TEXT NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-    CONSTRAINT "customer_pkey" PRIMARY KEY ("id")
-);
-EOF
-
-# Aplicar migración (asegúrate de tener .env con DATABASE_URL)
-npx prisma migrate deploy
-```
-
-### 8. Variables de Entorno
-
-**Template:**
-- `/.env.sample` - Plantilla con todas las variables necesarias
-
-**Desarrollo:**
-1. Copiar `.env.sample` a `.env`:
-   ```bash
-   cp .env.sample .env
-   ```
-2. Ajustar valores según tu configuración local
-
-**Vercel (Producción):**
-- Configurar `DATABASE_URL` en el panel de Variables de Entorno de Vercel
-
-### 9. Comandos Prisma CLI
-
-| Comando | Descripción |
-|---------|-------------|
-| `npx prisma generate` | Generar cliente TypeScript |
-| `npx prisma migrate deploy` | Aplicar migraciones pendientes |
-| `npx prisma migrate status` | Ver estado de migraciones |
-| `npx prisma db seed` | Ejecutar seed.ts |
-| `npx prisma studio` | Abrir Prisma Studio |
-
-## ⚠️ REGLAS OBLIGATORIAS
-
-1. **SIEMPRE** colocar `prisma.config.ts` en la RAÍZ del proyecto
-2. **NUNCA** agregar `url` al `datasource` en `schema.prisma`
-3. **SIEMPRE** usar `npx prisma migrate deploy` para aplicar migraciones
-4. **SIEMPRE** usar `npx prisma db seed` para el seed
-5. **NUNCA** usar scripts manuales de migración
-
-## Referencias
-
-- [Prisma v7 Upgrade Guide](https://www.prisma.io/docs/guides/upgrade-prisma-orm/v7)
-- `prisma.config.ts` - Configuración oficial
-- `prisma/seed.ts` - Seed nativo de Prisma
-
-# 🏗️ Arquitectura de Servicios - BFF & Agent Tools
-
-## ✅ REGLA FUNDAMENTAL: Servicios como Funciones Puras Reutilizables
-
-**Todos los servicios de negocio deben implementarse como funciones TypeScript puras en `lib/services/`, diseñadas para ser reutilizables por:**
-
-- **Controllers de API** (Next.js API Routes)
-- **Tools del Agente IA** (RPM Bot / LLM Tools)
-
-**❌ PROHIBIDO: Lógica de negocio directamente en API routes o controllers**
-
-```typescript
-// ❌ MAL: Lógica de negocio inline en API route
-export async function POST(request: Request) {
-  const body = await request.json();
-  
-  // ❌ Esto es lógica de negocio que debería estar en un servicio
-  const result = await prisma.supplier.create({...}); 
-  
-  return Response.json(result);
-}
-
-// ✅ BIEN: Controller delega a servicio
-import { createSupplier, getSupplierByName } from '@/lib/services/supplierService';
-
-export async function POST(request: Request) {
-  const body = await request.json();
-  
-  // ✅ El controller solo valida y delega
-  if (!body.name) return Response.json({ error: 'Nombre requerido' }, { status: 400 });
-  
-  const existing = await getSupplierByName(body.name);
-  if (existing) return Response.json({ error: 'Ya existe' }, { status: 409 });
-  
-  const supplier = await createSupplier(body);
-  return Response.json({ supplier }, { status: 201 });
-}
-```
-
-**📋 Estructura de un Servicio Reutilizable:**
-
-```typescript
-// lib/services/supplierService.ts
-import { prisma } from '@/lib/prisma';
-
-// Input tipado
-export interface CreateSupplierInput {
-  name: string;
-  contactName?: string;
-  phone?: string;
-  email?: string;
-  address?: string;
-  notes?: string;
-}
-
-// Servicio como función pura - reutilizable por API y Tools
-export async function createSupplier(input: CreateSupplierInput): Promise<Supplier> {
-  const supplier = await prisma.supplier.create({
-    data: {
-      id: nanoid(),
-      name: input.name,
-      contactName: input.contactName || null,
-      phone: input.phone || null,
-      email: input.email || null,
-      address: input.address || null,
-      notes: input.notes || null,
-      isActive: true,
-    },
-    include: { _count: { select: { products: true } } },
-  });
-
-  return { ...supplier, productCount: supplier._count.products };
-}
-```
-
-**⚠️ REGLAS OBLIGATORIAS:**
-
-1. **SIEMPRE** usar funciones puras con params y output tipados
-2. **SIEMPRE** colocar servicios en `lib/services/` (nunca en controllers)
-3. **NUNCA** acoplar servicios a objetos HTTP (Request/Response)
-4. **SIEMPRE** mantener servicios sin estado (stateless)
-5. **SIEMPRE** documentar params y output con JSDoc
-6. **NUNCA** duplicar lógica de negocio entre controllers y tools
-
----
-
-## Estructura de Directorios
-
-Todos los servicios de negocio deben implementarse como **funciones TypeScript con responsabilidad única**, diseñadas para ser reutilizables tanto en:
-- **Controllers de API** (Next.js API Routes)
-- **Tools del Agente IA** (RPM Bot / LLM Tools)
-
-### Estructura de un Servicio
-
-```typescript
-// lib/services/productService.ts
-import { prisma } from '@/lib/prisma';
-
-// Input tipado
-interface GetProductsParams {
-  categoryId?: string;
-  isActive?: boolean;
-  lowStock?: boolean;
-  search?: string;
-}
-
-// Output tipado
-interface GetProductsOutput {
-  products: Product[];
-  total: number;
-  lowStockCount: number;
-}
-
-// Servicio como función pura
-export async function getProducts(params: GetProductsParams): Promise<GetProductsOutput> {
-  const where: Prisma.ProductWhereInput = {};
-  
-  if (params.categoryId) where.categoryId = params.categoryId;
-  if (params.isActive !== undefined) where.isActive = params.isActive;
-  if (params.lowStock) where.stock = { lte: { minStock: true } };
-  if (params.search) {
-    where.OR = [
-      { name: { contains: params.search, mode: 'insensitive' } },
-      { sku: { contains: params.search, mode: 'insensitive' } },
-    ];
-  }
-  
-  const [products, total, lowStockCount] = await Promise.all([
-    prisma.product.findMany({ where, include: { category: true } }),
-    prisma.product.count({ where }),
-    prisma.product.count({ where: { stock: { lte: { minStock: true } } } }),
-  ]);
-  
-  return { products, total, lowStockCount };
-}
-```
-
-### Uso en API Controller
-
-```typescript
-// app/api/products/route.ts
-import { getProducts } from '@/lib/services/productService';
-
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  
-  const result = await getProducts({
-    categoryId: searchParams.get('categoryId') || undefined,
-    search: searchParams.get('search') || undefined,
-    lowStock: searchParams.get('lowStock') === 'true',
-  });
-  
-  return Response.json(result);
-}
-```
-
-### Uso en Agent Tool
-
-```typescript
-// lib/agent-tools/productTools.ts
-import { getProducts } from '@/lib/services/productService';
-import { z } from 'zod';
-
-export const productTools = {
-  get_products: {
-    description: 'Obtiene lista de productos del inventario',
-    parameters: z.object({
-      categoryId: z.string().optional().describe('Filtrar por categoría'),
-      search: z.string().optional().describe('Buscar por nombre o SKU'),
-      lowStock: z.boolean().optional().describe('Solo productos con stock bajo'),
-    }),
-    execute: async (params) => {
-      const result = await getProducts(params);
-      return {
-        content: result.products.map(p => ({
-          id: p.id,
-          name: p.name,
-          stock: p.stock,
-          price: p.salePrice,
-          category: p.category?.name,
-        })),
-      };
-    },
-  },
-};
-```
-
-## Reglas de Diseño
-
-### 1. **Single Responsibility**
-```typescript
-// ✅ BIEN: Una función, una responsabilidad
-export async function createProduct(params: CreateProductParams): Promise<Product>
-export async function updateProductStock(params: UpdateStockParams): Promise<Product>
-export async function deactivateProduct(id: string): Promise<void>
-
-// ❌ MAL: Múltiples responsabilidades
-export async function manageProduct(action: string, data: any) // No tipado, no reusable
-```
-
-### 2. **Input/Output Tipado Estricto**
-```typescript
-// ✅ BIEN: Interfaces explícitas
-interface UpdateStockParams {
-  productId: string;
-  quantity: number;
-  operation: 'add' | 'subtract' | 'set';
-  reason?: string;
-}
-
-interface UpdateStockOutput {
-  product: Product;
-  previousStock: number;
-  newStock: number;
-}
-
-// ❌ MAL: any o tipos implícitos
-async function updateStock(data: any) // No reusable
-```
-
-### 3. **Sin Dependencia de HTTP/Request**
-```typescript
-// ✅ BIEN: Servicio puro, sin acoplamiento a HTTP
-export async function createInvoice(params: CreateInvoiceParams): Promise<Invoice>
-
-// ❌ MAL: Acoplado a Request
-export async function createInvoice(req: NextRequest) // No reusable en Agent
-```
-
-### 4. **Manejo de Errores Consistente**
-```typescript
-// ✅ BIEN: Errores tipados y predecibles
-export class ServiceError extends Error {
-  constructor(
-    message: string,
-    public code: string,
-    public statusCode: number
-  ) {
-    super(message);
-  }
-}
-
-// Uso
-if (!product) {
-  throw new ServiceError('Producto no encontrado', 'NOT_FOUND', 404);
-}
-```
-
-## Directorio de Servicios
-
+**Estructura:**
 ```
 lib/
-├── services/
-│   ├── productService.ts      # CRUD productos + stock
-│   ├── categoryService.ts     # CRUD categorías
-│   ├── invoiceService.ts       # Facturación AFIP
-│   ├── customerService.ts      # Clientes (Fase 2)
-│   ├── workOrderService.ts     # Órdenes de trabajo (Fase 2)
-│   └── index.ts               # Re-exports
-├── agent-tools/
-│   ├── productTools.ts        # Tools para LLM
-│   ├── invoiceTools.ts
-│   └── index.ts
-└── api/
-    └── controllers/           # Usan los mismos servicios
-```
-
-## Ejemplo: Flujo Completo
-
-**Caso: Consultar stock y actualizar**
-
-```typescript
-// 1. Servicio reutilizable
-// lib/services/productService.ts
-export async function checkAndUpdateStock(
-  params: CheckStockParams
-): Promise<StockCheckResult> {
-  const product = await prisma.product.findUnique({
-    where: { id: params.productId },
-  });
-  
-  if (!product) throw new ServiceError('Producto no encontrado', 'NOT_FOUND', 404);
-  
-  const hasStock = product.stock >= params.requiredQuantity;
-  
-  if (hasStock && params.reserve) {
-    await prisma.product.update({
-      where: { id: params.productId },
-      data: { stock: { decrement: params.requiredQuantity } },
-    });
-  }
-  
-  return {
-    productId: product.id,
-    available: product.stock,
-    requested: params.requiredQuantity,
-    canFulfill: hasStock,
-    reserved: hasStock && params.reserve,
-  };
-}
-
-// 2. Uso en API (Venta desde mostrador)
-// app/api/sales/route.ts
-export async function POST(req: Request) {
-  const { items } = await req.json();
-  
-  for (const item of items) {
-    const stockCheck = await checkAndUpdateStock({
-      productId: item.productId,
-      requiredQuantity: item.quantity,
-      reserve: true, // Reservar stock
-    });
-    
-    if (!stockCheck.canFulfill) {
-      return Response.json({ 
-        error: `Stock insuficiente para ${item.productId}` 
-      }, { status: 400 });
-    }
-  }
-  
-  // Continuar con la venta...
-}
-
-// 3. Uso en Agent Tool (Bot verifica disponibilidad)
-// lib/agent-tools/productTools.ts
-export const productTools = {
-  check_stock_availability: {
-    description: 'Verifica si hay stock disponible para un producto',
-    parameters: z.object({
-      productId: z.string(),
-      quantity: z.number().positive(),
-    }),
-    execute: async (params) => {
-      const result = await checkAndUpdateStock({
-        productId: params.productId,
-        requiredQuantity: params.quantity,
-        reserve: false, // Solo consultar, no reservar
-      });
-      
-      return {
-        content: result.canFulfill 
-          ? `✅ Hay ${result.available} unidades disponibles`
-          : `❌ Stock insuficiente. Solo ${result.available} unidades disponibles, se necesitan ${result.requested}`,
-      };
-    },
-  },
-};
-```
-
-## ⚠️ REGLAS OBLIGATORIAS
-
-1. **SIEMPRE** usar funciones puras con params y output tipados
-2. **SIEMPRE** colocar servicios en `lib/services/`
-3. **NUNCA** acoplar servicios a objetos HTTP (Request/Response)
-4. **SIEMPRE** mantener servicios sin estado (stateless)
-5. **SIEMPRE** documentar params y output con JSDoc
-
----
-
-## Referencias
-
-- `lib/services/` - Directorio de servicios de negocio
-- `lib/agent-tools/` - Tools para LLM que reutilizan servicios
-- `/specs/bot.md` - Arquitectura del RPM Bot (Fase 2)
-
----
-
-# 📚 Especificaciones del Sistema - Guía de Referencia
-
-## Tabla de Especificaciones Disponibles
-
-| Especificación | Archivo | Cuándo Leer ANTES de Modificar/Crear | Casos de Uso Principales |
-|----------------|---------|--------------------------------------|--------------------------|
-| **Especificación del Sistema** | `SYSTEM_SPEC.md` | 🚨 **SIEMPRE** - Antes de CUALQUIER cambio | Arquitectura general, principios, dominio de negocio |
-| **API y Endpoints** | `api.md` | 📡 **Endpoints nuevos/modificados** | Contratos HTTP, validaciones, responses |
-| **UI Architecture Admin** | `ui-architecture-adm.md` | 🎨 **Componentes admin (`/adm`)** | Formularios, tablas, modales, layout admin |
-| **UI Architecture Público** | `ui-architecture-public.md` | 🌐 **Componentes públicos (`/`)** | Landing pages, catálogo, marketing |
-| **UI Architecture General** | `ui-architecture.md` | 🧩 **Componentes reutilizables** | Decisiones generales, índice de referencia |
-| **Base de Datos** | `database.md` | 🗄️ **Cambios en datos/migraciones** | Schema, relaciones, migraciones Prisma |
-| **Arquitectura de Datos** | `data-architecture.md` | 📊 **Flujo de datos** | ETL, caching, sincronización |
-| **Autenticación** | `auth.md` | 🔐 **Login/permisos** | Usuarios, roles, sesiones, OAuth |
-| **Componentes UI** | `components.md` | 🧩 **Nuevos componentes** | Creación, estandarización, testing |
-| **Business Domain** | `business-domain.md` | 💼 **Lógica de negocio** | Reglas, procesos, entidades del dominio |
-| **Core Architecture** | `core.md` | 🏗️ **Arquitectura central** | Patrones, principios, decisiones técnicas |
-| **Layout** | `layout.md` | 📐 **Estructura visual** | Grids, responsive, composición |
-| **Scalability** | `scalability.md` | 📈 **Performance/carga** | Optimización, arquitectura escalable |
-| **Vercel Deployment** | `vercel-deployment.md` | 🚀 **Deploy/producción** | Configuración, variables, CI/CD |
-| **Checklist CRUD** | `checklist-crud-implementation.md` | ✅ **CRUD operations** | Validación completa de implementaciones CRUD |
-| **AFIP Integration** | `afip-integration.md` | 🏛️ **Facturación electrónica** | Conexión AFIP, facturas, comprobantes |
-| **Bot Architecture** | `bot.md` | 🤖 **RPM Bot/Agentes** | Tools, LLM, automatización |
-| **GER Formatting** | `ger-formatting.md` | 📄 **Formato de facturas** | Plantillas GER, diseño de facturas |
-| **Inventory & Sales** | `inventory-sales.md` | 📦 **Gestión de stock** | Movimientos, inventario, ventas |
-| **Public Web** | `public-web.md` | 🌍 **Sitio web público** | Marketing, SEO, contenido |
-| **Suppliers** | `suppliers.md` | 🏪 **Gestión de proveedores** | CRUD, relaciones, integración |
-| **Workshop** | `workshop.md` | 👥 **Workshops/onboarding** | Guías de aprendizaje, training |
-| **Implementation Roadmap** | `implementation-roadmap.md` | 🗺️ **Plan de implementación** | Prioridades, fases, roadmap |
-| **PLAN** | `PLAN.md` | 📋 **Planificación general** | Objetivos, estrategia, timeline |
-
-## 🔍 Flujo Obligatorio de Consulta de Specs
-
-### Antes de CUALQUIER Modificación/Creación
-
-1. **Identificar el tipo de cambio** que vas a realizar
-2. **Consultar la tabla** para encontrar la spec relevante
-3. **LEER la spec completa** ANTES de escribir código
-4. **Seguir las reglas documentadas** en la spec
-5. **Actualizar la spec** si introduces nuevos patrones
-
-### Ejemplos Prácticos
-
-#### 🎨 Crear nuevo componente admin
-```
-1. Cambio: Nuevo formulario de productos
-2. Spec a leer: ui-architecture-adm.md
-3. Verificar: Reglas de formularios, validaciones, NativeSelect
-4. Implementar: Siguiendo patrones documentados
-5. Actualizar: Si introduces nuevos campos o validaciones
-```
-
-#### 📡 Crear nuevo endpoint API
-```
-1. Cambio: POST /api/invoices
-2. Spec a leer: api.md
-3. Verificar: Contratos HTTP, status codes, responses
-4. Implementar: Siguiendo estándares de la spec
-5. Actualizar: Documentar nuevo endpoint
-```
-
-#### 🗄️ Modificar schema de DB
-```
-1. Cambio: Agregar tabla customers
-2. Spec a leer: database.md
-3. Verificar: Convenciones de naming, relaciones
-4. Implementar: Crear migración según spec
-5. Actualizar: Actualizar schema documentation
-```
-
-#### 🧩 Componente reutilizable
-```
-1. Cambio: Nuevo DataTable component
-2. Spec a leer: ui-architecture.md + components.md
-3. Verificar: Props, testing, Storybook
-4. Implementar: Componente genérico
-5. Actualizar: Documentar nuevo componente
-```
-
-## ⚠️ REGLAS CRÍTICAS
-
-### 🚨 PROHIBIDO Implementar Sin Leer Specs
-
-- **❌** Crear componentes sin revisar `ui-architecture-*.md`
-- **❌** Modificar API sin leer `api.md`
-- **❌** Cambiar DB sin consultar `database.md`
-- **❌** Implementar auth sin revisar `auth.md`
-- **❌** Añadir nuevas features sin leer `business-domain.md`
-
-### ✅ OBLIGATORIO Seguir Este Flujo
-
-1. **Identificar** → **Consultar tabla** → **Leer spec** → **Implementar** → **Actualizar spec**
-
-2. **Si no existe spec relevante** → Crearla PRIMERO → Luego implementar
-
-3. **Si la spec está desactualizada** → Actualizarla PRIMERO → Luego implementar
-
-4. **Si hay conflicto entre specs** → Consultar `SYSTEM_SPEC.md` → Aclarar con usuario
-
-## 🔄 Mantenimiento de Especificaciones
-
-### Actualización Automática
-
-Cuando implementes algo nuevo:
-- **Actualiza la spec correspondiente** inmediatamente
-- **Agrega nuevos patrones** discovered durante la implementación
-- **Documenta decisiones** de diseño tomadas
-- **Mantén sincronización** entre código y documentación
-
-### Validación Cruzada
-
-- **Verifica que tu implementación** siga TODAS las reglas de la spec
-- **Asegura consistencia** con componentes existentes
-- **Confirma que no violas** principios de `SYSTEM_SPEC.md`
-- **Valida integración** con specs relacionadas
-
----
-
-# 🧩 Arquitectura de Componentes - UI
-
-## Principio Fundamental: Separación para Testabilidad
-
-**La razón principal de separar componentes es poder TESTEARLOS aisladamente.**
-
-### ❌ PROHIBIDO: Componentes inline en páginas
-
-```typescript
-// ❌ MAL: Formulario de 150 líneas inline en page.tsx
-export default function ProductsPage() {
-  const [formData, setFormData] = useState({...});
-  // ... 150 líneas más de lógica y JSX
-  return (
-    <form>
-      {/* Campos, validaciones, handlers todo mezclado */}
-    </form>
-  );
-}
-```
-
-**Problemas:**
-- No se puede testear unitariamente el formulario
-- La página tiene múltiples responsabilidades (data fetching + UI + form logic)
-- Duplicación de código si el mismo formulario se necesita en otro lugar
-- Tests E2E son la única opción (lentos y frágiles)
-
-### ✅ OBLIGATORIO: Componentes separados y testeables
-
-```typescript
-// ✅ BIEN: Componente separado en components/products/ProductForm.tsx
-export interface ProductFormProps {
-  formData: ProductFormData;
-  setFormData: (data: ProductFormData) => void;
-  categories: Category[];
-  onSubmit?: (e: FormEvent) => void;
-}
-
-export function ProductForm({ formData, setFormData, categories, onSubmit }: ProductFormProps) {
-  return (
-    <form onSubmit={onSubmit}>
-      {/* JSX puro, sin lógica de negocio */}
-    </form>
-  );
-}
-
-// ✅ BIEN: Página simple que importa y usa el componente
-import { ProductForm } from '@/components/products/ProductForm';
-
-export default function ProductsPage() {
-  // Solo responsabilidad: data fetching y composition
-  return (
-    <ProductForm 
-      formData={formData}
-      setFormData={setFormData}
-      categories={categories}
-      onSubmit={handleSubmit}
-    />
-  );
-}
-```
-
-**Beneficios:**
-- ✅ Tests unitarios rápidos para ProductForm
-- ✅ Tests de integración para ProductsPage
-- ✅ Reutilización en otras páginas
-- ✅ Responsabilidad única clara
-
-### Reglas de Organización
-
-| Tipo | Ubicación | Test Strategy |
-|------|-----------|---------------|
-| **UI Components** | `components/ui/*.tsx` | Unit tests + Storybook |
-| **Feature Components** | `components/[feature]/*.tsx` | Unit tests + Integration |
-| **Page Components** | `app/**/page.tsx` | Integration/E2E tests |
-| **Layout Components** | `components/layout/*.tsx` | Visual regression |
-
-### Criterios para Extraer Componente
-
-Extraer a archivo propio cuando:
-- ✅ **Testabilidad**: Necesita tests unitarios aislados
-- ✅ **Complejidad**: Más de 20 líneas de JSX o lógica de estado
-- ✅ **Reutilización**: Se usa en más de una página
-- ✅ **Responsabilidad única**: Hace una sola cosa bien definida
-
-### Límites de Complejidad
-
-| Métrica | Page | Feature Component |
-|---------|------|-------------------|
-| Líneas de código | ≤150 | ≤300 |
-| Props | ≤5 | ≤15 |
-| Hooks (useState/useEffect) | ≤3 | ≤8 |
-| Nesting JSX | ≤2 niveles | ≤4 niveles |
-
-### Testing Strategy por Tipo
-
-```typescript
-// UI Component (Button, Input, etc.)
-// → Unit tests + Storybook stories
-
-// Feature Component (ProductForm, CategoryList, etc.)  
-// → Unit tests con mocks + Integration tests
-
-// Page Component (ProductsPage, CategoriesPage, etc.)
-// → Integration tests + E2E tests críticos
+├── services/        # Funciones puras reutilizables
+├── agent-tools/     # Tools para LLM que reutilizan servicios
+└── api/controllers/ # Usan los mismos servicios
 ```
 
 ---
 
-## Documentación de Decisiones de Diseño UI
+# 📚 Especificaciones del Sistema
 
-### ✅ OBLIGATORIO: Documentar en specs correspondientes
+**Flujo obligatorio antes de CUALQUIER modificación:**
+1. Identificar tipo de cambio
+2. Consultar tabla para encontrar spec relevante
+3. LEER spec completa ANTES de escribir código
+4. Seguir reglas documentadas
+5. Actualizar spec si introduces nuevos patrones
 
-**Todas las decisiones de diseño UI deben documentarse según el área:**
+**🚨 PROHIBIDO implementar sin leer specs**
 
-| Área | Archivo Spec | Qué Documentar |
-|------|--------------|----------------|
-| **Admin** | `@[specs/ui-architecture-adm.md]` | Formularios admin, tablas, modales, layout `/adm` |
-| **Público** | `@[specs/ui-architecture-public.md]` | Landing pages, catálogo, marketing, sitio web |
-| **Ambos** | `@[specs/ui-architecture.md]` | Decisiones generales, índice de referencia |
-
-**Incluir siempre:**
-- Cambios en campos de formularios (obligatorios vs opcionales)
-- Reorganización de layouts
-- Cambios en validaciones
-- Nuevos patrones de UX
-- Decisiones de color, tipografía, espaciado
-- Cambios en flujos de usuario
-
-### 🔍 CONSULTAR CONSTANTEMENTE la especificación
-
-**Antes de crear o modificar UI, revisar la spec correspondiente:**
-
-- **¿Es admin (`/adm`)?** → Leer `@[specs/ui-architecture-adm.md]`
-- **¿Es público (`/`)?** → Leer `@[specs/ui-architecture-public.md]`
-- **¿No estás seguro?** → Empezar con `@[specs/ui-architecture.md]` (índice)
-
-```
-FLUJO OBLIGATORIO:
-1. Identificar área (admin vs público)
-2. Consultar `@[specs/ui-architecture.md]` para confirmar qué spec leer
-3. Leer la spec específica (adm.md o public.md)
-4. Implementar siguiendo las reglas documentadas
-5. Actualizar la spec si hay nuevas decisiones
-6. Commit con referencia a la spec actualizada
-```
-
-### ❌ PROHIBIDO: Implementar sin consultar specs
-
-**Nunca crear o modificar UI sin antes revisar la especificación correcta.** Esto evita:
-- Inconsistencias con decisiones previas
-- Regresiones en UX
-- Mezclar patrones de admin en público o viceversa
-- Duplicación de reglas contradictorias
-- Desviaciones de los estándares del proyecto
-
-### Ejemplos de Decisiones a Documentar
-
-| Tipo de Cambio | Área | Qué Documentar | Dónde |
-|----------------|------|------------------|-------|
-| **Formulario Admin** | Admin | Campos obligatorios, validaciones, orden | `ui-architecture-adm.md` |
-| **Layout Público** | Público | Hero sections, grids, CTAs | `ui-architecture-public.md` |
-| **Color Cards** | Admin | `ring-slate-300` para bordes | `ui-architecture-adm.md` |
-| **Catálogo** | Público | Estructura cards, filtros, imágenes | `ui-architecture-public.md` |
-| **Componente Reusable** | Ambos | Props, comportamiento, casos de uso | `ui-architecture.md` |
+**✅ OBLIGATORIO:** Identificar → Consultar tabla → Leer spec → Implementar → Actualizar spec
 
 ---
 
-El **Debug Mode** permite a los agentes de IA y desarrolladores validar la UI sin necesidad de autenticación, facilitando:
-- QA automatizado con Puppeteer MCP
-- Testing visual de componentes
-- Validación de flujos E2E
-- Desarrollo rápido sin configurar OAuth
+# 🧩 Arquitectura de Componentes
 
-## Métodos de Activación
+**Principio:** Separación para testabilidad
 
-### Variable de Entorno (Requerido)
+**❌ PROHIBIDO:** Componentes inline en páginas (no testeable unitariamente)
 
-```bash
-# .env.local
-DEBUG_AUTH="true"
-```
+**✅ OBLIGATORIO:** Componentes separados en `components/[feature]/`
 
-⚠️ **NUNCA usar query parameters** - Solo variable de entorno por seguridad.
+**Reglas de organización:**
+- UI Components: `components/ui/*.tsx` → Unit tests + Storybook
+- Feature Components: `components/[feature]/*.tsx` → Unit + Integration
+- Page Components: `app/**/page.tsx` → Integration/E2E
+- Layout Components: `components/layout/*.tsx` → Visual regression
 
-## Implementación en Código
+**Criterios para extraer:** Testabilidad, >20 líneas JSX, reutilización, responsabilidad única
 
-Ubicación: `proxy.ts` (reemplaza middleware.ts en Next.js 16+)
+**Límites de complejidad:**
+- Page: ≤150 líneas, ≤5 props, ≤3 hooks
+- Feature: ≤300 líneas, ≤15 props, ≤8 hooks
 
-```typescript
-export async function proxy(request: NextRequest) {
-  const pathname = request.nextUrl.pathname;
-  
-  // Debug mode - bypass authentication for testing
-  // ONLY via environment variable - NEVER via query param (security risk)
-  const isDebugMode = process.env.DEBUG_AUTH === 'true';
-  
-  if (isDebugMode) {
-    console.log('[DEBUG] Auth bypass enabled via DEBUG_AUTH env var');
-    return NextResponse.next();
-  }
-  
-  // ... resto de la lógica de auth
-}
-```
-
-## ⚠️ Seguridad Crítica
-
-### NUNCA en Producción
-
-```bash
-# ❌ PROHIBIDO en Vercel/Producción
-vercel env add DEBUG_AUTH production  # NO HACER
-```
-
-### Solo Local/Desarrollo
-
-```bash
-# ✅ Permitido solo en desarrollo local
-DEBUG_AUTH="true"  # .env.local only
-```
-
-### Verificación Automática
-
-```bash
-# Pre-commit hook recomendado
-if grep -q 'DEBUG_AUTH="true"' .env.production 2>/dev/null; then
-  echo "❌ DEBUG_AUTH no debe estar en producción"
-  exit 1
-fi
-```
-
-## Flujo de QA con Debug Mode
-
-```bash
-# 1. Iniciar servidor con debug
-DEBUG_AUTH="true" pnpm dev
-
-# 2. Validar con Puppeteer MCP
-# Navegar a: http://localhost:3000/adm/products?debug=true
-
-# 3. Ejecutar flujo completo
-# - Screenshot inicial
-# - CRUD operations
-# - Validación visual
-# - Screenshot final
-
-# 4. Desactivar debug para tests normales
-unset DEBUG_AUTH
-```
-
-## Variables Relacionadas
-
-| Variable | Valor | Uso | Seguridad |
-|----------|-------|-----|-----------|
-| `DEBUG_AUTH` | `"true"` | Bypass auth en desarrollo local | ⚠️ Solo `.env.local`, NUNCA en producción |
+**Documentación:** Decisiones de diseño UI en specs correspondientes (adm.md, public.md, ui-architecture.md)
 
 ---
 
-## Referencias
+# Debug Mode
 
-- `proxy.ts` - Implementación del debug mode
-- `.env.sample` - Template con variable DEBUG_AUTH
-- Puppeteer MCP - Validación UI automatizada
+**Permite validar UI sin autenticación para QA automatizado.**
+
+**Activación:** Variable de entorno `DEBUG_AUTH="true"` en `.env.local` (NUNCA query parameters)
+
+**Implementación:** `proxy.ts` - bypass auth cuando `process.env.DEBUG_AUTH === 'true'`
+
+**⚠️ Seguridad:** Solo local/desarrollo, NUNCA en producción
+
+**Flujo QA:**
+1. `DEBUG_AUTH="true" pnpm dev`
+2. Validar con Puppeteer MCP
+3. Desactivar: `unset DEBUG_AUTH`
+
+---

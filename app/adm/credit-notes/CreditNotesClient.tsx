@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@tanstack/react-table';
 import { useRouter } from 'next/navigation';
+import { useUI } from '@/components/ui/UIProvider';
 
 interface CreditNote {
   id: string;
@@ -24,11 +25,16 @@ interface CreditNotesClientProps {
 }
 
 export default function CreditNotesClient({ initialCreditNotes }: CreditNotesClientProps) {
+  const { alert, confirm } = useUI();
   const [creditNotes, setCreditNotes] = useState<CreditNote[]>(initialCreditNotes);
   const router = useRouter();
 
   const handleCancel = async (creditNote: CreditNote) => {
-    if (!confirm('Esta seguro de cancelar esta nota de credito? Se revertira el stock, el efectivo y el saldo del cliente.')) {
+    const confirmed = await confirm({
+      title: 'Cancelar Nota de Crédito',
+      description: '¿Está seguro de cancelar esta nota de crédito? Se revertirá el stock, el efectivo y el saldo del cliente.',
+    });
+    if (!confirmed) {
       return;
     }
     try {
@@ -44,7 +50,7 @@ export default function CreditNotesClient({ initialCreditNotes }: CreditNotesCli
       setCreditNotes(prev => prev.map(cn => cn.id === updated.id ? { ...cn, status: updated.status } : cn));
     } catch (e) {
       console.error(e);
-      alert(e instanceof Error ? e.message : 'Error al cancelar');
+      await alert({ title: 'Error', description: e instanceof Error ? e.message : 'Error al cancelar' });
     }
   };
 

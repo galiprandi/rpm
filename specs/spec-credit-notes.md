@@ -1,9 +1,13 @@
 ---
 title: Sistema de Notas de Crédito y Devoluciones
-version: 1.0
+version: 1.1
 date_created: 2026-05-02
+date_updated: 2026-05-04
 owner: RPM Dev Team
 tags: [process, sales, inventory, cash, customer-credit]
+
+## 🟢 Estado de Implementación
+Esta especificación está **completamente implementada**. Ver sección "Estado de Implementación" al final del documento.
 ---
 
 # Introduction
@@ -31,14 +35,17 @@ Proveer un flujo completo y trazable para gestionar devoluciones de clientes, in
 - ✅ Reintegro en efectivo / transferencia (egreso de caja)
 - ✅ Acreditación a cuenta corriente del cliente (`customer.balance` negativo = a favor)
 - ✅ Restablecimiento automático de stock con `stock_movement`
-- ✅ Generación de comprobante `NOTA_CREDITO` en tabla `invoice`
+- ❌ Generación de comprobante `NOTA_CREDITO` en tabla `invoice` (no implementado)
 - ✅ Búsqueda de venta original por número o cliente
+- ✅ Cancelación de notas de crédito emitidas
 
 ### Fuera de alcance
 - ❌ Cambios de producto (swap) — se modela como devolución + nueva venta
 - ❌ Devoluciones sin referencia a venta original
 - ❌ Notas de débito
-- ❌ Integración AFIP en esta fase (el modelo `invoice` queda listo, sin llamada a WS AFIP)
+- ❌ Devoluciones mixtas (parte efectivo, parte cuenta) — solo CASH o ACCOUNT_CREDIT
+- ❌ Integración AFIP en esta fase
+- ❌ Estados DRAFT → ISSUED — las NC se crean directamente en estado ISSUED
 
 ## 2. Definitions
 
@@ -48,7 +55,6 @@ Proveer un flujo completo y trazable para gestionar devoluciones de clientes, in
 | **Venta Original** | La transacción original que se está anulando parcialmente: `direct_sale` o `work_order`. |
 | **Reintegro** | Devolución de dinero al cliente en efectivo o transferencia. |
 | **Acreditación** | Crédito a favor del cliente registrado en `customer.balance` (balance negativo). |
-| **Devolución Mixta** | Parte del monto se reintegra en efectivo y parte se acredita a cuenta corriente. |
 | **Item Devuelto** | Producto o servicio de la venta original que el cliente devuelve. Solo los productos físicos afectan stock. |
 
 ## 3. Requirements, Constraints & Guidelines
@@ -60,12 +66,12 @@ Proveer un flujo completo y trazable para gestionar devoluciones de clientes, in
 - **REQ-003**: Solo se pueden devolver items que existan en la venta original, con cantidad menor o igual a la vendida.
 - **REQ-004**: Para cada item de producto devuelto, el sistema debe aumentar el stock del producto y crear un `stock_movement` de tipo `IN`.
 - **REQ-005**: El total de la nota de crédito se calcula automáticamente como la suma de los items devueltos.
-- **REQ-006**: El usuario debe elegir el destino del reintegro: `CASH`, `ACCOUNT_CREDIT` o `MIXED`, siendo `CASH` el predeterminado.
-- **REQ-007**: Si el destino incluye `CASH`, se debe crear un `cash_movement` de tipo `EXPENSE` con el monto reintegrado.
-- **REQ-008**: Si el destino incluye `ACCOUNT_CREDIT`, se debe decrementar `customer.balance` (hacerlo más negativo = crédito a favor).
-- **REQ-009**: Si el destino es `MIXED`, se deben registrar tanto el egreso de caja como el crédito a cuenta.
+- **REQ-006**: El usuario debe elegir el destino del reintegro: `CASH` o `ACCOUNT_CREDIT`.
+- **REQ-007**: Si el destino es `CASH`, se debe crear un `cash_movement` de tipo `EXPENSE` con el monto reintegrado.
+- **REQ-008**: Si el destino es `ACCOUNT_CREDIT`, se debe decrementar `customer.balance` (hacerlo más negativo = crédito a favor).
+- **REQ-009**: No hay soporte para devoluciones mixtas en esta implementación.
 - **REQ-010**: La caja debe estar abierta para realizar reintegros en efectivo.
-- **REQ-011**: Se debe crear un registro en `invoice` con type `NOTA_CREDITO` vinculado a la venta original.
+- **REQ-011**: No se crea registro en `invoice` en esta implementación (futuro: integración AFIP).
 - **REQ-012**: Toda nota de crédito debe tener trazabilidad completa: quién la creó, cuándo, items devueltos, movimientos de stock y caja generados.
 
 ### Requisitos Técnicos
@@ -90,28 +96,24 @@ Proveer un flujo completo y trazable para gestionar devoluciones de clientes, in
 
 ```prisma
 model credit_note {
-  id                  String          @id @default(cuid())
-  invoiceId           String?         @unique
-  originalSaleId      String          // ID de direct_sale o work_order
-  originalSaleType    String          // 'direct_sale' | 'work_order'
-  customerId          String
-  total               Decimal         @db.Decimal(10, 2)
-  refundMethod        String          // 'CASH' | 'ACCOUNT_CREDIT' | 'MIXED'
-  cashAmount          Decimal?        @db.Decimal(10, 2)
-  accountCreditAmount Decimal?        @db.Decimal(10, 2)
-  refundMethodCode    String?         // CASH, TRANSFER, CARD (solo si refundMethod incluye CASH)
-  status              String          @default("DRAFT") // DRAFT, ISSUED, CANCELLED
-  notes               String?
-  createdAt           DateTime        @default(now())
-  createdBy           String
-
-  items               credit_note_item[]
-  customer            customer        @relation(fields: [customerId], references: [id])
-  invoice             invoice?        @relation(fields: [invoiceId], references: [id])
+  id               String             @id @default(cuid())
+  originalSaleId   String
+  originalSaleType String
+  customerId       String
+  total            Decimal            @db.Decimal(10, 2)
+  refundMethod     String             // 'CASH' | 'ACCOUNT_CREDIT'
+  paymentMethodId  String?
+  status           String             @default("ISSUED") // 'ISSUED' | 'CANCELLED'
+  notes            String?
+  createdAt        DateTime           @default(now())
+  createdBy        String
+  customer         customer           @relation(fields: [customerId], references: [id])
+  paymentMethod    payment_method?    @relation(fields: [paymentMethodId], references: [id])
+  items            credit_note_item[]
 
   @@index([customerId])
   @@index([originalSaleId, originalSaleType])
-  @@index([createdAt])
+  @@index([paymentMethodId])
   @@index([status])
   @@map("credit_note")
 }
@@ -174,19 +176,13 @@ Crea una nueva nota de crédito con todos los efectos (stock, caja, cliente).
 {
   originalSaleId: string;           // ID de direct_sale o work_order
   originalSaleType: 'direct_sale' | 'work_order';
-  customerId: string;
   items: Array<{
     productId?: string;
     serviceId?: string;
-    name: string;
     quantity: number;
-    unitPrice: number;
-    totalPrice: number;
   }>;
-  refundMethod: 'CASH' | 'ACCOUNT_CREDIT' | 'MIXED';
-  cashAmount?: number;               // Requerido si refundMethod = CASH o MIXED
-  accountCreditAmount?: number;       // Requerido si refundMethod = ACCOUNT_CREDIT o MIXED
-  refundMethodCode?: string;          // Código de método de pago para cash_movement (CASH, TRANSFER, etc)
+  refundMethod: 'CASH' | 'ACCOUNT_CREDIT';
+  paymentMethodId?: string;          // Requerido si refundMethod = CASH
   notes?: string;
 }
 ```
@@ -196,16 +192,14 @@ Crea una nueva nota de crédito con todos los efectos (stock, caja, cliente).
 - `customerId` debe coincidir con el cliente de la venta original
 - Cada `item` debe corresponder a un item existente en la venta original
 - `quantity` <= cantidad vendida del item original
-- Si `refundMethod` incluye `CASH`, `cashAmount > 0` y caja abierta
-- Si `refundMethod` = `MIXED`, `cashAmount + accountCreditAmount === total`
+- Si `refundMethod` = `CASH`, `paymentMethodId` es requerido y caja debe estar abierta
 
 **Transacción atómica:**
-1. Crear `credit_note` y `credit_note_item`s
-2. Si incluye `CASH`: crear `cash_movement` de tipo `EXPENSE`
-3. Si incluye `ACCOUNT_CREDIT`: decrementar `customer.balance`
+1. Crear `credit_note` con status `ISSUED` y `credit_note_item`s
+2. Si `refundMethod` = `CASH`: crear `cash_movement` de tipo `EXPENSE`
+3. Si `refundMethod` = `ACCOUNT_CREDIT`: decrementar `customer.balance`
 4. Para cada item con `productId`: actualizar `product.stock` + y crear `stock_movement` tipo `IN`
-5. Crear `invoice` con type `NOTA_CREDITO` (DRAFT, listo para futura emisión AFIP)
-6. Actualizar `credit_note.invoiceId`
+5. Invalidar cache de dashboard (`revalidatePath('/adm')`)
 
 **Response (201):**
 ```json
@@ -213,18 +207,14 @@ Crea una nueva nota de crédito con todos los efectos (stock, caja, cliente).
   "id": "cuid",
   "originalSaleId": "...",
   "originalSaleType": "direct_sale",
+  "customerId": "...",
   "total": 25000.00,
-  "refundMethod": "MIXED",
-  "cashAmount": 10000.00,
-  "accountCreditAmount": 15000.00,
-  "status": "DRAFT",
-  "items": [...],
-  "invoice": {
-    "id": "...",
-    "number": "0001-00000042",
-    "type": "NOTA_CREDITO",
-    "status": "DRAFT"
-  }
+  "refundMethod": "CASH",
+  "paymentMethodId": "...",
+  "status": "ISSUED",
+  "notes": "...",
+  "createdAt": "2026-05-04T...",
+  "createdBy": "..."
 }
 ```
 
@@ -235,28 +225,28 @@ Lista de notas de crédito con filtros.
 **Query Params:**
 - `customerId` (optional)
 - `originalSaleId` (optional)
-- `status` (optional): DRAFT, ISSUED, CANCELLED
+- `status` (optional): ISSUED, CANCELLED
 - `startDate`, `endDate` (optional)
-- `page`, `limit` (optional)
 
 **Response:**
 ```json
-{
-  "creditNotes": [
-    {
-      "id": "...",
-      "originalSaleId": "...",
-      "originalSaleType": "direct_sale",
-      "customer": { "id": "...", "name": "Juan Pérez" },
-      "total": 25000.00,
-      "refundMethod": "MIXED",
-      "status": "DRAFT",
-      "createdAt": "2026-05-02T14:30:00Z",
-      "itemCount": 2
-    }
-  ],
-  "pagination": { "page": 1, "limit": 20, "total": 5 }
-}
+[
+  {
+    "id": "...",
+    "originalSaleId": "...",
+    "originalSaleType": "direct_sale",
+    "customerId": "...",
+    "customer": { "id": "...", "name": "Juan Pérez", "phone": "..." },
+    "total": 25000.00,
+    "refundMethod": "CASH",
+    "paymentMethodId": "...",
+    "status": "ISSUED",
+    "notes": "...",
+    "createdAt": "2026-05-02T14:30:00Z",
+    "createdBy": "...",
+    "_count": { "items": 2 }
+  }
+]
 ```
 
 #### `GET /api/credit-notes/:id`
@@ -269,70 +259,64 @@ Detalle completo de una nota de crédito.
   "id": "...",
   "originalSaleId": "...",
   "originalSaleType": "direct_sale",
-  "customer": { "id": "...", "name": "Juan Pérez", "balance": -15000.00 },
+  "customerId": "...",
+  "customer": { "id": "...", "name": "Juan Pérez", "phone": "...", "email": "...", "balance": -15000.00 },
   "total": 25000.00,
-  "refundMethod": "MIXED",
-  "cashAmount": 10000.00,
-  "accountCreditAmount": 15000.00,
-  "status": "DRAFT",
+  "refundMethod": "CASH",
+  "paymentMethodId": "...",
+  "paymentMethod": { "id": "...", "name": "Efectivo", "code": "CASH" },
+  "status": "ISSUED",
   "notes": "Producto defectuoso",
   "items": [
-    { "id": "...", "name": "Filtro de Aceite", "quantity": 2, "unitPrice": 5000.00, "totalPrice": 10000.00, "productId": "..." },
-    { "id": "...", "name": "Lámpara LED", "quantity": 1, "unitPrice": 15000.00, "totalPrice": 15000.00, "productId": "..." }
-  ],
-  "invoice": { "id": "...", "number": "0001-00000042", "type": "NOTA_CREDITO", "status": "DRAFT" },
-  "cashMovement": { "id": "...", "type": "EXPENSE", "amount": 10000.00, "method": "CASH" },
-  "stockMovements": [
-    { "id": "...", "productId": "...", "quantity": 2, "type": "IN", "reason": "Devolución NC #..." },
-    { "id": "...", "productId": "...", "quantity": 1, "type": "IN", "reason": "Devolución NC #..." }
+    { "id": "...", "productId": "...", "serviceId": null, "name": "Filtro de Aceite", "quantity": 2, "unitPrice": 5000.00, "totalPrice": 10000.00, "product": { "id": "...", "name": "Filtro de Aceite" }, "service": null },
+    { "id": "...", "productId": "...", "serviceId": null, "name": "Lámpara LED", "quantity": 1, "unitPrice": 15000.00, "totalPrice": 15000.00, "product": { "id": "...", "name": "Lámpara LED" }, "service": null }
   ],
   "createdAt": "2026-05-02T14:30:00Z",
   "createdBy": "user@email.com"
 }
 ```
 
-#### `PATCH /api/credit-notes/:id/status`
+#### `POST /api/credit-notes/:id/cancel`
 
-Cambiar estado de la nota de crédito (DRAFT → ISSUED → CANCELLED).
+Cancelar una nota de crédito emitida.
 
 **Body:**
 ```json
-{ "status": "ISSUED" }
+{ "reason": "string (opcional)" }
 ```
 
 **Reglas:**
-- `DRAFT` → `ISSUED`: Valida que la venta original no tenga otra NC activa que se solape en items
-- `ISSUED` → `CANCELLED`: Crea movimientos inversos (egreso de stock, re-ingreso de caja, ajuste de balance)
+- Solo se pueden cancelar NC con status `ISSUED`
+- Crea movimientos inversos (egreso de stock, re-ingreso de caja, ajuste de balance)
+- Actualiza status a `CANCELLED`
 
 ### Servicios
 
 ```typescript
 // lib/services/creditNoteService.ts
 
+interface CreditNoteItemInput {
+  productId?: string;
+  serviceId?: string;
+  quantity: number;
+}
+
 interface CreateCreditNoteInput {
   originalSaleId: string;
   originalSaleType: 'direct_sale' | 'work_order';
-  customerId: string;
-  items: Array<{
-    productId?: string;
-    serviceId?: string;
-    name: string;
-    quantity: number;
-    unitPrice: number;
-    totalPrice: number;
-  }>;
-  refundMethod: 'CASH' | 'ACCOUNT_CREDIT' | 'MIXED';
-  cashAmount?: number;
-  accountCreditAmount?: number;
-  refundMethodCode?: string;
+  items: CreditNoteItemInput[];
+  refundMethod: 'CASH' | 'ACCOUNT_CREDIT';
+  paymentMethodId?: string;
+  paymentMethodCode?: string;
   notes?: string;
   createdBy: string;
 }
 
-async function createCreditNote(input: CreateCreditNoteInput): Promise<CreditNoteResult>
-async function cancelCreditNote(id: string, reason: string): Promise<CreditNoteResult>
-async function getCreditNotes(filters: CreditNoteFilters): Promise<PaginatedCreditNotes>
+async function createCreditNote(input: CreateCreditNoteInput): Promise<CreditNote>
+async function cancelCreditNote(id: string, reason?: string): Promise<CreditNote>
+async function getCreditNotes(filters: CreditNoteFilters): Promise<CreditNote[]>
 async function getCreditNoteById(id: string): Promise<CreditNoteDetail>
+async function getAlreadyReturnedQuantities(originalSaleId: string, originalSaleType: string, tx?: any): Promise<Record<string, number>>
 ```
 
 ## 5. Acceptance Criteria
@@ -340,7 +324,7 @@ async function getCreditNoteById(id: string): Promise<CreditNoteDetail>
 - **AC-001**: Dado una venta directa de 2 filtros de aceite a $5000 cada uno, cuando el cliente devuelve 1 filtro solicitando reintegro en efectivo, entonces el stock del filtro aumenta en 1, se crea un cash_movement EXPENSE por $5000, y se genera una NOTA_CREDITO.
 - **AC-002**: Dado una orden de trabajo con productos y servicios, cuando el cliente devuelve solo los productos solicitando crédito a cuenta, entonces el stock se restablece, el balance del cliente decrementa (crédito a favor), no se genera movimiento de caja, y se genera una NOTA_CREDITO.
 - **AC-003**: Dado una venta a cuenta corriente donde el cliente adeudaba $10000, cuando se emite una NC por $15000 a cuenta del cliente, entonces el balance queda en -$5000 (crédito a favor de $5000).
-- **AC-004**: Dado una nota de crédito MIXED por $20000 con $8000 en efectivo y $12000 a cuenta, cuando se procesa, entonces se crea un cash_movement EXPENSE por $8000, el balance del cliente decrementa en $12000, y el stock se actualiza.
+- **AC-004**: Dado una nota de crédito CASH por $20000, cuando se procesa, entonces se crea un cash_movement EXPENSE por $20000 y el stock se actualiza.
 - **AC-005**: Dado una caja cerrada, cuando un usuario intenta crear una NC con reintegro en efectivo, entonces el sistema rechaza la operación con error 400.
 - **AC-006**: Dado un item de servicio en la venta original, cuando se incluye en una NC, entonces no se crea stock_movement para ese item.
 - **AC-007**: Dado una NC emitida, cuando se cancela, entonces se revierten todos los movimientos (stock, caja, balance) y se marca la NC como CANCELLED.
@@ -430,26 +414,6 @@ Efectos:
 - El cliente ahora tiene $35,000 de crédito que puede usar en futuras compras
 ```
 
-### Ejemplo 3: Devolución mixta
-
-```
-Venta original: Direct Sale #DS-002 por $40,000
-
-Cliente devuelve todo ($40,000). Pide:
-- $10,000 en efectivo (para gastos)
-- $30,000 acreditados a su cuenta
-
-NC generada:
-- RefundMethod: MIXED
-- CashAmount: $10,000
-- AccountCreditAmount: $30,000
-- refundMethodCode: CASH
-
-Efectos:
-- Caja: EXPENSE $10,000 efectivo
-- Balance cliente: -$30,000
-- Stock: restablecido según items
-```
 
 ### Edge Case: Cancelación de NC
 
@@ -483,20 +447,53 @@ NC por $60,000 a cuenta (más que la venta):
 
 ## 10. Validation Criteria
 
-- [ ] Migración de Prisma crea `credit_note` y `credit_note_item` sin errores
-- [ ] `POST /api/credit-notes` crea todos los registros esperados en una transacción
-- [ ] Stock se actualiza correctamente para productos devueltos
-- [ ] Servicios en NC no generan movimientos de stock
-- [ ] Reintegro en efectivo solo funciona con caja abierta
-- [ ] Balance de cliente se actualiza correctamente para ACCOUNT_CREDIT y MIXED
-- [ ] `invoice` de tipo NOTA_CREDITO se crea y vincula a `credit_note`
-- [ ] No se puede crear NC si la cantidad devuelta excede la vendida
-- [ ] Cancelación de NC revierte todos los movimientos
-- [ ] El total de NC no puede superar el total de la venta original
+- [x] Migración de Prisma crea `credit_note` y `credit_note_item` sin errores
+- [x] `POST /api/credit-notes` crea todos los registros esperados en una transacción
+- [x] Stock se actualiza correctamente para productos devueltos
+- [x] Servicios en NC no generan movimientos de stock
+- [x] Reintegro en efectivo solo funciona con caja abierta
+- [x] Balance de cliente se actualiza correctamente para ACCOUNT_CREDIT
+- [x] No se puede crear NC si la cantidad devuelta excede la vendida
+- [x] Cancelación de NC revierte todos los movimientos
+- [x] El total de NC no puede superar el total de la venta original
+- [x] Cache de dashboard se invalida al crear NC
+- [ ] `invoice` de tipo NOTA_CREDITO se crea y vincula a `credit_note` (pendiente: integración AFIP)
 
-## 11. Related Specifications / Further Reading
+## 11. Estado de Implementación
+
+### Componentes Implementados
+- ✅ Modelo Prisma: `credit_note`, `credit_note_item`
+- ✅ Servicio: `lib/services/creditNoteService.ts`
+  - `createCreditNote`: Crea NC con stock, caja y balance updates
+  - `cancelCreditNote`: Cancela NC revirtiendo efectos
+  - `getCreditNotes`: Lista NCs con filtros
+  - `getCreditNoteById`: Detalle completo de NC
+  - `getAlreadyReturnedQuantities`: Validación de cantidad devuelta
+- ✅ API Endpoints:
+  - `POST /api/credit-notes`: Crear NC
+  - `GET /api/credit-notes`: Listar NCs
+  - `GET /api/credit-notes/:id`: Detalle de NC
+  - `POST /api/credit-notes/:id/cancel`: Cancelar NC
+- ✅ Componentes UI:
+  - `CustomerCreditNoteDialog`: Diálogo para crear NC desde perfil de cliente
+  - `CreditNotesClient`: Lista de NCs en `/adm/credit-notes`
+
+### Diferencias con Spec Original
+1. **Sin integración AFIP**: No se crea `invoice` en esta fase
+2. **Sin estados DRAFT**: Las NC se crean directamente en estado `ISSUED`
+3. **Sin devoluciones mixtas**: Solo `CASH` o `ACCOUNT_CREDIT` (no `MIXED`)
+4. **Modelo simplificado**: Sin `cashAmount`, `accountCreditAmount`, `refundMethodCode`
+5. **Validación mejorada**: `getAlreadyReturnedQuantities` previene devolver más de lo vendido
+
+### Pendientes Futuros
+- Integración AFIP (crear invoice con NOTA_CREDITO)
+- Soporte para devoluciones mixtas (parte efectivo, parte cuenta)
+- Estados DRAFT → ISSUED workflow
+- Reportes de NCs por período
+
+## 12. Related Specifications / Further Reading
 
 - `/specs/inventory-sales.md` — Ventas directas, control de stock, movimientos de inventario
 - `/specs/cash-management.md` — Arqueo de caja, movimientos EXPENSE/INCOME
 - `/specs/customer-credit.md` — Cuenta corriente, saldo de clientes, pagos genéricos
-- `/specs/afip-integration.md` — Facturación electrónica, modelo `invoice`, NOTA_CREDITO
+- `/specs/afip-integration.md` — Facturación electrónica, modelo `invoice`, NOTA_CREDITO (futuro)
