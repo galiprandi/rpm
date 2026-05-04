@@ -316,7 +316,7 @@ async function createCreditNote(input: CreateCreditNoteInput): Promise<CreditNot
 async function cancelCreditNote(id: string, reason?: string): Promise<CreditNote>
 async function getCreditNotes(filters: CreditNoteFilters): Promise<CreditNote[]>
 async function getCreditNoteById(id: string): Promise<CreditNoteDetail>
-async function getAlreadyReturnedQuantities(originalSaleId: string, originalSaleType: string, tx?: any): Promise<Record<string, number>>
+// NOTA: getAlreadyReturnedQuantities está en creditNoteValidationService.ts
 ```
 
 ## 5. Acceptance Criteria

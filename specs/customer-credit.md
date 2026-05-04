@@ -108,6 +108,7 @@ Visualización en perfil:
 
 **Estado de implementación:** ✅ Completamente implementado
 - Servicio: `lib/services/creditNoteService.ts`
+- Validación: `lib/services/creditNoteValidationService.ts` (getAlreadyReturnedQuantities)
 - API: `POST /api/credit-notes`
 - UI: `CustomerCreditNoteDialog` en perfil de cliente
 - Ver spec detallada: `/specs/spec-credit-notes.md`
