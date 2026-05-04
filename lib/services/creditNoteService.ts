@@ -18,6 +18,9 @@ function decimalToNumber(decimal: unknown): number {
   return 0;
 }
 
+// Using 'any' for Prisma types because Prisma generates complex types with many fields
+// that don't match simple interfaces. This is acceptable for service logic.
+/* eslint-disable @typescript-eslint/no-explicit-any */
 function getOriginalItems(
   saleType: 'direct_sale' | 'work_order',
   sale: any,
@@ -25,19 +28,19 @@ function getOriginalItems(
   if (saleType === 'direct_sale') {
     return sale.items.map((item: any) => ({
       id: item.id,
-      productId: item.productId,
-      serviceId: item.serviceId,
+      productId: item.productId ?? undefined,
+      serviceId: item.serviceId ?? undefined,
       quantity: item.quantity,
-      unitPrice: item.unitPrice,
+      unitPrice: decimalToNumber(item.unitPrice),
       name: item.name || item.product?.name || item.service?.name || 'Sin nombre',
     }));
   }
   return sale.work_order_item.map((item: any) => ({
     id: item.id,
-    productId: item.productId,
-    serviceId: item.serviceId,
+    productId: item.productId ?? undefined,
+    serviceId: item.serviceId ?? undefined,
     quantity: item.quantity,
-    unitPrice: item.unitPrice,
+    unitPrice: decimalToNumber(item.unitPrice),
     name: item.product?.name || item.service?.name || 'Sin nombre',
   }));
 }
@@ -88,7 +91,8 @@ export async function createCreditNote(input: CreateCreditNoteInput) {
 
   for (const itemInput of items) {
     const original = originalItems.find(
-      (oi) =>
+       
+      (oi: any) =>
         (itemInput.productId && oi.productId === itemInput.productId) ||
         (itemInput.serviceId && oi.serviceId === itemInput.serviceId)
     );

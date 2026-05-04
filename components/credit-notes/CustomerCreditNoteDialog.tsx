@@ -117,6 +117,10 @@ export function CustomerCreditNoteDialog({ open, onOpenChange, customerId, custo
           payments: (wo.payments as Sale['payments']) || [],
         })),
       ];
+
+      // Ordenar ventas de actuales a viejas (descendente por fecha)
+      allSales.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
       setSales(allSales);
       if (preselectedSaleId) {
         const match = allSales.find((s) => s.id === preselectedSaleId);
@@ -244,7 +248,13 @@ export function CustomerCreditNoteDialog({ open, onOpenChange, customerId, custo
     {
       accessorKey: 'createdAt',
       header: 'Fecha',
-      cell: ({ row }) => new Date(row.getValue('createdAt') as string).toLocaleDateString('es-AR'),
+      cell: ({ row }) => new Date(row.getValue('createdAt') as string).toLocaleString('es-AR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      }),
     },
   ];
 

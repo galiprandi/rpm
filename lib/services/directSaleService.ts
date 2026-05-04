@@ -302,3 +302,34 @@ export async function getDirectSalesSummaryForDate(date: Date) {
     paymentsByMethod,
   };
 }
+
+/**
+ * Get direct sale by ID with full details
+ */
+export async function getDirectSaleById(id: string) {
+  return prisma.direct_sale.findUnique({
+    where: { id },
+    include: {
+      customer: {
+        select: { id: true, name: true, phone: true, email: true, balance: true },
+      },
+      items: {
+        include: {
+          product: {
+            select: { id: true, name: true, sku: true },
+          },
+          service: {
+            select: { id: true, name: true },
+          },
+        },
+      },
+      payments: {
+        include: {
+          paymentMethod: {
+            select: { id: true, name: true, code: true },
+          },
+        },
+      },
+    },
+  });
+}

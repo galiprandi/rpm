@@ -5,6 +5,10 @@
 import { prisma } from '@/lib/prisma';
 import { isCashRegisterOpen } from './cashMovementService';
 
+// Using 'any' for Prisma types because Prisma generates complex types with many fields
+// that don't match simple interfaces. This is acceptable for validation logic.
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 export interface CreditNoteItemInput {
   productId?: string;
   serviceId?: string;
@@ -70,7 +74,8 @@ export async function validateCreditNoteInput(input: CreateCreditNoteInput): Pro
 export async function validateOriginalSaleExists(
   originalSaleId: string,
   originalSaleType: 'direct_sale' | 'work_order'
-): Promise<{ exists: boolean; customerId?: string; sale?: any }> {
+): Promise<{ exists: boolean; customerId?: string;  
+sale?: any }> {
   if (originalSaleType === 'direct_sale') {
     const sale = await prisma.direct_sale.findUnique({
       where: { id: originalSaleId },
@@ -79,7 +84,7 @@ export async function validateOriginalSaleExists(
         customer: true,
       },
     });
-    return { exists: !!sale, customerId: sale?.customerId, sale };
+    return { exists: !!sale, customerId: sale?.customerId ?? undefined, sale: sale ?? undefined };
   }
 
   const sale = await prisma.work_order.findUnique({
@@ -89,7 +94,7 @@ export async function validateOriginalSaleExists(
       customer: true,
     },
   });
-  return { exists: !!sale, customerId: sale?.customerId, sale };
+  return { exists: !!sale, customerId: sale?.customerId ?? undefined, sale: sale ?? undefined };
 }
 
 export async function validateCashRegisterOpen(): Promise<ValidationResult> {
@@ -119,27 +124,30 @@ export async function validatePaymentMethodForCash(paymentMethodId?: string): Pr
 export async function validateItemsInOriginalSale(
   items: CreditNoteItemInput[],
   originalSaleType: 'direct_sale' | 'work_order',
+   
   sale: any
 ): Promise<ValidationResult> {
   const errors: string[] = [];
 
   const originalItems = originalSaleType === 'direct_sale'
+     
     ? sale.items.map((item: any) => ({
-        productId: item.productId,
-        serviceId: item.serviceId,
+        productId: item.productId ?? undefined,
+        serviceId: item.serviceId ?? undefined,
         quantity: item.quantity,
         name: item.name || item.product?.name || item.service?.name || 'Sin nombre',
       }))
+     
     : sale.work_order_item.map((item: any) => ({
-        productId: item.productId,
-        serviceId: item.serviceId,
+        productId: item.productId ?? undefined,
+        serviceId: item.serviceId ?? undefined,
         quantity: item.quantity,
         name: item.product?.name || item.service?.name || 'Sin nombre',
       }));
 
   for (const itemInput of items) {
     const original = originalItems.find(
-      (oi) =>
+      (oi: { productId?: string; serviceId?: string }) =>
         (itemInput.productId && oi.productId === itemInput.productId) ||
         (itemInput.serviceId && oi.serviceId === itemInput.serviceId)
     );
@@ -182,22 +190,25 @@ export async function getAlreadyReturnedQuantities(
 export async function validateReturnQuantities(
   items: CreditNoteItemInput[],
   originalSaleType: 'direct_sale' | 'work_order',
+   
   sale: any
 ): Promise<ValidationResult> {
   const errors: string[] = [];
 
   const originalItems = originalSaleType === 'direct_sale'
+     
     ? sale.items.map((item: any) => ({
         id: item.id,
-        productId: item.productId,
-        serviceId: item.serviceId,
+        productId: item.productId ?? undefined,
+        serviceId: item.serviceId ?? undefined,
         quantity: item.quantity,
-        name: item.name || item.product?.name || item.service?.name || 'Sin nombre',
+        name: item.product?.name || item.service?.name || 'Sin nombre',
       }))
+     
     : sale.work_order_item.map((item: any) => ({
         id: item.id,
-        productId: item.productId,
-        serviceId: item.serviceId,
+        productId: item.productId ?? undefined,
+        serviceId: item.serviceId ?? undefined,
         quantity: item.quantity,
         name: item.product?.name || item.service?.name || 'Sin nombre',
       }));
@@ -206,7 +217,7 @@ export async function validateReturnQuantities(
 
   for (const itemInput of items) {
     const original = originalItems.find(
-      (oi) =>
+      (oi: { productId?: string; serviceId?: string; id?: string }) =>
         (itemInput.productId && oi.productId === itemInput.productId) ||
         (itemInput.serviceId && oi.serviceId === itemInput.serviceId)
     );
@@ -245,7 +256,7 @@ export async function validateCreditNoteCreation(input: CreateCreditNoteInput): 
   }
 
   // Step 2: Validate original sale exists
-  const { exists, customerId, sale } = await validateOriginalSaleExists(input.originalSaleId, input.originalSaleType);
+  const { exists, sale } = await validateOriginalSaleExists(input.originalSaleId, input.originalSaleType);
   if (!exists) {
     errors.push('Venta original no encontrada');
     return { valid: false, errors };

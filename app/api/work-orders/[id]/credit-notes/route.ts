@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAdminDynamic } from '@/lib/api-middleware';
-import { getAlreadyReturnedQuantities } from '@/lib/services/creditNoteService';
+import { getAlreadyReturnedQuantities } from '@/lib/services/creditNoteValidationService';
 
 export const GET = withAdminDynamic(async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
