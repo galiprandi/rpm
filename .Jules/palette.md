@@ -10,6 +10,10 @@ Critical UX and accessibility learnings.
 **Learning:** The application targets a Spanish-speaking audience, so core UI components like `DataTable` must have their built-in text (pagination summaries, search placeholders, etc.) translated to Spanish to maintain a consistent UX. Additionally, accessibility for screen readers is enhanced by adding ARIA labels to icon-only navigation buttons.
 **Action:** Always ensure any new or modified data presentation components use Spanish labels (e.g., "registros" instead of "items") and provide explicit `aria-label` for icon-only interactive elements.
 
+## 2025-05-14 - DataTable Pagination Accessibility
+**Learning:** Icon-only buttons in critical navigation components like `DataTable` often lack explicit labels, making them difficult to use for screen reader users and ambiguous for others. Providing both `aria-label` and `Tooltip` is the standard for this project.
+**Action:** Always wrap icon-only buttons with `Tooltip` and provide `aria-label`.
+
 ## 2025-05-02 - [Tooltip Accessibility Pattern]
 **Learning:** Icon-only buttons require both `aria-label` for screen readers and `Tooltip` for visual users to be truly accessible. In Storybook, Radix-based Tooltips won't render unless wrapped in a `TooltipProvider` decorator.
 **Action:** Always wrap icon-only buttons in `Tooltip` + `TooltipTrigger` and provide an explicit `aria-label`. Ensure Storybook's `preview.ts` has the necessary providers.
