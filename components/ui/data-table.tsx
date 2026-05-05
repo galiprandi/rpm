@@ -42,6 +42,18 @@ interface DataTableProps<TData> {
   title?: React.ReactNode;
   rowActions?: (row: TData) => React.ReactNode;
 }
+
+interface DataTableProps<TData> {
+  data: TData[];
+  columns: ColumnDef<TData>[];
+  enableGlobalFilter?: boolean;
+  globalFilterPlaceholder?: string;
+  emptyMessage?: string;
+  externalGlobalFilter?: string;
+  onExternalGlobalFilterChange?: (value: string) => void;
+  footerPlaceholder?: React.ReactNode;
+  pageSize?: number;
+}
 export function DataTable<TData>({
   data,
   columns,
