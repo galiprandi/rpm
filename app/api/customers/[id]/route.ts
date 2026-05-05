@@ -35,6 +35,13 @@ export const GET = withAdminDynamic(async (request: NextRequest, { params }: Par
             items: true,
           },
         },
+        credit_notes: {
+          orderBy: { createdAt: "desc" },
+          take: 10,
+          include: {
+            items: true,
+          },
+        },
       },
     });
 
@@ -62,9 +69,11 @@ export const GET = withAdminDynamic(async (request: NextRequest, { params }: Par
       vehicles: customer.vehicle || [],
       workOrders: customer.work_order || [],
       directSales: customer.direct_sales || [],
+      creditNotes: customer.credit_notes || [],
       vehicle: undefined,
       work_order: undefined,
       direct_sales: undefined,
+      credit_notes: undefined,
     };
 
     return NextResponse.json(transformedCustomer);
