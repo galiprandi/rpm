@@ -62,6 +62,25 @@ interface DirectSale {
   items: Array<{ name: string; quantity: number }>;
 }
 
+interface CreditNote {
+  id: string;
+  total: number;
+  createdAt: string;
+  status: string;
+  items: Array<{ name: string; quantity: number }>;
+}
+
+type TransactionType = 'DIRECT_SALE' | 'CREDIT_NOTE' | 'INVOICE';
+
+interface Transaction {
+  id: string;
+  type: TransactionType;
+  total: number;
+  createdAt: string;
+  items: Array<{ name: string; quantity: number }>;
+  status?: string;
+}
+
 interface CustomerDetail {
   id: string;
   name: string;
@@ -79,6 +98,7 @@ interface CustomerDetail {
   vehicles: Vehicle[];
   workOrders: WorkOrder[];
   directSales: DirectSale[];
+  creditNotes: CreditNote[];
 }
 
 export default function CustomerDetailPage() {
@@ -98,6 +118,11 @@ export default function CustomerDetailPage() {
   const [paymentNotes, setPaymentNotes] = useState('');
   const [vehicleFilter, setVehicleFilter] = useState('');
   const [workOrderFilter, setWorkOrderFilter] = useState('');
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [preselectedSaleId, setPreselectedSaleId] = useState<string | undefined>(undefined);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('es-AR', {
@@ -202,13 +227,76 @@ export default function CustomerDetailPage() {
     []
   );
 
-  // Columnas para DataTable de Ventas Directas
-  const directSaleColumns: ColumnDef<DirectSale>[] = useMemo(
+  // Combinar ventas directas y notas de crédito en transacciones unificadas
+  const transactions: Transaction[] = useMemo(() => {
+    if (!customer) return [];
+
+    const sales: Transaction[] = customer.directSales.map(sale => ({
+      id: sale.id,
+      type: 'DIRECT_SALE' as TransactionType,
+      total: sale.total,
+      createdAt: sale.createdAt,
+      items: sale.items,
+    }));
+
+    const creditNotes: Transaction[] = customer.creditNotes.map(cn => ({
+      id: cn.id,
+      type: 'CREDIT_NOTE' as TransactionType,
+      total: cn.total,
+      createdAt: cn.createdAt,
+      items: cn.items,
+      status: cn.status,
+    }));
+
+    // Combinar y ordenar por fecha (más reciente primero)
+    return [...sales, ...creditNotes].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  }, [customer]);
+
+  // Columnas para DataTable de Transacciones
+  const transactionColumns: ColumnDef<Transaction>[] = useMemo(
     () => [
+      {
+        accessorKey: "type",
+        header: "Tipo",
+        cell: ({ row }) => {
+          const type = row.original.type;
+          const typeConfig: Record<TransactionType, { label: string; color: string }> = {
+            DIRECT_SALE: { label: "Venta", color: "bg-blue-100 text-blue-800" },
+            CREDIT_NOTE: { label: "NC", color: "bg-orange-100 text-orange-800" },
+            INVOICE: { label: "Factura", color: "bg-green-100 text-green-800" },
+          };
+          const config = typeConfig[type];
+          return (
+            <Badge className={config.color}>
+              {config.label}
+            </Badge>
+          );
+        },
+      },
       {
         accessorKey: "id",
         header: "ID",
         cell: ({ row }) => row.original.id.slice(-6),
+      },
+      {
+        accessorKey: "status",
+        header: "Estado",
+        cell: ({ row }) => {
+          const status = row.original.status;
+          if (!status) return <span className="text-muted-foreground">-</span>;
+          const statusConfig: Record<string, { label: string; color: string }> = {
+            ISSUED: { label: "Emitida", color: "bg-green-100 text-green-800" },
+            CANCELLED: { label: "Cancelada", color: "bg-red-100 text-red-800" },
+          };
+          const config = statusConfig[status] || { label: status, color: "bg-gray-100 text-gray-800" };
+          return (
+            <Badge className={config.color}>
+              {config.label}
+            </Badge>
+          );
+        },
       },
       {
         accessorKey: "items",
@@ -218,8 +306,15 @@ export default function CustomerDetailPage() {
       {
         accessorKey: "total",
         header: "Total",
-        cell: ({ row }) =>
-          `$${Number(row.original.total).toLocaleString("es-AR")}`,
+        cell: ({ row }) => {
+          const total = row.original.total;
+          const isCreditNote = row.original.type === 'CREDIT_NOTE';
+          return (
+            <span className={isCreditNote ? 'text-orange-600' : ''}>
+              {isCreditNote ? '-' : ''}$${Number(total).toLocaleString("es-AR")}
+            </span>
+          );
+        },
       },
       {
         accessorKey: "createdAt",
@@ -484,36 +579,41 @@ export default function CustomerDetailPage() {
         />
       )}
 
-      {/* Historial de Ventas Directas - DataTable */}
-      {customer.directSales.length === 0 ? (
+      {/* Historial de Transacciones - DataTable */}
+      {transactions.length === 0 ? (
         <div className="space-y-4">
           <h2 className="text-lg font-semibold flex items-center gap-2">
             <Receipt className="h-5 w-5" />
-            Historial de Ventas Directas (0)
+            Historial de Transacciones (0)
           </h2>
           <div className="text-center py-8 text-muted-foreground">
-            No hay ventas directas registradas
+            No hay transacciones registradas
           </div>
         </div>
       ) : (
         <DataTable
-          data={customer.directSales}
-          columns={directSaleColumns}
+          data={transactions}
+          columns={transactionColumns}
           enableGlobalFilter={true}
-          globalFilterPlaceholder="Buscar venta..."
+          globalFilterPlaceholder="Buscar transacción..."
           pageSize={5}
           title={
             <span className="flex items-center gap-2">
               <Receipt className="h-5 w-5" />
-              Historial de Ventas Directas ({customer.directSales.length})
+              Historial de Transacciones ({transactions.length})
             </span>
           }
-          rowActions={(sale) => (
-            <Link href={`/adm/direct-sales/${sale.id}`}>
-              <Button variant="ghost" size="sm">
-                <Eye className="h-4 w-4" />
-              </Button>
-            </Link>
+          rowActions={(transaction) => (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSelectedTransaction(transaction);
+                setIsTransactionModalOpen(true);
+              }}
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
           )}
         />
       )}
@@ -691,11 +791,150 @@ export default function CustomerDetailPage() {
       {/* Modal de Nota de Crédito */}
       <CustomerCreditNoteDialog
         open={isCreditNoteModalOpen}
-        onOpenChange={setIsCreditNoteModalOpen}
+        onOpenChange={(open) => {
+          setIsCreditNoteModalOpen(open);
+          if (!open) setPreselectedSaleId(undefined);
+        }}
         customerId={customerId}
         customerName={customer.name}
         onSuccess={fetchCustomer}
+        preselectedSaleId={preselectedSaleId}
       />
+
+      {/* Modal de Detalle de Transacción */}
+      <Dialog open={isTransactionModalOpen} onOpenChange={(open) => {
+        setIsTransactionModalOpen(open);
+        if (!open) {
+          setCancelReason('');
+          setIsCancelling(false);
+        }
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Detalle de Transacción</DialogTitle>
+          </DialogHeader>
+          {selectedTransaction && (
+            <div className="space-y-4 py-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Tipo</span>
+                <Badge className={
+                  selectedTransaction.type === 'DIRECT_SALE' ? 'bg-blue-100 text-blue-800' :
+                  selectedTransaction.type === 'CREDIT_NOTE' ? 'bg-orange-100 text-orange-800' :
+                  'bg-green-100 text-green-800'
+                }>
+                  {selectedTransaction.type === 'DIRECT_SALE' ? 'Venta' :
+                   selectedTransaction.type === 'CREDIT_NOTE' ? 'NC' : 'Factura'}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">ID</span>
+                <span className="font-mono text-sm">{selectedTransaction.id.slice(-6)}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Fecha</span>
+                <span className="text-sm">{new Date(selectedTransaction.createdAt).toLocaleDateString('es-AR')}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Total</span>
+                <span className={`font-semibold ${selectedTransaction.type === 'CREDIT_NOTE' ? 'text-orange-600' : ''}`}>
+                  {selectedTransaction.type === 'CREDIT_NOTE' ? '-' : ''}$${Number(selectedTransaction.total).toLocaleString('es-AR')}
+                </span>
+              </div>
+              {selectedTransaction.status && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Estado</span>
+                  <span className="text-sm">
+                    {selectedTransaction.status === 'ISSUED' ? 'Emitida' :
+                     selectedTransaction.status === 'CANCELLED' ? 'Cancelada' :
+                     selectedTransaction.status}
+                  </span>
+                </div>
+              )}
+              <div className="border-t pt-4">
+                <div className="text-sm font-medium mb-2">Items</div>
+                <div className="space-y-2">
+                  {selectedTransaction.items.map((item, index) => (
+                    <div key={index} className="flex items-center justify-between text-sm">
+                      <span>{item.name}</span>
+                      <span className="text-muted-foreground">x{item.quantity}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Botón para cancelar NC si está emitida */}
+              {selectedTransaction.type === 'CREDIT_NOTE' && selectedTransaction.status === 'ISSUED' && (
+                <div className="border-t pt-4 space-y-3">
+                  <div>
+                    <Label className="text-sm">Motivo de cancelación</Label>
+                    <Input
+                      placeholder="Ej: Error en la nota de crédito"
+                      value={cancelReason}
+                      onChange={(e) => setCancelReason(e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="w-full"
+                    onClick={async () => {
+                      if (!cancelReason.trim()) {
+                        alert('Por favor ingresa un motivo para la cancelación');
+                        return;
+                      }
+
+                      setIsCancelling(true);
+                      try {
+                        const res = await fetch(`/api/credit-notes/${selectedTransaction.id}/cancel`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ reason: cancelReason }),
+                        });
+
+                        if (res.ok) {
+                          setIsTransactionModalOpen(false);
+                          setCancelReason('');
+                          fetchCustomer();
+                        } else {
+                          const error = await res.json();
+                          alert(error.error || 'Error al cancelar nota de crédito');
+                        }
+                      } catch (error) {
+                        console.error('Error:', error);
+                        alert('Error al cancelar nota de crédito');
+                      } finally {
+                        setIsCancelling(false);
+                      }
+                    }}
+                    disabled={isCancelling || !cancelReason.trim()}
+                  >
+                    {isCancelling ? 'Cancelando...' : 'Cancelar Nota de Crédito'}
+                  </Button>
+                </div>
+              )}
+
+              {/* Botón para crear NC desde venta directa */}
+              {selectedTransaction.type === 'DIRECT_SALE' && (
+                <div className="border-t pt-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => {
+                      setPreselectedSaleId(selectedTransaction.id);
+                      setIsTransactionModalOpen(false);
+                      setIsCreditNoteModalOpen(true);
+                    }}
+                  >
+                    Crear Nota de Crédito
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
