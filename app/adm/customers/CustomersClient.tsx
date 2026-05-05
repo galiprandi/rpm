@@ -46,7 +46,7 @@ export default function CustomersClient({ initialCustomers }: CustomersClientPro
   // Filter customers based on balance
   const filteredCustomers = useMemo(() => {
     if (!showOnlyWithBalance) return customers;
-    return customers.filter(c => c.balance > 0);
+    return customers.filter(c => c.balance !== 0);
   }, [customers, showOnlyWithBalance]);
 
   const fetchCustomers = useCallback(async () => {
@@ -131,11 +131,22 @@ export default function CustomersClient({ initialCustomers }: CustomersClientPro
         header: "Saldo",
         cell: ({ row }) => {
           const balance = row.original.balance;
-          if (balance <= 0) {
+          if (balance === 0) {
             return <span className="text-muted-foreground">-</span>;
           }
+          if (balance > 0) {
+            return (
+              <span className="font-medium text-red-600">
+                {new Intl.NumberFormat('es-AR', {
+                  style: 'currency',
+                  currency: 'ARS',
+                }).format(balance)}
+              </span>
+            );
+          }
+          // balance < 0 (saldo a favor)
           return (
-            <span className="font-medium text-red-600">
+            <span className="font-medium text-green-600">
               {new Intl.NumberFormat('es-AR', {
                 style: 'currency',
                 currency: 'ARS',
@@ -203,7 +214,7 @@ export default function CustomersClient({ initialCustomers }: CustomersClientPro
         searchPlaceholder="Buscar por nombre o teléfono..."
         secondaryActions={[
           {
-            label: showOnlyWithBalance ? 'Ver Todos' : 'Solo con Saldo',
+            label: showOnlyWithBalance ? 'Ver Todos' : 'Con Saldo',
             onClick: () => setShowOnlyWithBalance(!showOnlyWithBalance),
             variant: 'outline',
             icon: TrendingDown,
