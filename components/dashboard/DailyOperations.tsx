@@ -21,14 +21,14 @@ interface DailyOperationsData {
     referenceType?: string;
     reason?: string;
     createdAt: string;
-    customerName?: string;
+    customer?: { id: string; name: string };
     relatedId?: string;
     relatedType?: 'work_order' | 'direct_sale';
   }>;
-  metrics: {
-    income: number;
-    expense: number;
-    balance: number;
+  summary: {
+    totalIncome: number;
+    totalExpense: number;
+    netAmount: number;
   };
 }
 
@@ -84,9 +84,9 @@ export function DailyOperations() {
       },
     },
     {
-      accessorKey: 'customerName',
+      accessorKey: 'customer.name',
       header: 'Cliente',
-      cell: ({ row }) => row.original.customerName || '-',
+      cell: ({ row }) => row.original.customer?.name || '-',
     },
     {
       accessorKey: 'reason',
@@ -123,7 +123,7 @@ export function DailyOperations() {
 
         const href = relatedType === 'work_order'
           ? `/adm/work-orders/${relatedId}`
-          : `/adm/customers?id=${relatedId}`; // Placeholder for direct sale view if available
+          : `/adm/customers?id=${relatedId}`;
 
         return (
           <Button asChild variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -169,7 +169,7 @@ export function DailyOperations() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
-              {formatARS(data?.metrics.income || 0)}
+              {formatARS(data?.summary.totalIncome || 0)}
             </div>
           </CardContent>
         </Card>
@@ -180,7 +180,7 @@ export function DailyOperations() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">
-              {formatARS(data?.metrics.expense || 0)}
+              {formatARS(data?.summary.totalExpense || 0)}
             </div>
           </CardContent>
         </Card>
@@ -190,8 +190,8 @@ export function DailyOperations() {
             <DollarSign className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${(data?.metrics.balance || 0) >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
-              {formatARS(data?.metrics.balance || 0)}
+            <div className={`text-2xl font-bold ${(data?.summary.netAmount || 0) >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+              {formatARS(data?.summary.netAmount || 0)}
             </div>
           </CardContent>
         </Card>
