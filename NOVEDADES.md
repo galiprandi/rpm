@@ -1,6 +1,7 @@
 🚀 Novedades del Sistema
 
 🗓️ 6 de Mayo de 2026
+• 👆 Órdenes de Trabajo: Ahora puedes arrastrar y soltar órdenes de trabajo entre columnas de estado en la vista Kanban para cambiar su estado de forma rápida e intuitiva.
 • 🎨 Tablas: Mejoras en accesibilidad de la paginación con etiquetas ARIA y textos en español.
 • 🎨 Ventas Rápidas: Botones con tooltips y etiquetas de accesibilidad para mejor usabilidad.
 
