@@ -3,10 +3,11 @@ import { getDirectSaleById } from '@/lib/services/directSaleService';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const sale = await getDirectSaleById(params.id);
+    const { id } = await params;
+    const sale = await getDirectSaleById(id);
 
     if (!sale) {
       return NextResponse.json({ error: 'Venta no encontrada' }, { status: 404 });
