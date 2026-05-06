@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { randomUUID } from 'crypto';
 import { createCashMovement } from './cashMovementService';
 import { revalidatePath } from 'next/cache';
+import { getArgentinaStartOfDay, getArgentinaEndOfDay } from '@/lib/utils/date';
 
 export interface DirectSaleItemInput {
   productId?: string;
@@ -256,11 +257,8 @@ export async function getDirectSalesByDateRange(startDate: Date, endDate: Date) 
  * Get direct sales summary for a date
  */
 export async function getDirectSalesSummaryForDate(date: Date) {
-  const startOfDay = new Date(date);
-  startOfDay.setHours(0, 0, 0, 0);
-
-  const endOfDay = new Date(date);
-  endOfDay.setHours(23, 59, 59, 999);
+  const startOfDay = getArgentinaStartOfDay(date);
+  const endOfDay = getArgentinaEndOfDay(date);
 
   const sales = await prisma.direct_sale.findMany({
     where: {

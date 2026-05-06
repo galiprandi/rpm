@@ -255,7 +255,6 @@ export default function WorkOrderDetailPage() {
   }, []);
 
   useEffect(() => {
-     
     fetchWorkOrder();
     fetchPayments();
   }, [fetchWorkOrder, fetchPayments]);

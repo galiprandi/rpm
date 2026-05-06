@@ -1,11 +1,12 @@
 import { prisma } from '@/lib/prisma';
+import { getArgentinaStartOfDay, getArgentinaEndOfDay } from '@/lib/utils/date';
 
 export interface CashMovementInput {
   type: 'INCOME' | 'EXPENSE' | 'OPENING' | 'CLOSING' | 'COUNT';
   amount: number;
   method: string;
   referenceId?: string;
-  referenceType?: 'work_order_payment' | 'direct_sale_payment' | 'credit_note_refund' | 'credit_note_cancelled' | 'manual';
+  referenceType?: 'work_order_payment' | 'direct_sale_payment' | 'customer_payment' | 'credit_note_refund' | 'credit_note_cancelled' | 'manual';
   reason?: string;
   notes?: string;
   createdBy: string;
@@ -56,11 +57,8 @@ export async function getCashMovements(filters: {
 }
 
 export async function getCashMovementSummary(date: Date) {
-  const startOfDay = new Date(date);
-  startOfDay.setHours(0, 0, 0, 0);
-
-  const endOfDay = new Date(date);
-  endOfDay.setHours(23, 59, 59, 999);
+  const startOfDay = getArgentinaStartOfDay(date);
+  const endOfDay = getArgentinaEndOfDay(date);
 
   const movements = await prisma.cash_movement.findMany({
     where: {

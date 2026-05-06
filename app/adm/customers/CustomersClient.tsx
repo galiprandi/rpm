@@ -17,10 +17,7 @@ interface Customer {
   phoneAlt?: string | null;
   email?: string | null;
   balance: number;
-  billingData?: {
-    cuit: string;
-    invoiceType: string;
-  } | null;
+  billingData?: unknown;
   vehicles: Array<{
     id: string;
     identifier: string;
@@ -33,6 +30,15 @@ interface Customer {
 
 interface CustomersClientProps {
   initialCustomers: Customer[];
+}
+
+function isBillingData(data: unknown): data is { cuit: string; invoiceType: string } {
+  return typeof data === 'object' &&
+         data !== null &&
+         'cuit' in data &&
+         'invoiceType' in data &&
+         typeof (data as { cuit: unknown }).cuit === 'string' &&
+         typeof (data as { invoiceType: unknown }).invoiceType === 'string';
 }
 
 export default function CustomersClient({ initialCustomers }: CustomersClientProps) {
@@ -80,9 +86,9 @@ export default function CustomersClient({ initialCustomers }: CustomersClientPro
                 {row.original.email}
               </div>
             )}
-            {row.original.billingData && (
+            {isBillingData(row.original.billingData) && (
               <div className="text-xs text-blue-600">
-                Fact: {row.original.billingData.invoiceType} - CUIT: {row.original.billingData.cuit}
+                Fact: {(row.original.billingData as { cuit: string; invoiceType: string }).invoiceType} - CUIT: {(row.original.billingData as { cuit: string; invoiceType: string }).cuit}
               </div>
             )}
           </div>

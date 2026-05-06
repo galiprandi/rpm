@@ -14,6 +14,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Search, Trash2 } from 'lucide-react';
 import { formatARS } from '@/lib/utils/format';
 import { ProductServiceSelector, type SelectedItem } from '@/components/ui/ProductServiceSelector';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { useMemo, useCallback } from 'react';
 
 interface CartItem extends SelectedItem {
@@ -171,20 +176,16 @@ export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModal
   // Auto-fill payment amount with remaining when payment method changes
   useEffect(() => {
     if (paymentMethodId && remaining > 0) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPaymentAmount(remaining);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [paymentMethodId]);
+  }, [paymentMethodId, remaining]);
 
   // Auto-fill payment amount when entering payment step
   useEffect(() => {
     if (step === 'payment' && remaining > 0) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPaymentAmount(remaining);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step]);
+  }, [step, remaining]);
 
   const removePayment = (index: number) => {
     const newPayments = payments.filter((_, i) => i !== index);
@@ -321,15 +322,30 @@ export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModal
                       onKeyDown={(e) => e.key === 'Enter' && searchCustomers()}
                       className="flex-1"
                     />
-                    <Button onClick={searchCustomers} size="icon">
-                      <Search className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => setCreatingCustomer(true)}
-                    >
-                      Nuevo
-                    </Button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          onClick={searchCustomers}
+                          size="icon"
+                          aria-label="Buscar cliente"
+                        >
+                          <Search className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Buscar cliente</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="outline"
+                          onClick={() => setCreatingCustomer(true)}
+                          aria-label="Nuevo cliente"
+                        >
+                          Nuevo
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Crear nuevo cliente</TooltipContent>
+                    </Tooltip>
                   </div>
 
                   {foundCustomers.length > 0 && (
@@ -532,14 +548,20 @@ export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModal
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="font-semibold">{formatARS(payment.amount)}</span>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => removePayment(index)}
-                            disabled={loading}
-                          >
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          </Button>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => removePayment(index)}
+                                disabled={loading}
+                                aria-label="Eliminar pago"
+                              >
+                                <Trash2 className="h-4 w-4 text-red-500" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Eliminar pago</TooltipContent>
+                          </Tooltip>
                         </div>
                       </div>
                     );

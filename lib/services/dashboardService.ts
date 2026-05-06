@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { getArgentinaStartOfDay, getArgentinaStartOfYesterday } from '@/lib/utils/date';
 
 // Helper para enmascarar teléfono
 function maskPhone(phone: string | null): string {
@@ -99,12 +100,9 @@ export interface DashboardData {
  * @returns Datos del dashboard con métricas de ventas, OTs, stock, etc.
  */
 export async function getDashboardData(): Promise<DashboardData> {
-  // Obtener fecha de hoy y ayer en zona horaria local
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  
-  const yesterday = new Date(today);
-  yesterday.setDate(yesterday.getDate() - 1);
+  // Obtener fecha de hoy y ayer en zona horaria de Argentina
+  const today = getArgentinaStartOfDay();
+  const yesterday = getArgentinaStartOfYesterday();
 
   // Optimized: Use aggregate queries instead of findMany + reduce
   // Reduces from 5 queries to 4 more efficient ones
