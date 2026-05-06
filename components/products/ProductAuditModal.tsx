@@ -26,7 +26,6 @@ interface ProductAuditModalProps {
 
 export function ProductAuditModal({ open, onClose }: ProductAuditModalProps) {
   const [auditData, setAuditData] = useState<CostUpdateBatch[]>([]);
-  const [_loading, _setLoading] = useState(false);
   const [pagination, setPagination] = useState({
     page: 1,
     pageSize: 20,
@@ -35,7 +34,6 @@ export function ProductAuditModal({ open, onClose }: ProductAuditModalProps) {
   });
 
   const loadAuditData = useCallback(async () => {
-    setLoading(true);
     try {
       const response = await fetch(
         `/api/cost-updates/history?page=${pagination.page}&pageSize=${pagination.pageSize}`,
@@ -61,10 +59,8 @@ export function ProductAuditModal({ open, onClose }: ProductAuditModalProps) {
       }));
     } catch (error) {
       console.error('Error loading audit data:', error);
-    } finally {
-      setLoading(false);
     }
-  }, [pagination.page, pagination.pageSize, setLoading]);
+  }, [pagination.page, pagination.pageSize]);
 
   // Load audit data when modal opens
   useEffect(() => {
