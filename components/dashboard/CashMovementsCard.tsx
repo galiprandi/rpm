@@ -1,6 +1,8 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DollarSign, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { DollarSign, ArrowUpCircle, ArrowDownCircle, ExternalLink } from 'lucide-react';
 import { formatARS } from '@/lib/utils/format';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
 interface CashMovement {
   id: string;
@@ -83,28 +85,28 @@ export function CashMovementsCard({ cashMovements }: CashMovementsCardProps) {
   }
 
   return (
-    <Card>
+    <Card className="flex flex-col h-full">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground">
           Movimientos de Caja
         </CardTitle>
         <DollarSign className="h-4 w-4 text-muted-foreground" />
       </CardHeader>
-      <CardContent>
-        <div className="space-y-3 mt-2 max-h-[300px] overflow-y-auto">
+      <CardContent className="flex-1 overflow-hidden">
+        <div className="space-y-3 mt-2 max-h-[300px] overflow-y-auto pr-2">
           {movements.map((movement) => (
             <div
               key={movement.id}
               className="flex items-center justify-between py-2 border-b last:border-0"
             >
-              <div className="flex items-start gap-2 flex-1">
+              <div className="flex items-start gap-2 flex-1 min-w-0">
                 {getMovementIcon(movement.type)}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="font-medium text-sm">
                       {getMovementTypeLabel(movement.type)}
                     </span>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-xs text-muted-foreground truncate">
                       ({movement.methodName})
                     </span>
                   </div>
@@ -121,7 +123,7 @@ export function CashMovementsCard({ cashMovements }: CashMovementsCardProps) {
                   </div>
                 </div>
               </div>
-              <div className={`text-sm font-semibold ${getAmountClass(movement.type)}`}>
+              <div className={`text-sm font-semibold whitespace-nowrap ml-2 ${getAmountClass(movement.type)}`}>
                 {movement.type === 'EXPENSE' ? '-' : '+'}
                 {formatARS(movement.amount)}
               </div>
@@ -129,6 +131,14 @@ export function CashMovementsCard({ cashMovements }: CashMovementsCardProps) {
           ))}
         </div>
       </CardContent>
+      <CardFooter className="pt-2 border-t mt-auto">
+        <Button asChild variant="ghost" size="sm" className="w-full text-xs gap-2">
+          <Link href="/adm/operations">
+            Ver todas las operaciones
+            <ExternalLink className="h-3 w-3" />
+          </Link>
+        </Button>
+      </CardFooter>
     </Card>
   );
 }

@@ -1,52 +1,63 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DataTable } from '@/components/ui/data-table';
-import { ColumnDef } from '@tanstack/react-table';
+import { type ColumnDef } from '@tanstack/react-table';
 import { formatARS } from '@/lib/utils/format';
-import {
-  ArrowUpCircle,
-  ArrowDownCircle,
-  DollarSign,
-  Calendar as CalendarIcon,
-  ExternalLink,
-  Receipt,
-  User,
-  Wrench,
-  ShoppingCart,
-  RotateCcw,
-} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
+import { Calendar, ArrowUpCircle, ArrowDownCircle, DollarSign, RefreshCw, Eye } from 'lucide-react';
 import Link from 'next/link';
-import { DailyOperationsData } from '@/lib/services/dashboardService';
-import { cn } from '@/lib/utils';
+
+interface DailyOperationsData {
+  movements: Array<{
+    id: string;
+    type: 'INCOME' | 'EXPENSE' | 'OPENING' | 'CLOSING' | 'ADJUSTMENT';
+    amount: number;
+    method: string;
+    methodName: string;
+    referenceId?: string;
+    referenceType?: string;
+    reason?: string;
+    createdAt: string;
+    customerName?: string;
+    relatedId?: string;
+    relatedType?: 'work_order' | 'direct_sale';
+  }>;
+  metrics: {
+    income: number;
+    expense: number;
+    balance: number;
+  };
+}
 
 export function DailyOperations() {
-  const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [data, setData] = useState<DailyOperationsData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
-  const fetchOperations = async (selectedDate: string) => {
+  const fetchOperations = useCallback(async (targetDate: string) => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/dashboard/operations?date=${selectedDate}`);
-      if (res.ok) {
-        const json = await res.json();
-        setData(json);
+      const response = await fetch(`/api/dashboard/operations?date=${targetDate}`);
+      if (response.ok) {
+        const result = await response.json();
+        setData(result);
       }
     } catch (error) {
-      console.error('Error fetching daily operations:', error);
+      console.error('Error fetching operations:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchOperations(date);
-  }, [date]);
+    const timer = setTimeout(() => {
+        fetchOperations(date);
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [date, fetchOperations]);
 
   const columns: ColumnDef<DailyOperationsData['movements'][0]>[] = useMemo(() => [
     {
@@ -62,79 +73,43 @@ export function DailyOperations() {
       header: 'Tipo',
       cell: ({ row }) => {
         const type = row.original.type;
-        const config: Record<string, { label: string; icon: any; color: string }> = {
-          INCOME: { label: 'Ingreso', icon: ArrowUpCircle, color: 'text-green-600' },
-          EXPENSE: { label: 'Egreso', icon: ArrowDownCircle, color: 'text-red-600' },
-          OPENING: { label: 'Apertura', icon: DollarSign, color: 'text-blue-600' },
-          CLOSING: { label: 'Cierre', icon: DollarSign, color: 'text-slate-600' },
+        const labels: Record<string, string> = {
+          INCOME: 'Ingreso',
+          EXPENSE: 'Egreso',
+          OPENING: 'Apertura',
+          CLOSING: 'Cierre',
+          ADJUSTMENT: 'Ajuste',
         };
-        const { label, icon: Icon, color } = config[type] || { label: type, icon: DollarSign, color: '' };
-        return (
-          <div className={cn("flex items-center gap-2 font-medium", color)}>
-            <Icon className="h-4 w-4" />
-            {label}
-          </div>
-        );
+        return labels[type] || type;
       },
     },
     {
-      accessorKey: 'customer',
+      accessorKey: 'customerName',
       header: 'Cliente',
-      cell: ({ row }) => {
-        const customer = row.original.customer;
-        if (!customer) return <span className="text-muted-foreground">-</span>;
-        if (!customer.id) return <span>{customer.name}</span>;
-        return (
-          <Link
-            href={`/adm/customers/${customer.id}`}
-            className="flex items-center gap-1 text-primary hover:underline"
-          >
-            <User className="h-3 w-3" />
-            {customer.name}
-          </Link>
-        );
-      },
+      cell: ({ row }) => row.original.customerName || '-',
     },
     {
-      accessorKey: 'relatedId',
+      accessorKey: 'reason',
       header: 'Referencia',
-      cell: ({ row }) => {
-        const { relatedId, relatedType, referenceType, reason } = row.original;
-        if (relatedType === 'work_order' && relatedId) {
-          return (
-            <Link
-              href={`/adm/work-orders/${relatedId}`}
-              className="flex items-center gap-1 text-primary hover:underline"
-            >
-              <Wrench className="h-3 w-3" />
-              OT #{relatedId.slice(-6).toUpperCase()}
-            </Link>
-          );
-        }
-        if (relatedType === 'direct_sale' && relatedId) {
-          return (
-            <div className="flex items-center gap-1 text-slate-600">
-              <ShoppingCart className="h-3 w-3" />
-              Venta Rápida
-            </div>
-          );
-        }
-        return <span className="text-xs text-muted-foreground">{reason || referenceType || '-'}</span>;
-      },
+      cell: ({ row }) => (
+        <div className="max-w-[200px] truncate" title={row.original.reason}>
+          {row.original.reason || '-'}
+        </div>
+      ),
     },
     {
       accessorKey: 'methodName',
       header: 'Método',
-      cell: ({ row }) => <Badge variant="outline">{row.original.methodName}</Badge>,
     },
     {
       accessorKey: 'amount',
       header: 'Monto',
       cell: ({ row }) => {
+        const amount = row.original.amount;
         const isExpense = row.original.type === 'EXPENSE';
         return (
-          <span className={cn("font-bold", isExpense ? "text-red-600" : "text-green-600")}>
-            {isExpense ? '-' : '+'}{formatARS(row.original.amount)}
+          <span className={isExpense ? 'text-red-600 font-medium' : 'text-green-600 font-medium'}>
+            {isExpense ? '-' : '+'}{formatARS(amount)}
           </span>
         );
       },
@@ -143,95 +118,97 @@ export function DailyOperations() {
       id: 'actions',
       header: 'Acciones',
       cell: ({ row }) => {
-        const { relatedId, relatedType, customer, type } = row.original;
+        const { relatedId, relatedType } = row.original;
+        if (!relatedId || !relatedType) return null;
+
+        const href = relatedType === 'work_order'
+          ? `/adm/work-orders/${relatedId}`
+          : `/adm/customers?id=${relatedId}`; // Placeholder for direct sale view if available
 
         return (
-          <div className="flex items-center gap-2">
-             {customer?.id && (
-               <Button variant="ghost" size="sm" asChild title="Ver Cliente">
-                 <Link href={`/adm/customers/${customer.id}`}>
-                   <User className="h-4 w-4" />
-                 </Link>
-               </Button>
-             )}
-             {relatedId && (
-               <Button variant="ghost" size="sm" asChild title="Ver Detalle">
-                 <Link href={relatedType === 'work_order' ? `/adm/work-orders/${relatedId}` : '#'}>
-                   <ExternalLink className="h-4 w-4" />
-                 </Link>
-               </Button>
-             )}
-             {type === 'INCOME' && relatedId && (
-               <Button
-                variant="ghost"
-                size="sm"
-                className="text-amber-600 hover:text-amber-700 hover:bg-amber-50"
-                title="Generar NC (Próximamente)"
-                onClick={() => alert('La funcionalidad de Nota de Crédito se debe realizar desde la ficha del cliente según la especificación actual.')}
-              >
-                 <RotateCcw className="h-4 w-4" />
-               </Button>
-             )}
-          </div>
+          <Button asChild variant="ghost" size="sm" className="h-8 w-8 p-0">
+            <Link href={href}>
+              <Eye className="h-4 w-4" />
+              <span className="sr-only">Ver detalle</span>
+            </Link>
+          </Button>
         );
-      }
-    }
+      },
+    },
   ], []);
 
   return (
     <div className="space-y-6">
-      {/* Selector de Fecha y Métricas rápidas */}
-      <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-        <div className="flex items-center gap-2 bg-white p-2 rounded-lg border shadow-sm">
-          <CalendarIcon className="h-4 w-4 text-muted-foreground ml-2" />
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-2 bg-background border rounded-lg px-3 py-1 shadow-sm w-fit">
+          <Calendar className="h-4 w-4 text-muted-foreground" />
           <Input
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="border-none focus-visible:ring-0 w-40"
+            className="border-0 focus-visible:ring-0 h-8 w-40 bg-transparent p-0"
           />
         </div>
+        <Button
+          onClick={() => fetchOperations(date)}
+          disabled={loading}
+          variant="outline"
+          size="sm"
+          className="gap-2"
+        >
+          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+          Actualizar
+        </Button>
+      </div>
 
-        {data && (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 flex-1 md:flex-none">
-             <Card className="bg-green-50/50 border-green-100">
-                <CardContent className="p-3">
-                  <p className="text-xs text-green-600 font-medium uppercase">Ingresos</p>
-                  <p className="text-lg font-bold text-green-700">{formatARS(data.summary.totalIncome)}</p>
-                </CardContent>
-             </Card>
-             <Card className="bg-red-50/50 border-red-100">
-                <CardContent className="p-3">
-                  <p className="text-xs text-red-600 font-medium uppercase">Egresos</p>
-                  <p className="text-lg font-bold text-red-700">{formatARS(data.summary.totalExpense)}</p>
-                </CardContent>
-             </Card>
-             <Card className="bg-blue-50/50 border-blue-100 hidden md:block">
-                <CardContent className="p-3">
-                  <p className="text-xs text-blue-600 font-medium uppercase">Saldo Neto</p>
-                  <p className="text-lg font-bold text-blue-700">{formatARS(data.summary.netAmount)}</p>
-                </CardContent>
-             </Card>
-          </div>
-        )}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Ingresos</CardTitle>
+            <ArrowUpCircle className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">
+              {formatARS(data?.metrics.income || 0)}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Egresos</CardTitle>
+            <ArrowDownCircle className="h-4 w-4 text-red-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">
+              {formatARS(data?.metrics.expense || 0)}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Balance</CardTitle>
+            <DollarSign className="h-4 w-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className={`text-2xl font-bold ${(data?.metrics.balance || 0) >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+              {formatARS(data?.metrics.balance || 0)}
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Receipt className="h-5 w-5 text-muted-foreground" />
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <DollarSign className="h-5 w-5 text-muted-foreground" />
             Operaciones del Día
           </CardTitle>
-          <Button variant="outline" size="sm" onClick={() => fetchOperations(date)}>
-            Actualizar
-          </Button>
         </CardHeader>
         <CardContent>
           <DataTable
             columns={columns}
             data={data?.movements || []}
             pageSize={10}
-            loading={loading}
           />
         </CardContent>
       </Card>
