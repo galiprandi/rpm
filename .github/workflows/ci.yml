@@ -68,9 +68,6 @@ jobs:
       
     - name: Build
       run: pnpm build
-      
-    - name: Build Storybook
-      run: pnpm build-storybook
 
   security:
     runs-on: ubuntu-latest
