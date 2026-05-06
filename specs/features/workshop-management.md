@@ -1,4 +1,4 @@
-🚦 Estado: 🟡 Parcialmente implementado
+🚦 Estado: 🟡 Parcialmente implementado (Lógica en API routes, pendiente refactor a servicios)
 
 # Gestión de Taller y Órdenes de Trabajo (OT)
 
@@ -7,21 +7,21 @@ Digitalizar el flujo completo del taller mecánico/instalación, desde el ingres
 
 ## 2. Casos de Uso Principales (Flujos de éxito)
 - **Ingreso de Vehículo**: Creación de OT vinculada a un cliente, vehículo y un detalle de servicios a realizar.
-- **Asignación y Estado**: Cambio de estado de la OT (`PENDING`, `IN_PROGRESS`, `READY`, `DELIVERED`) y asignación a un técnico.
-- **Checklists**: Llenado de checklist de ingreso (estado del vehículo) y checklist de calidad de salida.
-- **Registro Fotográfico**: Subida de fotos del "antes" y "después" del trabajo realizado.
-- **Facturación de OT**: Conversión de una OT terminada en una venta/factura final.
+- **Asignación y Estado**: Cambio de estado de la OT (`PENDING`, `CONFIRMED`, `IN_PROGRESS`, `READY`, `DELIVERED`) y asignación a un técnico.
+- **Checklists**: Llenado de checklist de ingreso (Json) y checklist de calidad de salida.
+- **Registro Fotográfico**: Subida de fotos asociadas a la OT en la tabla `photo`.
+- **Facturación de OT**: Las OTs generan deuda en la cuenta corriente del cliente y pueden vincularse a una factura.
 
 ## 3. Restricciones (Qué NO hace / Fuera de alcance)
-- **RES-01**: No gestiona turnos u horarios estrictos tipo calendario interactivo (se hace en la web pública).
-- **RES-02**: El tiempo de mano de obra no se calcula automáticamente cronometrando al técnico.
+- **RES-01**: No gestiona turnos interactivos complejos en esta fase.
+- **RES-02**: El tiempo de mano de obra se registra por estados, no por cronómetro en tiempo real.
 
 ## 4. Comportamiento Esperado y Casos Límite
-- **Límite 1**: No se puede cambiar a estado `DELIVERED` si hay pagos pendientes o facturación no completada (dependiendo de la regla de negocio configurada).
-- **Límite 2**: El checklist de salida es obligatorio para pasar a estado `READY`.
-- **Validación 1**: Cada cambio de estado registra el usuario y la fecha para auditoría de tiempos.
+- **Límite 1**: Al crear una OT, se actualiza automáticamente el saldo (balance) del cliente como deuda.
+- **Límite 2**: Soporta la creación rápida de vehículos y marcas/modelos inexistentes durante el alta de la OT.
+- **Validación 1**: Los cambios de estado críticos se registran en `work_order_audit_log`.
 
 ## 5. Dependencias Técnicas Clave
-- **Tablas BD**: `WorkOrder`, `Vehicle`, `Checklist`, `WorkOrderItem`
-- **Componentes UI**: Tablero Kanban para visualización de OTs.
-- **Dependencias**: Integración con el módulo de productos para descontar materiales usados en el taller.
+- **Tablas BD**: `work_order`, `vehicle`, `work_order_item`, `photo`, `work_order_audit_log`
+- **Componentes UI**: Tablero Kanban, formularios de checklists.
+- **Rutas API**: `/api/work-orders`, `/api/vehicles`, `/api/vehicle-makes`, `/api/vehicle-models`
