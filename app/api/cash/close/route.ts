@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
 
     // Calculate expected amounts per method
     const expectedByMethod: Record<string, number> = {};
-    movements.forEach(movement => {
+    movements.forEach((movement: any) => {
       const method = movement.method;
       const amount = decimalToNumber(movement.amount);
       

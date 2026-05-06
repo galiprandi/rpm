@@ -18,7 +18,7 @@ export default async function ServicesPage() {
     orderBy: { name: 'asc' },
   });
 
-  return <ServicesClient initialServices={services.map(s => ({
+  return <ServicesClient initialServices={services.map((s: any) => ({
     ...s,
     baseCost: Number(s.baseCost),
     vehicleFactor: Number(s.vehicleFactor),

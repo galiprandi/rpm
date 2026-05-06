@@ -41,7 +41,7 @@ export default async function CustomersPage() {
     return 0;
   };
 
-  const customersWithVehicles = customers.map(c => ({
+  const customersWithVehicles = customers.map((c: any) => ({
     ...c,
     balance: decimalToNumber(c.balance),
     vehicles: c.vehicle,

@@ -47,8 +47,8 @@ async function processBatch(
   const existingProducts = await prisma.product.findMany({
     select: { id: true, name: true, sku: true },
   });
-  const existingNames = new Set(existingProducts.map(p => p.name.toLowerCase()));
-  const existingSkus = new Set(existingProducts.map(p => p.sku?.toLowerCase()).filter(Boolean));
+  const existingNames = new Set(existingProducts.map((p: any) => p.name.toLowerCase()));
+  const existingSkus = new Set(existingProducts.map((p: any) => p.sku?.toLowerCase()).filter(Boolean));
 
   // Process sequentially within batch for transaction safety
   for (let i = 0; i < products.length; i++) {

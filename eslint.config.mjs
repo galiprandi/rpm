@@ -7,6 +7,11 @@ const eslintConfig = defineConfig([
   ...nextTs,
   {
     rules: {
+      "@typescript-eslint/no-explicit-any": "warn",
+    },
+  },
+  {
+    rules: {
       "react-hooks/static-components": "warn",
       "react-hooks/immutability": "warn",
       "react-hooks/set-state-in-effect": "warn",

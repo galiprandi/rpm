@@ -158,7 +158,7 @@ export async function getProducts(filters: ProductFilters = {}): Promise<Product
 
   // Apply low stock filter post-transformation
   if (filters.lowStock) {
-    transformedProducts = transformedProducts.filter(p => p.isLowStock);
+    transformedProducts = transformedProducts.filter((p: any) => p.isLowStock);
   }
 
   return {
@@ -454,7 +454,7 @@ export async function getProductMovements(productId: string): Promise<StockMovem
     orderBy: { createdAt: 'desc' },
   });
 
-  return movements.map(m => ({
+  return movements.map((m: any) => ({
     ...m,
     type: m.type as MovementType,
     reason: m.reason as MovementReason,

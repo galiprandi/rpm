@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
 
     // For each opening, find the corresponding closing and calculate totals
     const history = await Promise.all(
-      openings.map(async (opening) => {
+      openings.map(async (opening: any) => {
         const openingDate = new Date(opening.createdAt);
         const nextDay = new Date(openingDate);
         nextDay.setDate(nextDay.getDate() + 1);
@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
         let totalExpense = 0;
         let totalAdjustments = 0;
 
-        movements.forEach((movement) => {
+        movements.forEach((movement: any) => {
           const amount = decimalToNumber(movement.amount);
           switch (movement.type) {
             case 'INCOME':

@@ -42,7 +42,7 @@ async function closeOrphanedCashRegisters() {
       });
 
       let expectedAmount = decimalToNumber(opening.amount);
-      movements.forEach(m => {
+      movements.forEach((m: any) => {
         if (m.type === 'INCOME') expectedAmount += decimalToNumber(m.amount);
         if (m.type === 'EXPENSE') expectedAmount -= decimalToNumber(m.amount);
       });

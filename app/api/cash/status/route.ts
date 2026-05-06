@@ -61,7 +61,7 @@ const getCachedCashStatus = unstable_cache(
     }> = {};
 
     // Initialize with all payment methods (including CASH)
-    const allMethods = ['CASH', ...paymentMethods.map(pm => pm.code)];
+    const allMethods = ['CASH', ...paymentMethods.map((pm: any) => pm.code)];
     allMethods.forEach(method => {
       summary[method] = { opening: 0, income: 0, expense: 0, expected: 0 };
     });
@@ -76,7 +76,7 @@ const getCachedCashStatus = unstable_cache(
         },
       });
 
-      movements.forEach(movement => {
+      movements.forEach((movement: any) => {
         const method = movement.method;
         const amount = decimalToNumber(movement.amount);
 

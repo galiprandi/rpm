@@ -98,7 +98,7 @@ export const getAdminEmails = async (): Promise<string[]> => {
     },
     select: { email: true },
   });
-  return admins.map(a => a.email);
+  return admins.map((a: any) => a.email);
 };
 
 /**

@@ -40,7 +40,7 @@ export async function POST() {
     for (const customer of customers) {
       // Calculate what the balance should be (sum of unpaid work orders)
       const calculatedBalance = customer.work_order.reduce(
-        (sum, wo) => sum + Number(wo.total),
+        (sum: any, wo: any) => sum + Number(wo.total),
         0
       );
 

@@ -119,7 +119,7 @@ export async function getPriceLists(includeInactive: boolean = false): Promise<P
   });
 
   return {
-    priceLists: priceLists.map(pl => ({
+    priceLists: priceLists.map((pl: any) => ({
       ...pl,
       baseMarginPercentage: Number(pl.baseMarginPercentage),
       roundingRule: pl.roundingRule as RoundingRule,
@@ -158,7 +158,7 @@ export async function getPriceListById(id: string): Promise<PriceListDetail | nu
   const minimumMargin = await getMinimumMargin();
 
   // Transform items with calculated prices and margins
-  const transformedItems: PriceListItem[] = priceList.price_list_item.map(item => {
+  const transformedItems: PriceListItem[] = priceList.price_list_item.map((item: any) => {
     const replacementCost = item.product?.replacementCost
       ? Number(item.product.replacementCost)
       : 0;

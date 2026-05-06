@@ -56,7 +56,7 @@ export async function getSuppliers(includeInactive: boolean = false): Promise<Su
   });
 
   return {
-    suppliers: suppliers.map(s => ({
+    suppliers: suppliers.map((s: any) => ({
       ...s,
       productCount: s._count.product,
     })),

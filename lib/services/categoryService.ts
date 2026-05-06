@@ -53,7 +53,7 @@ export async function getCategories(includeInactive: boolean = false): Promise<C
   });
 
   return {
-    categories: categories.map(c => ({
+    categories: categories.map((c: any) => ({
       ...c,
       productCount: c._count.product,
     })),
