@@ -42,18 +42,6 @@ interface DataTableProps<TData> {
   title?: React.ReactNode;
   rowActions?: (row: TData) => React.ReactNode;
 }
-
-interface DataTableProps<TData> {
-  data: TData[];
-  columns: ColumnDef<TData>[];
-  enableGlobalFilter?: boolean;
-  globalFilterPlaceholder?: string;
-  emptyMessage?: string;
-  externalGlobalFilter?: string;
-  onExternalGlobalFilterChange?: (value: string) => void;
-  footerPlaceholder?: React.ReactNode;
-  pageSize?: number;
-}
 export function DataTable<TData>({
   data,
   columns,
@@ -228,7 +216,9 @@ export function DataTable<TData>({
         </div>
         <div className="flex items-center gap-4">
           <span className="text-sm text-muted-foreground">
-            {table.getState().pagination.pageIndex + 1}/{table.getPageCount()} · {table.getFilteredRowModel().rows.length} items
+            Página {table.getState().pagination.pageIndex + 1} de {table.getPageCount()} ·{' '}
+            {table.getFilteredRowModel().rows.length}{' '}
+            {table.getFilteredRowModel().rows.length === 1 ? 'registro' : 'registros'}
           </span>
           <div className="flex items-center gap-2">
             <Button
@@ -236,6 +226,7 @@ export function DataTable<TData>({
               size="sm"
               onClick={() => table.setPageIndex(0)}
               disabled={!table.getCanPreviousPage()}
+              aria-label="Primera página"
             >
               <ChevronsLeft className="h-4 w-4" />
             </Button>
@@ -244,6 +235,7 @@ export function DataTable<TData>({
               size="sm"
               onClick={() => table.previousPage()}
               disabled={!table.getCanPreviousPage()}
+              aria-label="Página anterior"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -252,6 +244,7 @@ export function DataTable<TData>({
               size="sm"
               onClick={() => table.nextPage()}
               disabled={!table.getCanNextPage()}
+              aria-label="Página siguiente"
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
@@ -260,6 +253,7 @@ export function DataTable<TData>({
               size="sm"
               onClick={() => table.setPageIndex(table.getPageCount() - 1)}
               disabled={!table.getCanNextPage()}
+              aria-label="Última página"
             >
               <ChevronsRight className="h-4 w-4" />
             </Button>
