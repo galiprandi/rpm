@@ -241,8 +241,10 @@ export default function WorkOrdersPage() {
   }, []);
 
   useEffect(() => {
-    fetchWorkOrders();
-  }, [fetchWorkOrders]);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void fetchWorkOrders();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const getStatusBadge = (status: string) => {
     const statusConfig = STATUSES.find((s) => s.id === status);
@@ -351,7 +353,8 @@ export default function WorkOrdersPage() {
         });
         if (!response.ok) throw new Error("Error al actualizar el estado");
         toast.success(`OT ${activeWO.vehicle.identifier} movida a ${STATUSES.find(s => s.id === finalStatus)?.label}`);
-      } catch (error) {
+      } catch (e) {
+        console.error("Error updating status:", e);
         toast.error("No se pudo actualizar el estado en el servidor");
         fetchWorkOrders(); // Revert on error
       }
