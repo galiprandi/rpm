@@ -69,7 +69,7 @@ export const POST = withAdminDynamic(async (request: NextRequest, { params }: Pa
     });
 
     // Create SKU -> product map
-    const productMap = new Map(products.map(p => [p.sku, p]));
+    const productMap = new Map(products.map((p: any) => [p.sku, p]));
 
     // Track results
     const updated: BulkUpdateResponse['updated'] = [];

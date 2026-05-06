@@ -167,7 +167,7 @@ export async function previewCostUpdate(
   let hasNegativeCosts = false;
   let negativeCount = 0;
 
-  const items: CostUpdatePreviewItem[] = products.map(product => {
+  const items: CostUpdatePreviewItem[] = products.map((product: any) => {
     const currentCost = getProductBaseCost(product.replacementCost, product.costPrice);
     const newCost = calculateNewCost(currentCost, adjustment);
     const variationPercent = calculateVariationPercent(currentCost, newCost);
@@ -316,8 +316,8 @@ export async function getCostUpdateHistory(
   ]);
 
   // Create lookup maps
-  const categoryMap = new Map(categories.map(cat => [cat.id, cat.name]));
-  const supplierMap = new Map(suppliers.map(sup => [sup.id, sup.name]));
+  const categoryMap = new Map(categories.map((cat: any) => [cat.id, cat.name]));
+  const supplierMap = new Map(suppliers.map((sup: any) => [sup.id, sup.name]));
 
   // Helper to enrich filters with names
   const enrichFilters = (filters: Record<string, unknown>): Record<string, unknown> => {
@@ -335,7 +335,7 @@ export async function getCostUpdateHistory(
   };
 
   return {
-    batches: batches.map(batch => ({
+    batches: batches.map((batch: any) => ({
       id: batch.id,
       userId: batch.userId,
       userName: batch.userName,

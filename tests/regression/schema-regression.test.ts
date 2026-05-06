@@ -64,7 +64,7 @@ describe('Schema Regression Tests', () => {
       });
 
       expect(Array.isArray(customers)).toBe(true);
-      customers.forEach(customer => {
+      customers.forEach((customer: any) => {
         expect(typeof customer._count.vehicle).toBe('number');
         expect(typeof customer._count.work_order).toBe('number');
       });

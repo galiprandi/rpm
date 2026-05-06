@@ -216,7 +216,7 @@ export async function GET(request: NextRequest) {
         orderBy: { name: 'asc' },
       });
       
-      services = rawServices.map(s => ({
+      services = rawServices.map((s: any) => ({
         id: s.id,
         name: s.name,
         baseCost: Number(s.baseCost),
@@ -228,7 +228,7 @@ export async function GET(request: NextRequest) {
     const priceExceptions: Map<string, { fixedPrice: number | null; overrideMarginPercentage: number | null }> = new Map();
     
     if (priceListId && products.length > 0) {
-      const productIds = products.map(p => p.id);
+      const productIds = products.map((p: any) => p.id);
       const exceptions = await prisma.price_list_item.findMany({
         where: {
           priceListId,
@@ -250,7 +250,7 @@ export async function GET(request: NextRequest) {
     const allExceptions: Map<string, Map<string, { fixedPrice: number | null; overrideMarginPercentage: number | null }>> = new Map();
     
     if (products.length > 0 && allActivePriceLists.length > 0) {
-      const productIds = products.map(p => p.id);
+      const productIds = products.map((p: any) => p.id);
       const allListIds = allActivePriceLists.map(pl => pl.id);
       
       const exceptions = await prisma.price_list_item.findMany({
@@ -305,7 +305,7 @@ export async function GET(request: NextRequest) {
     };
 
     // Transformar productos
-    const productResults: SearchResult[] = products.map(product => {
+    const productResults: SearchResult[] = products.map((product: any) => {
       const baseCost = getProductBaseCost(product.replacementCost, product.costPrice);
       
       // Calcular minimumPrice (precio con margen mínimo)

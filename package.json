@@ -33,7 +33,6 @@
     "@dnd-kit/modifiers": "^9.0.0",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
-    "@prisma/client": "6.19.3",
     "@radix-ui/react-slot": "^1.2.4",
     "@storybook/addon-docs": "^10.3.3",
     "@storybook/addon-mcp": "^0.4.2",
@@ -47,7 +46,6 @@
     "next": "16.2.4",
     "pg": "^8.20.0",
     "postcss": "^8.5.13",
-    "prisma": "^6.19.3",
     "radix-ui": "^1.4.3",
     "react": "19.2.4",
     "react-dom": "19.2.4",
@@ -69,6 +67,7 @@
     ]
   },
   "devDependencies": {
+    "@prisma/client": "6.19.3",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
@@ -81,6 +80,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.1",
     "jsdom": "^29.0.1",
+    "prisma": "^6.19.3",
     "tailwindcss": "^4",
     "tailwindcss-animate": "^1.0.7",
     "tsx": "^4.21.0",

@@ -246,7 +246,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     where: { createdAt: { gte: today } },
   });
 
-  const readyForDelivery = readyWorkOrders.map(wo => ({
+  const readyForDelivery = readyWorkOrders.map((wo: any) => ({
     workOrderId: wo.id,
     vehicle: {
       type: wo.vehicle.category as 'COMPACT' | 'SEDAN' | 'SUV' | 'PICKUP' | 'TRUCK',
@@ -261,7 +261,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     invoiceStatus: wo.invoiceId ? 'ISSUED' as const : 'PENDING' as const,
   }));
 
-  const recentMovementsFormatted = recentMovements.map(m => ({
+  const recentMovementsFormatted = recentMovements.map((m: any) => ({
     type: m.type as 'IN' | 'OUT' | 'ADJUSTMENT',
     productName: m.product.name,
     quantity: Math.abs(m.quantity),
@@ -305,7 +305,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     }))
     .sort((a, b) => b.total - a.total);
 
-  const cashMovementsFormatted = allCashMovements.map(m => ({
+  const cashMovementsFormatted = allCashMovements.map((m: any) => ({
     id: m.id,
     type: m.type as 'INCOME' | 'EXPENSE' | 'OPENING' | 'CLOSING',
     amount: decimalToNumber(m.amount),
@@ -339,7 +339,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     },
     stock: {
       lowStockCount: lowStockProducts.length,
-      lowStockItems: lowStockProducts.map(p => ({
+      lowStockItems: lowStockProducts.map((p: any) => ({
         id: p.id,
         name: p.name,
         stock: p.stock,
