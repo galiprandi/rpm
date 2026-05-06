@@ -1,4 +1,4 @@
-import CustomersClient from './CustomersClient';
+import CustomersClient, { Customer } from './CustomersClient';
 import { prisma } from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth-server';
 import { UserRole } from '@/lib/auth/roles';
@@ -50,5 +50,5 @@ export default async function CustomersPage() {
     },
   }));
 
-  return <CustomersClient initialCustomers={customersWithVehicles as unknown as any} />;
+  return <CustomersClient initialCustomers={customersWithVehicles as unknown as Customer[]} />;
 }

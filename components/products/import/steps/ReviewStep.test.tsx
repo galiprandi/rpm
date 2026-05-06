@@ -6,16 +6,25 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { vi } from 'vitest';
 import { ReviewStep } from './ReviewStep';
 import { useImportState } from '@/app/adm/products/import/hooks/useImportState';
+import type {
+  ValidationResult,
+  ColumnMapping,
+  ImportOptions
+} from '@/lib/product-import-schemas';
 
 // Mock hooks
 vi.mock('@/app/adm/products/import/hooks/useImportState');
 
 // Mock child components
 vi.mock('../shared/StepActions', () => ({
-  StepActions: ({ onPrevious, onNext, canGoNext }: any) => (
+  StepActions: ({ onBack, onContinue, onContinueDisabled }: {
+    onBack: () => void;
+    onContinue: () => void;
+    onContinueDisabled: boolean;
+  }) => (
     <div>
-      <button data-testid="prev-button" onClick={onPrevious}>Previous</button>
-      <button data-testid="next-button" onClick={onNext} disabled={!canGoNext}>
+      <button data-testid="prev-button" onClick={onBack}>Previous</button>
+      <button data-testid="next-button" onClick={onContinue} disabled={onContinueDisabled}>
         Next
       </button>
     </div>
@@ -25,16 +34,14 @@ vi.mock('../shared/StepActions', () => ({
 vi.mock('../ProductReviewTable', () => ({
   ProductReviewTable: ({ 
     csvData, 
-    fieldConfig, 
-    globalOptions, 
     onValidationComplete,
-    existingCategories 
   }: {
-    csvData: any;
-    fieldConfig: any;
-    globalOptions: any;
-    onValidationComplete: (result: any) => void;
-    existingCategories: any;
+    csvData: { headers: string[]; rows: string[][]; totalRows: number };
+    mapping: Record<string, ColumnMapping>;
+    importOptions: ImportOptions;
+    onValidationComplete: (result: ValidationResult) => void;
+    existingCategories: Array<{ id: string; name: string }>;
+    autoValidate?: boolean;
   }) => (
     <div>
       <div data-testid="product-review-table">
@@ -43,10 +50,23 @@ vi.mock('../ProductReviewTable', () => ({
         <button 
           data-testid="validation-complete" 
           onClick={() => onValidationComplete({
-            valid: [{ name: 'Test Product', sku: 'TEST', price: '10.99' }],
+            valid: [{
+              name: 'Test Product',
+              sku: 'TEST',
+              description: null,
+              costPrice: 10.99,
+              replacementCost: 0,
+              stock: 0,
+              minStock: 0,
+              barcode: null,
+              location: null,
+              supplierId: null,
+              isActive: true,
+              categoryId: '1'
+            }],
             invalid: [],
-            stats: { attempted: 1, created: 1, failed: 0, skipped: 0 },
-            categoriesToCreate: []
+            stats: { total: 1, valid: 1, invalid: 0, categoriesToCreate: 0 },
+            categories: []
           })}
         >
           Complete Validation
@@ -95,8 +115,20 @@ describe('ReviewStep Component', () => {
       setFileData: vi.fn(),
       categoryMappings: [],
       importResults: null,
-      isProcessing: false
-    } as any);
+      isProcessing: false,
+      goToStep: vi.fn(),
+      reset: vi.fn(),
+      clearFileData: vi.fn(),
+      setMapping: vi.fn(),
+      setOptions: vi.fn(),
+      clearConfiguration: vi.fn(),
+      clearValidationResult: vi.fn(),
+      setCategoryMappings: vi.fn(),
+      updateCategoryMapping: vi.fn(),
+      setImportResults: vi.fn(),
+      clearImportResults: vi.fn(),
+      setIsProcessing: vi.fn(),
+    });
   });
 
   it('should render correctly when file data exists', () => {
@@ -111,12 +143,29 @@ describe('ReviewStep Component', () => {
   it('should show no file message when no file data', () => {
     mockUseImportState.mockReturnValue({
       fileData: null,
-      configuration: { mapping: {}, options: {} },
+      configuration: { mapping: {}, options: mockGlobalOptions },
       validationResult: null,
       setValidationResult: vi.fn(),
       prevStep: vi.fn(),
-      nextStep: vi.fn()
-    } as any);
+      nextStep: vi.fn(),
+      currentStep: 2,
+      setFileData: vi.fn(),
+      categoryMappings: [],
+      importResults: null,
+      isProcessing: false,
+      goToStep: vi.fn(),
+      reset: vi.fn(),
+      clearFileData: vi.fn(),
+      setMapping: vi.fn(),
+      setOptions: vi.fn(),
+      clearConfiguration: vi.fn(),
+      clearValidationResult: vi.fn(),
+      setCategoryMappings: vi.fn(),
+      updateCategoryMapping: vi.fn(),
+      setImportResults: vi.fn(),
+      clearImportResults: vi.fn(),
+      setIsProcessing: vi.fn(),
+    });
 
     render(<ReviewStep existingCategories={mockExistingCategories} />);
     
@@ -137,10 +186,23 @@ describe('ReviewStep Component', () => {
     fireEvent.click(screen.getByTestId('validation-complete'));
     
     expect(mockUseImportState().setValidationResult).toHaveBeenCalledWith({
-      valid: [{ name: 'Test Product', sku: 'TEST', price: '10.99' }],
+      valid: [{
+        name: 'Test Product',
+        sku: 'TEST',
+        description: null,
+        costPrice: 10.99,
+        replacementCost: 0,
+        stock: 0,
+        minStock: 0,
+        barcode: null,
+        location: null,
+        supplierId: null,
+        isActive: true,
+        categoryId: '1'
+      }],
       invalid: [],
-      stats: { attempted: 1, created: 1, failed: 0, skipped: 0 },
-      categoriesToCreate: []
+      stats: { total: 1, valid: 1, invalid: 0, categoriesToCreate: 0 },
+      categories: []
     });
   });
 
@@ -149,15 +211,45 @@ describe('ReviewStep Component', () => {
       fileData: mockFileData,
       configuration: { mapping: mockFieldConfig, options: mockGlobalOptions },
       validationResult: {
-        valid: [{ name: 'Test Product' }],
+        valid: [{
+          name: 'Test Product',
+          sku: 'TEST',
+          description: null,
+          costPrice: 10.99,
+          replacementCost: 0,
+          stock: 0,
+          minStock: 0,
+          barcode: null,
+          location: null,
+          supplierId: null,
+          isActive: true,
+          categoryId: '1'
+        }],
         invalid: [],
-        stats: { attempted: 1, created: 1, failed: 0, skipped: 0 },
+        stats: { total: 1, valid: 1, invalid: 0, categoriesToCreate: 0 },
         categories: []
       },
       setValidationResult: vi.fn(),
       prevStep: vi.fn(),
-      nextStep: vi.fn()
-    } as any);
+      nextStep: vi.fn(),
+      currentStep: 2,
+      setFileData: vi.fn(),
+      categoryMappings: [],
+      importResults: null,
+      isProcessing: false,
+      goToStep: vi.fn(),
+      reset: vi.fn(),
+      clearFileData: vi.fn(),
+      setMapping: vi.fn(),
+      setOptions: vi.fn(),
+      clearConfiguration: vi.fn(),
+      clearValidationResult: vi.fn(),
+      setCategoryMappings: vi.fn(),
+      updateCategoryMapping: vi.fn(),
+      setImportResults: vi.fn(),
+      clearImportResults: vi.fn(),
+      setIsProcessing: vi.fn(),
+    });
 
     render(<ReviewStep existingCategories={mockExistingCategories} />);
     
@@ -174,14 +266,31 @@ describe('ReviewStep Component', () => {
       configuration: { mapping: mockFieldConfig, options: mockGlobalOptions },
       validationResult: {
         valid: [],
-        invalid: [{ name: 'Invalid Product', error: 'Missing required fields' }],
-        stats: { attempted: 1, created: 0, failed: 1, skipped: 0 },
+        invalid: [{ rowIndex: 0, reason: 'Missing required fields', rawData: {} }],
+        stats: { total: 1, valid: 0, invalid: 1, categoriesToCreate: 0 },
         categories: []
       },
       setValidationResult: vi.fn(),
       prevStep: vi.fn(),
-      nextStep: vi.fn()
-    } as any);
+      nextStep: vi.fn(),
+      currentStep: 2,
+      setFileData: vi.fn(),
+      categoryMappings: [],
+      importResults: null,
+      isProcessing: false,
+      goToStep: vi.fn(),
+      reset: vi.fn(),
+      clearFileData: vi.fn(),
+      setMapping: vi.fn(),
+      setOptions: vi.fn(),
+      clearConfiguration: vi.fn(),
+      clearValidationResult: vi.fn(),
+      setCategoryMappings: vi.fn(),
+      updateCategoryMapping: vi.fn(),
+      setImportResults: vi.fn(),
+      clearImportResults: vi.fn(),
+      setIsProcessing: vi.fn(),
+    });
 
     // Mock window.alert
     const mockAlert = vi.fn();
@@ -243,12 +352,29 @@ describe('ReviewStep Component', () => {
     it('should handle empty file data', () => {
       mockUseImportState.mockReturnValue({
         fileData: { ...mockFileData, preview: [], totalRows: 0 },
-        configuration: { mapping: {}, options: {} },
+        configuration: { mapping: {}, options: mockGlobalOptions },
         validationResult: null,
         setValidationResult: vi.fn(),
         prevStep: vi.fn(),
-        nextStep: vi.fn()
-      } as any);
+        nextStep: vi.fn(),
+        currentStep: 2,
+        setFileData: vi.fn(),
+        categoryMappings: [],
+        importResults: null,
+        isProcessing: false,
+        goToStep: vi.fn(),
+        reset: vi.fn(),
+        clearFileData: vi.fn(),
+        setMapping: vi.fn(),
+        setOptions: vi.fn(),
+        clearConfiguration: vi.fn(),
+        clearValidationResult: vi.fn(),
+        setCategoryMappings: vi.fn(),
+        updateCategoryMapping: vi.fn(),
+        setImportResults: vi.fn(),
+        clearImportResults: vi.fn(),
+        setIsProcessing: vi.fn(),
+      });
 
       render(<ReviewStep existingCategories={mockExistingCategories} />);
       
@@ -259,12 +385,29 @@ describe('ReviewStep Component', () => {
     it('should handle missing field config', () => {
       mockUseImportState.mockReturnValue({
         fileData: mockFileData,
-        configuration: { mapping: {}, options: {} },
+        configuration: { mapping: {}, options: mockGlobalOptions },
         validationResult: null,
         setValidationResult: vi.fn(),
         prevStep: vi.fn(),
-        nextStep: vi.fn()
-      } as any);
+        nextStep: vi.fn(),
+        currentStep: 2,
+        setFileData: vi.fn(),
+        categoryMappings: [],
+        importResults: null,
+        isProcessing: false,
+        goToStep: vi.fn(),
+        reset: vi.fn(),
+        clearFileData: vi.fn(),
+        setMapping: vi.fn(),
+        setOptions: vi.fn(),
+        clearConfiguration: vi.fn(),
+        clearValidationResult: vi.fn(),
+        setCategoryMappings: vi.fn(),
+        updateCategoryMapping: vi.fn(),
+        setImportResults: vi.fn(),
+        clearImportResults: vi.fn(),
+        setIsProcessing: vi.fn(),
+      });
 
       render(<ReviewStep existingCategories={mockExistingCategories} />);
       
@@ -279,8 +422,25 @@ describe('ReviewStep Component', () => {
         validationResult: null,
         setValidationResult: vi.fn(),
         prevStep: vi.fn(),
-        nextStep: vi.fn()
-      } as any);
+        nextStep: vi.fn(),
+        currentStep: 2,
+        setFileData: vi.fn(),
+        categoryMappings: [],
+        importResults: null,
+        isProcessing: false,
+        goToStep: vi.fn(),
+        reset: vi.fn(),
+        clearFileData: vi.fn(),
+        setMapping: vi.fn(),
+        setOptions: vi.fn(),
+        clearConfiguration: vi.fn(),
+        clearValidationResult: vi.fn(),
+        setCategoryMappings: vi.fn(),
+        updateCategoryMapping: vi.fn(),
+        setImportResults: vi.fn(),
+        clearImportResults: vi.fn(),
+        setIsProcessing: vi.fn(),
+      });
 
       render(<ReviewStep existingCategories={mockExistingCategories} />);
       

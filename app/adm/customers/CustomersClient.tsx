@@ -10,7 +10,7 @@ import { CustomerDialog } from "@/components/customers/CustomerDialog";
 import { type CustomerFormData } from "@/components/customers/CustomerForm";
 import { useRouter } from "next/navigation";
 
-interface Customer {
+export interface Customer {
   id: string;
   name: string;
   phone: string | null;

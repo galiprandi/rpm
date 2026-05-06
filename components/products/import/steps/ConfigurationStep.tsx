@@ -7,16 +7,7 @@ import { useEffect, useRef } from 'react';
 import { StepActions } from '../shared/StepActions';
 import { useImportState } from '@/app/adm/products/import/hooks/useImportState';
 import { ColumnMapper } from '../ColumnMapper';
-
-interface Category {
-  id: string;
-  name: string;
-}
-
-interface Supplier {
-  id: string;
-  name: string;
-}
+import type { ColumnMapping, ImportOptions } from '@/lib/product-import-schemas';
 
 interface ConfigurationStepProps {
   existingCategories: Array<{ id: string; name: string }>;
@@ -47,7 +38,7 @@ export function ConfigurationStep({ existingCategories, existingSuppliers }: Con
       console.log('🧹 Configuración de importación limpiada - mapeo manual forzado');
       hasInitialized.current = true;
     }
-  }, [setMapping, setOptions]);
+  }, [setMapping, setOptions, fieldConfig]);
 
   const handleContinue = () => {
     // Validate that at least name is mapped
@@ -58,11 +49,11 @@ export function ConfigurationStep({ existingCategories, existingSuppliers }: Con
     nextStep();
   };
 
-  const handleMappingChange = (newMapping: Record<string, any>) => {
+  const handleMappingChange = (newMapping: Record<string, ColumnMapping>) => {
     setMapping(newMapping);
   };
 
-  const handleOptionsChange = (newOptions: any) => {
+  const handleOptionsChange = (newOptions: ImportOptions) => {
     setOptions(newOptions);
   };
 
