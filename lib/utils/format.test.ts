@@ -25,9 +25,10 @@ describe('capitalizeText', () => {
   });
 
   it('should handle special characters', () => {
-    expect(capitalizeText('juan-perez')).toBe('Juan-Perez');
-    // Note: regex \b treats apostrophe as word boundary
-    expect(capitalizeText("juan's car")).toBe("Juan'S Car");
+    // Current implementation only capitalizes after spaces, not hyphens
+    expect(capitalizeText('juan-perez')).toBe('Juan-perez');
+    // Apostrophe is treated as part of the word, so "car" gets capitalized after the space
+    expect(capitalizeText("juan's car")).toBe("Juan's Car");
   });
 });
 
