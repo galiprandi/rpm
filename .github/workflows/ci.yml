@@ -56,11 +56,12 @@ jobs:
           echo "Linting changed files:"
           echo "$CHANGED_FILES"
           echo "$CHANGED_FILES" | xargs pnpm lint
+          
+          echo "Type-checking changed files:"
+          echo "$CHANGED_FILES" | xargs pnpm tsc --noEmit
         else
-          echo "No TypeScript/JavaScript files changed, skipping lint"
+          echo "No TypeScript/JavaScript files changed, skipping lint and type-check"
         fi
-        
-        pnpm type-check
       
     - name: Run tests
       run: pnpm test
