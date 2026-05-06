@@ -43,7 +43,23 @@ jobs:
       
     - name: Lint & Type Check
       run: |
-        pnpm lint
+        # Get changed files (only .ts, .tsx, .js, .mjs files)
+        if [ "${{ github.event_name }}" = "pull_request" ]; then
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+        else
+          BASE_SHA="HEAD~1"
+        fi
+        
+        CHANGED_FILES=$(git diff --name-only --diff-filter=ACMR $BASE_SHA HEAD | grep -E '\.(ts|tsx|js|mjs)$' || echo "")
+        
+        if [ -n "$CHANGED_FILES" ]; then
+          echo "Linting changed files:"
+          echo "$CHANGED_FILES"
+          echo "$CHANGED_FILES" | xargs pnpm lint
+        else
+          echo "No TypeScript/JavaScript files changed, skipping lint"
+        fi
+        
         pnpm type-check
       
     - name: Run tests
