@@ -5,13 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { FuelLevelSlider } from "@/components/work-orders/FuelLevelSlider";
 import { Badge } from "@/components/ui/badge";
@@ -22,18 +15,6 @@ import { useUI } from "@/components/ui/UIProvider";
 import { ProductServiceSelector } from "@/components/ui/ProductServiceSelector";
 import { VehicleDialog } from "@/components/vehicles/VehicleDialog";
 import { Save, Plus, Trash2, Search, Car, User, CheckCircle, Edit } from "lucide-react";
-
-const VEHICLE_CATEGORIES = [
-  { value: "CAR", label: "Auto/Camioneta", icon: "🚗" },
-  { value: "SUV", label: "SUV/4x4", icon: "🚙" },
-  { value: "PICKUP", label: "Pickup", icon: "🛻" },
-  { value: "TRUCK", label: "Camión", icon: "🚚" },
-  { value: "MOTORCYCLE", label: "Moto", icon: "🏍️" },
-  { value: "TRAILER", label: "Trailer/Acoplado", icon: "🚛" },
-  { value: "AUDIO_EQUIPMENT", label: "Equipo de Audio", icon: "🔊" },
-  { value: "ELECTRIC_SCOOTER", label: "Monopatín Eléctrico", icon: "🛴" },
-  { value: "OTHER", label: "Otro Equipo", icon: "📦" },
-];
 
 const ENTRY_CHECKLIST = [
   { id: "keys", label: "Llaves/Control recibido", required: true },
@@ -130,11 +111,8 @@ export default function NewWorkOrderPage() {
     equipmentType: "",
     description: "",
   });
-  const [newCustomerSearch, setNewCustomerSearch] = useState("");
-  const [foundCustomers, setFoundCustomers] = useState<Array<{ id: string; name: string; phone: string }>>([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
-  const [creatingCustomer, setCreatingCustomer] = useState(false);
-  const [newCustomerData, setNewCustomerData] = useState({
+  const [newCustomerData] = useState({
     name: "",
     phone: "",
     email: "",
@@ -233,40 +211,6 @@ export default function NewWorkOrderPage() {
     }
   };
 
-  // Search customers for new vehicle
-  const searchCustomersForNewVehicle = async () => {
-    if (!newCustomerSearch.trim()) return;
-    const res = await fetch(`/api/customers?search=${encodeURIComponent(newCustomerSearch)}`);
-    if (res.ok) {
-      const data = await res.json();
-      setFoundCustomers(data.customers || []);
-    }
-  };
-
-  // Create new customer inline
-  const createCustomerInline = async () => {
-    if (!newCustomerData.name || !newCustomerData.phone) return;
-    setLoading(true);
-    try {
-      const res = await fetch("/api/customers", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newCustomerData),
-      });
-      if (res.ok) {
-        const customer = await res.json();
-        setSelectedCustomerId(customer.id);
-        setCreatingCustomer(false);
-      }
-    } catch (error) {
-      console.error("Error creating customer:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const isMotorVehicle = (category: string) =>
-    ["CAR", "TRUCK", "SUV", "PICKUP", "MOTORCYCLE", "TRAILER"].includes(category);
 
   const addItem = async (type: "PRODUCT" | "SERVICE", item: Service | Product) => {
     let unitPrice: number;
@@ -430,7 +374,6 @@ export default function NewWorkOrderPage() {
     setShowCreateVehicle(false);
     setPlateSearch("");
     setSelectedCustomerId(null);
-    setFoundCustomers([]);
   };
 
   return (

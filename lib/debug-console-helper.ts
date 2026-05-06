@@ -57,8 +57,8 @@ function showHelp(): void {
 
 // Asignar funciones globalmente
 if (typeof window !== 'undefined') {
-  (window as any).switchUser = switchUser;
-  (window as any).showDebugHelp = showHelp;
+  (window as unknown as { switchUser: typeof switchUser }).switchUser = switchUser;
+  (window as unknown as { showDebugHelp: typeof showHelp }).showDebugHelp = showHelp;
   
   // Mostrar ayuda al cargar la página
   console.log('🔐 Debug Auth Helper disponible. Ejecuta showDebugHelp() para ver ayuda.');

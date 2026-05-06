@@ -7,6 +7,7 @@ import { useCallback } from 'react';
 import { StepActions } from '../shared/StepActions';
 import { ProductReviewTable } from '../ProductReviewTable';
 import { useImportState } from '@/app/adm/products/import/hooks/useImportState';
+import type { ValidationResult } from '@/lib/product-import-schemas';
 
 interface ReviewStepProps {
   existingCategories: Array<{ id: string; name: string }>;
@@ -17,7 +18,7 @@ export function ReviewStep({ existingCategories }: ReviewStepProps) {
   const fieldConfig = configuration.mapping;
   const globalOptions = configuration.options;
 
-  const handleValidationComplete = useCallback((result: any) => {
+  const handleValidationComplete = useCallback((result: ValidationResult) => {
     setValidationResult(result);
   }, [setValidationResult]);
 

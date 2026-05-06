@@ -12,7 +12,7 @@ vi.mock('@/app/adm/products/import/hooks/useImportState');
 
 // Mock child components
 vi.mock('../shared/StepActions', () => ({
-  StepActions: ({ onPrevious, onNext, canGoNext }: any) => (
+  StepActions: ({ onPrevious, onNext, canGoNext }: { onPrevious: () => void, onNext: () => void, canGoNext: boolean }) => (
     <div>
       <button data-testid="prev-button" onClick={onPrevious}>Previous</button>
       <button data-testid="next-button" onClick={onNext} disabled={!canGoNext}>
@@ -25,16 +25,13 @@ vi.mock('../shared/StepActions', () => ({
 vi.mock('../ProductReviewTable', () => ({
   ProductReviewTable: ({ 
     csvData, 
-    fieldConfig, 
-    globalOptions, 
     onValidationComplete,
-    existingCategories 
   }: {
-    csvData: any;
-    fieldConfig: any;
-    globalOptions: any;
-    onValidationComplete: (result: any) => void;
-    existingCategories: any;
+    csvData: { headers: string[], totalRows: number };
+    fieldConfig: unknown;
+    globalOptions: unknown;
+    onValidationComplete: (result: unknown) => void;
+    existingCategories: unknown;
   }) => (
     <div>
       <div data-testid="product-review-table">
@@ -85,8 +82,11 @@ describe('ReviewStep Component', () => {
 
   beforeEach(() => {
     mockUseImportState.mockReturnValue({
-      fileData: mockFileData,
-      configuration: { mapping: mockFieldConfig, options: mockGlobalOptions },
+      fileData: mockFileData as unknown as never,
+      configuration: {
+        mapping: mockFieldConfig as unknown as never,
+        options: mockGlobalOptions as unknown as never
+      },
       validationResult: null,
       setValidationResult: vi.fn(),
       prevStep: vi.fn(),
@@ -95,8 +95,20 @@ describe('ReviewStep Component', () => {
       setFileData: vi.fn(),
       categoryMappings: [],
       importResults: null,
-      isProcessing: false
-    } as any);
+      isProcessing: false,
+      goToStep: vi.fn(),
+      reset: vi.fn(),
+      clearFileData: vi.fn(),
+      setMapping: vi.fn(),
+      setOptions: vi.fn(),
+      clearConfiguration: vi.fn(),
+      clearValidationResult: vi.fn(),
+      setCategoryMappings: vi.fn(),
+      updateCategoryMapping: vi.fn(),
+      setImportResults: vi.fn(),
+      clearImportResults: vi.fn(),
+      setIsProcessing: vi.fn(),
+    } as unknown as never);
   });
 
   it('should render correctly when file data exists', () => {
@@ -116,7 +128,7 @@ describe('ReviewStep Component', () => {
       setValidationResult: vi.fn(),
       prevStep: vi.fn(),
       nextStep: vi.fn()
-    } as any);
+    } as unknown);
 
     render(<ReviewStep existingCategories={mockExistingCategories} />);
     
@@ -157,7 +169,7 @@ describe('ReviewStep Component', () => {
       setValidationResult: vi.fn(),
       prevStep: vi.fn(),
       nextStep: vi.fn()
-    } as any);
+    } as unknown);
 
     render(<ReviewStep existingCategories={mockExistingCategories} />);
     
@@ -181,7 +193,7 @@ describe('ReviewStep Component', () => {
       setValidationResult: vi.fn(),
       prevStep: vi.fn(),
       nextStep: vi.fn()
-    } as any);
+    } as unknown);
 
     // Mock window.alert
     const mockAlert = vi.fn();
@@ -248,7 +260,7 @@ describe('ReviewStep Component', () => {
         setValidationResult: vi.fn(),
         prevStep: vi.fn(),
         nextStep: vi.fn()
-      } as any);
+      } as unknown);
 
       render(<ReviewStep existingCategories={mockExistingCategories} />);
       
@@ -264,7 +276,7 @@ describe('ReviewStep Component', () => {
         setValidationResult: vi.fn(),
         prevStep: vi.fn(),
         nextStep: vi.fn()
-      } as any);
+      } as unknown);
 
       render(<ReviewStep existingCategories={mockExistingCategories} />);
       
@@ -280,7 +292,7 @@ describe('ReviewStep Component', () => {
         setValidationResult: vi.fn(),
         prevStep: vi.fn(),
         nextStep: vi.fn()
-      } as any);
+      } as unknown);
 
       render(<ReviewStep existingCategories={mockExistingCategories} />);
       

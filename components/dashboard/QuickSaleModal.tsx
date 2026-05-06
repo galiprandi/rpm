@@ -176,20 +176,16 @@ export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModal
   // Auto-fill payment amount with remaining when payment method changes
   useEffect(() => {
     if (paymentMethodId && remaining > 0) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPaymentAmount(remaining);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [paymentMethodId]);
+  }, [paymentMethodId, remaining]);
 
   // Auto-fill payment amount when entering payment step
   useEffect(() => {
     if (step === 'payment' && remaining > 0) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPaymentAmount(remaining);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step]);
+  }, [step, remaining]);
 
   const removePayment = (index: number) => {
     const newPayments = payments.filter((_, i) => i !== index);

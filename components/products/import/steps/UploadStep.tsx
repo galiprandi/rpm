@@ -9,16 +9,16 @@ import { useFileUpload } from '@/app/adm/products/import/hooks/useFileUpload';
 import { useImportState } from '@/app/adm/products/import/hooks/useImportState';
 
 interface UploadStepProps {
-  onUpload?: (data: any) => void;
+  onUpload?: (data: unknown) => void;
 }
 
 export function UploadStep({ onUpload }: UploadStepProps) {
-  const { uploadFile, error, reset } = useFileUpload();
+  const { error, reset } = useFileUpload();
   const { setFileData, nextStep } = useImportState();
 
-  const handleFileAnalyzed = useCallback(async (data: any) => {
+  const handleFileAnalyzed = useCallback(async (data: unknown) => {
     try {
-      setFileData(data);
+      setFileData(data as never);
       onUpload?.(data);
       nextStep();
     } catch (err) {
