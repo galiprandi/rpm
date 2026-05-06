@@ -1,193 +1,25 @@
-🟢 # Especificación del Sistema RPM
+# 📚 Índice del Sistema de Especificaciones (RPM)
 
-## Overview
+Bienvenido a las especificaciones de RPM. Esta documentación ha sido refactorizada para enfocarse en **casos de uso y prevención de regresiones**. Las especificaciones se dividen en dos categorías principales: **Arquitectura Técnica** y **Módulos de Negocio (Features)**.
 
-El proyecto RPM es una aplicación web construida con Next.js 16.2.1, React 19.2.4 y TailwindCSS 4. Esta especificación define la arquitectura, despliegue y operación del sistema.
+## 1. Arquitectura Técnica Global (`/specs/architecture/`)
+Define las bases técnicas y de infraestructura sobre las que está construida la aplicación.
+- [Arquitectura Backend y Datos](architecture/backend-data-architecture.md) - Servicios, Prisma, Caché y Transacciones.
+- [Arquitectura Frontend](architecture/frontend-architecture.md) - Next.js, UI, Manejo de Estado y Layouts.
+- [Operaciones, Deploy y Escalamiento](architecture/ops-architecture.md) - Vercel, Base de datos, CDN de imágenes.
 
-## Stack Tecnológico
+## 2. Módulos de Negocio / Features (`/specs/features/`)
+Define exactamente qué hace cada parte de la aplicación, qué no hace, y cuáles son sus casos límite de fallo.
+- [Ventas, Facturación y Caja](features/sales-and-billing.md) - Ventas, AFIP, Notas de crédito, Cierre de Caja, Listas de Precio.
+- [Productos e Inventario](features/products-and-inventory.md) - Catálogo, Importador, Actualización masiva de costos.
+- [Gestión de Taller (OT)](features/workshop-management.md) - Órdenes de trabajo, checklists, técnicos.
+- [Clientes y Cuenta Corriente](features/customers.md) - ABM clientes, vehículos, saldos a favor.
+- [Usuarios, Roles y Autenticación](features/users-and-auth.md) - Better Auth, ABM usuarios.
+- [Proveedores](features/suppliers.md) - Compras y proveedores.
+- [Bot GER (IA)](features/ai-bot-ger.md) - Vercel AI SDK, Tools, asistencia técnica inteligente.
 
-- **Frontend**: Next.js 16.2.1 con App Router
-- **UI**: React 19.2.4 + TailwindCSS 4
-- **Package Manager**: pnpm
-- **Hosting**: Vercel
-- **Repository**: GitHub (galiprandi/rpm)
+## 3. Propuestas No Implementadas (`/specs/proposals/`)
+Aquí residen ideas, propuestas o features diseñadas pero que aún no se han llevado a código, mantenidas para referencia futura.
 
-## Arquitectura
-
-### Estructura del Proyecto
-```
-rpm/
-├── app/                 # Next.js App Router
-├── public/             # Assets estáticos
-├── docs/               # Documentación técnica
-├── specs/              # Especificaciones del sistema
-├── .vercel/            # Configuración Vercel
-└── package.json        # Dependencias y scripts
-```
-
-## Despliegue en Vercel
-
-### Configuración del Despliegue
-
-#### Cuentas y Accesos
-- **GitHub Repository**: `galiprandi/rpm` (Owner: galiprandi, Collaborator: rpmsysadim)
-- **Vercel Account**: `rpm.sysadim@gmail.com` (Scope: rpmsysadim-5965s-projects)
-- **Vercel Project**: `rpm`
-- **Project ID**: `prj_xDmpvzobb8VhHmd7RhEg0pDB7ruE`
-
-#### URLs de Producción
-- **Principal**: https://rpm-wheat.vercel.app
-- **Directa**: https://rpm-8f53y9g4t-rpmsysadim-5965s-projects.vercel.app
-- **Panel**: https://vercel.com/rpmsysadim-5965s-projects/rpm/settings
-
-#### Configuración de Build
-```json
-{
-  "framework": "nextjs",
-  "buildCommand": "npm run build",
-  "outputDirectory": ".next",
-  "nodeVersion": "24.x"
-}
-```
-
-### Flujo de Despliegue Automático
-
-1. **Trigger**: Push a `main` branch en GitHub
-2. **Build**: `npm run build` 
-3. **Deploy**: Automático a producción
-4. **Alias**: Actualización de `rpm-wheat.vercel.app`
-
-### Variables de Entorno
-- **Development**: Descargadas automáticamente de Vercel
-- **Production**: Gestionadas en panel de Vercel
-- **Archivo Local**: `.env.local` (excluido de git)
-
-## Monitorización y Salud
-
-### Métricas de Despliegue
-- **Build Time**: < 30 segundos objetivo
-- **Deploy Status**: Visible en panel Vercel
-- **URL Health**: Verificación automática de disponibilidad
-
-### Monitorización de Aplicación
-- **Vercel Analytics**: Métricas de uso y rendimiento
-- **Core Web Vitals**: LCP, INP, CLS
-- **Error Tracking**: Logs en tiempo real desde Vercel
-
-### Alerts y Notificaciones
-- **Build Failures**: Email automático a `rpm.sysadim@gmail.com`
-- **Deploy Status**: Notificaciones en panel
-- **Performance Issues**: Alerts de Vercel Analytics
-
-## Componentes del Sistema
-
-### Frontend Components
-- **App Router**: Estructura basada en `app/` directory
-- **Pages**: Rutas dinámicas y estáticas
-- **Layouts**: Layouts compartidos
-- **Styles**: TailwindCSS con configuración personalizada
-
-### Infraestructura
-- **CDN**: Vercel Edge Network
-- **Build**: Vercel Build Platform
-- **Hosting**: Serverless Functions
-- **DNS**: Vercel DNS management
-
-## Seguridad
-
-### Acceso y Permisos
-- **GitHub**: Acceso de colaborador para `rpmsysadim`
-- **Vercel**: Acceso completo para `rpm.sysadim@gmail.com`
-- **Environment Variables**: Encriptadas en Vercel
-
-### Best Practices
-- **Dependencies**: Actualizaciones regulares con `pnpm update`
-- **Security Headers**: Configurados por defecto en Next.js
-- **HTTPS**: Forzado en todas las URLs
-
-## Mantenimiento
-
-### Updates y Versionado
-- **Next.js**: Seguir releases estables
-- **React**: Mantener versión actual
-- **Dependencies**: Revisión mensual de actualizaciones
-
-### Backups y Recovery
-- **Code**: Versionado en GitHub
-- **Configuration**: Backup en `.vercel/`
-- **Environment**: Gestión centralizada en Vercel
-
-## Tests y Documentación Relacionados
-
-### Tests Unitarios
-- `health.test.ts` - Validación de funcionalidad principal del health check API
-  - Cobertura: 80% 
-  - Tests: 5/5 pasando
-  - Performance: <100ms de respuesta
-  - Especificaciones: `/specs/core.md#testing-estrategy`
-
-### Tests E2E
-- `core-routes.spec.ts` - Validación completa de rutas principales
-  - Cobertura: >90% de rutas críticas
-  - Performance: <3s de carga por ruta
-  - Especificaciones: `/specs/core.md#routes-validation`
-  - Browser testing: Chromium, Firefox, Safari, Mobile
-
-### Tests de Integración
-- `Deploy Tests`: Validación de despliegue automático
-- `Health Tests`: Validación de health checks
-- `Performance Tests`: Métricas de rendimiento y Core Web Vitals
-- `CI/CD Tests`: Validación de pipeline de GitHub Actions
-
-### CI/CD Pipeline
-- **Quick-check**: Lint, TypeScript, Unit Tests, Build (PRs)
-- **Full CI**: Todo lo anterior + E2E Tests, Security, Deploy (Main)
-- **Estrategia**: Testing separado para optimizar tiempo de feedback
-- **Protección**: Production nunca se rompe por tests fallidos
-
-### Documentación Técnica
-- `docs/deployment.md` - Especificación de API y despliegue
-- `docs/architecture.md` - Diagramas de arquitectura (por implementar)
-- `docs/ci-cd.md` - Configuración y estrategia de CI/CD (por crear)
-- `docs/routing.md` - Estructura y validación de rutas (por crear)
-
-### Vinculación Activa
-- **Última actualización**: 2025-03-25
-- **Estado tests**: 🟢 E2E configurados, Unitarios 5/5 pasando
-- **Cobertura**: E2E >90%, Unitarios 80% (objetivo >95%)
-- **CI/CD**: ✅ Pipeline completo con protección de producción
-- **Automatización**: Deploy automático validado por tests
-
-## Procedimientos de Emergencia
-
-### Rollback
-1. Identificar commit estable anterior
-2. `git revert <commit-fallido>`
-3. Push a main (trigger deploy automático)
-4. Verificar funcionamiento
-
-### Downtime Procedures
-1. Comunicar vía email a stakeholders
-2. Investigar logs en Vercel
-3. Aplicar hotfix si es necesario
-4. Documentar incidente
-
-## Contactos y Responsabilidades
-
-| Rol | Contacto | Responsabilidades |
-|-----|----------|-------------------|
-| Owner | galiprandi (GitHub) | Administración del repositorio |
-| DevOps | rpm.sysadim@gmail.com | Despliegue y monitorización |
-| Developer | rpmsysadim (GitHub) | Desarrollo y mantenimiento |
-
-## Roadmap
-
-### Q2 2025
-- [ ] Implementar suite de tests unitarios
-- [ ] Configurar CI/CD avanzado
-- [ ] Implementar monitorización avanzada
-
-### Q3 2025
-- [ ] Migrar a TypeScript estricto
-- [ ] Implementar caching estratégico
-- [ ] Optimización de performance
+---
+**Nota para Agentes IA**: Antes de modificar código, consulta el módulo de negocio en `/features/` correspondiente para entender los casos de uso esperados y las restricciones técnicas, evitando así introducir regresiones. Si vas a crear una nueva feature, usa la skill `create-specification` que ya tiene cargada la plantilla estricta y obligatoria.
