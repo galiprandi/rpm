@@ -472,7 +472,7 @@ export async function getDailyOperations(date: Date): Promise<DailyOperationsDat
 
       return {
         id: m.id,
-        type: m.type as any,
+        type: m.type as DailyOperationsData["movements"][0]["type"],
         amount: decimalToNumber(m.amount),
         method: m.method,
         methodName: methodMap[m.method] || m.method,

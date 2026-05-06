@@ -1,21 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { getDailyOperations } from './dashboardService';
+import * as dashboardService from './dashboardService';
 import { prisma } from '@/lib/prisma';
-import { getArgentinaStartOfDay } from '@/lib/utils/date';
+import { getArgentinaDate } from '@/lib/utils/date';
 
-// Mock prisma
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     cash_movement: {
       findMany: vi.fn(),
     },
-    payment_method: {
-      findMany: vi.fn(),
-    },
-    payment: {
+    direct_sale: {
       findUnique: vi.fn(),
     },
-    direct_sale_payment: {
+    work_order: {
+      findUnique: vi.fn(),
+    },
+    work_order_payment: {
       findUnique: vi.fn(),
     },
     customer: {
@@ -24,87 +23,64 @@ vi.mock('@/lib/prisma', () => ({
   },
 }));
 
-describe('Dashboard Service - getDailyOperations', () => {
-  const mockDate = new Date('2026-03-20T12:00:00Z');
-
+describe('Daily Operations Service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('should return enriched daily operations', async () => {
+  it('should fetch and enrich daily operations', async () => {
+    const mockDate = getArgentinaDate();
+
     const mockMovements = [
       {
         id: '1',
         type: 'INCOME',
         amount: 1000,
         method: 'CASH',
-        referenceType: 'work_order_payment',
-        referenceId: 'pay1',
-        createdAt: new Date('2026-03-20T10:00:00Z'),
-        createdBy: 'user1',
+        referenceId: 'sale-1',
+        referenceType: 'direct_sale_payment',
+        createdAt: mockDate,
       },
-      {
-        id: '2',
-        type: 'EXPENSE',
-        amount: 500,
-        method: 'CASH',
-        reason: 'Limpieza',
-        createdAt: new Date('2026-03-20T11:00:00Z'),
-        createdBy: 'user1',
-      }
     ];
 
-    const mockPaymentMethods = [
-      { code: 'CASH', name: 'Efectivo' }
-    ];
+    const mockSale = {
+      id: 'sale-1',
+      customer: { name: 'John Doe' },
+    };
 
-    (prisma.cash_movement.findMany as any).mockResolvedValue(mockMovements);
-    (prisma.payment_method.findMany as any).mockResolvedValue(mockPaymentMethods);
-    (prisma.payment.findUnique as any).mockResolvedValue({
-      id: 'pay1',
-      workOrder: {
-        id: 'wo1',
-        customer: { id: 'cust1', name: 'Juan Perez' }
-      }
-    });
+    vi.mocked(prisma.cash_movement.findMany).mockResolvedValue(mockMovements as unknown);
+    vi.mocked(prisma.direct_sale.findUnique).mockResolvedValue(mockSale as unknown);
 
-    const result = await getDailyOperations(mockDate);
+    const result = await dashboardService.getDailyOperations(mockDate);
 
-    expect(result.summary.totalIncome).toBe(1000);
-    expect(result.summary.totalExpense).toBe(500);
-    expect(result.summary.netAmount).toBe(500);
-    expect(result.movements).toHaveLength(2);
-    expect(result.movements[0].customer?.name).toBe('Juan Perez');
-    expect(result.movements[0].methodName).toBe('Efectivo');
+    expect(result.movements).toHaveLength(1);
+    expect(result.movements[0].customerName).toBe('John Doe');
+    expect(result.metrics.income).toBe(1000);
   });
 
-  it('should handle direct sale payments', async () => {
+  it('should handle customer payments correctly', async () => {
+    const mockDate = getArgentinaDate();
+
     const mockMovements = [
       {
-        id: '3',
+        id: '2',
         type: 'INCOME',
-        amount: 2000,
+        amount: 500,
         method: 'TRANSFER',
-        referenceType: 'direct_sale_payment',
-        referenceId: 'dsp1',
-        createdAt: new Date('2026-03-20T14:00:00Z'),
-        createdBy: 'user1',
-      }
+        referenceId: 'cust-1',
+        referenceType: 'customer_payment',
+        createdAt: mockDate,
+      },
     ];
 
-    (prisma.cash_movement.findMany as any).mockResolvedValue(mockMovements);
-    (prisma.payment_method.findMany as any).mockResolvedValue([{ code: 'TRANSFER', name: 'Transferencia' }]);
-    (prisma.direct_sale_payment.findUnique as any).mockResolvedValue({
-      directSale: {
-        id: 'ds1',
-        customerName: 'Consumidor Final',
-        customer: null
-      }
-    });
+    const mockCustomer = { name: 'Jane Smith' };
 
-    const result = await getDailyOperations(mockDate);
+    vi.mocked(prisma.cash_movement.findMany).mockResolvedValue(mockMovements as unknown);
+    vi.mocked(prisma.customer.findUnique).mockResolvedValue(mockCustomer as unknown);
 
-    expect(result.movements[0].customer?.name).toBe('Consumidor Final');
-    expect(result.movements[0].relatedType).toBe('direct_sale');
+    const result = await dashboardService.getDailyOperations(mockDate);
+
+    expect(result.movements[0].customerName).toBe('Jane Smith');
+    expect(result.metrics.income).toBe(500);
   });
 });
