@@ -8,6 +8,25 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, LayoutGrid, List, ArrowUpDown, Car, Truck, Wrench, Headphones, Package } from "lucide-react";
 import { Header } from "@/components/adm/Header";
 import { cn } from "@/lib/utils";
+import {
+  DndContext,
+  DragOverlay,
+  closestCorners,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+  DragStartEvent,
+  DragOverEvent,
+} from "@dnd-kit/core";
+import {
+  useSortable,
+  SortableContext,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { toast } from "sonner";
 
 interface WorkOrder {
   id: string;
@@ -32,11 +51,180 @@ const STATUSES = [
   { id: "DELIVERED", label: "Entregada", color: "bg-gray-50 border-gray-200" },
 ];
 
+// --- Helper Functions ---
+
+const getPaymentColorClass = (wo: WorkOrder) => {
+  if (wo.isFullyPaid) return "text-green-600";
+  if (wo.totalPaid && wo.totalPaid > 0) return "text-yellow-600";
+  return "text-gray-600";
+};
+
+const getCategoryIcon = (category: string) => {
+  const normalizedCategory = category?.toUpperCase() || '';
+  switch (normalizedCategory) {
+    case 'CAR':
+    case 'SUV':
+    case 'PICKUP':
+      return <Car className="h-4 w-4" />;
+    case 'TRUCK':
+      return <Truck className="h-4 w-4" />;
+    case 'MOTORCYCLE':
+      return <Wrench className="h-4 w-4" />;
+    case 'AUDIO_EQUIPMENT':
+      return <Headphones className="h-4 w-4" />;
+    case 'TRAILER':
+    case 'OTHER_EQUIPMENT':
+    default:
+      return <Package className="h-4 w-4" />;
+  }
+};
+
+const isDelayed = (wo: WorkOrder) => {
+  const referenceDate = wo.startedAt ? new Date(wo.startedAt) : new Date(wo.createdAt);
+  const daysInStatus = Math.floor(
+    (Date.now() - referenceDate.getTime()) / (1000 * 60 * 60 * 24)
+  );
+  return daysInStatus > 3 && ["WAITING", "IN_PROGRESS"].includes(wo.status);
+};
+
+// --- Components ---
+
+function KanbanCard({ wo, isOverlay = false }: { wo: WorkOrder; isOverlay?: boolean }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: wo.id,
+    data: {
+      type: "WorkOrder",
+      wo,
+    }
+  });
+
+  const style = {
+    transform: CSS.Translate.toString(transform),
+    transition,
+  };
+
+  const content = (
+    <Card className={cn(
+      "cursor-pointer hover:shadow-md transition-all border-l-4",
+      isDelayed(wo) ? "border-l-red-500 bg-red-50/30" : "border-l-transparent",
+      isDragging && !isOverlay && "opacity-30",
+      isOverlay && "shadow-xl border-primary ring-2 ring-primary ring-opacity-50 scale-105"
+    )}>
+      <CardContent className="p-3 space-y-1.5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 font-semibold text-sm">
+            {getCategoryIcon(wo.vehicle.category)}
+            {wo.vehicle.identifier}
+          </div>
+          <span className={cn("text-xs font-medium", getPaymentColorClass(wo))}>
+            ${Number(wo.total).toLocaleString("es-AR")}
+          </span>
+        </div>
+        <div className="text-xs text-muted-foreground">
+          {wo.vehicle.make?.name} {wo.vehicle.model?.name}
+        </div>
+
+        <div className="flex justify-between items-center text-xs text-muted-foreground pt-0.5 border-t">
+          <span>{wo.customer.name}</span>
+          {isDelayed(wo) ? (
+            <span className="text-red-600 font-medium flex items-center gap-1">
+              <ArrowUpDown className="h-3 w-3" />
+              Atrasada
+            </span>
+          ) : (
+            <span>
+              {new Date(wo.createdAt).toLocaleDateString("es-AR", {
+                day: "2-digit",
+                month: "short"
+              })}
+            </span>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  if (isOverlay) return content;
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      <Link href={`/adm/work-orders/${wo.id}`} onClick={(e) => {
+        // Prevent navigation if we just finished dragging
+        if (isDragging) e.preventDefault();
+      }}>
+        {content}
+      </Link>
+    </div>
+  );
+}
+
+function KanbanColumn({ status, items }: { status: typeof STATUSES[0]; items: WorkOrder[] }) {
+  const { setNodeRef } = useSortable({
+    id: status.id,
+    data: {
+      type: "Column",
+      statusId: status.id,
+    }
+  });
+
+  return (
+    <div className="flex flex-col flex-1 min-w-[200px] h-full">
+      <div
+        className={cn(
+          "p-3 rounded-t-lg font-semibold text-sm border sticky top-0 z-10",
+          status.color
+        )}
+      >
+        <div className="flex justify-between items-center">
+          <span>{status.label}</span>
+          <span className="text-muted-foreground text-xs">
+            {items.length}
+          </span>
+        </div>
+      </div>
+      <div
+        ref={setNodeRef}
+        className="bg-muted/30 rounded-b-lg p-2 flex-1 overflow-y-auto space-y-3 border border-t-0 min-h-[150px]"
+      >
+        <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
+          {items.map((wo) => (
+            <KanbanCard key={wo.id} wo={wo} />
+          ))}
+          {items.length === 0 && (
+            <div className="h-full min-h-[100px] flex items-center justify-center text-muted-foreground/50 text-xs text-center px-4 italic">
+              Sin órdenes
+            </div>
+          )}
+        </SortableContext>
+      </div>
+    </div>
+  );
+}
+
+// --- Main Page Component ---
+
 export default function WorkOrdersPage() {
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"kanban" | "list">("kanban");
   const [paymentFilter, setPaymentFilter] = useState<"all" | "pending">("all");
+  const [activeId, setActiveId] = useState<string | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor)
+  );
 
   const fetchWorkOrders = useCallback(async () => {
     try {
@@ -46,6 +234,7 @@ export default function WorkOrdersPage() {
       setWorkOrders(data.workOrders);
     } catch (error) {
       console.error("Error fetching work orders:", error);
+      toast.error("Error al cargar las órdenes de trabajo");
     } finally {
       setLoading(false);
     }
@@ -64,43 +253,6 @@ export default function WorkOrdersPage() {
     );
   };
 
-  const getPaymentColorClass = (wo: WorkOrder) => {
-    if (wo.isFullyPaid) return "text-green-600";
-    if (wo.totalPaid && wo.totalPaid > 0) return "text-yellow-600";
-    return "text-gray-600";
-  };
-
-  const getCategoryIcon = (category: string) => {
-    const normalizedCategory = category?.toUpperCase() || '';
-    switch (normalizedCategory) {
-      case 'CAR':
-      case 'SUV':
-      case 'PICKUP':
-        return <Car className="h-4 w-4" />;
-      case 'TRUCK':
-        return <Truck className="h-4 w-4" />;
-      case 'MOTORCYCLE':
-        return <Wrench className="h-4 w-4" />;
-      case 'AUDIO_EQUIPMENT':
-        return <Headphones className="h-4 w-4" />;
-      case 'TRAILER':
-      case 'OTHER_EQUIPMENT':
-      default:
-        return <Package className="h-4 w-4" />;
-    }
-  };
-
-  // Check if OT is delayed (more than 3 days in current status without progress)
-  // BUG FIX: Use startedAt when available, otherwise use createdAt
-  const isDelayed = (wo: WorkOrder) => {
-    const referenceDate = wo.startedAt ? new Date(wo.startedAt) : new Date(wo.createdAt);
-    const daysInStatus = Math.floor(
-      (Date.now() - referenceDate.getTime()) / (1000 * 60 * 60 * 24)
-    );
-    return daysInStatus > 3 && ["WAITING", "IN_PROGRESS"].includes(wo.status);
-  };
-
-  // Filter work orders by payment status
   const filteredWorkOrders = useMemo(() => {
     if (paymentFilter === "pending") {
       return workOrders.filter((wo) => !wo.isFullyPaid);
@@ -108,10 +260,103 @@ export default function WorkOrdersPage() {
     return workOrders;
   }, [workOrders, paymentFilter]);
 
-  const workOrdersByStatus = STATUSES.map((status) => ({
+  const workOrdersByStatus = useMemo(() => STATUSES.map((status) => ({
     ...status,
     items: filteredWorkOrders.filter((wo) => wo.status === status.id),
-  }));
+  })), [filteredWorkOrders]);
+
+  const activeWorkOrder = useMemo(() =>
+    activeId ? workOrders.find(wo => wo.id === activeId) : null
+  , [activeId, workOrders]);
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+  };
+
+  const handleDragOver = (event: DragOverEvent) => {
+    const { active, over } = event;
+    if (!over) return;
+
+    const activeId = active.id;
+    const overId = over.id;
+
+    if (activeId === overId) return;
+
+    const isActiveAWorkOrder = active.data.current?.type === "WorkOrder";
+    if (!isActiveAWorkOrder) return;
+
+    const activeWO = active.data.current?.wo;
+    if (!activeWO) return;
+
+    // Dropping over another WorkOrder
+    if (over.data.current?.type === "WorkOrder") {
+      const overWO = over.data.current.wo;
+
+      if (activeWO.status !== overWO.status) {
+        setWorkOrders(prev => {
+          return prev.map(wo => {
+            if (wo.id === activeId) {
+              return { ...wo, status: overWO.status };
+            }
+            return wo;
+          });
+        });
+      }
+    }
+
+    // Dropping over a Column
+    if (over.data.current?.type === "Column") {
+      const overStatusId = over.data.current.statusId;
+
+      if (activeWO.status !== overStatusId) {
+        setWorkOrders(prev => {
+          return prev.map(wo => {
+            if (wo.id === activeId) {
+              return { ...wo, status: overStatusId };
+            }
+            return wo;
+          });
+        });
+      }
+    }
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveId(null);
+
+    if (!over) return;
+
+    const activeWO = active.data.current?.wo as WorkOrder | undefined;
+    if (!activeWO) return;
+
+    let newStatus = activeWO.status;
+
+    if (over.data.current?.type === "WorkOrder") {
+      newStatus = over.data.current.wo.status;
+    } else if (over.data.current?.type === "Column") {
+      newStatus = over.data.current.statusId;
+    }
+
+    // Find the current status in state (it might have been updated by handleDragOver)
+    const currentWOInState = workOrders.find(wo => wo.id === activeWO.id);
+    const finalStatus = currentWOInState?.status || newStatus;
+
+    if (finalStatus !== activeWO.status) {
+      try {
+        const response = await fetch(`/api/work-orders/${activeWO.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: finalStatus }),
+        });
+        if (!response.ok) throw new Error("Error al actualizar el estado");
+        toast.success(`OT ${activeWO.vehicle.identifier} movida a ${STATUSES.find(s => s.id === finalStatus)?.label}`);
+      } catch (error) {
+        toast.error("No se pudo actualizar el estado en el servidor");
+        fetchWorkOrders(); // Revert on error
+      }
+    }
+  };
 
   if (loading) {
     return (
@@ -170,74 +415,28 @@ export default function WorkOrdersPage() {
       {viewMode === "kanban" ? (
         <div className="flex-1 overflow-hidden">
           <div className="h-full overflow-x-auto">
-            <div className="flex gap-2 h-full pb-2 px-1">
-              {workOrdersByStatus.map((status) => (
-                <div
-                  key={status.id}
-                  className="flex flex-col flex-1 min-w-[180px] h-full"
-                >
-                  {/* Sticky Header */}
-                  <div
-                    className={cn(
-                      "p-3 rounded-t-lg font-semibold text-sm border sticky top-0 z-10",
-                      status.color
-                    )}
-                  >
-                    <div className="flex justify-between items-center">
-                      <span>{status.label}</span>
-                      <span className="text-muted-foreground text-xs">
-                        {status.items.length}
-                      </span>
-                    </div>
-                  </div>
-                  {/* Scrollable Column */}
-                  <div className="bg-muted/30 rounded-b-lg p-2 flex-1 overflow-y-auto space-y-3 border border-t-0">
-                    {status.items.map((wo) => (
-                      <Link key={wo.id} href={`/adm/work-orders/${wo.id}`}>
-                        <Card className={cn(
-                          "cursor-pointer hover:shadow-md transition-all border-l-4",
-                          isDelayed(wo) ? "border-l-red-500 bg-red-50/30" : "border-l-transparent"
-                        )}>
-                          <CardContent className="p-3 space-y-1.5">
-                            {/* Vehicle Info - Primary */}
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2 font-semibold text-sm">
-                                {getCategoryIcon(wo.vehicle.category)}
-                                {wo.vehicle.identifier}
-                              </div>
-                              <span className={cn("text-xs font-medium", getPaymentColorClass(wo))}>
-                                ${Number(wo.total).toLocaleString("es-AR")}
-                              </span>
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {wo.vehicle.make?.name} {wo.vehicle.model?.name}
-                            </div>
-                            
-                            {/* Customer - Secondary */}
-                            <div className="flex justify-between items-center text-xs text-muted-foreground pt-0.5 border-t">
-                              <span>{wo.customer.name}</span>
-                              {isDelayed(wo) ? (
-                                <span className="text-red-600 font-medium flex items-center gap-1">
-                                  <ArrowUpDown className="h-3 w-3" />
-                                  Atrasada
-                                </span>
-                              ) : (
-                                <span>
-                                  {new Date(wo.createdAt).toLocaleDateString("es-AR", {
-                                    day: "2-digit",
-                                    month: "short"
-                                  })}
-                                </span>
-                              )}
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCorners}
+              onDragStart={handleDragStart}
+              onDragOver={handleDragOver}
+              onDragEnd={handleDragEnd}
+            >
+              <div className="flex gap-2 h-full pb-2 px-1">
+                {workOrdersByStatus.map((status) => (
+                  <KanbanColumn
+                    key={status.id}
+                    status={status}
+                    items={status.items}
+                  />
+                ))}
+              </div>
+              <DragOverlay>
+                {activeId && activeWorkOrder ? (
+                  <KanbanCard wo={activeWorkOrder} isOverlay />
+                ) : null}
+              </DragOverlay>
+            </DndContext>
           </div>
         </div>
       ) : (
