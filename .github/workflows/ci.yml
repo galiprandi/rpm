@@ -169,26 +169,6 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Install pnpm
-      uses: pnpm/action-setup@v4
-      with:
-        version: 10
-        run_install: false
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '24.x'
-        cache: 'pnpm'
-
-    - name: Install dependencies
-      run: pnpm install --frozen-lockfile
-
-    - name: Build with Migrations
-      env:
-        DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      run: pnpm vercel-build
-
     - name: Deploy to Vercel
       uses: amondnet/vercel-action@v25
       with:
