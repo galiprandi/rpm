@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * ReviewStep Component Tests
  */
@@ -10,12 +11,18 @@ import { useImportState } from '@/app/adm/products/import/hooks/useImportState';
 // Mock hooks
 vi.mock('@/app/adm/products/import/hooks/useImportState');
 
+import type { ValidationResult, ColumnMapping, ImportOptions } from '@/lib/product-import-schemas';
+
 // Mock child components
 vi.mock('../shared/StepActions', () => ({
-  StepActions: ({ onPrevious, onNext, canGoNext }: any) => (
+  StepActions: ({ onBack, onContinue, onContinueDisabled }: {
+    onBack: () => void;
+    onContinue: () => void;
+    onContinueDisabled: boolean
+  }) => (
     <div>
-      <button data-testid="prev-button" onClick={onPrevious}>Previous</button>
-      <button data-testid="next-button" onClick={onNext} disabled={!canGoNext}>
+      <button data-testid="prev-button" onClick={onBack}>Previous</button>
+      <button data-testid="next-button" onClick={onContinue} disabled={onContinueDisabled}>
         Next
       </button>
     </div>
@@ -25,16 +32,16 @@ vi.mock('../shared/StepActions', () => ({
 vi.mock('../ProductReviewTable', () => ({
   ProductReviewTable: ({ 
     csvData, 
-    fieldConfig, 
-    globalOptions, 
+    mapping,
+    importOptions,
     onValidationComplete,
     existingCategories 
   }: {
-    csvData: any;
-    fieldConfig: any;
-    globalOptions: any;
-    onValidationComplete: (result: any) => void;
-    existingCategories: any;
+    csvData: { headers: string[]; rows: string[][]; totalRows: number };
+    mapping: Record<string, ColumnMapping>;
+    importOptions: ImportOptions;
+    onValidationComplete: (result: ValidationResult) => void;
+    existingCategories: Array<{ id: string; name: string }>;
   }) => (
     <div>
       <div data-testid="product-review-table">
@@ -95,8 +102,20 @@ describe('ReviewStep Component', () => {
       setFileData: vi.fn(),
       categoryMappings: [],
       importResults: null,
-      isProcessing: false
-    } as any);
+      isProcessing: false,
+      clearFileData: vi.fn(),
+      clearConfiguration: vi.fn(),
+      clearValidationResult: vi.fn(),
+      clearImportResults: vi.fn(),
+      setMapping: vi.fn(),
+      setOptions: vi.fn(),
+      setCategoryMappings: vi.fn(),
+      updateCategoryMapping: vi.fn(),
+      setIsProcessing: vi.fn(),
+      reset: vi.fn(),
+      goToStep: vi.fn(),
+      clearImportResult: vi.fn(),
+    } as unknown as ReturnType<typeof useImportState>);
   });
 
   it('should render correctly when file data exists', () => {
@@ -116,7 +135,7 @@ describe('ReviewStep Component', () => {
       setValidationResult: vi.fn(),
       prevStep: vi.fn(),
       nextStep: vi.fn()
-    } as any);
+    } as unknown as any);
 
     render(<ReviewStep existingCategories={mockExistingCategories} />);
     
@@ -157,7 +176,7 @@ describe('ReviewStep Component', () => {
       setValidationResult: vi.fn(),
       prevStep: vi.fn(),
       nextStep: vi.fn()
-    } as any);
+    } as unknown as any);
 
     render(<ReviewStep existingCategories={mockExistingCategories} />);
     
@@ -181,7 +200,7 @@ describe('ReviewStep Component', () => {
       setValidationResult: vi.fn(),
       prevStep: vi.fn(),
       nextStep: vi.fn()
-    } as any);
+    } as unknown as any);
 
     // Mock window.alert
     const mockAlert = vi.fn();
@@ -248,7 +267,7 @@ describe('ReviewStep Component', () => {
         setValidationResult: vi.fn(),
         prevStep: vi.fn(),
         nextStep: vi.fn()
-      } as any);
+      } as unknown as any);
 
       render(<ReviewStep existingCategories={mockExistingCategories} />);
       
@@ -264,7 +283,7 @@ describe('ReviewStep Component', () => {
         setValidationResult: vi.fn(),
         prevStep: vi.fn(),
         nextStep: vi.fn()
-      } as any);
+      } as unknown as any);
 
       render(<ReviewStep existingCategories={mockExistingCategories} />);
       
@@ -280,7 +299,7 @@ describe('ReviewStep Component', () => {
         setValidationResult: vi.fn(),
         prevStep: vi.fn(),
         nextStep: vi.fn()
-      } as any);
+      } as unknown as any);
 
       render(<ReviewStep existingCategories={mockExistingCategories} />);
       

@@ -1,7 +1,17 @@
+import React from 'react';
 import type { Preview } from '@storybook/react-vite';
+import { TooltipProvider } from '../components/ui/tooltip';
 import '../app/globals.css';
 
 const preview: Preview = {
+  decorators: [
+    (Story) =>
+      React.createElement(
+        TooltipProvider,
+        { delayDuration: 0 },
+        React.createElement(Story)
+      ),
+  ],
   parameters: {
     controls: {
       matchers: {

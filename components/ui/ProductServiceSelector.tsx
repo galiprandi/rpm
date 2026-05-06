@@ -14,6 +14,11 @@ import { Loader2, Plus, Search, Trash2, Package, Wrench, Minus, Plus as PlusIcon
 import { cn } from '@/lib/utils';
 import { formatARS } from '@/lib/utils/format';
 import { Badge } from '@/components/ui/badge';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 /**
  * ProductServiceSelector
@@ -495,23 +500,35 @@ export function ProductServiceSelector({
 
                 {/* Quantity controls */}
                 <div className="flex items-center gap-1 flex-shrink-0">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-7 w-7"
-                    onClick={() => updateQuantity(index, -1)}
-                  >
-                    <Minus className="h-3 w-3" />
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => updateQuantity(index, -1)}
+                        aria-label="Disminuir cantidad"
+                      >
+                        <Minus className="h-3 w-3" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Disminuir cantidad</TooltipContent>
+                  </Tooltip>
                   <span className="w-8 text-center text-sm">{item.quantity}</span>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-7 w-7"
-                    onClick={() => updateQuantity(index, 1)}
-                  >
-                    <PlusIcon className="h-3 w-3" />
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => updateQuantity(index, 1)}
+                        aria-label="Aumentar cantidad"
+                      >
+                        <PlusIcon className="h-3 w-3" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Aumentar cantidad</TooltipContent>
+                  </Tooltip>
                 </div>
 
                 {/* Price input */}
@@ -535,14 +552,20 @@ export function ProductServiceSelector({
                 </div>
 
                 {/* Delete */}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 flex-shrink-0"
-                  onClick={() => removeFromCart(index)}
-                >
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 flex-shrink-0"
+                      onClick={() => removeFromCart(index)}
+                      aria-label="Quitar del carrito"
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Quitar del carrito</TooltipContent>
+                </Tooltip>
               </div>
             ))}
           </div>

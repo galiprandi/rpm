@@ -7,6 +7,7 @@ import { useCallback } from 'react';
 import { StepActions } from '../shared/StepActions';
 import { ProductReviewTable } from '../ProductReviewTable';
 import { useImportState } from '@/app/adm/products/import/hooks/useImportState';
+import type { ValidationResult } from '@/lib/product-import-schemas';
 
 interface ReviewStepProps {
   existingCategories: Array<{ id: string; name: string }>;
@@ -14,10 +15,8 @@ interface ReviewStepProps {
 
 export function ReviewStep({ existingCategories }: ReviewStepProps) {
   const { fileData, configuration, validationResult, setValidationResult, prevStep, nextStep } = useImportState();
-  const fieldConfig = configuration.mapping;
-  const globalOptions = configuration.options;
 
-  const handleValidationComplete = useCallback((result: any) => {
+  const handleValidationComplete = useCallback((result: ValidationResult) => {
     setValidationResult(result);
   }, [setValidationResult]);
 
@@ -61,8 +60,8 @@ export function ReviewStep({ existingCategories }: ReviewStepProps) {
 
       <ProductReviewTable
         csvData={csvData}
-        mapping={fieldConfig}
-        importOptions={globalOptions}
+        mapping={configuration.mapping}
+        importOptions={configuration.options}
         existingCategories={existingCategories}
         onValidationComplete={handleValidationComplete}
         autoValidate={true}

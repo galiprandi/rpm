@@ -14,7 +14,14 @@ vi.mock('@/app/adm/products/import/hooks/useFileUpload');
 
 // Mock FileUploader component
 vi.mock('../FileUploader', () => ({
-  FileUploader: ({ onFileAnalyzed }: { onFileAnalyzed: (data: any) => void }) => (
+  FileUploader: ({ onFileAnalyzed }: { onFileAnalyzed: (data: {
+    columns: string[];
+    preview: Record<string, string>[];
+    totalRows: number;
+    delimiter: string;
+    encoding: string;
+    file: File;
+  }) => void }) => (
     <div>
       <button data-testid="file-uploader" onClick={() => onFileAnalyzed({
         columns: ['name', 'price'],

@@ -32,7 +32,7 @@ interface Supplier {
 }
 
 export default function ProductImporterPage() {
-  const { currentStep, reset } = useImportState();
+  const { currentStep } = useImportState();
   const [existingCategories, setExistingCategories] = useState<Category[]>([]);
   const [existingSuppliers, setExistingSuppliers] = useState<Supplier[]>([]);
 
@@ -84,10 +84,6 @@ export default function ProductImporterPage() {
       default:
         return <UploadStep />;
     }
-  };
-
-  const handleReset = () => {
-    reset();
   };
 
   return (

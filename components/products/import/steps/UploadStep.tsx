@@ -8,15 +8,25 @@ import { FileUploader } from '../FileUploader';
 import { useFileUpload } from '@/app/adm/products/import/hooks/useFileUpload';
 import { useImportState } from '@/app/adm/products/import/hooks/useImportState';
 
+interface FileData {
+  columns: string[];
+  preview: Record<string, string>[];
+  totalRows: number;
+  file: File;
+  delimiter?: string;
+  encoding?: string;
+  skippedRows?: number;
+}
+
 interface UploadStepProps {
-  onUpload?: (data: any) => void;
+  onUpload?: (data: FileData) => void;
 }
 
 export function UploadStep({ onUpload }: UploadStepProps) {
   const { uploadFile, error, reset } = useFileUpload();
   const { setFileData, nextStep } = useImportState();
 
-  const handleFileAnalyzed = useCallback(async (data: any) => {
+  const handleFileAnalyzed = useCallback(async (data: FileData) => {
     try {
       setFileData(data);
       onUpload?.(data);

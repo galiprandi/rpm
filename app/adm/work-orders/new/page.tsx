@@ -5,13 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { FuelLevelSlider } from "@/components/work-orders/FuelLevelSlider";
 import { Badge } from "@/components/ui/badge";
@@ -23,17 +16,6 @@ import { ProductServiceSelector } from "@/components/ui/ProductServiceSelector";
 import { VehicleDialog } from "@/components/vehicles/VehicleDialog";
 import { Save, Plus, Trash2, Search, Car, User, CheckCircle, Edit } from "lucide-react";
 
-const VEHICLE_CATEGORIES = [
-  { value: "CAR", label: "Auto/Camioneta", icon: "🚗" },
-  { value: "SUV", label: "SUV/4x4", icon: "🚙" },
-  { value: "PICKUP", label: "Pickup", icon: "🛻" },
-  { value: "TRUCK", label: "Camión", icon: "🚚" },
-  { value: "MOTORCYCLE", label: "Moto", icon: "🏍️" },
-  { value: "TRAILER", label: "Trailer/Acoplado", icon: "🚛" },
-  { value: "AUDIO_EQUIPMENT", label: "Equipo de Audio", icon: "🔊" },
-  { value: "ELECTRIC_SCOOTER", label: "Monopatín Eléctrico", icon: "🛴" },
-  { value: "OTHER", label: "Otro Equipo", icon: "📦" },
-];
 
 const ENTRY_CHECKLIST = [
   { id: "keys", label: "Llaves/Control recibido", required: true },
@@ -130,15 +112,7 @@ export default function NewWorkOrderPage() {
     equipmentType: "",
     description: "",
   });
-  const [newCustomerSearch, setNewCustomerSearch] = useState("");
-  const [foundCustomers, setFoundCustomers] = useState<Array<{ id: string; name: string; phone: string }>>([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
-  const [creatingCustomer, setCreatingCustomer] = useState(false);
-  const [newCustomerData, setNewCustomerData] = useState({
-    name: "",
-    phone: "",
-    email: "",
-  });
 
   // Step 2: Items
   const [items, setItems] = useState<WorkOrderItem[]>([]);
