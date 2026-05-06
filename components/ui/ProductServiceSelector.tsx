@@ -14,11 +14,7 @@ import { Loader2, Plus, Search, Trash2, Package, Wrench, Minus, Plus as PlusIcon
 import { cn } from '@/lib/utils';
 import { formatARS } from '@/lib/utils/format';
 import { Badge } from '@/components/ui/badge';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 /**
  * ProductServiceSelector
@@ -514,7 +510,9 @@ export function ProductServiceSelector({
                     </TooltipTrigger>
                     <TooltipContent>Disminuir cantidad</TooltipContent>
                   </Tooltip>
+
                   <span className="w-8 text-center text-sm">{item.quantity}</span>
+
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button

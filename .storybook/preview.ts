@@ -2,6 +2,8 @@ import React from 'react';
 import type { Preview } from '@storybook/react-vite';
 import { TooltipProvider } from '../components/ui/tooltip';
 import '../app/globals.css';
+import { TooltipProvider } from '../components/ui/tooltip';
+import React from 'react';
 
 const preview: Preview = {
   decorators: [
