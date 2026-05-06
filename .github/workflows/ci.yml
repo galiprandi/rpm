@@ -141,7 +141,7 @@ jobs:
       
     - name: Run security audit
       run: |
-        npx audit-ci --low
+        npx audit-ci --high
         
     - name: Check for secrets
       uses: trufflesecurity/trufflehog@main
