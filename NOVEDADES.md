@@ -1,5 +1,22 @@
 🚀 Novedades del Sistema
 
+🗓️ 6 de Mayo de 2026
+• 🎨 Tablas: Mejoras en accesibilidad de la paginación con etiquetas ARIA y textos en español.
+• 🎨 Ventas Rápidas: Botones con tooltips y etiquetas de accesibilidad para mejor usabilidad.
+
+🗓️ 5 de Mayo de 2026
+• 🎉 Clientes: Nuevo historial de transacciones unificado en la ficha del cliente.
+• ✨ Clientes: Ahora puedes ver el saldo a favor en el filtro y columna de saldo.
+
+🗓️ 2 de Mayo de 2026
+• 🎉 Notas de Crédito: Nuevo sistema para gestionar devoluciones y reembolsos desde ventas y órdenes de trabajo.
+• ✨ Ventas Rápidas: Optimización con modo de carga continua y precios duales (Contado/Tarjeta).
+• ✨ Ventas Rápidas: Advertencias visuales en el carrito para precios por debajo del margen mínimo.
+• 🐛 Caja: Corrección en la validación de caja abierta para evitar falsos negativos.
+
+🗓️ 25 de Abril de 2026
+• ⚡ Sistema: Optimización de consultas a base de datos con cache y operaciones en lote (75% menos consultas en dashboard).
+
 🗓️ 21 de Abril de 2026
 • 🎉 Archivos: Nuevo sistema de carga de archivos universal con compresión automática de imágenes. Ahora puedes subir archivos para productos, vehículos, recibos y documentos con optimización automática.
 • 🎨 Sistema: Se agregó el logo del sistema y se generó el favicon circular para identificar la aplicación en el navegador.
