@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import Image from 'next/image';
 import { type ColumnDef } from '@tanstack/react-table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -87,9 +88,11 @@ export function UserTable({
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center">
                 {user.image ? (
-                  <img
+                  <Image
                     src={user.image}
                     alt={user.name}
+                    width={40}
+                    height={40}
                     className="h-10 w-10 rounded-full object-cover"
                   />
                 ) : (

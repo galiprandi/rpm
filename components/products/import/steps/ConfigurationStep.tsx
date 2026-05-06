@@ -38,7 +38,7 @@ export function ConfigurationStep({ existingCategories, existingSuppliers }: Con
       console.log('🧹 Configuración de importación limpiada - mapeo manual forzado');
       hasInitialized.current = true;
     }
-  }, [setMapping, setOptions]);
+  }, [setMapping, setOptions, fieldConfig]);
 
   const handleContinue = () => {
     // Validate that at least name is mapped

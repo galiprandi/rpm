@@ -40,12 +40,10 @@ interface ImportProgressProps {
 export function ImportProgress({
   isRunning,
   progress,
-  dryRun,
   stats,
   results,
   onDownloadReport,
   onReset,
-  onToggleDryRun,
 }: ImportProgressProps) {
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -157,22 +155,5 @@ export function ImportProgress({
         </div>
       )}
     </div>
-  );
-}
-
-// Label component for checkbox
-function Label({
-  htmlFor,
-  children,
-  className,
-}: {
-  htmlFor: string;
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <label htmlFor={htmlFor} className={className}>
-      {children}
-    </label>
   );
 }

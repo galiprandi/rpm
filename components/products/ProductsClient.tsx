@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ProductDialog } from '@/components/products/ProductDialog';
@@ -359,9 +360,11 @@ export function ProductsClient({
       header: 'Imagen',
       cell: ({ row }) => (
         row.original.imageUrl ? (
-          <img
+          <Image
             src={`/api/products/${row.original.id}/image`}
             alt={row.original.name}
+            width={40}
+            height={40}
             className="w-10 h-10 object-cover rounded"
           />
         ) : (

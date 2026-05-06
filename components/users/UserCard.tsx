@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { Edit2, UserCheck, UserX } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -66,9 +67,11 @@ export function UserCard({ user, onEdit, onToggleActive, canToggle }: UserCardPr
           <div className="flex items-center gap-3">
             <div className="h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center">
               {user.image ? (
-                <img
+                <Image
                   src={user.image}
                   alt={user.name}
+                  width={48}
+                  height={48}
                   className="h-12 w-12 rounded-full object-cover"
                 />
               ) : (

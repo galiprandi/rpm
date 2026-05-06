@@ -6,13 +6,12 @@
  * Muestra datos validados exactamente como irán a la DB
  */
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { DataTable } from '@/components/ui/data-table';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Loader2 } from 'lucide-react';
-import { StatsCards } from './shared/StatsCards';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { 
   ValidationResult, 
@@ -53,22 +52,7 @@ export function ProductReviewTable({
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
   const [categoryMappings, setCategoryMappings] = useState<DetectedCategory[]>([]);
 
-  // Initialize category mappings from validation result
-  useEffect(() => {
-    if (validationResult?.categories) {
-      setCategoryMappings(validationResult.categories);
-    }
-  }, [validationResult?.categories]);
-
-  // Auto-validate on mount
-  useEffect(() => {
-    if (autoValidate && csvData.rows.length > 0) {
-      handleValidate();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const handleValidate = async () => {
+  const handleValidate = useCallback(async () => {
     setIsValidating(true);
     try {
       const payload = {
@@ -76,9 +60,9 @@ export function ProductReviewTable({
         mapping,
         importOptions,
       };
-      
+
       console.log('Sending validation payload:', JSON.stringify(payload, null, 2));
-      
+
       const response = await fetch('/api/import/products/validate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -100,7 +84,50 @@ export function ProductReviewTable({
     } finally {
       setIsValidating(false);
     }
-  };
+  }, [csvData, mapping, importOptions, onValidationComplete]);
+
+  // Auto-validate on mount
+   
+  useEffect(() => {
+    const validateOnMount = async () => {
+      if (autoValidate && csvData.rows.length > 0) {
+        setIsValidating(true);
+        try {
+          const payload = {
+            csvData,
+            mapping,
+            importOptions,
+          };
+
+          console.log('Sending validation payload:', JSON.stringify(payload, null, 2));
+
+          const response = await fetch('/api/import/products/validate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Validation failed response:', errorText);
+            throw new Error(`Validation failed: ${errorText}`);
+          }
+
+          const result: ValidationResult = await response.json();
+          setValidationResult(result);
+          setCategoryMappings(result.categories);
+          onValidationComplete?.(result);
+        } catch (error) {
+          console.error('Validation error:', error);
+        } finally {
+          setIsValidating(false);
+        }
+      }
+    };
+
+    validateOnMount();
+  }, [autoValidate, csvData.rows.length, csvData, mapping, importOptions, onValidationComplete]);
+   
 
   // Build columns dynamically based on mapped fields
   const productColumns = useMemo<ColumnDef<ProductWithCategoryInput>[]>(() => {

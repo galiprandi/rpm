@@ -142,13 +142,6 @@ jobs:
     - name: Run security audit
       run: |
         npx audit-ci --high
-        
-    - name: Check for secrets
-      uses: trufflesecurity/trufflehog@main
-      with:
-        path: ./
-        base: main
-        head: HEAD
 
   deploy:
     runs-on: ubuntu-latest

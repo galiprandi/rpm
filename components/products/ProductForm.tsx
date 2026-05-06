@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Image from 'next/image';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -61,12 +62,7 @@ export function ProductForm({
   onImageDeleteStart,
   onImageDeleteEnd,
 }: ProductFormProps) {
-  const [localImageUrl, setLocalImageUrl] = React.useState<string | null>(currentImageUrl || null);
-
-  // Sync localImageUrl when currentImageUrl changes (e.g., when opening different product)
-  React.useEffect(() => {
-    setLocalImageUrl(currentImageUrl || null);
-  }, [currentImageUrl]);
+  const [localImageUrl, setLocalImageUrl] = React.useState<string | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -263,9 +259,11 @@ export function ProductForm({
         {imagePreview ? (
           <div className="flex items-start gap-4">
             <div className="relative w-24 h-24 rounded-lg overflow-hidden border border-border">
-              <img
+              <Image
                 src={imagePreview}
                 alt="Preview"
+                width={96}
+                height={96}
                 className="w-full h-full object-cover"
               />
             </div>

@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import { prisma } from '@/lib/prisma';
 import { UserRole } from '@/lib/auth/roles';
 
 // POST /api/admin/recalculate-balances - Recalculate all customer balances
-export async function POST(_request: NextRequest) {
+export async function POST() {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
     

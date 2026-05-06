@@ -159,7 +159,7 @@ export async function GET() {
       user: session.user,
       role: session.user.role,
     });
-  } catch (_error) {
+  } catch {
     return NextResponse.json(
       { error: 'Failed to read debug session' },
       { status: 500 }
