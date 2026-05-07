@@ -8,6 +8,7 @@ import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ProductsClient } from './ProductsClient';
 import { type Product, type Category, type Supplier } from '@/components/products/types';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 // Mock de componentes
 vi.mock('@/components/ui/button', () => ({
@@ -110,13 +111,15 @@ describe('ProductsClient', () => {
 
   it('should render products correctly', () => {
     render(
-      <ProductsClient
-        products={mockProducts}
-        categories={mockCategories}
-        suppliers={mockSuppliers}
-        lowStockCount={0}
-        totalInventoryValue={1000}
-      />
+      <TooltipProvider>
+        <ProductsClient
+          products={mockProducts}
+          categories={mockCategories}
+          suppliers={mockSuppliers}
+          lowStockCount={0}
+          totalInventoryValue={1000}
+        />
+      </TooltipProvider>
     );
 
     expect(screen.getByText('Product 1')).toBeInTheDocument();
@@ -125,13 +128,15 @@ describe('ProductsClient', () => {
 
   it('should render stats correctly', () => {
     render(
-      <ProductsClient
-        products={mockProducts}
-        categories={mockCategories}
-        suppliers={mockSuppliers}
-        lowStockCount={1}
-        totalInventoryValue={1000}
-      />
+      <TooltipProvider>
+        <ProductsClient
+          products={mockProducts}
+          categories={mockCategories}
+          suppliers={mockSuppliers}
+          lowStockCount={1}
+          totalInventoryValue={1000}
+        />
+      </TooltipProvider>
     );
 
     // Check that stats are rendered with flexible text matching
@@ -142,13 +147,15 @@ describe('ProductsClient', () => {
 
   it('should handle empty products list', () => {
     render(
-      <ProductsClient
-        products={[]}
-        categories={mockCategories}
-        suppliers={mockSuppliers}
-        lowStockCount={0}
-        totalInventoryValue={0}
-      />
+      <TooltipProvider>
+        <ProductsClient
+          products={[]}
+          categories={mockCategories}
+          suppliers={mockSuppliers}
+          lowStockCount={0}
+          totalInventoryValue={0}
+        />
+      </TooltipProvider>
     );
 
     expect(screen.getByText('Total: 0')).toBeInTheDocument();
@@ -156,13 +163,15 @@ describe('ProductsClient', () => {
 
   it('should open ProductDialog when create button is clicked', () => {
     render(
-      <ProductsClient
-        products={mockProducts}
-        categories={mockCategories}
-        suppliers={mockSuppliers}
-        lowStockCount={0}
-        totalInventoryValue={1000}
-      />
+      <TooltipProvider>
+        <ProductsClient
+          products={mockProducts}
+          categories={mockCategories}
+          suppliers={mockSuppliers}
+          lowStockCount={0}
+          totalInventoryValue={1000}
+        />
+      </TooltipProvider>
     );
 
     const createButton = screen.getByText('Create');
@@ -173,13 +182,15 @@ describe('ProductsClient', () => {
 
   it('should render Header component', () => {
     render(
-      <ProductsClient
-        products={mockProducts}
-        categories={mockCategories}
-        suppliers={mockSuppliers}
-        lowStockCount={0}
-        totalInventoryValue={1000}
-      />
+      <TooltipProvider>
+        <ProductsClient
+          products={mockProducts}
+          categories={mockCategories}
+          suppliers={mockSuppliers}
+          lowStockCount={0}
+          totalInventoryValue={1000}
+        />
+      </TooltipProvider>
     );
 
     expect(screen.getByText('Productos')).toBeInTheDocument();
