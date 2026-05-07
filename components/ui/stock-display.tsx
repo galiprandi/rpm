@@ -4,6 +4,7 @@
  * Stock Display Component
  * Shows current stock quantity
  * Highlights when stock is low (below minimum)
+ * Provides a tooltip with the minimum stock threshold when stock is low
  */
 
 interface StockDisplayProps {

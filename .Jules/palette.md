@@ -17,3 +17,7 @@ Critical UX and accessibility learnings.
 ## 2025-05-02 - [Tooltip Accessibility Pattern]
 **Learning:** Icon-only buttons require both `aria-label` for screen readers and `Tooltip` for visual users to be truly accessible. In Storybook, Radix-based Tooltips won't render unless wrapped in a `TooltipProvider` decorator.
 **Action:** Always wrap icon-only buttons in `Tooltip` + `TooltipTrigger` and provide an explicit `aria-label`. Ensure Storybook's `preview.ts` has the necessary providers.
+
+## 2026-05-07 - [Low Stock Tooltip & Keyboard Accessibility]
+**Learning:** Providing visual-only cues (like orange text for low stock) is insufficient for accessibility. Adding a Tooltip with the exact threshold and an ARIA label ensures all users understand the context. Additionally, making the indicator focusable via `tabIndex={0}` allows keyboard users to trigger the tooltip.
+**Action:** When using color-based status indicators, always supplement with a Tooltip for threshold context and an `aria-label` for screen readers. Ensure the element is keyboard-focusable.
