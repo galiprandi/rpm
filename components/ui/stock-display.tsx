@@ -12,12 +12,6 @@ interface StockDisplayProps {
   minStock: number;
 }
 
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
-
 export function StockDisplay({ stock, minStock }: StockDisplayProps) {
   const isLowStock = stock <= minStock;
 
@@ -25,18 +19,5 @@ export function StockDisplay({ stock, minStock }: StockDisplayProps) {
     <span className={isLowStock ? 'text-orange-600 font-medium' : ''}>
       {stock}
     </span>
-  );
-
-  if (!isLowStock) return content;
-
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        {content}
-      </TooltipTrigger>
-      <TooltipContent>
-        Stock bajo el mínimo ({minStock})
-      </TooltipContent>
-    </Tooltip>
   );
 }
