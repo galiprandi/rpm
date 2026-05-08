@@ -1,5 +1,11 @@
 'use client';
 
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+
 /**
  * Stock Display Component
  * Shows current stock quantity
@@ -15,8 +21,27 @@ interface StockDisplayProps {
 export function StockDisplay({ stock, minStock }: StockDisplayProps) {
   const isLowStock = stock <= minStock;
 
-  const content = (
-    <span className={isLowStock ? 'text-orange-600 font-medium' : ''}>
+  if (isLowStock) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span
+            className="text-orange-600 font-medium cursor-help outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
+            aria-label={`Stock bajo: ${stock}. El nivel mínimo es ${minStock}`}
+            tabIndex={0}
+          >
+            {stock}
+          </span>
+        </TooltipTrigger>
+        <TooltipContent>
+          Stock bajo el mínimo ({minStock})
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  return (
+    <span aria-label={`Stock: ${stock}`}>
       {stock}
     </span>
   );
