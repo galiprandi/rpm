@@ -20,7 +20,9 @@ import {
   Wallet,
   TrendingDown,
   Receipt,
+  Newspaper,
 } from 'lucide-react';
+import { useNovedadesRead } from '@/hooks/useNovedadesRead';
 import {
   Sidebar,
   SidebarContent,
@@ -75,6 +77,7 @@ export function AppSidebar({ user, onSignOut }: AppSidebarProps) {
   const pathname = usePathname();
   const { isMobile, toggleSidebar, state } = useSidebar();
   const isCollapsed = state === "collapsed";
+  const { hasUnread } = useNovedadesRead();
 
   return (
     <Sidebar collapsible="icon">
@@ -120,7 +123,23 @@ export function AppSidebar({ user, onSignOut }: AppSidebarProps) {
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
-        {/* Settings second */}
+        {/* Novedades second */}
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              isActive={pathname === '/adm/novedades'}
+              tooltip="Novedades"
+              className="hover:bg-transparent hover:text-sidebar-foreground data-active:bg-transparent data-active:text-sidebar-foreground"
+            >
+              <Link href="/adm/novedades">
+                <Newspaper className={`size-5 ${hasUnread ? 'text-primary fill-primary' : 'text-muted-foreground'}`} />
+                <span>Novedades</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+        {/* Settings third */}
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton

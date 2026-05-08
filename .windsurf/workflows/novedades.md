@@ -1,12 +1,12 @@
 # Workflow: Actualizar Novedades del Sistema
 
-**Objetivo:** Actualizar el archivo `NOVEDADES.md` con los últimos cambios del sistema en formato WhatsApp-compatible (texto plano con emojis, sin markdown syntax).
+**Objetivo:** Actualizar el archivo `public/NOVEDADES.md` con los últimos cambios del sistema en formato Markdown visual.
 
 ## Pasos a seguir
 
 ### 1. Obtener última fecha y commits pendientes
 
-1. **Leer NOVEDADES.md** para identificar la última fecha documentada (línea con `🗓️`)
+1. **Leer public/NOVEDADES.md** para identificar la última fecha documentada (línea con `🗓️`)
 
 2. **Obtener commits desde la última fecha** usando MCP Git:
    ```
@@ -44,26 +44,34 @@ Los commits obtenidos pueden ser de distintas fechas (desde la última entrada e
 - Mencionar dónde se encuentra el cambio en la interfaz
 - Usar verbos de acción: "Ahora puedes...", "Se agregó...", "Se corrigió..."
 
-**Formato de salida (WhatsApp-compatible):**
+**Formato de salida (Markdown visual):**
 
-Nuevo formato **inline** - cada novedad lleva su emoji de tipo:
+Nuevo formato **inline** - cada novedad usa bold con emoji y dos puntos:
 
 ```
-🚀 Novedades del Sistema
+# 🚀 Novedades del Sistema
 
-🗓️ 17 de Abril de 2026
-• ✨ Ventas Rápidas: El botón ahora dice "Registrar pago".
-• 🎉 Clientes: Ahora puedes registrar pagos desde la ficha.
+---
 
-🗓️ 15 de Abril de 2026
-• ✨ Clientes: Los nombres ahora se muestran con formato correcto.
-• 🐛 Productos: Corrección en el cálculo de costos.
+### 🗓️ 17 de Abril de 2026
+
+**✨ Ventas Rápidas**: El botón ahora dice "Registrar pago".
+
+**🎉 Clientes**: Ahora puedes registrar pagos desde la ficha.
+
+---
+
+### 🗓️ 15 de Abril de 2026
+
+**✨ Clientes**: Los nombres ahora se muestran con formato correcto.
+
+**🐛 Productos**: Corrección en el cálculo de costos.
 ```
 
-**Reglas de formato WhatsApp:**
-- NO usar `**negrita**`, `## títulos`, ni markdown syntax
-- Cada novedad es una línea con bullet: `• [emoji] [Área]: Descripción`
-- Sin categorías agrupadas (no más "NUEVO" o "MEJORA" como headers)
+**Reglas de formato Markdown:**
+- Usar `##` para títulos de fecha con emoji `🗓️`
+- Cada novedad es una línea con bold: `**[emoji] [Área]**: Descripción`
+- Separadores horizontales (`---`) entre fechas
 - Emojis inline indican el tipo de cambio
 
 **Emojis por tipo de cambio (inline):**
@@ -80,17 +88,18 @@ Nuevo formato **inline** - cada novedad lleva su emoji de tipo:
 | 📝 | Docs/Texto | Cambios en textos, ayuda, mensajes, labels |
 | ♻️ | Refactor | Cambio interno sin afectar funcionalidad (evitar si es solo técnico) |
 
-### 4. Ejemplos de conversión (formato inline)
+### 4. Ejemplos de conversión (formato inline Markdown)
 
 ❌ **Commit técnico:**
 ```
 refactor: extract ProductForm to components/products/
 ```
 
-✅ **Para usuario final (formato inline):**
+✅ **Para usuario final (formato Markdown):**
 ```
-🗓️ 17 de Abril de 2026
-• ♻️ Productos: Mejoras internas en el formulario para mayor estabilidad.
+### 🗓️ 17 de Abril de 2026
+
+**♻️ Productos**: Mejoras internas en el formulario para mayor estabilidad.
 ```
 
 ❌ **Commit técnico:**
@@ -98,10 +107,11 @@ refactor: extract ProductForm to components/products/
 feat: add cost preview in cost update dialog
 ```
 
-✅ **Para usuario final (formato inline):**
+✅ **Para usuario final (formato Markdown):**
 ```
-🗓️ 15 de Abril de 2026
-• ✨ Actualización de Costos: Ahora puedes previsualizar el impacto de los cambios antes de aplicarlos.
+### 🗓️ 15 de Abril de 2026
+
+**✨ Actualización de Costos**: Ahora puedes previsualizar el impacto de los cambios antes de aplicarlos.
 ```
 
 ❌ **Commit técnico:**
@@ -109,15 +119,16 @@ feat: add cost preview in cost update dialog
 fix: resolve payment calculation rounding error
 ```
 
-✅ **Para usuario final (formato inline):**
+✅ **Para usuario final (formato Markdown):**
 ```
-🗓️ 14 de Abril de 2026
-• 🐛 Pagos: Corrección en el redondeo de totales al registrar pagos.
+### 🗓️ 14 de Abril de 2026
+
+**🐛 Pagos**: Corrección en el redondeo de totales al registrar pagos.
 ```
 
 ### 5. Guardar y actualizar
 
-1. **Leer NOVEDADES.md actual** para mantener historial existente
+1. **Leer public/NOVEDADES.md actual** para mantener historial existente
 2. **Identificar duplicados:** Comparar cada commit con el contenido existente. Si la novedad ya está documentada (misma funcionalidad/mejora), **ignorarla**.
 3. **Identificar fechas nuevas:** Verificar qué fechas de los commits ya existen en el archivo
 4. **Agregar entradas faltantes:**
@@ -130,16 +141,22 @@ fix: resolve payment calculation rounding error
 
 **Ejemplo de estructura final:**
 ```
-🚀 Novedades del Sistema
+# 🚀 Novedades del Sistema
 
-🗓️ 17 de Abril de 2026      ← Nueva entrada (commits recientes)
-[contenido...]
+---
 
-🗓️ 15 de Abril de 2026      ← Nueva entrada (otros commits)
-[contenido...]
+### 🗓️ 17 de Abril de 2026      ← Nueva entrada (commits recientes)
+**✨ Ventas**: Descripción...
 
-🗓️ 10 de Abril de 2026      ← Ya existía, se preserva
-[contenido...]
+---
+
+### 🗓️ 15 de Abril de 2026      ← Nueva entrada (otros commits)
+**🎉 Clientes**: Descripción...
+
+---
+
+### 🗓️ 10 de Abril de 2026      ← Ya existía, se preserva
+**🐛 Productos**: Descripción...
 ```
 
 ### 6. Si hay dudas
@@ -150,4 +167,4 @@ Si no comprendes un commit o su impacto en el negocio:
 
 ---
 
-**Nota final:** El resultado debe poder copiarse y pegarse directamente en WhatsApp. Usar texto plano con emojis - WhatsApp no respeta markdown syntax como **negritas** o ## títulos.
+**Nota final:** El resultado usa formato Markdown visual con bold, headers y separadores horizontales para mejor legibilidad en el navegador.
