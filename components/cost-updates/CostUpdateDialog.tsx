@@ -117,14 +117,7 @@ export function CostUpdateDialog({ open, onClose, onSuccess }: CostUpdateDialogP
   // Apply state
   const [isApplying, setIsApplying] = useState(false);
 
-  // Load suppliers and categories on mount
-  useEffect(() => {
-    if (open) {
-      loadFiltersData();
-    }
-  }, [open]);
-
-  const loadFiltersData = async () => {
+  const loadFiltersData = useCallback(async () => {
     try {
       const [suppliersRes, categoriesRes] = await Promise.all([
         fetch('/api/suppliers'),
@@ -143,7 +136,14 @@ export function CostUpdateDialog({ open, onClose, onSuccess }: CostUpdateDialogP
     } catch (error) {
       console.error('Error loading filter data:', error);
     }
-  };
+  }, []);
+
+  // Load suppliers and categories on mount
+  useEffect(() => {
+    if (open) {
+      setTimeout(() => loadFiltersData(), 0);
+    }
+  }, [open, loadFiltersData]);
 
   // Load preview data
   const loadPreview = async (page: number = 1) => {
@@ -511,10 +511,10 @@ export function CostUpdateDialog({ open, onClose, onSuccess }: CostUpdateDialogP
   ), [filters, categories, suppliers, adjustmentType, adjustmentValue]);
 
   // ============================================================================
-  // Step 2: Preview - useCallback to prevent recreation
+  // Step 2: Preview - useMemo to avoid "created during render" warning
   // ============================================================================
 
-  const PreviewStep = useCallback(() => (
+  const PreviewStepContent = useMemo(() => (
     <div className="space-y-4">
       {/* Alert for negative costs */}
       {preview?.hasNegativeCosts && (
@@ -591,10 +591,10 @@ export function CostUpdateDialog({ open, onClose, onSuccess }: CostUpdateDialogP
   ), [preview, isLoadingPreview, previewColumns, adjustmentDescription]);
 
   // ============================================================================
-  // Step 3: Confirm - useCallback to prevent recreation
+  // Step 3: Confirm - useMemo to avoid "created during render" warning
   // ============================================================================
 
-  const ConfirmStep = useCallback(() => (
+  const ConfirmStepContent = useMemo(() => (
     <div className="space-y-6">
       <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
         <div className="flex items-start gap-3">
@@ -752,8 +752,8 @@ export function CostUpdateDialog({ open, onClose, onSuccess }: CostUpdateDialogP
 
         {/* Step content */}
         {currentStep === 'filters' && FiltersStepContent}
-        {currentStep === 'preview' && <PreviewStep />}
-        {currentStep === 'confirm' && <ConfirmStep />}
+        {currentStep === 'preview' && PreviewStepContent}
+        {currentStep === 'confirm' && ConfirmStepContent}
 
         <DialogFooter className="flex flex-row justify-between gap-2">
           <div className="flex-1">

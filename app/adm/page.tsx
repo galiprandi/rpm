@@ -28,7 +28,7 @@ export default async function AdminDashboard() {
   const getCachedDashboardData = unstable_cache(
     getDashboardData,
     ['dashboard-data'],
-    { revalidate: 60 }
+    { revalidate: 60, tags: ['dashboard-data'] }
   );
   const data = await getCachedDashboardData();
 

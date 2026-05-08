@@ -85,8 +85,44 @@ export interface DashboardData {
     reason?: string;
     createdAt: string;
     createdBy: string;
+    customer?: {
+      id: string;
+      name: string;
+    };
   }>;
   generatedAt: string;
+}
+
+export interface DailyOperationsData {
+  summary: {
+    totalIncome: number;
+    totalExpense: number;
+    netAmount: number;
+    byMethod: Array<{
+      method: string;
+      methodName: string;
+      amount: number;
+    }>;
+  };
+  movements: Array<{
+    id: string;
+    type: 'INCOME' | 'EXPENSE' | 'OPENING' | 'CLOSING' | 'ADJUSTMENT';
+    amount: number;
+    method: string;
+    methodName: string;
+    referenceId?: string;
+    referenceType?: string;
+    reason?: string;
+    notes?: string;
+    createdAt: string;
+    createdBy: string;
+    customer?: {
+      id: string;
+      name: string;
+    };
+    relatedId?: string; // ID de la OT o Venta Directa
+    relatedType?: 'work_order' | 'direct_sale';
+  }>;
 }
 
 /**
@@ -351,5 +387,146 @@ export async function getDashboardData(): Promise<DashboardData> {
     paymentsByMethod: paymentsByMethodArray,
     cashMovements: cashMovementsFormatted,
     generatedAt: new Date().toISOString(),
+  };
+}
+
+/**
+ * Obtiene todas las operaciones detalladas de un día específico
+ */
+export async function getDailyOperations(date: Date): Promise<DailyOperationsData> {
+  const startOfDay = getArgentinaStartOfDay(date);
+  const endOfDay = new Date(startOfDay);
+  endOfDay.setHours(23, 59, 59, 999);
+
+  const [movements, paymentMethods] = await Promise.all([
+    prisma.cash_movement.findMany({
+      where: {
+        createdAt: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    }),
+    prisma.payment_method.findMany({
+      select: { code: true, name: true },
+    }),
+  ]);
+
+  const methodMap = Object.fromEntries(paymentMethods.map(m => [m.code, m.name]));
+
+  // Enriquecer movimientos con información de cliente y referencias
+  const enrichedMovements = await Promise.all(
+    movements.map(async (m) => {
+      let customer = undefined;
+      let relatedId = undefined;
+      let relatedType: 'work_order' | 'direct_sale' | undefined = undefined;
+
+      try {
+        if (m.referenceType === 'work_order_payment' && m.referenceId) {
+          const payment = await prisma.payment.findUnique({
+            where: { id: m.referenceId },
+            include: {
+              workOrder: {
+                include: { customer: { select: { id: true, name: true } } },
+              },
+            },
+          });
+          if (payment?.workOrder) {
+            customer = payment.workOrder.customer;
+            relatedId = payment.workOrder.id;
+            relatedType = 'work_order';
+          }
+        } else if (m.referenceType === 'direct_sale_payment' && m.referenceId) {
+          const dsPayment = await prisma.direct_sale_payment.findUnique({
+            where: { id: m.referenceId },
+            include: {
+              directSale: {
+                include: { customer: { select: { id: true, name: true } } },
+              },
+            },
+          });
+          if (dsPayment?.directSale) {
+            if (dsPayment.directSale.customer) {
+              customer = dsPayment.directSale.customer;
+            } else {
+              customer = { id: '', name: dsPayment.directSale.customerName };
+            }
+            relatedId = dsPayment.directSale.id;
+            relatedType = 'direct_sale';
+          }
+        } else if (m.referenceType === 'customer_payment' && m.referenceId) {
+          const cust = await prisma.customer.findUnique({
+            where: { id: m.referenceId },
+            select: { id: true, name: true },
+          });
+          if (cust) {
+            customer = cust;
+          }
+        }
+      } catch (err) {
+        console.error(`Error enriching movement ${m.id}:`, err);
+      }
+
+      return {
+        id: m.id,
+        type: m.type as DailyOperationsData["movements"][0]["type"],
+        amount: decimalToNumber(m.amount),
+        method: m.method,
+        methodName: methodMap[m.method] || m.method,
+        referenceId: m.referenceId ?? undefined,
+        referenceType: m.referenceType ?? undefined,
+        reason: m.reason ?? undefined,
+        notes: m.notes ?? undefined,
+        createdAt: m.createdAt.toISOString(),
+        createdBy: m.createdBy,
+        customer,
+        relatedId,
+        relatedType,
+      };
+    })
+  );
+
+  // Calcular resumen
+  const summary = enrichedMovements.reduce(
+    (acc, m) => {
+      const amount = m.amount;
+      if (m.type === 'INCOME') {
+        acc.totalIncome += amount;
+        acc.netAmount += amount;
+      } else if (m.type === 'EXPENSE') {
+        acc.totalExpense += amount;
+        acc.netAmount -= amount;
+      }
+
+      if (m.type === 'INCOME' || m.type === 'EXPENSE') {
+        const existingMethod = acc.byMethod.find((bm) => bm.method === m.method);
+        const signedAmount = m.type === 'INCOME' ? amount : -amount;
+        if (existingMethod) {
+          existingMethod.amount += signedAmount;
+        } else {
+          acc.byMethod.push({
+            method: m.method,
+            methodName: m.methodName,
+            amount: signedAmount,
+          });
+        }
+      }
+
+      return acc;
+    },
+    {
+      totalIncome: 0,
+      totalExpense: 0,
+      netAmount: 0,
+      byMethod: [] as DailyOperationsData['summary']['byMethod'],
+    }
+  );
+
+  return {
+    summary,
+    movements: enrichedMovements,
   };
 }
