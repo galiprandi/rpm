@@ -34,7 +34,7 @@ export function StockDisplay({ stock, minStock }: StockDisplayProps) {
           </span>
         </TooltipTrigger>
         <TooltipContent>
-          Mínimo: {minStock}
+          Stock bajo el mínimo ({minStock})
         </TooltipContent>
       </Tooltip>
     );

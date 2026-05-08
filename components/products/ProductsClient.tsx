@@ -13,6 +13,11 @@ import { Header, CrudAdmin, StatItem } from '@/components/adm';
 import { Edit2, Trash2, AlertTriangle, DollarSign, Boxes, Clock, ShoppingCart } from 'lucide-react';
 import { PriceDisplay } from '@/components/ui/price-display';
 import { StockDisplay } from '@/components/ui/stock-display';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { type ColumnDef } from '@tanstack/react-table';
 import { useRouter } from 'next/navigation';
 
@@ -468,34 +473,62 @@ export function ProductsClient({
           searchPlaceholder="Buscar por SKU, nombre..."
           rowActions={(product: Product) => (
             <div className="flex gap-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => openPricesModal(product)}
-                title="Ver precios"
-              >
-                <DollarSign className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => openMovementsModal(product)}
-                title="Ver historial"
-              >
-                <Clock className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => openEditDialog(product)} title="Editar producto">
-                <Edit2 className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-red-600"
-                onClick={() => handleDelete(product)}
-                title="Eliminar producto"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => openPricesModal(product)}
+                    aria-label="Ver precios"
+                  >
+                    <DollarSign className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Ver precios</TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => openMovementsModal(product)}
+                    aria-label="Ver historial"
+                  >
+                    <Clock className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Ver historial</TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => openEditDialog(product)}
+                    aria-label="Editar producto"
+                  >
+                    <Edit2 className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Editar producto</TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-red-600"
+                    onClick={() => handleDelete(product)}
+                    aria-label="Desactivar producto"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Desactivar producto</TooltipContent>
+              </Tooltip>
             </div>
           )}
         />

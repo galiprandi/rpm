@@ -19,7 +19,7 @@ import {
 } from '@tanstack/react-table';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { ArrowUpDown, ArrowUp, ArrowDown, Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { ArrowUpDown, ArrowUp, ArrowDown, Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, X } from 'lucide-react';
 import {
   Tooltip,
   TooltipContent,
@@ -123,8 +123,18 @@ export function DataTable<TData>({
                 placeholder={globalFilterPlaceholder}
                 value={globalFilter}
                 onChange={(e) => setGlobalFilter(e.target.value)}
-                className="pl-10 h-9"
+                className="pl-10 pr-10 h-9"
               />
+              {globalFilter && (
+                <button
+                  type="button"
+                  onClick={() => setGlobalFilter('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  aria-label="Limpiar búsqueda"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
             </div>
             {headerActions && headerActions.length > 0 && (
               <div className="flex items-center gap-2">
