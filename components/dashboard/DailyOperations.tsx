@@ -208,7 +208,7 @@ export function DailyOperations() {
           <DataTable
             columns={columns}
             data={data?.movements || []}
-            pageSize={10}
+            pageSize={50}
           />
         </CardContent>
       </Card>

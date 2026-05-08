@@ -5,15 +5,14 @@ import { WorkshopKanbanCard } from '@/components/dashboard/WorkshopKanbanCard';
 import { ReadyForDeliveryCard } from '@/components/dashboard/ReadyForDeliveryCard';
 import { RecentMovementsCard } from '@/components/dashboard/RecentMovementsCard';
 import { PaymentMethodsCard } from '@/components/dashboard/PaymentMethodsCard';
-import { DailyOperations } from '@/components/dashboard/DailyOperations';
+import { CashMovementsCard } from '@/components/dashboard/CashMovementsCard';
 import { DashboardClient } from '@/components/dashboard/DashboardClient';
 import { requireAuth } from '@/lib/auth-server';
 import { UserRole } from '@/lib/auth/roles';
 import { getDashboardData } from '@/lib/services/dashboardService';
 import { unstable_cache } from 'next/cache';
 
-// Cache dashboard data for 60 seconds to reduce database operations
-export const revalidate = 60;
+export const revalidate = 0;
 
 export default async function AdminDashboard() {
   // Validar sesión y rol
@@ -25,10 +24,11 @@ export default async function AdminDashboard() {
   }
 
   // Obtener datos del dashboard con cache para reducir operaciones DB
+  // El cache se invalida selectivamente cuando se crean NCs, ventas, etc.
   const getCachedDashboardData = unstable_cache(
     getDashboardData,
     ['dashboard-data'],
-    { revalidate: 60 }
+    { revalidate: 60, tags: ['dashboard-data'] }
   );
   const data = await getCachedDashboardData();
 
@@ -62,12 +62,10 @@ export default async function AdminDashboard() {
         <PaymentMethodsCard paymentsByMethod={data.paymentsByMethod} />
       </div>
 
-      {/* Fila 3: Operaciones Detalladas del Día */}
-      <DailyOperations />
-
-      {/* Fila 4: Movimientos Recientes (Stock) */}
-      <div className="grid gap-4">
+      {/* Fila 3: Movimientos Recientes y Movimientos de Caja */}
+      <div className="grid gap-4 md:grid-cols-2">
         <RecentMovementsCard recentMovements={data.recentMovements} />
+        <CashMovementsCard cashMovements={data.cashMovements} />
       </div>
     </div>
   );
