@@ -80,6 +80,14 @@ export function CashMovementsCard({ cashMovements }: CashMovementsCardProps) {
             </p>
           </div>
         </CardContent>
+        <CardFooter className="pt-2 border-t">
+          <Button asChild variant="ghost" size="sm" className="w-full text-xs gap-2">
+            <Link href="/adm/operations">
+              Ver operaciones detalladas
+              <ExternalLink className="h-3 w-3" />
+            </Link>
+          </Button>
+        </CardFooter>
       </Card>
     );
   }
