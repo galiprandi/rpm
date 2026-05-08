@@ -4,6 +4,16 @@ Mantente al día con las últimas actualizaciones y mejoras
 
 ---
 
+### 🗓️ 7 de Mayo de 2026
+
+**🎉 Novedades**: Nueva página de administración para ver el historial de actualizaciones del sistema con formato visual mejorado.
+
+**✨ Dashboard**: Reorganización del panel principal con vista de operaciones mejorada y enlaces directos a detalles.
+
+**🎨 Stock**: Mejoras de accesibilidad en indicadores de stock con tooltips informativos y soporte para navegación por teclado.
+
+---
+
 ### 🗓️ 6 de Mayo de 2026
 
  **👆 Órdenes de Trabajo** : Ahora puedes arrastrar y soltar órdenes de trabajo entre columnas de estado en la vista Kanban para cambiar su estado de forma rápida e intuitiva.
