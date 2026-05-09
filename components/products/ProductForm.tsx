@@ -124,24 +124,26 @@ export function ProductForm({
       {/* Fila 2: Producto | Categoría */}
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="name">Producto *</Label>
+          <Label htmlFor="name" required>Producto</Label>
           <Input
             id="name"
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             placeholder="Barra LED 20 pulgadas"
             required
+            aria-required="true"
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="categoryId">Categoría *</Label>
+          <Label htmlFor="categoryId" required>Categoría</Label>
           <NativeSelect
             id="categoryId"
             value={formData.categoryId}
             onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
             className="w-full"
             required
+            aria-required="true"
           >
             <NativeSelectOption value="">Selecciona categoría</NativeSelectOption>
             {categories.map((cat) => (
@@ -156,13 +158,14 @@ export function ProductForm({
       {/* Fila 3: Proveedor | Ubicación */}
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="supplierId">Proveedor *</Label>
+          <Label htmlFor="supplierId" required>Proveedor</Label>
           <NativeSelect
             id="supplierId"
             value={formData.supplierId}
             onChange={(e) => setFormData({ ...formData, supplierId: e.target.value })}
             className="w-full"
             required
+            aria-required="true"
           >
             <NativeSelectOption value="">Selecciona proveedor</NativeSelectOption>
             {suppliers.map((sup) => (
@@ -187,7 +190,7 @@ export function ProductForm({
       {/* Fila 4: Costo | Venta | Stock | Mínimo */}
       <div className="grid grid-cols-4 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="costPrice">Costo *</Label>
+          <Label htmlFor="costPrice" required>Costo</Label>
           <Input
             id="costPrice"
             type="number"
@@ -197,11 +200,12 @@ export function ProductForm({
             onChange={(e) => setFormData({ ...formData, costPrice: e.target.value })}
             placeholder="45000"
             required
+            aria-required="true"
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="replacementCost">Costo de Reposición *</Label>
+          <Label htmlFor="replacementCost" required>Costo de Reposición</Label>
           <Input
             id="replacementCost"
             type="number"
@@ -211,11 +215,12 @@ export function ProductForm({
             onChange={(e) => setFormData({ ...formData, replacementCost: e.target.value })}
             placeholder="45000"
             required
+            aria-required="true"
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="stock">Stock *</Label>
+          <Label htmlFor="stock" required>Stock</Label>
           <Input
             id="stock"
             type="number"
@@ -224,11 +229,12 @@ export function ProductForm({
             onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
             placeholder="15"
             required
+            aria-required="true"
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="minStock">Mínimo *</Label>
+          <Label htmlFor="minStock" required>Mínimo</Label>
           <Input
             id="minStock"
             type="number"
@@ -237,6 +243,7 @@ export function ProductForm({
             onChange={(e) => setFormData({ ...formData, minStock: e.target.value })}
             placeholder="5"
             required
+            aria-required="true"
           />
         </div>
       </div>
