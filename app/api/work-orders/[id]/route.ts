@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { logWorkOrderChange } from "@/lib/services/auditService";
+import * as workOrderService from "@/lib/services/workOrderService";
 
 // GET /api/work-orders/[id] - Get work order by ID
 export async function GET(
@@ -9,25 +8,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const workOrder = await prisma.work_order.findUnique({
-      where: { id },
-      include: {
-        customer: true,
-        vehicle: {
-          include: {
-            vehicle_make: true,
-            vehicle_model: true,
-          },
-        },
-        work_order_item: {
-          include: {
-            product: true,
-            service: true,
-          },
-        },
-        photo: true,
-      },
-    });
+    const workOrder = await workOrderService.getWorkOrderById(id);
 
     if (!workOrder) {
       return NextResponse.json(
@@ -54,101 +35,25 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
-    const {
-      technicianId,
-      status,
-      entryChecklist,
-      exitChecklist,
-      notes,
-      paymentMethod,
-      paymentNotes,
-      scheduledDate,
-      startedAt,
-      completedAt,
-      deliveredAt,
-    } = body;
 
-    // Get current work order to compare changes
-    const currentWorkOrder = await prisma.work_order.findUnique({
-      where: { id },
-      select: {
-        status: true,
-        notes: true,
-        scheduledDate: true,
-        paymentMethod: true,
-        paymentNotes: true,
-      },
-    });
-
-    // Get user from session (simplified - should use proper auth)
+    // Extract audit info from headers
     const changedBy = request.headers.get("x-user-email") || "system";
     const ipAddress = request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || undefined;
     const userAgent = request.headers.get("user-agent") || undefined;
 
-    // Log changes for tracked fields
-    if (currentWorkOrder) {
-      const trackedFields = [
-        { name: "status", current: currentWorkOrder.status, new: status },
-        { name: "notes", current: currentWorkOrder.notes, new: notes },
-        { name: "scheduledDate", current: currentWorkOrder.scheduledDate?.toISOString(), new: scheduledDate },
-        { name: "paymentMethod", current: currentWorkOrder.paymentMethod, new: paymentMethod },
-        { name: "paymentNotes", current: currentWorkOrder.paymentNotes, new: paymentNotes },
-      ];
-
-      for (const field of trackedFields) {
-        if (field.new !== undefined && String(field.current) !== String(field.new)) {
-          await logWorkOrderChange({
-            workOrderId: id,
-            fieldName: field.name,
-            oldValue: field.current,
-            newValue: field.new,
-            changedBy,
-            ipAddress,
-            userAgent,
-          });
-        }
-      }
-    }
-
-    const workOrder = await prisma.work_order.update({
-      where: { id },
-      data: {
-        technicianId,
-        status,
-        entryChecklist,
-        exitChecklist,
-        notes,
-        paymentMethod,
-        paymentNotes,
-        scheduledDate: scheduledDate ? new Date(scheduledDate) : undefined,
-        startedAt: startedAt ? new Date(startedAt) : undefined,
-        completedAt: completedAt ? new Date(completedAt) : undefined,
-        deliveredAt: deliveredAt ? new Date(deliveredAt) : undefined,
-      },
-      include: {
-        customer: true,
-        vehicle: {
-          include: {
-            vehicle_make: true,
-            vehicle_model: true,
-          },
-        },
-        work_order_item: {
-          include: {
-            product: true,
-            service: true,
-          },
-        },
-        photo: true,
-      },
+    const workOrder = await workOrderService.updateWorkOrder(id, {
+      ...body,
+      changedBy,
+      ipAddress,
+      userAgent,
     });
 
     return NextResponse.json(workOrder);
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error updating work order:", error);
     return NextResponse.json(
-      { error: "Failed to update work order" },
-      { status: 500 }
+      { error: error.message || "Failed to update work order" },
+      { status: error.message === 'Work order not found' ? 404 : 500 }
     );
   }
 }
@@ -160,10 +65,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    await prisma.work_order.delete({
-      where: { id },
-    });
-
+    await workOrderService.deleteWorkOrder(id);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error deleting work order:", error);

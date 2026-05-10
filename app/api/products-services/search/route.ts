@@ -246,32 +246,9 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Obtener excepciones para TODAS las listas
-    const allExceptions: Map<string, Map<string, { fixedPrice: number | null; overrideMarginPercentage: number | null }>> = new Map();
-    
-    if (products.length > 0 && allActivePriceLists.length > 0) {
-      const productIds = products.map((p: any) => p.id);
-      const allListIds = allActivePriceLists.map(pl => pl.id);
-      
-      const exceptions = await prisma.price_list_item.findMany({
-        where: {
-          priceListId: { in: allListIds },
-          productId: { in: productIds },
-        },
-      });
-      
-      for (const ex of exceptions) {
-        if (ex.productId) {
-          if (!allExceptions.has(ex.priceListId)) {
-            allExceptions.set(ex.priceListId, new Map());
-          }
-          allExceptions.get(ex.priceListId)!.set(ex.productId, {
-            fixedPrice: ex.fixedPrice !== null ? Number(ex.fixedPrice) : null,
-            overrideMarginPercentage: ex.overrideMarginPercentage !== null ? Number(ex.overrideMarginPercentage) : null,
-          });
-        }
-      }
-    }
+    // OPTIMIZACIÓN: Solo obtener excepciones para la lista seleccionada si existe
+    // El frontend por ahora solo muestra los precios de la lista actual en la mayoría de los flujos
+    // Si en el futuro se requiere para todas las listas, se puede volver a habilitar o parametrizar
 
     // Obtener margen mínimo global
     const minimumMargin = await getMinimumMargin();
@@ -330,14 +307,10 @@ export async function GET(request: NextRequest) {
         isBelowMinimum = actualMargin < minimumMargin;
       }
 
-      // Calcular allPrices para todas las listas
+      // Optimización: Solo devolver el precio de la lista solicitada
       const allPrices: Record<string, PriceInfo> = {};
-      if (allActivePriceLists.length > 0) {
-        for (const list of allActivePriceLists) {
-          const listExceptions = allExceptions.get(list.id);
-          const exception = listExceptions?.get(product.id);
-          allPrices[list.id] = calculateProductPriceForList(product, baseCost, list, exception);
-        }
+      if (priceList) {
+        allPrices[priceList.id] = { finalPrice, isBelowMinimum };
       }
 
       return {

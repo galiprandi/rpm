@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import Link from "next/link";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -211,11 +212,43 @@ function KanbanColumn({ status, items }: { status: typeof STATUSES[0]; items: Wo
 // --- Main Page Component ---
 
 export default function WorkOrdersPage() {
-  const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [viewMode, setViewMode] = useState<"kanban" | "list">("kanban");
   const [paymentFilter, setPaymentFilter] = useState<"all" | "pending">("all");
   const [activeId, setActiveId] = useState<string | null>(null);
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["work-orders"],
+    queryFn: async () => {
+      const response = await fetch("/api/work-orders");
+      if (!response.ok) throw new Error("Failed to fetch");
+      const result = await response.json();
+      return result.workOrders as WorkOrder[];
+    },
+  });
+
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const response = await fetch(`/api/work-orders/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      if (!response.ok) throw new Error("Error al actualizar el estado");
+      return response.json();
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["work-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-summary"] });
+      const wo = data?.find(w => w.id === variables.id);
+      toast.success(`OT ${wo?.vehicle.identifier || ''} movida a ${STATUSES.find(s => s.id === variables.status)?.label}`);
+    },
+    onError: () => {
+      toast.error("No se pudo actualizar el estado en el servidor");
+    }
+  });
+
+  const workOrders = data || [];
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -225,26 +258,6 @@ export default function WorkOrdersPage() {
     }),
     useSensor(KeyboardSensor)
   );
-
-  const fetchWorkOrders = useCallback(async () => {
-    try {
-      const response = await fetch("/api/work-orders");
-      if (!response.ok) throw new Error("Failed to fetch");
-      const data = await response.json();
-      setWorkOrders(data.workOrders);
-    } catch (error) {
-      console.error("Error fetching work orders:", error);
-      toast.error("Error al cargar las órdenes de trabajo");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    void fetchWorkOrders();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const getStatusBadge = (status: string) => {
     const statusConfig = STATUSES.find((s) => s.id === status);
@@ -290,37 +303,9 @@ export default function WorkOrdersPage() {
     const activeWO = active.data.current?.wo;
     if (!activeWO) return;
 
-    // Dropping over another WorkOrder
-    if (over.data.current?.type === "WorkOrder") {
-      const overWO = over.data.current.wo;
-
-      if (activeWO.status !== overWO.status) {
-        setWorkOrders(prev => {
-          return prev.map(wo => {
-            if (wo.id === activeId) {
-              return { ...wo, status: overWO.status };
-            }
-            return wo;
-          });
-        });
-      }
-    }
-
-    // Dropping over a Column
-    if (over.data.current?.type === "Column") {
-      const overStatusId = over.data.current.statusId;
-
-      if (activeWO.status !== overStatusId) {
-        setWorkOrders(prev => {
-          return prev.map(wo => {
-            if (wo.id === activeId) {
-              return { ...wo, status: overStatusId };
-            }
-            return wo;
-          });
-        });
-      }
-    }
+    // Nota: El feedback visual inmediato (optimistic update) durante el drag
+    // se podría implementar aquí si fuera necesario, pero por ahora dependemos
+    // de la mutación al final del drag para mantener la consistencia con TanStack Query.
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
@@ -345,23 +330,11 @@ export default function WorkOrdersPage() {
     const finalStatus = currentWOInState?.status || newStatus;
 
     if (finalStatus !== activeWO.status) {
-      try {
-        const response = await fetch(`/api/work-orders/${activeWO.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status: finalStatus }),
-        });
-        if (!response.ok) throw new Error("Error al actualizar el estado");
-        toast.success(`OT ${activeWO.vehicle.identifier} movida a ${STATUSES.find(s => s.id === finalStatus)?.label}`);
-      } catch (e) {
-        console.error("Error updating status:", e);
-        toast.error("No se pudo actualizar el estado en el servidor");
-        fetchWorkOrders(); // Revert on error
-      }
+      updateStatusMutation.mutate({ id: activeWO.id, status: finalStatus });
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="container mx-auto py-6">
         <div className="text-center py-12">Cargando...</div>
