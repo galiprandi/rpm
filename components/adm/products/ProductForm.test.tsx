@@ -34,7 +34,7 @@ describe('ProductForm', () => {
   });
 
   describe('Validation', () => {
-    it('should mark name as required', () => {
+    it('should mark required fields with an asterisk', () => {
       render(
         <ProductForm
           formData={defaultFormData}
@@ -44,36 +44,16 @@ describe('ProductForm', () => {
         />
       );
       
-      const nameLabel = screen.getByText(/Producto \*/i);
-      expect(nameLabel).toBeInTheDocument();
-    });
-
-    it('should mark category as required', () => {
-      render(
-        <ProductForm
-          formData={defaultFormData}
-          setFormData={mockSetFormData}
-          categories={categories}
-          suppliers={suppliers}
-        />
-      );
+      expect(screen.getByText(/^Producto$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Categoría$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Proveedor$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Costo$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Costo de Reposición$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Stock$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Mínimo$/i)).toBeInTheDocument();
       
-      const categoryLabel = screen.getByText(/Categoría \*/i);
-      expect(categoryLabel).toBeInTheDocument();
-    });
-
-    it('should mark supplier as required', () => {
-      render(
-        <ProductForm
-          formData={defaultFormData}
-          setFormData={mockSetFormData}
-          categories={categories}
-          suppliers={suppliers}
-        />
-      );
-      
-      const supplierLabel = screen.getByText(/Proveedor \*/i);
-      expect(supplierLabel).toBeInTheDocument();
+      // All these 7 fields are required
+      expect(screen.getAllByText('*')).toHaveLength(7);
     });
 
     it('should use NativeSelect for category dropdown', () => {
@@ -87,7 +67,7 @@ describe('ProductForm', () => {
       );
       
       // NativeSelect renders a native <select> element
-      const categorySelect = screen.getByLabelText(/Categoría/i);
+      const categorySelect = screen.getByLabelText(/^Categoría/i);
       expect(categorySelect.tagName).toBe('SELECT');
     });
 
@@ -101,7 +81,7 @@ describe('ProductForm', () => {
         />
       );
       
-      const supplierSelect = screen.getByLabelText(/Proveedor/i);
+      const supplierSelect = screen.getByLabelText(/^Proveedor/i);
       expect(supplierSelect.tagName).toBe('SELECT');
     });
   });
@@ -117,7 +97,7 @@ describe('ProductForm', () => {
         />
       );
       
-      const categorySelect = screen.getByLabelText(/Categoría/i);
+      const categorySelect = screen.getByLabelText(/^Categoría/i);
       fireEvent.change(categorySelect, { target: { value: 'cat-1' } });
       
       expect(mockSetFormData).toHaveBeenCalledWith(
@@ -135,7 +115,7 @@ describe('ProductForm', () => {
         />
       );
       
-      const supplierSelect = screen.getByLabelText(/Proveedor/i);
+      const supplierSelect = screen.getByLabelText(/^Proveedor/i);
       fireEvent.change(supplierSelect, { target: { value: 'sup-1' } });
       
       expect(mockSetFormData).toHaveBeenCalledWith(
@@ -156,13 +136,13 @@ describe('ProductForm', () => {
       );
       
       // All required fields should be present
-      expect(screen.getByLabelText(/Producto/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/Categoría/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/Proveedor/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/Costo \*/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/^Producto/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/^Categoría/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/^Proveedor/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/^Costo\s*\*$/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/Costo de Reposición/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/Stock \*/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/Mínimo/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/^Stock\s*\*$/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/^Mínimo\s*\*$/i)).toBeInTheDocument();
       
       // Optional fields
       expect(screen.getByLabelText(/Código de Barras/i)).toBeInTheDocument();

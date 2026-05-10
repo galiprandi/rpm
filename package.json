@@ -54,6 +54,9 @@
     "zustand": "^5.0.12"
   },
   "pnpm": {
+    "overrides": {
+      "fast-uri": "^3.1.2"
+    },
     "onlyBuiltDependencies": [
       "@prisma/client",
       "esbuild",

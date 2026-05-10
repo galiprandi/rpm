@@ -221,9 +221,9 @@ export function VehicleDialog({
           {!customerId && !customerIdProp && !isCreatingCustomer && (
             <div className="space-y-3 p-4 border rounded-lg bg-muted/50">
               <div className="flex items-center justify-between">
-                <Label className="flex items-center gap-2">
+                <Label required className="flex items-center gap-2">
                   <User className="h-4 w-4" />
-                  Buscar Cliente *
+                  Buscar Cliente
                 </Label>
                 <Button
                   type="button"
@@ -310,8 +310,8 @@ export function VehicleDialog({
               </div>
               <div className="space-y-3">
                 <div>
-                  <Label htmlFor="new-customer-name">
-                    Nombre <span className="text-destructive">*</span>
+                  <Label htmlFor="new-customer-name" required>
+                    Nombre
                   </Label>
                   <Input
                     id="new-customer-name"
@@ -320,11 +320,12 @@ export function VehicleDialog({
                       setNewCustomerData((prev) => ({ ...prev, name: e.target.value }))
                     }
                     placeholder="Ej: Juan Pérez"
+                    aria-required="true"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="new-customer-phone">
-                    Teléfono <span className="text-destructive">*</span>
+                  <Label htmlFor="new-customer-phone" required>
+                    Teléfono
                   </Label>
                   <Input
                     id="new-customer-phone"
@@ -333,6 +334,7 @@ export function VehicleDialog({
                       setNewCustomerData((prev) => ({ ...prev, phone: e.target.value }))
                     }
                     placeholder="Ej: 1123456789"
+                    aria-required="true"
                   />
                 </div>
                 <div>
@@ -384,7 +386,7 @@ export function VehicleDialog({
 
           {/* Categoría */}
           <div>
-            <Label htmlFor="category">Categoría *</Label>
+            <Label htmlFor="category" required>Categoría</Label>
             <Select
               value={formData.category}
               onValueChange={(value) => handleChange('category', value)}
@@ -405,8 +407,8 @@ export function VehicleDialog({
 
           {/* Identificador */}
           <div>
-            <Label htmlFor="identifier">
-              {isVehicle ? 'Patente *' : 'Número de Serie/Identificador *'}
+            <Label htmlFor="identifier" required>
+              {isVehicle ? 'Patente' : 'Número de Serie/Identificador'}
             </Label>
             <Input
               id="identifier"
@@ -414,6 +416,7 @@ export function VehicleDialog({
               onChange={(e) => handleChange('identifier', e.target.value.toUpperCase())}
               placeholder={isVehicle ? 'Ej: AB123CD' : 'Ej: SN123456'}
               required
+              aria-required="true"
             />
           </div>
 
@@ -464,13 +467,14 @@ export function VehicleDialog({
             /* Campos para equipos */
             <div className="space-y-4">
               <div>
-                <Label htmlFor="equipmentName">Nombre del Equipo *</Label>
+                <Label htmlFor="equipmentName" required>Nombre del Equipo</Label>
                 <Input
                   id="equipmentName"
                   value={formData.equipmentName}
                   onChange={(e) => handleChange('equipmentName', e.target.value)}
                   placeholder="Ej: Equipo de Sonido JBL"
                   required={!isVehicle}
+                  aria-required={!isVehicle}
                 />
               </div>
               <div>
