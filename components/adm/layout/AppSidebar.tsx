@@ -133,7 +133,7 @@ export function AppSidebar({ user, onSignOut }: AppSidebarProps) {
               className="hover:bg-transparent hover:text-sidebar-foreground data-active:bg-transparent data-active:text-sidebar-foreground"
             >
               <Link href="/adm/novedades">
-                <Newspaper className={`size-5 ${hasUnread ? 'text-primary fill-primary' : 'text-muted-foreground'}`} />
+                <Newspaper className={`size-5 ${hasUnread ? 'text-yellow-500 animate-pulse' : 'text-muted-foreground'}`} />
                 <span>Novedades</span>
               </Link>
             </SidebarMenuButton>
