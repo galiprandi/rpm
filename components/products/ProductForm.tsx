@@ -301,19 +301,19 @@ export function ProductForm({
             </div>
           </div>
         ) : (
-          <div className="border-2 border-dashed border-border rounded-lg p-6">
+          <div className="border-2 border-dashed border-border rounded-lg p-6 transition-colors hover:border-primary/50 hover:bg-muted/50 focus-within:border-primary focus-within:ring-1 focus-within:ring-ring">
             <input
               id="image"
               type="file"
               accept="image/jpeg,image/png,image/webp"
               onChange={handleImageChange}
-              className="hidden"
+              className="sr-only"
             />
             <label
               htmlFor="image"
-              className="flex flex-col items-center justify-center cursor-pointer"
+              className="flex flex-col items-center justify-center cursor-pointer group"
             >
-              <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+              <Upload className="h-8 w-8 text-muted-foreground mb-2 group-hover:text-primary transition-colors" />
               <span className="text-sm text-muted-foreground">
                 Click para subir imagen
               </span>
