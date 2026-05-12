@@ -151,12 +151,12 @@ export function DailyOperations() {
         </div>
         <Button
           onClick={() => fetchOperations(date)}
-          disabled={loading}
+          loading={loading}
           variant="outline"
           size="sm"
           className="gap-2"
         >
-          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+          {!loading && <RefreshCw className="h-4 w-4" />}
           Actualizar
         </Button>
       </div>

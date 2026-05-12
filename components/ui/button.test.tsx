@@ -40,4 +40,12 @@ describe('Button Component', () => {
     expect(link).toBeInTheDocument();
     expect(link).toHaveClass('inline-flex');
   });
+
+  test('shows spinner and is disabled when loading is true', () => {
+    render(<Button loading>Loading Button</Button>);
+    const button = screen.getByRole('button');
+    expect(button).toBeDisabled();
+    // The spinner (Loader2) should be present
+    expect(button.querySelector('.animate-spin')).toBeInTheDocument();
+  });
 });
