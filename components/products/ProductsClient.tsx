@@ -10,7 +10,7 @@ import { ProductPricesModal } from '@/components/products/ProductPricesModal';
 import { QuickSaleModal } from '@/components/dashboard/QuickSaleModal';
 import { useUI } from '@/components/ui/UIProvider';
 import { Header, CrudAdmin, StatItem } from '@/components/adm';
-import { Edit2, Trash2, AlertTriangle, DollarSign, Boxes, Clock, ShoppingCart } from 'lucide-react';
+import { Edit2, Trash2, AlertTriangle, DollarSign, Boxes, Clock, ShoppingCart, FileUp } from 'lucide-react';
 import { PriceDisplay } from '@/components/ui/price-display';
 import { StockDisplay } from '@/components/ui/stock-display';
 import {
@@ -445,7 +445,7 @@ export function ProductsClient({
               label: 'Importar Productos',
               onClick: goToImporter,
               variant: 'outline' as const,
-              icon: undefined,
+              icon: FileUp,
             },
             {
               label: 'Venta Rápida',
