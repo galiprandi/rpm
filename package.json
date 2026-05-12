@@ -38,7 +38,7 @@
     "clsx": "^2.1.1",
     "dotenv": "^17.3.1",
     "lucide-react": "^1.6.0",
-    "next": "16.2.4",
+    "next": "16.2.6",
     "pg": "^8.20.0",
     "postcss": "^8.5.13",
     "radix-ui": "^1.4.3",
@@ -55,16 +55,14 @@
   },
   "pnpm": {
     "overrides": {
-      "fast-uri": "^3.1.2"
+      "fast-uri": ">=3.1.2",
+      "kysely": "0.28.17"
     },
     "onlyBuiltDependencies": [
       "@prisma/client",
       "esbuild",
       "prisma"
-    ],
-    "overrides": {
-      "fast-uri": ">=3.1.2"
-    }
+    ]
   },
   "devDependencies": {
     "@prisma/client": "6.19.3",
