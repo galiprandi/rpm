@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Loader2, Plus, Search, Trash2, Package, Wrench, Minus, Plus as PlusIcon } from 'lucide-react';
+import { Loader2, Plus, Search, Trash2, Package, Wrench, Minus, Plus as PlusIcon, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatARS } from '@/lib/utils/format';
 import { Badge } from '@/components/ui/badge';
@@ -368,13 +368,36 @@ export function ProductServiceSelector({
             ref={inputRef}
             placeholder="Buscar: led+cronos (ambas) o filtro aire (cualquiera)"
             value={searchTerm}
+            aria-label="Buscar productos o servicios"
             onChange={(e) => {
               setSearchTerm(e.target.value);
               setShowResults(true);
             }}
             onFocus={() => setShowResults(true)}
-            className="pl-10"
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') {
+                setSearchTerm('');
+                setSearchResults([]);
+                setShowResults(false);
+              }
+            }}
+            className="pl-10 pr-10"
           />
+          {searchTerm && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchTerm('');
+                setSearchResults([]);
+                setShowResults(false);
+                inputRef.current?.focus();
+              }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="Limpiar búsqueda"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
         </div>
 
         {/* Search results dropdown - always visible with fixed height */}
@@ -576,6 +599,7 @@ export function ProductServiceSelector({
                     min={0}
                     step="1"
                     value={Math.round(item.unitPrice)}
+                    aria-label={`Precio unitario para ${item.name}`}
                     onChange={(e) => updatePrice(index, parseFloat(e.target.value) || 0)}
                     className={cn(
                       'h-8 text-right',
