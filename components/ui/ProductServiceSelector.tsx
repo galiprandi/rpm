@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Loader2, Plus, Search, Trash2, Package, Wrench, Minus, Plus as PlusIcon } from 'lucide-react';
+import { Loader2, Plus, Search, Trash2, Package, Wrench, Minus, Plus as PlusIcon, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatARS } from '@/lib/utils/format';
 import { Badge } from '@/components/ui/badge';
@@ -146,15 +146,26 @@ export function ProductServiceSelector({
   // Cart state - efímero, solo vive en memoria durante la sesión
   const [cartItems, setCartItems] = useState<SelectedItem[]>(initialItems);
 
-  // Close dropdown when clicking outside
+  // Close dropdown when clicking outside or pressing Escape
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setShowResults(false);
       }
     };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setShowResults(false);
+      }
+    };
+
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
   }, []);
   
   // Helper simple para actualizar carrito y notificar al parent
@@ -373,8 +384,22 @@ export function ProductServiceSelector({
               setShowResults(true);
             }}
             onFocus={() => setShowResults(true)}
-            className="pl-10"
+            className={cn("pl-10", searchTerm && "pr-10")}
           />
+          {searchTerm && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchTerm('');
+                setShowResults(false);
+                inputRef.current?.focus();
+              }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="Limpiar búsqueda"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
         </div>
 
         {/* Search results dropdown - always visible with fixed height */}
