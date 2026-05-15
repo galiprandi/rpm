@@ -146,15 +146,26 @@ export function ProductServiceSelector({
   // Cart state - efímero, solo vive en memoria durante la sesión
   const [cartItems, setCartItems] = useState<SelectedItem[]>(initialItems);
 
-  // Close dropdown when clicking outside
+  // Close dropdown when clicking outside or pressing Escape
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setShowResults(false);
       }
     };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setShowResults(false);
+      }
+    };
+
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
   }, []);
   
   // Helper simple para actualizar carrito y notificar al parent
@@ -381,7 +392,7 @@ export function ProductServiceSelector({
                 setShowResults(false);
               }
             }}
-            className="pl-10 pr-10"
+            className={cn("pl-10", searchTerm && "pr-10")}
           />
           {searchTerm && (
             <button
