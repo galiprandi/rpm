@@ -7,8 +7,15 @@ import { type ColumnDef } from '@tanstack/react-table';
 import { formatARS } from '@/lib/utils/format';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { Calendar, ArrowUpCircle, ArrowDownCircle, DollarSign, RefreshCw, Eye } from 'lucide-react';
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
 
 interface DailyOperationsData {
   movements: Array<{
@@ -80,7 +87,20 @@ export function DailyOperations() {
           CLOSING: 'Cierre',
           ADJUSTMENT: 'Ajuste',
         };
-        return labels[type] || type;
+
+        const colors: Record<string, string> = {
+          INCOME: 'bg-green-50 text-green-700 border-green-200',
+          EXPENSE: 'bg-red-50 text-red-700 border-red-200',
+          OPENING: 'bg-blue-50 text-blue-700 border-blue-200',
+          CLOSING: 'bg-slate-50 text-slate-700 border-slate-200',
+          ADJUSTMENT: 'bg-amber-50 text-amber-700 border-amber-200',
+        };
+
+        return (
+          <Badge variant="outline" className={cn("font-medium", colors[type])}>
+            {labels[type] || type}
+          </Badge>
+        );
       },
     },
     {
@@ -91,11 +111,22 @@ export function DailyOperations() {
     {
       accessorKey: 'reason',
       header: 'Referencia',
-      cell: ({ row }) => (
-        <div className="max-w-[200px] truncate" title={row.original.reason}>
-          {row.original.reason || '-'}
-        </div>
-      ),
+      cell: ({ row }) => {
+        const reason = row.original.reason;
+        if (!reason) return '-';
+        return (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="max-w-[200px] truncate cursor-help">
+                {reason}
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-xs">
+              {reason}
+            </TooltipContent>
+          </Tooltip>
+        );
+      },
     },
     {
       accessorKey: 'methodName',
@@ -126,12 +157,17 @@ export function DailyOperations() {
           : `/adm/customers?id=${relatedId}`;
 
         return (
-          <Button asChild variant="ghost" size="sm" className="h-8 w-8 p-0">
-            <Link href={href}>
-              <Eye className="h-4 w-4" />
-              <span className="sr-only">Ver detalle</span>
-            </Link>
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button asChild variant="ghost" size="sm" className="h-8 w-8 p-0">
+                <Link href={href} aria-label="Ver detalle de la operación">
+                  <Eye className="h-4 w-4" />
+                  <span className="sr-only">Ver detalle</span>
+                </Link>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Ver detalle</TooltipContent>
+          </Tooltip>
         );
       },
     },
@@ -147,6 +183,7 @@ export function DailyOperations() {
             value={date}
             onChange={(e) => setDate(e.target.value)}
             className="border-0 focus-visible:ring-0 h-8 w-40 bg-transparent p-0"
+            aria-label="Seleccionar fecha de operaciones"
           />
         </div>
         <Button
