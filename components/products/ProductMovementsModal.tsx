@@ -2,6 +2,7 @@
 
 import { ModalBase } from '@/components/ui/ModalBase';
 import { Badge } from '@/components/ui/badge';
+import { Loader2, PackageSearch } from 'lucide-react';
 
 interface StockMovement {
   id: string;
@@ -79,16 +80,19 @@ export function ProductMovementsModal({
       maxHeight="max-h-[80vh]"
     >
       {loading ? (
-        <div className="flex items-center justify-center py-8">
-          <div className="text-muted-foreground">Cargando movimientos...</div>
+        <div className="flex flex-col items-center justify-center py-12 gap-3">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <div className="text-muted-foreground animate-pulse">Cargando movimientos...</div>
         </div>
       ) : movements.length === 0 ? (
-        <div className="flex items-center justify-center py-8">
-          <div className="text-muted-foreground">No hay movimientos registrados</div>
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <PackageSearch className="h-12 w-12 text-muted-foreground/40 mb-4" />
+          <p className="text-muted-foreground font-medium">No hay movimientos registrados</p>
+          <p className="text-xs text-muted-foreground/60 mt-1">Este producto aún no registra entradas ni salidas.</p>
         </div>
       ) : (
         <div className="overflow-auto -mx-6 px-6">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm" aria-label="Historial de movimientos de stock">
             <thead className="bg-muted sticky top-0">
               <tr>
                 <th className="text-left p-2 font-medium">Fecha/Hora</th>
@@ -107,8 +111,8 @@ export function ProductMovementsModal({
                   </td>
                   <td className="p-2">
                     <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium">
-                        {movement.userName?.charAt(0).toUpperCase() || '?'}
+                      <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary">
+                        {movement.userName ? movement.userName.charAt(0).toUpperCase() : 'S'}
                       </div>
                       <span className="truncate max-w-[120px]">
                         {movement.userName || 'Sistema'}
