@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, LayoutGrid, List, ArrowUpDown, Car, Truck, Wrench, Headphones, Package } from "lucide-react";
 import { Header } from "@/components/adm/Header";
 import { cn } from "@/lib/utils";
@@ -363,8 +364,25 @@ export default function WorkOrdersPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto py-6">
-        <div className="text-center py-12">Cargando...</div>
+      <div className="container mx-auto py-6 space-y-4 h-[calc(100vh-6rem)] flex flex-col">
+        <div className="flex justify-between items-start mb-4">
+          <div className="space-y-2">
+            <Skeleton className="h-9 w-64" />
+            <Skeleton className="h-4 w-80" />
+          </div>
+          <Skeleton className="h-9 w-28" />
+        </div>
+        <div className="flex gap-4 h-full overflow-hidden">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="flex-1 min-w-[250px] space-y-4">
+              <Skeleton className="h-10 w-full rounded-t-lg" />
+              <div className="space-y-3">
+                <Skeleton className="h-28 w-full rounded-xl" />
+                <Skeleton className="h-28 w-full rounded-xl" />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
