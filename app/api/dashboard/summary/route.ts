@@ -14,9 +14,10 @@ import { UserRole } from '@/lib/auth/roles';
 import { getDashboardData } from '@/lib/services/dashboardService';
 import { unstable_cache } from 'next/cache';
 
+
 // GET /api/dashboard/summary
 // Cache for 60 seconds to reduce database operations
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
