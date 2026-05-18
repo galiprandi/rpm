@@ -63,13 +63,32 @@ export async function createDirectSale(input: CreateDirectSaleInput) {
     }
   }
 
-  // Validate stock for products
+  // Pre-fetch all products and payment methods to optimize performance and reduce transaction time
+  const productIds = items.map(i => i.productId).filter(Boolean) as string[];
+  const paymentMethodIds = payments.map(p => p.paymentMethodId);
+
+  const [products, paymentMethods] = await Promise.all([
+    productIds.length > 0
+      ? prisma.product.findMany({
+          where: { id: { in: productIds } },
+          select: { id: true, stock: true, name: true }
+        })
+      : Promise.resolve([]),
+    paymentMethodIds.length > 0
+      ? prisma.payment_method.findMany({
+          where: { id: { in: paymentMethodIds } },
+          select: { id: true, code: true }
+        })
+      : Promise.resolve([])
+  ]);
+
+  const productMap = new Map(products.map(p => [p.id, p]));
+  const paymentMethodMap = new Map(paymentMethods.map(pm => [pm.id, pm]));
+
+  // Validate stock for products before starting transaction
   for (const item of items) {
     if (item.productId) {
-      const product = await prisma.product.findUnique({
-        where: { id: item.productId },
-        select: { stock: true, name: true },
-      });
+      const product = productMap.get(item.productId);
 
       if (!product) {
         throw new Error(`Producto no encontrado: ${item.name}`);
@@ -83,7 +102,7 @@ export async function createDirectSale(input: CreateDirectSaleInput) {
     }
   }
 
-  // Create direct sale in a transaction
+  // Create direct sale in a transaction with extended timeout
   const result = await prisma.$transaction(async (tx) => {
     // Create direct sale
     const directSale = await tx.direct_sale.create({
@@ -96,29 +115,34 @@ export async function createDirectSale(input: CreateDirectSaleInput) {
       },
     });
 
-    // Create items and update stock
-    for (const item of items) {
-      await tx.direct_sale_item.create({
-        data: {
-          directSaleId: directSale.id,
-          productId: item.productId,
-          serviceId: item.serviceId,
-          name: item.name,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          totalPrice: item.totalPrice,
-        },
-      });
+    // Create items in bulk
+    await tx.direct_sale_item.createMany({
+      data: items.map(item => ({
+        directSaleId: directSale.id,
+        productId: item.productId,
+        serviceId: item.serviceId,
+        name: item.name,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        totalPrice: item.totalPrice,
+      })),
+    });
 
-      // Update stock for products
+    // Update stock and create stock movements
+    for (const item of items) {
       if (item.productId) {
+        // Re-fetch within transaction to ensure data consistency
         const product = await tx.product.findUnique({
           where: { id: item.productId },
-          select: { stock: true },
+          select: { stock: true, name: true },
         });
 
         if (!product) {
           throw new Error(`Producto no encontrado: ${item.name}`);
+        }
+
+        if (product.stock < item.quantity) {
+          throw new Error(`Stock insuficiente para ${product.name} (actualización concurrente)`);
         }
 
         const previousStock = product.stock;
@@ -160,11 +184,8 @@ export async function createDirectSale(input: CreateDirectSaleInput) {
         },
       });
 
-      // Get payment method to determine the method code
-      const paymentMethod = await tx.payment_method.findUnique({
-        where: { id: payment.paymentMethodId },
-        select: { code: true },
-      });
+      // Use pre-fetched payment method
+      const paymentMethod = paymentMethodMap.get(payment.paymentMethodId);
 
       // Create cash movement
       await createCashMovement(
@@ -217,6 +238,8 @@ export async function createDirectSale(input: CreateDirectSaleInput) {
     }
 
     return directSale;
+  }, {
+    timeout: 15000, // Increase timeout to 15 seconds for sales with many items
   });
 
   // Invalidate dashboard cache to show fresh data

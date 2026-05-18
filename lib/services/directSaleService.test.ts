@@ -4,11 +4,16 @@ import { createDirectSale, getDirectSalesSummaryForDate } from './directSaleServ
 import { createCashMovement } from './cashMovementService';
 import { prisma } from '@/lib/prisma';
 
+vi.mock('next/cache', () => ({
+  revalidatePath: vi.fn(),
+}));
+
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     $transaction: vi.fn(),
     product: {
       findUnique: vi.fn(),
+      findMany: vi.fn(),
       update: vi.fn(),
     },
     stock_movement: {
@@ -20,12 +25,18 @@ vi.mock('@/lib/prisma', () => ({
     },
     direct_sale_item: {
       create: vi.fn(),
+      createMany: vi.fn(),
     },
     direct_sale_payment: {
       create: vi.fn(),
     },
     payment_method: {
       findUnique: vi.fn(),
+      findMany: vi.fn(),
+    },
+    customer: {
+      findUnique: vi.fn(),
+      update: vi.fn(),
     },
   },
 }));
@@ -57,13 +68,14 @@ describe('directSaleService', () => {
         return await callback(prisma as any);
       });
 
+      vi.mocked(prisma.product.findMany).mockResolvedValue([mockProduct] as any);
       vi.mocked(prisma.product.findUnique).mockResolvedValue(mockProduct as any);
       vi.mocked(prisma.product.update).mockResolvedValue({} as any);
       vi.mocked(prisma.stock_movement.create).mockResolvedValue({} as any);
       vi.mocked(prisma.direct_sale.create).mockResolvedValue(mockDirectSale as any);
-      vi.mocked(prisma.direct_sale_item.create).mockResolvedValue({} as any);
+      vi.mocked(prisma.direct_sale_item.createMany).mockResolvedValue({ count: 1 } as any);
       vi.mocked(prisma.direct_sale_payment.create).mockResolvedValue({ id: 'payment-id' } as any);
-      vi.mocked(prisma.payment_method.findUnique).mockResolvedValue({ code: 'EFECTIVO' } as any);
+      vi.mocked(prisma.payment_method.findMany).mockResolvedValue([{ id: 'payment-method-id', code: 'EFECTIVO' }] as any);
       vi.mocked(createCashMovement).mockResolvedValue({} as any);
 
       const result = await createDirectSale({
@@ -121,6 +133,7 @@ describe('directSaleService', () => {
         stock: 1,
       };
 
+      vi.mocked(prisma.product.findMany).mockResolvedValue([mockProduct] as any);
       vi.mocked(prisma.product.findUnique).mockResolvedValue(mockProduct as any);
 
       await expect(
@@ -163,13 +176,14 @@ describe('directSaleService', () => {
         return await callback(prisma as any);
       });
 
+      vi.mocked(prisma.product.findMany).mockResolvedValue([mockProduct] as any);
       vi.mocked(prisma.product.findUnique).mockResolvedValue(mockProduct as any);
       vi.mocked(prisma.product.update).mockResolvedValue({} as any);
       vi.mocked(prisma.stock_movement.create).mockResolvedValue({} as any);
       vi.mocked(prisma.direct_sale.create).mockResolvedValue(mockDirectSale as any);
-      vi.mocked(prisma.direct_sale_item.create).mockResolvedValue({} as any);
+      vi.mocked(prisma.direct_sale_item.createMany).mockResolvedValue({ count: 1 } as any);
       vi.mocked(prisma.direct_sale_payment.create).mockResolvedValue({ id: 'payment-id' } as any);
-      vi.mocked(prisma.payment_method.findUnique).mockResolvedValue({ code: 'EFECTIVO' } as any);
+      vi.mocked(prisma.payment_method.findMany).mockResolvedValue([{ id: 'payment-method-id', code: 'EFECTIVO' }] as any);
       vi.mocked(createCashMovement).mockResolvedValue({} as any);
 
       await createDirectSale({
@@ -202,6 +216,51 @@ describe('directSaleService', () => {
           }),
         })
       );
+    });
+
+    it('should optimize heavy sales with many items', async () => {
+      const itemCount = 50;
+      const items = Array.from({ length: itemCount }).map((_, i) => ({
+        productId: `product-${i}`,
+        name: `Product ${i}`,
+        quantity: 1,
+        unitPrice: 10,
+        totalPrice: 10,
+      }));
+
+      const mockProducts = items.map(item => ({
+        id: item.productId,
+        name: item.name,
+        stock: 100,
+      }));
+
+      vi.mocked(prisma.$transaction).mockImplementation(async (callback, options: any) => {
+        expect(options).toEqual({ timeout: 15000 });
+        return await callback(prisma as any);
+      });
+
+      vi.mocked(prisma.product.findMany).mockResolvedValue(mockProducts as any);
+      vi.mocked(prisma.product.findUnique).mockImplementation(({ where }: any) => {
+        return Promise.resolve(mockProducts.find(p => p.id === where.id) as any);
+      });
+      vi.mocked(prisma.direct_sale.create).mockResolvedValue({ id: 'sale-id' } as any);
+      vi.mocked(prisma.payment_method.findMany).mockResolvedValue([{ id: 'pm-1', code: 'CASH' }] as any);
+
+      await createDirectSale({
+        customerName: 'Test Load',
+        items,
+        payments: [{ paymentMethodId: 'pm-1', amount: itemCount * 10 }],
+        createdBy: 'user-id',
+      });
+
+      expect(prisma.product.findMany).toHaveBeenCalledTimes(1);
+      expect(prisma.direct_sale_item.createMany).toHaveBeenCalledWith({
+        data: expect.arrayContaining([
+          expect.objectContaining({ name: 'Product 0' }),
+          expect.objectContaining({ name: 'Product 49' }),
+        ]),
+      });
+      expect(prisma.product.update).toHaveBeenCalledTimes(itemCount);
     });
   });
 
