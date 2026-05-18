@@ -4,6 +4,34 @@ Mantente al día con las últimas actualizaciones y mejoras
 
 ---
 
+### 🗓️ 17 de Mayo de 2026
+
+**⚡ Ventas Rápidas**: Optimización del proceso de ventas para evitar tiempos de espera excesivos al registrar pagos.
+
+**🎨 Selector de Productos**: Los nombres largos de productos y servicios ahora se truncan a 80 caracteres para mejor legibilidad.
+
+**🎨 Órdenes de Trabajo**: Mejoras de accesibilidad con skeleton de carga inicial, estados de carga consistentes en botones y etiquetas ARIA descriptivas.
+
+**🎨 Operaciones Diarias**: Badges semánticos para tipos de movimiento, tooltips informativos y soporte mejorado para lectores de pantalla.
+
+**🎨 Historial de Movimientos**: Spinner animado de carga, icono descriptivo para estado vacío y mejor accesibilidad en la tabla.
+
+**🎨 Búsqueda**: Botón de limpieza (X) en selectores y soporte para tecla Escape para cerrar resultados rápidamente.
+
+**🎨 Botones**: Estados de carga estandarizados con spinner visual en toda la aplicación.
+
+**🎨 Carga de Imágenes**: Feedback visual al enfocar, icono de importación y mejor accesibilidad con teclado.
+
+**🎨 Etiquetas**: Traducción de etiquetas de accesibilidad al español (Cerrar, Alternar barra lateral).
+
+**🎨 Formularios**: Estandarización de campos obligatorios con asterisco rojo visible y etiquetas aria-required.
+
+**🐛 Stock**: Corrección en la funcionalidad de tooltips del indicador de stock.
+
+**🔒 Seguridad**: Corrección de vulnerabilidades en dependencias del sistema.
+
+---
+
 ### 🗓️ 7 de Mayo de 2026
 
 **🎉 Novedades**: Nueva página de administración para ver el historial de actualizaciones del sistema con formato visual mejorado.
