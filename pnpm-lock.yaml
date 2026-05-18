@@ -1,3 +1,4 @@
+# Updated to fix Vercel build cache mismatch with overrides
 lockfileVersion: '9.0'
 
 settings:
