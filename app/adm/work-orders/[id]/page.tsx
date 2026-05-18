@@ -194,6 +194,7 @@ export default function WorkOrderDetailPage() {
   const [savingChecklist, setSavingChecklist] = useState(false);
   const [editingScheduledDate, setEditingScheduledDate] = useState(false);
   const [editingNotes, setEditingNotes] = useState(false);
+  const [savingNotes, setSavingNotes] = useState(false);
   const [newScheduledDate, setNewScheduledDate] = useState<string>('');
   const [newNotes, setNewNotes] = useState<string>('');
   const [isCashOpen, setIsCashOpen] = useState<boolean | null>(null);
@@ -411,6 +412,7 @@ export default function WorkOrderDetailPage() {
   };
 
   const handleUpdateNotes = async () => {
+    setSavingNotes(true);
     try {
       const response = await fetch(`/api/work-orders/${workOrderId}`, {
         method: "PUT",
@@ -436,6 +438,8 @@ export default function WorkOrderDetailPage() {
         description: 'Error al actualizar notas',
         variant: 'error',
       });
+    } finally {
+      setSavingNotes(false);
     }
   };
 
@@ -491,6 +495,7 @@ export default function WorkOrderDetailPage() {
             onClick: () => setIsCreditNoteDialogOpen(true),
             variant: 'outline',
             icon: Undo2,
+            ariaLabel: 'Crear nota de crédito por devolución',
           },
         ]}
       >
@@ -594,18 +599,9 @@ export default function WorkOrderDetailPage() {
                   <X className="h-4 w-4 mr-2" />
                   Cancelar
                 </Button>
-                <Button onClick={handleSaveItems} disabled={savingItems}>
-                  {savingItems ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Guardando...
-                    </>
-                  ) : (
-                    <>
-                      <Check className="h-4 w-4 mr-2" />
-                      Guardar Cambios
-                    </>
-                  )}
+                <Button onClick={handleSaveItems} loading={savingItems}>
+                  <Check className="h-4 w-4 mr-2" />
+                  Guardar Cambios
                 </Button>
               </div>
             </div>
@@ -803,8 +799,8 @@ export default function WorkOrderDetailPage() {
                             onChange={setEditingFuelLevel}
                           />
                           <div className="flex gap-2 mt-2">
-                            <Button size="sm" onClick={handleSaveChecklistData} disabled={savingChecklist}>
-                              {savingChecklist ? 'Guardando...' : 'Guardar'}
+                            <Button size="sm" onClick={handleSaveChecklistData} loading={savingChecklist}>
+                              Guardar
                             </Button>
                             <Button size="sm" variant="outline" onClick={() => setEditingChecklist(null)}>
                               Cancelar
@@ -886,8 +882,8 @@ export default function WorkOrderDetailPage() {
                             onChange={setEditingFuelLevel}
                           />
                           <div className="flex gap-2 mt-2">
-                            <Button size="sm" onClick={handleSaveChecklistData} disabled={savingChecklist}>
-                              {savingChecklist ? 'Guardando...' : 'Guardar'}
+                            <Button size="sm" onClick={handleSaveChecklistData} loading={savingChecklist}>
+                              Guardar
                             </Button>
                             <Button size="sm" variant="outline" onClick={() => setEditingChecklist(null)}>
                               Cancelar
@@ -1067,10 +1063,10 @@ export default function WorkOrderDetailPage() {
                         rows={4}
                       />
                       <div className="flex gap-2">
-                        <Button size="sm" onClick={handleUpdateNotes}>
+                        <Button size="sm" onClick={handleUpdateNotes} loading={savingNotes}>
                           Guardar
                         </Button>
-                        <Button size="sm" variant="outline" onClick={() => setEditingNotes(false)}>
+                        <Button size="sm" variant="outline" onClick={() => setEditingNotes(false)} disabled={savingNotes}>
                           Cancelar
                         </Button>
                       </div>

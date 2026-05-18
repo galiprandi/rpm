@@ -13,6 +13,7 @@ export interface HeaderAction {
   className?: string;
   disabled?: boolean;
   title?: string;
+  ariaLabel?: string;
 }
 
 export interface HeaderProps {
@@ -114,6 +115,7 @@ export function Header({
             variant="ghost"
             size="sm"
             onClick={onBack}
+            aria-label="Volver a la página anterior"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Volver
@@ -135,6 +137,7 @@ export function Header({
               className={`${action.className || ''} h-8`}
               disabled={action.disabled}
               title={action.title}
+              aria-label={action.ariaLabel}
             >
               {Icon && <Icon className="h-4 w-4 mr-2" />}
               {action.label}
@@ -161,6 +164,7 @@ export function Header({
                 onClick={primaryAction.onClick}
                 disabled={primaryAction.disabled}
                 title={primaryAction.title}
+                aria-label={primaryAction.ariaLabel}
                 className={
                   primaryAction.className ||
                   `bg-slate-900 text-white hover:bg-slate-800 border border-slate-900 shadow-lg hover:shadow-xl transition-all font-semibold px-4 py-2 h-8 ${primaryAction.disabled ? 'opacity-50 cursor-not-allowed shadow-none hover:shadow-none' : ''}`
