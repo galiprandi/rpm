@@ -53,3 +53,4 @@ next-env.d.ts
 *.log
 debug-storybook.log
 /tmp
+backup_*.sql
