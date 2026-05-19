@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Download, Plus, Package } from 'lucide-react';
 import { ReactNode } from 'react';
 import { CrudStats, StatItem } from './CrudStats';
@@ -105,8 +106,42 @@ export function CrudAdmin<T extends { id: string }>({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-muted-foreground">Cargando {title.toLowerCase()}...</div>
+      <div className="space-y-4">
+        <div className="flex justify-between items-start">
+          <div className="space-y-2">
+            <Skeleton className="h-10 w-48" />
+            <Skeleton className="h-4 w-64" />
+          </div>
+          <div className="flex gap-2">
+            <Skeleton className="h-10 w-28" />
+            <Skeleton className="h-10 w-28" />
+          </div>
+        </div>
+        <div className="mt-10 space-y-4">
+          <div className="flex justify-between items-center">
+            <Skeleton className="h-8 w-40" />
+            <div className="flex gap-2">
+              <Skeleton className="h-10 w-64" />
+              <Skeleton className="h-10 w-32" />
+            </div>
+          </div>
+          <div className="border rounded-lg overflow-hidden">
+            <div className="bg-muted/50 p-4 border-b">
+              <div className="flex gap-4">
+                {[1, 2, 3, 4].map((i) => (
+                  <Skeleton key={i} className="h-4 flex-1" />
+                ))}
+              </div>
+            </div>
+            {[1, 2, 3, 4, 5].map((row) => (
+              <div key={row} className="p-4 border-b last:border-0 flex gap-4 items-center">
+                {[1, 2, 3, 4].map((col) => (
+                  <Skeleton key={col} className="h-10 flex-1" />
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
