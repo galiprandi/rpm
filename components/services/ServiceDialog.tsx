@@ -62,14 +62,16 @@ export function ServiceDialog({
     >
       <div className="grid gap-4 py-4">
         <div className="space-y-2">
-          <Label htmlFor="name">
-            Nombre del Servicio <span className="text-destructive">*</span>
+          <Label htmlFor="name" required>
+            Nombre del Servicio
           </Label>
           <Input
             id="name"
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             placeholder="Ej: Instalación barras LED"
+            required
+            aria-required="true"
           />
         </div>
 
@@ -86,8 +88,8 @@ export function ServiceDialog({
 
         <div className="grid grid-cols-3 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="baseCost">
-              Costo Base ($) <span className="text-destructive">*</span>
+            <Label htmlFor="baseCost" required>
+              Costo Base ($)
             </Label>
             <Input
               id="baseCost"
@@ -97,12 +99,14 @@ export function ServiceDialog({
               value={formData.baseCost}
               onChange={(e) => setFormData({ ...formData, baseCost: e.target.value })}
               placeholder="15000"
+              required
+              aria-required="true"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="timeMinutes">
-              Tiempo (min) <span className="text-destructive">*</span>
+            <Label htmlFor="timeMinutes" required>
+              Tiempo (min)
             </Label>
             <Input
               id="timeMinutes"
@@ -111,6 +115,8 @@ export function ServiceDialog({
               value={formData.timeMinutes}
               onChange={(e) => setFormData({ ...formData, timeMinutes: e.target.value })}
               placeholder="60"
+              required
+              aria-required="true"
             />
           </div>
 
