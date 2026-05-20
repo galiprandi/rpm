@@ -20,6 +20,7 @@ import { prisma } from './prisma';
  * - TypeScript-first approach
  */
 export const auth = betterAuth({
+  secret: process.env.BETTER_AUTH_SECRET,
   database: prismaAdapter(prisma, {
     provider: 'postgresql',
   }),
