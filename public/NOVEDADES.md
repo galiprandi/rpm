@@ -4,6 +4,24 @@ Mantente al día con las últimas actualizaciones y mejoras
 
 ---
 
+### 🗓️ 20 de Mayo de 2026
+
+**🔒 Seguridad**: Configuración mejorada de secretos en el sistema de autenticación para mayor protección de datos.
+
+---
+
+### 🗓️ 19 de Mayo de 2026
+
+**🎨 Servicios**: Estandarización de campos obligatorios para mayor claridad en los formularios.
+
+---
+
+### 🗓️ 18 de Mayo de 2026
+
+**⚡ Dashboard**: Los datos ahora se actualizan en tiempo real sin cache para garantizar información siempre actual.
+
+---
+
 ### 🗓️ 17 de Mayo de 2026
 
 **⚡ Ventas Rápidas**: Optimización del proceso de ventas para evitar tiempos de espera excesivos al registrar pagos.
@@ -44,11 +62,11 @@ Mantente al día con las últimas actualizaciones y mejoras
 
 ### 🗓️ 6 de Mayo de 2026
 
- **👆 Órdenes de Trabajo** : Ahora puedes arrastrar y soltar órdenes de trabajo entre columnas de estado en la vista Kanban para cambiar su estado de forma rápida e intuitiva.
+**👆 Órdenes de Trabajo**: Ahora puedes arrastrar y soltar órdenes de trabajo entre columnas de estado en la vista Kanban para cambiar su estado de forma rápida e intuitiva.
 
-**🎨 Tablas** : Mejoras en accesibilidad de la paginación con etiquetas ARIA y textos en español.
+**🎨 Tablas**: Mejoras en accesibilidad de la paginación con etiquetas ARIA y textos en español.
 
-**🎨 Ventas Rápidas** : Botones con tooltips y etiquetas de accesibilidad para mejor usabilidad.
+**🎨 Ventas Rápidas**: Botones con tooltips y etiquetas de accesibilidad para mejor usabilidad.
 
 ---
 
