@@ -12,9 +12,13 @@ vi.mock('@/lib/prisma', () => ({
   prisma: {
     work_order: {
       findMany: vi.fn(),
+      aggregate: vi.fn(),
+      groupBy: vi.fn(),
+      count: vi.fn(),
     },
     direct_sale: {
       findMany: vi.fn(),
+      aggregate: vi.fn(),
     },
     product: {
       findMany: vi.fn(),
@@ -38,9 +42,19 @@ describe('Dashboard Service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // Default mocks to return empty arrays
+    // Default mocks
     vi.mocked(prisma.work_order.findMany).mockResolvedValue([]);
+    vi.mocked(prisma.work_order.aggregate).mockResolvedValue({
+      _sum: { total: 0 },
+      _count: { id: 0 },
+    } as any);
+    vi.mocked(prisma.work_order.groupBy).mockResolvedValue([]);
+    vi.mocked(prisma.work_order.count).mockResolvedValue(0);
     vi.mocked(prisma.direct_sale.findMany).mockResolvedValue([]);
+    vi.mocked(prisma.direct_sale.aggregate).mockResolvedValue({
+      _sum: { total: 0 },
+      _count: { id: 0 },
+    } as any);
     vi.mocked(prisma.product.findMany).mockResolvedValue([]);
     vi.mocked(prisma.stock_movement.findMany).mockResolvedValue([]);
     vi.mocked(prisma.cash_movement.findMany).mockResolvedValue([]);

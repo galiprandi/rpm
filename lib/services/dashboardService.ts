@@ -125,6 +125,68 @@ export interface DailyOperationsData {
   }>;
 }
 
+const MOCK_DATA: DashboardData = {
+  sales: {
+    today: {
+      total: 154200.50,
+      workOrderCount: 8,
+      vsYesterday: 12.5,
+    },
+    ticketAverage: 19275,
+  },
+  workOrders: {
+    active: {
+      total: 24,
+      byStatus: {
+        pending: 12,
+        inProgress: 8,
+        ready: 4,
+      },
+      newToday: 5,
+    },
+  },
+  stock: {
+    lowStockCount: 3,
+    lowStockItems: [
+      { id: '1', name: 'Aceite Sintético 5W30', stock: 2, minStock: 5 },
+      { id: '2', name: 'Filtro de Aire ABC', stock: 1, minStock: 10 },
+      { id: '3', name: 'Pastillas de Freno X', stock: 4, minStock: 5 },
+    ],
+  },
+  readyForDelivery: [
+    {
+      workOrderId: 'OT-1001',
+      vehicle: { type: 'SEDAN', description: 'Toyota Corolla - AB 123 CD' },
+      customer: { name: 'Juan Perez', phone: '11-XXXX-5678' },
+      total: 45000,
+      completedAt: new Date().toISOString(),
+      invoiceStatus: 'PENDING',
+    },
+    {
+      workOrderId: 'OT-1002',
+      vehicle: { type: 'SUV', description: 'Honda CR-V - EF 456 GH' },
+      customer: { name: 'Maria Garcia', phone: '11-XXXX-1234' },
+      total: 82000,
+      completedAt: new Date().toISOString(),
+      invoiceStatus: 'ISSUED',
+    },
+  ],
+  recentMovements: [
+    { type: 'IN', productName: 'Aceite Sintético', quantity: 24, reason: 'Compra a proveedor', timestamp: new Date().toISOString(), userName: 'Admin' },
+    { type: 'OUT', productName: 'Filtro de Aceite', quantity: 1, reason: 'Uso en OT-1001', timestamp: new Date().toISOString(), userName: 'Mecánico 1' },
+  ],
+  paymentsByMethod: [
+    { code: 'CASH', name: 'Efectivo', total: 45000 },
+    { code: 'TRANSFER', name: 'Transferencia', total: 82000 },
+    { code: 'DEBIT', name: 'Débito', total: 27200.50 },
+  ],
+  cashMovements: [
+    { id: '1', type: 'INCOME', amount: 45000, method: 'CASH', methodName: 'Efectivo', reason: 'Pago OT-1001', createdAt: new Date().toISOString(), createdBy: 'Admin' },
+    { id: '2', type: 'EXPENSE', amount: 1500, method: 'CASH', methodName: 'Efectivo', reason: 'Limpieza', createdAt: new Date().toISOString(), createdBy: 'Admin' },
+  ],
+  generatedAt: new Date().toISOString(),
+};
+
 /**
  * Obtiene datos del dashboard para administradores
  * 
@@ -135,7 +197,14 @@ export interface DailyOperationsData {
  * 
  * @returns Datos del dashboard con métricas de ventas, OTs, stock, etc.
  */
-export async function getDashboardData(): Promise<DashboardData> {
+export async function getDashboardData(options?: { forceMock?: boolean }): Promise<DashboardData> {
+  if (options?.forceMock || process.env.MOCK_DASHBOARD === 'true') {
+    return {
+      ...MOCK_DATA,
+      generatedAt: new Date().toISOString()
+    };
+  }
+
   // Obtener fecha de hoy y ayer en zona horaria de Argentina
   const today = getArgentinaStartOfDay();
   const yesterday = getArgentinaStartOfYesterday();

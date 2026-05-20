@@ -10,6 +10,11 @@ import { getSession } from '@/lib/auth-server';
 import { prisma } from '@/lib/prisma';
 
 export async function UserSyncServer() {
+  // En modo debug o mock dashboard, saltamos la sincronización si no hay DB
+  if (process.env.SKIP_DB_CHECK === 'true' || process.env.MOCK_DASHBOARD === 'true') {
+    return null;
+  }
+
   const session = await getSession();
   
   // Only sync if user is authenticated
