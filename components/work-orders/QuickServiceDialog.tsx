@@ -111,14 +111,16 @@ export function QuickServiceDialog({
     >
       <div className="grid gap-4 py-4">
         <div className="space-y-2">
-          <Label htmlFor="quick-name">
-            Nombre del Servicio <span className="text-destructive">*</span>
+          <Label htmlFor="quick-name" required>
+            Nombre del Servicio
           </Label>
           <Input
             id="quick-name"
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             placeholder="Ej: Instalación barras LED"
+            required
+            aria-required="true"
           />
         </div>
 
@@ -137,8 +139,8 @@ export function QuickServiceDialog({
 
         <div className="grid grid-cols-3 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="quick-baseCost">
-              Costo Base ($) <span className="text-destructive">*</span>
+            <Label htmlFor="quick-baseCost" required>
+              Costo Base ($)
             </Label>
             <Input
               id="quick-baseCost"
@@ -150,12 +152,14 @@ export function QuickServiceDialog({
                 setFormData({ ...formData, baseCost: e.target.value })
               }
               placeholder="15000"
+              required
+              aria-required="true"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="quick-timeMinutes">
-              Tiempo (min) <span className="text-destructive">*</span>
+            <Label htmlFor="quick-timeMinutes" required>
+              Tiempo (min)
             </Label>
             <Input
               id="quick-timeMinutes"
@@ -166,6 +170,8 @@ export function QuickServiceDialog({
                 setFormData({ ...formData, timeMinutes: e.target.value })
               }
               placeholder="60"
+              required
+              aria-required="true"
             />
           </div>
 
