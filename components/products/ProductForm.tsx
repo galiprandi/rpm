@@ -277,11 +277,12 @@ export function ProductForm({
             <div className="flex-1">
               <Button
                 type="button"
-                variant="outline"
+                variant="destructive"
                 size="sm"
                 onClick={handleRemoveImage}
                 loading={isDeletingImage}
                 className="mb-2"
+                aria-label="Eliminar imagen actual o seleccionada"
               >
                 <X className="h-4 w-4 mr-2" />
                 Eliminar imagen
@@ -292,7 +293,7 @@ export function ProductForm({
             </div>
           </div>
         ) : (
-          <div className="border-2 border-dashed border-border rounded-lg p-6 transition-colors hover:border-primary/50 hover:bg-muted/50 focus-within:border-primary focus-within:ring-1 focus-within:ring-ring">
+          <div className="border-2 border-dashed border-border rounded-lg p-6 transition-all hover:border-primary/50 hover:bg-primary/5 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
             <input
               id="image"
               type="file"

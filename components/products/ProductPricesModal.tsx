@@ -412,13 +412,14 @@ export function ProductPricesModal({ isOpen, onClose, product }: ProductPricesMo
             </div>
 
             {/* Mode selector buttons */}
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button
                 type="button"
                 variant={editMode === 'default' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setEditMode('default')}
                 className={hasExistingException && editMode === 'default' ? 'border-green-500' : ''}
+                aria-label="Usar configuración por defecto de la lista"
               >
                 Por defecto
               </Button>
@@ -427,6 +428,7 @@ export function ProductPricesModal({ isOpen, onClose, product }: ProductPricesMo
                 variant={editMode === 'override' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setEditMode('override')}
+                aria-label="Establecer un margen específico en porcentaje"
               >
                 Margen específico (%)
               </Button>
@@ -435,6 +437,7 @@ export function ProductPricesModal({ isOpen, onClose, product }: ProductPricesMo
                 variant={editMode === 'fixed' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setEditMode('fixed')}
+                aria-label="Establecer un precio fijo en pesos"
               >
                 Precio fijo ($)
               </Button>
@@ -443,7 +446,7 @@ export function ProductPricesModal({ isOpen, onClose, product }: ProductPricesMo
             {/* Show info when default mode */}
             {editMode === 'default' && (
               <div className="space-y-3">
-                <div className="bg-muted/50 rounded-lg p-3">
+                <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 transition-all">
                   <p className="text-sm text-muted-foreground mb-1">
                     Usará el margen base de la lista ({editingPriceList?.baseMargin}%)
                   </p>
@@ -479,7 +482,8 @@ export function ProductPricesModal({ isOpen, onClose, product }: ProductPricesMo
                     placeholder="Ej: 35.5"
                     value={overrideMargin}
                     onChange={(e) => setOverrideMargin(e.target.value)}
-                    className="w-32 mt-1"
+                    className="w-full mt-1"
+                    aria-label="Ingrese el porcentaje de margen deseado"
                   />
                   <p className="text-xs text-muted-foreground mt-1">
                     Sobrescribe el margen base ({editingPriceList?.baseMargin}%)
@@ -488,7 +492,7 @@ export function ProductPricesModal({ isOpen, onClose, product }: ProductPricesMo
                 
                 {/* Preview calculated price */}
                 {overrideMargin !== '' && !isNaN(parseFloat(overrideMargin)) && (
-                  <div className="bg-primary/5 border border-primary/20 rounded-lg p-3">
+                  <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 transition-all">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
                       <Calculator className="h-4 w-4" />
                       <span>Precio resultante:</span>
@@ -519,7 +523,8 @@ export function ProductPricesModal({ isOpen, onClose, product }: ProductPricesMo
                     placeholder="Ej: 15000"
                     value={fixedPrice}
                     onChange={(e) => setFixedPrice(e.target.value)}
-                    className="w-32 mt-1"
+                    className="w-full mt-1"
+                    aria-label="Ingrese el precio fijo en pesos"
                   />
                   <p className="text-xs text-muted-foreground mt-1">
                     Precio final exacto para este producto
@@ -528,7 +533,7 @@ export function ProductPricesModal({ isOpen, onClose, product }: ProductPricesMo
 
                 {/* Preview calculated margin */}
                 {fixedPrice !== '' && !isNaN(parseFloat(fixedPrice)) && replacementCost > 0 && (
-                  <div className="bg-primary/5 border border-primary/20 rounded-lg p-3">
+                  <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 transition-all">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
                       <Calculator className="h-4 w-4" />
                       <span>Margen resultante:</span>

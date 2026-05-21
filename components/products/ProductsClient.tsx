@@ -10,7 +10,7 @@ import { ProductPricesModal } from '@/components/products/ProductPricesModal';
 import { QuickSaleModal } from '@/components/dashboard/QuickSaleModal';
 import { useUI } from '@/components/ui/UIProvider';
 import { Header, CrudAdmin, StatItem } from '@/components/adm';
-import { Edit2, Trash2, AlertTriangle, DollarSign, Boxes, Clock, ShoppingCart, FileUp } from 'lucide-react';
+import { Edit2, Trash2, AlertTriangle, DollarSign, Boxes, Clock, ShoppingCart, FileUp, Plus } from 'lucide-react';
 import { PriceDisplay } from '@/components/ui/price-display';
 import { StockDisplay } from '@/components/ui/stock-display';
 import {
@@ -350,7 +350,7 @@ export function ProductsClient({
       label: 'Stock bajo',
       value: lowStockCount,
       icon: AlertTriangle,
-      iconColor: lowStockCount > 0 ? '#ea580c' : undefined,
+      iconColor: lowStockCount > 0 ? '#f97316' : undefined, // orange-500
     },
     {
       label: 'Valor inventario',
@@ -440,12 +440,19 @@ export function ProductsClient({
         <Header
           title="Productos"
           description="Gestiona el inventario de productos y servicios"
+          primaryAction={{
+            label: 'Nuevo Producto',
+            onClick: openCreateDialog,
+            icon: Plus,
+            ariaLabel: 'Crear nuevo producto',
+          }}
           secondaryActions={[
             {
               label: 'Importar Productos',
               onClick: goToImporter,
               variant: 'outline' as const,
               icon: FileUp,
+              ariaLabel: 'Importar productos desde archivo',
             },
             {
               label: 'Venta Rápida',
@@ -454,6 +461,7 @@ export function ProductsClient({
               icon: ShoppingCart,
               disabled: isCashOpen === false,
               title: isCashOpen === false ? 'Debe abrir la caja para realizar ventas' : undefined,
+              ariaLabel: 'Realizar una venta rápida',
             },
           ]}
         />
@@ -464,6 +472,7 @@ export function ProductsClient({
           items={products}
           loading={false}
           onCreate={openCreateDialog}
+          hideCreateAction
           columns={columns}
           stats={stats}
           emptyIcon={<Boxes className="h-12 w-12 mx-auto text-muted-foreground mb-4" />}
