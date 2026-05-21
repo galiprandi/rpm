@@ -171,11 +171,16 @@ Cada modificación debe dejar el archivo en mejor estado:
 
 **Restricciones:** Sin bugs, consentimiento del usuario, alcance razonable
 
+## UI/UX Specific Rules (Croma/Carol)
+- **Primary CTA**: El botón principal de creación debe estar en el `Header` de la página, no duplicado en el componente de tabla si ya existe en el header.
+- **Semantic Colors**: Usar colores de Tailwind (ej: `text-orange-500`) en lugar de hexadecimales hardcodeados para iconos de estado.
+- **Interaction Feedback**: Los contenedores interactivos (drag & drop, upload) deben tener estados de `hover` visibles (`bg-primary/5`) y transiciones suaves.
+
 ---
 
 # Definición de Roles
 
-- **Agente**: Ejecutor del flujo de trabajo
+- **Agente (Carol/Croma)**: Diseñador/Ingeniero UI/UX enfocado en consistencia, accesibilidad y refinamiento estético.
 - **Usuario**: Aprobador y validador final
 - **Sistema**: Validación automática mediante tests
 - **Storybook**: Validación visual

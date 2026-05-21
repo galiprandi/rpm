@@ -13,7 +13,8 @@ interface CrudAdminProps<T extends { id: string }> {
   description: string;
   items: T[];
   loading: boolean;
-  onCreate: () => void;
+  onCreate?: () => void;
+  hideCreateAction?: boolean;
   columns: ColumnDef<T>[];
   stats?: StatItem[];
   emptyIcon?: ReactNode;
@@ -41,6 +42,7 @@ export function CrudAdmin<T extends { id: string }>({
   items,
   loading,
   onCreate,
+  hideCreateAction = false,
   columns,
   stats,
   emptyIcon,
@@ -90,12 +92,12 @@ export function CrudAdmin<T extends { id: string }>({
     ...(secondaryActions || []),
   ];
 
-  const createAction = {
+  const createAction = onCreate ? {
     label: createButtonText,
     onClick: onCreate,
     variant: 'default' as const,
     icon: Plus,
-  };
+  } : null;
 
   const exportAction = {
     label: 'Exportar',
@@ -189,7 +191,10 @@ export function CrudAdmin<T extends { id: string }>({
               enableGlobalFilter={enableSearch}
               globalFilterPlaceholder={searchPlaceholder}
               emptyMessage={emptyMessage}
-              headerActions={[...(enableExport && items.length > 0 ? [exportAction] : []), createAction]}
+              headerActions={[
+                ...(enableExport && items.length > 0 ? [exportAction] : []),
+                ...(createAction && !hideCreateAction ? [createAction] : [])
+              ]}
               rowActions={rowActions}
             />
           </div>
@@ -199,14 +204,16 @@ export function CrudAdmin<T extends { id: string }>({
                 {emptyIcon || <Package className="h-8 w-8 text-muted-foreground" />}
               </div>
               <p className="text-muted-foreground mb-4">{emptyMessage}</p>
-              <Button
-                onClick={onCreate}
-                variant="default"
-                className="bg-slate-900 text-white hover:bg-slate-800 border border-slate-900 shadow-lg hover:shadow-xl transition-all font-semibold"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                {emptyActionText}
-              </Button>
+              {onCreate && (
+                <Button
+                  onClick={onCreate}
+                  variant="default"
+                  className="bg-slate-900 text-white hover:bg-slate-800 border border-slate-900 shadow-lg hover:shadow-xl transition-all font-semibold"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  {emptyActionText}
+                </Button>
+              )}
             </div>
           )}
         </div>
