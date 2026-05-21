@@ -280,20 +280,11 @@ export function ProductForm({
                 variant="outline"
                 size="sm"
                 onClick={handleRemoveImage}
-                disabled={isDeletingImage}
+                loading={isDeletingImage}
                 className="mb-2"
               >
-                {isDeletingImage ? (
-                  <>
-                    <div className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                    Eliminando...
-                  </>
-                ) : (
-                  <>
-                    <X className="h-4 w-4 mr-2" />
-                    Eliminar imagen
-                  </>
-                )}
+                <X className="h-4 w-4 mr-2" />
+                Eliminar imagen
               </Button>
               <p className="text-xs text-muted-foreground">
                 {formData.imageFile ? 'Nueva imagen seleccionada' : 'Imagen actual'}

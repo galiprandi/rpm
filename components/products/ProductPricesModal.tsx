@@ -8,6 +8,8 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
+import { ModalBase } from '@/components/ui/ModalBase';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, Pencil, Calculator } from 'lucide-react';
 import { calculateMarginPercentage, applyRounding, type RoundingRule } from '@/lib/utils/rounding';
@@ -339,44 +341,56 @@ export function ProductPricesModal({ isOpen, onClose, product }: ProductPricesMo
 
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="sm:max-w-4xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Precios Calculados: {product.name}</DialogTitle>
-            <DialogDescription>
-              Revisa los precios calculados para este producto según las diferentes listas de precios configuradas.
-            </DialogDescription>
-          </DialogHeader>
+      <ModalBase
+        isOpen={isOpen}
+        onClose={onClose}
+        title={`Precios Calculados: ${product.name}`}
+        description="Revisa los precios calculados para este producto según las diferentes listas de precios configuradas."
+        maxWidth="4xl"
+        maxHeight="max-h-[80vh]"
+      >
+        {/* Replacement Cost Section */}
+        <div className="bg-muted/50 rounded-lg p-4 mb-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground mb-1">Costo de Reposición</p>
+              <p className="text-2xl font-bold">{formatPrice(replacementCost)}</p>
+            </div>
+            <Badge variant="outline" className="text-muted-foreground">
+              {availableListsCount} {availableListsCount === 1 ? 'lista' : 'listas'} disponibles
+            </Badge>
+          </div>
+        </div>
 
-          {/* Replacement Cost Section */}
-          <div className="bg-muted/50 rounded-lg p-4 mb-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Costo de Reposición</p>
-                <p className="text-2xl font-bold">{formatPrice(replacementCost)}</p>
+        {/* Prices Table */}
+        {loading ? (
+          <div className="space-y-4">
+            <div className="flex justify-between items-center px-2">
+              <Skeleton className="h-6 w-48" />
+            </div>
+            <div className="border rounded-lg overflow-hidden">
+              <div className="bg-muted/50 p-3 border-b flex gap-4">
+                {[1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="h-4 flex-1" />)}
               </div>
-              <Badge variant="outline" className="text-muted-foreground">
-                {availableListsCount} {availableListsCount === 1 ? 'lista' : 'listas'} disponibles
-              </Badge>
+              {[1, 2, 3].map((row) => (
+                <div key={row} className="p-4 border-b last:border-0 flex gap-4">
+                  {[1, 2, 3, 4, 5].map((col) => <Skeleton key={col} className="h-8 flex-1" />)}
+                </div>
+              ))}
             </div>
           </div>
-
-          {/* Prices Table */}
-          {loading ? (
-            <div className="text-center py-8 text-muted-foreground">Cargando precios...</div>
-          ) : sortedPrices.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No hay listas de precios activas para calcular.
-            </div>
-          ) : (
-            <DataTable
-              columns={columns}
-              data={sortedPrices}
-              title={`Precios por Lista (${sortedPrices.length})`}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+        ) : sortedPrices.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            No hay listas de precios activas para calcular.
+          </div>
+        ) : (
+          <DataTable
+            columns={columns}
+            data={sortedPrices}
+            title={`Precios por Lista (${sortedPrices.length})`}
+          />
+        )}
+      </ModalBase>
 
       {/* Edit Exception Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
@@ -541,9 +555,10 @@ export function ProductPricesModal({ isOpen, onClose, product }: ProductPricesMo
             </Button>
             <Button
               onClick={handleSaveException}
-              disabled={saving || (editMode === 'override' ? !overrideMargin : editMode === 'fixed' ? !fixedPrice : false)}
+              loading={saving}
+              disabled={editMode === 'override' ? !overrideMargin : editMode === 'fixed' ? !fixedPrice : false}
             >
-              {saving ? 'Guardando...' : (editMode === 'default' && hasExistingException ? 'Eliminar excepción' : 'Guardar')}
+              {editMode === 'default' && hasExistingException ? 'Eliminar excepción' : 'Guardar'}
             </Button>
           </div>
         </DialogContent>

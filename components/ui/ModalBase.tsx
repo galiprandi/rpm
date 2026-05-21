@@ -131,9 +131,10 @@ export function ModalBaseFooter({
       <Button
         onClick={disabled ? undefined : onSave}
         disabled={isLoading || disabled}
+        loading={isLoading}
         className="bg-primary text-primary-foreground hover:bg-primary/90 border border-primary shadow-lg hover:shadow-xl transition-all font-semibold"
       >
-        {isLoading ? 'Guardando...' : saveText}
+        {saveText}
       </Button>
     </div>
   );

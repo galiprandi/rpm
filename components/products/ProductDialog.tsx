@@ -56,8 +56,9 @@ export function ProductDialog({
         <ModalBaseFooter
           onCancel={onClose}
           onSave={onSubmit}
-          saveText={isUploadingImage ? 'Subiendo imagen...' : (editingProduct ? 'Guardar Cambios' : 'Crear Producto')}
-          disabled={!isValid || isUploadingImage || isDeletingImage}
+          saveText={editingProduct ? 'Guardar Cambios' : 'Crear Producto'}
+          isLoading={isUploadingImage}
+          disabled={!isValid || isDeletingImage}
         />
       }
     >
