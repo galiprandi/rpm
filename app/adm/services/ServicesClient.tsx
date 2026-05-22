@@ -4,9 +4,14 @@ import { useState, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useUI } from '@/components/ui/UIProvider';
-import { CrudAdmin, StatItem } from '@/components/adm';
-import { Wrench, Edit2, Trash2, Clock, List } from 'lucide-react';
+import { CrudAdmin, Header, StatItem } from '@/components/adm';
+import { Wrench, Edit2, Trash2, Clock, List, Plus } from 'lucide-react';
 import { PriceDisplay } from '@/components/ui/price-display';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { type ColumnDef } from '@tanstack/react-table';
 import { ServiceDialog } from '@/components/services/ServiceDialog';
 
@@ -277,46 +282,68 @@ export default function ServicesClient({ initialServices }: ServicesClientProps)
     []
   );
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-muted-foreground">Cargando servicios...</div>
-      </div>
-    );
-  }
-
   return (
     <>
-      <CrudAdmin
-        title="Servicios"
-        description="Gestiona el catálogo de servicios del taller"
-        items={services}
-        loading={loading}
-        onCreate={openCreateDialog}
-        columns={columns}
+      <div className="space-y-6">
+        <Header
+          title="Servicios"
+          description="Gestiona el catálogo de servicios del taller"
+          primaryAction={{
+            label: 'Nuevo Servicio',
+            onClick: openCreateDialog,
+            icon: Plus,
+            ariaLabel: 'Crear nuevo servicio',
+          }}
+        />
+
+        <CrudAdmin
+          title=""
+          description=""
+          items={services}
+          loading={loading}
+          onCreate={openCreateDialog}
+          hideCreateAction
+          columns={columns}
         stats={stats}
         emptyIcon={<Wrench className="h-12 w-12 mx-auto text-muted-foreground mb-4" />}
         emptyMessage="No hay servicios creados. Haz clic en 'Nuevo Servicio' para crear el primero."
         createButtonText="Servicio"
         tableTitle="Listado de Servicios"
         searchPlaceholder="Buscar por nombre..."
-        rowActions={(service) => (
-          <div className="flex gap-1">
-            <Button variant="ghost" size="sm" onClick={() => openEditDialog(service)} title="Editar servicio">
-              <Edit2 className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-red-600"
-              onClick={() => handleDelete(service)}
-              title="Eliminar servicio"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
-      />
+          rowActions={(service) => (
+            <div className="flex gap-1">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => openEditDialog(service)}
+                    aria-label="Editar servicio"
+                  >
+                    <Edit2 className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Editar servicio</TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-red-600"
+                    onClick={() => handleDelete(service)}
+                    aria-label="Desactivar servicio"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Desactivar servicio</TooltipContent>
+              </Tooltip>
+            </div>
+          )}
+        />
+      </div>
 
       <ServiceDialog
         isOpen={isDialogOpen}

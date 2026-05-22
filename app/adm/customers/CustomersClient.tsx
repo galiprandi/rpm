@@ -2,9 +2,14 @@
 
 import { useState, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { CrudAdmin } from "@/components/adm";
-import { Phone, User, Eye, TrendingDown } from "lucide-react";
+import { CrudAdmin, Header } from "@/components/adm";
+import { Phone, User, Eye, TrendingDown, Plus } from "lucide-react";
 import Link from "next/link";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { type ColumnDef } from "@tanstack/react-table";
 import { CustomerDialog } from "@/components/customers/CustomerDialog";
 import { type CustomerFormData } from "@/components/customers/CustomerForm";
@@ -206,13 +211,26 @@ export default function CustomersClient({ initialCustomers }: CustomersClientPro
 
   return (
     <>
-      <CrudAdmin
-        title="Clientes"
-        description="Gestiona las fichas de tus clientes"
-        items={filteredCustomers}
-        loading={loading}
-        onCreate={handleCreate}
-        columns={columns}
+      <div className="space-y-6">
+        <Header
+          title="Clientes"
+          description="Gestiona las fichas de tus clientes"
+          primaryAction={{
+            label: 'Nuevo Cliente',
+            onClick: handleCreate,
+            icon: Plus,
+            ariaLabel: 'Crear nuevo cliente',
+          }}
+        />
+
+        <CrudAdmin
+          title=""
+          description=""
+          items={filteredCustomers}
+          loading={loading}
+          onCreate={handleCreate}
+          hideCreateAction
+          columns={columns}
         emptyIcon={<User className="h-12 w-12 mx-auto text-muted-foreground mb-4" />}
         emptyMessage="No hay clientes registrados. Haz clic en 'Nuevo Cliente' para crear el primero."
         createButtonText="Cliente"
@@ -226,14 +244,20 @@ export default function CustomersClient({ initialCustomers }: CustomersClientPro
             icon: TrendingDown,
           },
         ]}
-        rowActions={(customer) => (
-          <Link href={`/adm/customers/${customer.id}`}>
-            <Button variant="ghost" size="sm" title="Ver detalle">
-              <Eye className="h-4 w-4" />
-            </Button>
-          </Link>
-        )}
-      />
+          rowActions={(customer) => (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link href={`/adm/customers/${customer.id}`}>
+                  <Button variant="ghost" size="sm" aria-label="Ver detalle">
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent>Ver detalle</TooltipContent>
+            </Tooltip>
+          )}
+        />
+      </div>
 
       {/* Modal para crear cliente */}
       <CustomerDialog
