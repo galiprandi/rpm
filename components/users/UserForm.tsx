@@ -23,7 +23,7 @@ export function UserForm({ formData, setFormData, isEditing = false }: UserFormP
   return (
     <form id="user-form" className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="email">Email *</Label>
+        <Label htmlFor="email" required>Email</Label>
         <Input
           id="email"
           type="email"
@@ -31,6 +31,7 @@ export function UserForm({ formData, setFormData, isEditing = false }: UserFormP
           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
           placeholder="usuario@empresa.com"
           required
+          aria-required="true"
           disabled={isEditing}
         />
         {isEditing && (
@@ -39,18 +40,19 @@ export function UserForm({ formData, setFormData, isEditing = false }: UserFormP
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="name">Nombre *</Label>
+        <Label htmlFor="name" required>Nombre</Label>
         <Input
           id="name"
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           placeholder="Nombre completo del usuario"
           required
+          aria-required="true"
         />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="role">Rol *</Label>
+        <Label htmlFor="role" required>Rol</Label>
         <UserRoleSelect
           value={formData.role}
           onChange={(value) => setFormData({ ...formData, role: value })}

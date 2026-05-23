@@ -6,9 +6,14 @@ import { Badge } from '@/components/ui/badge';
 import { UserDialog } from '@/components/users/UserDialog';
 import { UserFormData } from '@/components/users/UserForm';
 import { useUI } from '@/components/ui/UIProvider';
-import { CrudAdmin, StatItem } from '@/components/adm';
-import { Users, Edit2, UserCheck, UserCog, Shield } from 'lucide-react';
+import { Header, CrudAdmin, StatItem } from '@/components/adm';
+import { Users, Edit2, UserCheck, UserCog, Shield, Plus } from 'lucide-react';
 import { type ColumnDef } from '@tanstack/react-table';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface User {
   id: string;
@@ -42,6 +47,7 @@ export default function UsersClient({ initialUsers }: UsersClientProps) {
   });
 
   const fetchUsers = async () => {
+    setLoading(true);
     try {
       const response = await fetch('/api/users?includeInactive=true');
       const data = await response.json();
@@ -163,13 +169,13 @@ export default function UsersClient({ initialUsers }: UsersClientProps) {
       label: 'Activos',
       value: users.filter((u) => u.isActive).length,
       icon: UserCheck,
-      iconColor: '#22c55e',
+      iconColor: 'rgb(34 197 94)', // text-green-500
     },
     {
       label: 'Admins',
       value: users.filter((u) => u.role === 'ADMIN').length,
       icon: Shield,
-      iconColor: '#3b82f6',
+      iconColor: 'rgb(59 130 246)', // text-blue-500
     },
   ];
 
@@ -228,22 +234,26 @@ export default function UsersClient({ initialUsers }: UsersClientProps) {
     []
   );
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-muted-foreground">Cargando usuarios...</div>
-      </div>
-    );
-  }
-
   return (
-    <>
-      <CrudAdmin
+    <div className="space-y-6">
+      <Header
         title="Usuarios"
         description="Gestiona los usuarios del sistema y sus roles"
+        primaryAction={{
+          label: 'Nuevo Usuario',
+          onClick: openCreateDialog,
+          icon: Plus,
+          ariaLabel: 'Crear nuevo usuario',
+        }}
+      />
+
+      <CrudAdmin
+        title=""
+        description=""
         items={users}
         loading={loading}
         onCreate={openCreateDialog}
+        hideCreateAction
         columns={columns}
         stats={stats}
         emptyIcon={<Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />}
@@ -253,9 +263,19 @@ export default function UsersClient({ initialUsers }: UsersClientProps) {
         searchPlaceholder="Buscar por nombre o email..."
         rowActions={(user) => (
           <div className="flex gap-1">
-            <Button variant="ghost" size="sm" onClick={() => openEditDialog(user)} title="Editar usuario">
-              <Edit2 className="h-4 w-4" />
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => openEditDialog(user)}
+                  aria-label="Editar usuario"
+                >
+                  <Edit2 className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Editar usuario</TooltipContent>
+            </Tooltip>
           </div>
         )}
       />
@@ -274,6 +294,6 @@ export default function UsersClient({ initialUsers }: UsersClientProps) {
         isValid={isFormValid}
         isLoading={isSubmitting}
       />
-    </>
+    </div>
   );
 }
