@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { useUI } from '@/components/ui/UIProvider';
 import { SupplierDialog } from '@/components/suppliers/SupplierDialog';
 import { type SupplierFormData } from '@/components/suppliers/SupplierForm';
-import { CrudAdmin, StatItem } from '@/components/adm';
+import { Header, CrudAdmin, StatItem } from '@/components/adm';
 import {
   Truck,
   Edit2,
@@ -14,9 +14,15 @@ import {
   Phone,
   Mail,
   Building2,
-  Package
+  Package,
+  Plus
 } from 'lucide-react';
 import { type ColumnDef } from '@tanstack/react-table';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface Supplier {
   id: string;
@@ -59,6 +65,7 @@ export default function SuppliersClient({ initialSuppliers }: SuppliersClientPro
   });
 
   const fetchSuppliers = async () => {
+    setLoading(true);
     try {
       const response = await fetch('/api/suppliers?includeInactive=true');
       const data = await response.json();
@@ -179,7 +186,7 @@ export default function SuppliersClient({ initialSuppliers }: SuppliersClientPro
       label: 'Activos',
       value: suppliers.filter((s) => s.isActive).length,
       icon: Truck,
-      iconColor: '#22c55e',
+      iconColor: 'rgb(34 197 94)', // text-green-500
     },
     {
       label: 'Con productos',
@@ -250,44 +257,68 @@ export default function SuppliersClient({ initialSuppliers }: SuppliersClientPro
     []
   );
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-muted-foreground">Cargando proveedores...</div>
-      </div>
-    );
-  }
-
   return (
-    <>
-      <CrudAdmin
+    <div className="space-y-6">
+      <Header
         title="Proveedores"
         description="Gestiona los proveedores de productos"
+        primaryAction={{
+          label: 'Nuevo Proveedor',
+          onClick: () => setIsCreateDialogOpen(true),
+          icon: Plus,
+          ariaLabel: 'Crear nuevo proveedor',
+        }}
+      />
+
+      <CrudAdmin
+        title=""
+        description=""
         items={suppliers}
         loading={loading}
         onCreate={() => setIsCreateDialogOpen(true)}
+        hideCreateAction
         columns={columns}
         stats={stats}
         emptyIcon={<Truck className="h-12 w-12 mx-auto text-muted-foreground mb-4" />}
-        emptyMessage="No hay proveedores creados. Crea el primero arriba."
+        emptyMessage="No hay proveedores creados. Haz clic en 'Nuevo Proveedor' para crear el primero."
         createButtonText="Proveedor"
         tableTitle="Listado de Proveedores"
         searchPlaceholder="Buscar proveedores..."
         rowActions={(supplier) => (
           <div className="flex gap-1">
-            <Button variant="ghost" size="sm" onClick={() => openEditDialog(supplier)} title="Editar proveedor">
-              <Edit2 className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-red-600"
-              onClick={() => handleDeleteSupplier(supplier)}
-              disabled={supplier.productCount > 0}
-              title="Eliminar proveedor"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => openEditDialog(supplier)}
+                  aria-label="Editar proveedor"
+                >
+                  <Edit2 className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Editar proveedor</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-red-600"
+                  onClick={() => handleDeleteSupplier(supplier)}
+                  disabled={supplier.productCount > 0}
+                  aria-label="Eliminar proveedor"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {supplier.productCount > 0
+                  ? 'No se puede eliminar un proveedor con productos asociados'
+                  : 'Eliminar proveedor'}
+              </TooltipContent>
+            </Tooltip>
           </div>
         )}
       />
@@ -314,6 +345,6 @@ export default function SuppliersClient({ initialSuppliers }: SuppliersClientPro
         setFormData={setEditForm}
         onSubmit={handleEditSubmit}
       />
-    </>
+    </div>
   );
 }

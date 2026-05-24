@@ -33,13 +33,14 @@ export function SupplierForm({
   return (
     <form id="supplier-form" onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="name">Nombre *</Label>
+        <Label htmlFor="name" required>Nombre</Label>
         <Input
           id="name"
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           placeholder="Nombre del proveedor"
           required
+          aria-required="true"
         />
       </div>
 

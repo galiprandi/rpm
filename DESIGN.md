@@ -20,6 +20,7 @@ The product module is a core part of the administrative dashboard. This refineme
 - **Responsive Inputs**: Refined input widths in the price exception dialog to use `w-full`, providing a more balanced layout in mobile and desktop views.
 
 ## Component Evolution
-- `ProductsClient`: Now serves as a model for "Page-level Header + CrudAdmin" integration.
+- `ProductsClient`, `UsersClient`, `SuppliersClient`: Now serve as models for "Page-level Header + CrudAdmin" integration.
 - `ProductForm`: Enhanced image management UX.
 - `ProductPricesModal`: Improved the complex "Exception Management" flow with better visual grouping.
+- `UserForm`, `SupplierForm`: Standardized mandatory field signaling and accessibility attributes.
