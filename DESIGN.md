@@ -24,3 +24,29 @@ The product module is a core part of the administrative dashboard. This refineme
 - `ProductForm`: Enhanced image management UX.
 - `ProductPricesModal`: Improved the complex "Exception Management" flow with better visual grouping.
 - `UserForm`, `SupplierForm`: Standardized mandatory field signaling and accessibility attributes.
+
+# Design Decisions: Work Order Module Refinement
+
+## Context
+The Work Order (OT) module is critical for workshop operations. This refinement focuses on improving the scannability of work status, financial clarity, and workshop-to-customer communication flow.
+
+## Applied Patterns
+
+### 1. Kanban Excellence
+- **Scannable Status**: Kanban cards now use semantic `Badge` components for price display. Green-tinted for fully paid, yellow-tinted for partial payments, and neutral for pending.
+- **Urgency Awareness**: "Delayed" orders now use the semantic orange-500 color (`text-orange-600` for text, `border-l-orange-500` for visual emphasis), replacing generic red to align with the system's "Warning" hierarchy instead of "Error".
+- **Enhanced Affordance**: Added `Tooltip` descriptions to vehicle category icons, improving accessibility and providing immediate context for workshop icons.
+- **Interaction Feedback**: Kanban columns now feature a subtle `bg-muted/40` hover state, clarifying drag-and-drop targets.
+
+### 2. High-Hierarchy Detail Header
+- **Contextual Grouping**: The Work Order detail page now separates vehicle specifications from customer contact info.
+- **Actionable Metadata**: Contact information (Phone, Email) and Scheduled dates are now encapsulated in "pills" (rounded-full backgrounds), making them visually distinct from descriptive text.
+- **Standardized Controls**: Replaced native HTML `<select>` with the project's Radix-based `Select` component, ensuring consistent styling across the administrative area.
+
+### 3. Operational Clarity
+- **Structured Checklists**: Checklist items in the detail view are now organized in a responsive grid. Checked items use a distinct tinted background (`bg-blue-50` or `bg-green-50`) to provide immediate visual confirmation of completed tasks.
+- **Accessibility**: Standardized manual checkbox states with explicit visual feedback and better touch targets.
+
+## Component Evolution
+- `WorkOrdersPage`: Serves as the reference for Kanban-style interaction patterns.
+- `WorkOrderDetailPage`: Establishes the "Metadata Pill" pattern for secondary actionable info in headers.
