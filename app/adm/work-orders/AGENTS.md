@@ -41,7 +41,7 @@ Gestión de órdenes de trabajo (OT) que documentan instalaciones y servicios. F
 
 **Características:**
 - Múltiples pagos por OT (pagos parciales)
-- Código de colores en importe: Verde (pagado), Amarillo (parcial), Gris (sin pagar)
+- Visualización mediante Badges: Verde (pagado), Amarillo (parcial), Neutral (pendiente)
 - CRUD de métodos de pago en `/adm/payment-methods` (solo ADMIN)
 - Registro de pagos desde vista detalle de OT
 
@@ -50,16 +50,16 @@ Gestión de órdenes de trabajo (OT) que documentan instalaciones y servicios. F
 - Payment (nuevo) - Pagos asociados a la OT
 
 ### Vistas
-- **Kanban**: Visualización por estados con código de colores en importe
+- **Kanban**: Visualización por estados con Badges de pago y Tooltips de categoría
 - **Lista**: Vista alternativa con filtros
-- **Detalle**: Información completa + sección de pagos + registro de pagos
-  - Edición de kilometraje y combustible en checklists
-  - Edición de fecha agendada y notas
+- **Detalle**: Información completa con Header de alta jerarquía + sección de pagos
+  - Edición de kilometraje y combustible en checklists (grid layout)
+  - Edición de fecha agendada y notas (pills style)
 
 ## Development Notes
 
 - Vista Kanban principal para gestión visual por estados (6 columnas)
-- Código de colores en importe calculado desde los pagos registrados
+- Estado de pago visualizado mediante Badges calculados desde los pagos registrados
 - Integración con selector de listas de precios en creación
 - Tracking de vehículo y cliente asociados
 - Soporte para asignación de técnicos y fechas programadas

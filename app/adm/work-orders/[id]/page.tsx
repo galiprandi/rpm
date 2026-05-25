@@ -10,6 +10,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PaymentDialog } from "@/components/work-orders/PaymentDialog";
 import { FuelLevelSlider } from "@/components/work-orders/FuelLevelSlider";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useUI } from "@/components/ui/UIProvider";
 import {
   Table,
@@ -476,18 +483,22 @@ export default function WorkOrderDetailPage() {
         title={workOrder.vehicle.identifier}
         showBackButton
         leftActions={
-          <select
+          <Select
             value={workOrder.status}
-            onChange={(e) => handleStatusChange(e.target.value)}
+            onValueChange={handleStatusChange}
             disabled={updatingStatus}
-            className="w-44 h-9 px-3 rounded-md border border-input bg-background text-sm"
           >
-            {STATUSES.map((status) => (
-              <option key={status.id} value={status.id}>
-                {status.label}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger className="w-44 h-9">
+              <SelectValue placeholder="Estado" />
+            </SelectTrigger>
+            <SelectContent>
+              {STATUSES.map((status) => (
+                <SelectItem key={status.id} value={status.id}>
+                  {status.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         }
         secondaryActions={[
           {
@@ -499,67 +510,80 @@ export default function WorkOrderDetailPage() {
           },
         ]}
       >
-        {/* Línea 1: Info del vehículo */}
-        <div className="text-muted-foreground">
-          {[workOrder.vehicle.make?.name, workOrder.vehicle.model?.name, workOrder.vehicle.year, workOrder.vehicle.color].filter(Boolean).join(" ")}
-        </div>
-        
-        {/* Línea 2: Fecha agendada si existe */}
-        {workOrder.scheduledDate && (
-          <div className="text-sm mt-1">
-            {editingScheduledDate ? (
-              <div className="flex items-center gap-2">
-                <Input
-                  type="datetime-local"
-                  value={newScheduledDate}
-                  onChange={(e) => setNewScheduledDate(e.target.value)}
-                  className="h-8 w-48"
-                />
-                <Button size="sm" onClick={handleUpdateScheduledDate}>
-                  Guardar
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => setEditingScheduledDate(false)}>
-                  Cancelar
-                </Button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground">
-                  📅 Agendado: {new Date(workOrder.scheduledDate).toLocaleString("es-AR", {
-                    day: "2-digit",
-                    month: "short",
-                    year: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </span>
-                <Button variant="ghost" size="sm" onClick={() => startEditingScheduledDate()}>
-                  Editar
-                </Button>
+        <div className="flex flex-col gap-1.5">
+          {/* Línea 1: Info del vehículo */}
+          <div className="text-lg font-medium text-muted-foreground">
+            {[workOrder.vehicle.make?.name, workOrder.vehicle.model?.name, workOrder.vehicle.year, workOrder.vehicle.color].filter(Boolean).join(" ")}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-y-2 gap-x-6">
+            {/* Línea 2: Fecha agendada si existe */}
+            {workOrder.scheduledDate && (
+              <div className="text-sm">
+                {editingScheduledDate ? (
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="datetime-local"
+                      value={newScheduledDate}
+                      onChange={(e) => setNewScheduledDate(e.target.value)}
+                      className="h-8 w-48"
+                    />
+                    <Button size="sm" onClick={handleUpdateScheduledDate}>
+                      Guardar
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => setEditingScheduledDate(false)}>
+                      Cancelar
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 bg-muted/50 px-3 py-1 rounded-full border">
+                    <span className="text-muted-foreground flex items-center gap-1.5 font-medium">
+                      <Clock className="h-3.5 w-3.5 text-primary" />
+                      {new Date(workOrder.scheduledDate).toLocaleString("es-AR", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2 text-xs hover:bg-primary/10"
+                      onClick={() => startEditingScheduledDate()}
+                    >
+                      Editar
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
+
+            {/* Línea 3: Contacto del cliente */}
+            <div className="flex flex-wrap items-center gap-3 text-sm">
+              <a
+                href={`tel:${workOrder.customer?.phone}`}
+                className="flex items-center gap-2 bg-primary/5 hover:bg-primary/10 px-3 py-1 rounded-full border border-primary/20 transition-colors"
+              >
+                <span className="font-semibold text-primary">{workOrder.customer?.name}</span>
+                <div className="w-px h-3 bg-primary/30" />
+                <span className="flex items-center gap-1 text-muted-foreground">
+                  <Phone className="h-3.5 w-3.5" />
+                  {workOrder.customer?.phone}
+                </span>
+              </a>
+              {workOrder.customer?.email && (
+                <a
+                  href={`mailto:${workOrder.customer.email}`}
+                  className="flex items-center gap-1.5 text-muted-foreground hover:text-primary transition-colors"
+                >
+                  <Mail className="h-3.5 w-3.5" />
+                  {workOrder.customer.email}
+                </a>
+              )}
+            </div>
           </div>
-        )}
-        
-        {/* Línea 3: Contacto del cliente */}
-        <div className="flex flex-wrap items-center gap-3 text-sm mt-1">
-          <a
-            href={`tel:${workOrder.customer?.phone}`}
-            className="flex items-center gap-1 text-primary hover:underline"
-          >
-            {workOrder.customer?.name}
-            <Phone className="h-4 w-4" />
-            {workOrder.customer?.phone}
-          </a>
-          {workOrder.customer?.email && (
-            <a
-              href={`mailto:${workOrder.customer.email}`}
-              className="flex items-center gap-1 text-primary hover:underline"
-            >
-              <Mail className="h-4 w-4" />
-              {workOrder.customer.email}
-            </a>
-          )}
         </div>
       </Header>
 
@@ -824,14 +848,24 @@ export default function WorkOrderDetailPage() {
                     </div>
                     
                     {/* Checklist Items */}
-                    {workOrder.entryChecklist.items.map((item, index) => (
-                      <div key={index} className="flex items-start gap-3">
-                        <input type="checkbox" checked={item.checked} readOnly className="rounded mt-0.5" />
-                        <span className={cn("text-sm", item.checked ? "" : "text-muted-foreground")}>
-                          {item.label}
-                        </span>
-                      </div>
-                    ))}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
+                      {workOrder.entryChecklist.items.map((item, index) => (
+                        <div key={index} className={cn(
+                          "flex items-start gap-3 p-2 rounded-md transition-colors",
+                          item.checked ? "bg-blue-50/50" : "hover:bg-muted/30"
+                        )}>
+                          <div className={cn(
+                            "mt-0.5 h-4 w-4 shrink-0 rounded-sm border border-primary flex items-center justify-center",
+                            item.checked ? "bg-primary text-primary-foreground" : "bg-background"
+                          )}>
+                            {item.checked && <Check className="h-3 w-3" />}
+                          </div>
+                          <span className={cn("text-xs leading-none pt-0.5", item.checked ? "font-medium" : "text-muted-foreground")}>
+                            {item.label}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                     <div className="text-xs text-muted-foreground mt-4 pt-3 border-t">
                       Completado: {new Date(workOrder.entryChecklist.completedAt).toLocaleString("es-AR")}
                     </div>
@@ -907,14 +941,24 @@ export default function WorkOrderDetailPage() {
                     </div>
                     
                     {/* Checklist Items */}
-                    {workOrder.exitChecklist.items.map((item, index) => (
-                      <div key={index} className="flex items-start gap-3">
-                        <input type="checkbox" checked={item.checked} readOnly className="rounded mt-0.5" />
-                        <span className={cn("text-sm", item.checked ? "" : "text-muted-foreground")}>
-                          {item.label}
-                        </span>
-                      </div>
-                    ))}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
+                      {workOrder.exitChecklist.items.map((item, index) => (
+                        <div key={index} className={cn(
+                          "flex items-start gap-3 p-2 rounded-md transition-colors",
+                          item.checked ? "bg-green-50/50" : "hover:bg-muted/30"
+                        )}>
+                          <div className={cn(
+                            "mt-0.5 h-4 w-4 shrink-0 rounded-sm border border-primary flex items-center justify-center",
+                            item.checked ? "bg-primary text-primary-foreground" : "bg-background"
+                          )}>
+                            {item.checked && <Check className="h-3 w-3" />}
+                          </div>
+                          <span className={cn("text-xs leading-none pt-0.5", item.checked ? "font-medium" : "text-muted-foreground")}>
+                            {item.label}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                     <div className="text-xs text-muted-foreground mt-4 pt-3 border-t">
                       Completado: {new Date(workOrder.exitChecklist.completedAt).toLocaleString("es-AR")}
                     </div>
