@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { ModalBase, ModalBaseFooter } from "@/components/ui/ModalBase";
-import { CategoryForm, type CategoryFormData } from "./CategoryForm";
+import { ModalBase, ModalBaseFooter } from '@/components/ui/ModalBase';
+import { CategoryForm, type CategoryFormData } from './CategoryForm';
 
 interface Category {
   id: string;
@@ -40,23 +40,27 @@ export function CategoryDialog({
     <ModalBase
       isOpen={isOpen}
       onClose={onClose}
-      title={editingCategory ? "Editar Categoría" : "Nueva Categoría"}
+      title={editingCategory ? 'Editar Categoría' : 'Nueva Categoría'}
       description={
         editingCategory
-          ? "Modifica los datos de la categoría existente."
-          : "Completa los datos para crear una nueva categoría."
+          ? 'Modifica los detalles de la categoría seleccionada.'
+          : 'Completa la información para categorizar tus productos y servicios.'
       }
       maxWidth="md"
       footer={
         <ModalBaseFooter
           onCancel={onClose}
           onSave={handleSubmit}
-          saveText={editingCategory ? "Guardar Cambios" : "Crear Categoría"}
+          saveText={editingCategory ? 'Guardar Cambios' : 'Crear Categoría'}
           isLoading={isLoading}
         />
       }
     >
-      <CategoryForm formData={formData} setFormData={setFormData} onSubmit={handleSubmit} />
+      <CategoryForm
+        formData={formData}
+        setFormData={setFormData}
+        onSubmit={handleSubmit}
+      />
     </ModalBase>
   );
 }

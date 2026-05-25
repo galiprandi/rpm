@@ -31,13 +31,14 @@ export function CategoryForm({
   return (
     <form id="category-form" onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="name">Nombre *</Label>
+        <Label htmlFor="name" required>Nombre</Label>
         <Input
           id="name"
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          placeholder="Nombre de la categoría"
+          placeholder="Ej: Repuestos, Lubricantes..."
           required
+          aria-required="true"
         />
       </div>
 
@@ -47,19 +48,20 @@ export function CategoryForm({
           id="description"
           value={formData.description}
           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          placeholder="Descripción de la categoría..."
-          rows={2}
+          placeholder="Descripción opcional de la categoría..."
+          rows={3}
+          className="resize-none"
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="defaultMarginPercent">Margen Sugerido (%)</Label>
           <Input
             id="defaultMarginPercent"
             type="number"
             min="0"
-            max="100"
+            max="500"
             value={formData.defaultMarginPercent}
             onChange={(e) =>
               setFormData({ ...formData, defaultMarginPercent: parseInt(e.target.value) || 0 })
@@ -69,13 +71,19 @@ export function CategoryForm({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="color">Color</Label>
-          <Input
-            id="color"
-            type="color"
-            value={formData.color || '#e5e7eb'}
-            onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-          />
+          <Label htmlFor="color">Color Visual</Label>
+          <div className="flex gap-2 items-center">
+            <Input
+              id="color"
+              type="color"
+              value={formData.color || '#3b82f6'}
+              onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+              className="w-12 h-10 p-1 cursor-pointer"
+            />
+            <span className="text-xs text-muted-foreground font-mono">
+              {formData.color || '#3b82f6'}
+            </span>
+          </div>
         </div>
       </div>
     </form>
