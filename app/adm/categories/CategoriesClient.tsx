@@ -6,9 +6,14 @@ import { Badge } from '@/components/ui/badge';
 import { useUI } from '@/components/ui/UIProvider';
 import { CategoryDialog } from '@/components/categories/CategoryDialog';
 import { type CategoryFormData } from '@/components/categories/CategoryForm';
-import { CrudAdmin, StatItem } from '@/components/adm';
-import { Folder, Edit2, Trash2, Package, Layers } from 'lucide-react';
+import { Header, CrudAdmin, StatItem } from '@/components/adm';
+import { Folder, Edit2, Trash2, Package, Layers, Plus } from 'lucide-react';
 import { type ColumnDef } from '@tanstack/react-table';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface Category {
   id: string;
@@ -29,6 +34,7 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
   const { alert, confirm } = useUI();
   const [categories, setCategories] = useState<Category[]>(initialCategories);
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [createForm, setCreateForm] = useState<CategoryFormData>({
     name: '',
     description: '',
@@ -62,6 +68,7 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
   const handleCreateCategory = async () => {
     if (!createForm.name.trim()) return;
 
+    setSaving(true);
     try {
       const response = await fetch('/api/categories', {
         method: 'POST',
@@ -78,9 +85,23 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
         });
         setIsCreateDialogOpen(false);
         fetchCategories();
+      } else {
+        const error = await response.json();
+        await alert({
+          title: 'Error',
+          description: error.error || 'Error al crear categoría',
+          variant: 'error',
+        });
       }
     } catch (error) {
       console.error('Error creating category:', error);
+      await alert({
+        title: 'Error',
+        description: 'Error al crear categoría',
+        variant: 'error',
+      });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -123,6 +144,7 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
     e?.preventDefault();
     if (!editingCategory) return;
 
+    setSaving(true);
     try {
       const response = await fetch(`/api/categories/${editingCategory.id}`, {
         method: 'PUT',
@@ -149,6 +171,8 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
         description: 'Error al actualizar categoría',
         variant: 'error',
       });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -179,7 +203,7 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
         cell: ({ row }) => (
           <div className="flex items-center gap-2">
             <div
-              className="w-6 h-6 rounded flex items-center justify-center"
+              className="w-6 h-6 rounded flex items-center justify-center shadow-sm"
               style={{ backgroundColor: row.original.color || '#e5e7eb' }}
             >
               <Folder className="h-3 w-3 text-white" />
@@ -224,35 +248,67 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
   );
 
   return (
-    <>
-      <CrudAdmin
+    <div className="space-y-6">
+      <Header
         title="Categorías"
         description="Gestiona las categorías de productos"
+        primaryAction={{
+          label: 'Nueva Categoría',
+          onClick: () => setIsCreateDialogOpen(true),
+          icon: Plus,
+          ariaLabel: 'Crear nueva categoría',
+        }}
+      />
+
+      <CrudAdmin
+        title=""
+        description=""
         items={categories}
         loading={loading}
         onCreate={() => setIsCreateDialogOpen(true)}
+        hideCreateAction
         columns={columns}
         stats={stats}
         emptyIcon={<Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />}
-        emptyMessage="No hay categorías creadas. Haz clic en '+ Categoría' para crear la primera."
+        emptyMessage="No hay categorías creadas. Haz clic en 'Nueva Categoría' para crear la primera."
         createButtonText="Categoría"
         tableTitle="Listado de Categorías"
         searchPlaceholder="Buscar categorías..."
         rowActions={(category) => (
           <div className="flex gap-1">
-            <Button variant="ghost" size="sm" onClick={() => openEditDialog(category)} title="Editar categoría">
-              <Edit2 className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-red-600"
-              onClick={() => handleDeleteCategory(category)}
-              disabled={category.productCount > 0}
-              title="Eliminar categoría"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => openEditDialog(category)}
+                  aria-label="Editar categoría"
+                >
+                  <Edit2 className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Editar categoría</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-red-600"
+                  onClick={() => handleDeleteCategory(category)}
+                  disabled={category.productCount > 0}
+                  aria-label="Eliminar categoría"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {category.productCount > 0
+                  ? "No se puede eliminar una categoría con productos"
+                  : "Eliminar categoría"}
+              </TooltipContent>
+            </Tooltip>
           </div>
         )}
       />
@@ -265,6 +321,7 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
         formData={editForm}
         setFormData={setEditForm}
         onSubmit={handleEditSubmit}
+        isLoading={saving}
       />
 
       {/* Create Category Dialog */}
@@ -278,7 +335,8 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
           e?.preventDefault();
           handleCreateCategory();
         }}
+        isLoading={saving}
       />
-    </>
+    </div>
   );
 }

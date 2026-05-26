@@ -50,3 +50,23 @@ The Work Order (OT) module is critical for workshop operations. This refinement 
 ## Component Evolution
 - `WorkOrdersPage`: Serves as the reference for Kanban-style interaction patterns.
 - `WorkOrderDetailPage`: Establishes the "Metadata Pill" pattern for secondary actionable info in headers.
+
+# Design Decisions: Category Module Refinement
+
+## Context
+The Categories module is a fundamental catalog for product organization. This refinement focuses on unifiying the action hierarchy and improving the accessibility of the management forms.
+
+## Applied Patterns
+
+### 1. Action Consistency
+- **Primary CTA**: Moved "Nueva Categoría" to the `Header` component. This reinforces the pattern where the main intent of the page is clearly visible at the top level, separated from table-specific interactions.
+- **Interaction Tooltips**: Added Tooltips to all row actions (Edit, Delete). This provides immediate visual feedback on button functionality and status (e.g., explaining why a category cannot be deleted).
+
+### 2. Form Accessibility & UX
+- **Semantic Labels**: Standardized the use of the `required` prop in `Label` components, ensuring the red asterisk is visible and correctly ignored by screen readers while the `aria-required` attribute provides the necessary context to assistive technologies.
+- **Visual Feedback**: Added a `saving` state to the creation and edition flow, providing animated feedback via the `loading` prop of the `ModalBaseFooter` buttons.
+- **Color Affordance**: Improved the color picker UX by adding a visual preview of the selected hex code, making it easier for administrators to manage visual categorization.
+
+## Component Evolution
+- `CategoriesClient`: Now follows the "Header + CrudAdmin" pattern with a clear separation of concerns between page actions and data presentation.
+- `CategoryForm`: Serves as a reference for accessible catalog forms with grid layouts and semantic labels.
