@@ -34,24 +34,26 @@ export function PaymentMethodForm({
   return (
     <form id="payment-method-form" onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="name">Nombre *</Label>
+        <Label htmlFor="name" required>Nombre</Label>
         <Input
           id="name"
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           placeholder="Ej: Efectivo, Transferencia"
           required
+          aria-required="true"
         />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="code">Código *</Label>
+        <Label htmlFor="code" required>Código</Label>
         <Input
           id="code"
           value={formData.code}
           onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
           placeholder="Ej: CASH, TRANSFER"
           required
+          aria-required="true"
           disabled={isEdit}
           className={isEdit ? 'bg-muted' : ''}
         />

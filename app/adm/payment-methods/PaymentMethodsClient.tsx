@@ -4,10 +4,13 @@ import { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { CrudAdmin } from '@/components/adm/CrudAdmin';
 import { PaymentMethodForm, PaymentMethodFormData } from '@/components/payment-methods/PaymentMethodForm';
-import { ModalBase } from '@/components/ui/ModalBase';
+import { ModalBase, ModalBaseFooter } from '@/components/ui/ModalBase';
 import { useUI } from '@/components/ui/UIProvider';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2, Plus } from 'lucide-react';
 import { type ColumnDef } from '@tanstack/react-table';
+import { Header } from '@/components/adm/Header';
+import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface PaymentMethod {
   id: string;
@@ -191,59 +194,81 @@ export default function PaymentMethodsClient({ initialPaymentMethods }: PaymentM
       accessorKey: 'code',
       header: 'Código',
       cell: ({ row }) => (
-        <code className="bg-muted px-2 py-1 rounded text-sm">{row.original.code}</code>
+        <code className="bg-muted px-2 py-1 rounded text-sm text-foreground/80 font-mono">{row.original.code}</code>
       ),
     },
     {
       accessorKey: 'description',
       header: 'Descripción',
-      cell: ({ row }) => row.original.description || '-',
+      cell: ({ row }) => <span className="text-muted-foreground">{row.original.description || '-'}</span>,
     },
     {
       accessorKey: 'isActive',
       header: 'Estado',
       cell: ({ row }) => (
-        <span
-          className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-            row.original.isActive
-              ? 'bg-green-100 text-green-800'
-              : 'bg-gray-100 text-gray-800'
-          }`}
+        <Badge
+          variant={row.original.isActive ? 'outline' : 'secondary'}
+          className={row.original.isActive ? 'text-green-600 border-green-200 bg-green-50' : ''}
         >
           {row.original.isActive ? 'Activo' : 'Inactivo'}
-        </span>
+        </Badge>
       ),
     },
   ];
 
   const rowActions = (method: PaymentMethod) => (
     <div className="flex items-center gap-2">
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => handleEdit(method)}
-      >
-        <Pencil className="h-4 w-4" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => handleDelete(method)}
-        className="text-destructive hover:text-destructive"
-      >
-        <Trash2 className="h-4 w-4" />
-      </Button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleEdit(method)}
+            aria-label={`Editar método de pago ${method.name}`}
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Editar método de pago</TooltipContent>
+      </Tooltip>
+
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleDelete(method)}
+            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+            aria-label={`Eliminar método de pago ${method.name}`}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Eliminar método de pago</TooltipContent>
+      </Tooltip>
     </div>
   );
 
   return (
     <div className="container mx-auto py-6 space-y-6">
+      <Header
+        title="Métodos de Pago"
+        description="Administra los métodos de pago disponibles en el sistema"
+        primaryAction={{
+          label: 'Nuevo Método',
+          onClick: handleCreate,
+          icon: Plus,
+          ariaLabel: 'Crear nuevo método de pago'
+        }}
+      />
+
       <CrudAdmin
         title="Métodos de Pago"
         description="Administrar métodos de pago disponibles"
         items={paymentMethods}
         loading={loading}
         onCreate={handleCreate}
+        hideCreateAction={true}
         columns={columns}
         emptyMessage="No hay métodos de pago configurados"
         emptyActionText="Crear primero"
@@ -260,26 +285,20 @@ export default function PaymentMethodsClient({ initialPaymentMethods }: PaymentM
         isOpen={isDialogOpen}
         onClose={() => setIsDialogOpen(false)}
         title={editingMethod ? 'Editar Método de Pago' : 'Nuevo Método de Pago'}
-      >
-        <div className="space-y-4">
-          <PaymentMethodForm
-            formData={formData}
-            setFormData={setFormData}
-            isEdit={!!editingMethod}
+        footer={
+          <ModalBaseFooter
+            onCancel={() => setIsDialogOpen(false)}
+            onSave={handleSubmit}
+            isLoading={saving}
+            saveText={editingMethod ? 'Actualizar' : 'Crear'}
           />
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-              Cancelar
-            </Button>
-            <Button 
-              onClick={handleSubmit} 
-              disabled={saving}
-              form="payment-method-form"
-            >
-              {saving ? 'Guardando...' : editingMethod ? 'Actualizar' : 'Crear'}
-            </Button>
-          </div>
-        </div>
+        }
+      >
+        <PaymentMethodForm
+          formData={formData}
+          setFormData={setFormData}
+          isEdit={!!editingMethod}
+        />
       </ModalBase>
     </div>
   );

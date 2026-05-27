@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { DataTable } from "@/components/ui/data-table";
 import { ColumnDef } from "@tanstack/react-table";
 import { Header } from "@/components/adm/Header";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Car,
   User,
@@ -112,18 +114,21 @@ export default function VehicleDetailPage() {
   };
 
   const getStatusBadge = (status: string) => {
-    const statusColors: Record<string, string> = {
-      CONFIRMED: "bg-blue-100 text-blue-800",
-      WAITING: "bg-yellow-100 text-yellow-800",
-      IN_PROGRESS: "bg-orange-100 text-orange-800",
-      QC_CHECK: "bg-purple-100 text-purple-800",
-      READY: "bg-green-100 text-green-800",
-      PAID: "bg-emerald-100 text-emerald-800",
-      DELIVERED: "bg-gray-100 text-gray-800",
+    const statusConfig: Record<string, { label: string; variant: any; className: string }> = {
+      CONFIRMED: { label: "Confirmada", variant: "outline", className: "text-blue-600 border-blue-200 bg-blue-50" },
+      WAITING: { label: "En espera", variant: "outline", className: "text-yellow-600 border-yellow-200 bg-yellow-50" },
+      IN_PROGRESS: { label: "En progreso", variant: "outline", className: "text-orange-600 border-orange-200 bg-orange-50" },
+      QC_CHECK: { label: "Control de Calidad", variant: "outline", className: "text-purple-600 border-purple-200 bg-purple-50" },
+      READY: { label: "Listo", variant: "outline", className: "text-green-600 border-green-200 bg-green-50" },
+      PAID: { label: "Pagado", variant: "outline", className: "text-emerald-600 border-emerald-200 bg-emerald-50" },
+      DELIVERED: { label: "Entregado", variant: "secondary", className: "" },
     };
+
+    const config = statusConfig[status] || { label: status, variant: "secondary", className: "" };
+
     return (
-      <Badge className={statusColors[status] || "bg-gray-100"}>
-        {status}
+      <Badge variant={config.variant} className={config.className}>
+        {config.label}
       </Badge>
     );
   };
@@ -154,19 +159,47 @@ export default function VehicleDetailPage() {
 
   const workOrderRowActions = useCallback(
     (row: WorkOrder) => (
-      <Link href={`/adm/work-orders/${row.id}`}>
-        <Button variant="ghost" size="icon" className="h-8 w-8">
-          <Eye className="h-4 w-4" />
-        </Button>
-      </Link>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Link href={`/adm/work-orders/${row.id}`}>
+            <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Ver detalles de la Orden de Trabajo">
+              <Eye className="h-4 w-4" />
+            </Button>
+          </Link>
+        </TooltipTrigger>
+        <TooltipContent>Ver detalles</TooltipContent>
+      </Tooltip>
     ),
     []
   );
 
   if (loading) {
     return (
-      <div className="container mx-auto py-6">
-        <div className="text-center py-12">Cargando...</div>
+      <div className="container mx-auto py-6 space-y-6">
+        <div className="flex justify-between items-start">
+          <div className="space-y-2">
+            <Skeleton className="h-10 w-64" />
+            <Skeleton className="h-4 w-48" />
+            <div className="flex gap-2 pt-2">
+              <Skeleton className="h-6 w-32 rounded-full" />
+              <Skeleton className="h-6 w-32 rounded-full" />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Skeleton className="h-10 w-28" />
+            <Skeleton className="h-10 w-24" />
+          </div>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <Skeleton className="h-48 w-full" />
+          <Skeleton className="h-48 w-full" />
+        </div>
+
+        <div className="space-y-4 pt-4">
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-64 w-full" />
+        </div>
       </div>
     );
   }
@@ -189,10 +222,13 @@ export default function VehicleDetailPage() {
       <Header
         title={isEquipment ? vehicle.equipmentName || vehicle.identifier : vehicle.identifier}
         description={`${categoryLabels[vehicle.category] || vehicle.category}${vehicle.make?.name ? ` • ${vehicle.make.name} ${vehicle.model?.name || ""}` : ""}`}
+        showBackButton
+        onBack={() => router.back()}
         primaryAction={{
-          label: "OT",
+          label: "Nueva OT",
           href: `/adm/work-orders/new?vehicleId=${vehicleId}`,
           icon: Plus,
+          ariaLabel: "Crear nueva orden de trabajo para este vehículo"
         }}
         secondaryActions={[
           {
@@ -200,24 +236,37 @@ export default function VehicleDetailPage() {
             onClick: handleDelete,
             variant: "outline",
             icon: Trash2,
+            className: "text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/20",
+            ariaLabel: "Eliminar este vehículo o equipo"
           },
         ]}
       >
         {vehicle.customer && (
-          <div className="flex flex-wrap gap-3 mt-2">
-            <a
-              href={`tel:${vehicle.customer.phone}`}
-              className="flex items-center gap-1 text-sm hover:underline text-primary"
-            >
-              <Phone className="h-4 w-4" /> {vehicle.customer.phone}
-            </a>
+          <div className="flex flex-wrap gap-3 mt-3">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <a
+                  href={`tel:${vehicle.customer.phone}`}
+                  className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-100 text-xs font-medium hover:bg-blue-100 transition-colors"
+                >
+                  <Phone className="h-3 w-3" /> {vehicle.customer.phone}
+                </a>
+              </TooltipTrigger>
+              <TooltipContent>Llamar al cliente</TooltipContent>
+            </Tooltip>
+
             {vehicle.customer.email && (
-              <a
-                href={`mailto:${vehicle.customer.email}`}
-                className="flex items-center gap-1 text-sm hover:underline text-primary"
-              >
-                <Mail className="h-4 w-4" /> {vehicle.customer.email}
-              </a>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <a
+                    href={`mailto:${vehicle.customer.email}`}
+                    className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-50 text-slate-700 border border-slate-100 text-xs font-medium hover:bg-slate-100 transition-colors"
+                  >
+                    <Mail className="h-3 w-3" /> {vehicle.customer.email}
+                  </a>
+                </TooltipTrigger>
+                <TooltipContent>Enviar correo electrónico</TooltipContent>
+              </Tooltip>
             )}
           </div>
         )}
@@ -294,12 +343,17 @@ export default function VehicleDetailPage() {
                   </a>
                 )}
               </div>
-              <Link href={`/adm/customers/${vehicle.customer.id}`}>
-                <Button variant="outline" size="sm">
-                  <User className="h-4 w-4 mr-2" />
-                  Ver Ficha Cliente
-                </Button>
-              </Link>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link href={`/adm/customers/${vehicle.customer.id}`}>
+                    <Button variant="outline" size="sm" aria-label="Ver ficha detallada del cliente">
+                      <User className="h-4 w-4 mr-2" />
+                      Ver Ficha Cliente
+                    </Button>
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent>Ir al perfil del cliente</TooltipContent>
+              </Tooltip>
             </CardContent>
           </Card>
         )}

@@ -50,6 +50,7 @@ The Work Order (OT) module is critical for workshop operations. This refinement 
 ## Component Evolution
 - `WorkOrdersPage`: Serves as the reference for Kanban-style interaction patterns.
 - `WorkOrderDetailPage`: Establishes the "Metadata Pill" pattern for secondary actionable info in headers.
+- `VehicleDetailPage`: Reinforces the "Metadata Pill" pattern and structural Skeletons for detail views.
 
 # Design Decisions: Category Module Refinement
 
@@ -68,5 +69,5 @@ The Categories module is a fundamental catalog for product organization. This re
 - **Color Affordance**: Improved the color picker UX by adding a visual preview of the selected hex code, making it easier for administrators to manage visual categorization.
 
 ## Component Evolution
-- `CategoriesClient`: Now follows the "Header + CrudAdmin" pattern with a clear separation of concerns between page actions and data presentation.
-- `CategoryForm`: Serves as a reference for accessible catalog forms with grid layouts and semantic labels.
+- `CategoriesClient`, `PaymentMethodsClient`: Now follow the "Header + CrudAdmin" pattern with a clear separation of concerns between page actions and data presentation.
+- `CategoryForm`, `PaymentMethodForm`: Serve as references for accessible catalog forms with grid layouts and semantic labels.
