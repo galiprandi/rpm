@@ -9,7 +9,7 @@ import { DataTable } from '@/components/ui/data-table';
 import { ColumnDef } from '@tanstack/react-table';
 import { Plus, Trash2, AlertTriangle, Percent, DollarSign, Calculator, Search } from 'lucide-react';
 import { Header, StatItem, CrudStats } from '@/components/adm';
-import { ModalBase } from '@/components/ui/ModalBase';
+import { ModalBase, ModalBaseFooter } from '@/components/ui/ModalBase';
 import { SearchableSelect } from '@/components/ui/SearchableSelect';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -351,24 +351,22 @@ export default function PriceListDetailClient({ initialPriceList }: PriceListDet
         onClose={() => setIsAddModalOpen(false)}
         title="Agregar Excepción de Precio"
         description="Define un margen específico o un precio fijo para un producto en esta lista."
-        footer={{
-          actionLabel: 'Agregar Excepción',
-          onAction: handleAddException,
-          cancelLabel: 'Cancelar',
-        }}
+        footer={
+          <ModalBaseFooter
+            onCancel={() => setIsAddModalOpen(false)}
+            onSave={handleAddException}
+            saveText="Agregar Excepción"
+          />
+        }
       >
         <div className="space-y-4 py-2">
           <div className="space-y-2">
             <Label htmlFor="product" required>Producto</Label>
             <SearchableSelect
-              options={products.map(p => ({
-                value: p.id,
-                label: `${p.name} ${p.sku ? `(${p.sku})` : ''}`,
-              }))}
-              value={selectedProduct}
-              onValueChange={setSelectedProduct}
+              apiUrl="/api/products"
+              onSelect={(item) => setSelectedProduct(item.id)}
               placeholder="Buscar producto..."
-              aria-label="Seleccionar producto"
+              searchPlaceholder="Escribe el nombre o SKU..."
             />
           </div>
 

@@ -9,7 +9,7 @@ import { PriceListDialog } from '@/components/price-lists/PriceListDialog';
 import { CostUpdateDialog } from '@/components/cost-updates/CostUpdateDialog';
 import { ProductAuditModal } from '@/components/products/ProductAuditModal';
 import { type PriceListFormData } from '@/components/price-lists/PriceListForm';
-import { Header, CrudAdmin, StatItem } from '@/components/adm';
+import { Header, CrudAdmin, StatItem, CrudStats } from '@/components/adm';
 import { DollarSign, Edit2, Trash2, List, Percent, Layers, TrendingUp, History, Plus } from 'lucide-react';
 import { type ColumnDef } from '@tanstack/react-table';
 import {

@@ -1,6 +1,6 @@
 'use client';
 
-import { ModalBase } from '@/components/ui/ModalBase';
+import { ModalBase, ModalBaseFooter } from '@/components/ui/ModalBase';
 import { PriceListForm, type PriceListFormData } from './PriceListForm';
 
 interface PriceList {
@@ -40,11 +40,13 @@ export function PriceListDialog({
           ? 'Modifica los datos de la lista de precios existente.'
           : 'Crea una nueva lista de precios para aplicar a los productos.'
       }
-      footer={{
-        actionLabel: editingPriceList ? 'Guardar Cambios' : 'Crear Lista',
-        onAction: () => onSubmit(),
-        cancelLabel: 'Cancelar',
-      }}
+      footer={
+        <ModalBaseFooter
+          onCancel={onClose}
+          onSave={() => onSubmit()}
+          saveText={editingPriceList ? 'Guardar Cambios' : 'Crear Lista'}
+        />
+      }
     >
       <PriceListForm
         formData={formData}
