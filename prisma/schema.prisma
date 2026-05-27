@@ -127,17 +127,19 @@ model product {
   categoryId        String
   supplierId        String?
   lastMovementAt    DateTime?
-  replacementCost   Decimal            @db.Decimal(10, 2)
-  imageBranch       String?            @default("main")
-  imageCommit       String?
-  imageUrl          String?
-  credit_note_items credit_note_item[]
-  direct_sale_items direct_sale_item[]
-  price_list_item   price_list_item[]
-  category          category           @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  supplier          supplier?          @relation(fields: [supplierId], references: [id])
-  stock_movement    stock_movement[]
-  work_order_item   work_order_item[]
+  replacementCost        Decimal                  @db.Decimal(10, 2)
+  imageBranch            String?                  @default("main")
+  imageCommit            String?
+  imageUrl               String?
+  lastCountedAt          DateTime?
+  credit_note_items      credit_note_item[]
+  direct_sale_items      direct_sale_item[]
+  price_list_item        price_list_item[]
+  inventory_count_items  inventory_count_item[]
+  category               category                 @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  supplier               supplier?                @relation(fields: [supplierId], references: [id])
+  stock_movement         stock_movement[]
+  work_order_item        work_order_item[]
 
   @@index([categoryId])
   @@index([isActive])
@@ -580,4 +582,40 @@ model credit_note_item {
   @@index([productId])
   @@index([serviceId])
   @@map("credit_note_item")
+}
+
+model inventory_count_operative {
+  id            String                 @id @default(cuid())
+  status        String                 @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, APPROVED, CANCELLED
+  itemCount     Int
+  createdBy     String
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+  finishedAt    DateTime?
+  approvedAt    DateTime?
+  approvedBy    String?
+  items         inventory_count_item[]
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("inventory_count_operative")
+}
+
+model inventory_count_item {
+  id                  String                    @id @default(cuid())
+  operativeId         String
+  productId           String
+  theoreticalStock    Int
+  countedStock        Int?
+  previousLocation    String?
+  newLocation         String?
+  isFound             Boolean                   @default(false)
+  reportedAt          DateTime?
+  reportedBy          String?
+  operative           inventory_count_operative @relation(fields: [operativeId], references: [id], onDelete: Cascade)
+  product             product                   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([operativeId])
+  @@index([productId])
+  @@map("inventory_count_item")
 }
