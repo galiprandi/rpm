@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useUI } from '@/components/ui/UIProvider';
@@ -8,9 +9,14 @@ import { PriceListDialog } from '@/components/price-lists/PriceListDialog';
 import { CostUpdateDialog } from '@/components/cost-updates/CostUpdateDialog';
 import { ProductAuditModal } from '@/components/products/ProductAuditModal';
 import { type PriceListFormData } from '@/components/price-lists/PriceListForm';
-import { CrudAdmin, StatItem } from '@/components/adm';
-import { DollarSign, Edit2, Trash2, List, Percent, Layers, TrendingUp, History } from 'lucide-react';
+import { Header, CrudAdmin, StatItem } from '@/components/adm';
+import { DollarSign, Edit2, Trash2, List, Percent, Layers, TrendingUp, History, Plus } from 'lucide-react';
 import { type ColumnDef } from '@tanstack/react-table';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface PriceList {
   id: string;
@@ -211,7 +217,12 @@ export default function PriceListsClient({ initialPriceLists }: PriceListsClient
         cell: ({ row }) => (
           <div className="flex items-center gap-2">
             <DollarSign className="h-4 w-4 text-muted-foreground" />
-            <span className="font-medium">{row.original.name}</span>
+            <Link
+              href={`/adm/price-lists/${row.original.id}`}
+              className="font-medium hover:underline text-primary"
+            >
+              {row.original.name}
+            </Link>
           </div>
         ),
       },
@@ -260,47 +271,79 @@ export default function PriceListsClient({ initialPriceLists }: PriceListsClient
 
   return (
     <>
-      <CrudAdmin
+      <Header
         title="Precios"
         description="Gestiona listas de precios y excepciones"
-        items={priceLists}
-        loading={loading}
-        onCreate={() => setIsCreateDialogOpen(true)}
-        columns={columns}
-        stats={stats}
+        primaryAction={{
+          label: 'Nueva Lista',
+          onClick: () => setIsCreateDialogOpen(true),
+          icon: Plus,
+          ariaLabel: 'Crear nueva lista de precios',
+        }}
         secondaryActions={[
-          {
-            label: 'Historial de Auditoría',
-            onClick: () => setShowAuditModal(true),
-            variant: 'outline',
-            icon: History,
-          },
           {
             label: 'Actualizar Costos',
             onClick: () => setIsCostUpdateDialogOpen(true),
             variant: 'outline',
             icon: TrendingUp,
+            ariaLabel: 'Ir a actualización de costos',
+          },
+          {
+            label: 'Historial',
+            onClick: () => setShowAuditModal(true),
+            variant: 'outline',
+            icon: History,
+            ariaLabel: 'Ver historial de auditoría',
           },
         ]}
+      >
+        <div className="mt-2">
+          <CrudStats stats={stats} />
+        </div>
+      </Header>
+
+      <CrudAdmin
+        title=""
+        description=""
+        items={priceLists}
+        loading={loading}
+        columns={columns}
+        hideCreateAction
         emptyIcon={<List className="h-12 w-12 mx-auto text-muted-foreground mb-4" />}
-        emptyMessage="No hay listas de precios. Haz clic en '+ Lista' para crear la primera."
+        emptyMessage="No hay listas de precios creadas. Haz clic en 'Nueva Lista' para crear la primera."
         createButtonText="Lista"
         tableTitle="Listado de Listas de Precios"
         searchPlaceholder="Buscar listas..."
         rowActions={(priceList) => (
           <div className="flex gap-1">
-            <Button variant="ghost" size="sm" onClick={() => openEditDialog(priceList)} title="Editar lista">
-              <Edit2 className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-red-600"
-              onClick={() => handleDeletePriceList(priceList)}
-              title="Eliminar lista"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => openEditDialog(priceList)}
+                  aria-label="Editar lista"
+                >
+                  <Edit2 className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Editar lista</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-red-600"
+                  onClick={() => handleDeletePriceList(priceList)}
+                  aria-label="Eliminar lista"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Eliminar lista</TooltipContent>
+            </Tooltip>
           </div>
         )}
       />
