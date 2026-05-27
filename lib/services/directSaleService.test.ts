@@ -241,7 +241,8 @@ describe('directSaleService', () => {
 
       vi.mocked(prisma.product.findMany).mockResolvedValue(mockProducts as any);
       vi.mocked(prisma.product.findUnique).mockImplementation(({ where }: any) => {
-        return Promise.resolve(mockProducts.find(p => p.id === where.id) as any);
+        const product = mockProducts.find(p => p.id === where.id);
+        return Promise.resolve(product ? { ...product, credit_note_items: [], direct_sale_items: [], price_list_item: [], inventory_count_items: [] } : null) as any;
       });
       vi.mocked(prisma.direct_sale.create).mockResolvedValue({ id: 'sale-id' } as any);
       vi.mocked(prisma.payment_method.findMany).mockResolvedValue([{ id: 'pm-1', code: 'CASH' }] as any);

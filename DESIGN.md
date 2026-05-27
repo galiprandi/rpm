@@ -71,3 +71,27 @@ The Categories module is a fundamental catalog for product organization. This re
 ## Component Evolution
 - `CategoriesClient`, `PaymentMethodsClient`: Now follow the "Header + CrudAdmin" pattern with a clear separation of concerns between page actions and data presentation.
 - `CategoryForm`, `PaymentMethodForm`: Serve as references for accessible catalog forms with grid layouts and semantic labels.
+
+# Design Decisions: Inventory Count Module
+
+## Context
+Implementing a cyclic inventory counting system to maintain stock accuracy through small, regular audits based on risk factors.
+
+## Applied Patterns
+
+### 1. Risk-Based Prioritization
+- **Smart Selection**: Implemented an algorithm that assigns risk scores to products based on: never counted status, low stock (n=1), lack of physical location, and high sales rotation (60-day window).
+- **Audit Intervals**: Added `lastCountedAt` to track audit freshness, ensuring all products eventually cycle through the count process.
+
+### 2. Blind Count Workflow
+- **Operator Integrity**: The mobile view specifically hides theoretical stock values to prevent confirmation bias, forcing a real physical check.
+- **One-Handed UX**: Designed the mobile interface with large, thumb-friendly touch targets and a focused single-item workflow, allowing operators to count while holding the device.
+
+### 3. Concurrency Management
+- **Intelligent Adjustments**: The system tracks sales occurring between the start of the count and approval. It suggests a "Corrected Stock" value that compensates for concurrent sales, preventing artificial discrepancies.
+- **Visual Alerts**: Integrated Tooltips and semantic badges to warn administrators about concurrent movements during the review process.
+
+## Component Evolution
+- `InventoryCountsPage`: Dashboard for audit history and smart operative creation.
+- `MobileCountView`: Optimized reporting interface for workshop personnel.
+- `ApprovalView`: Comparative decision table for inventory reconciliation.

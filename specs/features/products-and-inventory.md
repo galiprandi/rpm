@@ -19,6 +19,7 @@ Control integral del catálogo de productos, inventario (stock) e imágenes. Per
 - **Límite 1 - Archivos Grandes**: El importador procesa archivos en lotes para no bloquear la base de datos.
 - **Límite 2 - Auditoría de Costos**: Cada actualización masiva queda registrada en la tabla `cost_update_batch` para trazabilidad.
 - **Validación 1**: Los movimientos de stock son inmutables y siempre generan un registro en `stock_movement`.
+- **Auditoría**: Soporta auditorías de stock mediante el [Conteo Cíclico Inteligente](./cyclic-count.md).
 
 ## 5. Dependencias Técnicas Clave
 - **Tablas BD**: `product`, `category`, `supplier`, `stock_movement`, `cost_update_batch`

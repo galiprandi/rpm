@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
   Package,
+  RefreshCcw,
   Folder,
   Truck,
   Users,
@@ -51,6 +52,7 @@ const navigation = [
   { name: 'Dashboard', href: '/adm', icon: LayoutDashboard },
   { name: 'Clientes', href: '/adm/customers', icon: UserCircle },
   { name: 'Órdenes de Trabajo', href: '/adm/work-orders', icon: ClipboardList },
+  { name: 'Inventario Cíclico', href: '/adm/inventory-counts', icon: RefreshCcw },
   { name: 'Productos', href: '/adm/products', icon: Package },
   { name: 'Servicios', href: '/adm/services', icon: Handshake },
   { name: 'Categorías', href: '/adm/categories', icon: Folder },

@@ -21,6 +21,7 @@ Este módulo centraliza todas las operaciones de venta (mostrador), gestión de 
 - **Límite 1 - Fallo en Venta**: Si una venta falla en mitad del proceso, se debe asegurar mediante transacciones que el stock no quede descontado erróneamente.
 - **Límite 2 - Diferencia de Caja**: Al cerrar, si el monto físico no coincide, se registra un movimiento de ajuste automático (ADJUSTMENT).
 - **Límite 3 - Devolución Parcial**: Las notas de crédito pueden ser por el total o parciales (seleccionando ítems específicos).
+- **Interacción con Conteo**: Las ventas ocurridas durante un [Conteo Cíclico](./cyclic-count.md) activo son alertadas al administrador durante la aprobación para evitar desajustes de stock físico.
 
 ## 5. Dependencias Técnicas Clave
 - **Tablas BD**: `direct_sale`, `direct_sale_item`, `cash_movement`, `invoice`, `credit_note`, `price_list`, `product`
