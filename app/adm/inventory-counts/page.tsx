@@ -14,5 +14,13 @@ export default async function InventoryCountsPage() {
     }
   });
 
-  return <InventoryCountsClient counts={counts} />;
+  const serializedCounts = counts.map(count => ({
+    ...count,
+    createdAt: count.createdAt.toISOString(),
+    items: count.items.map(item => ({
+      reportedAt: item.reportedAt?.toISOString() ?? null,
+    })),
+  }));
+
+  return <InventoryCountsClient counts={serializedCounts} />;
 }
