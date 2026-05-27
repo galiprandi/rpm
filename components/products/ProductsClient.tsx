@@ -10,7 +10,7 @@ import { ProductPricesModal } from '@/components/products/ProductPricesModal';
 import { QuickSaleModal } from '@/components/dashboard/QuickSaleModal';
 import { useUI } from '@/components/ui/UIProvider';
 import { Header, CrudAdmin, StatItem } from '@/components/adm';
-import { Edit2, Trash2, AlertTriangle, DollarSign, Boxes, Clock, ShoppingCart, FileUp, Plus } from 'lucide-react';
+import { Edit2, Trash2, AlertTriangle, DollarSign, Boxes, Clock, ShoppingCart, FileUp, Plus, RefreshCcw } from 'lucide-react';
 import { PriceDisplay } from '@/components/ui/price-display';
 import { StockDisplay } from '@/components/ui/stock-display';
 import {
@@ -447,6 +447,13 @@ export function ProductsClient({
             ariaLabel: 'Crear nuevo producto',
           }}
           secondaryActions={[
+            {
+              label: 'Inventario',
+              href: '/adm/inventory-counts',
+              variant: 'outline' as const,
+              icon: RefreshCcw,
+              ariaLabel: 'Ir a inventario cíclico',
+            },
             {
               label: 'Importar Productos',
               onClick: goToImporter,

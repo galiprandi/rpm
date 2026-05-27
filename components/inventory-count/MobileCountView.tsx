@@ -28,6 +28,14 @@ interface Operative {
   items: OperativeItem[];
 }
 
+const statusTranslations: Record<string, string> = {
+  PENDING: 'Pendiente',
+  IN_PROGRESS: 'En Progreso',
+  COMPLETED: 'Completado',
+  APPROVED: 'Aprobado',
+  CANCELLED: 'Cancelado',
+};
+
 export function MobileCountView({ operativeId }: { operativeId: string }) {
   const [operative, setOperative] = useState<Operative | null>(null);
   const [loading, setLoading] = useState(true);
@@ -110,7 +118,7 @@ export function MobileCountView({ operativeId }: { operativeId: string }) {
           <CardDescription>
             Has completado todos los artículos de esta lista. El administrador revisará los resultados.
           </CardDescription>
-          <Badge variant="outline" className="text-lg py-1 px-4">Estado: {operative.status}</Badge>
+          <Badge variant="outline" className="text-lg py-1 px-4">Estado: {statusTranslations[operative.status] || operative.status}</Badge>
         </CardContent>
       </Card>
     );
