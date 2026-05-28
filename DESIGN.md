@@ -71,3 +71,29 @@ The Categories module is a fundamental catalog for product organization. This re
 ## Component Evolution
 - `CategoriesClient`, `PaymentMethodsClient`: Now follow the "Header + CrudAdmin" pattern with a clear separation of concerns between page actions and data presentation.
 - `CategoryForm`, `PaymentMethodForm`: Serve as references for accessible catalog forms with grid layouts and semantic labels.
+
+# Design Decisions: Price Lists Module Refinement
+
+## Context
+The Price Lists module is essential for the store's commercial strategy. This refinement focuses on unifying the navigation experience, improving the scannability of price exceptions, and standardizing the interface with the rest of the administrative panel.
+
+## Applied Patterns
+
+### 1. Header Integration & Stat Consolidation
+- **Unified Header**: Both the main list and the detail view now use the standard `Header` component.
+- **Stat Strip**: Replaced bulky stat cards in the detail view with the `CrudStats` strip integrated into the header. This pattern provides immediate context without pushing the main content (the table) too far down the page.
+- **Action Hierarchy**: Moved "Nueva Lista" and "Agregar Excepción" to the `primaryAction` slot of the `Header`. Secondary tools like "Actualizar Costos" or "Historial" are now cleanly organized as `secondaryActions`.
+
+### 2. Table UX & Navigation
+- **Actionable Links**: Price list names in the main table are now active links (`Link` from Next.js), following the pattern used in Customers or Work Orders.
+- **Contextual Tooltips**: Added `Tooltip` components to all row actions, ensuring the "Why" and "What" are clear even for icon-only buttons.
+- **Semantic Badges**: Standardized the use of badges for visibility (Public/Private) and status (Active/Inactive), and implemented `orange-500` for margin warnings to align with the "Urgency" visual language.
+
+### 3. Structural Modal Consistency
+- **ModalBase Migration**: Converted the add/edit dialogs and the exceptions modal to use `ModalBase`. This ensures consistent header/footer styling and standardized loading/saving states.
+- **Searchable Select**: Replaced the native `<select>` in the "Add Exception" modal with the `SearchableSelect` component, significantly improving the experience of finding products in large catalogs.
+
+## Component Evolution
+- `PriceListsClient`: Now uses the "Header + CrudAdmin" pattern with `hideCreateAction={true}`.
+- `PriceListDetailClient`: Establishes the pattern of using `CrudStats` within the `Header` for detail views.
+- `PriceListForm`: Standardized accessibility attributes (`aria-required`) and visual requirement indicators.

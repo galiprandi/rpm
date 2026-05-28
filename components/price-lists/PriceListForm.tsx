@@ -35,20 +35,21 @@ export function PriceListForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4 py-2">
       <div className="space-y-2">
-        <Label htmlFor="name">Nombre</Label>
+        <Label htmlFor="name" required>Nombre</Label>
         <Input
           id="name"
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           placeholder="Ej: Lista Mayorista"
           required
+          aria-required="true"
         />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="baseMarginPercentage">Margen Base (%)</Label>
+        <Label htmlFor="baseMarginPercentage" required>Margen Base (%)</Label>
         <Input
           id="baseMarginPercentage"
           type="number"
@@ -62,6 +63,7 @@ export function PriceListForm({
             })
           }
           required
+          aria-required="true"
         />
       </div>
 

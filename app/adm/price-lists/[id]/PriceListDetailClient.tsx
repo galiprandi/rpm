@@ -7,18 +7,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { ColumnDef } from '@tanstack/react-table';
-import { Plus, Trash2, AlertTriangle, Percent, DollarSign, Calculator } from 'lucide-react';
-import { Header } from '@/components/adm/Header';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
+import { Plus, Trash2, AlertTriangle, Percent, DollarSign, Calculator, Search } from 'lucide-react';
+import { Header, StatItem, CrudStats } from '@/components/adm';
+import { ModalBase, ModalBaseFooter } from '@/components/ui/ModalBase';
+import { SearchableSelect } from '@/components/ui/SearchableSelect';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useUI } from '@/components/ui/UIProvider';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { PriceDisplay } from '@/components/ui/price-display';
 
 interface PriceListItem {
   id: string;
@@ -185,7 +186,7 @@ export default function PriceListDetailClient({ initialPriceList }: PriceListDet
         <div>
           <div className="font-medium">{row.original.productName}</div>
           {row.original.productSku && (
-            <div className="text-sm text-muted-foreground">{row.original.productSku}</div>
+            <div className="text-xs font-mono text-muted-foreground">{row.original.productSku}</div>
           )}
         </div>
       ),
@@ -194,7 +195,7 @@ export default function PriceListDetailClient({ initialPriceList }: PriceListDet
       accessorKey: 'replacementCost',
       header: 'Costo Repo.',
       cell: ({ row }) => (
-        <span>${row.original.replacementCost?.toFixed(2) ?? '-'}</span>
+        <PriceDisplay value={row.original.replacementCost ?? 0} />
       ),
     },
     {
@@ -212,7 +213,9 @@ export default function PriceListDetailClient({ initialPriceList }: PriceListDet
       header: 'Precio Fijo',
       cell: ({ row }) =>
         row.original.fixedPrice !== null ? (
-          <Badge variant="default">${row.original.fixedPrice.toFixed(2)}</Badge>
+          <Badge variant="outline" className="border-primary/20 bg-primary/5 text-primary">
+            <PriceDisplay value={row.original.fixedPrice} />
+          </Badge>
         ) : (
           <span className="text-muted-foreground">-</span>
         ),
@@ -221,7 +224,9 @@ export default function PriceListDetailClient({ initialPriceList }: PriceListDet
       accessorKey: 'finalPrice',
       header: 'Precio Final',
       cell: ({ row }) => (
-        <span className="font-bold">${row.original.finalPrice.toFixed(2)}</span>
+        <div className="font-bold">
+          <PriceDisplay value={row.original.finalPrice} />
+        </div>
       ),
     },
     {
@@ -231,10 +236,10 @@ export default function PriceListDetailClient({ initialPriceList }: PriceListDet
         const isLow = row.original.isBelowMinimum;
         return (
           <div className="flex items-center gap-2">
-            <span className={isLow ? 'text-red-600 font-bold' : ''}>
+            <span className={isLow ? 'text-orange-600 font-bold' : ''}>
               {row.original.actualMargin.toFixed(1)}%
             </span>
-            {isLow && <AlertTriangle className="h-4 w-4 text-red-600" />}
+            {isLow && <AlertTriangle className="h-4 w-4 text-orange-500" />}
           </div>
         );
       },
@@ -243,14 +248,20 @@ export default function PriceListDetailClient({ initialPriceList }: PriceListDet
       id: 'actions',
       header: '',
       cell: ({ row }) => (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-red-600"
-          onClick={() => handleDeleteException(row.original.id)}
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              onClick={() => handleDeleteException(row.original.id)}
+              aria-label="Eliminar excepción"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Eliminar excepción</TooltipContent>
+        </Tooltip>
       ),
     },
   ];
@@ -263,91 +274,67 @@ export default function PriceListDetailClient({ initialPriceList }: PriceListDet
     return <div className="p-6">Lista de precios no encontrada</div>;
   }
 
+  const stats: StatItem[] = [
+    {
+      label: 'Margen Base',
+      value: `${priceList.baseMarginPercentage}%`,
+      icon: Percent,
+    },
+    {
+      label: 'Redondeo',
+      value: getRoundingRuleLabel(priceList.roundingRule),
+      icon: Calculator,
+    },
+    {
+      label: 'Excepciones',
+      value: priceList.itemCount,
+      icon: Search,
+    },
+    {
+      label: 'Estado',
+      value: priceList.isActive ? 'Activa' : 'Inactiva',
+      icon: DollarSign,
+      iconColor: priceList.isActive ? '#22c55e' : '#ef4444',
+    },
+  ];
+
   return (
     <div className="space-y-6">
       <Header
         title={priceList.name}
-        description={`Margen base: ${priceList.baseMarginPercentage}% • Redondeo: ${getRoundingRuleLabel(priceList.roundingRule)}`}
+        description="Gestiona excepciones y precios específicos para esta lista"
         showBackButton
         primaryAction={{
           label: 'Agregar Excepción',
           onClick: openAddModal,
           icon: Plus,
+          ariaLabel: 'Agregar nueva excepción de precio',
         }}
-      />
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Margen Base
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <Percent className="h-5 w-5 text-primary" />
-              <span className="text-2xl font-bold">{priceList.baseMarginPercentage}%</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Excepciones
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <Calculator className="h-5 w-5 text-primary" />
-              <span className="text-2xl font-bold">{priceList.itemCount}</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Estado
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-primary" />
-              <Badge variant={priceList.isActive ? 'default' : 'destructive'}>
-                {priceList.isActive ? 'Activa' : 'Inactiva'}
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Visibilidad
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-primary" />
-              <Badge variant={priceList.isPublic ? 'default' : 'secondary'}>
-                {priceList.isPublic ? 'Pública' : 'Privada'}
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      >
+        <div className="mt-2">
+          <CrudStats stats={stats} />
+        </div>
+      </Header>
 
       {/* Exceptions Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Excepciones de Precio</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg font-semibold">Excepciones de Precio</CardTitle>
+            <Badge variant="outline">{priceList.items.length} ítems</Badge>
+          </div>
         </CardHeader>
         <CardContent>
           {priceList.items.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No hay excepciones. Haz clic en &quot;Agregar Excepción&quot; para crear una.
+            <div className="text-center py-12">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
+                <Calculator className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <p className="text-muted-foreground mb-4">No hay excepciones configuradas para esta lista.</p>
+              <Button onClick={openAddModal} variant="outline">
+                <Plus className="h-4 w-4 mr-2" />
+                Agregar primera excepción
+              </Button>
             </div>
           ) : (
             <DataTable
@@ -359,32 +346,31 @@ export default function PriceListDetailClient({ initialPriceList }: PriceListDet
       </Card>
 
       {/* Add Exception Modal */}
-      <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Agregar Excepción de Precio</DialogTitle>
-            <DialogDescription>
-              Agrega una excepción de precio para un producto específico en esta lista de precios.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="product">Producto</Label>
-              <select
-                id="product"
-                className="w-full p-2 border rounded-md"
-                value={selectedProduct}
-                onChange={(e) => setSelectedProduct(e.target.value)}
-              >
-                <option value="">Selecciona un producto</option>
-                {products.map((product) => (
-                  <option key={product.id} value={product.id}>
-                    {product.name} {product.sku ? `(${product.sku})` : ''}
-                  </option>
-                ))}
-              </select>
-            </div>
+      <ModalBase
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        title="Agregar Excepción de Precio"
+        description="Define un margen específico o un precio fijo para un producto en esta lista."
+        footer={
+          <ModalBaseFooter
+            onCancel={() => setIsAddModalOpen(false)}
+            onSave={handleAddException}
+            saveText="Agregar Excepción"
+          />
+        }
+      >
+        <div className="space-y-4 py-2">
+          <div className="space-y-2">
+            <Label htmlFor="product" required>Producto</Label>
+            <SearchableSelect
+              apiUrl="/api/products"
+              onSelect={(item) => setSelectedProduct(item.id)}
+              placeholder="Buscar producto..."
+              searchPlaceholder="Escribe el nombre o SKU..."
+            />
+          </div>
 
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="overrideMargin">Margen Override (%)</Label>
               <Input
@@ -394,7 +380,7 @@ export default function PriceListDetailClient({ initialPriceList }: PriceListDet
                 step={0.1}
                 value={overrideMargin}
                 onChange={(e) => setOverrideMargin(e.target.value)}
-                placeholder="Dejar vacío para usar margen base"
+                placeholder="Ej: 35"
               />
             </div>
 
@@ -407,22 +393,21 @@ export default function PriceListDetailClient({ initialPriceList }: PriceListDet
                 step={0.01}
                 value={fixedPrice}
                 onChange={(e) => setFixedPrice(e.target.value)}
-                placeholder="Dejar vacío para calcular automáticamente"
+                placeholder="Ej: 1500"
               />
             </div>
+          </div>
 
-            <p className="text-sm text-muted-foreground">
-              Si defines un precio fijo, se usará ese valor. Si no, se calculará usando el margen override (o el margen base si no hay override).
+          <div className="p-3 bg-muted/50 rounded-lg text-xs text-muted-foreground flex gap-2">
+            <AlertTriangle className="h-4 w-4 shrink-0 text-orange-500" />
+            <p>
+              Si defines un <strong>precio fijo</strong>, este prevalecerá.
+              De lo contrario, se usará el <strong>margen override</strong>.
+              Si ambos están vacíos, se aplicará el margen base de la lista ({priceList.baseMarginPercentage}%).
             </p>
           </div>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setIsAddModalOpen(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={handleAddException}>Agregar Excepción</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      </ModalBase>
     </div>
   );
 }
