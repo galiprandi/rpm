@@ -4,6 +4,58 @@ Mantente al día con las últimas actualizaciones y mejoras
 
 ---
 
+### 🗓️ 29 de Mayo de 2026
+
+**🎉 Compras a Proveedores**: Nuevo sistema completo de órdenes de compra con integración de caja, actualización automática de stock, alertas de margen mínimo y rediseño del modal. Accede desde Administración → Compras a Proveedores o desde la ficha de proveedor (botón "Comprobantes").
+
+---
+
+### 🗓️ 28 de Mayo de 2026
+
+**🎨 Clientes, Proveedores y Servicios**: Refinamiento de UX y consistencia visual en los tres módulos.
+
+---
+
+### 🗓️ 27 de Mayo de 2026
+
+**🎨 Listas de Precios**: Refinamiento de UX y estandarización de patrones de diseño.
+
+**🎉 Inventario**: Nuevo sistema de conteo cíclico inteligente con selección automática de productos y ajuste de stock. Accede desde Administración → Conteos de Inventario o desde Productos (botón "Inventario").
+
+---
+
+### 🗓️ 26 de Mayo de 2026
+
+**🎨 Métodos de Pago y Vehículos**: Refinamiento de UX y consistencia visual.
+
+---
+
+### 🗓️ 25 de Mayo de 2026
+
+**🎨 Categorías**: Pulido de UX y mejoras de accesibilidad.
+
+---
+
+### 🗓️ 24 de Mayo de 2026
+
+**🎨 Órdenes de Trabajo**: Pulido de UX y consistencia visual.
+
+---
+
+### 🗓️ 23 de Mayo de 2026
+
+**🎨 Usuarios y Proveedores**: Refinamiento de UX/UI y accesibilidad.
+
+---
+
+### 🗓️ 21 de Mayo de 2026
+
+**🎨 Productos**: Refinamiento de UX/UI y accesibilidad.
+
+**🎨 Precios**: Estandarización de estados de carga en modales de precios.
+
+---
+
 ### 🗓️ 20 de Mayo de 2026
 
 **🔒 Seguridad**: Configuración mejorada de secretos en el sistema de autenticación para mayor protección de datos.
