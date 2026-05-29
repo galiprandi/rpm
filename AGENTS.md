@@ -175,7 +175,7 @@ Cada modificación debe dejar el archivo en mejor estado:
 
 ## UI/UX Specific Rules (Croma/Carol)
 - **Primary CTA**: El botón principal de creación debe estar en el `Header` de la página, no duplicado en el componente de tabla si ya existe en el header.
-- **Header Stats**: Las estadísticas de alto nivel en una vista de listado o detalle deben integrarse en el `Header` usando `CrudStats` para maximizar el espacio vertical y mantener consistencia.
+- **Header Stats**: Las estadísticas de alto nivel en una vista de listado o detalle deben integrarse en el `Header` usando `CrudStats` para maximizar el espacio vertical y mantener consistencia. El `CrudAdmin` debe configurarse con `hideCreateAction={true}` si el botón de creación ya está en el Header.
 - **Semantic Colors**: Usar colores de Tailwind (ej: `text-orange-500`) en lugar de hexadecimales hardcodeados para iconos de estado.
 - **Interaction Feedback**: Los contenedores interactivos (drag & drop, upload) deben tener estados de `hover` visibles (`bg-primary/5`) y transiciones suaves.
 

@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { useUI } from '@/components/ui/UIProvider';
 import { SupplierDialog } from '@/components/suppliers/SupplierDialog';
 import { type SupplierFormData } from '@/components/suppliers/SupplierForm';
-import { Header, CrudAdmin, StatItem } from '@/components/adm';
+import { Header, CrudAdmin, CrudStats, type StatItem } from '@/components/adm';
 import {
   Truck,
   Edit2,
@@ -261,7 +261,7 @@ export default function SuppliersClient({ initialSuppliers }: SuppliersClientPro
     <div className="space-y-6">
       <Header
         title="Proveedores"
-        description="Gestiona los proveedores de productos"
+        description="Gestiona los proveedores de productos y repuestos"
         secondaryActions={[
           {
             label: 'Comprobantes',
@@ -275,7 +275,11 @@ export default function SuppliersClient({ initialSuppliers }: SuppliersClientPro
           icon: Plus,
           ariaLabel: 'Crear nuevo proveedor',
         }}
-      />
+      >
+        <div className="mt-4">
+          <CrudStats stats={stats} />
+        </div>
+      </Header>
 
       <CrudAdmin
         title=""
@@ -285,7 +289,6 @@ export default function SuppliersClient({ initialSuppliers }: SuppliersClientPro
         onCreate={() => setIsCreateDialogOpen(true)}
         hideCreateAction
         columns={columns}
-        stats={stats}
         emptyIcon={<Truck className="h-12 w-12 mx-auto text-muted-foreground mb-4" />}
         emptyMessage="No hay proveedores creados. Haz clic en 'Nuevo Proveedor' para crear el primero."
         createButtonText="Proveedor"
