@@ -237,8 +237,6 @@ interface SelectedItem {
 components/
 ├── ui/
 │   └── ProductServiceSelector.tsx          # Componente principal
-├── products/
-│   └── ProductServiceSelector.stories.tsx  # Stories de Storybook
 └── services/
     └── (no aplica - componente es agnóstico)
 
@@ -349,22 +347,6 @@ test.describe('ProductServiceSelector', () => {
 });
 ```
 
-### Storybook Tests
-
-Ubicación: `components/ui/ProductServiceSelector.stories.tsx`
-
-**Stories requeridas:**
-
-- `Default` - Estado inicial vacío
-- `WithInitialItems` - Precargado con items
-- `WithPriceListSelector` - Mostrando selector de lista
-- `WithCategoryFilter` - Mostrando filtro de categoría
-- `WithQuickCreate` - Mostrando botón de crear servicio
-- `WithManualPrices` - Items con precios editados manualmente
-- `MaxSelectionReached` - Estado cuando se alcanza el límite
-- `LoadingState` - Mientras carga resultados
-- `EmptyResults` - Sin resultados de búsqueda
-
 ## Checklist de Implementación
 
 - [ ] Crear especificación (este documento)
@@ -377,7 +359,6 @@ Ubicación: `components/ui/ProductServiceSelector.stories.tsx`
 - [ ] Implementar servicios rápidos
 - [ ] **Crear tests unitarios (Jest)**
 - [ ] **Crear tests de integración (Playwright)**
-- [ ] Crear stories en Storybook
 - [ ] Migrar QuickSaleModal
 - [ ] Migrar Nueva OT - Paso 2
 - [ ] Testing manual en ambos casos de uso
