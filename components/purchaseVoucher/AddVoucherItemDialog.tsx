@@ -486,9 +486,10 @@ export function AddVoucherItemDialog({
         </div>
       }
     >
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="h-[600px] grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left panel — Form */}
-        <div className="space-y-6">
+        <div className="flex flex-col overflow-hidden">
+          <div className="flex-1 overflow-y-auto space-y-6">
           {/* Product Search via ProductServiceSelector */}
           {!selectedProduct ? (
             <div className="space-y-2">
@@ -639,24 +640,26 @@ export function AddVoucherItemDialog({
               </div>
             </div>
           )}
+          </div>
         </div>
 
         {/* Right panel — Loaded items sidebar */}
-        <div className="border rounded-md bg-muted/20 flex flex-col max-h-[600px]">
-          <div className="p-3 border-b bg-muted/50">
+        <div className="border rounded-md bg-muted/20 flex flex-col overflow-hidden">
+          <div className="p-3 border-b bg-muted/50 flex-shrink-0">
             <h4 className="font-medium text-sm flex items-center gap-2">
               <Package className="h-4 w-4 text-muted-foreground" />
               Ítems cargados ({items.length})
             </h4>
           </div>
 
-          {items.length === 0 ? (
-            <div className="p-6 text-center text-muted-foreground text-sm">
-              <Package className="h-8 w-8 mx-auto mb-2 opacity-40" />
-              <p>{supplierName ? `Agregue productos al comprobante de ${supplierName}` : "Agregue productos al comprobante"}</p>
-            </div>
-          ) : (
-            <div className="flex-1 overflow-y-auto divide-y">
+          <div className="flex-1 overflow-y-auto">
+            {items.length === 0 ? (
+              <div className="p-6 text-center text-muted-foreground text-sm">
+                <Package className="h-8 w-8 mx-auto mb-2 opacity-40" />
+                <p>{supplierName ? `Agregue productos al comprobante de ${supplierName}` : "Agregue productos al comprobante"}</p>
+              </div>
+            ) : (
+              <div className="divide-y">
               {items.map((item) => (
                 <div
                   key={item.id}
@@ -701,7 +704,8 @@ export function AddVoucherItemDialog({
                 </div>
               ))}
             </div>
-          )}
+            )}
+          </div>
 
           {items.length > 0 && (
             <div className="p-3 border-t bg-muted/30 text-xs text-muted-foreground text-right">
