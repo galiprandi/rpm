@@ -262,6 +262,13 @@ export default function SuppliersClient({ initialSuppliers }: SuppliersClientPro
       <Header
         title="Proveedores"
         description="Gestiona los proveedores de productos"
+        secondaryActions={[
+          {
+            label: 'Comprobantes',
+            href: '/adm/purchase-vouchers',
+            variant: 'outline',
+          },
+        ]}
         primaryAction={{
           label: 'Nuevo Proveedor',
           onClick: () => setIsCreateDialogOpen(true),

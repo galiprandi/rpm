@@ -22,6 +22,8 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # ⚠️ Prisma v6 (NO v7)
 
+## 🚫 Prohibido hacer reset de la base de datos!
+
 **Este proyecto usa Prisma v6.19.3** - NO actualizar a v7 (incompatible con Next.js 16 por módulos nativos).
 
 **Configuración:**

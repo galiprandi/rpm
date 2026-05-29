@@ -87,6 +87,7 @@ export async function getCashMovementSummary(date: Date) {
         summary.income += amount;
         break;
       case 'EXPENSE':
+      case 'PURCHASE_VOUCHER':
         summary.expense += amount;
         break;
       case 'CLOSING':

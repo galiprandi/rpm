@@ -115,6 +115,7 @@ export async function POST(request: NextRequest) {
           expectedByMethod[method] += amount;
           break;
         case 'EXPENSE':
+        case 'PURCHASE_VOUCHER':
           expectedByMethod[method] -= amount;
           break;
       }

@@ -4,7 +4,7 @@
  * Spec: /specs/spec-price-lists.md
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { withAdmin } from '@/lib/api-middleware';
+import { withStaff } from '@/lib/api-middleware';
 import {
   getPriceLists,
   createPriceList,
@@ -13,9 +13,9 @@ import {
 } from '@/lib/services';
 import type { RoundingRule } from '@/lib/utils/rounding';
 
-// GET /api/price-lists - List price lists (requiere ADMIN)
+// GET /api/price-lists - List price lists (requiere STAFF)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const GET = withAdmin(async (request: NextRequest, _session) => {
+export const GET = withStaff(async (request: NextRequest, _session) => {
   try {
     const { searchParams } = request.nextUrl;
     const includeInactive = searchParams.get('includeInactive') === 'true';
@@ -34,7 +34,7 @@ export const GET = withAdmin(async (request: NextRequest, _session) => {
 
 // POST /api/price-lists - Create price list (requiere ADMIN)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const POST = withAdmin(async (request: NextRequest, _session) => {
+export const POST = withStaff(async (request: NextRequest, _session) => {
   try {
     const body = await request.json();
 

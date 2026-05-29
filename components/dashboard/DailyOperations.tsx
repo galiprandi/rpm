@@ -16,11 +16,17 @@ import {
 import { Calendar, ArrowUpCircle, ArrowDownCircle, DollarSign, RefreshCw, Eye } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 interface DailyOperationsData {
   movements: Array<{
     id: string;
-    type: 'INCOME' | 'EXPENSE' | 'OPENING' | 'CLOSING' | 'ADJUSTMENT';
+    type: 'INCOME' | 'EXPENSE' | 'OPENING' | 'CLOSING' | 'ADJUSTMENT' | 'PURCHASE_VOUCHER';
     amount: number;
     method: string;
     methodName: string;
@@ -47,7 +53,9 @@ export function DailyOperations() {
   const fetchOperations = useCallback(async (targetDate: string) => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/dashboard/operations?date=${targetDate}`);
+      // Convert Argentina-local date to UTC start-of-day ISO string
+      const utcDate = dayjs.tz(targetDate, 'America/Argentina/Buenos_Aires').startOf('day').utc().toISOString();
+      const response = await fetch(`/api/dashboard/operations?date=${encodeURIComponent(utcDate)}`);
       if (response.ok) {
         const result = await response.json();
         setData(result);
@@ -86,6 +94,7 @@ export function DailyOperations() {
           OPENING: 'Apertura',
           CLOSING: 'Cierre',
           ADJUSTMENT: 'Ajuste',
+          PURCHASE_VOUCHER: 'Compra',
         };
 
         const colors: Record<string, string> = {
@@ -94,6 +103,7 @@ export function DailyOperations() {
           OPENING: 'bg-blue-50 text-blue-700 border-blue-200',
           CLOSING: 'bg-slate-50 text-slate-700 border-slate-200',
           ADJUSTMENT: 'bg-amber-50 text-amber-700 border-amber-200',
+          PURCHASE_VOUCHER: 'bg-orange-50 text-orange-700 border-orange-200',
         };
 
         return (
@@ -137,7 +147,7 @@ export function DailyOperations() {
       header: 'Monto',
       cell: ({ row }) => {
         const amount = row.original.amount;
-        const isExpense = row.original.type === 'EXPENSE';
+        const isExpense = row.original.type === 'EXPENSE' || row.original.type === 'PURCHASE_VOUCHER';
         return (
           <span className={isExpense ? 'text-red-600 font-medium' : 'text-green-600 font-medium'}>
             {isExpense ? '-' : '+'}{formatARS(amount)}

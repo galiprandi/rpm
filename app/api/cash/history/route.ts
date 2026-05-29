@@ -88,6 +88,7 @@ export async function GET(request: NextRequest) {
               totalIncome += amount;
               break;
             case 'EXPENSE':
+            case 'PURCHASE_VOUCHER':
               totalExpense += amount;
               break;
             case 'ADJUSTMENT':

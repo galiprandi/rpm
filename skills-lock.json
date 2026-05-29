@@ -6,6 +6,12 @@
       "sourceType": "github",
       "computedHash": "81af098a4ce6f0e323c1bd02b8e79df3bbaed57cbf1c4060f58ddc95de5545a1"
     },
+    "context-organizer": {
+      "source": "galiprandi/skills",
+      "sourceType": "github",
+      "skillPath": "context-organizer/SKILL.md",
+      "computedHash": "87be3011ca509af4ad4d3725a28db5f88dfe4be6255f59b9ac56de691b772a4e"
+    },
     "create-specification": {
       "source": "github/awesome-copilot",
       "sourceType": "github",

@@ -20,7 +20,7 @@ Eliminar la fricción en la carga de facturas de proveedores. Un flujo lento pro
   - **Monto Total** (obligatorio): Importe total declarado de la factura.
   - **Forma de Pago** (default: Cuenta Corriente): Selector del medio de pago utilizado. "Cuenta Corriente" no genera movimiento de caja.
   - **Notas** (opcional): Observaciones de texto libre.
-- **Regla de Oro (Autoguardado)**: El comprobante se persiste en estado `DRAFT` cuando los datos obligatorios son completados. A partir de ese momento, cualquier avance se guarda automáticamente de forma pasiva.
+- **Guardado manual**: El comprobante se persiste en estado `DRAFT` al presionar "Crear Borrador". No hay autoguardado pasivo; el usuario debe guardar explícitamente.
 
 ### Fase 3 — Carga Atómica de Productos (Modal Enfocado Continuo)
 Una vez inicializada la cabecera, se habilita la carga de ítems **de a uno por vez** mediante un modal dedicado. Secuencia dentro del modal:
@@ -29,7 +29,7 @@ Una vez inicializada la cabecera, se habilita la carga de ítems **de a uno por 
 2. **Datos de Compra**: Se ingresa cantidad y costo unitario del comprobante.
 3. **Proyección de Precios de Venta (Pre-cálculo)**: El sistema presenta inmediatamente los precios pre-calculados para cada lista de precios activa, respetando la jerarquía actual (rentabilidad de la lista o rentabilidad específica del producto, salvo que tenga precio fijo prioritario).
 4. **Márgenes de Rentabilidad e Indicador de Alerta**: Se muestran los márgenes proyectados para cada lista. Si la rentabilidad queda por debajo de un margen mínimo preestablecido, el modal muestra una **alerta de baja rentabilidad** en la lista afectada.
-5. **Confirmación y Reinicio Continuo**: Al confirmar el ítem, el avance se persiste en el borrador, el total acumulado de la pantalla principal se actualiza y el **modal se reinicia automáticamente vacío** para cargar el siguiente producto sin cerrarse. Solo se cierra cuando el usuario presiona explícitamente la (X).
+5. **Confirmación y Reinicio Continuo**: Al confirmar el ítem, el avance se persiste en el borrador y el total acumulado se actualiza. El formulario del modal se reinicia vacío (producto, cantidad, costo y precios se limpian), pero el modal **permanece abierto** para cargar el siguiente producto. Solo se cierra cuando el usuario presiona explícitamente la (X).
 
 ### Fase 4 — Consolidación y Cierre Transaccional
 Al presionar "Finalizar Carga", el sistema ejecuta una **operación atómica (transacción)** que realiza en un solo paso:
@@ -48,8 +48,6 @@ Al presionar "Finalizar Carga", el sistema ejecuta una **operación atómica (tr
 
 ## 4. Comportamiento Esperado y Casos Límite
 - **Límite 1 — Control de descuadre**: El sistema muestra el total acumulado de los ítems cargados vs. el Monto Total declarado en la cabecera. Si no coinciden al intentar finalizar, se **advierte al usuario** pero se **permite el cierre** si el administrador lo decide.
-- **Límite 2 — Productos repetidos**: Si el usuario intenta agregar un producto que ya fue cargado en el mismo borrador, el sistema sugiere editar la línea existente o sumar la cantidad, evitando duplicar el mismo artículo.
-- **Límite 3 — Unicidad de comprobante**: La combinación `(supplierId, letter, number)` es única, evitando la carga duplicada de la misma factura física.
 - **Límite 4 — Solo borradores editables**: No se pueden agregar ítems ni finalizar un comprobante que ya esté en estado `FINALIZED`.
 - **Límite 5 — Fallo en transacción**: Si cualquier paso de la finalización falla (producto inexistente, método de pago inactivo), la transacción completa se revierte, manteniendo la integridad del stock, costos y caja.
 - **Validación 1**: El método de pago, si se proporciona, debe existir y estar activo (`isActive: true`).
@@ -60,4 +58,4 @@ Al presionar "Finalizar Carga", el sistema ejecuta una **operación atómica (tr
 - **Servicios**: `purchaseVoucherService.ts` (`createDraftVoucher`, `addItemToVoucher`, `finalizeVoucher`, `getVoucherById`, `listVouchers`)
 - **Rutas API**: `/api/purchase-vouchers` (GET, POST), `/api/purchase-vouchers/[id]` (GET, PATCH), `/api/purchase-vouchers/[id]/finalize` (POST)
 - **Vistas UI**: `/adm/purchase-vouchers` (listado), `/adm/purchase-vouchers/create` (nuevo borrador), `/adm/purchase-vouchers/[id]` (detalle e ítems)
-- **Componentes**: `PurchaseVouchersClient`, `CreateVoucherClient`, `VoucherDetailClient`, `VoucherCard`, `PurchaseVoucherDialog`
+- **Componentes**: `PurchaseVouchersClient`, `CreateDraftVoucherDialog`, `AddVoucherItemDialog`, `VoucherPreviewDialog`, `QuickProductDialog`, `SupplierDialog`

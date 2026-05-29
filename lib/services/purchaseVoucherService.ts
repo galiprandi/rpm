@@ -2,6 +2,7 @@
 import { prisma } from '@/lib/prisma';
 import { Decimal } from '@prisma/client/runtime/library';
 import { revalidatePath } from 'next/cache';
+import { randomUUID } from 'crypto';
 
 /**
  * Create a new draft purchase voucher.
@@ -15,6 +16,7 @@ export async function createDraftVoucher(data: {
   date: Date;
   notes?: string;
   totalAmount: Decimal;
+  paymentMethodId?: string | null;
   createdBy: string;
 }) {
   return await prisma.purchase_voucher.create({
@@ -25,8 +27,45 @@ export async function createDraftVoucher(data: {
       date: data.date,
       notes: data.notes,
       totalAmount: data.totalAmount,
+      paymentMethodId: data.paymentMethodId || null,
       createdBy: data.createdBy,
       status: 'DRAFT',
+    },
+  });
+}
+
+/**
+ * Update voucher header (supplier, letter, number, date, totalAmount, paymentMethod, notes)
+ */
+export async function updateVoucherHeader(params: {
+  voucherId: string;
+  supplierId: string;
+  letter: string;
+  number: string;
+  date: Date;
+  totalAmount: Decimal;
+  paymentMethodId?: string | null;
+  notes?: string;
+}) {
+  // Ensure voucher is in DRAFT state
+  const voucher = await prisma.purchase_voucher.findUnique({
+    where: { id: params.voucherId },
+    select: { status: true },
+  });
+  if (!voucher || voucher.status !== 'DRAFT') {
+    throw new Error('Only draft vouchers can be modified');
+  }
+
+  return await prisma.purchase_voucher.update({
+    where: { id: params.voucherId },
+    data: {
+      supplierId: params.supplierId,
+      letter: params.letter,
+      number: params.number,
+      date: params.date,
+      totalAmount: params.totalAmount,
+      paymentMethodId: params.paymentMethodId,
+      notes: params.notes,
     },
   });
 }
@@ -103,7 +142,7 @@ export async function finalizeVoucher(params: {
       // Create stock movement record
       await tx.stock_movement.create({
         data: {
-          id: `sm_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          id: `sm_${randomUUID()}`,
           productId: item.productId,
           type: 'PURCHASE_VOUCHER',
           quantity: item.quantity,
@@ -132,7 +171,7 @@ export async function finalizeVoucher(params: {
                 overrideMarginPercentage: null,
               },
               create: {
-                id: `pli_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                id: `pli_${randomUUID()}`,
                 priceListId,
                 productId: item.productId,
                 fixedPrice: data.price,
@@ -154,7 +193,7 @@ export async function finalizeVoucher(params: {
                 overrideMarginPercentage: null,
               },
               create: {
-                id: `pli_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                id: `pli_${randomUUID()}`,
                 priceListId,
                 productId: item.productId,
                 updatedAt: new Date(),
@@ -196,7 +235,7 @@ export async function finalizeVoucher(params: {
       },
     });
     // Invalidate cache for voucher list
-    revalidatePath('/purchase-vouchers');
+    revalidatePath('/adm/purchase-vouchers');
     return updated;
   });
 }
@@ -205,7 +244,15 @@ export async function finalizeVoucher(params: {
 export async function getVoucherById(id: string) {
   return await prisma.purchase_voucher.findUnique({
     where: { id },
-    include: { items: true, supplier: true, paymentMethod: true },
+    include: { 
+      items: { 
+        include: { 
+          product: true 
+        } 
+      }, 
+      supplier: true, 
+      paymentMethod: true 
+    },
   });
 }
 
@@ -261,11 +308,35 @@ export async function removeVoucherItem(params: { itemId: string }) {
   });
 }
 
+/** Delete a draft voucher (only DRAFT status allowed) */
+export async function deleteVoucher(params: { voucherId: string }) {
+  const { voucherId } = params;
+  const voucher = await prisma.purchase_voucher.findUnique({
+    where: { id: voucherId },
+    select: { status: true },
+  });
+  if (!voucher) throw new Error('Voucher not found');
+  if (voucher.status !== 'DRAFT') throw new Error('Only draft vouchers can be deleted');
+
+  // Delete all items first (cascade delete should handle this, but explicit is safer)
+  await prisma.purchase_voucher_item.deleteMany({
+    where: { voucherId },
+  });
+
+  // Delete the voucher
+  await prisma.purchase_voucher.delete({
+    where: { id: voucherId },
+  });
+
+  // Invalidate cache
+  revalidatePath('/adm/purchase-vouchers');
+}
+
 /** List vouchers (optionally filter by status), including items for progress tracking */
 export async function listVouchers(filter?: { status?: string }) {
   return await prisma.purchase_voucher.findMany({
     where: filter?.status ? { status: filter.status } : undefined,
-    include: { supplier: true, items: true },
+    include: { supplier: true, items: true, paymentMethod: true },
     orderBy: { createdAt: 'desc' },
   });
 }

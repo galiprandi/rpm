@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { useUI } from "@/components/ui/UIProvider";
 import { ProductServiceSelector, type SelectedItem } from "@/components/ui/ProductServiceSelector";
 import { calculateFinalPrice, type RoundingRule } from "@/lib/utils/rounding";
-import { Plus, CheckCircle, Package, AlertTriangle, TrendingDown } from "lucide-react";
+import { Plus, CheckCircle, Package, AlertTriangle, TrendingDown, Trash2 } from "lucide-react";
 import { QuickProductDialog } from "./QuickProductDialog";
 
 interface PriceList {
@@ -37,6 +37,7 @@ interface VoucherItem {
   unitCost: number;
   subtotal: number;
   priceListPrices: PriceListPrice[];
+  currentStock?: number;
 }
 
 interface AddVoucherItemDialogProps {
@@ -50,6 +51,7 @@ interface AddVoucherItemDialogProps {
   supplierName?: string;
   onItemAdded?: () => void;
   onFinish?: () => void;
+  onBackToHeader?: () => void;
 }
 
 export function AddVoucherItemDialog({
@@ -63,6 +65,7 @@ export function AddVoucherItemDialog({
   supplierName,
   onItemAdded,
   onFinish,
+  onBackToHeader,
 }: AddVoucherItemDialogProps) {
   const { alert, confirm } = useUI();
   const [loading, setLoading] = useState(false);
@@ -72,6 +75,8 @@ export function AddVoucherItemDialog({
     name: string;
     sku?: string;
     allPrices?: Record<string, { finalPrice: number; isBelowMinimum: boolean; isFixed: boolean; overrideMargin: number | null; roundingRule: string }>;
+    replacementCost?: number;
+    costPrice?: number;
   } | null>(null);
   const [priceLists, setPriceLists] = useState<PriceList[]>([]);
   const [items, setItems] = useState<VoucherItem[]>([]);
@@ -85,13 +90,14 @@ export function AddVoucherItemDialog({
   const [isQuickProductOpen, setIsQuickProductOpen] = useState(false);
   const [quickProductKey, setQuickProductKey] = useState(0);
 
-  const loadExistingItems = async () => {
+  const loadExistingItems = async (plOverride?: PriceList[]) => {
+    const plToUse = plOverride || priceLists;
     try {
       const res = await fetch(`/api/purchase-vouchers/${voucherId}`);
       if (res.ok) {
         const data = await res.json();
-        if (data.voucher?.items) {
-          const loaded = data.voucher.items.map((it: Record<string, unknown>) => ({
+        if (data.items) {
+          const loaded = data.items.map((it: Record<string, unknown>) => ({
             id: it.id as string,
             productId: it.productId as string,
             productName: it.productName as string,
@@ -100,13 +106,14 @@ export function AddVoucherItemDialog({
             subtotal: Number(it.subtotal),
             priceListPrices: it.priceListData ? Object.entries(it.priceListData as Record<string, unknown>).map(([k, v]: [string, unknown]) => ({
               priceListId: k,
-              priceListName: priceLists.find(p => p.id === k)?.name || k,
-              baseMargin: priceLists.find(p => p.id === k)?.baseMarginPercentage || 0,
+              priceListName: plToUse.find(p => p.id === k)?.name || k,
+              baseMargin: plToUse.find(p => p.id === k)?.baseMarginPercentage || 0,
               calculatedPrice: (v as { price?: number }).price || 0,
               fixedPrice: (v as { isFixed?: boolean; price?: number }).isFixed ? (v as { price?: number }).price : null,
               isFixed: (v as { isFixed?: boolean }).isFixed || false,
               isBelowMinimum: false,
             })) : [],
+            currentStock: (it.product as { stock?: number })?.stock,
           }));
           setItems(loaded);
         }
@@ -116,7 +123,15 @@ export function AddVoucherItemDialog({
     }
   };
 
-  // Load price lists and existing items when modal opens
+  // Calculate projected stock for a product (current stock + quantities from all items in this voucher)
+  const getProjectedStock = (productId: string, currentStock?: number): number => {
+    const totalQuantityInVoucher = items
+      .filter(item => item.productId === productId)
+      .reduce((sum, item) => sum + item.quantity, 0);
+    return (currentStock || 0) + totalQuantityInVoucher;
+  };
+
+  // Load price lists, settings, and existing items when modal opens
   useEffect(() => {
     if (!isOpen) return;
 
@@ -125,9 +140,11 @@ export function AddVoucherItemDialog({
         const [plRes] = await Promise.allSettled([
           fetch("/api/price-lists"),
         ]);
+        let fetchedPriceLists: PriceList[] = [];
         if (plRes.status === "fulfilled" && plRes.value.ok) {
           const plData = await plRes.value.json();
-          setPriceLists(plData.priceLists || []);
+          fetchedPriceLists = plData.priceLists || [];
+          setPriceLists(fetchedPriceLists);
         }
 
         // Fetch minimum margin from settings
@@ -136,12 +153,12 @@ export function AddVoucherItemDialog({
           const settingsData = await settingsRes.json();
           setMinimumMargin(settingsData.minimumMarginPercentage || 15);
         }
+
+        // Load existing items after price lists are set (pass the fetched price lists directly)
+        await loadExistingItems(fetchedPriceLists);
       } catch (err) {
         console.error("Error fetching price lists:", err);
       }
-
-      // Load existing items after price lists so mapping works
-      await loadExistingItems();
     };
 
     loadAll();
@@ -261,7 +278,7 @@ export function AddVoucherItemDialog({
 
       if (!res.ok) {
         const errData = await res.json();
-        throw new Error(errData.error || isUpdate ? "No se pudo actualizar el ítem" : "No se pudo agregar el ítem");
+        throw new Error(errData.error || (isUpdate ? "No se pudo actualizar el ítem" : "No se pudo agregar el ítem"));
       }
 
       const subtotal = quantity * unitCost;
@@ -338,6 +355,7 @@ export function AddVoucherItemDialog({
         description: `El total de ítems cargados ($${totalItemsValue.toFixed(2)}) difiere del monto declarado ($${voucherTotal.toFixed(2)}). ¿Desea finalizar de todos modos?`,
         confirmText: "Finalizar igual",
         cancelText: "Revisar",
+        variant: "warning",
       });
       if (!proceed) return;
     }
@@ -354,12 +372,6 @@ export function AddVoucherItemDialog({
         const errData = await res.json();
         throw new Error(errData.error || "Error al finalizar");
       }
-
-      await alert({
-        title: "Comprobante Finalizado",
-        description: "El comprobante se ha finalizado correctamente.",
-        variant: "success",
-      });
 
       onFinish?.();
       onClose();
@@ -404,6 +416,11 @@ export function AddVoucherItemDialog({
         setUnitCost(0);
         setPriceListPrices([]);
       }
+      
+      // Always clear editingItemId if the removed item was being edited
+      if (editingItemId === itemId) {
+        setEditingItemId(null);
+      }
 
       onItemAdded?.();
     } catch (err: unknown) {
@@ -418,11 +435,42 @@ export function AddVoucherItemDialog({
     }
   };
 
+  const handleDeleteVoucher = async () => {
+    if (!window.confirm('¿Estás seguro de eliminar este comprobante? Esta acción no se puede deshacer.')) {
+      return;
+    }
+    
+    try {
+      const res = await fetch(`/api/purchase-vouchers/${voucherId}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        onClose();
+        if (onItemAdded) onItemAdded();
+      } else {
+        const error = await res.json();
+        await alert({
+          title: 'Error',
+          description: error.error || 'Error al eliminar el comprobante',
+          variant: 'error',
+        });
+      }
+    } catch {
+      await alert({
+        title: 'Error',
+        description: 'Error al eliminar el comprobante',
+        variant: 'error',
+      });
+    }
+  };
+
   const totalItems = items.reduce((acc, item) => acc + item.subtotal, 0);
   const variance = voucherTotal - totalItems;
   const hasLowMargin = priceListPrices.some((p) => p.isBelowMinimum);
 
-  const modalSubtitle = supplierName && letter && number ? `${supplierName} | ${letter}-${number}` : undefined;
+  const modalSubtitle = supplierName && letter && number 
+    ? `${supplierName} | ${letter}-${number} | Productos: ${items.length} | Total: $${totalItems.toFixed(2)}${voucherTotal > 0 ? (Math.abs(variance) > 0.01 ? ` (Dif: $${variance.toFixed(2)})` : ' (Cuadrado)') : ''}`
+    : undefined;
 
   return (
     <ModalBase
@@ -432,26 +480,22 @@ export function AddVoucherItemDialog({
       description={modalSubtitle}
       maxWidth="5xl"
       footer={
-        <div className="flex justify-between items-center w-full">
-          <div className="text-sm text-muted-foreground">
-            Items: <span className="font-semibold">{items.length}</span> | Total: {" "}
-            <span className="font-semibold">${totalItems.toFixed(2)}</span>
-            {voucherTotal > 0 && (
-              <span className={`ml-2 ${Math.abs(variance) > 0.01 ? "text-orange-500 font-medium" : "text-green-600"}`}>
-                {Math.abs(variance) > 0.01
-                  ? `(Dif: $${variance.toFixed(2)})`
-                  : "(Cuadrado)"}
-              </span>
-            )}
-          </div>
+        <div className="flex justify-between gap-2 w-full">
+          <Button
+            variant="outline"
+            onClick={onBackToHeader}
+            disabled={loading}
+          >
+            Volver a datos
+          </Button>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={onClose} disabled={loading}>
-              Cancelar
+            <Button variant="destructive" onClick={handleDeleteVoucher} disabled={loading}>
+              <Trash2 className="h-4 w-4 mr-2" />
+              Eliminar comprobante
             </Button>
             <Button
               onClick={handleFinish}
               disabled={loading || items.length === 0}
-              className="bg-emerald-600 hover:bg-emerald-700"
             >
               <CheckCircle className="h-4 w-4 mr-2" />
               Finalizar
@@ -484,7 +528,15 @@ export function AddVoucherItemDialog({
                       name: lastItem.name,
                       sku: lastItem.sku,
                       allPrices: lastItem.allPrices,
+                      replacementCost: lastItem.replacementCost,
+                      costPrice: lastItem.costPrice,
                     });
+                    // Set default quantity to 1 and unitCost to replacementCost (or costPrice)
+                    setQuantity(1);
+                    const baseCost = lastItem.replacementCost && lastItem.replacementCost > 0
+                      ? lastItem.replacementCost
+                      : (lastItem.costPrice || 0);
+                    setUnitCost(baseCost);
                   }
                 }}
               />
@@ -634,14 +686,25 @@ export function AddVoucherItemDialog({
           )}
           </div>
           {selectedProduct && (
-            <div className="flex justify-end pt-4 border-t">
+            <div className="flex justify-end gap-2 pt-4 border-t">
+              {editingItemId && (
+                <Button
+                  variant="destructive"
+                  onClick={() => handleRemoveItem(editingItemId)}
+                  disabled={loading}
+                  className="w-full sm:w-auto"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Eliminar
+                </Button>
+              )}
               <Button
                 onClick={handleAddItem}
                 disabled={loading || quantity <= 0 || unitCost <= 0}
                 className="w-full sm:w-auto"
               >
                 <Plus className="h-4 w-4 mr-2" />
-                {editingItemId ? "Actualizar producto" : "Agregar producto"}
+                {editingItemId ? "Actualizar" : "Agregar"}
               </Button>
             </div>
           )}
@@ -652,7 +715,7 @@ export function AddVoucherItemDialog({
           <div className="p-3 border-b bg-muted/50 flex-shrink-0">
             <h4 className="font-medium text-sm flex items-center gap-2">
               <Package className="h-4 w-4 text-muted-foreground" />
-              Ítems cargados ({items.length})
+              Productos cargados
             </h4>
           </div>
 
@@ -663,60 +726,55 @@ export function AddVoucherItemDialog({
                 <p>{supplierName ? `Agregue productos al comprobante de ${supplierName}` : "Agregue productos al comprobante"}</p>
               </div>
             ) : (
-              <div className="divide-y">
-              {items.map((item) => (
-                <div
-                  key={item.id}
-                  className={`group flex items-center justify-between gap-2 p-3 hover:bg-muted/40 transition-colors ${
-                    selectedProduct?.id === item.productId ? "bg-primary/5" : ""
-                  }`}
-                >
-                  <button
-                    className="flex-1 text-left flex items-center gap-2 min-w-0"
-                    onClick={() => {
-                      setSelectedProduct({
-                        id: item.productId,
-                        name: item.productName,
-                        sku: undefined,
-                        allPrices: undefined,
-                      });
-                      setQuantity(item.quantity);
-                      setUnitCost(item.unitCost);
-                      setPriceListPrices(item.priceListPrices.map((p) => ({ ...p })));
-                      setEditingItemId(item.id);
-                    }}
-                  >
-                    <span
-                      className="text-sm truncate"
-                      title={item.productName}
-                      style={{ maxWidth: "35ch" }}
+              <table className="w-full text-sm">
+                <thead className="bg-muted/50">
+                  <tr>
+                    <th className="text-left p-2 font-medium">Producto</th>
+                    <th className="text-right p-2 font-medium w-20">Cantidad</th>
+                    <th className="text-right p-2 font-medium w-20 text-muted-foreground">Stock</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {items.map((item) => (
+                    <tr
+                      key={item.id}
+                      className={`hover:bg-muted/40 transition-colors cursor-pointer ${
+                        selectedProduct?.id === item.productId ? "bg-primary/5" : ""
+                      }`}
+                      onClick={() => {
+                        setSelectedProduct({
+                          id: item.productId,
+                          name: item.productName,
+                          sku: undefined,
+                          allPrices: undefined,
+                        });
+                        setQuantity(item.quantity);
+                        setUnitCost(item.unitCost);
+                        setPriceListPrices(item.priceListPrices.map((p) => ({ ...p })));
+                        setEditingItemId(item.id);
+                      }}
                     >
-                      {item.productName}
-                    </span>
-                    <span className="text-xs font-medium text-muted-foreground shrink-0">
-                      x{item.quantity}
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveItem(item.id)}
-                    disabled={loading}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-700 px-1"
-                    title="Eliminar ítem"
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
-            </div>
+                      <td className="p-2">
+                        <span
+                          className="truncate block"
+                          title={item.productName}
+                          style={{ maxWidth: "35ch" }}
+                        >
+                          {item.productName}
+                        </span>
+                      </td>
+                      <td className="p-2 text-right font-medium">
+                        {item.quantity}
+                      </td>
+                      <td className="p-2 text-right text-muted-foreground">
+                        {getProjectedStock(item.productId, item.currentStock)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             )}
           </div>
-
-          {items.length > 0 && (
-            <div className="p-3 border-t bg-muted/30 text-xs text-muted-foreground text-right">
-              Total: ${totalItems.toFixed(2)}
-            </div>
-          )}
         </div>
       </div>
       <QuickProductDialog

@@ -12,6 +12,9 @@ ALTER TABLE "credit_note" DROP COLUMN IF EXISTS "accountCreditAmount";
 -- Change status default to ISSUED (no more DRAFT state)
 ALTER TABLE "credit_note" ALTER COLUMN "status" SET DEFAULT 'ISSUED';
 
+-- Add paymentMethodId column (nullable) to credit_note
+ALTER TABLE "credit_note" ADD COLUMN "paymentMethodId" TEXT;
+
 -- Add foreign key constraint for paymentMethodId -> payment_method
 ALTER TABLE "credit_note" ADD CONSTRAINT "credit_note_paymentMethodId_fkey"
   FOREIGN KEY ("paymentMethodId") REFERENCES "payment_method"("id")

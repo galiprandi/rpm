@@ -1,11 +1,16 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { withStaffDynamic } from '@/lib/api-middleware';
 import { updateVoucherItem, removeVoucherItem } from '@/lib/services/purchaseVoucherService';
 
 /** PATCH /api/purchase-vouchers/:id/items/:itemId
  *  Update an item in a draft voucher.
  *  Body: { quantity?, unitCost?, priceListData? }
  */
-export async function PATCH(request: Request, { params }: { params: Promise<{ id: string; itemId: string }> }) {
+interface Params {
+  params: Promise<{ id: string; itemId: string }>;
+}
+
+export const PATCH = withStaffDynamic(async (request: NextRequest, { params }: Params, _session) => {
   const { itemId } = await params;
   const body = await request.json();
   const { quantity, unitCost, priceListData } = body;
@@ -23,12 +28,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const message = e instanceof Error ? e.message : 'Error al actualizar ítem';
     return NextResponse.json({ error: message }, { status: 400 });
   }
-}
+});
 
 /** DELETE /api/purchase-vouchers/:id/items/:itemId
  *  Remove an item from a draft voucher.
  */
-export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string; itemId: string }> }) {
+export const DELETE = withStaffDynamic(async (_request: NextRequest, { params }: Params, _session) => {
   const { itemId } = await params;
   try {
     await removeVoucherItem({ itemId });
@@ -37,4 +42,4 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
     const message = e instanceof Error ? e.message : 'Error al eliminar ítem';
     return NextResponse.json({ error: message }, { status: 400 });
   }
-}
+});

@@ -19,7 +19,6 @@ import {
   CircleDollarSign,
   Wallet,
   TrendingDown,
-  Receipt,
   Newspaper,
 } from 'lucide-react';
 import { useNovedadesRead } from '@/hooks/useNovedadesRead';
@@ -56,7 +55,6 @@ const navigation = [
   { name: 'Categorías', href: '/adm/categories', icon: Folder },
   { name: 'Precios', href: '/adm/price-lists', icon: CircleDollarSign },
   { name: 'Arqueo de Caja', href: '/adm/cash', icon: Wallet },
-  { name: 'Comprobantes', href: '/adm/comprobantes', icon: Receipt },
   { name: 'Deudores', href: '/adm/reports/debtors', icon: TrendingDown },
   { name: 'Proveedores', href: '/adm/suppliers', icon: Truck },
   { name: 'Usuarios', href: '/adm/users', icon: Users },

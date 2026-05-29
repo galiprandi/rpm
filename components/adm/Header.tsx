@@ -3,6 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, LucideIcon } from 'lucide-react';
 import { ReactNode } from 'react';
+import Link from 'next/link';
 
 export interface HeaderAction {
   label: string;
@@ -178,7 +179,11 @@ export function Header({
             );
 
             if (primaryAction.href && !primaryAction.disabled) {
-              return <a href={primaryAction.href}>{button}</a>;
+              return (
+                <Link href={primaryAction.href} key="primary-action-link">
+                  {button}
+                </Link>
+              );
             }
             return button;
           })()

@@ -54,3 +54,15 @@ export function getArgentinaStartOfYesterday(): Date {
   yesterday.setUTCDate(yesterday.getUTCDate() - 1);
   return yesterday;
 }
+
+/**
+ * Parses a YYYY-MM-DD string as an Argentina-local date.
+ * Independent of server timezone. Returns start of that day in Argentina.
+ */
+export function parseArgentinaDateString(dateString: string): Date {
+  const [year, month, day] = dateString.split('-').map(Number);
+  // Build a noon UTC Date so it unambiguously falls on the intended calendar day
+  // in Argentina (noon UTC is morning in Argentina, always same day).
+  const probeDate = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+  return getArgentinaStartOfDay(probeDate);
+}

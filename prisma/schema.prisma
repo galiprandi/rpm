@@ -136,6 +136,7 @@ model product {
   direct_sale_items      direct_sale_item[]
   price_list_item        price_list_item[]
   inventory_count_items  inventory_count_item[]
+  purchase_voucher_item  purchase_voucher_item[]
   category               category                 @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   supplier               supplier?                @relation(fields: [supplierId], references: [id])
   stock_movement         stock_movement[]
@@ -211,17 +212,19 @@ model stock_movement {
 }
 
 model supplier {
-  id          String    @id
-  name        String    @unique
-  contactName String?
-  phone       String?
-  email       String?
-  address     String?
-  notes       String?
-  isActive    Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime
-  product     product[]
+  id                String             @id
+  name              String             @unique
+  cuit              String?            // CUIT/CUIL del proveedor (opcional)
+  contactName       String?
+  phone             String?
+  email             String?
+  address           String?
+  notes             String?
+  isActive          Boolean            @default(true)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime
+  product           product[]
+  purchase_voucher  purchase_voucher[]
 
   @@index([isActive])
   @@index([name])
@@ -431,6 +434,7 @@ model payment_method {
   directSalePayments direct_sale_payment[]
   payments           payment[]
   creditNotes        credit_note[]
+  purchase_voucher   purchase_voucher[]
 
   @@index([isActive])
   @@index([sortOrder])
@@ -618,4 +622,51 @@ model inventory_count_item {
   @@index([operativeId])
   @@index([productId])
   @@map("inventory_count_item")
+}
+
+// ============================================
+// Comprobantes de Compra
+// ============================================
+
+model purchase_voucher {
+  id              String                  @id @default(cuid())
+  supplierId      String
+  letter          String                  // Letra del comprobante (texto libre: A, B, C, etc.)
+  number          String                  // Número de la factura física
+  date            DateTime                // Fecha del comprobante físico
+  totalAmount     Decimal                 @db.Decimal(10, 2) // Monto total declarado de la factura
+  paymentMethodId String?                 // null = Cuenta Corriente (no genera mov. de caja)
+  notes           String?
+  status          String                  @default("DRAFT") // 'DRAFT' | 'FINALIZED'
+  createdBy       String
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+  finalizedAt     DateTime?
+  supplier        supplier                @relation(fields: [supplierId], references: [id])
+  paymentMethod   payment_method?         @relation(fields: [paymentMethodId], references: [id])
+  items           purchase_voucher_item[]
+
+  @@unique([supplierId, letter, number])
+  @@index([status])
+  @@index([supplierId])
+  @@index([createdAt])
+}
+
+model purchase_voucher_item {
+  id              String           @id @default(cuid())
+  voucherId       String
+  productId       String
+  productName     String           // Snapshot del nombre al momento de carga
+  quantity        Int
+  unitCost        Decimal          @db.Decimal(10, 2)
+  subtotal        Decimal          @db.Decimal(10, 2)
+  priceListData   Json?            // Precios calculados/fijos por lista: { [priceListId]: { price: number, isFixed: boolean } }
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  voucher         purchase_voucher @relation(fields: [voucherId], references: [id], onDelete: Cascade)
+  product         product          @relation(fields: [productId], references: [id])
+
+  @@unique([voucherId, productId]) // Un producto no puede aparecer dos veces en el mismo comprobante
+  @@index([voucherId])
+  @@index([productId])
 }

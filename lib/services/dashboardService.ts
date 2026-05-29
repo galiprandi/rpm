@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { getArgentinaStartOfDay, getArgentinaStartOfYesterday } from '@/lib/utils/date';
+import { getArgentinaStartOfDay, getArgentinaEndOfDay, getArgentinaStartOfYesterday } from '@/lib/utils/date';
 
 // Helper para enmascarar teléfono
 function maskPhone(phone: string | null): string {
@@ -106,7 +106,7 @@ export interface DailyOperationsData {
   };
   movements: Array<{
     id: string;
-    type: 'INCOME' | 'EXPENSE' | 'OPENING' | 'CLOSING' | 'ADJUSTMENT';
+    type: 'INCOME' | 'EXPENSE' | 'OPENING' | 'CLOSING' | 'ADJUSTMENT' | 'PURCHASE_VOUCHER';
     amount: number;
     method: string;
     methodName: string;
@@ -395,8 +395,7 @@ export async function getDashboardData(): Promise<DashboardData> {
  */
 export async function getDailyOperations(date: Date): Promise<DailyOperationsData> {
   const startOfDay = getArgentinaStartOfDay(date);
-  const endOfDay = new Date(startOfDay);
-  endOfDay.setHours(23, 59, 59, 999);
+  const endOfDay = getArgentinaEndOfDay(date);
 
   const [movements, paymentMethods] = await Promise.all([
     prisma.cash_movement.findMany({
@@ -416,6 +415,7 @@ export async function getDailyOperations(date: Date): Promise<DailyOperationsDat
   ]);
 
   const methodMap = Object.fromEntries(paymentMethods.map(m => [m.code, m.name]));
+  methodMap['PURCHASE'] = 'Compra';
 
   // Enriquecer movimientos con información de cliente y referencias
   const enrichedMovements = await Promise.all(
@@ -496,12 +496,12 @@ export async function getDailyOperations(date: Date): Promise<DailyOperationsDat
       if (m.type === 'INCOME') {
         acc.totalIncome += amount;
         acc.netAmount += amount;
-      } else if (m.type === 'EXPENSE') {
+      } else if (m.type === 'EXPENSE' || m.type === 'PURCHASE_VOUCHER') {
         acc.totalExpense += amount;
         acc.netAmount -= amount;
       }
 
-      if (m.type === 'INCOME' || m.type === 'EXPENSE') {
+      if (m.type === 'INCOME' || m.type === 'EXPENSE' || m.type === 'PURCHASE_VOUCHER') {
         const existingMethod = acc.byMethod.find((bm) => bm.method === m.method);
         const signedAmount = m.type === 'INCOME' ? amount : -amount;
         if (existingMethod) {

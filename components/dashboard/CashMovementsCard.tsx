@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 
 interface CashMovement {
   id: string;
-  type: 'INCOME' | 'EXPENSE' | 'OPENING' | 'CLOSING';
+  type: 'INCOME' | 'EXPENSE' | 'OPENING' | 'CLOSING' | 'PURCHASE_VOUCHER';
   amount: number;
   method: string;
   methodName: string;
@@ -29,6 +29,7 @@ export function CashMovementsCard({ cashMovements }: CashMovementsCardProps) {
       case 'INCOME':
         return <ArrowUpCircle className="h-4 w-4 text-green-600" />;
       case 'EXPENSE':
+      case 'PURCHASE_VOUCHER':
         return <ArrowDownCircle className="h-4 w-4 text-red-600" />;
       case 'OPENING':
       case 'CLOSING':
@@ -44,6 +45,8 @@ export function CashMovementsCard({ cashMovements }: CashMovementsCardProps) {
         return 'Ingreso';
       case 'EXPENSE':
         return 'Egreso';
+      case 'PURCHASE_VOUCHER':
+        return 'Compra';
       case 'OPENING':
         return 'Apertura';
       case 'CLOSING':
@@ -58,6 +61,7 @@ export function CashMovementsCard({ cashMovements }: CashMovementsCardProps) {
       case 'INCOME':
         return 'text-green-600';
       case 'EXPENSE':
+      case 'PURCHASE_VOUCHER':
         return 'text-red-600';
       default:
         return 'text-foreground';
@@ -132,7 +136,7 @@ export function CashMovementsCard({ cashMovements }: CashMovementsCardProps) {
                 </div>
               </div>
               <div className={`text-sm font-semibold whitespace-nowrap ml-2 ${getAmountClass(movement.type)}`}>
-                {movement.type === 'EXPENSE' ? '-' : '+'}
+                {movement.type === 'EXPENSE' || movement.type === 'PURCHASE_VOUCHER' ? '-' : '+'}
                 {formatARS(movement.amount)}
               </div>
             </div>

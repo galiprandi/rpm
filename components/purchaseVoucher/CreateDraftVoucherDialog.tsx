@@ -19,18 +19,31 @@ interface SupplierOption {
 interface PaymentMethodOption {
   id: string;
   name: string;
+  isActive: boolean;
 }
 
 interface CreateDraftVoucherDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onDraftCreated?: (voucher: { id: string; totalAmount?: unknown; letter: string; number: string; supplier?: { name: string } }) => void;
+  editingVoucherId?: string;
+  initialData?: {
+    supplierId: string;
+    letter: string;
+    number: string;
+    date: string;
+    totalAmount: string;
+    paymentMethodId: string;
+    notes: string;
+  } | null;
 }
 
 export function CreateDraftVoucherDialog({
   isOpen,
   onClose,
   onDraftCreated,
+  editingVoucherId,
+  initialData,
 }: CreateDraftVoucherDialogProps) {
   const { alert } = useUI();
   const [loading, setLoading] = useState(false);
@@ -49,13 +62,13 @@ export function CreateDraftVoucherDialog({
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethodOption[]>([]);
 
   // Form Fields
-  const [supplierId, setSupplierId] = useState("");
-  const [letter, setLetter] = useState("A");
-  const [number, setNumber] = useState("");
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
-  const [totalAmount, setTotalAmount] = useState("");
-  const [paymentMethodId, setPaymentMethodId] = useState("");
-  const [notes, setNotes] = useState("");
+  const [supplierId, setSupplierId] = useState(initialData?.supplierId || "");
+  const [letter, setLetter] = useState(initialData?.letter || "A");
+  const [number, setNumber] = useState(initialData?.number || "");
+  const [date, setDate] = useState(initialData?.date || new Date().toISOString().split("T")[0]);
+  const [totalAmount, setTotalAmount] = useState(initialData?.totalAmount || "");
+  const [paymentMethodId, setPaymentMethodId] = useState(initialData?.paymentMethodId || "");
+  const [notes, setNotes] = useState(initialData?.notes || "");
 
   // Load suppliers and payment methods
   useEffect(() => {
@@ -79,6 +92,19 @@ export function CreateDraftVoucherDialog({
     };
     if (isOpen) loadData();
   }, [isOpen]);
+
+  // Update form when initialData changes (for editing mode)
+  useEffect(() => {
+    if (initialData) {
+      setSupplierId(initialData.supplierId);
+      setLetter(initialData.letter);
+      setNumber(initialData.number);
+      setDate(initialData.date);
+      setTotalAmount(initialData.totalAmount);
+      setPaymentMethodId(initialData.paymentMethodId);
+      setNotes(initialData.notes);
+    }
+  }, [initialData]);
 
   const handleCreateSupplier = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -134,35 +160,50 @@ export function CreateDraftVoucherDialog({
 
     setLoading(true);
     try {
-      const res = await fetch("/api/purchase-vouchers", {
-        method: "POST",
+      // If editing, verify voucher still exists
+      if (editingVoucherId) {
+        const checkRes = await fetch(`/api/purchase-vouchers/${editingVoucherId}`);
+        if (!checkRes.ok) {
+          throw new Error("El comprobante ya no existe. Fue eliminado o modificado por otro usuario.");
+        }
+      }
+
+      const url = editingVoucherId ? `/api/purchase-vouchers/${editingVoucherId}` : "/api/purchase-vouchers";
+      const method = editingVoucherId ? "PUT" : "POST";
+      const body = {
+        supplierId,
+        letter,
+        number,
+        date: new Date(date).toISOString(),
+        totalAmount: parseFloat(totalAmount),
+        paymentMethodId: paymentMethodId || null,
+        notes,
+      };
+
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          supplierId,
-          letter,
-          number,
-          date: new Date(date).toISOString(),
-          totalAmount: parseFloat(totalAmount),
-          paymentMethodId: paymentMethodId || null,
-          notes,
-          createdBy: "admin",
-        }),
+        body: JSON.stringify(body),
       });
 
       if (!res.ok) {
         const errorData = await res.json();
-        throw new Error(errorData.error || "No se pudo crear el comprobante");
+        throw new Error(errorData.error || (editingVoucherId ? "No se pudo actualizar el comprobante" : "No se pudo crear el comprobante"));
       }
 
       const voucher = await res.json();
       onDraftCreated?.(voucher);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Error al crear el comprobante.";
+      const message = err instanceof Error ? err.message : (editingVoucherId ? "Error al actualizar el comprobante." : "Error al crear el comprobante.");
       await alert({
         title: "Error",
         description: message,
         variant: "error",
       });
+      // If voucher was deleted, close dialog and reset editing state
+      if (message.includes("ya no existe") || message.includes("not found")) {
+        onClose();
+      }
     } finally {
       setLoading(false);
     }
@@ -226,7 +267,7 @@ export function CreateDraftVoucherDialog({
             >
               <option value="">Cuenta Corriente</option>
               {paymentMethods
-                .filter((p) => p.id)
+                .filter((p) => p.id && p.isActive)
                 .map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name}

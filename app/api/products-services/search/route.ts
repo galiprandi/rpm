@@ -16,6 +16,9 @@ export const dynamic = 'force-dynamic';
 interface PriceInfo {
   finalPrice: number;
   isBelowMinimum: boolean;
+  isFixed: boolean;
+  overrideMargin: number | null;
+  roundingRule: RoundingRule;
 }
 
 interface SearchResult {
@@ -29,6 +32,8 @@ interface SearchResult {
   stock?: number;
   categoryId?: string;
   categoryName?: string;
+  replacementCost?: number;
+  costPrice?: number;
   // Servicios
   description?: string;
   // Precios calculados para todas las listas
@@ -284,24 +289,30 @@ export async function GET(request: NextRequest) {
       exception?: { fixedPrice: number | null; overrideMarginPercentage: number | null }
     ): PriceInfo => {
       let finalPrice: number;
-      
+      let isFixed = false;
+      let overrideMargin: number | null = null;
+
       if (exception?.fixedPrice !== null && exception?.fixedPrice !== undefined) {
         finalPrice = exception.fixedPrice;
+        isFixed = true;
       } else {
+        if (exception?.overrideMarginPercentage !== null && exception?.overrideMarginPercentage !== undefined) {
+          overrideMargin = exception.overrideMarginPercentage;
+        }
         finalPrice = calculateFinalPrice(
           baseCost,
           list.baseMarginPercentage,
           list.roundingRule,
-          exception?.overrideMarginPercentage !== null && exception?.overrideMarginPercentage !== undefined
-            ? { overrideMarginPercentage: exception.overrideMarginPercentage }
+          overrideMargin !== null
+            ? { overrideMarginPercentage: overrideMargin }
             : undefined
         );
       }
-      
+
       const actualMargin = calculateMarginPercentage(baseCost, finalPrice);
       const isBelowMinimum = actualMargin < minimumMargin;
-      
-      return { finalPrice, isBelowMinimum };
+
+      return { finalPrice, isBelowMinimum, isFixed, overrideMargin, roundingRule: list.roundingRule };
     };
 
     // Transformar productos
@@ -353,6 +364,8 @@ export async function GET(request: NextRequest) {
         stock: product.stock,
         categoryId: product.categoryId || undefined,
         categoryName: product.category?.name || undefined,
+        replacementCost: Number(product.replacementCost) || undefined,
+        costPrice: Number(product.costPrice) || undefined,
       };
     });
 

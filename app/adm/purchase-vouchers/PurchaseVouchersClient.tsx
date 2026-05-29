@@ -8,10 +8,11 @@ import { type PurchaseVoucher } from '@/types/purchaseVoucher';
 
 interface VoucherWithPaymentMethod extends PurchaseVoucher {
   paymentMethodId: string | null;
+  paymentMethod: { name: string } | null;
 }
 import { Header, CrudStats } from '@/components/adm';
 import { Button } from '@/components/ui/button';
-import { Receipt, Plus, History, FileText } from 'lucide-react';
+import { Receipt, Plus, History, FileText, Trash2 } from 'lucide-react';
 
 interface PurchaseVouchersClientProps {
   initialVouchers: VoucherWithPaymentMethod[];
@@ -28,6 +29,15 @@ export default function PurchaseVouchersClient({ initialVouchers }: PurchaseVouc
   const [currentVoucherNumber, setCurrentVoucherNumber] = useState<string>('');
   const [currentVoucherSupplierName, setCurrentVoucherSupplierName] = useState<string>('');
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [editingVoucherData, setEditingVoucherData] = useState<{
+    supplierId: string;
+    letter: string;
+    number: string;
+    date: string;
+    totalAmount: string;
+    paymentMethodId: string;
+    notes: string;
+  } | null>(null);
 
   const draftsCount = vouchers.filter((v) => v.status === 'DRAFT').length;
   const finalizedCount = vouchers.filter((v) => v.status === 'FINALIZED').length;
@@ -56,6 +66,7 @@ export default function PurchaseVouchersClient({ initialVouchers }: PurchaseVouc
             date: v.date,
             totalAmount: v.totalAmount,
             paymentMethodId: v.paymentMethodId,
+            paymentMethod: v.paymentMethod,
             notes: v.notes,
             status: v.status as 'DRAFT' | 'FINALIZED',
             createdBy: v.createdBy,
@@ -70,6 +81,49 @@ export default function PurchaseVouchersClient({ initialVouchers }: PurchaseVouc
       }
     } catch (error) {
       console.error('Error reloading vouchers:', error);
+    }
+  };
+
+  const handleBackToHeader = async () => {
+    // Load current voucher data for editing
+    try {
+      const response = await fetch(`/api/purchase-vouchers/${currentVoucherId}`);
+      if (response.ok) {
+        const voucher = await response.json();
+        setEditingVoucherData({
+          supplierId: voucher.supplierId,
+          letter: voucher.letter,
+          number: voucher.number,
+          date: new Date(voucher.date).toISOString().split('T')[0],
+          totalAmount: voucher.totalAmount.toString(),
+          paymentMethodId: voucher.paymentMethodId || '',
+          notes: voucher.notes || '',
+        });
+        setIsAddItemDialogOpen(false);
+        setIsCreateDialogOpen(true);
+      }
+    } catch (error) {
+      console.error('Error loading voucher data:', error);
+    }
+  };
+
+  const handleDeleteVoucher = async (voucherId: string) => {
+    if (!confirm('¿Estás seguro de eliminar este borrador? Esta acción no se puede deshacer.')) {
+      return;
+    }
+    try {
+      const response = await fetch(`/api/purchase-vouchers/${voucherId}`, {
+        method: 'DELETE',
+      });
+      if (response.ok) {
+        setVouchers((prev) => prev.filter((v) => v.id !== voucherId));
+      } else {
+        const error = await response.json();
+        alert(error.error || 'Error al eliminar el comprobante');
+      }
+    } catch (error) {
+      console.error('Error deleting voucher:', error);
+      alert('Error al eliminar el comprobante');
     }
   };
 
@@ -125,6 +179,7 @@ export default function PurchaseVouchersClient({ initialVouchers }: PurchaseVouc
                   <th className="text-left p-3 font-medium">Proveedor</th>
                   <th className="text-left p-3 font-medium">Comprobante</th>
                   <th className="text-left p-3 font-medium">Fecha</th>
+                  <th className="text-left p-3 font-medium">Forma de Pago</th>
                   <th className="text-left p-3 font-medium">Estado</th>
                   <th className="text-right p-3 font-medium">Monto Total</th>
                   <th className="text-left p-3 font-medium w-40">Completado</th>
@@ -162,6 +217,11 @@ export default function PurchaseVouchersClient({ initialVouchers }: PurchaseVouc
                       </td>
                       <td className="p-3 text-muted-foreground">
                         {new Date(v.date).toLocaleDateString('es-AR')}
+                      </td>
+                      <td className="p-3">
+                        <span className="text-muted-foreground">
+                          {v.paymentMethod?.name || 'Cuenta Corriente'}
+                        </span>
                       </td>
                       <td className="p-3">
                         <span
@@ -206,25 +266,40 @@ export default function PurchaseVouchersClient({ initialVouchers }: PurchaseVouc
                         )}
                       </td>
                       <td className="p-3 text-right">
-                        {v.status === 'DRAFT' ? (
-                          <Button
-                            size="sm"
-                            onClick={(e: React.MouseEvent) => {
-                              e.stopPropagation();
-                              setCurrentVoucherId(v.id);
-                              setCurrentVoucherTotal(totalAmount);
-                              setCurrentVoucherPaymentMethodId(v.paymentMethodId ?? null);
-                              setCurrentVoucherLetter(v.letter);
-                              setCurrentVoucherNumber(v.number);
-                              setCurrentVoucherSupplierName(v.supplier?.name || v.supplierName || '');
-                              setIsAddItemDialogOpen(true);
-                            }}
-                          >
-                            Continuar
-                          </Button>
-                        ) : (
-                          <span className="text-muted-foreground text-xs">—</span>
-                        )}
+                        <div className="flex items-center justify-end gap-2">
+                          {v.status === 'DRAFT' && (
+                            <Button
+                              size="sm"
+                              onClick={(e: React.MouseEvent) => {
+                                e.stopPropagation();
+                                setCurrentVoucherId(v.id);
+                                setCurrentVoucherTotal(totalAmount);
+                                setCurrentVoucherPaymentMethodId(v.paymentMethodId ?? null);
+                                setCurrentVoucherLetter(v.letter);
+                                setCurrentVoucherNumber(v.number);
+                                setCurrentVoucherSupplierName(v.supplier?.name || v.supplierName || '');
+                                setIsAddItemDialogOpen(true);
+                              }}
+                            >
+                              Continuar
+                            </Button>
+                          )}
+                          {v.status === 'DRAFT' && (
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={(e: React.MouseEvent) => {
+                                e.stopPropagation();
+                                handleDeleteVoucher(v.id);
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                          {v.status === 'FINALIZED' && (
+                            <span className="text-muted-foreground text-xs">—</span>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
@@ -237,9 +312,13 @@ export default function PurchaseVouchersClient({ initialVouchers }: PurchaseVouc
 
       <CreateDraftVoucherDialog
         isOpen={isCreateDialogOpen}
-        onClose={() => setIsCreateDialogOpen(false)}
+        onClose={() => {
+          setIsCreateDialogOpen(false);
+          setEditingVoucherData(null);
+        }}
         onDraftCreated={(voucher) => {
           setIsCreateDialogOpen(false);
+          setEditingVoucherData(null);
           setCurrentVoucherId(voucher.id);
           setCurrentVoucherTotal(parseFloat(voucher.totalAmount?.toString() || '0'));
           setCurrentVoucherPaymentMethodId((voucher as unknown as { paymentMethodId?: string | null }).paymentMethodId ?? null);
@@ -248,6 +327,8 @@ export default function PurchaseVouchersClient({ initialVouchers }: PurchaseVouc
           setCurrentVoucherSupplierName(voucher.supplier?.name || '');
           setIsAddItemDialogOpen(true);
         }}
+        editingVoucherId={editingVoucherData ? currentVoucherId : undefined}
+        initialData={editingVoucherData}
       />
 
       <VoucherPreviewDialog
@@ -279,6 +360,7 @@ export default function PurchaseVouchersClient({ initialVouchers }: PurchaseVouc
           setIsAddItemDialogOpen(false);
           handleVoucherCreated();
         }}
+        onBackToHeader={handleBackToHeader}
       />
     </div>
   );

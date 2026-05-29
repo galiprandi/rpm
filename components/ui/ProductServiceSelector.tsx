@@ -74,6 +74,8 @@ export interface SelectedItem {
   categoryId?: string;
   categoryName?: string;
   allPrices?: Record<string, { finalPrice: number; isBelowMinimum: boolean; isFixed: boolean; overrideMargin: number | null; roundingRule: string }>;
+  replacementCost?: number;
+  costPrice?: number;
 }
 
 interface PriceInfo {
@@ -97,6 +99,8 @@ interface SearchResult {
   categoryId?: string;
   categoryName?: string;
   description?: string;
+  replacementCost?: number;
+  costPrice?: number;
 }
 
 interface Category {
@@ -292,6 +296,8 @@ export function ProductServiceSelector({
         categoryId: result.categoryId,
         categoryName: result.categoryName,
         allPrices: result.allPrices,
+        replacementCost: result.replacementCost,
+        costPrice: result.costPrice,
       };
       updateCartAndNotify([...cartItems, newItem]);
     }

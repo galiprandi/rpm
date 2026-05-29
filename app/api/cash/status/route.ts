@@ -92,6 +92,7 @@ const getCachedCashStatus = unstable_cache(
             summary[method].income += amount;
             break;
           case 'EXPENSE':
+          case 'PURCHASE_VOUCHER':
             summary[method].expense += amount;
             break;
         }
