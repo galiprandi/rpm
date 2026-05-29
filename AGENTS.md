@@ -178,6 +178,7 @@ Cada modificación debe dejar el archivo en mejor estado:
 - **Header Stats**: Las estadísticas de alto nivel en una vista de listado o detalle deben integrarse en el `Header` usando `CrudStats` para maximizar el espacio vertical y mantener consistencia. El `CrudAdmin` debe configurarse con `hideCreateAction={true}` si el botón de creación ya está en el Header.
 - **Semantic Colors**: Usar colores de Tailwind (ej: `text-orange-500`) en lugar de hexadecimales hardcodeados para iconos de estado.
 - **Interaction Feedback**: Los contenedores interactivos (drag & drop, upload) deben tener estados de `hover` visibles (`bg-primary/5`) y transiciones suaves.
+- **Financial Status Colors**: Usar `emerald-600` para saldos positivos/cuadrados y `red-600` para deudas/egresos/faltantes para mantener consistencia financiera.
 
 ---
 

@@ -13,6 +13,7 @@ export interface HeaderAction {
   icon?: LucideIcon;
   className?: string;
   disabled?: boolean;
+  loading?: boolean;
   title?: string;
   ariaLabel?: string;
 }
@@ -164,6 +165,7 @@ export function Header({
                 size="sm"
                 onClick={primaryAction.onClick}
                 disabled={primaryAction.disabled}
+                loading={primaryAction.loading}
                 title={primaryAction.title}
                 aria-label={primaryAction.ariaLabel}
                 className={

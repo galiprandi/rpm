@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ModalBase } from '@/components/ui/ModalBase';
@@ -8,6 +8,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useUI } from '@/components/ui/UIProvider';
+import { Header, CrudStats } from '@/components/adm';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   ArrowUpCircle,
   ArrowDownCircle,
@@ -22,6 +32,8 @@ import {
   LayoutDashboard,
   ChevronLeft,
   ChevronRight,
+  User,
+  Clock,
 } from 'lucide-react';
 
 interface CashSummary {
@@ -445,275 +457,359 @@ export default function CashClient() {
     return counted - expected;
   };
 
+  const isOpen = cashStatus?.status === 'OPEN';
+
+  const stats = useMemo(() => [
+    {
+      label: 'Apertura Efectivo',
+      value: formatCurrency(cashStatus?.summary?.CASH?.opening || 0),
+      icon: ArrowUpCircle,
+      iconColor: '#10b981', // emerald-500
+    },
+    {
+      label: 'Ingresos',
+      value: formatCurrency(cashStatus?.summary?.CASH?.income || 0),
+      icon: TrendingUp,
+      iconColor: '#3b82f6', // blue-500
+    },
+    {
+      label: 'Egresos',
+      value: formatCurrency(cashStatus?.summary?.CASH?.expense || 0),
+      icon: TrendingDown,
+      iconColor: '#ef4444', // red-500
+    },
+    {
+      label: 'Esperado Efectivo',
+      value: formatCurrency(cashStatus?.summary?.CASH?.expected || 0),
+      icon: Wallet,
+      iconColor: '#9333ea', // purple-600
+    }
+  ], [cashStatus]);
+
   if (loading) {
     return (
-      <div className="container mx-auto py-6">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-          <div className="h-32 bg-gray-200 rounded"></div>
+      <div className="container mx-auto py-6 space-y-6">
+        <div className="flex justify-between items-start">
+          <div className="space-y-2">
+            <div className="h-10 w-48 bg-muted animate-pulse rounded"></div>
+            <div className="h-4 w-64 bg-muted animate-pulse rounded"></div>
+          </div>
+          <div className="h-10 w-32 bg-muted animate-pulse rounded-full"></div>
         </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map(i => <div key={i} className="h-24 bg-muted animate-pulse rounded-lg"></div>)}
+        </div>
+        <div className="h-[400px] bg-muted animate-pulse rounded-lg"></div>
       </div>
     );
   }
 
-  const isOpen = cashStatus?.status === 'OPEN';
-
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Arqueo de Caja</h1>
-          <p className="text-muted-foreground">
-            {cashStatus?.openedAt && `Abierta desde: ${new Date(cashStatus.openedAt).toLocaleString('es-AR', {
-              day: '2-digit',
-              month: '2-digit',
-              year: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit'
-            })}`}
-            {cashStatus?.closedAt && `Cerrada el: ${new Date(cashStatus.closedAt).toLocaleString('es-AR', {
-              day: '2-digit',
-              month: '2-digit',
-              year: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit'
-            })}`}
-            {!cashStatus?.openedAt && !cashStatus?.closedAt && 'Gestión de apertura, cierre y movimientos de caja'}
-          </p>
-        </div>
-        <div className="flex items-center gap-4">
-          <div className={`flex items-center gap-2 px-4 py-2 rounded-full ${
-            isOpen
-              ? 'bg-green-100 text-green-800'
-              : 'bg-gray-100 text-gray-800'
-          }`}>
-            {isOpen ? (
-              <>
-                <CheckCircle2 className="h-5 w-5" />
-                <span className="font-medium">Caja Abierta</span>
-              </>
-            ) : (
-              <>
-                <XCircle className="h-5 w-5" />
-                <span className="font-medium">Caja Cerrada</span>
-              </>
-            )}
+    <div className="space-y-6">
+      <Header
+        title="Arqueo de Caja"
+        description={cashStatus?.openedAt
+          ? `Abierta desde: ${new Date(cashStatus.openedAt).toLocaleString('es-AR')}`
+          : cashStatus?.closedAt
+          ? `Cerrada el: ${new Date(cashStatus.closedAt).toLocaleString('es-AR')}`
+          : 'Gestión de apertura, cierre y movimientos de caja'
+        }
+        leftActions={
+          <div key="status-badge" className="flex items-center gap-2 mr-4">
+             <Badge variant="outline" className={cn(
+               "px-3 py-1 text-sm font-medium",
+               isOpen ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-slate-100 text-slate-700 border-slate-200"
+             )}>
+                <span className={cn("h-2 w-2 rounded-full mr-2", isOpen ? "bg-emerald-500 animate-pulse" : "bg-slate-400")}></span>
+                {isOpen ? 'Caja Abierta' : 'Caja Cerrada'}
+             </Badge>
           </div>
+        }
+        primaryAction={!isOpen ? {
+          label: 'Abrir Caja',
+          onClick: () => setIsOpenModalOpen(true),
+          icon: ArrowUpCircle,
+          className: 'bg-emerald-600 hover:bg-emerald-700 text-white',
+          ariaLabel: 'Realizar apertura de caja'
+        } : {
+          label: 'Cerrar Caja',
+          onClick: () => setIsCloseModalOpen(true),
+          variant: 'destructive',
+          icon: DollarSign,
+          ariaLabel: 'Realizar cierre y arqueo de caja'
+        }}
+      />
 
-          {/* CTA junto al indicador */}
-          {!isOpen && (
-            <Button
-              size="lg"
-              onClick={() => setIsOpenModalOpen(true)}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              <ArrowUpCircle className="mr-2 h-5 w-5" />
-              Abrir Caja
-            </Button>
-          )}
+      <CrudStats stats={stats} />
 
-          {isOpen && cashStatus && (
-            <Button
-              size="lg"
-              onClick={() => setIsCloseModalOpen(true)}
-              variant="destructive"
-            >
-              <DollarSign className="mr-2 h-5 w-5" />
-              Cerrar Caja
-            </Button>
-          )}
-        </div>
-      </div>
-
-      {/* Tabs Navigation */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-3 max-w-md">
-          <TabsTrigger value="status" className="flex items-center gap-2">
+        <TabsList className="grid w-full grid-cols-2 max-w-md bg-muted/50 p-1 rounded-lg">
+          <TabsTrigger value="status" className="flex items-center gap-2 rounded-md transition-all">
             <LayoutDashboard className="h-4 w-4" />
-            <span className="hidden sm:inline">Estado</span>
-            <span className="sm:hidden">Estado</span>
+            Estado
           </TabsTrigger>
-          <TabsTrigger value="history" className="flex items-center gap-2">
+          <TabsTrigger value="history" className="flex items-center gap-2 rounded-md transition-all">
             <History className="h-4 w-4" />
-            <span className="hidden sm:inline">Historial</span>
-            <span className="sm:hidden">Historial</span>
+            Historial
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="status" className="space-y-6">
-          {/* Status Cards */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Apertura Efectivo</CardTitle>
-            <ArrowUpCircle className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {formatCurrency(cashStatus?.summary?.CASH?.opening || 0)}
+        <TabsContent value="status" className="space-y-6 mt-6 animate-in fade-in-50 duration-500">
+           {isOpen && (
+            <div className="flex flex-wrap gap-4">
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={() => setIsIncomeModalOpen(true)}
+                className="bg-emerald-50 border-emerald-100 text-emerald-700 hover:bg-emerald-100 transition-colors shadow-sm"
+              >
+                <TrendingUp className="mr-2 h-5 w-5" />
+                Registrar Ingreso
+              </Button>
+
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={() => setIsExpenseModalOpen(true)}
+                className="bg-white hover:bg-slate-50 transition-colors shadow-sm"
+              >
+                <ArrowDownCircle className="mr-2 h-5 w-5 text-red-500" />
+                Registrar Egreso
+              </Button>
             </div>
-          </CardContent>
-        </Card>
+          )}
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ingresos</CardTitle>
-            <TrendingUp className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {formatCurrency(cashStatus?.summary?.CASH?.income || 0)}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Egresos</CardTitle>
-            <TrendingDown className="h-4 w-4 text-red-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {formatCurrency(cashStatus?.summary?.CASH?.expense || 0)}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Esperado Efectivo</CardTitle>
-            <Wallet className="h-4 w-4 text-purple-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {formatCurrency(cashStatus?.summary?.CASH?.expected || 0)}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Action Buttons - Solo movimientos (apertura/cierre van en header) */}
-      {isOpen && cashStatus && (
-        <div className="flex flex-wrap gap-4">
-          <Button
-            size="lg"
-            variant="outline"
-            onClick={() => setIsIncomeModalOpen(true)}
-            className="bg-green-50 border-green-200 hover:bg-green-100"
-          >
-            <TrendingUp className="mr-2 h-5 w-5 text-green-600" />
-            Registrar Ingreso
-          </Button>
-
-          <Button
-            size="lg"
-            variant="outline"
-            onClick={() => setIsExpenseModalOpen(true)}
-          >
-            <ArrowDownCircle className="mr-2 h-5 w-5" />
-            Registrar Egreso
-          </Button>
-        </div>
-      )}
-
-      {/* Summary by Method */}
-      {isOpen && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Desglose por Método de Pago</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left py-3 px-4 font-medium">Método</th>
-                    <th className="text-right py-3 px-4 font-medium">Apertura</th>
-                    <th className="text-right py-3 px-4 font-medium">Ingresos</th>
-                    <th className="text-right py-3 px-4 font-medium">Egresos</th>
-                    <th className="text-right py-3 px-4 font-medium">Esperado</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {Object.entries(cashStatus?.summary || {}).map(([method, summary]) => (
-                    summary.expected > 0 || summary.opening > 0 ? (
-                      <tr key={method} className="border-b">
-                        <td className="py-3 px-4 font-medium">{getMethodName(method)}</td>
-                        <td className="text-right py-3 px-4">{formatCurrency(summary.opening)}</td>
-                        <td className="text-right py-3 px-4">{formatCurrency(summary.income)}</td>
-                        <td className="text-right py-3 px-4">{formatCurrency(summary.expense)}</td>
-                        <td className="text-right py-3 px-4 font-bold">
-                          {formatCurrency(summary.expected)}
-                        </td>
+          {isOpen ? (
+            <Card className="border shadow-xs overflow-hidden">
+              <CardHeader className="bg-muted/30 border-b">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Wallet className="h-5 w-5 text-muted-foreground" />
+                  Desglose por Método de Pago
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-muted/10 border-b text-muted-foreground">
+                        <th className="text-left py-4 px-6 font-medium">Método</th>
+                        <th className="text-right py-4 px-6 font-medium">Apertura</th>
+                        <th className="text-right py-4 px-6 font-medium">Ingresos</th>
+                        <th className="text-right py-4 px-6 font-medium">Egresos</th>
+                        <th className="text-right py-4 px-6 font-medium">Esperado</th>
                       </tr>
-                    ) : null
-                  ))}
-                </tbody>
-              </table>
+                    </thead>
+                    <tbody className="divide-y">
+                      {Object.entries(cashStatus?.summary || {}).map(([method, summary]) => (
+                        summary.expected > 0 || summary.opening > 0 ? (
+                          <tr key={method} className="hover:bg-muted/20 transition-colors">
+                            <td className="py-4 px-6 font-semibold text-card-foreground">{getMethodName(method)}</td>
+                            <td className="text-right py-4 px-6">{formatCurrency(summary.opening)}</td>
+                            <td className="text-right py-4 px-6 text-emerald-600 font-medium">+{formatCurrency(summary.income)}</td>
+                            <td className="text-right py-4 px-6 text-red-600 font-medium">-{formatCurrency(summary.expense)}</td>
+                            <td className="text-right py-4 px-6 font-bold text-base text-primary">
+                              {formatCurrency(summary.expected)}
+                            </td>
+                          </tr>
+                        ) : null
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="text-center py-20 bg-muted/20 rounded-xl border-2 border-dashed border-muted">
+               <XCircle className="h-16 w-16 mx-auto mb-4 text-muted-foreground/30" />
+               <h3 className="text-xl font-semibold text-card-foreground">Caja Cerrada</h3>
+               <p className="text-muted-foreground max-w-sm mx-auto mt-2">
+                 No hay una jornada activa. Abre la caja para comenzar a registrar movimientos.
+               </p>
+               <Button onClick={() => setIsOpenModalOpen(true)} className="mt-6 bg-emerald-600 hover:bg-emerald-700">
+                  <ArrowUpCircle className="mr-2 h-4 w-4" />
+                  Abrir Caja Ahora
+               </Button>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          )}
+        </TabsContent>
 
+        <TabsContent value="history" className="space-y-6 mt-6 animate-in fade-in-50 duration-500">
+          <Card className="border shadow-xs overflow-hidden">
+             <CardHeader className="bg-muted/30 border-b">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <History className="h-5 w-5 text-muted-foreground" />
+                  Historial de Arqueos
+                </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              {historyLoading ? (
+                <div className="flex items-center justify-center py-12 gap-3 text-muted-foreground">
+                   <div className="h-5 w-5 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                   Cargando historial...
+                </div>
+              ) : history.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  No hay arqueos previos registrados
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-muted/10 border-b text-muted-foreground">
+                        <th className="text-left py-4 px-6 font-medium">Fecha</th>
+                        <th className="text-left py-4 px-6 font-medium">Responsable</th>
+                        <th className="text-left py-4 px-6 font-medium">Cerrado por</th>
+                        <th className="text-right py-4 px-6 font-medium">Monto Cierre</th>
+                        <th className="text-right py-4 px-6 font-medium">Diferencia</th>
+                        <th className="text-center py-4 px-6 font-medium">Estado</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {history.map((record) => (
+                        <tr key={record.id} className="hover:bg-muted/20 transition-colors">
+                          <td className="py-4 px-6">
+                            <div className="font-semibold text-card-foreground">{record.date}</div>
+                            <div className="text-xs text-muted-foreground flex items-center gap-2 mt-1">
+                              <Clock className="h-3 w-3" />
+                              {record.openedAt && `${new Date(record.openedAt).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}`}
+                              {record.closedAt && ` - ${new Date(record.closedAt).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}`}
+                            </div>
+                          </td>
+                          <td className="py-4 px-6">
+                            <div className="flex items-center gap-2 font-medium">
+                               <User className="h-3.5 w-3.5 text-muted-foreground" />
+                               {record.responsibleBy}
+                            </div>
+                            {record.openedBy !== record.responsibleBy && (
+                              <div className="text-[10px] text-muted-foreground ml-5">
+                                Abierto por: {record.openedBy}
+                              </div>
+                            )}
+                          </td>
+                          <td className="py-4 px-6 text-muted-foreground">{record.closedBy || '-'}</td>
+                          <td className="text-right py-4 px-6 font-semibold">
+                            {record.closingAmount !== null
+                              ? formatCurrency(record.closingAmount)
+                              : '-'}
+                          </td>
+                          <td className={`text-right py-4 px-6 font-bold ${
+                            record.difference > 0
+                              ? 'text-blue-600'
+                              : record.difference < 0
+                              ? 'text-red-600'
+                              : 'text-emerald-600'
+                          }`}>
+                            {record.difference !== 0
+                              ? `${record.difference > 0 ? '+' : ''}${formatCurrency(record.difference)}`
+                              : <CheckCircle2 className="h-4 w-4 ml-auto" />}
+                          </td>
+                          <td className="text-center py-4 px-6">
+                            {!record.isClosed ? (
+                              <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">Abierta</Badge>
+                            ) : record.difference === 0 ? (
+                              <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">Cuadrado</Badge>
+                            ) : record.difference > 0 ? (
+                              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Sobrante</Badge>
+                            ) : (
+                              <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Faltante</Badge>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+
+                  {/* Pagination */}
+                  {historyPagination && historyPagination.totalPages > 1 && (
+                    <div className="flex items-center justify-between p-4 bg-muted/10 border-t">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setHistoryPage((p) => Math.max(1, p - 1))}
+                        disabled={historyPage === 1}
+                        className="h-8"
+                      >
+                        <ChevronLeft className="h-4 w-4 mr-1" />
+                        Anterior
+                      </Button>
+                      <span className="text-xs text-muted-foreground font-medium">
+                        Página {historyPage} de {historyPagination.totalPages}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setHistoryPage((p) => p + 1)}
+                        disabled={!historyPagination.hasMore}
+                        className="h-8"
+                      >
+                        Siguiente
+                        <ChevronRight className="h-4 w-4 ml-1" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* Modals are updated to use standard UI where possible */}
       {/* Open Cash Modal */}
       <ModalBase
         isOpen={isOpenModalOpen}
         onClose={() => setIsOpenModalOpen(false)}
         title="Abrir Caja"
       >
-        <div className="space-y-4">
+        <div className="space-y-6 p-1">
           <div className="space-y-2">
             <Label htmlFor="openingAmount">
               Monto Inicial Efectivo
               {cashStatus && cashStatus.suggestedOpeningAmount > 0 && (
-                <span className="text-sm text-muted-foreground ml-2">
-                  (Sugerido: {formatCurrency(cashStatus.suggestedOpeningAmount)})
+                <span className="text-xs text-emerald-600 font-medium ml-2 bg-emerald-50 px-2 py-0.5 rounded-full">
+                  Sugerido: {formatCurrency(cashStatus.suggestedOpeningAmount)}
                 </span>
               )}
             </Label>
-            <Input
-              id="openingAmount"
-              type="number"
-              min="0"
-              step="0.01"
-              value={openingAmount}
-              onChange={(e) => setOpeningAmount(e.target.value)}
-              placeholder="Ingrese el monto inicial"
-            />
+            <div className="relative">
+               <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+               <Input
+                 id="openingAmount"
+                 type="number"
+                 min="0"
+                 step="0.01"
+                 value={openingAmount}
+                 onChange={(e) => setOpeningAmount(e.target.value)}
+                 className="pl-9"
+                 placeholder="0.00"
+               />
+            </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="responsible">
-              Responsable de Caja
-              {responsibleId !== currentUserId && (
-                <span className="text-sm text-amber-600 ml-2">
-                  (Diferente al usuario actual)
-                </span>
-              )}
-            </Label>
-            <select
-              id="responsible"
-              value={responsibleId}
-              onChange={(e) => setResponsibleId(e.target.value)}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {staffUsers.map((user) => (
-                <option key={user.id} value={user.id}>
-                  {user.name} {user.id === currentUserId ? '(Yo)' : ''}
-                </option>
-              ))}
-            </select>
-            <p className="text-xs text-muted-foreground">
-              El responsable es quien opera físicamente la caja durante el turno.
+            <Label htmlFor="responsible">Responsable de Caja</Label>
+            <Select value={responsibleId} onValueChange={setResponsibleId}>
+               <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Seleccione un responsable" />
+               </SelectTrigger>
+               <SelectContent>
+                  {staffUsers.map((user) => (
+                    <SelectItem key={user.id} value={user.id}>
+                      {user.name} {user.id === currentUserId ? '(Yo)' : ''}
+                    </SelectItem>
+                  ))}
+               </SelectContent>
+            </Select>
+            <p className="text-[11px] text-muted-foreground leading-tight italic">
+              El responsable es quien opera físicamente la caja durante el turno. Por defecto es el usuario actual.
             </p>
           </div>
 
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setIsOpenModalOpen(false)}>
+          <div className="flex justify-end gap-3 pt-4">
+            <Button variant="ghost" onClick={() => setIsOpenModalOpen(false)}>
               Cancelar
             </Button>
-            <Button onClick={handleOpenCash}>
+            <Button onClick={handleOpenCash} className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold">
               Abrir Caja
             </Button>
           </div>
@@ -726,33 +822,39 @@ export default function CashClient() {
         onClose={() => setIsExpenseModalOpen(false)}
         title="Registrar Egreso"
       >
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="expenseAmount">Monto</Label>
-            <Input
-              id="expenseAmount"
-              type="number"
-              min="0.01"
-              step="0.01"
-              value={expenseAmount}
-              onChange={(e) => setExpenseAmount(e.target.value)}
-              placeholder="Ingrese el monto"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="expenseMethod">Método de Pago</Label>
-            <select
-              id="expenseMethod"
-              value={expenseMethod}
-              onChange={(e) => setExpenseMethod(e.target.value)}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {paymentMethods.map((method) => (
-                <option key={method.code} value={method.code}>
-                  {method.name}
-                </option>
-              ))}
-            </select>
+        <div className="space-y-4 p-1">
+          <div className="grid grid-cols-2 gap-4">
+             <div className="space-y-2">
+               <Label htmlFor="expenseAmount">Monto</Label>
+               <div className="relative">
+                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="expenseAmount"
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    value={expenseAmount}
+                    onChange={(e) => setExpenseAmount(e.target.value)}
+                    className="pl-9"
+                    placeholder="0.00"
+                  />
+               </div>
+             </div>
+             <div className="space-y-2">
+               <Label htmlFor="expenseMethod">Método de Pago</Label>
+               <Select value={expenseMethod} onValueChange={setExpenseMethod}>
+                  <SelectTrigger className="w-full">
+                     <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                     {paymentMethods.map((method) => (
+                        <SelectItem key={method.code} value={method.code}>
+                          {method.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+               </Select>
+             </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="expenseReason">Motivo *</Label>
@@ -765,15 +867,16 @@ export default function CashClient() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="expenseNotes">Notas (opcional)</Label>
-            <Input
+            <textarea
               id="expenseNotes"
               value={expenseNotes}
               onChange={(e) => setExpenseNotes(e.target.value)}
               placeholder="Detalles adicionales"
+              className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             />
           </div>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setIsExpenseModalOpen(false)}>
+          <div className="flex justify-end gap-3 pt-4">
+            <Button variant="ghost" onClick={() => setIsExpenseModalOpen(false)}>
               Cancelar
             </Button>
             <Button onClick={handleRegisterExpense} variant="destructive">
@@ -789,33 +892,39 @@ export default function CashClient() {
         onClose={() => setIsIncomeModalOpen(false)}
         title="Registrar Ingreso"
       >
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="incomeAmount">Monto</Label>
-            <Input
-              id="incomeAmount"
-              type="number"
-              min="0.01"
-              step="0.01"
-              value={incomeAmount}
-              onChange={(e) => setIncomeAmount(e.target.value)}
-              placeholder="Ingrese el monto"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="incomeMethod">Método de Pago</Label>
-            <select
-              id="incomeMethod"
-              value={incomeMethod}
-              onChange={(e) => setIncomeMethod(e.target.value)}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {paymentMethods.map((method) => (
-                <option key={method.code} value={method.code}>
-                  {method.name}
-                </option>
-              ))}
-            </select>
+        <div className="space-y-4 p-1">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="incomeAmount">Monto</Label>
+              <div className="relative">
+                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="incomeAmount"
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    value={incomeAmount}
+                    onChange={(e) => setIncomeAmount(e.target.value)}
+                    className="pl-9"
+                    placeholder="0.00"
+                  />
+               </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="incomeMethod">Método de Pago</Label>
+              <Select value={incomeMethod} onValueChange={setIncomeMethod}>
+                  <SelectTrigger className="w-full">
+                     <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {paymentMethods.map((method) => (
+                      <SelectItem key={method.code} value={method.code}>
+                        {method.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+              </Select>
+            </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="incomeReason">Motivo *</Label>
@@ -828,18 +937,19 @@ export default function CashClient() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="incomeNotes">Notas (opcional)</Label>
-            <Input
+            <textarea
               id="incomeNotes"
               value={incomeNotes}
               onChange={(e) => setIncomeNotes(e.target.value)}
               placeholder="Detalles adicionales"
+              className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             />
           </div>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setIsIncomeModalOpen(false)}>
+          <div className="flex justify-end gap-3 pt-4">
+            <Button variant="ghost" onClick={() => setIsIncomeModalOpen(false)}>
               Cancelar
             </Button>
-            <Button onClick={handleRegisterIncome} className="bg-green-600 hover:bg-green-700">
+            <Button onClick={handleRegisterIncome} className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold">
               Registrar Ingreso
             </Button>
           </div>
@@ -850,59 +960,66 @@ export default function CashClient() {
       <ModalBase
         isOpen={isCloseModalOpen}
         onClose={() => setIsCloseModalOpen(false)}
-        title="Cerrar Caja - Arqueo"
+        title="Cierre y Arqueo de Caja"
         maxWidth="4xl"
       >
-        <div className="space-y-6">
-          <div className="rounded-md border overflow-x-auto">
-            <table className="w-full text-sm min-w-[600px]">
-              <thead className="bg-muted">
+        <div className="space-y-6 p-1">
+          <div className="rounded-xl border shadow-xs overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/50 border-b">
                 <tr>
-                  <th className="text-left py-3 px-4 font-medium">Método</th>
-                  <th className="text-right py-3 px-4 font-medium">Esperado</th>
-                  <th className="text-right py-3 px-4 font-medium">Contado</th>
-                  <th className="text-right py-3 px-4 font-medium">Diferencia</th>
+                  <th className="text-left py-3 px-6 font-medium">Método</th>
+                  <th className="text-right py-3 px-6 font-medium">Esperado</th>
+                  <th className="text-right py-3 px-6 font-medium">Contado</th>
+                  <th className="text-right py-3 px-6 font-medium">Diferencia</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y">
                 {Object.entries(cashStatus?.summary || {}).map(([method, summary]) => {
                   const diff = calculateDifference(method);
                   const hasDiff = Math.abs(diff) > 0.01;
                   
                   return (
-                    <tr key={method} className="border-t">
-                      <td className="py-3 px-4 font-medium">{getMethodName(method)}</td>
-                      <td className="text-right py-3 px-4">
+                    <tr key={method} className="hover:bg-muted/5 transition-colors">
+                      <td className="py-3 px-6 font-semibold text-card-foreground">{getMethodName(method)}</td>
+                      <td className="text-right py-3 px-6 font-medium text-muted-foreground">
                         {formatCurrency(summary.expected)}
                       </td>
-                      <td className="text-right py-3 px-4">
-                        <Input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={counts[method] || ''}
-                          onChange={(e) => setCounts(prev => ({ ...prev, [method]: e.target.value }))}
-                          className="w-32 text-right inline-block"
-                        />
+                      <td className="text-right py-3 px-6">
+                        <div className="relative inline-block w-40">
+                           <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                           <Input
+                             type="number"
+                             min="0"
+                             step="0.01"
+                             value={counts[method] || ''}
+                             onChange={(e) => setCounts(prev => ({ ...prev, [method]: e.target.value }))}
+                             className="pl-8 text-right h-9"
+                             placeholder="0.00"
+                           />
+                        </div>
                       </td>
-                      <td className={`text-right py-3 px-4 font-medium ${
+                      <td className={`text-right py-3 px-6 font-bold ${
                         hasDiff 
                           ? diff > 0 
-                            ? 'text-green-600' 
+                            ? 'text-blue-600'
                             : 'text-red-600'
-                          : ''
+                          : 'text-emerald-600'
                       }`}>
                         {hasDiff ? (
-                          <>
+                          <div className="flex items-center justify-end gap-1.5">
                             {diff > 0 ? '+' : ''}{formatCurrency(diff)}
                             {diff > 0 ? (
-                              <TrendingUp className="inline ml-1 h-4 w-4" />
+                              <TrendingUp className="h-4 w-4" />
                             ) : (
-                              <TrendingDown className="inline ml-1 h-4 w-4" />
+                              <TrendingDown className="h-4 w-4" />
                             )}
-                          </>
+                          </div>
                         ) : (
-                          <CheckCircle2 className="inline h-4 w-4 text-green-600" />
+                          <div className="flex items-center justify-end gap-1.5">
+                            <CheckCircle2 className="h-4 w-4" />
+                            <span>Cuadrado</span>
+                          </div>
                         )}
                       </td>
                     </tr>
@@ -916,156 +1033,36 @@ export default function CashClient() {
           {Object.entries(cashStatus?.summary || {}).some(([method]) => 
             Math.abs(calculateDifference(method)) > 0.01
           ) && (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-amber-600">
+            <div className="space-y-3 p-4 bg-red-50 border border-red-100 rounded-lg animate-in slide-in-from-top-2">
+              <div className="flex items-center gap-2 text-red-700">
                 <AlertCircle className="h-5 w-5" />
-                <span className="font-medium">Se detectaron diferencias</span>
+                <span className="font-bold">Diferencias detectadas</span>
               </div>
-              <Label htmlFor="differenceReason">
-                Explicación de las diferencias *
-              </Label>
-              <textarea
-                id="differenceReason"
-                value={differenceReason}
-                onChange={(e) => setDifferenceReason(e.target.value)}
-                placeholder="Explique las diferencias encontradas (mínimo 5 caracteres)"
-                className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              />
+              <div className="space-y-1.5">
+                <Label htmlFor="differenceReason" className="text-red-800">
+                  Explicación de las diferencias *
+                </Label>
+                <textarea
+                  id="differenceReason"
+                  value={differenceReason}
+                  onChange={(e) => setDifferenceReason(e.target.value)}
+                  placeholder="Explique las diferencias encontradas (mínimo 5 caracteres)"
+                  className="flex min-h-[100px] w-full rounded-md border-red-200 bg-white px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/20 focus-visible:border-red-300 disabled:cursor-not-allowed disabled:opacity-50 shadow-sm"
+                />
+              </div>
             </div>
           )}
 
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setIsCloseModalOpen(false)}>
+          <div className="flex justify-end gap-3 pt-4">
+            <Button variant="ghost" onClick={() => setIsCloseModalOpen(false)}>
               Cancelar
             </Button>
-            <Button onClick={handleCloseCash} variant="destructive">
-              Cerrar Caja
+            <Button onClick={handleCloseCash} variant="destructive" className="font-semibold shadow-lg">
+              Confirmar Cierre de Caja
             </Button>
           </div>
         </div>
       </ModalBase>
-        </TabsContent>
-
-        <TabsContent value="history" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Historial de Arqueos</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {historyLoading ? (
-                <div className="text-center py-8">Cargando historial...</div>
-              ) : history.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  No hay arqueos previos registrados
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead className="bg-muted">
-                      <tr>
-                        <th className="text-left py-3 px-4 font-medium">Fecha</th>
-                        <th className="text-left py-3 px-4 font-medium">Responsable</th>
-                        <th className="text-left py-3 px-4 font-medium">Cerrado por</th>
-                        <th className="text-right py-3 px-4 font-medium">Monto Cierre</th>
-                        <th className="text-right py-3 px-4 font-medium">Diferencia</th>
-                        <th className="text-center py-3 px-4 font-medium">Estado</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {history.map((record) => (
-                        <tr key={record.id} className="border-t">
-                          <td className="py-3 px-4">
-                            <div className="font-medium">{record.date}</div>
-                            <div className="text-xs text-muted-foreground">
-                              {record.openedAt && `Abierta: ${new Date(record.openedAt).toLocaleString('es-AR', {
-                                day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
-                              })}`}
-                              {record.closedAt && ` - Cerrada: ${new Date(record.closedAt).toLocaleString('es-AR', {
-                                day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
-                              })}`}
-                            </div>
-                          </td>
-                          <td className="py-3 px-4">
-                            <div className="font-medium">{record.responsibleBy}</div>
-                            {record.openedBy !== record.responsibleBy && (
-                              <div className="text-xs text-muted-foreground">
-                                Abierto por: {record.openedBy}
-                              </div>
-                            )}
-                          </td>
-                          <td className="py-3 px-4">{record.closedBy || '-'}</td>
-                          <td className="text-right py-3 px-4">
-                            {record.closingAmount !== null
-                              ? formatCurrency(record.closingAmount)
-                              : '-'}
-                          </td>
-                          <td className={`text-right py-3 px-4 font-medium ${
-                            record.difference > 0
-                              ? 'text-green-600'
-                              : record.difference < 0
-                              ? 'text-red-600'
-                              : ''
-                          }`}>
-                            {record.difference !== 0
-                              ? `${record.difference > 0 ? '+' : ''}${formatCurrency(Math.abs(record.difference))}`
-                              : '-'}
-                          </td>
-                          <td className="text-center py-3 px-4">
-                            {!record.isClosed ? (
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                Abierta
-                              </span>
-                            ) : record.difference === 0 ? (
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                Cuadrado
-                              </span>
-                            ) : record.difference > 0 ? (
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                Sobrante
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                Faltante
-                              </span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-
-                  {/* Pagination */}
-                  {historyPagination && historyPagination.totalPages > 1 && (
-                    <div className="flex items-center justify-between mt-4">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setHistoryPage((p) => Math.max(1, p - 1))}
-                        disabled={historyPage === 1}
-                      >
-                        <ChevronLeft className="h-4 w-4 mr-1" />
-                        Anterior
-                      </Button>
-                      <span className="text-sm text-muted-foreground">
-                        Página {historyPage} de {historyPagination.totalPages}
-                      </span>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setHistoryPage((p) => p + 1)}
-                        disabled={!historyPagination.hasMore}
-                      >
-                        Siguiente
-                        <ChevronRight className="h-4 w-4 ml-1" />
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
     </div>
   );
 }
