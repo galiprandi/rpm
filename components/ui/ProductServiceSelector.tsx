@@ -73,11 +73,15 @@ export interface SelectedItem {
   stock?: number;
   categoryId?: string;
   categoryName?: string;
+  allPrices?: Record<string, { finalPrice: number; isBelowMinimum: boolean; isFixed: boolean; overrideMargin: number | null; roundingRule: string }>;
 }
 
 interface PriceInfo {
   finalPrice: number;
   isBelowMinimum: boolean;
+  isFixed: boolean;
+  overrideMargin: number | null;
+  roundingRule: string;
 }
 
 interface SearchResult {
@@ -112,6 +116,7 @@ interface ProductServiceSelectorProps {
   showCategoryFilter?: boolean;
   showQuickCreate?: boolean;
   showSelectedTable?: boolean;
+  showPrice?: boolean;
   initialItems?: SelectedItem[];
   onSelectionChange: (items: SelectedItem[]) => void;
   onQuickCreate?: () => void;
@@ -126,6 +131,7 @@ export function ProductServiceSelector({
   showCategoryFilter = false,
   showQuickCreate = false,
   showSelectedTable = true,
+  showPrice = true,
   initialItems = [],
   onSelectionChange,
   onQuickCreate,
@@ -285,6 +291,7 @@ export function ProductServiceSelector({
         stock: result.stock,
         categoryId: result.categoryId,
         categoryName: result.categoryName,
+        allPrices: result.allPrices,
       };
       updateCartAndNotify([...cartItems, newItem]);
     }
@@ -473,37 +480,47 @@ export function ProductServiceSelector({
                       </div>
 
                       <div className="flex items-center gap-2 flex-shrink-0">
-                        {result.type === 'product' && (contadoPrice || tarjetaPrice) ? (
-                          <div className="flex gap-2">
-                            {contadoPrice && (
-                              <Button
-                                size="sm"
-                                className="h-8 px-3 bg-emerald-600 hover:bg-emerald-700 flex flex-col items-center gap-0"
-                                onClick={() => addToCart(result, contadoPrice, contadoList?.id)}
-                              >
-                                <span className="text-[10px] uppercase opacity-80 leading-none">Contado</span>
-                                <span className="font-bold leading-none">{formatARS(contadoPrice)}</span>
-                              </Button>
-                            )}
-                            {tarjetaPrice && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="h-8 px-3 border-blue-600 text-blue-700 hover:bg-blue-50 flex flex-col items-center gap-0"
-                                onClick={() => addToCart(result, tarjetaPrice, tarjetaList?.id)}
-                              >
-                                <span className="text-[10px] uppercase opacity-80 leading-none">Tarjeta</span>
-                                <span className="font-bold leading-none">{formatARS(tarjetaPrice)}</span>
-                              </Button>
-                            )}
-                          </div>
+                        {showPrice ? (
+                          result.type === 'product' && (contadoPrice || tarjetaPrice) ? (
+                            <div className="flex gap-2">
+                              {contadoPrice && (
+                                <Button
+                                  size="sm"
+                                  className="h-8 px-3 bg-emerald-600 hover:bg-emerald-700 flex flex-col items-center gap-0"
+                                  onClick={() => addToCart(result, contadoPrice, contadoList?.id)}
+                                >
+                                  <span className="text-[10px] uppercase opacity-80 leading-none">Contado</span>
+                                  <span className="font-bold leading-none">{formatARS(contadoPrice)}</span>
+                                </Button>
+                              )}
+                              {tarjetaPrice && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-8 px-3 border-blue-600 text-blue-700 hover:bg-blue-50 flex flex-col items-center gap-0"
+                                  onClick={() => addToCart(result, tarjetaPrice, tarjetaList?.id)}
+                                >
+                                  <span className="text-[10px] uppercase opacity-80 leading-none">Tarjeta</span>
+                                  <span className="font-bold leading-none">{formatARS(tarjetaPrice)}</span>
+                                </Button>
+                              )}
+                            </div>
+                          ) : (
+                            <Button
+                              size="sm"
+                              className="h-8 flex items-center gap-2"
+                              onClick={() => addToCart(result)}
+                            >
+                              <span className="font-bold">{formatARS(result.basePrice)}</span>
+                              <PlusIcon className="h-4 w-4" />
+                            </Button>
+                          )
                         ) : (
                           <Button
                             size="sm"
                             className="h-8 flex items-center gap-2"
                             onClick={() => addToCart(result)}
                           >
-                            <span className="font-bold">{formatARS(result.basePrice)}</span>
                             <PlusIcon className="h-4 w-4" />
                           </Button>
                         )}
@@ -524,7 +541,7 @@ export function ProductServiceSelector({
                   onClick={handleQuickCreate}
                 >
                   <Plus className="h-4 w-4 mr-2" />
-                  Crear servicio rápido
+                  Crear nuevo
                 </Button>
               </div>
             )}

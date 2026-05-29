@@ -498,6 +498,7 @@ export function AddVoucherItemDialog({
                 showPriceListSelector={false}
                 showCategoryFilter={false}
                 showSelectedTable={false}
+                showPrice={false}
                 showQuickCreate
                 onQuickCreate={() => setIsQuickProductOpen(true)}
                 onSelectionChange={(selItems: SelectedItem[]) => {
