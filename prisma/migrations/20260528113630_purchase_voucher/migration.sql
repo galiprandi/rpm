@@ -4,11 +4,11 @@
   - You are about to drop the column `refundMethodCode` on the `credit_note` table. All the data in the column will be lost.
 
 */
--- DropIndex
-DROP INDEX "credit_note_createdAt_idx";
+-- DropIndex (idempotent: index may not exist in prod if previous migration was rolled back)
+DROP INDEX IF EXISTS "credit_note_createdAt_idx";
 
--- AlterTable
-ALTER TABLE "credit_note" DROP COLUMN "refundMethodCode";
+-- AlterTable (idempotent: column may not exist in prod if previous migration was rolled back)
+ALTER TABLE "credit_note" DROP COLUMN IF EXISTS "refundMethodCode";
 
 -- AlterTable
 ALTER TABLE "supplier" ADD COLUMN     "cuit" TEXT;
