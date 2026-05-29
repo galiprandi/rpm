@@ -540,8 +540,8 @@ export function AddVoucherItemDialog({
           )}
 
           {selectedProduct && (
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="space-y-2">
+            <div className="flex gap-4">
+              <div className="flex-1 space-y-2">
                 <Label htmlFor="quantity">Cantidad *</Label>
                 <Input
                   id="quantity"
@@ -554,8 +554,8 @@ export function AddVoucherItemDialog({
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="unitCost">Costo Unitario ($) *</Label>
+              <div className="flex-1 space-y-2">
+                <Label htmlFor="unitCost">Precio ($) *</Label>
                 <Input
                   id="unitCost"
                   type="number"
@@ -584,59 +584,76 @@ export function AddVoucherItemDialog({
 
           {/* Price Lists */}
           {unitCost > 0 && priceListPrices.length > 0 && (
-            <div className="space-y-2">
-              <h4 className="font-semibold text-sm text-muted-foreground flex items-center gap-2">
-                Precios de Venta por Lista
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <h4 className="font-semibold text-sm text-muted-foreground">
+                  Precios de venta
+                </h4>
                 {hasLowMargin && <TrendingDown className="h-4 w-4 text-red-500" />}
-              </h4>
-              <div className="grid md:grid-cols-2 gap-3">
-                {priceListPrices.map((pl) => (
-                  <div
-                    key={pl.priceListId}
-                    className={`border rounded-md p-3 space-y-2 ${
-                      pl.isFixed ? "border-primary bg-primary/5" : ""
-                    } ${pl.isBelowMinimum ? "border-red-300 bg-red-50/50" : ""}`}
-                  >
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium text-sm">{pl.priceListName}</span>
-                      <span className={`text-xs ${pl.isBelowMinimum ? "text-red-600 font-medium" : "text-muted-foreground"}`}>
-                        {pl.isBelowMinimum ? "Bajo mínimo" : `Margen: ${pl.baseMargin}%`}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={pl.isFixed ? pl.fixedPrice ?? "" : pl.calculatedPrice}
-                        onChange={(e) => {
-                          const value = parseFloat(e.target.value);
-                          if (!isNaN(value)) {
-                            handleFixPrice(pl.priceListId, value);
-                          }
-                        }}
-                        className={`h-8 text-sm ${pl.isBelowMinimum && !pl.isFixed ? "border-red-300" : ""}`}
-                      />
-                      {pl.isFixed && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleUnfixPrice(pl.priceListId)}
-                          className="h-8 px-2 text-xs"
-                        >
-                          Auto
-                        </Button>
-                      )}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {pl.isFixed ? (
-                        <span className="text-primary">Precio fijo</span>
-                      ) : (
-                        <>Calculado: ${pl.calculatedPrice.toFixed(2)}</>
-                      )}
-                    </div>
-                  </div>
-                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Puede definir los precios de venta en este paso o luego desde la sección productos
+              </p>
+              <div className="border rounded-md overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/50">
+                    <tr>
+                      <th className="text-left p-2 font-medium">Lista</th>
+                      <th className="text-left p-2 font-medium">Margen</th>
+                      <th className="text-left p-2 font-medium">Precio</th>
+                      <th className="text-right p-2 font-medium w-32">[Precio]</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {priceListPrices.map((pl) => (
+                      <tr
+                        key={pl.priceListId}
+                        className={`${pl.isBelowMinimum ? "bg-red-50/50" : ""}`}
+                      >
+                        <td className="p-2">{pl.priceListName}</td>
+                        <td className={`p-2 ${pl.isBelowMinimum ? "text-red-600 font-medium" : "text-muted-foreground"}`}>
+                          {pl.isBelowMinimum ? "Bajo mínimo" : `${pl.baseMargin}%`}
+                        </td>
+                        <td className="p-2">
+                          <span className={`text-xs ${pl.isFixed ? "text-primary" : "text-muted-foreground"}`}>
+                            ({pl.isFixed ? "fijo" : "auto"})
+                          </span>
+                        </td>
+                        <td className="p-2">
+                          <div className="flex items-center gap-2 justify-end">
+                            <span className={`text-xs ${pl.isFixed ? "text-primary" : "text-muted-foreground"}`}>
+                              ${pl.isFixed ? (pl.fixedPrice ?? 0).toFixed(2) : pl.calculatedPrice.toFixed(2)}
+                            </span>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              value={pl.isFixed ? pl.fixedPrice ?? "" : pl.calculatedPrice}
+                              onChange={(e) => {
+                                const value = parseFloat(e.target.value);
+                                if (!isNaN(value)) {
+                                  handleFixPrice(pl.priceListId, value);
+                                }
+                              }}
+                              className={`h-7 w-24 text-xs text-right ${pl.isBelowMinimum && !pl.isFixed ? "border-red-300" : ""}`}
+                            />
+                            {pl.isFixed && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleUnfixPrice(pl.priceListId)}
+                                className="h-7 px-1 text-xs"
+                                title="Volver a auto"
+                              >
+                                <TrendingDown className="h-3 w-3" />
+                              </Button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
