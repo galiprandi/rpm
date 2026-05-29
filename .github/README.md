@@ -136,7 +136,6 @@ needs: [quick-check, e2e-test, security] # Deploy solo si todo pasa
 pnpm test:unit
 pnpm test:e2e
 pnpm build
-pnpm build-storybook
 ```
 
 ---

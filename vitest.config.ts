@@ -14,7 +14,6 @@ export default defineConfig({
       '**/test-results/**',
       '**/playwright-report/**',
       '**/.next/**',
-      '**/storybook-static/**',
       // Database integration tests - use `pnpm test:db` or `pnpm test:all`
       '**/lib/services/*Service.test.ts',
       '**/tests/db.test.ts',

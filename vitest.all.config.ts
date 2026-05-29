@@ -17,7 +17,6 @@ export default defineConfig({
       '**/test-results/**',
       '**/playwright-report/**',
       '**/.next/**',
-      '**/storybook-static/**',
     ],
     coverage: {
       provider: 'v8',

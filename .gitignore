@@ -46,11 +46,7 @@ next-env.d.ts
 .env*.local
 .env.production
 
-# storybook
-/storybook-static
-
 # logs
 *.log
-debug-storybook.log
 /tmp
 backup_*.sql

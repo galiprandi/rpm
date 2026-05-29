@@ -44,7 +44,6 @@ export const prisma = new PrismaClient({
 - **API Backend**: `curl`
 - **UI/Frontend**: Playwright MCP / Puppeteer MCP
 - **Base de Datos**: `psql` o queries directas
-- **Componentes**: Storybook MCP
 - **Auth/Session**: Verificar cookies/tokens
 
 **Flujo:** Hacer cambio → VALIDAR → Confirmar → Responder
@@ -55,49 +54,12 @@ export const prisma = new PrismaClient({
 
 ---
 
-# Storybook Integration - OBLIGATORIO
-
-**ES ESENCIAL:** Cada modificación de componente requiere actualizar su story.
-
-**REGLA CRÍTICA:** El usuario SIEMPRE inicia servidores manualmente. El agente NUNCA ejecuta `pnpm storybook`, `pnpm dev`, etc.
-
-**Flujo:**
-1. Modificar componente
-2. Actualizar story inmediatamente
-3. Solicitar al usuario que inicie Storybook si no está corriendo
-4. Validar visualmente
-
-**Consecuencias:** Stories desactualizados = rechazo de PRs, bloqueo de despliegues
-
----
-
-# Storybook MCP Integration - OBLIGATORIO
-
-**ES ESENCIAL:** Usar herramientas MCP de Storybook antes de cualquier acción con componentes UI.
-
-**Endpoint:** `http://localhost:6006/mcp` (cuando Storybook está corriendo)
-
-**Flujo MCP Obligatorio:**
-1. Verificar MCP disponible
-2. `list-all-documentation` - Listar componentes
-3. `get-documentation` - Obtener documentación de componente
-4. Verificar propiedades en documentación
-5. `get-storybook-story-instructions` - Instrucciones para stories
-6. `run-story-tests` - Ejecutar tests
-
-**❌ PROHIBIDO:** Asumir propiedades, usar convenciones de nombres, crear sin verificar
-
-**✅ OBLIGATORIO:** SIEMPRE verificar propiedades con MCP antes de usarlas
-
----
-
 # Flujo de Trabajo Basado en Especificaciones
 *(solo aplica si existe el directorio /specs)*
 
 **Antes de CUALQUIER tarea:**
 1. Leer especificaciones relacionadas en `/specs`
 2. Revisar `/specs/SYSTEM_SPEC.md`
-3. **USAR MCP** para verificar componentes UI afectados
 
 **Para cambios de lógica:**
 1. Solicitar autorización del usuario (explicar cambios, riesgos, regresiones)
@@ -106,16 +68,16 @@ export const prisma = new PrismaClient({
 4. Actualizar tests para nuevos requisitos (TDD: 🔴 → 🟢)
 5. Implementar cambio
 6. Validación proactiva durante implementación
-7. Validación post-implementación (suite completa, cobertura, Storybook, MCP)
+7. Validación post-implementación (suite completa, cobertura)
 
-**Orden estricto:** Implementación nunca ocurre antes de autorización, actualización de specs, stories y validación MCP.
+**Orden estricto**: Implementación nunca ocurre antes de autorización, actualización de specs y validación.
 
 **Estándares de tests:**
 - Ubicación: Misma carpeta del servicio
 - Nomenclatura: `xx.test.ts`
 - JSDoc obligatorio al inicio con specs relacionadas, alcance y métricas
 
-**Herramientas:** Vitest (frontend/backend), Storybook (visual), MCP (documentación)
+**Herramientas**: Vitest (frontend/backend)
 
 ---
 
@@ -156,7 +118,7 @@ export const prisma = new PrismaClient({
 
 - Revisar y mantener documentación existente
 - Sincronizar código con documentación
-- Reflejar cambios en specs, stories y MCP
+- Reflejar cambios en specs y MCP
 
 ---
 
@@ -166,7 +128,6 @@ Cada modificación debe dejar el archivo en mejor estado:
 - Mejorar legibilidad sin cambiar funcionalidad
 - Actualizar comentarios obsoletos
 - Mejorar nombres de variables
-- Actualizar stories de Storybook
 - Validar con MCP tools
 
 **Restricciones:** Sin bugs, consentimiento del usuario, alcance razonable
@@ -184,8 +145,6 @@ Cada modificación debe dejar el archivo en mejor estado:
 - **Agente (Carol/Croma)**: Diseñador/Ingeniero UI/UX enfocado en consistencia, accesibilidad y refinamiento estético.
 - **Usuario**: Aprobador y validador final
 - **Sistema**: Validación automática mediante tests
-- **Storybook**: Validación visual
-- **MCP**: Acceso a documentación y validación
 
 ---
 
@@ -194,14 +153,14 @@ Cada modificación debe dejar el archivo en mejor estado:
 **Activación:** Usuario solicita nueva feature o cambio significativo
 
 **Proceso:**
-1. Análisis de regresión (revisar specs, Storybook, MCP)
+1. Análisis de regresión (revisar specs)
 2. Interrogatorio estructurado con opciones recomendadas
 3. Presentar borrador completo para revisión
 4. Esperar aprobación explícita del usuario
 5. Transicionar a flujo de implementación
 6. Documentar proceso y trazabilidad
 
-**Áreas de interrogatorio:** Alcance funcional, casos límite, integración, performance, seguridad, UI/UX, datos, testing, Storybook, MCP
+**Áreas de interrogatorio:** Alcance funcional, casos límite, integración, performance, seguridad, UI/UX, datos, testing
 
 ---
 
@@ -315,7 +274,7 @@ lib/
 **✅ OBLIGATORIO:** Componentes separados en `components/[feature]/`
 
 **Reglas de organización:**
-- UI Components: `components/ui/*.tsx` → Unit tests + Storybook
+- UI Components: `components/ui/*.tsx` → Unit tests
 - Feature Components: `components/[feature]/*.tsx` → Unit + Integration
 - Page Components: `app/**/page.tsx` → Integration/E2E
 - Layout Components: `components/layout/*.tsx` → Visual regression
