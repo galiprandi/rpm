@@ -11,10 +11,10 @@ DROP INDEX IF EXISTS "credit_note_createdAt_idx";
 ALTER TABLE "credit_note" DROP COLUMN IF EXISTS "refundMethodCode";
 
 -- AlterTable
-ALTER TABLE "supplier" ADD COLUMN     "cuit" TEXT;
+ALTER TABLE "supplier" ADD COLUMN IF NOT EXISTS "cuit" TEXT;
 
 -- CreateTable
-CREATE TABLE "purchase_voucher" (
+CREATE TABLE IF NOT EXISTS "purchase_voucher" (
     "id" TEXT NOT NULL,
     "supplierId" TEXT NOT NULL,
     "letter" TEXT NOT NULL,
@@ -33,7 +33,7 @@ CREATE TABLE "purchase_voucher" (
 );
 
 -- CreateTable
-CREATE TABLE "purchase_voucher_item" (
+CREATE TABLE IF NOT EXISTS "purchase_voucher_item" (
     "id" TEXT NOT NULL,
     "voucherId" TEXT NOT NULL,
     "productId" TEXT NOT NULL,

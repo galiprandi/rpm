@@ -39,7 +39,10 @@ jobs:
         
     - name: Install dependencies
       run: pnpm install --frozen-lockfile
-      
+
+    - name: Validate Prisma migrations (idempotent DDL)
+      run: npx tsx scripts/validate-migrations.ts --ci
+
     - name: Lint & Type Check
       run: |
         # Get changed files (only .ts, .tsx, .js, .mjs files)
