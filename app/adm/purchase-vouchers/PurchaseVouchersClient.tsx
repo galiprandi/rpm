@@ -208,7 +208,7 @@ export default function PurchaseVouchersClient({ initialVouchers }: PurchaseVouc
                               setCurrentVoucherId(v.id);
                               setCurrentVoucherTotal(totalAmount);
                               setCurrentVoucherPaymentMethodId(v.paymentMethodId ?? null);
-                              setIsPreviewOpen(true);
+                              setIsAddItemDialogOpen(true);
                             }}
                           >
                             Continuar
