@@ -2,13 +2,18 @@
 
 import { useState, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { CrudAdmin } from "@/components/adm";
-import { Phone, User, Eye, TrendingDown } from "lucide-react";
+import { Header, CrudAdmin, CrudStats, type StatItem } from "@/components/adm";
+import { Phone, User, Eye, TrendingDown, Users, Wallet, Plus } from "lucide-react";
 import Link from "next/link";
 import { type ColumnDef } from "@tanstack/react-table";
 import { CustomerDialog } from "@/components/customers/CustomerDialog";
 import { type CustomerFormData } from "@/components/customers/CustomerForm";
 import { useRouter } from "next/navigation";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface Customer {
   id: string;
@@ -176,6 +181,20 @@ export default function CustomersClient({ initialCustomers }: CustomersClientPro
     setIsCreateModalOpen(true);
   };
 
+  const stats: StatItem[] = useMemo(() => [
+    {
+      label: "Total Clientes",
+      value: customers.length,
+      icon: Users,
+    },
+    {
+      label: "Con Saldo",
+      value: customers.filter(c => c.balance !== 0).length,
+      icon: Wallet,
+      iconColor: customers.some(c => c.balance > 0) ? "#f97316" : undefined, // orange-500 if someone owes
+    },
+  ], [customers]);
+
   const handleCreateSubmit = async (formData: CustomerFormData) => {
     setIsCreating(true);
     try {
@@ -205,33 +224,54 @@ export default function CustomersClient({ initialCustomers }: CustomersClientPro
   };
 
   return (
-    <>
-      <CrudAdmin
+    <div className="space-y-6">
+      <Header
         title="Clientes"
-        description="Gestiona las fichas de tus clientes"
+        description="Gestiona las fichas de tus clientes y sus saldos"
+        primaryAction={{
+          label: 'Nuevo Cliente',
+          onClick: handleCreate,
+          icon: Plus,
+          ariaLabel: 'Crear nuevo cliente',
+        }}
+        secondaryActions={[
+          {
+            label: showOnlyWithBalance ? 'Ver Todos' : 'Filtrar con Saldo',
+            onClick: () => setShowOnlyWithBalance(!showOnlyWithBalance),
+            variant: 'outline',
+            icon: TrendingDown,
+          },
+        ]}
+      >
+        <div className="mt-4">
+          <CrudStats stats={stats} />
+        </div>
+      </Header>
+
+      <CrudAdmin
+        title=""
+        description=""
         items={filteredCustomers}
         loading={loading}
         onCreate={handleCreate}
+        hideCreateAction
         columns={columns}
         emptyIcon={<User className="h-12 w-12 mx-auto text-muted-foreground mb-4" />}
         emptyMessage="No hay clientes registrados. Haz clic en 'Nuevo Cliente' para crear el primero."
         createButtonText="Cliente"
         tableTitle="Listado de Clientes"
         searchPlaceholder="Buscar por nombre o teléfono..."
-        secondaryActions={[
-          {
-            label: showOnlyWithBalance ? 'Ver Todos' : 'Con Saldo',
-            onClick: () => setShowOnlyWithBalance(!showOnlyWithBalance),
-            variant: 'outline',
-            icon: TrendingDown,
-          },
-        ]}
         rowActions={(customer) => (
-          <Link href={`/adm/customers/${customer.id}`}>
-            <Button variant="ghost" size="sm" title="Ver detalle">
-              <Eye className="h-4 w-4" />
-            </Button>
-          </Link>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link href={`/adm/customers/${customer.id}`}>
+                <Button variant="ghost" size="sm" aria-label="Ver detalle">
+                  <Eye className="h-4 w-4" />
+                </Button>
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent>Ver detalle del cliente</TooltipContent>
+          </Tooltip>
         )}
       />
 
@@ -244,6 +284,6 @@ export default function CustomersClient({ initialCustomers }: CustomersClientPro
         submitLabel="Crear Cliente"
         isSubmitting={isCreating}
       />
-    </>
+    </div>
   );
 }

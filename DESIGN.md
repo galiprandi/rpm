@@ -97,3 +97,23 @@ The Price Lists module is essential for the store's commercial strategy. This re
 - `PriceListsClient`: Now uses the "Header + CrudAdmin" pattern with `hideCreateAction={true}`.
 - `PriceListDetailClient`: Establishes the pattern of using `CrudStats` within the `Header` for detail views.
 - `PriceListForm`: Standardized accessibility attributes (`aria-required`) and visual requirement indicators.
+
+# Design Decisions: Catalog Modules Refinement (Customers, Suppliers, Services)
+
+## Context
+The Customers, Suppliers, and Services modules are core catalogs of the application. This refinement focuses on unifiying the administrative pattern across all list views to maximize vertical space and consistency.
+
+## Applied Patterns
+
+### 1. Unified Header & Stat Consolidation
+- **Pattern Adoption**: Migrated Customers, Suppliers, and Services to the "Header + CrudAdmin" pattern.
+- **Stat Integration**: High-level metrics (Total counts, active states, financial summaries) are now integrated into the `Header` via `CrudStats`. This provides immediate business context while keeping the data table as the protagonist.
+- **Action Hierarchy**: Moved all primary creation actions ("Nuevo Cliente", "Nuevo Proveedor", "Nuevo Servicio") to the `Header`'s `primaryAction`. Secondary filters or actions (e.g., "Filtrar con Saldo") are placed in `secondaryActions` within the header.
+
+### 2. Interaction & Accessibility
+- **Action Tooltips**: Standardized the use of `Tooltip` for all table row actions, ensuring clear feedback for icon-only buttons (Edit, View, Delete/Deactivate).
+- **Semantic Colors**: Standardized color usage for financial and status indicators. Debt is shown in `text-red-600`, credit in `text-green-600`, and warnings (like suppliers without products or inactive states) use appropriate semantic shades.
+- **ARIA Compliance**: Added explicit `aria-label` attributes to all action buttons to ensure a smooth experience for screen reader users.
+
+## Component Evolution
+- `CustomersClient`, `SuppliersClient`, `ServicesClient`: Now follow the exact same architectural structure, making the codebase easier to maintain and the UI predictable for the user.
