@@ -146,7 +146,7 @@ export function AddVoucherItemDialog({
 
     loadAll();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen]);
+  }, [isOpen, voucherId]);
 
   const recalculatePrices = (cost: number, productAllPrices?: Record<string, { finalPrice: number; isBelowMinimum: boolean; isFixed: boolean; overrideMargin: number | null; roundingRule: string }> | undefined) => {
     if (cost <= 0 || priceLists.length === 0) return;
