@@ -75,6 +75,7 @@ export function AddVoucherItemDialog({
   } | null>(null);
   const [priceLists, setPriceLists] = useState<PriceList[]>([]);
   const [items, setItems] = useState<VoucherItem[]>([]);
+  const [minimumMargin, setMinimumMargin] = useState<number>(15); // Default 15%
 
   // New item form
   const [quantity, setQuantity] = useState(1);
@@ -126,6 +127,13 @@ export function AddVoucherItemDialog({
         if (plRes.status === "fulfilled" && plRes.value.ok) {
           const plData = await plRes.value.json();
           setPriceLists(plData.priceLists || []);
+        }
+
+        // Fetch minimum margin from settings
+        const settingsRes = await fetch('/api/settings');
+        if (settingsRes.ok) {
+          const settingsData = await settingsRes.json();
+          setMinimumMargin(settingsData.minimumMarginPercentage || 15);
         }
       } catch (err) {
         console.error("Error fetching price lists:", err);
@@ -546,14 +554,24 @@ export function AddVoucherItemDialog({
                     </tr>
                   </thead>
                   <tbody className="divide-y">
-                    {priceListPrices.map((pl) => (
+                    {priceListPrices.map((pl) => {
+                      const isFixedBelowMinimum = pl.isFixed && pl.fixedPrice && unitCost > 0 && ((pl.fixedPrice - unitCost) / unitCost) * 100 < minimumMargin;
+                      return (
                       <tr
                         key={pl.priceListId}
-                        className={`${pl.isBelowMinimum ? "bg-red-50/50" : ""}`}
+                        className={`${pl.isBelowMinimum || isFixedBelowMinimum ? "bg-red-50/50" : ""}`}
                       >
                         <td className="p-2">{pl.priceListName}</td>
-                        <td className={`p-2 ${pl.isBelowMinimum ? "text-red-600 font-medium" : "text-muted-foreground"}`}>
-                          {pl.isBelowMinimum ? "Bajo mínimo" : `${pl.baseMargin}%`}
+                        <td className={`p-2 ${
+                          pl.isFixed 
+                            ? ((pl.fixedPrice && unitCost > 0 ? ((pl.fixedPrice - unitCost) / unitCost) * 100 : 0) < minimumMargin ? "text-red-600 font-medium" : "text-muted-foreground")
+                            : (pl.isBelowMinimum ? "text-red-600 font-medium" : "text-muted-foreground")
+                        }`}>
+                          {pl.isFixed 
+                            ? (pl.fixedPrice && unitCost > 0 
+                                ? `${(((pl.fixedPrice - unitCost) / unitCost) * 100).toFixed(1)}%` 
+                                : "-")
+                            : (pl.isBelowMinimum ? "Bajo mínimo" : `${pl.baseMargin}%`)}
                         </td>
                         <td className="p-2">
                           <Badge 
@@ -565,7 +583,7 @@ export function AddVoucherItemDialog({
                           </Badge>
                         </td>
                         <td className="p-2">
-                          <div className="flex items-center gap-2 justify-end">
+                          <div className="flex items-center gap-2 justify-end">$ 
                             <Input
                               type="number"
                               step="0.01"
@@ -581,7 +599,8 @@ export function AddVoucherItemDialog({
                           </div>
                         </td>
                       </tr>
-                    ))}
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
