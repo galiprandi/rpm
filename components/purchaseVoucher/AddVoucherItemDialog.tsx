@@ -81,6 +81,7 @@ export function AddVoucherItemDialog({
   const [quantity, setQuantity] = useState(1);
   const [unitCost, setUnitCost] = useState(0);
   const [priceListPrices, setPriceListPrices] = useState<PriceListPrice[]>([]);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [isQuickProductOpen, setIsQuickProductOpen] = useState(false);
   const [quickProductKey, setQuickProductKey] = useState(0);
 
@@ -242,43 +243,67 @@ export function AddVoucherItemDialog({
         };
       });
 
-      const res = await fetch(`/api/purchase-vouchers/${voucherId}/items`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          productId: selectedProduct.id,
-          quantity,
-          unitCost,
-          priceListData,
-        }),
-      });
+      const isUpdate = !!editingItemId;
+
+      const res = await fetch(
+        isUpdate ? `/api/purchase-vouchers/${voucherId}/items/${editingItemId}` : `/api/purchase-vouchers/${voucherId}/items`,
+        {
+          method: isUpdate ? "PATCH" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            productId: selectedProduct.id,
+            quantity,
+            unitCost,
+            priceListData,
+          }),
+        }
+      );
 
       if (!res.ok) {
         const errData = await res.json();
-        throw new Error(errData.error || "No se pudo agregar el ítem");
+        throw new Error(errData.error || isUpdate ? "No se pudo actualizar el ítem" : "No se pudo agregar el ítem");
       }
 
-      // Add to local items list
       const subtotal = quantity * unitCost;
-      const newItem = await res.json();
-      setItems([
-        ...items,
-        {
-          id: newItem.id,
-          productId: selectedProduct.id,
-          productName: selectedProduct.name,
-          quantity,
-          unitCost,
-          subtotal,
-          priceListPrices: [...priceListPrices],
-        },
-      ]);
+
+      if (isUpdate) {
+        // Update existing item in local list
+        setItems((prev) =>
+          prev.map((it) =>
+            it.id === editingItemId
+              ? {
+                  ...it,
+                  quantity,
+                  unitCost,
+                  subtotal,
+                  priceListPrices: [...priceListPrices],
+                }
+              : it
+          )
+        );
+      } else {
+        // Add new item to local list
+        const newItem = await res.json();
+        setItems([
+          ...items,
+          {
+            id: newItem.id,
+            productId: selectedProduct.id,
+            productName: selectedProduct.name,
+            quantity,
+            unitCost,
+            subtotal,
+            priceListPrices: [...priceListPrices],
+          },
+        ]);
+      }
 
       // Reset form for next item
       setSelectedProduct(null);
       setQuantity(1);
       setUnitCost(0);
       setPriceListPrices([]);
+      setEditingItemId(null);
 
       onItemAdded?.();
     } catch (err: unknown) {
@@ -481,6 +506,7 @@ export function AddVoucherItemDialog({
                   setSelectedProduct(null);
                   setPriceListPrices([]);
                   setSelectorKey((k) => k + 1);
+                  setEditingItemId(null);
                 }}
               >
                 Cambiar
@@ -586,7 +612,7 @@ export function AddVoucherItemDialog({
                           <div className="flex items-center gap-2 justify-end">$ 
                             <Input
                               type="number"
-                              step="0.01"
+                              step="1000"
                               value={pl.isFixed ? pl.fixedPrice ?? "" : pl.calculatedPrice}
                               onChange={(e) => {
                                 const value = parseFloat(e.target.value);
@@ -615,7 +641,7 @@ export function AddVoucherItemDialog({
                 className="w-full sm:w-auto"
               >
                 <Plus className="h-4 w-4 mr-2" />
-                Agregar producto
+                {editingItemId ? "Actualizar producto" : "Agregar producto"}
               </Button>
             </div>
           )}
@@ -657,6 +683,7 @@ export function AddVoucherItemDialog({
                       setQuantity(item.quantity);
                       setUnitCost(item.unitCost);
                       setPriceListPrices(item.priceListPrices.map((p) => ({ ...p })));
+                      setEditingItemId(item.id);
                     }}
                   >
                     <span
