@@ -616,7 +616,11 @@ export function AddVoucherItemDialog({
                           {pl.isBelowMinimum ? "Bajo mínimo" : `${pl.baseMargin}%`}
                         </td>
                         <td className="p-2">
-                          <Badge variant={pl.isFixed ? "default" : "secondary"} className="text-xs">
+                          <Badge 
+                            variant={pl.isFixed ? "default" : "secondary"} 
+                            className="text-xs cursor-pointer hover:opacity-80"
+                            onClick={() => pl.isFixed && handleUnfixPrice(pl.priceListId)}
+                          >
                             {pl.isFixed ? "fijo" : "auto"}
                           </Badge>
                         </td>
@@ -634,18 +638,6 @@ export function AddVoucherItemDialog({
                               }}
                               className={`h-7 w-24 text-xs text-right ${pl.isBelowMinimum && !pl.isFixed ? "border-red-300" : ""}`}
                             />
-                            {pl.isFixed && (
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleUnfixPrice(pl.priceListId)}
-                                className="h-7 px-1 text-xs"
-                                title="Volver a auto"
-                              >
-                                <TrendingDown className="h-3 w-3" />
-                              </Button>
-                            )}
                           </div>
                         </td>
                       </tr>
