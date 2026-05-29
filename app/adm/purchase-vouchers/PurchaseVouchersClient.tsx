@@ -124,7 +124,7 @@ export default function PurchaseVouchersClient({ initialVouchers }: PurchaseVouc
                   <th className="text-left p-3 font-medium">Fecha</th>
                   <th className="text-left p-3 font-medium">Estado</th>
                   <th className="text-right p-3 font-medium">Monto Total</th>
-                  <th className="text-left p-3 font-medium w-40">Carga</th>
+                  <th className="text-left p-3 font-medium w-40">Completado</th>
                   <th className="text-right p-3 font-medium">Acciones</th>
                 </tr>
               </thead>
@@ -192,9 +192,6 @@ export default function PurchaseVouchersClient({ initialVouchers }: PurchaseVouc
                                 }`}
                                 style={{ width: `${progressPct}%` }}
                               />
-                            </div>
-                            <div className="text-[10px] text-muted-foreground">
-                              ${itemsSubtotal.toFixed(2)} / ${totalAmount.toFixed(2)}
                             </div>
                           </div>
                         )}
