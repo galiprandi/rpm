@@ -5,6 +5,7 @@ import { ModalBase } from "@/components/ui/ModalBase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { useUI } from "@/components/ui/UIProvider";
 import { ProductServiceSelector, type SelectedItem } from "@/components/ui/ProductServiceSelector";
 import { calculateFinalPrice, type RoundingRule } from "@/lib/utils/rounding";
@@ -600,8 +601,8 @@ export function AddVoucherItemDialog({
                     <tr>
                       <th className="text-left p-2 font-medium">Lista</th>
                       <th className="text-left p-2 font-medium">Margen</th>
-                      <th className="text-left p-2 font-medium">Precio</th>
-                      <th className="text-right p-2 font-medium w-32">[Precio]</th>
+                      <th className="text-left p-2 font-medium">Tipo</th>
+                      <th className="text-right p-2 font-medium w-32">Precio</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">
@@ -615,15 +616,12 @@ export function AddVoucherItemDialog({
                           {pl.isBelowMinimum ? "Bajo mínimo" : `${pl.baseMargin}%`}
                         </td>
                         <td className="p-2">
-                          <span className={`text-xs ${pl.isFixed ? "text-primary" : "text-muted-foreground"}`}>
-                            ({pl.isFixed ? "fijo" : "auto"})
-                          </span>
+                          <Badge variant={pl.isFixed ? "default" : "secondary"} className="text-xs">
+                            {pl.isFixed ? "fijo" : "auto"}
+                          </Badge>
                         </td>
                         <td className="p-2">
                           <div className="flex items-center gap-2 justify-end">
-                            <span className={`text-xs ${pl.isFixed ? "text-primary" : "text-muted-foreground"}`}>
-                              ${pl.isFixed ? (pl.fixedPrice ?? 0).toFixed(2) : pl.calculatedPrice.toFixed(2)}
-                            </span>
                             <Input
                               type="number"
                               step="0.01"
