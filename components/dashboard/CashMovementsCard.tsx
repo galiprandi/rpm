@@ -56,6 +56,17 @@ export function CashMovementsCard({ cashMovements }: CashMovementsCardProps) {
     }
   };
 
+  const getMethodNameLabel = (methodName: string) => {
+    switch (methodName) {
+      case 'PURCHASE':
+        return 'Compra';
+      case 'CASH':
+        return 'Efectivo';
+      default:
+        return methodName;
+    }
+  };
+
   const getAmountClass = (type: string) => {
     switch (type) {
       case 'INCOME':
@@ -119,7 +130,7 @@ export function CashMovementsCard({ cashMovements }: CashMovementsCardProps) {
                       {getMovementTypeLabel(movement.type)}
                     </span>
                     <span className="text-xs text-muted-foreground truncate">
-                      ({movement.methodName})
+                      ({getMethodNameLabel(movement.methodName)})
                     </span>
                   </div>
                   {movement.reason && (
