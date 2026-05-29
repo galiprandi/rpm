@@ -223,66 +223,6 @@ export function AddVoucherItemDialog({
       return;
     }
 
-    // Check for duplicate product
-    const existingItem = items.find((it) => it.productId === selectedProduct.id);
-    if (existingItem) {
-      const choice = await confirm({
-        title: "Producto duplicado",
-        description: `${selectedProduct.name} ya fue cargado con cantidad ${existingItem.quantity}. ¿Desea sumar la nueva cantidad (${quantity}) o cancelar?`,
-        confirmText: "Sumar Cantidad",
-        cancelText: "Cancelar",
-      });
-      if (!choice) return;
-
-      // Update existing item quantity via API
-      setLoading(true);
-      try {
-        const res = await fetch(`/api/purchase-vouchers/${voucherId}/items/${existingItem.productId}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            quantity: existingItem.quantity + quantity,
-          }),
-        });
-
-        if (!res.ok) {
-          const errData = await res.json();
-          throw new Error(errData.error || "No se pudo actualizar la cantidad");
-        }
-
-        // Update local items list
-        setItems((prev) =>
-          prev.map((it) =>
-            it.productId === selectedProduct.id
-              ? {
-                  ...it,
-                  quantity: it.quantity + quantity,
-                  subtotal: (it.quantity + quantity) * it.unitCost,
-                }
-              : it
-          )
-        );
-
-        // Reset form for next item
-        setSelectedProduct(null);
-        setQuantity(1);
-        setUnitCost(0);
-        setPriceListPrices([]);
-        onItemAdded?.();
-        setLoading(false);
-        return;
-      } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : "Error al actualizar cantidad.";
-        await alert({
-          title: "Error",
-          description: message,
-          variant: "error",
-        });
-        setLoading(false);
-        return;
-      }
-    }
-
     setLoading(true);
     try {
       // Build priceListData payload
