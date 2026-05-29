@@ -476,14 +476,6 @@ export function AddVoucherItemDialog({
               Cancelar
             </Button>
             <Button
-              onClick={handleAddItem}
-              disabled={loading || !selectedProduct || quantity <= 0 || unitCost <= 0}
-              variant="secondary"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Agregar y Continuar
-            </Button>
-            <Button
               onClick={handleFinish}
               disabled={loading || items.length === 0}
               className="bg-emerald-600 hover:bg-emerald-700"
@@ -568,8 +560,8 @@ export function AddVoucherItemDialog({
                 <Input
                   id="unitCost"
                   type="number"
-                  step="0.01"
-                  min={1}
+                  step="1"
+                  min={0}
                   required
                   value={unitCost || ""}
                   onChange={(e) => {
@@ -656,6 +648,18 @@ export function AddVoucherItemDialog({
             </div>
           )}
           </div>
+          {selectedProduct && (
+            <div className="flex justify-end pt-4 border-t">
+              <Button
+                onClick={handleAddItem}
+                disabled={loading || quantity <= 0 || unitCost <= 0}
+                className="w-full sm:w-auto"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Agregar producto
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Right panel — Loaded items sidebar */}
