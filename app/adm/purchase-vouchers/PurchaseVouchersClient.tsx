@@ -24,6 +24,9 @@ export default function PurchaseVouchersClient({ initialVouchers }: PurchaseVouc
   const [currentVoucherId, setCurrentVoucherId] = useState<string>('');
   const [currentVoucherTotal, setCurrentVoucherTotal] = useState<number>(0);
   const [currentVoucherPaymentMethodId, setCurrentVoucherPaymentMethodId] = useState<string | null>(null);
+  const [currentVoucherLetter, setCurrentVoucherLetter] = useState<string>('');
+  const [currentVoucherNumber, setCurrentVoucherNumber] = useState<string>('');
+  const [currentVoucherSupplierName, setCurrentVoucherSupplierName] = useState<string>('');
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   const draftsCount = vouchers.filter((v) => v.status === 'DRAFT').length;
@@ -144,6 +147,9 @@ export default function PurchaseVouchersClient({ initialVouchers }: PurchaseVouc
                           setCurrentVoucherId(v.id);
                           setCurrentVoucherTotal(totalAmount);
                           setCurrentVoucherPaymentMethodId(v.paymentMethodId ?? null);
+                          setCurrentVoucherLetter(v.letter);
+                          setCurrentVoucherNumber(v.number);
+                          setCurrentVoucherSupplierName(v.supplier?.name || v.supplierName || '');
                           setIsPreviewOpen(true);
                         }
                       }}
@@ -208,6 +214,9 @@ export default function PurchaseVouchersClient({ initialVouchers }: PurchaseVouc
                               setCurrentVoucherId(v.id);
                               setCurrentVoucherTotal(totalAmount);
                               setCurrentVoucherPaymentMethodId(v.paymentMethodId ?? null);
+                              setCurrentVoucherLetter(v.letter);
+                              setCurrentVoucherNumber(v.number);
+                              setCurrentVoucherSupplierName(v.supplier?.name || v.supplierName || '');
                               setIsAddItemDialogOpen(true);
                             }}
                           >
@@ -234,6 +243,9 @@ export default function PurchaseVouchersClient({ initialVouchers }: PurchaseVouc
           setCurrentVoucherId(voucher.id);
           setCurrentVoucherTotal(parseFloat(voucher.totalAmount?.toString() || '0'));
           setCurrentVoucherPaymentMethodId((voucher as unknown as { paymentMethodId?: string | null }).paymentMethodId ?? null);
+          setCurrentVoucherLetter(voucher.letter);
+          setCurrentVoucherNumber(voucher.number);
+          setCurrentVoucherSupplierName(voucher.supplier?.name || '');
           setIsAddItemDialogOpen(true);
         }}
       />
@@ -257,6 +269,9 @@ export default function PurchaseVouchersClient({ initialVouchers }: PurchaseVouc
         voucherId={currentVoucherId}
         voucherTotal={currentVoucherTotal}
         paymentMethodId={currentVoucherPaymentMethodId}
+        letter={currentVoucherLetter}
+        number={currentVoucherNumber}
+        supplierName={currentVoucherSupplierName}
         onItemAdded={() => {
           handleVoucherCreated();
         }}
