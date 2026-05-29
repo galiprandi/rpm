@@ -142,19 +142,27 @@ export function AddVoucherItemDialog({
   const recalculatePrices = (cost: number, productAllPrices?: Record<string, { finalPrice: number; isBelowMinimum: boolean; isFixed: boolean; overrideMargin: number | null; roundingRule: string }> | undefined) => {
     if (cost <= 0 || priceLists.length === 0) return;
 
+    // Preserve user's manual isFixed state from current priceListPrices
+    const currentFixedStates = new Map(priceListPrices.map(p => [p.priceListId, p.isFixed]));
+    const currentFixedPrices = new Map(priceListPrices.filter(p => p.isFixed).map(p => [p.priceListId, p.fixedPrice]));
+
     const prices: PriceListPrice[] = priceLists.map((pl) => {
       const productPriceInfo = productAllPrices?.[pl.id];
+      const userManuallyFixed = currentFixedStates.get(pl.id);
 
-      if (productPriceInfo?.isFixed) {
-        // Fixed price does not depend on cost
+      if (userManuallyFixed) {
+        // User manually set this to fixed - preserve it with recalculated value
+        const margin = productPriceInfo?.overrideMargin ?? pl.baseMarginPercentage;
+        const calculated = calculateFinalPrice(cost, margin, pl.roundingRule);
+        const isBelowMinimum = productPriceInfo?.isBelowMinimum ?? false;
         return {
           priceListId: pl.id,
           priceListName: pl.name,
           baseMargin: pl.baseMarginPercentage,
-          calculatedPrice: productPriceInfo.finalPrice,
-          fixedPrice: productPriceInfo.finalPrice,
+          calculatedPrice: calculated,
+          fixedPrice: currentFixedPrices.get(pl.id) ?? calculated,
           isFixed: true,
-          isBelowMinimum: productPriceInfo.isBelowMinimum,
+          isBelowMinimum,
         };
       }
 
@@ -561,7 +569,7 @@ export function AddVoucherItemDialog({
                   id="unitCost"
                   type="number"
                   step="0.01"
-                  min={0.01}
+                  min={1}
                   required
                   value={unitCost || ""}
                   onChange={(e) => {
