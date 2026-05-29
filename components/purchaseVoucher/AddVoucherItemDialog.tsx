@@ -486,7 +486,7 @@ export function AddVoucherItemDialog({
         </div>
       }
     >
-      <div className="h-[600px] grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="h-[500px] grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left panel — Form */}
         <div className="flex flex-col overflow-hidden">
           <div className="flex-1 overflow-y-auto space-y-6">
