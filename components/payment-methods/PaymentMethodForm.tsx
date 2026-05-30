@@ -96,7 +96,7 @@ export function PaymentMethodForm({
             onChange={(e) =>
               setFormData({ ...formData, isActive: e.target.checked })
             }
-            className="h-4 w-4 rounded border-gray-300"
+            className="h-4 w-4 rounded border-gray-300 accent-primary"
           />
           <Label htmlFor="isActive" className="cursor-pointer">
             Activo

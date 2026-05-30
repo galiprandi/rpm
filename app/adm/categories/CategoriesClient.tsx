@@ -6,8 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { useUI } from '@/components/ui/UIProvider';
 import { CategoryDialog } from '@/components/categories/CategoryDialog';
 import { type CategoryFormData } from '@/components/categories/CategoryForm';
-import { Header, CrudAdmin, StatItem } from '@/components/adm';
-import { Folder, Edit2, Trash2, Package, Layers, Plus } from 'lucide-react';
+import { Header, CrudAdmin, CrudStats, type StatItem } from '@/components/adm';
+import { Folder, Pencil, Trash2, Package, Layers, Plus, CheckCircle2 } from 'lucide-react';
 import { type ColumnDef } from '@tanstack/react-table';
 import {
   Tooltip,
@@ -183,10 +183,10 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
       icon: Layers,
     },
     {
-      label: '+ Categorías Activas',
+      label: 'Activas',
       value: categories.filter((c) => c.isActive).length,
-      icon: Folder,
-      iconColor: '#22c55e',
+      icon: CheckCircle2,
+      iconColor: '#10b981', // emerald-500
     },
     {
       label: 'Productos',
@@ -236,12 +236,14 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
       {
         accessorKey: 'isActive',
         header: 'Estado',
-        cell: ({ row }) =>
-          row.original.isActive ? (
-            <Badge variant="default">Activa</Badge>
-          ) : (
-            <Badge variant="destructive">Inactiva</Badge>
-          ),
+        cell: ({ row }) => (
+          <Badge
+            variant={row.original.isActive ? 'outline' : 'secondary'}
+            className={row.original.isActive ? 'text-emerald-600 border-emerald-200 bg-emerald-50' : ''}
+          >
+            {row.original.isActive ? 'Activa' : 'Inactiva'}
+          </Badge>
+        ),
       },
     ],
     []
@@ -260,6 +262,8 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
         }}
       />
 
+      <CrudStats stats={stats} />
+
       <CrudAdmin
         title=""
         description=""
@@ -268,7 +272,6 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
         onCreate={() => setIsCreateDialogOpen(true)}
         hideCreateAction
         columns={columns}
-        stats={stats}
         emptyIcon={<Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />}
         emptyMessage="No hay categorías creadas. Haz clic en 'Nueva Categoría' para crear la primera."
         createButtonText="Categoría"
@@ -284,7 +287,7 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
                   onClick={() => openEditDialog(category)}
                   aria-label="Editar categoría"
                 >
-                  <Edit2 className="h-4 w-4" />
+                  <Pencil className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Editar categoría</TooltipContent>

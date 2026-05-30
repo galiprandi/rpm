@@ -6,8 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { UserDialog } from '@/components/users/UserDialog';
 import { UserFormData } from '@/components/users/UserForm';
 import { useUI } from '@/components/ui/UIProvider';
-import { Header, CrudAdmin, StatItem } from '@/components/adm';
-import { Users, Edit2, UserCheck, UserCog, Shield, Plus } from 'lucide-react';
+import { Header, CrudAdmin, CrudStats, type StatItem } from '@/components/adm';
+import { Users, Pencil, UserCheck, UserCog, Shield, Plus, CheckCircle2 } from 'lucide-react';
 import { type ColumnDef } from '@tanstack/react-table';
 import {
   Tooltip,
@@ -168,14 +168,14 @@ export default function UsersClient({ initialUsers }: UsersClientProps) {
     {
       label: 'Activos',
       value: users.filter((u) => u.isActive).length,
-      icon: UserCheck,
-      iconColor: 'rgb(34 197 94)', // text-green-500
+      icon: CheckCircle2,
+      iconColor: '#10b981', // emerald-500
     },
     {
       label: 'Admins',
       value: users.filter((u) => u.role === 'ADMIN').length,
       icon: Shield,
-      iconColor: 'rgb(59 130 246)', // text-blue-500
+      iconColor: '#3b82f6', // blue-500
     },
   ];
 
@@ -214,12 +214,14 @@ export default function UsersClient({ initialUsers }: UsersClientProps) {
       {
         accessorKey: 'isActive',
         header: 'Estado',
-        cell: ({ row }) =>
-          row.original.isActive ? (
-            <Badge variant="default">Activo</Badge>
-          ) : (
-            <Badge variant="secondary">Inactivo</Badge>
-          ),
+        cell: ({ row }) => (
+          <Badge
+            variant={row.original.isActive ? 'outline' : 'secondary'}
+            className={row.original.isActive ? 'text-emerald-600 border-emerald-200 bg-emerald-50' : ''}
+          >
+            {row.original.isActive ? 'Activo' : 'Inactivo'}
+          </Badge>
+        ),
       },
       {
         accessorKey: 'notes',
@@ -247,6 +249,8 @@ export default function UsersClient({ initialUsers }: UsersClientProps) {
         }}
       />
 
+      <CrudStats stats={stats} />
+
       <CrudAdmin
         title=""
         description=""
@@ -255,7 +259,6 @@ export default function UsersClient({ initialUsers }: UsersClientProps) {
         onCreate={openCreateDialog}
         hideCreateAction
         columns={columns}
-        stats={stats}
         emptyIcon={<Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />}
         emptyMessage="No hay usuarios creados. Haz clic en 'Nuevo Usuario' para crear el primero."
         createButtonText="Usuario"
@@ -271,7 +274,7 @@ export default function UsersClient({ initialUsers }: UsersClientProps) {
                   onClick={() => openEditDialog(user)}
                   aria-label="Editar usuario"
                 >
-                  <Edit2 className="h-4 w-4" />
+                  <Pencil className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Editar usuario</TooltipContent>

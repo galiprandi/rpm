@@ -9,13 +9,14 @@ import { type SupplierFormData } from '@/components/suppliers/SupplierForm';
 import { Header, CrudAdmin, CrudStats, type StatItem } from '@/components/adm';
 import {
   Truck,
-  Edit2,
+  Pencil,
   Trash2,
   Phone,
   Mail,
   Building2,
   Package,
-  Plus
+  Plus,
+  CheckCircle2
 } from 'lucide-react';
 import { type ColumnDef } from '@tanstack/react-table';
 import {
@@ -185,8 +186,8 @@ export default function SuppliersClient({ initialSuppliers }: SuppliersClientPro
     {
       label: 'Activos',
       value: suppliers.filter((s) => s.isActive).length,
-      icon: Truck,
-      iconColor: 'rgb(34 197 94)', // text-green-500
+      icon: CheckCircle2,
+      iconColor: '#10b981', // emerald-500
     },
     {
       label: 'Con productos',
@@ -246,12 +247,14 @@ export default function SuppliersClient({ initialSuppliers }: SuppliersClientPro
       {
         accessorKey: 'isActive',
         header: 'Estado',
-        cell: ({ row }) =>
-          row.original.isActive ? (
-            <Badge variant="default">Activo</Badge>
-          ) : (
-            <Badge variant="destructive">Inactivo</Badge>
-          ),
+        cell: ({ row }) => (
+          <Badge
+            variant={row.original.isActive ? 'outline' : 'secondary'}
+            className={row.original.isActive ? 'text-emerald-600 border-emerald-200 bg-emerald-50' : ''}
+          >
+            {row.original.isActive ? 'Activo' : 'Inactivo'}
+          </Badge>
+        ),
       },
     ],
     []
@@ -275,11 +278,9 @@ export default function SuppliersClient({ initialSuppliers }: SuppliersClientPro
           icon: Plus,
           ariaLabel: 'Crear nuevo proveedor',
         }}
-      >
-        <div className="mt-4">
-          <CrudStats stats={stats} />
-        </div>
-      </Header>
+      />
+
+      <CrudStats stats={stats} />
 
       <CrudAdmin
         title=""
@@ -304,7 +305,7 @@ export default function SuppliersClient({ initialSuppliers }: SuppliersClientPro
                   onClick={() => openEditDialog(supplier)}
                   aria-label="Editar proveedor"
                 >
-                  <Edit2 className="h-4 w-4" />
+                  <Pencil className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Editar proveedor</TooltipContent>
