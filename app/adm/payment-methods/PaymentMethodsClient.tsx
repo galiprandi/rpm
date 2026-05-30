@@ -208,7 +208,7 @@ export default function PaymentMethodsClient({ initialPaymentMethods }: PaymentM
       cell: ({ row }) => (
         <Badge
           variant={row.original.isActive ? 'outline' : 'secondary'}
-          className={row.original.isActive ? 'text-green-600 border-green-200 bg-green-50' : ''}
+          className={row.original.isActive ? 'text-emerald-600 border-emerald-200 bg-emerald-50' : ''}
         >
           {row.original.isActive ? 'Activo' : 'Inactivo'}
         </Badge>

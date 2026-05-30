@@ -4,7 +4,17 @@ import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useUI } from '@/components/ui/UIProvider';
-import { TrendingDown, Users, Receipt, DollarSign, Phone } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Header, CrudStats } from '@/components/adm';
+import { TrendingDown, Users, Receipt, DollarSign, Phone, Eye, Clock } from 'lucide-react';
 import Link from 'next/link';
 
 interface Debtor {
@@ -92,78 +102,56 @@ export default function DebtorsClient() {
     return diffDays;
   };
 
+  const stats = summary ? [
+    {
+      label: 'Deuda Total',
+      value: formatCurrency(summary.totalDebt),
+      icon: TrendingDown,
+      iconColor: '#ef4444', // red-500
+    },
+    {
+      label: 'Clientes Deudores',
+      value: summary.totalCustomers,
+      icon: Users,
+      iconColor: '#3b82f6', // blue-500
+    },
+    {
+      label: 'OTs Impagas',
+      value: summary.totalWorkOrders,
+      icon: Receipt,
+      iconColor: '#f59e0b', // amber-500
+    },
+    {
+      label: 'Deuda Promedio',
+      value: formatCurrency(summary.averageDebt),
+      icon: DollarSign,
+      iconColor: '#9333ea', // purple-600
+    },
+  ] : [];
+
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Reporte de Deudores</h1>
-          <p className="text-muted-foreground">
-            Clientes con saldo pendiente de pago
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">Ordenar por:</span>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as 'amount' | 'oldest' | 'newest')}
-            className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm"
-          >
-            <option value="amount">Mayor Deuda</option>
-            <option value="oldest">Más Antiguo</option>
-            <option value="newest">Más Reciente</option>
-          </select>
-        </div>
-      </div>
+    <div className="space-y-6">
+      <Header
+        title="Reporte de Deudores"
+        description="Clientes con saldo pendiente de pago"
+        leftActions={
+          <div key="sort-select" className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Ordenar por:</span>
+            <Select value={sortBy} onValueChange={(v) => setSortBy(v as 'amount' | 'oldest' | 'newest')}>
+              <SelectTrigger className="w-44 h-9">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="amount">Mayor Deuda</SelectItem>
+                <SelectItem value="oldest">Más Antiguo</SelectItem>
+                <SelectItem value="newest">Más Reciente</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        }
+      />
 
-      {/* Summary Cards */}
-      {summary && (
-        <div className="grid gap-4 md:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Deuda Total</CardTitle>
-              <TrendingDown className="h-4 w-4 text-red-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-red-600">
-                {formatCurrency(summary.totalDebt)}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Clientes Deudores</CardTitle>
-              <Users className="h-4 w-4 text-blue-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{summary.totalCustomers}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">OTs Impagas</CardTitle>
-              <Receipt className="h-4 w-4 text-amber-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{summary.totalWorkOrders}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Deuda Promedio</CardTitle>
-              <DollarSign className="h-4 w-4 text-purple-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {formatCurrency(summary.averageDebt)}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+      <CrudStats stats={stats} />
 
       {/* Debtors Table */}
       <Card>
@@ -187,14 +175,14 @@ export default function DebtorsClient() {
                     <th className="text-center py-3 px-4 font-medium"># OTs</th>
                     <th className="text-right py-3 px-4 font-medium">Deuda Total</th>
                     <th className="text-left py-3 px-4 font-medium">Deuda Más Antigua</th>
-                    <th className="text-center py-3 px-4 font-medium">Acciones</th>
+                    <th className="text-center py-3 px-4 font-medium"></th>
                   </tr>
                 </thead>
                 <tbody>
                   {debtors.map((debtor) => {
                     const daysSince = getDaysSince(debtor.oldestDebtDate);
                     return (
-                      <tr key={debtor.customerId} className="border-t hover:bg-muted/50">
+                      <tr key={debtor.customerId} className="border-t hover:bg-muted/30 transition-colors group">
                         <td className="py-3 px-4">
                           <div className="font-medium">{debtor.customerName}</div>
                           {debtor.phone && (
@@ -205,15 +193,15 @@ export default function DebtorsClient() {
                           )}
                         </td>
                         <td className="py-3 px-4">
-                          <div className="text-xs">
+                          <div className="text-xs text-muted-foreground">
                             {debtor.vehicles.slice(0, 2).join(', ')}
                             {debtor.vehicles.length > 2 && ` +${debtor.vehicles.length - 2}`}
                           </div>
                         </td>
                         <td className="text-center py-3 px-4">
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                          <Badge variant="secondary" className="font-mono text-xs">
                             {debtor.workOrderCount}
-                          </span>
+                          </Badge>
                         </td>
                         <td className="text-right py-3 px-4">
                           <div className="font-bold text-red-600">
@@ -221,19 +209,27 @@ export default function DebtorsClient() {
                           </div>
                         </td>
                         <td className="py-3 px-4">
-                          <div className="text-sm">{formatDate(debtor.oldestDebtDate)}</div>
+                          <div className="text-sm flex items-center gap-1.5">
+                            <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                            {formatDate(debtor.oldestDebtDate)}
+                          </div>
                           {daysSince && (
-                            <div className={`text-xs ${daysSince > 30 ? 'text-red-600' : 'text-muted-foreground'}`}>
+                            <div className={`text-xs font-medium ${daysSince > 30 ? 'text-red-600' : 'text-muted-foreground'}`}>
                               {daysSince} días
                             </div>
                           )}
                         </td>
                         <td className="text-center py-3 px-4">
-                          <Link href={`/adm/customers/${debtor.customerId}`}>
-                            <Button variant="outline" size="sm">
-                              Ver Cliente
-                            </Button>
-                          </Link>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Link href={`/adm/customers/${debtor.customerId}`}>
+                                <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Ver cliente">
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              </Link>
+                            </TooltipTrigger>
+                            <TooltipContent>Ver cliente</TooltipContent>
+                          </Tooltip>
                         </td>
                       </tr>
                     );

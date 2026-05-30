@@ -295,7 +295,7 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-red-600"
+                  className="text-destructive"
                   onClick={() => handleDeleteCategory(category)}
                   disabled={category.productCount > 0}
                   aria-label="Eliminar categoría"

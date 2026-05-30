@@ -335,7 +335,7 @@ export default function PriceListsClient({ initialPriceLists }: PriceListsClient
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-red-600"
+                  className="text-destructive"
                   onClick={() => handleDeletePriceList(priceList)}
                   aria-label="Eliminar lista"
                 >

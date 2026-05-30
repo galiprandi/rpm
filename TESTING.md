@@ -4,6 +4,51 @@
 
 ---
 
+## Admin Routes Map
+
+### Sidebar principal (`AppSidebar`)
+Acceso directo desde el menú lateral:
+
+| Ruta | Nombre en sidebar | Tipo |
+|------|-------------------|------|
+| `/adm` | Dashboard | Listado |
+| `/adm/customers` | Clientes | Listado |
+| `/adm/work-orders` | Órdenes de Trabajo | Kanban + Lista |
+| `/adm/products` | Productos | Listado |
+| `/adm/services` | Servicios | Listado |
+| `/adm/categories` | Categorías | Listado |
+| `/adm/price-lists` | Precios | Listado |
+| `/adm/cash` | Arqueo de Caja | Dashboard |
+| `/adm/reports/debtors` | Deudores | Reporte |
+| `/adm/suppliers` | Proveedores | Listado |
+| `/adm/users` | Usuarios | Listado |
+
+### Footer del sidebar
+| Ruta | Nombre |
+|------|--------|
+| `/adm/settings` | Configuración |
+| `/adm/novedades` | Novedades |
+
+### Acceso indirecto (links desde otras vistas)
+| Ruta | Se accede desde... |
+|------|-------------------|
+| `/adm/credit-notes` | Detalle de cliente (`secondaryActions` en `Header`) |
+| `/adm/purchase-vouchers` | Botón "Comprobantes" en header de `/adm/suppliers` |
+| `/adm/payment-methods` | Link "Métodos de Pago" dentro de `/adm/settings` |
+| `/adm/operations` | Links "Ver operaciones" en Dashboard (`CashMovementsCard`) |
+
+### Rutas de detalle (desde listados)
+| Ruta de detalle | Se accede desde... |
+|-----------------|-------------------|
+| `/adm/customers/[id]` | Botón ojo en tabla de `/adm/customers` |
+| `/adm/work-orders/[id]` | Click en tarjeta del Kanban o lista |
+| `/adm/vehicles/[id]` | Links de patente en tabla de clientes |
+| `/adm/price-lists/[id]` | Click en nombre de lista en `/adm/price-lists` |
+| `/adm/purchase-vouchers/[id]` | Botón ojo en tabla de `/adm/purchase-vouchers` |
+| `/adm/work-orders/new` | Botón "Nueva OT" en header de `/adm/work-orders` |
+
+---
+
 ## Purchase Vouchers (Comprobantes de Compra)
 
 ### Listado

@@ -119,7 +119,7 @@ export default function VehicleDetailPage() {
       WAITING: { label: "En espera", variant: "outline", className: "text-yellow-600 border-yellow-200 bg-yellow-50" },
       IN_PROGRESS: { label: "En progreso", variant: "outline", className: "text-orange-600 border-orange-200 bg-orange-50" },
       QC_CHECK: { label: "Control de Calidad", variant: "outline", className: "text-purple-600 border-purple-200 bg-purple-50" },
-      READY: { label: "Listo", variant: "outline", className: "text-green-600 border-green-200 bg-green-50" },
+      READY: { label: "Listo", variant: "outline", className: "text-emerald-600 border-emerald-200 bg-emerald-50" },
       PAID: { label: "Pagado", variant: "outline", className: "text-emerald-600 border-emerald-200 bg-emerald-50" },
       DELIVERED: { label: "Entregado", variant: "secondary", className: "" },
     };

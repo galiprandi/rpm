@@ -328,7 +328,7 @@ export default function ServicesClient({ initialServices }: ServicesClientProps)
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-red-600"
+                  className="text-destructive"
                   onClick={() => handleDelete(service)}
                   aria-label="Desactivar servicio"
                 >

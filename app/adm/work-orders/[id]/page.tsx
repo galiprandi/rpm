@@ -68,7 +68,7 @@ function TimelineItem({
           className={cn(
             "w-5 h-5 rounded-full flex items-center justify-center shrink-0",
             status === "completed"
-              ? "bg-green-500 text-white"
+              ? "bg-emerald-500 text-white"
               : "bg-muted border-2 border-muted-foreground/30"
           )}
         >
@@ -709,11 +709,11 @@ export default function WorkOrderDetailPage() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Pagado</p>
-                <p className="text-lg font-semibold text-green-600">${totalPaid.toLocaleString("es-AR")}</p>
+                <p className="text-lg font-semibold text-emerald-600">${totalPaid.toLocaleString("es-AR")}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Pendiente</p>
-                <p className={`text-lg font-semibold ${totalPaid >= workOrder.total ? 'text-green-600' : 'text-orange-600'}`}>
+                <p className={`text-lg font-semibold ${totalPaid >= workOrder.total ? 'text-emerald-600' : 'text-amber-600'}`}>
                   ${Math.max(0, workOrder.total - totalPaid).toLocaleString("es-AR")}
                 </p>
               </div>

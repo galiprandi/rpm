@@ -315,7 +315,7 @@ export default function SuppliersClient({ initialSuppliers }: SuppliersClientPro
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-red-600"
+                  className="text-destructive"
                   onClick={() => handleDeleteSupplier(supplier)}
                   disabled={supplier.productCount > 0}
                   aria-label="Eliminar proveedor"
