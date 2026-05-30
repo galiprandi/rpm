@@ -2,26 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState } from 'react';
 import {
-  LayoutDashboard,
-  Package,
-  Folder,
-  Truck,
-  Users,
-  Settings,
   LogOut,
   ChevronsUpDown,
   PanelLeft,
   PanelRight,
-  UserCircle,
-  ClipboardList,
-  Handshake,
-  CircleDollarSign,
-  Wallet,
-  TrendingDown,
-  Newspaper,
+  Search,
 } from 'lucide-react';
-import { useNovedadesRead } from '@/hooks/useNovedadesRead';
 import {
   Sidebar,
   SidebarContent,
@@ -31,6 +19,8 @@ import {
   SidebarMenuItem,
   SidebarRail,
   useSidebar,
+  SidebarGroup,
+  SidebarGroupContent,
 } from '@/components/ui/sidebar';
 import {
   Avatar,
@@ -45,20 +35,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-
-const navigation = [
-  { name: 'Dashboard', href: '/adm', icon: LayoutDashboard },
-  { name: 'Clientes', href: '/adm/customers', icon: UserCircle },
-  { name: 'Órdenes de Trabajo', href: '/adm/work-orders', icon: ClipboardList },
-  { name: 'Productos', href: '/adm/products', icon: Package },
-  { name: 'Servicios', href: '/adm/services', icon: Handshake },
-  { name: 'Categorías', href: '/adm/categories', icon: Folder },
-  { name: 'Precios', href: '/adm/price-lists', icon: CircleDollarSign },
-  { name: 'Arqueo de Caja', href: '/adm/cash', icon: Wallet },
-  { name: 'Deudores', href: '/adm/reports/debtors', icon: TrendingDown },
-  { name: 'Proveedores', href: '/adm/suppliers', icon: Truck },
-  { name: 'Usuarios', href: '/adm/users', icon: Users },
-];
+import { navGroups } from '@/lib/nav/navConfig';
+import { canAccess } from '@/lib/nav/canAccess';
+import { UserRole } from '@/lib/auth/roles';
 
 interface AppSidebarProps {
   user: {
@@ -69,42 +48,115 @@ interface AppSidebarProps {
     role?: string;
   };
   onSignOut: () => void;
+  onOpenPalette?: () => void;
 }
 
-export function AppSidebar({ user, onSignOut }: AppSidebarProps) {
+export function AppSidebar({ user, onSignOut, onOpenPalette }: AppSidebarProps) {
   const pathname = usePathname();
   const { isMobile, toggleSidebar, state } = useSidebar();
-  const isCollapsed = state === "collapsed";
-  const { hasUnread } = useNovedadesRead();
+  const isCollapsed = state === 'collapsed';
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+
+  const userRole = (user.role?.toUpperCase() as UserRole) ?? UserRole.STAFF;
+
+  const toggleGroup = (label: string) => {
+    setOpenGroups((prev) => ({ ...prev, [label]: !prev[label] }));
+  };
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarContent className="pt-4">
-        <SidebarMenu className="gap-2">
-          {navigation.map((item) => {
-            const isActive = pathname === item.href;
-            const Icon = item.icon;
-            return (
-              <SidebarMenuItem key={item.name}>
-                <SidebarMenuButton
-                  asChild
-                  isActive={isActive}
-                  tooltip={item.name}
-                  className="hover:bg-transparent hover:text-sidebar-foreground data-active:bg-transparent data-active:text-sidebar-foreground"
-                >
-                  <Link href={item.href}>
-                    <Icon className="size-5" />
-                    <span>{item.name}</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            );
-          })}
+      <SidebarContent className="pt-4 gap-2">
+        {/* Buscador global */}
+        <SidebarMenu className="px-2">
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={onOpenPalette}
+              tooltip="Buscar (Cmd+K)"
+              className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            >
+              <Search className="size-4" />
+              <span className="text-muted-foreground text-xs">Buscar...</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
         </SidebarMenu>
+
+        {/* Grupos de navegación */}
+        {navGroups.map((group) => {
+          if (!canAccess(userRole, group.roles)) return null;
+
+          const visibleItems = group.items.filter((item) => canAccess(userRole, item.roles));
+          if (visibleItems.length === 0) return null;
+
+          const isOpen = openGroups[group.label] ?? true;
+          const GroupIcon = group.icon;
+
+          return (
+            <SidebarGroup key={group.label} className="py-0">
+              <button
+                onClick={() => toggleGroup(group.label)}
+                className="flex w-full items-center gap-2 px-2 py-1 text-xs font-medium text-sidebar-foreground/70 uppercase tracking-wider hover:text-sidebar-foreground transition-colors group-data-[collapsible=icon]:hidden"
+              >
+                <GroupIcon className="size-3.5" />
+                <span>{group.label}</span>
+                <span className="ml-auto text-[10px] transition-transform" style={{ transform: isOpen ? 'rotate(0deg)' : 'rotate(-90deg)' }}>
+                  ▼
+                </span>
+              </button>
+              <SidebarGroupContent
+                className="transition-all overflow-hidden group-data-[collapsible=icon]:hidden"
+                style={{ maxHeight: isOpen ? '999px' : '0px', opacity: isOpen ? 1 : 0 }}
+              >
+                <SidebarMenu className="gap-0.5">
+                  {visibleItems.map((item) => {
+                    const isActive = pathname === item.href;
+                    const Icon = item.icon;
+                    return (
+                      <SidebarMenuItem key={item.href}>
+                        <SidebarMenuButton
+                          asChild
+                          isActive={isActive}
+                          tooltip={item.label}
+                          className="hover:bg-transparent hover:text-sidebar-foreground data-active:bg-transparent data-active:text-sidebar-foreground"
+                        >
+                          <Link href={item.href}>
+                            <Icon className="size-5" />
+                            <span>{item.label}</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  })}
+                </SidebarMenu>
+              </SidebarGroupContent>
+              {/* Icon-only mode: render flat items without group label */}
+              <SidebarMenu className="gap-0.5 hidden group-data-[collapsible=icon]:flex">
+                {visibleItems.map((item) => {
+                  const isActive = pathname === item.href;
+                  const Icon = item.icon;
+                  return (
+                    <SidebarMenuItem key={item.href}>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={isActive}
+                        tooltip={item.label}
+                        className="hover:bg-transparent hover:text-sidebar-foreground data-active:bg-transparent data-active:text-sidebar-foreground"
+                      >
+                        <Link href={item.href}>
+                          <Icon className="size-5" />
+                          <span>{item.label}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </SidebarGroup>
+          );
+        })}
       </SidebarContent>
 
       <SidebarFooter className="pb-4 gap-2">
-        {/* Toggle first */}
+        {/* Toggle */}
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
@@ -121,39 +173,7 @@ export function AppSidebar({ user, onSignOut }: AppSidebarProps) {
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
-        {/* Novedades second */}
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              isActive={pathname === '/adm/novedades'}
-              tooltip="Novedades"
-              className="hover:bg-transparent hover:text-sidebar-foreground data-active:bg-transparent data-active:text-sidebar-foreground"
-            >
-              <Link href="/adm/novedades">
-                <Newspaper className={`size-5 ${hasUnread ? 'text-yellow-500 animate-pulse' : 'text-muted-foreground'}`} />
-                <span>Novedades</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-        {/* Settings third */}
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              isActive={pathname === '/adm/settings'}
-              tooltip="Configuración"
-              className="hover:bg-transparent hover:text-sidebar-foreground data-active:bg-transparent data-active:text-sidebar-foreground"
-            >
-              <Link href="/adm/settings">
-                <Settings className="size-5" />
-                <span>Configuración</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-        {/* Avatar last */}
+        {/* Avatar */}
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
@@ -209,3 +229,4 @@ export function AppSidebar({ user, onSignOut }: AppSidebarProps) {
     </Sidebar>
   );
 }
+
