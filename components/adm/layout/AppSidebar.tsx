@@ -129,7 +129,7 @@ export function AppSidebar({ user, onSignOut, onOpenPalette }: AppSidebarProps) 
     <Sidebar collapsible="icon">
       <SidebarContent className="pt-3">
         {/* Buscador global */}
-        <SidebarMenu className="px-2 mb-1">
+        <SidebarMenu className="px-2 mb-2">
           <SidebarMenuItem>
             <SidebarMenuButton
               onClick={onOpenPalette}
@@ -145,15 +145,15 @@ export function AppSidebar({ user, onSignOut, onOpenPalette }: AppSidebarProps) 
 
         {/* Dashboard standalone (no acordeón, no pin) */}
         {canAccess(userRole, homeNavItem.roles) && (
-          <SidebarMenu className="px-2 mb-1">
+          <SidebarMenu className="px-2 mb-3">
             {renderItem(homeNavItem, false)}
           </SidebarMenu>
         )}
 
         {/* Anclados */}
         {pinnedItems.length > 0 && (
-          <SidebarGroup className="py-1">
-            <SidebarGroupLabel className="text-[10px] font-medium text-sidebar-foreground/40 uppercase tracking-wider">
+          <SidebarGroup className="py-1 mb-2">
+            <SidebarGroupLabel className="text-[10px] font-medium text-sidebar-foreground/60 uppercase tracking-wider">
               Anclados
             </SidebarGroupLabel>
             <SidebarGroupContent>
@@ -171,7 +171,7 @@ export function AppSidebar({ user, onSignOut, onOpenPalette }: AppSidebarProps) 
           const open = isGroupOpen(group.label);
 
           return (
-            <SidebarGroup key={group.label} className="py-0.5">
+            <SidebarGroup key={group.label} className="py-1">
               <button
                 onClick={() => toggleGroup(group.label)}
                 className="flex w-full items-center gap-1.5 px-2 py-1 text-[10px] font-medium text-sidebar-foreground/60 uppercase tracking-wider hover:text-sidebar-foreground transition-colors group-data-[collapsible=icon]:hidden"
