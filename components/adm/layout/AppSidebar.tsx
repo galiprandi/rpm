@@ -2,12 +2,16 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import {
   LogOut,
   ChevronsUpDown,
   PanelLeft,
   PanelRight,
   Search,
+  ChevronRight,
+  Pin,
+  PinOff,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -16,6 +20,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuAction,
   SidebarRail,
   useSidebar,
   SidebarGroup,
@@ -37,6 +42,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { navGroups } from '@/lib/nav/navConfig';
 import { canAccess } from '@/lib/nav/canAccess';
+import { usePinnedNav } from '@/hooks/usePinnedNav';
 import { UserRole } from '@/lib/auth/roles';
 
 interface AppSidebarProps {
@@ -51,12 +57,71 @@ interface AppSidebarProps {
   onOpenPalette?: () => void;
 }
 
+/** Resolve the active group label based on the current pathname */
+function getActiveGroupLabel(path: string): string | undefined {
+  return navGroups.find((g) =>
+    g.items.some((i) => {
+      if (i.href === '/adm') return path === '/adm';
+      return path === i.href || path.startsWith(i.href + '/');
+    })
+  )?.label;
+}
+
 export function AppSidebar({ user, onSignOut, onOpenPalette }: AppSidebarProps) {
   const pathname = usePathname();
   const { isMobile, toggleSidebar, state } = useSidebar();
   const isCollapsed = state === 'collapsed';
+  const { isPinned, togglePin } = usePinnedNav();
 
   const userRole = (user.role?.toUpperCase() as UserRole) ?? UserRole.STAFF;
+
+  // Acordeón auto-activo: solo la sección del módulo actual está abierta al navegar
+  const [overrides, setOverrides] = useState<Record<string, boolean>>({});
+  useEffect(() => {
+    const active = getActiveGroupLabel(pathname);
+    if (active) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setOverrides({ [active]: true });
+    }
+  }, [pathname]);
+  const isGroupOpen = (label: string) => overrides[label] ?? false;
+  const toggleGroup = (label: string) =>
+    setOverrides((p) => ({ ...p, [label]: !p[label] }));
+
+  // Flatten all nav items
+  const allItems = navGroups.flatMap((g) => g.items);
+  const pinnedItems = allItems.filter(
+    (i) => isPinned(i.href) && canAccess(userRole, i.roles)
+  );
+
+  const renderItem = (item: (typeof allItems)[number]) => {
+    const isActive = pathname === item.href;
+    const Icon = item.icon;
+    const pinned = isPinned(item.href);
+    return (
+      <SidebarMenuItem key={item.href} className="group/item">
+        <SidebarMenuButton
+          asChild
+          isActive={isActive}
+          tooltip={item.label}
+          className="hover:bg-sidebar-accent data-active:bg-sidebar-accent data-active:font-medium"
+        >
+          <Link href={item.href}>
+            <Icon className="size-5" />
+            <span>{item.label}</span>
+          </Link>
+        </SidebarMenuButton>
+        <SidebarMenuAction
+          showOnHover
+          onClick={() => togglePin(item.href)}
+          aria-label={pinned ? 'Desanclar' : 'Anclar'}
+          className="text-muted-foreground hover:text-sidebar-foreground"
+        >
+          {pinned ? <PinOff className="size-3.5" /> : <Pin className="size-3.5" />}
+        </SidebarMenuAction>
+      </SidebarMenuItem>
+    );
+  };
 
   return (
     <Sidebar collapsible="icon">
@@ -76,41 +141,44 @@ export function AppSidebar({ user, onSignOut, onOpenPalette }: AppSidebarProps) 
           </SidebarMenuItem>
         </SidebarMenu>
 
-        {/* Grupos de navegación con labels de sección sutiles */}
+        {/* Anclados */}
+        {pinnedItems.length > 0 && (
+          <SidebarGroup className="py-1">
+            <SidebarGroupLabel className="text-[10px] font-medium text-sidebar-foreground/40 uppercase tracking-wider">
+              Anclados
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>{pinnedItems.map(renderItem)}</SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {/* Acordeón por sección */}
         {navGroups.map((group) => {
           if (!canAccess(userRole, group.roles)) return null;
-
-          const visibleItems = group.items.filter((item) => canAccess(userRole, item.roles));
+          const visibleItems = group.items.filter((i) => canAccess(userRole, i.roles));
           if (visibleItems.length === 0) return null;
 
+          const open = isGroupOpen(group.label);
+
           return (
-            <SidebarGroup key={group.label} className="py-1">
-              <SidebarGroupLabel className="text-[10px] font-medium text-sidebar-foreground/40 uppercase tracking-wider">
-                {group.label}
-              </SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {visibleItems.map((item) => {
-                    const isActive = pathname === item.href;
-                    const Icon = item.icon;
-                    return (
-                      <SidebarMenuItem key={item.href}>
-                        <SidebarMenuButton
-                          asChild
-                          isActive={isActive}
-                          tooltip={item.label}
-                          className="hover:bg-sidebar-accent data-active:bg-sidebar-accent data-active:font-medium"
-                        >
-                          <Link href={item.href}>
-                            <Icon className="size-5" />
-                            <span>{item.label}</span>
-                          </Link>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    );
-                  })}
-                </SidebarMenu>
-              </SidebarGroupContent>
+            <SidebarGroup key={group.label} className="py-0.5">
+              <button
+                onClick={() => toggleGroup(group.label)}
+                className="flex w-full items-center gap-1.5 px-2 py-1 text-[10px] font-medium text-sidebar-foreground/40 uppercase tracking-wider hover:text-sidebar-foreground/70 transition-colors group-data-[collapsible=icon]:hidden"
+              >
+                <ChevronRight className={`size-3 transition-transform duration-200 ${open ? 'rotate-90' : ''}`} />
+                <span>{group.label}</span>
+              </button>
+              {/* Animated collapse */}
+              <div
+                className="overflow-hidden transition-all duration-200 ease-out group-data-[collapsible=icon]:opacity-100 group-data-[collapsible=icon]:max-h-[500px]"
+                style={{ maxHeight: open ? '500px' : '0px', opacity: open ? 1 : 0 }}
+              >
+                <SidebarGroupContent>
+                  <SidebarMenu>{visibleItems.map(renderItem)}</SidebarMenu>
+                </SidebarGroupContent>
+              </div>
             </SidebarGroup>
           );
         })}
@@ -190,4 +258,3 @@ export function AppSidebar({ user, onSignOut, onOpenPalette }: AppSidebarProps) 
     </Sidebar>
   );
 }
-
