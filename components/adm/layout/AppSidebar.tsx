@@ -129,7 +129,7 @@ export function AppSidebar({ user, onSignOut, onOpenPalette }: AppSidebarProps) 
     <Sidebar collapsible="icon">
       <SidebarContent className="pt-3">
         {/* Buscador global */}
-        <SidebarMenu className="px-2 mb-2">
+        <SidebarMenu className="px-2 pb-2 mb-2 border-b border-sidebar-border">
           <SidebarMenuItem>
             <SidebarMenuButton
               onClick={onOpenPalette}
