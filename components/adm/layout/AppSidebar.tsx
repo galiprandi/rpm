@@ -153,7 +153,7 @@ export function AppSidebar({ user, onSignOut, onOpenPalette }: AppSidebarProps) 
         {/* Anclados */}
         {pinnedItems.length > 0 && (
           <SidebarGroup className="py-1 mb-2">
-            <SidebarGroupLabel className="text-[10px] font-medium text-sidebar-foreground/60 uppercase tracking-wider">
+            <SidebarGroupLabel className="text-[11px] font-medium text-sidebar-foreground/60 uppercase tracking-wider">
               Anclados
             </SidebarGroupLabel>
             <SidebarGroupContent>
@@ -174,7 +174,7 @@ export function AppSidebar({ user, onSignOut, onOpenPalette }: AppSidebarProps) 
             <SidebarGroup key={group.label} className="py-1">
               <button
                 onClick={() => toggleGroup(group.label)}
-                className="flex w-full items-center gap-1.5 px-2 py-1 text-[10px] font-medium text-sidebar-foreground/60 uppercase tracking-wider hover:text-sidebar-foreground transition-colors group-data-[collapsible=icon]:hidden"
+                className="flex w-full items-center gap-1.5 px-2 py-1 text-[11px] font-medium text-sidebar-foreground/60 uppercase tracking-wider hover:text-sidebar-foreground transition-colors group-data-[collapsible=icon]:hidden"
               >
                 <ChevronRight className={`size-3 transition-transform duration-200 ${open ? 'rotate-90' : ''}`} />
                 <span>{group.label}</span>
