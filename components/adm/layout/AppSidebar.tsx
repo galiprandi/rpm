@@ -40,7 +40,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { navGroups } from '@/lib/nav/navConfig';
+import { navGroups, homeNavItem } from '@/lib/nav/navConfig';
 import { canAccess } from '@/lib/nav/canAccess';
 import { usePinnedNav } from '@/hooks/usePinnedNav';
 import { UserRole } from '@/lib/auth/roles';
@@ -88,13 +88,13 @@ export function AppSidebar({ user, onSignOut, onOpenPalette }: AppSidebarProps) 
   const toggleGroup = (label: string) =>
     setOverrides((p) => ({ ...p, [label]: !p[label] }));
 
-  // Flatten all nav items
+  // Flatten nav items from groups (home is handled standalone)
   const allItems = navGroups.flatMap((g) => g.items);
   const pinnedItems = allItems.filter(
     (i) => isPinned(i.href) && canAccess(userRole, i.roles)
   );
 
-  const renderItem = (item: (typeof allItems)[number]) => {
+  const renderItem = (item: (typeof allItems)[number], showPin = true) => {
     const isActive = pathname === item.href;
     const Icon = item.icon;
     const pinned = isPinned(item.href);
@@ -111,14 +111,16 @@ export function AppSidebar({ user, onSignOut, onOpenPalette }: AppSidebarProps) 
             <span>{item.label}</span>
           </Link>
         </SidebarMenuButton>
-        <SidebarMenuAction
-          showOnHover
-          onClick={() => togglePin(item.href)}
-          aria-label={pinned ? 'Desanclar' : 'Anclar'}
-          className="text-muted-foreground hover:text-sidebar-foreground"
-        >
-          {pinned ? <PinOff className="size-3.5" /> : <Pin className="size-3.5" />}
-        </SidebarMenuAction>
+        {showPin && (
+          <SidebarMenuAction
+            showOnHover
+            onClick={() => togglePin(item.href)}
+            aria-label={pinned ? 'Desanclar' : 'Anclar'}
+            className="text-muted-foreground hover:text-sidebar-foreground"
+          >
+            {pinned ? <PinOff className="size-3.5" /> : <Pin className="size-3.5" />}
+          </SidebarMenuAction>
+        )}
       </SidebarMenuItem>
     );
   };
@@ -141,6 +143,13 @@ export function AppSidebar({ user, onSignOut, onOpenPalette }: AppSidebarProps) 
           </SidebarMenuItem>
         </SidebarMenu>
 
+        {/* Dashboard standalone (no acordeón, no pin) */}
+        {canAccess(userRole, homeNavItem.roles) && (
+          <SidebarMenu className="px-2 mb-1">
+            {renderItem(homeNavItem, false)}
+          </SidebarMenu>
+        )}
+
         {/* Anclados */}
         {pinnedItems.length > 0 && (
           <SidebarGroup className="py-1">
@@ -148,7 +157,7 @@ export function AppSidebar({ user, onSignOut, onOpenPalette }: AppSidebarProps) 
               Anclados
             </SidebarGroupLabel>
             <SidebarGroupContent>
-              <SidebarMenu>{pinnedItems.map(renderItem)}</SidebarMenu>
+              <SidebarMenu>{pinnedItems.map((i) => renderItem(i))}</SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
         )}
@@ -176,7 +185,7 @@ export function AppSidebar({ user, onSignOut, onOpenPalette }: AppSidebarProps) 
                 style={{ maxHeight: open ? '500px' : '0px', opacity: open ? 1 : 0 }}
               >
                 <SidebarGroupContent>
-                  <SidebarMenu>{visibleItems.map(renderItem)}</SidebarMenu>
+                  <SidebarMenu>{visibleItems.map((i) => renderItem(i))}</SidebarMenu>
                 </SidebarGroupContent>
               </div>
             </SidebarGroup>

@@ -36,15 +36,15 @@ export interface NavGroup {
 }
 
 /** Todas las rutas de administración definidas en un solo lugar */
+/** Ítem standalone para el dashboard (no forma parte de ningún grupo acordeón) */
+export const homeNavItem: NavItem = {
+  label: 'Dashboard',
+  href: '/adm',
+  icon: LayoutDashboard,
+  roles: [UserRole.ADMIN, UserRole.STAFF],
+};
+
 export const navGroups: NavGroup[] = [
-  {
-    label: 'Inicio',
-    icon: LayoutDashboard,
-    roles: [UserRole.ADMIN, UserRole.STAFF],
-    items: [
-      { label: 'Dashboard', href: '/adm', icon: LayoutDashboard, roles: [UserRole.ADMIN, UserRole.STAFF] },
-    ],
-  },
   {
     label: 'Taller',
     icon: ClipboardList,
@@ -98,5 +98,7 @@ export const navGroups: NavGroup[] = [
 ];
 
 /** Ítems planos para la Command Palette */
-export const flatNavItems: { label: string; href: string; group: string }[] =
-  navGroups.flatMap((g) => g.items.map((i) => ({ label: i.label, href: i.href, group: g.label })));
+export const flatNavItems: { label: string; href: string; group: string }[] = [
+  { label: homeNavItem.label, href: homeNavItem.href, group: 'Inicio' },
+  ...navGroups.flatMap((g) => g.items.map((i) => ({ label: i.label, href: i.href, group: g.label }))),
+];
