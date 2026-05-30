@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
 import {
   LogOut,
   ChevronsUpDown,
@@ -21,6 +20,7 @@ import {
   useSidebar,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
 } from '@/components/ui/sidebar';
 import {
   Avatar,
@@ -55,58 +55,41 @@ export function AppSidebar({ user, onSignOut, onOpenPalette }: AppSidebarProps) 
   const pathname = usePathname();
   const { isMobile, toggleSidebar, state } = useSidebar();
   const isCollapsed = state === 'collapsed';
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
 
   const userRole = (user.role?.toUpperCase() as UserRole) ?? UserRole.STAFF;
 
-  const toggleGroup = (label: string) => {
-    setOpenGroups((prev) => ({ ...prev, [label]: !prev[label] }));
-  };
-
   return (
     <Sidebar collapsible="icon">
-      <SidebarContent className="pt-4 gap-2">
+      <SidebarContent className="pt-3">
         {/* Buscador global */}
-        <SidebarMenu className="px-2">
+        <SidebarMenu className="px-2 mb-1">
           <SidebarMenuItem>
             <SidebarMenuButton
               onClick={onOpenPalette}
-              tooltip="Buscar (Cmd+K)"
-              className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              tooltip="Buscar (⌘K)"
+              className="text-muted-foreground border border-sidebar-border bg-sidebar-accent/30 hover:bg-sidebar-accent"
             >
               <Search className="size-4" />
-              <span className="text-muted-foreground text-xs">Buscar...</span>
+              <span className="text-xs">Buscar...</span>
+              <kbd className="ml-auto text-[10px] font-mono opacity-60 group-data-[collapsible=icon]:hidden">⌘K</kbd>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
 
-        {/* Grupos de navegación */}
+        {/* Grupos de navegación con labels de sección sutiles */}
         {navGroups.map((group) => {
           if (!canAccess(userRole, group.roles)) return null;
 
           const visibleItems = group.items.filter((item) => canAccess(userRole, item.roles));
           if (visibleItems.length === 0) return null;
 
-          const isOpen = openGroups[group.label] ?? true;
-          const GroupIcon = group.icon;
-
           return (
-            <SidebarGroup key={group.label} className="py-0">
-              <button
-                onClick={() => toggleGroup(group.label)}
-                className="flex w-full items-center gap-2 px-2 py-1 text-xs font-medium text-sidebar-foreground/70 uppercase tracking-wider hover:text-sidebar-foreground transition-colors group-data-[collapsible=icon]:hidden"
-              >
-                <GroupIcon className="size-3.5" />
-                <span>{group.label}</span>
-                <span className="ml-auto text-[10px] transition-transform" style={{ transform: isOpen ? 'rotate(0deg)' : 'rotate(-90deg)' }}>
-                  ▼
-                </span>
-              </button>
-              <SidebarGroupContent
-                className="transition-all overflow-hidden group-data-[collapsible=icon]:hidden"
-                style={{ maxHeight: isOpen ? '999px' : '0px', opacity: isOpen ? 1 : 0 }}
-              >
-                <SidebarMenu className="gap-0.5">
+            <SidebarGroup key={group.label} className="py-1">
+              <SidebarGroupLabel className="text-[10px] font-medium text-sidebar-foreground/40 uppercase tracking-wider">
+                {group.label}
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
                   {visibleItems.map((item) => {
                     const isActive = pathname === item.href;
                     const Icon = item.icon;
@@ -116,7 +99,7 @@ export function AppSidebar({ user, onSignOut, onOpenPalette }: AppSidebarProps) 
                           asChild
                           isActive={isActive}
                           tooltip={item.label}
-                          className="hover:bg-transparent hover:text-sidebar-foreground data-active:bg-transparent data-active:text-sidebar-foreground"
+                          className="hover:bg-sidebar-accent data-active:bg-sidebar-accent data-active:font-medium"
                         >
                           <Link href={item.href}>
                             <Icon className="size-5" />
@@ -128,28 +111,6 @@ export function AppSidebar({ user, onSignOut, onOpenPalette }: AppSidebarProps) 
                   })}
                 </SidebarMenu>
               </SidebarGroupContent>
-              {/* Icon-only mode: render flat items without group label */}
-              <SidebarMenu className="gap-0.5 hidden group-data-[collapsible=icon]:flex">
-                {visibleItems.map((item) => {
-                  const isActive = pathname === item.href;
-                  const Icon = item.icon;
-                  return (
-                    <SidebarMenuItem key={item.href}>
-                      <SidebarMenuButton
-                        asChild
-                        isActive={isActive}
-                        tooltip={item.label}
-                        className="hover:bg-transparent hover:text-sidebar-foreground data-active:bg-transparent data-active:text-sidebar-foreground"
-                      >
-                        <Link href={item.href}>
-                          <Icon className="size-5" />
-                          <span>{item.label}</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                })}
-              </SidebarMenu>
             </SidebarGroup>
           );
         })}
