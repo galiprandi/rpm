@@ -8,9 +8,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useUI } from '@/components/ui/UIProvider';
-import { ArrowLeft, Save, Plus, Trash2, CheckCircle } from 'lucide-react';
+import { Save, Plus, Trash2, CheckCircle, Calendar, CreditCard, DollarSign, Package, AlertCircle, History } from 'lucide-react';
 import { type PurchaseVoucher } from '@/types/purchaseVoucher';
-import Link from 'next/link';
+import { SearchableSelect } from '@/components/ui/SearchableSelect';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface VoucherDetailClientProps {
   initialVoucher: PurchaseVoucher & {
@@ -26,31 +27,13 @@ export default function VoucherDetailClient({ initialVoucher }: VoucherDetailCli
   const [loading, setLoading] = useState(false);
 
   // Item Carga Form
-  const [products, setProducts] = useState<{ id: string; name: string }[]>([]);
-  const [selectedProductId, setSelectedProductId] = useState('');
+  const [selectedProduct, setSelectedProduct] = useState<{id: string, name: string, price: number} | null>(null);
   const [quantity, setQuantity] = useState('1');
   const [unitCost, setUnitCost] = useState('');
 
-  // Load products list for the simple load dropdown
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const res = await fetch('/api/products');
-        if (res.ok) {
-          const data = await res.json();
-          // Map products list
-          setProducts(data.products || []);
-        }
-      } catch (err) {
-        console.error('Error fetching products:', err);
-      }
-    };
-    fetchProducts();
-  }, []);
-
   const handleAddItem = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedProductId || !quantity || !unitCost) {
+    if (!selectedProduct || !quantity || !unitCost) {
       await alert({
         title: 'Error',
         description: 'Complete todos los campos del producto.',
@@ -65,7 +48,7 @@ export default function VoucherDetailClient({ initialVoucher }: VoucherDetailCli
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          productId: selectedProductId,
+          productId: selectedProduct.id,
           quantity: parseInt(quantity),
           unitCost: parseFloat(unitCost),
         }),
@@ -84,13 +67,49 @@ export default function VoucherDetailClient({ initialVoucher }: VoucherDetailCli
       }
 
       // Reset item inputs
-      setSelectedProductId('');
+      setSelectedProduct(null);
       setQuantity('1');
       setUnitCost('');
     } catch (err: any) {
       await alert({
         title: 'Error',
         description: err.message || 'Error al agregar producto.',
+        variant: 'error',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRemoveItem = async (itemId: string) => {
+    const confirmed = await confirm({
+      title: 'Eliminar ítem',
+      description: '¿Estás seguro de eliminar este producto del comprobante?',
+      variant: 'destructive',
+    });
+
+    if (!confirmed) return;
+
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/purchase-vouchers/${voucher.id}/items/${itemId}`, {
+        method: 'DELETE',
+      });
+
+      if (!res.ok) {
+        throw new Error('Error al eliminar ítem');
+      }
+
+      // Reload Voucher details
+      const detailRes = await fetch(`/api/purchase-vouchers/${voucher.id}`);
+      if (detailRes.ok) {
+        const updatedVoucher = await detailRes.json();
+        setVoucher(updatedVoucher);
+      }
+    } catch (err: any) {
+      await alert({
+        title: 'Error',
+        description: err.message || 'Error al eliminar ítem.',
         variant: 'error',
       });
     } finally {
@@ -162,177 +181,234 @@ export default function VoucherDetailClient({ initialVoucher }: VoucherDetailCli
     0
   );
 
-  return (
-    <div className="space-y-6 max-w-5xl mx-auto">
-      <div className="flex items-center gap-2">
-        <Link href="/adm/purchase-vouchers">
-          <Button variant="ghost" size="sm">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Volver a la lista
-          </Button>
-        </Link>
-      </div>
+  const isComplete = Math.abs(totalCalculated - parseFloat(voucher.totalAmount)) < 0.01;
 
+  return (
+    <div className="space-y-6 max-w-6xl mx-auto">
       <Header
         title={`Comprobante ${voucher.letter} - ${voucher.number}`}
         description={`Proveedor: ${voucher.supplier?.name}`}
-        leftActions={
-          <div key="status-badge" className="flex items-center gap-2 mr-4">
-            <span className="text-sm text-muted-foreground">Estado:</span>
-            {voucher.status === 'DRAFT' ? (
-              <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
-                Borrador
-              </Badge>
-            ) : (
-              <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">
-                Finalizado
-              </Badge>
-            )}
-          </div>
-        }
-      />
+        showBackButton
+        onBack={() => router.push('/adm/purchase-vouchers')}
+        primaryAction={voucher.status === 'DRAFT' ? {
+          label: 'Finalizar Carga',
+          onClick: handleFinalize,
+          icon: CheckCircle,
+          loading: loading,
+          className: 'bg-emerald-600 hover:bg-emerald-700 text-white font-semibold',
+          disabled: (voucher.items || []).length === 0,
+          ariaLabel: 'Finalizar la carga del comprobante y actualizar stock'
+        } : undefined}
+      >
+        <div className="flex flex-wrap gap-3 mt-4">
+          <Badge variant="outline" className={
+            voucher.status === 'DRAFT'
+              ? 'bg-orange-50 text-orange-700 border-orange-200'
+              : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+          }>
+            {voucher.status === 'DRAFT' ? 'Borrador' : 'Finalizado'}
+          </Badge>
 
-      <div className="grid md:grid-cols-3 gap-6">
-        {/* Cabecera info */}
-        <div className="bg-card border rounded-lg p-6 space-y-4 h-fit">
-          <h3 className="font-semibold text-lg border-b pb-2">Información General</h3>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Fecha Emisión:</span>
-              <span className="font-medium">{new Date(voucher.date).toLocaleDateString('es-AR')}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Forma de Pago:</span>
-              <span className="font-medium">{voucher.paymentMethod?.name || 'Cuenta Corriente'}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Monto Declarado:</span>
-              <span className="font-bold text-primary">
-                {parseFloat(voucher.totalAmount).toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })}
-              </span>
-            </div>
-            <div className="flex justify-between border-t pt-2 mt-2">
-              <span className="text-muted-foreground">Total Cargado:</span>
-              <span className="font-bold">
-                {totalCalculated.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })}
-              </span>
-            </div>
+          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-100 text-xs font-medium">
+            <Calendar className="h-3.5 w-3.5" />
+            {new Date(voucher.date).toLocaleDateString('es-AR')}
           </div>
 
-          {voucher.notes && (
-            <div className="pt-2 border-t text-xs text-muted-foreground">
-              <span className="font-semibold block mb-1">Notas:</span>
-              <p className="whitespace-pre-wrap">{voucher.notes}</p>
-            </div>
-          )}
+          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200 text-xs font-medium">
+            <CreditCard className="h-3.5 w-3.5" />
+            {voucher.paymentMethod?.name || 'Cuenta Corriente'}
+          </div>
 
-          {voucher.status === 'DRAFT' && (
-            <Button
-              className="w-full mt-4 bg-emerald-600 hover:bg-emerald-700"
-              onClick={handleFinalize}
-              disabled={loading}
-            >
-              <CheckCircle className="h-4 w-4 mr-2" />
-              Finalizar Carga
-            </Button>
-          )}
+          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/5 text-primary border border-primary/20 text-xs font-bold">
+            <DollarSign className="h-3.5 w-3.5" />
+            {parseFloat(voucher.totalAmount).toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })}
+          </div>
         </div>
+      </Header>
 
+      <div className="grid lg:grid-cols-3 gap-6">
         {/* Productos cargados / Carga items */}
-        <div className="md:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-6">
           {voucher.status === 'DRAFT' && (
-            <form onSubmit={handleAddItem} className="bg-card border rounded-lg p-6 space-y-4">
-              <h3 className="font-semibold text-lg">Agregar Producto al Comprobante</h3>
-              <div className="grid md:grid-cols-3 gap-4">
-                <div className="md:col-span-2 space-y-1.5">
-                  <Label htmlFor="product-select">Producto</Label>
-                  <select
-                    id="product-select"
-                    value={selectedProductId}
-                    onChange={(e) => setSelectedProductId(e.target.value)}
-                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
-                    required
-                  >
-                    <option value="">Seleccionar producto...</option>
-                    {products.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="qty">Cantidad</Label>
-                  <Input
-                    id="qty"
-                    type="number"
-                    min="1"
-                    value={quantity}
-                    onChange={(e) => setQuantity(e.target.value)}
-                    required
-                  />
-                </div>
+            <form onSubmit={handleAddItem} className="bg-card border rounded-xl shadow-xs overflow-hidden">
+              <div className="p-4 bg-muted/50 border-b flex items-center gap-2">
+                <Plus className="h-4 w-4 text-primary" />
+                <h3 className="font-semibold">Agregar Producto al Comprobante</h3>
               </div>
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <Label htmlFor="cost">Costo Unitario ($)</Label>
-                  <Input
-                    id="cost"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="0.00"
-                    value={unitCost}
-                    onChange={(e) => setUnitCost(e.target.value)}
-                    required
-                  />
+              <div className="p-6 space-y-4">
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="product-select">Producto</Label>
+                    <SearchableSelect
+                      placeholder="Seleccionar producto..."
+                      apiUrl="/api/products"
+                      onSelect={(item) => {
+                        setSelectedProduct(item);
+                        setUnitCost(item.price.toString());
+                      }}
+                      disabled={loading}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="qty">Cantidad</Label>
+                      <Input
+                        id="qty"
+                        type="number"
+                        min="1"
+                        value={quantity}
+                        onChange={(e) => setQuantity(e.target.value)}
+                        required
+                        disabled={loading}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="cost">Costo Unitario ($)</Label>
+                      <Input
+                        id="cost"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="0.00"
+                        value={unitCost}
+                        onChange={(e) => setUnitCost(e.target.value)}
+                        required
+                        disabled={loading}
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-end justify-end">
-                  <Button type="submit" disabled={loading} className="w-full md:w-auto">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Cargar Ítem
+                <div className="flex justify-end pt-2">
+                  <Button type="submit" disabled={loading || !selectedProduct} className="min-w-[140px]">
+                    {loading ? (
+                       <span className="flex items-center gap-2">Cargando...</span>
+                    ) : (
+                      <>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Cargar Ítem
+                      </>
+                    )}
                   </Button>
                 </div>
               </div>
             </form>
           )}
 
-          <div className="bg-card border rounded-lg p-6">
-            <h3 className="font-semibold text-lg mb-4">Detalle de Artículos</h3>
+          <div className="bg-card border rounded-xl shadow-xs overflow-hidden">
+            <div className="p-4 bg-muted/50 border-b flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Package className="h-4 w-4 text-muted-foreground" />
+                <h3 className="font-semibold text-card-foreground">Detalle de Artículos</h3>
+              </div>
+              <Badge variant="secondary" className="font-mono">
+                {(voucher.items || []).length} ítems
+              </Badge>
+            </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left">
-                <thead className="text-xs uppercase bg-muted text-muted-foreground">
+                <thead className="text-xs uppercase bg-muted/30 text-muted-foreground">
                   <tr>
-                    <th className="px-4 py-2">Producto</th>
-                    <th className="px-4 py-2 text-right">Cantidad</th>
-                    <th className="px-4 py-2 text-right">Costo Unitario</th>
-                    <th className="px-4 py-2 text-right">Subtotal</th>
+                    <th className="px-6 py-3 font-medium">Producto</th>
+                    <th className="px-6 py-3 text-right font-medium">Cantidad</th>
+                    <th className="px-6 py-3 text-right font-medium">Costo Unitario</th>
+                    <th className="px-6 py-3 text-right font-medium">Subtotal</th>
+                    <th className="px-6 py-3 text-right font-medium"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
                   {(voucher.items || []).length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="text-center py-8 text-muted-foreground">
+                      <td colSpan={5} className="text-center py-12 text-muted-foreground">
+                        <Package className="h-12 w-12 mx-auto mb-4 opacity-20" />
                         No hay productos cargados en este comprobante
                       </td>
                     </tr>
                   ) : (
                     (voucher.items || []).map((item) => (
-                      <tr key={item.id}>
-                        <td className="px-4 py-3 font-medium">{item.productName}</td>
-                        <td className="px-4 py-3 text-right">{item.quantity}</td>
-                        <td className="px-4 py-3 text-right">
+                      <tr key={item.id} className="hover:bg-muted/30 transition-colors group">
+                        <td className="px-6 py-4 font-medium text-card-foreground">{item.productName}</td>
+                        <td className="px-6 py-4 text-right">{item.quantity}</td>
+                        <td className="px-6 py-4 text-right">
                           {parseFloat(item.unitCost).toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })}
                         </td>
-                        <td className="px-4 py-3 text-right font-medium">
+                        <td className="px-6 py-4 text-right font-semibold">
                           {parseFloat(item.subtotal).toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })}
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          {voucher.status === 'DRAFT' && (
+                             <Tooltip>
+                               <TooltipTrigger asChild>
+                                 <Button
+                                   variant="ghost"
+                                   size="icon"
+                                   className="h-8 w-8 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                                   onClick={() => handleRemoveItem(item.id)}
+                                   disabled={loading}
+                                   aria-label="Eliminar ítem del comprobante"
+                                 >
+                                   <Trash2 className="h-4 w-4" />
+                                 </Button>
+                               </TooltipTrigger>
+                               <TooltipContent>Eliminar ítem</TooltipContent>
+                             </Tooltip>
+                          )}
                         </td>
                       </tr>
                     ))
                   )}
                 </tbody>
+                { (voucher.items || []).length > 0 && (
+                  <tfoot className="bg-muted/20 border-t">
+                    <tr>
+                      <td colSpan={3} className="px-6 py-4 text-right font-medium text-muted-foreground">Total Calculado:</td>
+                      <td className="px-6 py-4 text-right font-bold text-lg">
+                        {totalCalculated.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })}
+                      </td>
+                      <td></td>
+                    </tr>
+                  </tfoot>
+                )}
               </table>
             </div>
+          </div>
+        </div>
+
+        {/* Sidebar info */}
+        <div className="space-y-6">
+          <div className="bg-card border rounded-xl shadow-xs p-6 space-y-6">
+            <h3 className="font-semibold text-lg flex items-center gap-2">
+              <History className="h-5 w-5 text-muted-foreground" />
+              Resumen Financiero
+            </h3>
+
+            <div className="space-y-4">
+              <div className="p-4 rounded-lg bg-primary/5 border border-primary/10">
+                <span className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Monto Declarado</span>
+                <div className="text-2xl font-bold text-primary mt-1">
+                  {parseFloat(voucher.totalAmount).toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })}
+                </div>
+              </div>
+
+              <div className={`p-4 rounded-lg border ${isComplete ? 'bg-emerald-50 border-emerald-100' : 'bg-orange-50 border-orange-100'}`}>
+                <span className={`text-xs uppercase tracking-wider font-semibold ${isComplete ? 'text-emerald-700' : 'text-orange-700'}`}>Monto Cargado</span>
+                <div className={`text-2xl font-bold mt-1 ${isComplete ? 'text-emerald-700' : 'text-orange-700'}`}>
+                  {totalCalculated.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })}
+                </div>
+                {!isComplete && (
+                   <div className="flex items-center gap-1.5 mt-2 text-xs text-orange-600 font-medium">
+                     <AlertCircle className="h-3.5 w-3.5" />
+                     Diferencia: {(parseFloat(voucher.totalAmount) - totalCalculated).toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })}
+                   </div>
+                )}
+              </div>
+            </div>
+
+            {voucher.notes && (
+              <div className="pt-4 border-t">
+                <span className="text-xs font-semibold text-muted-foreground uppercase mb-2 block">Notas</span>
+                <p className="text-sm text-card-foreground whitespace-pre-wrap leading-relaxed">{voucher.notes}</p>
+              </div>
+            )}
           </div>
         </div>
       </div>

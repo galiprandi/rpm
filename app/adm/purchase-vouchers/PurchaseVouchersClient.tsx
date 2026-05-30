@@ -1,18 +1,24 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { CreateDraftVoucherDialog } from '@/components/purchaseVoucher/CreateDraftVoucherDialog';
 import { AddVoucherItemDialog } from '@/components/purchaseVoucher/AddVoucherItemDialog';
 import { VoucherPreviewDialog } from '@/components/purchaseVoucher/VoucherPreviewDialog';
 import { type PurchaseVoucher } from '@/types/purchaseVoucher';
+import { Header, CrudStats } from '@/components/adm';
+import { Button } from '@/components/ui/button';
+import { Receipt, Plus, History, FileText, Trash2, Eye, Play } from 'lucide-react';
+import { DataTable } from '@/components/ui/data-table';
+import { ColumnDef } from '@tanstack/react-table';
+import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface VoucherWithPaymentMethod extends PurchaseVoucher {
   paymentMethodId: string | null;
   paymentMethod: { name: string } | null;
+  itemsCount?: number;
+  itemsSubtotal?: number;
 }
-import { Header, CrudStats } from '@/components/adm';
-import { Button } from '@/components/ui/button';
-import { Receipt, Plus, History, FileText, Trash2 } from 'lucide-react';
 
 interface PurchaseVouchersClientProps {
   initialVouchers: VoucherWithPaymentMethod[];
@@ -46,33 +52,16 @@ export default function PurchaseVouchersClient({ initialVouchers }: PurchaseVouc
     .toLocaleString('es-AR', { style: 'currency', currency: 'ARS' });
 
   const handleVoucherCreated = async () => {
-    // Reload vouchers after creation
     try {
       const response = await fetch('/api/purchase-vouchers');
       if (response.ok) {
         const data = await response.json();
-        // API returns raw vouchers without computed fields; refetch via page reload
-        // or compute client-side from items if available
-        const vouchersFormatted = data.map((v: VoucherWithPaymentMethod & { items?: { subtotal: string }[] }) => {
+        const vouchersFormatted = data.map((v: any) => {
           const itemsCount = v.items?.length ?? 0;
-          const itemsSubtotal = v.items?.reduce((sum, it) => sum + parseFloat(it.subtotal), 0) ?? 0;
+          const itemsSubtotal = v.items?.reduce((sum: number, it: any) => sum + parseFloat(it.subtotal), 0) ?? 0;
           return {
-            id: v.id,
-            supplierId: v.supplierId,
+            ...v,
             supplier: v.supplier ? { name: v.supplier.name } : { name: 'Desconocido' },
-            supplierName: v.supplierName,
-            letter: v.letter,
-            number: v.number,
-            date: v.date,
-            totalAmount: v.totalAmount,
-            paymentMethodId: v.paymentMethodId,
-            paymentMethod: v.paymentMethod,
-            notes: v.notes,
-            status: v.status as 'DRAFT' | 'FINALIZED',
-            createdBy: v.createdBy,
-            createdAt: v.createdAt,
-            updatedAt: v.updatedAt,
-            finalizedAt: v.finalizedAt,
             itemsCount,
             itemsSubtotal,
           };
@@ -85,7 +74,6 @@ export default function PurchaseVouchersClient({ initialVouchers }: PurchaseVouc
   };
 
   const handleBackToHeader = async () => {
-    // Load current voucher data for editing
     try {
       const response = await fetch(`/api/purchase-vouchers/${currentVoucherId}`);
       if (response.ok) {
@@ -127,6 +115,109 @@ export default function PurchaseVouchersClient({ initialVouchers }: PurchaseVouc
     }
   };
 
+  const columns = useMemo<ColumnDef<VoucherWithPaymentMethod>[]>(() => [
+    {
+      accessorKey: 'supplierName',
+      header: 'Proveedor',
+      cell: ({ row }) => row.original.supplier?.name || row.original.supplierName || 'Desconocido',
+    },
+    {
+      accessorKey: 'number',
+      header: 'Comprobante',
+      cell: ({ row }) => (
+        <span className="font-medium">
+          {row.original.letter} - {row.original.number}
+        </span>
+      ),
+    },
+    {
+      accessorKey: 'date',
+      header: 'Fecha',
+      cell: ({ row }) => (
+        <span className="text-muted-foreground">
+          {new Date(row.original.date).toLocaleDateString('es-AR')}
+        </span>
+      ),
+    },
+    {
+      accessorKey: 'paymentMethod',
+      header: 'Forma de Pago',
+      cell: ({ row }) => (
+        <span className="text-muted-foreground">
+          {row.original.paymentMethod?.name || 'Cuenta Corriente'}
+        </span>
+      ),
+    },
+    {
+      accessorKey: 'status',
+      header: 'Estado',
+      cell: ({ row }) => {
+        const status = row.original.status;
+        return (
+          <Badge
+            variant="outline"
+            className={
+              status === 'DRAFT'
+                ? 'bg-orange-50 text-orange-700 border-orange-200'
+                : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+            }
+          >
+            {status === 'DRAFT' ? 'Borrador' : 'Finalizado'}
+          </Badge>
+        );
+      },
+    },
+    {
+      accessorKey: 'totalAmount',
+      header: () => <div className="text-right">Monto Total</div>,
+      cell: ({ row }) => {
+        const amount = parseFloat(row.original.totalAmount);
+        return (
+          <div className="text-right font-medium">
+            ${amount.toLocaleString('es-AR', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
+          </div>
+        );
+      },
+    },
+    {
+      id: 'progress',
+      header: 'Completado',
+      cell: ({ row }) => {
+        if (row.original.status === 'FINALIZED') return <span className="text-muted-foreground text-xs">—</span>;
+
+        const itemsCount = row.original.itemsCount ?? 0;
+        const itemsSubtotal = row.original.itemsSubtotal ?? 0;
+        const totalAmount = parseFloat(row.original.totalAmount);
+        const progressPct = totalAmount > 0 ? Math.min(100, (itemsSubtotal / totalAmount) * 100) : 0;
+        const isComplete = progressPct >= 95;
+
+        return (
+          <div className="space-y-1 w-32">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">
+                {itemsCount} {itemsCount === 1 ? 'ítem' : 'ítems'}
+              </span>
+              <span className={`font-medium ${isComplete ? 'text-emerald-600' : 'text-orange-500'}`}>
+                {progressPct.toFixed(0)}%
+              </span>
+            </div>
+            <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all ${
+                  isComplete ? 'bg-emerald-500' : 'bg-orange-400'
+                }`}
+                style={{ width: `${progressPct}%` }}
+              />
+            </div>
+          </div>
+        );
+      },
+    },
+  ], []);
+
   const stats = [
     {
       label: 'Borradores',
@@ -138,7 +229,7 @@ export default function PurchaseVouchersClient({ initialVouchers }: PurchaseVouc
       label: 'Finalizados',
       value: finalizedCount,
       icon: History,
-      iconColor: 'rgb(34 197 94)', // text-green-500
+      iconColor: 'rgb(16 185 129)', // text-emerald-500
     },
     {
       label: 'Total Acumulado',
@@ -164,150 +255,98 @@ export default function PurchaseVouchersClient({ initialVouchers }: PurchaseVouc
       <CrudStats stats={stats} />
 
       <div className="bg-card rounded-lg border shadow-xs p-6">
-        <h2 className="text-lg font-semibold mb-4 text-card-foreground">Listado de Comprobantes</h2>
-        {vouchers.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">
-            <Receipt className="h-12 w-12 mx-auto mb-4 text-muted-foreground/60" />
-            <p className="text-lg font-medium">No hay comprobantes cargados</p>
-            <p className="text-sm">Comienza creando un borrador con el botón &apos;Nuevo Comprobante&apos;.</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-muted/50">
-                  <th className="text-left p-3 font-medium">Proveedor</th>
-                  <th className="text-left p-3 font-medium">Comprobante</th>
-                  <th className="text-left p-3 font-medium">Fecha</th>
-                  <th className="text-left p-3 font-medium">Forma de Pago</th>
-                  <th className="text-left p-3 font-medium">Estado</th>
-                  <th className="text-right p-3 font-medium">Monto Total</th>
-                  <th className="text-left p-3 font-medium w-40">Completado</th>
-                  <th className="text-right p-3 font-medium">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {vouchers.map((v) => {
-                  const itemsCount = v.itemsCount ?? 0;
-                  const itemsSubtotal = v.itemsSubtotal ?? 0;
-                  const totalAmount = parseFloat(v.totalAmount);
-                  const progressPct = totalAmount > 0 ? Math.min(100, (itemsSubtotal / totalAmount) * 100) : 0;
-                  const isComplete = progressPct >= 95;
-                  return (
-                    <tr
-                      key={v.id}
-                      className="border-b last:border-0 hover:bg-muted/30 transition-colors cursor-pointer"
-                      onClick={() => {
-                        if (v.status === 'DRAFT') {
+        <DataTable
+          data={vouchers}
+          columns={columns}
+          title="Listado de Comprobantes"
+          enableGlobalFilter
+          globalFilterPlaceholder="Buscar por proveedor o número..."
+          emptyMessage="No hay comprobantes cargados"
+          rowActions={(v) => (
+            <div className="flex items-center justify-end gap-2">
+              {v.status === 'DRAFT' ? (
+                <>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                        onClick={() => {
                           setCurrentVoucherId(v.id);
-                          setCurrentVoucherTotal(totalAmount);
+                          setCurrentVoucherTotal(parseFloat(v.totalAmount));
+                          setCurrentVoucherPaymentMethodId(v.paymentMethodId ?? null);
+                          setCurrentVoucherLetter(v.letter);
+                          setCurrentVoucherNumber(v.number);
+                          setCurrentVoucherSupplierName(v.supplier?.name || v.supplierName || '');
+                          setIsAddItemDialogOpen(true);
+                        }}
+                        aria-label="Continuar carga de comprobante"
+                      >
+                        <Play className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Continuar carga</TooltipContent>
+                  </Tooltip>
+
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8"
+                        onClick={() => {
+                          setCurrentVoucherId(v.id);
+                          setCurrentVoucherTotal(parseFloat(v.totalAmount));
                           setCurrentVoucherPaymentMethodId(v.paymentMethodId ?? null);
                           setCurrentVoucherLetter(v.letter);
                           setCurrentVoucherNumber(v.number);
                           setCurrentVoucherSupplierName(v.supplier?.name || v.supplierName || '');
                           setIsPreviewOpen(true);
-                        }
-                      }}
-                    >
-                      <td className="p-3">
-                        {v.supplier?.name || v.supplierName || 'Desconocido'}
-                      </td>
-                      <td className="p-3 font-medium">
-                        {v.letter} - {v.number}
-                      </td>
-                      <td className="p-3 text-muted-foreground">
-                        {new Date(v.date).toLocaleDateString('es-AR')}
-                      </td>
-                      <td className="p-3">
-                        <span className="text-muted-foreground">
-                          {v.paymentMethod?.name || 'Cuenta Corriente'}
-                        </span>
-                      </td>
-                      <td className="p-3">
-                        <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                            v.status === 'DRAFT'
-                              ? 'bg-orange-100 text-orange-700'
-                              : 'bg-green-100 text-green-700'
-                          }`}
-                        >
-                          {v.status === 'DRAFT' ? 'Borrador' : 'Finalizado'}
-                        </span>
-                      </td>
-                      <td className="p-3 text-right font-medium">
-                        ${totalAmount.toLocaleString('es-AR', {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
-                      </td>
-                      <td className="p-3">
-                        {v.status === 'DRAFT' && (
-                          <div className="space-y-1">
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="text-muted-foreground">
-                                {itemsCount} {itemsCount === 1 ? 'ítem' : 'ítems'}
-                              </span>
-                              <span className={`font-medium ${isComplete ? 'text-green-600' : 'text-orange-500'}`}>
-                                {progressPct.toFixed(0)}%
-                              </span>
-                            </div>
-                            <div className="h-1.5 w-full max-w-32 bg-muted rounded-full overflow-hidden">
-                              <div
-                                className={`h-full rounded-full transition-all ${
-                                  isComplete ? 'bg-green-500' : 'bg-orange-400'
-                                }`}
-                                style={{ width: `${progressPct}%` }}
-                              />
-                            </div>
-                          </div>
-                        )}
-                        {v.status === 'FINALIZED' && (
-                          <span className="text-muted-foreground text-xs">—</span>
-                        )}
-                      </td>
-                      <td className="p-3 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          {v.status === 'DRAFT' && (
-                            <Button
-                              size="sm"
-                              onClick={(e: React.MouseEvent) => {
-                                e.stopPropagation();
-                                setCurrentVoucherId(v.id);
-                                setCurrentVoucherTotal(totalAmount);
-                                setCurrentVoucherPaymentMethodId(v.paymentMethodId ?? null);
-                                setCurrentVoucherLetter(v.letter);
-                                setCurrentVoucherNumber(v.number);
-                                setCurrentVoucherSupplierName(v.supplier?.name || v.supplierName || '');
-                                setIsAddItemDialogOpen(true);
-                              }}
-                            >
-                              Continuar
-                            </Button>
-                          )}
-                          {v.status === 'DRAFT' && (
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={(e: React.MouseEvent) => {
-                                e.stopPropagation();
-                                handleDeleteVoucher(v.id);
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          )}
-                          {v.status === 'FINALIZED' && (
-                            <span className="text-muted-foreground text-xs">—</span>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
+                        }}
+                        aria-label="Ver vista previa de comprobante"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Vista previa</TooltipContent>
+                  </Tooltip>
+
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => handleDeleteVoucher(v.id)}
+                        aria-label="Eliminar borrador de comprobante"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Eliminar</TooltipContent>
+                  </Tooltip>
+                </>
+              ) : (
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8"
+                        asChild
+                      >
+                        <a href={`/adm/purchase-vouchers/${v.id}`} aria-label="Ver detalle de comprobante">
+                          <Eye className="h-4 w-4" />
+                        </a>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Ver detalle</TooltipContent>
+                  </Tooltip>
+              )}
+            </div>
+          )}
+        />
       </div>
 
       <CreateDraftVoucherDialog
@@ -321,7 +360,7 @@ export default function PurchaseVouchersClient({ initialVouchers }: PurchaseVouc
           setEditingVoucherData(null);
           setCurrentVoucherId(voucher.id);
           setCurrentVoucherTotal(parseFloat(voucher.totalAmount?.toString() || '0'));
-          setCurrentVoucherPaymentMethodId((voucher as unknown as { paymentMethodId?: string | null }).paymentMethodId ?? null);
+          setCurrentVoucherPaymentMethodId((voucher as any).paymentMethodId ?? null);
           setCurrentVoucherLetter(voucher.letter);
           setCurrentVoucherNumber(voucher.number);
           setCurrentVoucherSupplierName(voucher.supplier?.name || '');

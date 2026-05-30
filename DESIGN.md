@@ -117,3 +117,30 @@ The Customers, Suppliers, and Services modules are core catalogs of the applicat
 
 ## Component Evolution
 - `CustomersClient`, `SuppliersClient`, `ServicesClient`: Now follow the exact same architectural structure, making the codebase easier to maintain and the UI predictable for the user.
+
+# Design Decisions: Purchase Vouchers & Cash Management Refinement
+
+## Context
+Purchase vouchers and cash management are critical for financial control. This refinement focuses on unifiying the administrative pattern, improving visual feedback for discrepancies, and standardizing the interface with the rest of the administrative panel.
+
+## Applied Patterns
+
+### 1. Unified Header & Financial Metadata
+- **Standardized Header**: Both modules now use the standard `Header` component with integrated status badges and primary actions.
+- **Metadata Pills**: The Voucher Detail view uses pill-style badges for Date, Payment Method, and Total Amount, providing a quick scannable overview of the document's header info.
+- **Live Status Indicators**: Cash management features a live "Pulse" indicator in the header badge to clearly distinguish an open jornada from a closed one.
+
+### 2. Operational Feedback & UI Components
+- **Searchable Selection**: Replaced native `<select>` in Voucher Detail with `SearchableSelect`, making product entry faster and more professional.
+- **Standardized Stats**: Both modules utilize `CrudStats` for high-level summaries (Drafts vs. Finalized, Total Accumulated, Cash Summary), ensuring vertical space is used efficiently.
+- **Contextual Tooltips**: Added `Tooltip` components to all row actions in the Purchase Vouchers list, clarifying intent for "Play" (continue draft), "Eye" (preview/view), and "Trash" (delete).
+
+### 3. Financial Scannability
+- **Semantic Colors**: Standardized the use of `emerald-600` for balanced/positive amounts and `red-600` for expenses or shortages.
+- **Discrepancy Highlighting**: Differences in cash counting or voucher loading are highlighted with `orange-50` or `red-50` backgrounds and explicit icons to ensure users notice operational gaps.
+- **Enhanced Tables**: History and detail tables now include icons (Clock, User, Package) to improve scannability and accessibility.
+
+## Component Evolution
+- `PurchaseVouchersClient`: Serves as a reference for handling complex multi-step workflows (Draft -> Items -> Finalize) within a list view.
+- `VoucherDetailClient`: Reinforces the "Metadata Pill" and "Financial Sidebar" patterns.
+- `CashClient`: Demonstrates the "Header Status Badge" and "Standardized Summary Cards" pattern for operational dashboards.
