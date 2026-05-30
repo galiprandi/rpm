@@ -90,3 +90,11 @@ secondaryActions={[
   { label: "Comprobantes", href: "/adm/purchase-vouchers", icon: FileText, variant: "outline" },
 ]}
 ```
+
+## 9. Admin Sidebar Pattern
+
+- El aside de `/adm` debe funcionar como navegación protagonista: marca visible, búsqueda global destacada, grupos con icono, estados activos claros y footer de sesión.
+- Mantener el componente separado en `components/adm/layout/AppSidebar.tsx`; no duplicar navegación inline en páginas.
+- Los ítems activos, marca y footer usan tokens `primary/sidebar-ring` y sombra/indicador lateral para respetar la paleta del sistema.
+- El comportamiento colapsado y mobile debe conservar tooltips, cierre automático al navegar, permisos por rol, pines y Command Palette (`⌘K`).
+- Los cambios visuales del sidebar requieren validación con type-check y captura Playwright en desktop, colapsado y mobile.

@@ -12,6 +12,8 @@ import {
   ChevronRight,
   Pin,
   PinOff,
+  Sparkles,
+  ShieldCheck,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -25,7 +27,6 @@ import {
   useSidebar,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
 } from '@/components/ui/sidebar';
 import {
   Avatar,
@@ -44,6 +45,7 @@ import { navGroups, homeNavItem } from '@/lib/nav/navConfig';
 import { canAccess } from '@/lib/nav/canAccess';
 import { usePinnedNav } from '@/hooks/usePinnedNav';
 import { UserRole } from '@/lib/auth/roles';
+import { cn } from '@/lib/utils';
 
 interface AppSidebarProps {
   user: {
@@ -74,8 +76,9 @@ export function AppSidebar({ user, onSignOut, onOpenPalette }: AppSidebarProps) 
   const { isPinned, togglePin } = usePinnedNav();
 
   const userRole = (user.role?.toUpperCase() as UserRole) ?? UserRole.STAFF;
+  const roleLabel = userRole === UserRole.ADMIN ? 'Admin' : 'Staff';
 
-  // Acordeón auto-activo: solo la sección del módulo actual está abierta al navegar
+  // Keep the current module expanded after navigation.
   const [overrides, setOverrides] = useState<Record<string, boolean>>({});
   useEffect(() => {
     const active = getActiveGroupLabel(pathname);
@@ -95,20 +98,33 @@ export function AppSidebar({ user, onSignOut, onOpenPalette }: AppSidebarProps) 
   );
 
   const renderItem = (item: (typeof allItems)[number], showPin = true) => {
-    const isActive = pathname === item.href;
+    const isActive = item.href === '/adm'
+      ? pathname === item.href
+      : pathname === item.href || pathname.startsWith(item.href + '/');
     const Icon = item.icon;
     const pinned = isPinned(item.href);
     return (
-      <SidebarMenuItem key={item.href} className="group/item">
+      <SidebarMenuItem key={item.href} className="group/item px-1">
         <SidebarMenuButton
           asChild
           isActive={isActive}
           tooltip={item.label}
-          className="hover:bg-sidebar-accent data-active:bg-sidebar-accent data-active:font-medium"
+          className={cn(
+            "relative h-10 gap-3 rounded-lg px-3 text-sidebar-foreground/78 transition-[background,color,box-shadow,transform] duration-200 hover:-translate-y-px hover:bg-sidebar-accent/80 hover:text-sidebar-foreground hover:shadow-sm",
+            "data-active:bg-sidebar-accent data-active:text-sidebar-accent-foreground data-active:font-semibold data-active:shadow-[inset_3px_0_0_hsl(var(--sidebar-ring)),0_8px_22px_hsl(var(--sidebar-ring)/0.12)]",
+            "group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:px-2 group-data-[collapsible=icon]:shadow-none group-data-[collapsible=icon]:data-active:shadow-[inset_0_-3px_0_0_hsl(var(--sidebar-ring))]",
+          )}
         >
           <Link href={item.href}>
-            <Icon className="size-5" />
-            <span>{item.label}</span>
+            <span
+              className={cn(
+                "flex size-7 shrink-0 items-center justify-center rounded-md bg-sidebar-foreground/5 text-sidebar-foreground/68 transition-colors",
+                isActive && "bg-primary/12 text-primary"
+              )}
+            >
+              <Icon className="size-4.5" />
+            </span>
+            <span className="truncate">{item.label}</span>
           </Link>
         </SidebarMenuButton>
         {showPin && (
@@ -116,7 +132,7 @@ export function AppSidebar({ user, onSignOut, onOpenPalette }: AppSidebarProps) 
             showOnHover
             onClick={() => togglePin(item.href)}
             aria-label={pinned ? 'Desanclar' : 'Anclar'}
-            className="text-muted-foreground hover:text-sidebar-foreground"
+            className="right-2 text-sidebar-foreground/45 hover:bg-primary/10 hover:text-primary"
           >
             {pinned ? <PinOff className="size-3.5" /> : <Pin className="size-3.5" />}
           </SidebarMenuAction>
@@ -126,60 +142,80 @@ export function AppSidebar({ user, onSignOut, onOpenPalette }: AppSidebarProps) 
   };
 
   return (
-    <Sidebar collapsible="icon">
-      <SidebarContent className="pt-3">
-        {/* Buscador global */}
-        <SidebarMenu className="px-2 pb-2 mb-5">
+    <Sidebar collapsible="icon" className="border-sidebar-border/70">
+      <SidebarContent className="bg-[linear-gradient(180deg,hsl(var(--sidebar))_0%,hsl(var(--sidebar-accent)/0.34)_100%)] pt-3">
+        <div className="px-3 pb-4 group-data-[collapsible=icon]:px-2">
+          <div className="flex items-center gap-3 rounded-xl border border-sidebar-border/70 bg-sidebar-foreground/[0.035] p-2.5 shadow-sm group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-2">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-[0_10px_24px_hsl(var(--primary)/0.18)]">
+              <Sparkles className="size-5" />
+            </div>
+            <div className="min-w-0 group-data-[collapsible=icon]:hidden">
+              <p className="truncate text-sm font-semibold leading-tight text-sidebar-foreground">
+                RPM Accesorios
+              </p>
+              <div className="mt-1 flex items-center gap-1.5 text-[11px] text-sidebar-foreground/60">
+                <span className="size-1.5 rounded-full bg-primary" />
+                <span>Panel operativo</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <SidebarMenu className="px-3 pb-3 group-data-[collapsible=icon]:px-2">
           <SidebarMenuItem>
             <SidebarMenuButton
               onClick={onOpenPalette}
               tooltip="Buscar (⌘K)"
-              className="text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"
+              className="h-11 rounded-lg border border-sidebar-border/70 bg-background/55 px-3 text-sidebar-foreground/68 shadow-sm transition-[background,color,box-shadow] hover:bg-sidebar-accent hover:text-sidebar-foreground hover:shadow-md group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-2"
             >
-              <Search className="size-4" />
-              <span className="text-xs">Buscar...</span>
-              <kbd className="ml-auto text-[10px] font-mono opacity-60 group-data-[collapsible=icon]:hidden">⌘K</kbd>
+              <Search className="size-4.5" />
+              <span className="text-sm font-medium">Buscar módulo...</span>
+              <kbd className="ml-auto rounded-md border border-sidebar-border bg-sidebar-foreground/5 px-1.5 py-0.5 text-[10px] font-mono text-sidebar-foreground/58 group-data-[collapsible=icon]:hidden">⌘K</kbd>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
 
-        {/* Dashboard standalone (no acordeón, no pin) */}
         {canAccess(userRole, homeNavItem.roles) && (
-          <SidebarMenu className="px-2 mb-3">
+          <SidebarMenu className="mb-3 px-2">
             {renderItem(homeNavItem, false)}
           </SidebarMenu>
         )}
 
-        {/* Anclados */}
         {pinnedItems.length > 0 && (
-          <SidebarGroup className="py-1 mb-2">
-            <SidebarGroupLabel className="text-xs font-medium text-sidebar-foreground/60 uppercase tracking-wider">
-              Anclados
-            </SidebarGroupLabel>
+          <SidebarGroup className="mb-2 px-2 py-1">
+            <div className="mb-1 flex h-7 items-center gap-2 px-3 text-[11px] font-semibold uppercase text-sidebar-foreground/52 group-data-[collapsible=icon]:hidden">
+              <Pin className="size-3.5 text-primary" />
+              <span>Anclados</span>
+            </div>
             <SidebarGroupContent>
               <SidebarMenu>{pinnedItems.map((i) => renderItem(i))}</SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
         )}
 
-        {/* Acordeón por sección */}
+        {/* Section accordion */}
         {navGroups.map((group) => {
           if (!canAccess(userRole, group.roles)) return null;
           const visibleItems = group.items.filter((i) => canAccess(userRole, i.roles));
           if (visibleItems.length === 0) return null;
 
           const open = isGroupOpen(group.label);
+          const GroupIcon = group.icon;
 
           return (
-            <SidebarGroup key={group.label} className="py-1">
+            <SidebarGroup key={group.label} className="px-2 py-1">
               <button
                 onClick={() => toggleGroup(group.label)}
-                className="flex w-full items-center gap-1.5 px-2 py-1 text-xs font-medium text-sidebar-foreground/60 uppercase tracking-wider hover:text-sidebar-foreground transition-colors group-data-[collapsible=icon]:hidden"
+                className="mb-1 flex h-8 w-full items-center gap-2 rounded-lg px-3 text-[11px] font-semibold uppercase text-sidebar-foreground/54 transition-colors hover:bg-sidebar-accent/55 hover:text-sidebar-foreground group-data-[collapsible=icon]:hidden"
+                aria-expanded={open}
               >
-                <ChevronRight className={`size-3 transition-transform duration-200 ${open ? 'rotate-90' : ''}`} />
-                <span>{group.label}</span>
+                <GroupIcon className="size-3.5 text-sidebar-foreground/42" />
+                <span className="flex-1 text-left">{group.label}</span>
+                <span className="rounded-full bg-sidebar-foreground/8 px-1.5 py-0.5 text-[10px] text-sidebar-foreground/50">
+                  {visibleItems.length}
+                </span>
+                <ChevronRight className={`size-3.5 transition-transform duration-200 ${open ? 'rotate-90 text-primary' : ''}`} />
               </button>
-              {/* Animated collapse */}
               <div
                 className="overflow-hidden transition-all duration-200 ease-out group-data-[collapsible=icon]:opacity-100 group-data-[collapsible=icon]:max-h-[500px]"
                 style={{ maxHeight: open ? '500px' : '0px', opacity: open ? 1 : 0 }}
@@ -193,14 +229,23 @@ export function AppSidebar({ user, onSignOut, onOpenPalette }: AppSidebarProps) 
         })}
       </SidebarContent>
 
-      <SidebarFooter className="pb-4 gap-2">
-        {/* Toggle */}
-        <SidebarMenu>
+      <SidebarFooter className="gap-2 border-t border-sidebar-border/70 bg-sidebar/92 pb-4 pt-3">
+        <div className="px-2 group-data-[collapsible=icon]:hidden">
+          <div className="flex items-center gap-2 rounded-lg border border-sidebar-border/70 bg-sidebar-foreground/[0.035] px-3 py-2 text-xs text-sidebar-foreground/65">
+            <ShieldCheck className="size-4 text-primary" />
+            <span className="truncate">Sesión segura</span>
+            <span className="ml-auto rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+              {roleLabel}
+            </span>
+          </div>
+        </div>
+
+        <SidebarMenu className="px-2">
           <SidebarMenuItem>
             <SidebarMenuButton
               onClick={toggleSidebar}
               tooltip={isCollapsed ? 'Expandir menú' : 'Colapsar menú'}
-              className="hover:bg-transparent hover:text-sidebar-foreground"
+              className="h-9 rounded-lg text-sidebar-foreground/62 hover:bg-sidebar-accent hover:text-sidebar-foreground"
             >
               {isCollapsed ? (
                 <PanelRight className="size-5" />
@@ -211,26 +256,25 @@ export function AppSidebar({ user, onSignOut, onOpenPalette }: AppSidebarProps) 
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
-        {/* Avatar */}
-        <SidebarMenu>
+        <SidebarMenu className="px-2">
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton
                   size="lg"
-                  className="data-[state=open]:bg-transparent data-[state=open]:text-sidebar-foreground hover:bg-transparent hover:text-sidebar-foreground"
+                  className="h-13 rounded-xl border border-sidebar-border/70 bg-sidebar-foreground/[0.035] px-2.5 data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"
                 >
-                  <Avatar className="h-8 w-8 rounded-lg">
+                  <Avatar className="h-9 w-9 rounded-lg ring-1 ring-sidebar-border">
                     <AvatarImage src={user.image || undefined} alt={user.name} />
-                    <AvatarFallback className="rounded-lg">
+                    <AvatarFallback className="rounded-lg bg-primary/12 text-primary">
                       {user.name.charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
                     <span className="truncate font-medium">{user.name}</span>
-                    <span className="truncate text-xs">{user.email}</span>
+                    <span className="truncate text-xs text-sidebar-foreground/55">{user.email}</span>
                   </div>
-                  <ChevronsUpDown className="ml-auto size-5 group-data-[collapsible=icon]:hidden" />
+                  <ChevronsUpDown className="ml-auto size-4 text-sidebar-foreground/45 group-data-[collapsible=icon]:hidden" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent
