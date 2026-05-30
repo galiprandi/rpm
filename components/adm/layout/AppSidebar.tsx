@@ -129,12 +129,12 @@ export function AppSidebar({ user, onSignOut, onOpenPalette }: AppSidebarProps) 
     <Sidebar collapsible="icon">
       <SidebarContent className="pt-3">
         {/* Buscador global */}
-        <SidebarMenu className="px-2 pb-2 mb-2 border-b border-sidebar-border">
+        <SidebarMenu className="px-2 pb-2 mb-5">
           <SidebarMenuItem>
             <SidebarMenuButton
               onClick={onOpenPalette}
               tooltip="Buscar (⌘K)"
-              className="text-muted-foreground border border-sidebar-border bg-sidebar-accent/30 hover:bg-sidebar-accent"
+              className="text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"
             >
               <Search className="size-4" />
               <span className="text-xs">Buscar...</span>
