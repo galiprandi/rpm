@@ -8,10 +8,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useUI } from '@/components/ui/UIProvider';
-import { Save, Plus, Trash2, CheckCircle, Calendar, CreditCard, DollarSign, Package, AlertCircle, History } from 'lucide-react';
+import { Save, Plus, Trash2, CheckCircle, Calendar, CreditCard, DollarSign, Package, AlertCircle, History, Loader2 } from 'lucide-react';
 import { type PurchaseVoucher } from '@/types/purchaseVoucher';
 import { SearchableSelect } from '@/components/ui/SearchableSelect';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 interface VoucherDetailClientProps {
   initialVoucher: PurchaseVoucher & {
@@ -200,28 +208,34 @@ export default function VoucherDetailClient({ initialVoucher }: VoucherDetailCli
           ariaLabel: 'Finalizar la carga del comprobante y actualizar stock'
         } : undefined}
       >
-        <div className="flex flex-wrap gap-3 mt-4">
-          <Badge variant="outline" className={
-            voucher.status === 'DRAFT'
-              ? 'bg-orange-50 text-orange-700 border-orange-200'
-              : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-          }>
+        <div className="flex flex-wrap items-center gap-2 mt-4">
+          <Badge
+            variant="outline"
+            className={
+              voucher.status === 'DRAFT'
+                ? 'bg-orange-50 text-orange-700 border-orange-200'
+                : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+            }
+          >
             {voucher.status === 'DRAFT' ? 'Borrador' : 'Finalizado'}
           </Badge>
 
-          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-100 text-xs font-medium">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted/50 border text-xs font-medium text-muted-foreground">
             <Calendar className="h-3.5 w-3.5" />
             {new Date(voucher.date).toLocaleDateString('es-AR')}
           </div>
 
-          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200 text-xs font-medium">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted/50 border text-xs font-medium text-muted-foreground">
             <CreditCard className="h-3.5 w-3.5" />
             {voucher.paymentMethod?.name || 'Cuenta Corriente'}
           </div>
 
-          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/5 text-primary border border-primary/20 text-xs font-bold">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-primary/5 border border-primary/10 text-xs font-bold text-primary">
             <DollarSign className="h-3.5 w-3.5" />
-            {parseFloat(voucher.totalAmount).toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })}
+            {parseFloat(voucher.totalAmount).toLocaleString('es-AR', {
+              style: 'currency',
+              currency: 'ARS',
+            })}
           </div>
         </div>
       </Header>
@@ -304,72 +318,81 @@ export default function VoucherDetailClient({ initialVoucher }: VoucherDetailCli
                 {(voucher.items || []).length} ítems
               </Badge>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left">
-                <thead className="text-xs uppercase bg-muted/30 text-muted-foreground">
-                  <tr>
-                    <th className="px-6 py-3 font-medium">Producto</th>
-                    <th className="px-6 py-3 text-right font-medium">Cantidad</th>
-                    <th className="px-6 py-3 text-right font-medium">Costo Unitario</th>
-                    <th className="px-6 py-3 text-right font-medium">Subtotal</th>
-                    <th className="px-6 py-3 text-right font-medium"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {(voucher.items || []).length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="text-center py-12 text-muted-foreground">
-                        <Package className="h-12 w-12 mx-auto mb-4 opacity-20" />
-                        No hay productos cargados en este comprobante
-                      </td>
-                    </tr>
-                  ) : (
-                    (voucher.items || []).map((item) => (
-                      <tr key={item.id} className="hover:bg-muted/30 transition-colors group">
-                        <td className="px-6 py-4 font-medium text-card-foreground">{item.productName}</td>
-                        <td className="px-6 py-4 text-right">{item.quantity}</td>
-                        <td className="px-6 py-4 text-right">
-                          {parseFloat(item.unitCost).toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })}
-                        </td>
-                        <td className="px-6 py-4 text-right font-semibold">
-                          {parseFloat(item.subtotal).toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })}
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          {voucher.status === 'DRAFT' && (
-                             <Tooltip>
-                               <TooltipTrigger asChild>
-                                 <Button
-                                   variant="ghost"
-                                   size="icon"
-                                   className="h-8 w-8 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-                                   onClick={() => handleRemoveItem(item.id)}
-                                   disabled={loading}
-                                   aria-label="Eliminar ítem del comprobante"
-                                 >
-                                   <Trash2 className="h-4 w-4" />
-                                 </Button>
-                               </TooltipTrigger>
-                               <TooltipContent>Eliminar ítem</TooltipContent>
-                             </Tooltip>
-                          )}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-                { (voucher.items || []).length > 0 && (
-                  <tfoot className="bg-muted/20 border-t">
-                    <tr>
-                      <td colSpan={3} className="px-6 py-4 text-right font-medium text-muted-foreground">Total Calculado:</td>
-                      <td className="px-6 py-4 text-right font-bold text-lg">
-                        {totalCalculated.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })}
-                      </td>
-                      <td></td>
-                    </tr>
-                  </tfoot>
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/30 hover:bg-muted/30">
+                  <TableHead className="px-6">Producto</TableHead>
+                  <TableHead className="px-6 text-right">Cantidad</TableHead>
+                  <TableHead className="px-6 text-right">Costo Unitario</TableHead>
+                  <TableHead className="px-6 text-right">Subtotal</TableHead>
+                  <TableHead className="px-6"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(voucher.items || []).length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
+                      <Package className="h-12 w-12 mx-auto mb-4 opacity-20" />
+                      No hay productos cargados en este comprobante
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  (voucher.items || []).map((item) => (
+                    <TableRow key={item.id} className="group">
+                      <TableCell className="px-6 py-4 font-medium">{item.productName}</TableCell>
+                      <TableCell className="px-6 py-4 text-right">{item.quantity}</TableCell>
+                      <TableCell className="px-6 py-4 text-right">
+                        {parseFloat(item.unitCost).toLocaleString('es-AR', {
+                          style: 'currency',
+                          currency: 'ARS',
+                        })}
+                      </TableCell>
+                      <TableCell className="px-6 py-4 text-right font-semibold">
+                        {parseFloat(item.subtotal).toLocaleString('es-AR', {
+                          style: 'currency',
+                          currency: 'ARS',
+                        })}
+                      </TableCell>
+                      <TableCell className="px-6 py-4 text-right">
+                        {voucher.status === 'DRAFT' && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={() => handleRemoveItem(item.id)}
+                                disabled={loading}
+                                aria-label="Eliminar ítem del comprobante"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Eliminar ítem</TooltipContent>
+                          </Tooltip>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))
                 )}
-              </table>
-            </div>
+              </TableBody>
+              {(voucher.items || []).length > 0 && (
+                <TableBody className="bg-muted/20 border-t">
+                  <TableRow className="hover:bg-transparent">
+                    <TableCell colSpan={3} className="px-6 py-4 text-right font-medium text-muted-foreground">
+                      Total Calculado:
+                    </TableCell>
+                    <TableCell className="px-6 py-4 text-right font-bold text-lg">
+                      {totalCalculated.toLocaleString('es-AR', {
+                        style: 'currency',
+                        currency: 'ARS',
+                      })}
+                    </TableCell>
+                    <TableCell></TableCell>
+                  </TableRow>
+                </TableBody>
+              )}
+            </Table>
           </div>
         </div>
 

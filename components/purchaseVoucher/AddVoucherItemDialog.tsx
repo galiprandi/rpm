@@ -9,8 +9,16 @@ import { Badge } from "@/components/ui/badge";
 import { useUI } from "@/components/ui/UIProvider";
 import { ProductServiceSelector, type SelectedItem } from "@/components/ui/ProductServiceSelector";
 import { calculateFinalPrice, type RoundingRule } from "@/lib/utils/rounding";
-import { Plus, CheckCircle, Package, AlertTriangle, TrendingDown, Trash2 } from "lucide-react";
+import { Plus, CheckCircle, Package, AlertTriangle, TrendingDown, Trash2, Loader2 } from "lucide-react";
 import { QuickProductDialog } from "./QuickProductDialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface PriceList {
   id: string;
@@ -237,6 +245,13 @@ export function AddVoucherItemDialog({
         };
       })
     );
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleAddItem();
+    }
   };
 
   const handleAddItem = async () => {
@@ -504,9 +519,9 @@ export function AddVoucherItemDialog({
         </div>
       }
     >
-      <div className="h-[500px] grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="h-[550px] grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-6">
         {/* Left panel — Form */}
-        <div className="flex flex-col overflow-hidden">
+        <div className="flex flex-col overflow-hidden" onKeyDown={handleKeyDown}>
           <div className="flex-1 overflow-y-auto space-y-6">
           {/* Product Search via ProductServiceSelector */}
           {!selectedProduct ? (
@@ -622,25 +637,25 @@ export function AddVoucherItemDialog({
                 Puede definir los precios de venta en este paso o luego desde la sección productos
               </p>
               <div className="border rounded-md overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead className="bg-muted/50">
-                    <tr>
-                      <th className="text-left p-2 font-medium">Lista</th>
-                      <th className="text-left p-2 font-medium">Margen</th>
-                      <th className="text-left p-2 font-medium">Tipo</th>
-                      <th className="text-right p-2 font-medium w-32">Precio</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50 hover:bg-muted/50 h-8">
+                      <TableHead className="h-8 p-2 font-medium">Lista</TableHead>
+                      <TableHead className="h-8 p-2 font-medium">Margen</TableHead>
+                      <TableHead className="h-8 p-2 font-medium">Tipo</TableHead>
+                      <TableHead className="h-8 p-2 font-medium text-right w-32">Precio</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {priceListPrices.map((pl) => {
                       const isFixedBelowMinimum = pl.isFixed && pl.fixedPrice && unitCost > 0 && ((pl.fixedPrice - unitCost) / unitCost) * 100 < minimumMargin;
                       return (
-                      <tr
+                      <TableRow
                         key={pl.priceListId}
-                        className={`${pl.isBelowMinimum || isFixedBelowMinimum ? "bg-red-50/50" : ""}`}
+                        className={`${pl.isBelowMinimum || isFixedBelowMinimum ? "bg-red-50/50" : ""} hover:bg-transparent`}
                       >
-                        <td className="p-2">{pl.priceListName}</td>
-                        <td className={`p-2 ${
+                        <TableCell className="p-2">{pl.priceListName}</TableCell>
+                        <TableCell className={`p-2 ${
                           pl.isFixed 
                             ? ((pl.fixedPrice && unitCost > 0 ? ((pl.fixedPrice - unitCost) / unitCost) * 100 : 0) < minimumMargin ? "text-red-600 font-medium" : "text-muted-foreground")
                             : (pl.isBelowMinimum ? "text-red-600 font-medium" : "text-muted-foreground")
@@ -650,18 +665,18 @@ export function AddVoucherItemDialog({
                                 ? `${(((pl.fixedPrice - unitCost) / unitCost) * 100).toFixed(1)}%` 
                                 : "-")
                             : (pl.isBelowMinimum ? "Bajo mínimo" : `${pl.baseMargin}%`)}
-                        </td>
-                        <td className="p-2">
+                        </TableCell>
+                        <TableCell className="p-2">
                           <Badge 
                             variant={pl.isFixed ? "default" : "secondary"} 
-                            className="text-xs cursor-pointer hover:opacity-80"
+                            className="text-[10px] h-4 px-1.5 cursor-pointer hover:opacity-80"
                             onClick={() => pl.isFixed && handleUnfixPrice(pl.priceListId)}
                           >
                             {pl.isFixed ? "fijo" : "auto"}
                           </Badge>
-                        </td>
-                        <td className="p-2">
-                          <div className="flex items-center gap-2 justify-end">$ 
+                        </TableCell>
+                        <TableCell className="p-2">
+                          <div className="flex items-center gap-1.5 justify-end">$
                             <Input
                               type="number"
                               step="1000"
@@ -672,15 +687,15 @@ export function AddVoucherItemDialog({
                                   handleFixPrice(pl.priceListId, value);
                                 }
                               }}
-                              className={`h-7 w-24 text-xs text-right ${pl.isBelowMinimum && !pl.isFixed ? "border-red-300" : ""}`}
+                              className={`h-7 w-20 text-xs text-right ${pl.isBelowMinimum && !pl.isFixed ? "border-red-300" : ""}`}
                             />
                           </div>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                       );
                     })}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
             </div>
           )}
@@ -726,19 +741,19 @@ export function AddVoucherItemDialog({
                 <p>{supplierName ? `Agregue productos al comprobante de ${supplierName}` : "Agregue productos al comprobante"}</p>
               </div>
             ) : (
-              <table className="w-full text-sm">
-                <thead className="bg-muted/50">
-                  <tr>
-                    <th className="text-left p-2 font-medium">Producto</th>
-                    <th className="text-right p-2 font-medium w-20">Cantidad</th>
-                    <th className="text-right p-2 font-medium w-20 text-muted-foreground">Stock</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/50 hover:bg-muted/50 h-8">
+                    <TableHead className="h-8 p-2 font-medium">Producto</TableHead>
+                    <TableHead className="h-8 p-2 font-medium text-right w-20">Cant.</TableHead>
+                    <TableHead className="h-8 p-2 font-medium text-right w-20 text-muted-foreground">Stock</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {items.map((item) => (
-                    <tr
+                    <TableRow
                       key={item.id}
-                      className={`hover:bg-muted/40 transition-colors cursor-pointer ${
+                      className={`hover:bg-muted/40 transition-colors cursor-pointer h-10 ${
                         selectedProduct?.id === item.productId ? "bg-primary/5" : ""
                       }`}
                       onClick={() => {
@@ -754,25 +769,25 @@ export function AddVoucherItemDialog({
                         setEditingItemId(item.id);
                       }}
                     >
-                      <td className="p-2">
+                      <TableCell className="p-2">
                         <span
-                          className="truncate block"
+                          className="truncate block text-xs"
                           title={item.productName}
-                          style={{ maxWidth: "35ch" }}
+                          style={{ maxWidth: "20ch" }}
                         >
                           {item.productName}
                         </span>
-                      </td>
-                      <td className="p-2 text-right font-medium">
+                      </TableCell>
+                      <TableCell className="p-2 text-right font-medium text-xs">
                         {item.quantity}
-                      </td>
-                      <td className="p-2 text-right text-muted-foreground">
+                      </TableCell>
+                      <TableCell className="p-2 text-right text-muted-foreground text-xs">
                         {getProjectedStock(item.productId, item.currentStock)}
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             )}
           </div>
         </div>
