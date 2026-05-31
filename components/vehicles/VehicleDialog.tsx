@@ -19,7 +19,8 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
-import { Save, Car, User, Plus, X } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Save, Car, User, Plus, X, CheckCircle, Eye } from 'lucide-react';
 
 const VEHICLE_CATEGORIES = [
   { value: 'CAR', label: 'Auto/Camioneta', icon: '🚗' },
@@ -64,6 +65,7 @@ export function VehicleDialog({
   const [searchingCustomers, setSearchingCustomers] = useState(false);
   const [isCreatingCustomer, setIsCreatingCustomer] = useState(false);
   const [creatingCustomer, setCreatingCustomer] = useState(false);
+  const [showCustomerCreatedToast, setShowCustomerCreatedToast] = useState(false);
   const [newCustomerData, setNewCustomerData] = useState({
     name: '',
     phone: '',
@@ -142,6 +144,9 @@ export function VehicleDialog({
         setCustomerName(customer.name);
         setIsCreatingCustomer(false);
         setNewCustomerData({ name: '', phone: '', email: '' });
+        // Show brief confirmation
+        setShowCustomerCreatedToast(true);
+        setTimeout(() => setShowCustomerCreatedToast(false), 2000);
       } else {
         const error = await res.json();
         alert(error.error || 'Error al crear cliente');
@@ -361,6 +366,14 @@ export function VehicleDialog({
             </div>
           )}
 
+          {/* Customer Created Toast */}
+          {showCustomerCreatedToast && (
+            <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm animate-in fade-in slide-in-from-top-2">
+              <CheckCircle className="h-4 w-4" />
+              <span>Cliente <strong>{customerName}</strong> creado exitosamente</span>
+            </div>
+          )}
+
           {/* Selected Customer Display */}
           {(customerId || customerIdProp) && (
             <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
@@ -386,7 +399,9 @@ export function VehicleDialog({
 
           {/* Categoría */}
           <div>
-            <Label htmlFor="category" required>Categoría</Label>
+            <Label htmlFor="category">
+              Categoría <span className="text-destructive">*</span>
+            </Label>
             <Select
               value={formData.category}
               onValueChange={(value) => handleChange('category', value)}
@@ -407,8 +422,8 @@ export function VehicleDialog({
 
           {/* Identificador */}
           <div>
-            <Label htmlFor="identifier" required>
-              {isVehicle ? 'Patente' : 'Número de Serie/Identificador'}
+            <Label htmlFor="identifier">
+              {isVehicle ? 'Patente' : 'Número de Serie/Identificador'} <span className="text-destructive">*</span>
             </Label>
             <Input
               id="identifier"
@@ -467,7 +482,7 @@ export function VehicleDialog({
             /* Campos para equipos */
             <div className="space-y-4">
               <div>
-                <Label htmlFor="equipmentName" required>Nombre del Equipo</Label>
+                <Label htmlFor="equipmentName">Nombre del Equipo <span className="text-destructive">*</span></Label>
                 <Input
                   id="equipmentName"
                   value={formData.equipmentName}
@@ -495,6 +510,23 @@ export function VehicleDialog({
                   placeholder="Detalles adicionales del equipo..."
                   rows={3}
                 />
+              </div>
+            </div>
+          )}
+
+          {/* Vehicle Summary Preview */}
+          {(formData.makeName || formData.modelName || formData.color || formData.year) && (
+            <div className="p-4 bg-muted/50 rounded-lg border">
+              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-2">
+                <Eye className="h-4 w-4" />
+                Resumen del vehículo a crear
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <Badge variant="outline">{formData.identifier || 'Sin patente'}</Badge>
+                {formData.makeName && <Badge variant="secondary">{formData.makeName}</Badge>}
+                {formData.modelName && <Badge variant="secondary">{formData.modelName}</Badge>}
+                {formData.year && <Badge variant="outline">{formData.year}</Badge>}
+                {formData.color && <Badge variant="outline" className="border-dashed">{formData.color}</Badge>}
               </div>
             </div>
           )}

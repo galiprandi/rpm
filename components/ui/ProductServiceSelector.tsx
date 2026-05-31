@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Loader2, Plus, Search, Trash2, Package, Wrench, Minus, Plus as PlusIcon, X } from 'lucide-react';
+import { Loader2, Plus, Search, Trash2, Package, Wrench, Minus, Plus as PlusIcon, X, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatARS } from '@/lib/utils/format';
 import { Badge } from '@/components/ui/badge';
@@ -161,6 +161,8 @@ export function ProductServiceSelector({
 
   // Cart state - efímero, solo vive en memoria durante la sesión
   const [cartItems, setCartItems] = useState<SelectedItem[]>(initialItems);
+  const [addedItemName, setAddedItemName] = useState<string | null>(null);
+  const addedTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Close dropdown when clicking outside or pressing Escape
   useEffect(() => {
@@ -301,6 +303,11 @@ export function ProductServiceSelector({
       };
       updateCartAndNotify([...cartItems, newItem]);
     }
+
+    // Feedback visual de ítem agregado
+    if (addedTimeoutRef.current) clearTimeout(addedTimeoutRef.current);
+    setAddedItemName(result.name);
+    addedTimeoutRef.current = setTimeout(() => setAddedItemName(null), 1500);
 
     setSearchTerm('');
     setSearchResults([]);
@@ -458,15 +465,15 @@ export function ProductServiceSelector({
                       className="w-full px-4 py-2 flex items-center justify-between border-b last:border-0 hover:bg-accent/50"
                     >
                       <div className="min-w-0 overflow-hidden flex-1 mr-4">
-                        <div className="flex items-center gap-2">
+                        <div className="font-semibold text-sm truncate mb-1">
                           {result.type === 'product' ? (
-                            <Package className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                            <Package className="h-4 w-4 text-blue-500 inline mr-1.5 -mt-0.5" />
                           ) : (
-                            <Wrench className="h-4 w-4 text-orange-500 flex-shrink-0" />
+                            <Wrench className="h-4 w-4 text-orange-500 inline mr-1.5 -mt-0.5" />
                           )}
-                          <span className="font-medium truncate">{truncateText(result.name)}</span>
+                          {truncateText(result.name)}
                         </div>
-                        <div className="flex items-center gap-2 mt-0.5 pl-6 min-w-0">
+                        <div className="flex items-center gap-2 min-w-0">
                           <Badge variant="outline" className="text-xs flex-shrink-0 h-5 px-1.5">
                             {result.type === 'product' ? 'Producto' : 'Servicio'}
                           </Badge>
@@ -553,6 +560,14 @@ export function ProductServiceSelector({
             )}
           </div>
         </div>
+
+      {/* Feedback toast */}
+      {addedItemName && (
+        <div className="bg-green-50 border border-green-200 rounded-md px-4 py-2 text-sm text-green-700 flex items-center gap-2 animate-in fade-in slide-in-from-top-2 duration-300">
+          <Check className="h-4 w-4" />
+          <span><strong>{addedItemName}</strong> agregado al carrito</span>
+        </div>
+      )}
 
       {/* Selected items (Cart) */}
       {showSelectedTable && cartItems.length > 0 && (

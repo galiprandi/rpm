@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { FuelLevelSlider } from "@/components/work-orders/FuelLevelSlider";
 import { Badge } from "@/components/ui/badge";
 import { Header } from "@/components/adm/Header";
@@ -14,7 +15,26 @@ import { QuickServiceDialog } from "@/components/work-orders/QuickServiceDialog"
 import { useUI } from "@/components/ui/UIProvider";
 import { ProductServiceSelector } from "@/components/ui/ProductServiceSelector";
 import { VehicleDialog } from "@/components/vehicles/VehicleDialog";
-import { Save, Plus, Trash2, Search, Car, User, CheckCircle, Edit } from "lucide-react";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { Save, Plus, Search, Car, User, CheckCircle, Edit, RotateCcw } from "lucide-react";
+
+// Storage key for wizard persistence
+const WIZARD_STORAGE_KEY = "work-order-wizard-state";
+
+// Validate Argentine license plate format (old: AAA000, new: AA000AA)
+function isValidPlate(plate: string): boolean {
+  const clean = plate.trim().toUpperCase();
+  // Old format: 3 letters + 3 digits
+  const oldFormat = /^[A-Z]{3}\d{3}$/;
+  // New format: 2 letters + 3 digits + 2 letters
+  const newFormat = /^[A-Z]{2}\d{3}[A-Z]{2}$/;
+  return oldFormat.test(clean) || newFormat.test(clean);
+}
+
+// Normalize plate to uppercase and trim
+function normalizePlate(plate: string): string {
+  return plate.trim().toUpperCase();
+}
 
 const ENTRY_CHECKLIST = [
   { id: "keys", label: "Llaves/Control recibido", required: true },
@@ -90,6 +110,7 @@ export default function NewWorkOrderPage() {
 
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
+  const [plateError, setPlateError] = useState<string | null>(null);
 
   // Step 1: Search by license plate
   const [plateSearch, setPlateSearch] = useState("");
@@ -122,7 +143,7 @@ export default function NewWorkOrderPage() {
   const [items, setItems] = useState<WorkOrderItem[]>([]);
   const [selectedPriceList, setSelectedPriceList] = useState<string>("");
   const [priceLists, setPriceLists] = useState<Array<{ id: string; name: string; baseMarginPercentage: number }>>([]);
-  const [minimumMargin, setMinimumMargin] = useState<number>(15); // Default 15%
+  const [, setMinimumMargin] = useState<number>(15); // Default 15%
   const [showQuickServiceDialog, setShowQuickServiceDialog] = useState(false);
 
   // Step 3: Checklist & Notes
@@ -131,6 +152,43 @@ export default function NewWorkOrderPage() {
   const [fuelLevel, setFuelLevel] = useState<number>(50);
   const [notes, setNotes] = useState("");
   const [scheduledDate, setScheduledDate] = useState("");
+
+  // Load wizard state from localStorage on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(WIZARD_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.step) setStep(parsed.step);
+        if (parsed.plateSearch) setPlateSearch(parsed.plateSearch);
+        if (parsed.checklist) setChecklist(parsed.checklist);
+        if (parsed.odometerValue) setOdometerValue(parsed.odometerValue);
+        if (parsed.fuelLevel !== undefined) setFuelLevel(parsed.fuelLevel);
+        if (parsed.notes) setNotes(parsed.notes);
+        if (parsed.scheduledDate) setScheduledDate(parsed.scheduledDate);
+      }
+    } catch {
+      // Ignore parse errors
+    }
+  }, []);
+
+  // Save wizard state to localStorage on changes
+  useEffect(() => {
+    const state = { step, plateSearch, checklist, odometerValue, fuelLevel, notes, scheduledDate, items };
+    localStorage.setItem(WIZARD_STORAGE_KEY, JSON.stringify(state));
+  }, [step, plateSearch, checklist, odometerValue, fuelLevel, notes, scheduledDate, items]);
+
+  // Warn before leaving if wizard has data
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (step > 1 || items.length > 0 || plateSearch) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [step, items, plateSearch]);
 
   // Fetch price lists and settings on mount
   useEffect(() => {
@@ -185,10 +243,18 @@ export default function NewWorkOrderPage() {
 
   // Search vehicle by identifier
   const searchVehicle = async () => {
-    if (!plateSearch.trim()) return;
+    const normalized = normalizePlate(plateSearch);
+    if (!normalized) return;
+
+    // Validate plate format
+    if (!isValidPlate(normalized)) {
+      setPlateError("Formato inválido. Use AAA000 o AA000AA");
+      return;
+    }
+    setPlateError(null);
     setSearching(true);
     try {
-      const res = await fetch(`/api/vehicles/by-identifier/${encodeURIComponent(plateSearch)}`);
+      const res = await fetch(`/api/vehicles/by-identifier/${encodeURIComponent(normalized)}`);
       if (res.ok) {
         const data = await res.json();
         if (data.vehicles && data.vehicles.length > 0) {
@@ -197,7 +263,7 @@ export default function NewWorkOrderPage() {
         } else {
           setFoundVehicle(null);
           setShowCreateVehicle(true);
-          setNewVehicleData(prev => ({ ...prev, identifier: plateSearch.toUpperCase() }));
+          setNewVehicleData(prev => ({ ...prev, identifier: normalized }));
           // Pre-select customer if we already have one from previous search
           if (selectedCustomerId) {
             setSelectedCustomerForNewVehicle(selectedCustomerId);
@@ -261,43 +327,8 @@ export default function NewWorkOrderPage() {
     ]);
   };
 
-  const removeItem = (index: number) => {
-    setItems((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const updateItemQuantity = (index: number, quantity: number) => {
-    setItems((prev) =>
-      prev.map((item, i) => (i === index ? { ...item, quantity: Math.max(1, quantity) } : item))
-    );
-  };
-
-  const updateItemPrice = (index: number, newPrice: number) => {
-    setItems((prev) =>
-      prev.map((item, i) =>
-        i === index
-          ? { ...item, unitPrice: Math.max(0, newPrice), isManualPrice: true }
-          : item
-      )
-    );
-  };
-
   const calculateTotal = () => {
     return items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
-  };
-
-  // Calculate margin percentage for a product item
-  const calculateMargin = (item: WorkOrderItem): number | null => {
-    if (item.type !== "PRODUCT" || !item.replacementCost || item.replacementCost === 0) {
-      return null;
-    }
-    return ((item.unitPrice - item.replacementCost) / item.replacementCost) * 100;
-  };
-
-  // Check if item is below minimum margin
-  const isBelowMinimumMargin = (item: WorkOrderItem): boolean => {
-    const margin = calculateMargin(item);
-    if (margin === null) return false;
-    return margin < minimumMargin;
   };
 
   const handleSubmit = async () => {
@@ -373,10 +404,22 @@ export default function NewWorkOrderPage() {
     setFoundVehicle(null);
     setShowCreateVehicle(false);
     setPlateSearch("");
+    setPlateError(null);
     setSelectedCustomerId(null);
   };
 
+  const handleStepClick = (targetStep: number) => {
+    if (targetStep < step) {
+      setStep(targetStep);
+    } else if (targetStep === 2 && foundVehicle) {
+      setStep(2);
+    } else if (targetStep === 3 && foundVehicle && items.length > 0) {
+      setStep(3);
+    }
+  };
+
   return (
+    <TooltipProvider>
     <div className="container mx-auto py-6 max-w-4xl space-y-6">
       <Header
         title="Nueva Orden de Trabajo"
@@ -385,7 +428,7 @@ export default function NewWorkOrderPage() {
         onBack={() => router.push("/adm/work-orders")}
       />
 
-      <WorkOrderStepper currentStep={step} className="mb-8" />
+      <WorkOrderStepper currentStep={step} className="mb-8" onStepClick={handleStepClick} />
 
       <div className="space-y-6">
           {/* Step 1: Search Vehicle by License Plate */}
@@ -401,18 +444,27 @@ export default function NewWorkOrderPage() {
                     </p>
                   </div>
 
-                  <div className="flex gap-2 max-w-md mx-auto">
-                    <Input
-                      placeholder="Ej: ABC123 o AB123CD"
-                      value={plateSearch}
-                      onChange={(e) => setPlateSearch(e.target.value.toUpperCase())}
-                      onKeyDown={(e) => e.key === "Enter" && searchVehicle()}
-                      className="flex-1 text-center text-lg uppercase"
-                    />
-                    <Button onClick={searchVehicle} disabled={searching || !plateSearch.trim()}>
-                      <Search className="h-4 w-4 mr-2" />
-                      {searching ? "Buscando..." : "Buscar"}
-                    </Button>
+                  <div className="flex flex-col gap-2 max-w-md mx-auto">
+                    <div className="flex gap-2">
+                      <Input
+                        autoFocus
+                        placeholder="Ej: ABC123 o AB123CD"
+                        value={plateSearch}
+                        onChange={(e) => {
+                          setPlateSearch(e.target.value.toUpperCase());
+                          if (plateError) setPlateError(null);
+                        }}
+                        onKeyDown={(e) => e.key === "Enter" && searchVehicle()}
+                        className="flex-1 text-center text-lg uppercase"
+                      />
+                      <Button onClick={searchVehicle} disabled={searching || !plateSearch.trim()}>
+                        <Search className="h-4 w-4 mr-2" />
+                        {searching ? "Buscando..." : "Buscar"}
+                      </Button>
+                    </div>
+                    {plateError && (
+                      <p className="text-sm text-destructive text-center">{plateError}</p>
+                    )}
                   </div>
                 </>
               )}
@@ -472,7 +524,8 @@ export default function NewWorkOrderPage() {
 
                   <div className="flex gap-2">
                     <Button variant="outline" onClick={resetSearch} className="flex-1">
-                      Cancelar
+                      <RotateCcw className="h-4 w-4 mr-2" />
+                      Volver a buscar
                     </Button>
                     <Button
                       onClick={() => {
@@ -513,7 +566,7 @@ export default function NewWorkOrderPage() {
                 showPriceListSelector
                 showCategoryFilter
                 showQuickCreate
-                showSelectedTable={false}
+                showSelectedTable={true}
                 searchEndpoint="/api/products-services/search"
                 categories={[]}
                 priceLists={priceLists}
@@ -549,82 +602,14 @@ export default function NewWorkOrderPage() {
                 onQuickCreate={() => setShowQuickServiceDialog(true)}
               />
 
+              {/* Sticky total bar */}
               {items.length > 0 && (
-                <div className="border rounded-md">
-                  <div className="grid grid-cols-12 gap-2 p-3 bg-muted font-medium text-sm">
-                    <div className="col-span-5">Item</div>
-                    <div className="col-span-2">Cantidad</div>
-                    <div className="col-span-3">Precio Unit.</div>
-                    <div className="col-span-1">Subtotal</div>
-                    <div className="col-span-1"></div>
-                  </div>
-                  {items.map((item, index) => {
-                    const margin = calculateMargin(item);
-                    const belowMin = isBelowMinimumMargin(item);
-                    return (
-                      <div key={index} className={`grid grid-cols-12 gap-2 p-3 border-t items-center ${belowMin ? 'bg-red-50/50' : ''}`}>
-                        <div className="col-span-5">
-                          <div className="font-medium flex items-center gap-2 flex-wrap">
-                            {item.name}
-                            {item.isManualPrice && (
-                              <Badge variant="outline" className="text-xs bg-yellow-50 text-yellow-700 border-yellow-200">
-                                Manual
-                              </Badge>
-                            )}
-                            {belowMin && (
-                              <Badge variant="outline" className="text-xs bg-red-50 text-red-700 border-red-200">
-                                Margen Bajo
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {item.type}
-                            {margin !== null && (
-                              <span className={`ml-2 ${belowMin ? 'text-red-600 font-medium' : 'text-muted-foreground'}`}>
-                                (Margen: {margin.toFixed(1)}%)
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <div className="col-span-2">
-                          <Input
-                            type="number"
-                            min={1}
-                            value={item.quantity}
-                            onChange={(e) =>
-                              updateItemQuantity(index, parseInt(e.target.value) || 1)
-                            }
-                            className="h-8"
-                          />
-                        </div>
-                        <div className="col-span-3">
-                          <Input
-                            type="number"
-                            min={0}
-                            step="1"
-                            value={item.unitPrice}
-                            onChange={(e) =>
-                              updateItemPrice(index, parseFloat(e.target.value) || 0)
-                            }
-                            className={`h-8 ${item.isManualPrice ? 'border-yellow-400 bg-yellow-50/30' : ''} ${belowMin ? 'border-red-400' : ''}`}
-                          />
-                        </div>
-                        <div className="col-span-1 text-sm">
-                          ${(item.unitPrice * item.quantity).toLocaleString("es-AR")}
-                        </div>
-                        <div className="col-span-1">
-                          <Button variant="ghost" size="sm" onClick={() => removeItem(index)}>
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                  <div className="p-3 border-t bg-muted">
-                    <div className="flex justify-between font-medium">
-                      <span>Total:</span>
-                      <span>${calculateTotal().toLocaleString("es-AR")}</span>
-                    </div>
+                <div className="sticky bottom-0 z-10 bg-background border rounded-lg shadow-lg p-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">{items.length} ítem{items.length !== 1 ? 's' : ''}</span>
+                    <span className="text-xl font-bold">
+                      Total: ${calculateTotal().toLocaleString("es-AR")}
+                    </span>
                   </div>
                 </div>
               )}
@@ -667,24 +652,21 @@ export default function NewWorkOrderPage() {
                 </Button>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <Label>Checklist de Ingreso</Label>
-                <div className="space-y-2 border rounded-md p-4">
+                <div className="space-y-3 border rounded-md p-4">
                   {ENTRY_CHECKLIST.map((item) => (
-                    <label key={item.id} className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={checklist[item.id] || false}
-                        onChange={(e) =>
-                          setChecklist((prev) => ({ ...prev, [item.id]: e.target.checked }))
-                        }
-                        className="rounded"
-                      />
-                      <span className={item.required ? "font-medium" : ""}>
-                        {item.label}
-                        {item.required && <span className="text-destructive ml-1">*</span>}
-                      </span>
-                    </label>
+                    <Checkbox
+                      key={item.id}
+                      id={`checklist-${item.id}`}
+                      checked={checklist[item.id] || false}
+                      onCheckedChange={(checked: boolean) =>
+                        setChecklist((prev) => ({ ...prev, [item.id]: checked }))
+                      }
+                      label={item.label}
+                      labelClassName={item.required ? "font-medium" : ""}
+                      required={item.required}
+                    />
                   ))}
                 </div>
               </div>
@@ -710,8 +692,9 @@ export default function NewWorkOrderPage() {
               </div>
 
               <div className="space-y-2">
-                <Label>Fecha Agendada (opcional)</Label>
+                <Label htmlFor="scheduled-date">Fecha estimada de entrega (opcional)</Label>
                 <Input
+                  id="scheduled-date"
                   type="datetime-local"
                   value={scheduledDate}
                   onChange={(e) => setScheduledDate(e.target.value)}
@@ -741,7 +724,10 @@ export default function NewWorkOrderPage() {
                 <Button variant="outline" onClick={() => setStep(2)}>
                   Anterior
                 </Button>
-                <Button onClick={handleSubmit} disabled={loading}>
+                <Button
+                  onClick={handleSubmit}
+                  disabled={loading || !ENTRY_CHECKLIST.every(item => !item.required || checklist[item.id])}
+                >
                   <Save className="h-4 w-4 mr-2" />
                   {loading ? "Creando..." : "Crear Orden de Trabajo"}
                 </Button>
@@ -765,5 +751,6 @@ export default function NewWorkOrderPage() {
           }}
         />
       </div>
+    </TooltipProvider>
   );
 }
