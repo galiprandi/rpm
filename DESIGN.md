@@ -5,13 +5,13 @@
 - **Primary CTA** (`primaryAction`): El botón principal de creación/acción va en el `Header` de la página.
 - **Secondary CTAs** (`secondaryActions`): Botones secundarios (filtrar, exportar, navegar a vistas relacionadas) van en `Header.secondaryActions`.
 - **De-duplication**: Si el `Header` ya tiene el botón de creación, configurar `CrudAdmin` con `hideCreateAction={true}`.
-- **Row Actions**: Acciones de fila (editar, eliminar, ver) deben tener `Tooltip` y `aria-label`.
+- **Row Actions**: Acciones de fila (editar, eliminar, ver) deben tener `Tooltip` y `aria-label`. Usar preferentemente el icono `Pencil` para editar en lugar de `Edit2` para mantener consistencia.
 
 ## 2. Color Semantics
 
 | Contexto | Clase Tailwind | Uso |
 |----------|---------------|-----|
-| Positivo / Saldo a favor / Pagado | `text-emerald-600` | Saldos favorables, pagos completos, estados "listo" |
+| Positivo / Saldo a favor / Pagado / Activo | `text-emerald-600` | Saldos favorables, pagos completos, estados "listo" o "activo" |
 | Deuda / Negativo / Egreso | `text-red-600` | Deudas pendientes, gastos, saldos negativos |
 | Advertencia / Parcial | `text-amber-600` | Pagos parciales, márgenes bajos, estados de espera |
 | Destructivo | `text-destructive` | Botones de eliminar/desactivar (usa `destructive` token, no `red-600` hardcodeado) |
@@ -33,13 +33,13 @@ Toda vista de listado CRUD debe seguir esta estructura:
     ]}
   />
   <CrudStats stats={[...]} />
-  <CrudAdmin columns={columns} data={items} hideCreateAction />
+  <CrudAdmin columns={columns} items={items} hideCreateAction />
 </div>
 ```
 
 ## 4. Stats Placement
 
-- **Vistas de listado**: `CrudStats` debajo del `Header`, antes de la tabla.
+- **Vistas de listado**: `CrudStats` debajo del `Header`, antes de la tabla. No pasar `stats` como prop a `CrudAdmin` para evitar acoplamiento; usar el componente `CrudStats` directamente entre el Header y la Tabla.
 - **Vistas de detalle**: Stats clave (saldo, totales) integrados en el `Header` como `children` o pills.
 
 ## 5. Badges Semánticos

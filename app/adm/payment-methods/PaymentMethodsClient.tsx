@@ -6,9 +6,9 @@ import { CrudAdmin } from '@/components/adm/CrudAdmin';
 import { PaymentMethodForm, PaymentMethodFormData } from '@/components/payment-methods/PaymentMethodForm';
 import { ModalBase, ModalBaseFooter } from '@/components/ui/ModalBase';
 import { useUI } from '@/components/ui/UIProvider';
-import { Pencil, Trash2, Plus } from 'lucide-react';
+import { Pencil, Trash2, Plus, CreditCard, CheckCircle2 } from 'lucide-react';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Header } from '@/components/adm/Header';
+import { Header, CrudStats, type StatItem } from '@/components/adm';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -216,6 +216,20 @@ export default function PaymentMethodsClient({ initialPaymentMethods }: PaymentM
     },
   ];
 
+  const stats: StatItem[] = [
+    {
+      label: 'Total',
+      value: paymentMethods.length,
+      icon: CreditCard,
+    },
+    {
+      label: 'Activos',
+      value: paymentMethods.filter((m) => m.isActive).length,
+      icon: CheckCircle2,
+      iconColor: '#10b981', // emerald-500
+    },
+  ];
+
   const rowActions = (method: PaymentMethod) => (
     <div className="flex items-center gap-2">
       <Tooltip>
@@ -262,9 +276,11 @@ export default function PaymentMethodsClient({ initialPaymentMethods }: PaymentM
         }}
       />
 
+      <CrudStats stats={stats} />
+
       <CrudAdmin
-        title="Métodos de Pago"
-        description="Administrar métodos de pago disponibles"
+        title=""
+        description=""
         items={paymentMethods}
         loading={loading}
         onCreate={handleCreate}
