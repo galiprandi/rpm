@@ -11,7 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Trash2 } from 'lucide-react';
+import { Search, Trash2, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { formatARS } from '@/lib/utils/format';
 import { ProductServiceSelector, type SelectedItem } from '@/components/ui/ProductServiceSelector';
 import {
@@ -315,13 +316,28 @@ export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModal
               {!customerId && !creatingCustomer && (
                 <div className="space-y-2 mt-2">
                   <div className="flex gap-2">
-                    <Input
-                      placeholder="Buscar cliente por nombre o teléfono..."
-                      value={customerSearch}
-                      onChange={(e) => setCustomerSearch(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && searchCustomers()}
-                      className="flex-1"
-                    />
+                    <div className="relative flex-1">
+                      <Input
+                        placeholder="Buscar cliente por nombre o teléfono..."
+                        value={customerSearch}
+                        onChange={(e) => setCustomerSearch(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && searchCustomers()}
+                        className={cn("pr-10")}
+                      />
+                      {customerSearch && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCustomerSearch('');
+                            setFoundCustomers([]);
+                          }}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                          aria-label="Limpiar búsqueda"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
@@ -431,6 +447,7 @@ export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModal
                       setCustomerId('');
                       setCustomerName('Consumidor final');
                     }}
+                    aria-label="Cambiar cliente"
                   >
                     Cambiar
                   </Button>
@@ -497,7 +514,7 @@ export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModal
                   id="sellOnCredit"
                   checked={sellOnCredit}
                   onChange={(e) => setSellOnCredit(e.target.checked)}
-                  className="h-4 w-4 rounded border-amber-300 text-amber-600 focus:ring-amber-500"
+                  className="h-4 w-4 rounded border-amber-300 text-amber-600 focus:ring-amber-500 accent-primary focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 outline-none transition-all"
                 />
                 <label htmlFor="sellOnCredit" className="text-sm font-medium text-amber-900 cursor-pointer">
                   Venta a cuenta corriente (dejar saldo pendiente)
@@ -526,6 +543,12 @@ export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModal
                   placeholder="Monto"
                   value={paymentAmount || ''}
                   onChange={(e) => setPaymentAmount(Number(e.target.value))}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && paymentMethodId && paymentAmount > 0) {
+                      e.preventDefault();
+                      addPayment();
+                    }
+                  }}
                   className="w-32"
                 />
                 <Button onClick={addPayment} disabled={!paymentMethodId || paymentAmount <= 0}>
