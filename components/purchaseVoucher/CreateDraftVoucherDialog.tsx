@@ -5,6 +5,13 @@ import { ModalBase, ModalBaseFooter } from "@/components/ui/ModalBase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useUI } from "@/components/ui/UIProvider";
 import { Plus } from "lucide-react";
@@ -74,7 +81,7 @@ export function CreateDraftVoucherDialog({
   const [number, setNumber] = useState(initialData?.number || "");
   const [date, setDate] = useState(initialData?.date || new Date().toISOString().split("T")[0]);
   const [totalAmount, setTotalAmount] = useState(initialData?.totalAmount || "");
-  const [paymentMethodId, setPaymentMethodId] = useState(initialData?.paymentMethodId || "");
+  const [paymentMethodId, setPaymentMethodId] = useState(initialData?.paymentMethodId || "none");
   const [notes, setNotes] = useState(initialData?.notes || "");
 
   // Load suppliers and payment methods
@@ -108,7 +115,7 @@ export function CreateDraftVoucherDialog({
       setNumber(initialData.number);
       setDate(initialData.date);
       setTotalAmount(initialData.totalAmount);
-      setPaymentMethodId(initialData.paymentMethodId);
+      setPaymentMethodId(initialData.paymentMethodId || "none");
       setNotes(initialData.notes);
     }
   }, [initialData]);
@@ -193,7 +200,7 @@ export function CreateDraftVoucherDialog({
         number,
         date: new Date(date).toISOString(),
         totalAmount: parseFloat(totalAmount),
-        paymentMethodId: paymentMethodId || null,
+        paymentMethodId: paymentMethodId === "none" ? null : paymentMethodId,
         notes,
       };
 
@@ -245,14 +252,14 @@ export function CreateDraftVoucherDialog({
       <form onSubmit={handleSubmit} className="space-y-4" onKeyDown={handleKeyDown}>
         <div className="grid md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="supplier">Proveedor *</Label>
+            <Label htmlFor="supplier" required>Proveedor</Label>
             <div className="flex gap-2">
               <Select
                 value={supplierId}
                 onValueChange={setSupplierId}
                 required
               >
-                <SelectTrigger id="supplier" className="h-9">
+                <SelectTrigger id="supplier" className="w-full h-9">
                   <SelectValue placeholder="Seleccione un proveedor..." />
                 </SelectTrigger>
                 <SelectContent>
@@ -280,14 +287,14 @@ export function CreateDraftVoucherDialog({
           <div className="space-y-2">
             <Label htmlFor="paymentMethod">Forma de Pago</Label>
             <Select
-              value={paymentMethodId || "cta-cte"}
-              onValueChange={(val) => setPaymentMethodId(val === "cta-cte" ? "" : val)}
+              value={paymentMethodId}
+              onValueChange={setPaymentMethodId}
             >
-              <SelectTrigger id="paymentMethod" className="h-9">
+              <SelectTrigger id="paymentMethod" className="w-full h-9">
                 <SelectValue placeholder="Cuenta Corriente" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="cta-cte">Cuenta Corriente</SelectItem>
+                <SelectItem value="none">Cuenta Corriente</SelectItem>
                 {paymentMethods
                   .filter((p) => p.id && p.isActive)
                   .map((p) => (
@@ -302,51 +309,53 @@ export function CreateDraftVoucherDialog({
 
         <div className="grid grid-cols-3 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="letter">Letra *</Label>
+            <Label htmlFor="letter" required>Letra</Label>
             <Select
               value={letter}
               onValueChange={setLetter}
               required
             >
-              <SelectTrigger id="letter" className="h-9 font-bold">
-                <SelectValue placeholder="A" />
+              <SelectTrigger id="letter" className="w-full h-9">
+                <SelectValue placeholder="Seleccione..." />
               </SelectTrigger>
               <SelectContent>
-                {["A", "B", "C", "X", "M"].map((l) => (
-                  <SelectItem key={l} value={l} className="font-bold">
-                    {l}
-                  </SelectItem>
-                ))}
+                <SelectItem value="A">A</SelectItem>
+                <SelectItem value="B">B</SelectItem>
+                <SelectItem value="C">C</SelectItem>
+                <SelectItem value="X">X</SelectItem>
+                <SelectItem value="M">M</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div className="col-span-2 space-y-2">
-            <Label htmlFor="number">Número de Factura *</Label>
+            <Label htmlFor="number" required>Número de Factura</Label>
             <Input
               id="number"
               placeholder="0001-00000234"
               value={number}
               onChange={(e) => setNumber(e.target.value)}
               required
+              aria-required="true"
             />
           </div>
         </div>
 
         <div className="grid md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="date">Fecha de Emisión *</Label>
+            <Label htmlFor="date" required>Fecha de Emisión</Label>
             <Input
               id="date"
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
               required
+              aria-required="true"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="totalAmount">Monto Total ($) *</Label>
+            <Label htmlFor="totalAmount" required>Monto Total ($)</Label>
             <Input
               id="totalAmount"
               type="number"
@@ -356,6 +365,7 @@ export function CreateDraftVoucherDialog({
               value={totalAmount}
               onChange={(e) => setTotalAmount(e.target.value)}
               required
+              aria-required="true"
             />
           </div>
         </div>
