@@ -368,7 +368,7 @@ export function VehicleDialog({
 
           {/* Customer Created Toast */}
           {showCustomerCreatedToast && (
-            <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm animate-in fade-in slide-in-from-top-2">
+            <div className="flex items-center gap-2 p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-700 text-sm animate-in fade-in slide-in-from-top-2">
               <CheckCircle className="h-4 w-4" />
               <span>Cliente <strong>{customerName}</strong> creado exitosamente</span>
             </div>
@@ -376,9 +376,9 @@ export function VehicleDialog({
 
           {/* Selected Customer Display */}
           {(customerId || customerIdProp) && (
-            <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
+            <div className="flex items-center justify-between p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
               <div className="flex items-center gap-2">
-                <User className="h-4 w-4 text-green-600" />
+                <User className="h-4 w-4 text-emerald-600" />
                 <span className="font-medium">{customerName || customerNameProp}</span>
               </div>
               {!customerIdProp && (

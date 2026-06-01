@@ -945,7 +945,7 @@ export default function WorkOrderDetailPage() {
                       {workOrder.exitChecklist.items.map((item, index) => (
                         <div key={index} className={cn(
                           "flex items-start gap-3 p-2 rounded-md transition-colors",
-                          item.checked ? "bg-green-50/50" : "hover:bg-muted/30"
+                          item.checked ? "bg-emerald-50/50" : "hover:bg-muted/30"
                         )}>
                           <div className={cn(
                             "mt-0.5 h-4 w-4 shrink-0 rounded-sm border border-primary flex items-center justify-center",

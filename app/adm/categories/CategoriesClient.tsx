@@ -262,11 +262,11 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
         }}
       />
 
-      <CrudStats stats={stats} />
+      <div className="mt-4">
+        <CrudStats stats={stats} />
+      </div>
 
       <CrudAdmin
-        title=""
-        description=""
         items={categories}
         loading={loading}
         onCreate={() => setIsCreateDialogOpen(true)}

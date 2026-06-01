@@ -9,8 +9,8 @@ import { ProductMovementsModal } from '@/components/products/ProductMovementsMod
 import { ProductPricesModal } from '@/components/products/ProductPricesModal';
 import { QuickSaleModal } from '@/components/dashboard/QuickSaleModal';
 import { useUI } from '@/components/ui/UIProvider';
-import { Header, CrudAdmin, StatItem } from '@/components/adm';
-import { Edit2, Trash2, AlertTriangle, DollarSign, Boxes, Clock, ShoppingCart, FileUp, Plus, RefreshCcw } from 'lucide-react';
+import { Header, CrudAdmin, StatItem, CrudStats } from '@/components/adm';
+import { Pencil, Trash2, AlertTriangle, DollarSign, Boxes, Clock, ShoppingCart, FileUp, Plus, RefreshCcw } from 'lucide-react';
 import { PriceDisplay } from '@/components/ui/price-display';
 import { StockDisplay } from '@/components/ui/stock-display';
 import {
@@ -427,9 +427,14 @@ export function ProductsClient({
       header: 'Estado',
       cell: ({ row }) =>
         row.original.isActive ? (
-          <Badge variant="default">Activo</Badge>
+          <Badge
+            variant="outline"
+            className="text-emerald-600 border-emerald-200 bg-emerald-50"
+          >
+            Activo
+          </Badge>
         ) : (
-          <Badge variant="destructive">Inactivo</Badge>
+          <Badge variant="secondary">Inactivo</Badge>
         ),
     },
   ];
@@ -473,15 +478,16 @@ export function ProductsClient({
           ]}
         />
 
+        <div className="mt-4">
+          <CrudStats stats={stats} />
+        </div>
+
         <CrudAdmin
-          title=""
-          description=""
           items={products}
           loading={false}
           onCreate={openCreateDialog}
           hideCreateAction
           columns={columns}
-          stats={stats}
           emptyIcon={<Boxes className="h-12 w-12 mx-auto text-muted-foreground mb-4" />}
           emptyMessage="No hay productos creados. Haz clic en 'Nuevo Producto' para crear el primero."
           createButtonText="Producto"
@@ -525,7 +531,7 @@ export function ProductsClient({
                     onClick={() => openEditDialog(product)}
                     aria-label="Editar producto"
                   >
-                    <Edit2 className="h-4 w-4" />
+                    <Pencil className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>Editar producto</TooltipContent>

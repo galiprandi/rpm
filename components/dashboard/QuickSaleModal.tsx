@@ -484,7 +484,7 @@ export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModal
               </div>
               <div className="flex justify-between items-center mt-2">
                 <span className="text-sm text-muted-foreground">Restante</span>
-                <span className={`text-lg font-semibold ${remaining > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                <span className={`text-lg font-semibold ${remaining > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
                   {formatARS(remaining)}
                 </span>
               </div>

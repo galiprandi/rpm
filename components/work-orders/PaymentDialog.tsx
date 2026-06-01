@@ -233,13 +233,13 @@ export function PaymentDialog({
           </div>
           <div className="flex justify-between items-center mb-2">
             <span className="text-sm text-muted-foreground">Pagado:</span>
-            <span className="font-medium text-green-600">${totalPaid.toFixed(2)}</span>
+            <span className="font-medium text-emerald-600">${totalPaid.toFixed(2)}</span>
           </div>
           <div className="flex justify-between items-center pt-2 border-t">
             <span className="text-sm font-medium">
               {isFullyPaid ? 'Pagado completamente' : 'Pendiente:'}
             </span>
-            <span className={`font-bold ${isFullyPaid ? 'text-green-600' : 'text-orange-600'}`}>
+            <span className={`font-bold ${isFullyPaid ? 'text-emerald-600' : 'text-orange-600'}`}>
               ${remainingAmount.toFixed(2)}
             </span>
           </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { Edit2, UserCheck, UserX } from 'lucide-react';
+import { Pencil, UserCheck, UserX } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -84,15 +84,16 @@ export function UserCard({ user, onEdit, onToggleActive, canToggle }: UserCardPr
             </div>
           </div>
           <div className="flex gap-1">
-            <Button variant="ghost" size="sm" onClick={onEdit}>
-              <Edit2 className="h-4 w-4" />
+            <Button variant="ghost" size="sm" onClick={onEdit} aria-label="Editar usuario">
+              <Pencil className="h-4 w-4" />
             </Button>
             {canToggle && (
               <Button
                 variant="ghost"
                 size="sm"
-                className={user.isActive ? 'text-red-600' : 'text-green-600'}
+                className={user.isActive ? 'text-red-600' : 'text-emerald-600'}
                 onClick={onToggleActive}
+                aria-label={user.isActive ? "Desactivar usuario" : "Activar usuario"}
               >
                 {user.isActive ? (
                   <UserX className="h-4 w-4" />

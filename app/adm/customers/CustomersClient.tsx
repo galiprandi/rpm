@@ -242,15 +242,13 @@ export default function CustomersClient({ initialCustomers }: CustomersClientPro
             icon: TrendingDown,
           },
         ]}
-      >
-        <div className="mt-4">
-          <CrudStats stats={stats} />
-        </div>
-      </Header>
+      />
+
+      <div className="mt-4">
+        <CrudStats stats={stats} />
+      </div>
 
       <CrudAdmin
-        title=""
-        description=""
         items={filteredCustomers}
         loading={loading}
         onCreate={handleCreate}

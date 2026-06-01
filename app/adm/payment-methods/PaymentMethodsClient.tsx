@@ -276,11 +276,11 @@ export default function PaymentMethodsClient({ initialPaymentMethods }: PaymentM
         }}
       />
 
-      <CrudStats stats={stats} />
+      <div className="mt-4">
+        <CrudStats stats={stats} />
+      </div>
 
       <CrudAdmin
-        title=""
-        description=""
         items={paymentMethods}
         loading={loading}
         onCreate={handleCreate}

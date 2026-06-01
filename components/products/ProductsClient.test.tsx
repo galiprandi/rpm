@@ -44,12 +44,9 @@ vi.mock('@/components/ui/UIProvider', () => ({
 
 vi.mock('@/components/adm', () => ({
   Header: ({ title, children }: { title: string; children?: React.ReactNode }) => <div><h1>{title}</h1>{children}</div>,
-  CrudAdmin: ({ items, onCreate, rowActions, stats }: { items: Product[]; onCreate: () => void; rowActions?: (item: Product) => React.ReactNode; stats?: Array<{ label: string; value: React.ReactNode }> }) => (
+  CrudAdmin: ({ items, onCreate, rowActions }: { items: Product[]; onCreate: () => void; rowActions?: (item: Product) => React.ReactNode }) => (
     <div>
       <button onClick={onCreate}>Create</button>
-      {stats && stats.map((stat, i) => (
-        <div key={i}>{stat.label}: {stat.value}</div>
-      ))}
       <div data-testid="crud-admin">
         {items.map((item: Product) => (
           <div key={item.id}>
@@ -58,6 +55,13 @@ vi.mock('@/components/adm', () => ({
           </div>
         ))}
       </div>
+    </div>
+  ),
+  CrudStats: ({ stats }: { stats: Array<{ label: string; value: React.ReactNode }> }) => (
+    <div>
+      {stats.map((stat, i) => (
+        <div key={i}>{stat.label}: {stat.value}</div>
+      ))}
     </div>
   ),
   StatItem: ({ label, value }: { label: string; value: React.ReactNode }) => <div>{label}: {value}</div>,

@@ -279,7 +279,7 @@ export function CostUpdateDialog({ open, onClose, onSuccess }: CostUpdateDialogP
             className={cn(
               'font-mono font-medium',
               row.original.newCost < 0 && 'text-red-600',
-              row.original.newCost > row.original.currentCost && 'text-green-600',
+              row.original.newCost > row.original.currentCost && 'text-emerald-600',
               row.original.newCost < row.original.currentCost &&
                 row.original.newCost >= 0 &&
                 'text-orange-600'
@@ -300,7 +300,7 @@ export function CostUpdateDialog({ open, onClose, onSuccess }: CostUpdateDialogP
               row.original.warningFlag && 'text-red-600 font-bold',
               !row.original.warningFlag &&
                 row.original.variationPercent > 0 &&
-                'text-green-600',
+                'text-emerald-600',
               !row.original.warningFlag &&
                 row.original.variationPercent < 0 &&
                 'text-orange-600'
@@ -453,7 +453,7 @@ export function CostUpdateDialog({ open, onClose, onSuccess }: CostUpdateDialogP
               <SelectContent>
                 <SelectItem value="PERCENTAGE_INC">
                   <span className="flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4 text-green-600" />
+                    <TrendingUp className="w-4 h-4 text-emerald-600" />
                     Aumentar %
                   </span>
                 </SelectItem>
@@ -465,7 +465,7 @@ export function CostUpdateDialog({ open, onClose, onSuccess }: CostUpdateDialogP
                 </SelectItem>
                 <SelectItem value="FIXED_INC">
                   <span className="flex items-center gap-2">
-                    <DollarSign className="w-4 h-4 text-green-600" />
+                    <DollarSign className="w-4 h-4 text-emerald-600" />
                     Aumentar $
                   </span>
                 </SelectItem>
@@ -719,7 +719,7 @@ export function CostUpdateDialog({ open, onClose, onSuccess }: CostUpdateDialogP
                     currentStep !== step &&
                       (['filters', 'adjustment', 'preview', 'confirm'].indexOf(currentStep) >
                       index
-                        ? 'bg-green-100 text-green-700'
+                        ? 'bg-green-100 text-emerald-700'
                         : 'bg-muted text-muted-foreground')
                   )}
                 >

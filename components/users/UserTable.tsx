@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import {
   Search,
-  Edit2,
+  Pencil,
   UserX,
   UserCheck,
 } from 'lucide-react';
@@ -149,15 +149,16 @@ export function UserTable({
 
           return (
             <div className="flex justify-center space-x-2">
-              <Button variant="ghost" size="sm" onClick={() => onEdit(user)}>
-                <Edit2 className="h-4 w-4" />
+              <Button variant="ghost" size="sm" onClick={() => onEdit(user)} aria-label="Editar usuario">
+                <Pencil className="h-4 w-4" />
               </Button>
               {canToggle && (
                 <Button
                   variant="ghost"
                   size="sm"
-                  className={user.isActive ? 'text-red-600' : 'text-green-600'}
+                  className={user.isActive ? 'text-red-600' : 'text-emerald-600'}
                   onClick={() => onToggleActive(user)}
+                  aria-label={user.isActive ? "Desactivar usuario" : "Activar usuario"}
                 >
                   {user.isActive ? (
                     <UserX className="h-4 w-4" />

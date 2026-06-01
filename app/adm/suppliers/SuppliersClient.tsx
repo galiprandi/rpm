@@ -280,11 +280,11 @@ export default function SuppliersClient({ initialSuppliers }: SuppliersClientPro
         }}
       />
 
-      <CrudStats stats={stats} />
+      <div className="mt-4">
+        <CrudStats stats={stats} />
+      </div>
 
       <CrudAdmin
-        title=""
-        description=""
         items={suppliers}
         loading={loading}
         onCreate={() => setIsCreateDialogOpen(true)}
