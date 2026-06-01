@@ -223,19 +223,19 @@ export default function PurchaseVouchersClient({ initialVouchers }: PurchaseVouc
       label: 'Borradores',
       value: draftsCount,
       icon: FileText,
-      iconColor: 'rgb(249 115 22)', // text-orange-500
+      iconColor: '#f97316', // orange-500
     },
     {
       label: 'Finalizados',
       value: finalizedCount,
       icon: History,
-      iconColor: 'rgb(16 185 129)', // text-emerald-500
+      iconColor: '#10b981', // emerald-500
     },
     {
       label: 'Total Acumulado',
       value: totalAmountSum,
       icon: Receipt,
-      iconColor: 'rgb(59 130 246)', // text-blue-500
+      iconColor: '#3b82f6', // blue-500
     }
   ];
 
@@ -294,7 +294,7 @@ export default function PurchaseVouchersClient({ initialVouchers }: PurchaseVouc
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="h-8 w-8"
+                        className="h-8 w-8 text-slate-600 hover:text-slate-900"
                         onClick={() => {
                           setCurrentVoucherId(v.id);
                           setCurrentVoucherTotal(parseFloat(v.totalAmount));
@@ -333,7 +333,7 @@ export default function PurchaseVouchersClient({ initialVouchers }: PurchaseVouc
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="h-8 w-8"
+                        className="h-8 w-8 text-slate-600 hover:text-slate-900"
                         asChild
                       >
                         <a href={`/adm/purchase-vouchers/${v.id}`} aria-label="Ver detalle de comprobante">

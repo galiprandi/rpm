@@ -15,6 +15,13 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useUI } from "@/components/ui/UIProvider";
 import { Plus } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { SupplierDialog } from "@/components/suppliers/SupplierDialog";
 import { type SupplierFormData } from "@/components/suppliers/SupplierForm";
 
@@ -154,6 +161,16 @@ export function CreateDraftVoucherDialog({
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      const target = e.target as HTMLElement;
+      if (target.tagName !== "TEXTAREA") {
+        e.preventDefault();
+        handleSubmit({ preventDefault: () => {} } as React.FormEvent);
+      }
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!supplierId || !letter || !number || !date || !totalAmount) {
@@ -232,7 +249,7 @@ export function CreateDraftVoucherDialog({
         />
       }
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4" onKeyDown={handleKeyDown}>
         <div className="grid md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="supplier" required>Proveedor</Label>
