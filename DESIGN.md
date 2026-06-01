@@ -78,9 +78,27 @@ Toda acción de fila con icono único debe estar envuelta en `Tooltip`:
 
 ## 7. Select vs Native
 
-Reemplazar siempre los `<select>` nativos por el componente `Select` de shadcn/ui para consistencia visual.
+Reemplazar siempre los `<select>` nativos por el componente `Select` de shadcn/ui para consistencia visual en diálogos y vistas de detalle.
 
-## 8. Links entre Vistas Relacionadas
+## 8. Metadata Pills & Detail Headers
+
+En vistas de detalle, usar un patrón de "Metadata Pills" para información secundaria en el `Header`:
+
+```tsx
+<div className="flex flex-wrap items-center gap-2 mt-4">
+  <Badge variant="outline" className="...">Estado</Badge>
+  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted/50 border text-xs font-medium text-muted-foreground">
+    <Icon className="h-3.5 w-3.5" />
+    Valor
+  </div>
+</div>
+```
+
+## 9. Loading Skeletons
+
+Toda vista administrativa debe implementar un `loading.tsx` con `Skeleton` que imite la estructura real de la página (Header, Stats, Tabla/Grilla) para mejorar la percepción de velocidad y evitar saltos de layout.
+
+## 10. Links entre Vistas Relacionadas
 
 Desde vistas de detalle, usar `secondaryActions` con `href` para navegar a módulos relacionados:
 

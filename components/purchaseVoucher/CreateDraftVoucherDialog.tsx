@@ -8,6 +8,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useUI } from "@/components/ui/UIProvider";
 import { Plus } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { SupplierDialog } from "@/components/suppliers/SupplierDialog";
 import { type SupplierFormData } from "@/components/suppliers/SupplierForm";
 
@@ -147,6 +154,16 @@ export function CreateDraftVoucherDialog({
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      const target = e.target as HTMLElement;
+      if (target.tagName !== "TEXTAREA") {
+        e.preventDefault();
+        handleSubmit({ preventDefault: () => {} } as React.FormEvent);
+      }
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!supplierId || !letter || !number || !date || !totalAmount) {
@@ -225,25 +242,27 @@ export function CreateDraftVoucherDialog({
         />
       }
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4" onKeyDown={handleKeyDown}>
         <div className="grid md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="supplier">Proveedor *</Label>
             <div className="flex gap-2">
-              <select
-                id="supplier"
+              <Select
                 value={supplierId}
-                onChange={(e) => setSupplierId(e.target.value)}
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring"
+                onValueChange={setSupplierId}
                 required
               >
-                <option value="">Seleccione un proveedor...</option>
-                {suppliers.map((s) => (
-                  <option key={s.id || s.name} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger id="supplier" className="h-9">
+                  <SelectValue placeholder="Seleccione un proveedor..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {suppliers.map((s) => (
+                    <SelectItem key={s.id || s.name} value={s.id}>
+                      {s.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Button
                 type="button"
                 variant="outline"
@@ -251,6 +270,7 @@ export function CreateDraftVoucherDialog({
                 onClick={() => setIsSupplierDialogOpen(true)}
                 className="h-9 px-2"
                 title="Crear nuevo proveedor"
+                aria-label="Crear nuevo proveedor"
               >
                 <Plus className="h-4 w-4" />
               </Button>
@@ -259,40 +279,46 @@ export function CreateDraftVoucherDialog({
 
           <div className="space-y-2">
             <Label htmlFor="paymentMethod">Forma de Pago</Label>
-            <select
-              id="paymentMethod"
-              value={paymentMethodId}
-              onChange={(e) => setPaymentMethodId(e.target.value)}
-              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring"
+            <Select
+              value={paymentMethodId || "cta-cte"}
+              onValueChange={(val) => setPaymentMethodId(val === "cta-cte" ? "" : val)}
             >
-              <option value="">Cuenta Corriente</option>
-              {paymentMethods
-                .filter((p) => p.id && p.isActive)
-                .map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-            </select>
+              <SelectTrigger id="paymentMethod" className="h-9">
+                <SelectValue placeholder="Cuenta Corriente" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="cta-cte">Cuenta Corriente</SelectItem>
+                {paymentMethods
+                  .filter((p) => p.id && p.isActive)
+                  .map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
         <div className="grid grid-cols-3 gap-4">
           <div className="space-y-2">
             <Label htmlFor="letter">Letra *</Label>
-            <select
-              id="letter"
+            <Select
               value={letter}
-              onChange={(e) => setLetter(e.target.value)}
-              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring"
+              onValueChange={setLetter}
               required
             >
-              <option value="A">A</option>
-              <option value="B">B</option>
-              <option value="C">C</option>
-              <option value="X">X</option>
-              <option value="M">M</option>
-            </select>
+              <SelectTrigger id="letter" className="h-9 font-bold">
+                <SelectValue placeholder="A" />
+              </SelectTrigger>
+              <SelectContent>
+                {["A", "B", "C", "X", "M"].map((l) => (
+                  <SelectItem key={l} value={l} className="font-bold">
+                    {l}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="col-span-2 space-y-2">
