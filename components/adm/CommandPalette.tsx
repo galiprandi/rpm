@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { flatNavItems } from '@/lib/nav/navConfig';
-import { Search, ArrowRight } from 'lucide-react';
+import { Search, ArrowRight, X } from 'lucide-react';
 
 interface CommandPaletteProps {
   open: boolean;
@@ -77,16 +77,30 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
         <DialogTitle className="sr-only">Buscar</DialogTitle>
         <div className="flex items-center gap-2 px-4 py-3 border-b">
           <Search className="size-4 text-muted-foreground shrink-0" />
-          <Input
-            placeholder="Buscar vista..."
-            className="border-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 h-auto px-0 text-base"
-            value={query}
-            onChange={(e) => handleQueryChange(e.target.value)}
-            autoFocus
-          />
-          <kbd className="hidden sm:inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
-            ESC
-          </kbd>
+          <div className="relative flex-1 flex items-center">
+            <Input
+              placeholder="Buscar vista..."
+              className="border-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 h-auto px-0 text-base w-full pr-8"
+              value={query}
+              onChange={(e) => handleQueryChange(e.target.value)}
+              autoFocus
+            />
+            {query && (
+              <button
+                type="button"
+                onClick={() => handleQueryChange('')}
+                className="absolute right-0 text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="Limpiar búsqueda"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+          {!query && (
+            <kbd className="hidden sm:inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
+              ESC
+            </kbd>
+          )}
         </div>
         <div className="max-h-[300px] overflow-y-auto py-2">
           {results.length === 0 ? (
@@ -97,6 +111,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
             results.map((item, index) => (
               <button
                 key={item.href}
+                type="button"
                 onClick={() => handleSelect(item.href)}
                 className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors text-left ${
                   index === selectedIndex

@@ -193,6 +193,7 @@ function Sidebar({
               <button
                 onClick={() => setOpenMobile(false)}
                 className="absolute top-3 right-3 p-1 rounded-md hover:bg-sidebar-accent"
+                aria-label="Cerrar barra lateral"
               >
                 <PanelLeftIcon className="size-4" />
               </button>
