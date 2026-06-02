@@ -409,7 +409,7 @@ export default function CustomerDetailPage() {
 
       {/* Cuenta Corriente - Solo visible si hay saldo pendiente o a favor */}
       {customer.balance !== 0 && (
-        <Card className={customer.balance > 0 ? "border-red-200 bg-red-50/30" : "border-green-200 bg-green-50/30"}>
+        <Card className={customer.balance > 0 ? "border-red-200 bg-red-50/30" : "border-emerald-200 bg-emerald-50/30"}>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base flex items-center gap-2">

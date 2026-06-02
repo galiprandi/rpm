@@ -9,8 +9,8 @@ import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@tanstack/react-table';
 
 interface CrudAdminProps<T extends { id: string }> {
-  title: string;
-  description: string;
+  title?: string;
+  description?: string;
   items: T[];
   loading: boolean;
   onCreate?: () => void;
@@ -148,40 +148,44 @@ export function CrudAdmin<T extends { id: string }>({
     );
   }
 
+  const hasHeader = title || description || stats || headerActions.length > 0;
+
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">{title}</h1>
-          <p className="text-muted-foreground">{description}</p>
-          {stats && (
-            <div className="mt-2">
-              <CrudStats stats={stats} />
-            </div>
-          )}
+      {hasHeader && (
+        <div className="flex justify-between items-start">
+          <div>
+            {title && <h1 className="text-3xl font-bold text-foreground">{title}</h1>}
+            {description && <p className="text-muted-foreground">{description}</p>}
+            {stats && (
+              <div className="mt-2">
+                <CrudStats stats={stats} />
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {headerActions.map((action, index) => (
+              <Button
+                key={index}
+                onClick={action.onClick}
+                variant={action.variant || 'default'}
+                className={
+                  (action.variant || 'default') === 'default'
+                    ? 'bg-slate-900 text-white hover:bg-slate-800 border border-slate-900 shadow-lg hover:shadow-xl transition-all font-semibold'
+                    : undefined
+                }
+              >
+                {action.icon && <action.icon className="h-4 w-4 mr-2" />}
+                {action.label}
+              </Button>
+            ))}
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          {headerActions.map((action, index) => (
-            <Button
-              key={index}
-              onClick={action.onClick}
-              variant={action.variant || 'default'}
-              className={
-                (action.variant || 'default') === 'default'
-                  ? 'bg-slate-900 text-white hover:bg-slate-800 border border-slate-900 shadow-lg hover:shadow-xl transition-all font-semibold'
-                  : undefined
-              }
-            >
-              {action.icon && <action.icon className="h-4 w-4 mr-2" />}
-              {action.label}
-            </Button>
-          ))}
-        </div>
-      </div>
+      )}
 
       {/* Items Table */}
-      <div className="mt-10">
+      <div className={hasHeader ? 'mt-10' : ''}>
         {items.length > 0 ? (
           <div className="overflow-x-auto -mx-6 px-6">
             <DataTable

@@ -31,7 +31,7 @@ export function WorkOrdersCard({
             {byStatus.pending} pendientes · {byStatus.inProgress} en proceso · {byStatus.ready} listas
           </p>
           {newToday > 0 && (
-            <div className="flex items-center gap-1 text-xs text-green-600">
+            <div className="flex items-center gap-1 text-xs text-emerald-600">
               <ArrowUp className="h-3 w-3" />
               <span>{newToday} nueva{newToday !== 1 ? 's' : ''}</span>
             </div>

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useUI } from '@/components/ui/UIProvider';
 import { Header, CrudAdmin, CrudStats, type StatItem } from '@/components/adm';
-import { Wrench, Edit2, Trash2, Clock, List, Plus } from 'lucide-react';
+import { Wrench, Pencil, Trash2, Clock, List, Plus } from 'lucide-react';
 import { PriceDisplay } from '@/components/ui/price-display';
 import { type ColumnDef } from '@tanstack/react-table';
 import { ServiceDialog } from '@/components/services/ServiceDialog';
@@ -273,9 +273,14 @@ export default function ServicesClient({ initialServices }: ServicesClientProps)
         header: 'Estado',
         cell: ({ row }) =>
           row.original.isActive ? (
-            <Badge variant="default">Activo</Badge>
+            <Badge
+              variant="outline"
+              className="text-emerald-600 border-emerald-200 bg-emerald-50"
+            >
+              Activo
+            </Badge>
           ) : (
-            <Badge variant="destructive">Inactivo</Badge>
+            <Badge variant="secondary">Inactivo</Badge>
           ),
       },
     ],
@@ -293,15 +298,13 @@ export default function ServicesClient({ initialServices }: ServicesClientProps)
           icon: Plus,
           ariaLabel: 'Crear nuevo servicio',
         }}
-      >
-        <div className="mt-4">
-          <CrudStats stats={stats} />
-        </div>
-      </Header>
+      />
+
+      <div className="mt-4">
+        <CrudStats stats={stats} />
+      </div>
 
       <CrudAdmin
-        title=""
-        description=""
         items={services}
         loading={loading}
         onCreate={openCreateDialog}
@@ -317,7 +320,7 @@ export default function ServicesClient({ initialServices }: ServicesClientProps)
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button variant="ghost" size="sm" onClick={() => openEditDialog(service)} aria-label="Editar servicio">
-                  <Edit2 className="h-4 w-4" />
+                  <Pencil className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Editar servicio</TooltipContent>

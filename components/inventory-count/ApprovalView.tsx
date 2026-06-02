@@ -150,7 +150,7 @@ export function ApprovalView({ operativeId }: { operativeId: string }) {
       </div>
 
       {isApproved && (
-        <Card className="bg-green-50 border-green-200">
+        <Card className="bg-emerald-50 border-emerald-200">
           <CardContent className="p-4 flex items-center gap-3 text-green-800">
             <CheckCircle className="h-5 w-5" />
             <span className="font-medium">Este operativo ya ha sido aprobado y el stock ha sido impactado.</span>
@@ -189,7 +189,7 @@ export function ApprovalView({ operativeId }: { operativeId: string }) {
                       ) : (
                         <div>
                           <span className="font-bold text-sm">{item.countedStock}</span>
-                          <span className={cn("text-[10px] ml-1", diff > 0 ? "text-green-600" : diff < 0 ? "text-red-600" : "text-muted-foreground")}>
+                          <span className={cn("text-[10px] ml-1", diff > 0 ? "text-emerald-600" : diff < 0 ? "text-red-600" : "text-muted-foreground")}>
                             ({diff > 0 ? '+' : ''}{diff})
                           </span>
                         </div>

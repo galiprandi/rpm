@@ -19,7 +19,7 @@ export function RecentMovementsCard({
   const getMovementIcon = (type: string) => {
     switch (type) {
       case 'IN':
-        return <ArrowUp className="h-3 w-3 text-green-600" />;
+        return <ArrowUp className="h-3 w-3 text-emerald-600" />;
       case 'OUT':
         return <ArrowDown className="h-3 w-3 text-red-600" />;
       case 'ADJUSTMENT':
@@ -70,7 +70,7 @@ export function RecentMovementsCard({
                   <span
                     className={`text-sm font-semibold ${
                       movement.type === 'IN'
-                        ? 'text-green-600'
+                        ? 'text-emerald-600'
                         : movement.type === 'OUT'
                         ? 'text-red-600'
                         : 'text-yellow-600'

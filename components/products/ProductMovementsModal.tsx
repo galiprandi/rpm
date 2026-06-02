@@ -125,7 +125,7 @@ export function ProductMovementsModal({
                     </Badge>
                   </td>
                   <td className="p-2 text-right font-mono">
-                    <span className={movement.quantity > 0 ? 'text-green-600' : 'text-red-600'}>
+                    <span className={movement.quantity > 0 ? 'text-emerald-600' : 'text-red-600'}>
                       {movement.quantity > 0 ? '+' : ''}{movement.quantity}
                     </span>
                   </td>

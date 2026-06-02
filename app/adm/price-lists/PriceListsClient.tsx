@@ -10,7 +10,7 @@ import { CostUpdateDialog } from '@/components/cost-updates/CostUpdateDialog';
 import { ProductAuditModal } from '@/components/products/ProductAuditModal';
 import { type PriceListFormData } from '@/components/price-lists/PriceListForm';
 import { Header, CrudAdmin, StatItem, CrudStats } from '@/components/adm';
-import { DollarSign, Edit2, Trash2, List, Percent, Layers, TrendingUp, History, Plus } from 'lucide-react';
+import { DollarSign, Pencil, Trash2, List, Percent, Layers, TrendingUp, History, Plus } from 'lucide-react';
 import { type ColumnDef } from '@tanstack/react-table';
 import {
   Tooltip,
@@ -190,7 +190,7 @@ export default function PriceListsClient({ initialPriceLists }: PriceListsClient
       label: 'Activas',
       value: priceLists.filter((pl) => pl.isActive).length,
       icon: List,
-      iconColor: '#22c55e',
+      iconColor: '#10b981',
     },
     {
       label: 'Excepciones',
@@ -260,9 +260,14 @@ export default function PriceListsClient({ initialPriceLists }: PriceListsClient
         header: 'Estado',
         cell: ({ row }) =>
           row.original.isActive ? (
-            <Badge variant="default">Activa</Badge>
+            <Badge
+              variant="outline"
+              className="text-emerald-600 border-emerald-200 bg-emerald-50"
+            >
+              Activa
+            </Badge>
           ) : (
-            <Badge variant="destructive">Inactiva</Badge>
+            <Badge variant="secondary">Inactiva</Badge>
           ),
       },
     ],
@@ -296,15 +301,13 @@ export default function PriceListsClient({ initialPriceLists }: PriceListsClient
             ariaLabel: 'Ver historial de auditoría',
           },
         ]}
-      >
-        <div className="mt-2">
-          <CrudStats stats={stats} />
-        </div>
-      </Header>
+      />
+
+      <div className="mt-4">
+        <CrudStats stats={stats} />
+      </div>
 
       <CrudAdmin
-        title=""
-        description=""
         items={priceLists}
         loading={loading}
         columns={columns}
@@ -324,7 +327,7 @@ export default function PriceListsClient({ initialPriceLists }: PriceListsClient
                   onClick={() => openEditDialog(priceList)}
                   aria-label="Editar lista"
                 >
-                  <Edit2 className="h-4 w-4" />
+                  <Pencil className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Editar lista</TooltipContent>

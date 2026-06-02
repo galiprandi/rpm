@@ -472,7 +472,7 @@ export default function NewWorkOrderPage() {
               {/* Vehicle Found Card */}
               {foundVehicle && (
                 <div className="space-y-4">
-                  <div className="border rounded-lg p-6 bg-green-50/50">
+                  <div className="border rounded-lg p-6 bg-emerald-50/50">
                     <div className="flex items-start gap-4">
                       <div className="bg-primary/10 p-3 rounded-full">
                         <Car className="h-6 w-6 text-primary" />

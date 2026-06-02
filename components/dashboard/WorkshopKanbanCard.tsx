@@ -31,7 +31,7 @@ export function WorkshopKanbanCard({
             <p className="text-xs text-muted-foreground">En proceso</p>
           </div>
           <div className="flex-1">
-            <div className="text-2xl font-bold text-green-600">{byStatus.ready}</div>
+            <div className="text-2xl font-bold text-emerald-600">{byStatus.ready}</div>
             <p className="text-xs text-muted-foreground">Listas</p>
           </div>
         </div>

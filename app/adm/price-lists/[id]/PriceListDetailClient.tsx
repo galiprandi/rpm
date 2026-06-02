@@ -294,7 +294,7 @@ export default function PriceListDetailClient({ initialPriceList }: PriceListDet
       label: 'Estado',
       value: priceList.isActive ? 'Activa' : 'Inactiva',
       icon: DollarSign,
-      iconColor: priceList.isActive ? '#22c55e' : '#ef4444',
+      iconColor: priceList.isActive ? '#10b981' : '#ef4444',
     },
   ];
 

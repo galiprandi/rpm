@@ -98,7 +98,7 @@ export function DailyOperations() {
         };
 
         const colors: Record<string, string> = {
-          INCOME: 'bg-green-50 text-green-700 border-green-200',
+          INCOME: 'bg-emerald-50 text-emerald-700 border-emerald-200',
           EXPENSE: 'bg-red-50 text-red-700 border-red-200',
           OPENING: 'bg-blue-50 text-blue-700 border-blue-200',
           CLOSING: 'bg-slate-50 text-slate-700 border-slate-200',
@@ -149,7 +149,7 @@ export function DailyOperations() {
         const amount = row.original.amount;
         const isExpense = row.original.type === 'EXPENSE' || row.original.type === 'PURCHASE_VOUCHER';
         return (
-          <span className={isExpense ? 'text-red-600 font-medium' : 'text-green-600 font-medium'}>
+          <span className={isExpense ? 'text-red-600 font-medium' : 'text-emerald-600 font-medium'}>
             {isExpense ? '-' : '+'}{formatARS(amount)}
           </span>
         );
@@ -212,10 +212,10 @@ export function DailyOperations() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Ingresos</CardTitle>
-            <ArrowUpCircle className="h-4 w-4 text-green-600" />
+            <ArrowUpCircle className="h-4 w-4 text-emerald-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
+            <div className="text-2xl font-bold text-emerald-600">
               {formatARS(data?.summary.totalIncome || 0)}
             </div>
           </CardContent>

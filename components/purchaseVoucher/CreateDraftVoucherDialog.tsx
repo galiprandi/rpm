@@ -15,13 +15,6 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useUI } from "@/components/ui/UIProvider";
 import { Plus } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { SupplierDialog } from "@/components/suppliers/SupplierDialog";
 import { type SupplierFormData } from "@/components/suppliers/SupplierForm";
 

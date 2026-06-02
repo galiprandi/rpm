@@ -563,7 +563,7 @@ export function ProductServiceSelector({
 
       {/* Feedback toast */}
       {addedItemName && (
-        <div className="bg-green-50 border border-green-200 rounded-md px-4 py-2 text-sm text-green-700 flex items-center gap-2 animate-in fade-in slide-in-from-top-2 duration-300">
+        <div className="bg-emerald-50 border border-emerald-200 rounded-md px-4 py-2 text-sm text-emerald-700 flex items-center gap-2 animate-in fade-in slide-in-from-top-2 duration-300">
           <Check className="h-4 w-4" />
           <span><strong>{addedItemName}</strong> agregado al carrito</span>
         </div>

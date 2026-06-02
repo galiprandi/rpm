@@ -32,7 +32,7 @@ export function StockAlertCard({
           {hasAlerts ? (
             <span className="text-orange-600">{lowStockCount} productos</span>
           ) : (
-            <span className="text-green-600">OK</span>
+            <span className="text-emerald-600">OK</span>
           )}
         </div>
         {hasAlerts ? (

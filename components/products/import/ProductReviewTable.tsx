@@ -436,7 +436,7 @@ export function ProductReviewTable({
         >
           <Badge 
             variant="outline" 
-            className={`bg-green-100 text-green-800 border-green-200 h-6 px-3 font-semibold text-sm ${activeTab === 'new' ? 'ring-2 ring-green-500' : ''}`}
+            className={`bg-green-100 text-green-800 border-emerald-200 h-6 px-3 font-semibold text-sm ${activeTab === 'new' ? 'ring-2 ring-green-500' : ''}`}
           >
             {counts.new}
           </Badge>

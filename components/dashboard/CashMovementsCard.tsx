@@ -27,7 +27,7 @@ export function CashMovementsCard({ cashMovements }: CashMovementsCardProps) {
   const getMovementIcon = (type: string) => {
     switch (type) {
       case 'INCOME':
-        return <ArrowUpCircle className="h-4 w-4 text-green-600" />;
+        return <ArrowUpCircle className="h-4 w-4 text-emerald-600" />;
       case 'EXPENSE':
       case 'PURCHASE_VOUCHER':
         return <ArrowDownCircle className="h-4 w-4 text-red-600" />;
@@ -70,7 +70,7 @@ export function CashMovementsCard({ cashMovements }: CashMovementsCardProps) {
   const getAmountClass = (type: string) => {
     switch (type) {
       case 'INCOME':
-        return 'text-green-600';
+        return 'text-emerald-600';
       case 'EXPENSE':
       case 'PURCHASE_VOUCHER':
         return 'text-red-600';

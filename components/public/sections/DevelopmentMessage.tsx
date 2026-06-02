@@ -19,7 +19,7 @@ export function DevelopmentMessage() {
       
       <div className="pt-8">
         <div className="inline-flex items-center space-x-2">
-          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+          <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
           <span className="text-sm text-gray-400">
             Próximamente disponible
           </span>

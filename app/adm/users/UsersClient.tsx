@@ -7,7 +7,7 @@ import { UserDialog } from '@/components/users/UserDialog';
 import { UserFormData } from '@/components/users/UserForm';
 import { useUI } from '@/components/ui/UIProvider';
 import { Header, CrudAdmin, CrudStats, type StatItem } from '@/components/adm';
-import { Users, Pencil, UserCheck, UserCog, Shield, Plus, CheckCircle2 } from 'lucide-react';
+import { Users, Pencil, UserCog, Shield, Plus, CheckCircle2 } from 'lucide-react';
 import { type ColumnDef } from '@tanstack/react-table';
 import {
   Tooltip,
@@ -249,11 +249,11 @@ export default function UsersClient({ initialUsers }: UsersClientProps) {
         }}
       />
 
-      <CrudStats stats={stats} />
+      <div className="mt-4">
+        <CrudStats stats={stats} />
+      </div>
 
       <CrudAdmin
-        title=""
-        description=""
         items={users}
         loading={loading}
         onCreate={openCreateDialog}

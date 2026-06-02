@@ -54,7 +54,7 @@ const STATUSES = [
   { id: "WAITING", label: "En Espera", color: "bg-yellow-50 border-yellow-200" },
   { id: "IN_PROGRESS", label: "En Proceso", color: "bg-orange-50 border-orange-200" },
   { id: "QC_CHECK", label: "Control QC", color: "bg-purple-50 border-purple-200" },
-  { id: "READY", label: "Listo", color: "bg-green-50 border-green-200" },
+  { id: "READY", label: "Listo", color: "bg-emerald-50 border-emerald-200" },
   { id: "DELIVERED", label: "Entregada", color: "bg-gray-50 border-gray-200" },
 ];
 
@@ -142,7 +142,7 @@ function KanbanCard({ wo, isOverlay = false }: { wo: WorkOrder; isOverlay?: bool
             variant={wo.isFullyPaid ? "outline" : (wo.totalPaid && wo.totalPaid > 0 ? "secondary" : "outline")}
             className={cn(
               "text-[10px] px-1.5 py-0 h-5",
-              wo.isFullyPaid ? "border-green-200 bg-green-50 text-green-700" :
+              wo.isFullyPaid ? "border-emerald-200 bg-emerald-50 text-emerald-700" :
               (wo.totalPaid && wo.totalPaid > 0 ? "border-yellow-200 bg-yellow-50 text-yellow-700" : "text-muted-foreground")
             )}
           >
@@ -522,7 +522,7 @@ export default function WorkOrdersPage() {
                           variant={wo.isFullyPaid ? "outline" : (wo.totalPaid && wo.totalPaid > 0 ? "secondary" : "outline")}
                           className={cn(
                             "px-2.5 py-0.5",
-                            wo.isFullyPaid ? "border-green-200 bg-green-50 text-green-700" :
+                            wo.isFullyPaid ? "border-emerald-200 bg-emerald-50 text-emerald-700" :
                             (wo.totalPaid && wo.totalPaid > 0 ? "border-yellow-200 bg-yellow-50 text-yellow-700" : "text-muted-foreground")
                           )}
                         >

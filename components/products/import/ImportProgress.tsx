@@ -61,7 +61,7 @@ export function ImportProgress({
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'success':
-        return <Badge className="bg-green-100 text-green-700">Éxito</Badge>;
+        return <Badge className="bg-green-100 text-emerald-700">Éxito</Badge>;
       case 'error':
         return <Badge className="bg-red-100 text-red-700">Error</Badge>;
       case 'skipped':

@@ -55,7 +55,7 @@ export function WorkOrderStepper({
                   isActive
                     ? "border-primary bg-primary text-primary-foreground ring-2 ring-primary/20 scale-110"
                     : isCompleted
-                      ? "border-green-500 bg-green-500 text-white hover:bg-green-600 hover:scale-105 cursor-pointer shadow-sm"
+                      ? "border-green-500 bg-emerald-500 text-white hover:bg-green-600 hover:scale-105 cursor-pointer shadow-sm"
                       : "border-neutral-400 bg-neutral-400 text-white opacity-70 dark:border-neutral-500 dark:bg-neutral-500",
                   isClickable && !isActive && "hover:ring-2 hover:ring-green-500/30"
                 )}
@@ -77,7 +77,7 @@ export function WorkOrderStepper({
                   isActive
                     ? "text-primary"
                     : isCompleted
-                      ? "text-green-600 hover:text-green-700 cursor-pointer"
+                      ? "text-emerald-600 hover:text-emerald-700 cursor-pointer"
                       : "text-muted-foreground",
                   isClickable && "hover:underline"
                 )}
@@ -92,7 +92,7 @@ export function WorkOrderStepper({
                 <div
                   className={cn(
                     "h-0.5 flex-1 transition-colors",
-                    currentStep > step.value ? "bg-green-500" : "bg-neutral-300 dark:bg-neutral-600"
+                    currentStep > step.value ? "bg-emerald-500" : "bg-neutral-300 dark:bg-neutral-600"
                   )}
                 />
               </div>

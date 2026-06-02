@@ -112,7 +112,7 @@ export function MobileCountView({ operativeId }: { operativeId: string }) {
       <Card className="m-4">
         <CardContent className="p-8 flex flex-col items-center text-center space-y-4">
           <div className="bg-green-100 p-4 rounded-full">
-            <Check className="h-12 w-12 text-green-600" />
+            <Check className="h-12 w-12 text-emerald-600" />
           </div>
           <CardTitle>¡Conteo Finalizado!</CardTitle>
           <CardDescription>
@@ -211,7 +211,7 @@ export function MobileCountView({ operativeId }: { operativeId: string }) {
               key={item.id}
               className={cn(
                 "flex-1 transition-all",
-                item.reportedAt ? (item.isFound ? "bg-green-500" : "bg-red-500") : "bg-transparent"
+                item.reportedAt ? (item.isFound ? "bg-emerald-500" : "bg-red-500") : "bg-transparent"
               )}
             />
           ))}
