@@ -109,10 +109,17 @@ secondaryActions={[
 ]}
 ```
 
-## 9. Admin Sidebar Pattern
+## 11. Admin Sidebar Pattern
 
 - El aside de `/adm` debe funcionar como navegación protagonista: marca visible, búsqueda global destacada, grupos con icono, estados activos claros y footer de sesión.
 - Mantener el componente separado en `components/adm/layout/AppSidebar.tsx`; no duplicar navegación inline en páginas.
 - Los ítems activos, marca y footer usan tokens `primary/sidebar-ring` y sombra/indicador lateral para respetar la paleta del sistema.
 - El comportamiento colapsado y mobile debe conservar tooltips, cierre automático al navegar, permisos por rol, pines y Command Palette (`⌘K`).
 - Los cambios visuales del sidebar requieren validación con type-check y captura Playwright en desktop, colapsado y mobile.
+
+## 12. Settings & Configuration Patterns
+
+- **SettingItem**: Usar para controles individuales dentro de una tarjeta. Soporta `icon` (LucideIcon), `title`, `description` y `children` para el control.
+- **Card Organization**: Agrupar configuraciones relacionadas en `Card` con `overflow-hidden` y un `CardHeader` con fondo sutil (`bg-muted/20`) para separar visualmente las secciones.
+- **Navigation Links**: Para enlaces a sub-configuraciones, envolver el `SettingItem` en un `Link` con clase `group` y `hover:bg-muted/30`. Usar un `ChevronRight` como indicador visual de navegación.
+- **Layout**: En páginas de configuración, usar un ancho máximo controlado (ej: `max-w-3xl mx-auto`) para mejorar la legibilidad en pantallas grandes.
