@@ -140,6 +140,7 @@ Cada modificación debe dejar el archivo en mejor estado:
 - **Semantic Colors**: Usar colores de Tailwind (ej: `text-orange-500`) en lugar de hexadecimales hardcodeados para iconos de estado. Para el componente `CrudStats`, usar strings hex que correspondan a la paleta de Tailwind (ej: `#10b981` para emerald-500).
 - **Interaction Feedback**: Los contenedores interactivos (drag & drop, upload) deben tener estados de `hover` visibles (`bg-primary/5`) y transiciones suaves.
 - **Financial Status Colors**: Usar `emerald-600` para saldos positivos/cuadrados y `red-600` para deudas/egresos/faltantes para mantener consistencia financiera.
+- **Settings Layout**: Las páginas de configuración deben usar un `max-w-3xl mx-auto` para el contenedor principal y tarjetas con `overflow-hidden` y `CardHeader` con `bg-muted/20`.
 
 ---
 

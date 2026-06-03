@@ -9,7 +9,7 @@ import { ThemeSelector } from '@/components/ui/ThemeSelector';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { SettingItem } from '@/components/settings/SettingItem';
-import { CreditCard, ChevronRight } from 'lucide-react';
+import { CreditCard, ChevronRight, Palette, Percent } from 'lucide-react';
 
 interface SettingsClientProps {
   initialMinimumMargin: number;
@@ -47,81 +47,106 @@ export default function SettingsClient({ initialMinimumMargin }: SettingsClientP
   };
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-3xl mx-auto space-y-6">
       <Header
         title="Configuración"
         description="Personaliza la apariencia y comportamiento de la aplicación."
       />
 
-      {/* Apariencia */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle>Apariencia</CardTitle>
-          <CardDescription>
-            Personaliza el tema visual de la aplicación.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <ThemeSelector />
-        </CardContent>
-      </Card>
+      <div className="space-y-6">
+        {/* Apariencia */}
+        <Card className="overflow-hidden border-muted/60 shadow-sm">
+          <CardHeader className="pb-4 bg-muted/20">
+            <CardTitle className="text-lg">Apariencia</CardTitle>
+            <CardDescription>
+              Personaliza el tema visual de la aplicación.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="px-6">
+              <SettingItem
+                title="Tema del Sistema"
+                description="Selecciona entre tema claro, oscuro o sincronizado con el sistema"
+                icon={Palette}
+              >
+                <ThemeSelector />
+              </SettingItem>
+            </div>
+          </CardContent>
+        </Card>
 
-      {/* Configuración de Precios */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle>Listas de Precios</CardTitle>
-          <CardDescription>
-            Configuración global para el cálculo y alertas de precios.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <SettingItem
-            title="Margen Mínimo Global"
-            description="Alerta cuando una lista o excepción quede por debajo de este valor"
-          >
-            <Input
-              type="number"
-              min={0}
-              max={100}
-              step={0.1}
-              value={minimumMargin}
-              onChange={(e) => setMinimumMargin(e.target.value)}
-              className="w-24 h-8 text-sm"
-            />
-            <Button
-              size="sm"
-              className="h-8"
-              onClick={handleSave}
-              disabled={saving}
-            >
-              {saving ? '...' : 'Guardar'}
-            </Button>
-          </SettingItem>
-        </CardContent>
-      </Card>
+        {/* Configuración de Precios */}
+        <Card className="overflow-hidden border-muted/60 shadow-sm">
+          <CardHeader className="pb-4 bg-muted/20">
+            <CardTitle className="text-lg">Listas de Precios</CardTitle>
+            <CardDescription>
+              Configuración global para el cálculo y alertas de precios.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="px-6">
+              <SettingItem
+                title="Margen Mínimo Global"
+                description="Alerta cuando una lista o excepción quede por debajo de este valor"
+                icon={Percent}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <Input
+                      type="number"
+                      min={0}
+                      max={100}
+                      step={0.1}
+                      value={minimumMargin}
+                      onChange={(e) => setMinimumMargin(e.target.value)}
+                      className="w-24 h-9 text-sm pr-7"
+                    />
+                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium">
+                      %
+                    </span>
+                  </div>
+                  <Button
+                    size="sm"
+                    className="h-9 px-4"
+                    onClick={handleSave}
+                    loading={saving}
+                  >
+                    Guardar
+                  </Button>
+                </div>
+              </SettingItem>
+            </div>
+          </CardContent>
+        </Card>
 
-      {/* Métodos de Pago - Solo ADMIN */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle>Finanzas</CardTitle>
-          <CardDescription>
-            Configuración de métodos de pago y opciones de cobro.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <Link href="/adm/payment-methods">
-            <SettingItem
-              title="Métodos de Pago"
-              description="Administra las formas de pago disponibles (Efectivo, Transferencia, QR, etc.)"
+        {/* Finanzas */}
+        <Card className="overflow-hidden border-muted/60 shadow-sm">
+          <CardHeader className="pb-4 bg-muted/20">
+            <CardTitle className="text-lg">Finanzas</CardTitle>
+            <CardDescription>
+              Configuración de métodos de pago y opciones de cobro.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <Link
+              href="/adm/payment-methods"
+              className="group block hover:bg-muted/30 transition-colors"
             >
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <CreditCard className="h-4 w-4" />
-                <ChevronRight className="h-4 w-4" />
+              <div className="px-6">
+                <SettingItem
+                  title="Métodos de Pago"
+                  description="Administra las formas de pago disponibles (Efectivo, Transferencia, QR, etc.)"
+                  icon={CreditCard}
+                >
+                  <div className="flex items-center gap-2 text-muted-foreground group-hover:text-primary transition-colors">
+                    <ChevronRight className="h-4 w-4" />
+                  </div>
+                </SettingItem>
               </div>
-            </SettingItem>
-          </Link>
-        </CardContent>
-      </Card>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
