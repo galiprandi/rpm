@@ -25,6 +25,12 @@ export const POST = withAdmin(async (request: NextRequest, _session) => {
     if (body.filters?.search) {
       filters.search = body.filters.search;
     }
+    if (body.filters?.priceListId) {
+      filters.priceListId = body.filters.priceListId;
+    }
+    if (Array.isArray(body.filters?.productIds)) {
+      filters.productIds = body.filters.productIds;
+    }
 
     // Validate adjustment
     if (!body.adjustment?.type || !VALID_ADJUSTMENT_TYPES.includes(body.adjustment.type)) {
