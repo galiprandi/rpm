@@ -12,8 +12,8 @@ interface StepConfig {
   icon: LucideIcon
 }
 
-// Props for the WorkOrderStepper component
-interface WorkOrderStepperProps {
+// Props for the Stepper component
+interface StepperProps {
   currentStep: number
   steps?: StepConfig[]
   className?: string
@@ -27,12 +27,12 @@ const DEFAULT_STEPS: StepConfig[] = [
   { value: 3, label: "Checklist & Finalizar", icon: ClipboardCheck },
 ]
 
-export function WorkOrderStepper({
+export function Stepper({
   currentStep,
   steps = DEFAULT_STEPS,
   className,
   onStepClick,
-}: WorkOrderStepperProps) {
+}: StepperProps) {
   return (
     <div className={cn("relative flex justify-between items-start", className)}>
       {steps.map((step, index) => {
@@ -55,9 +55,9 @@ export function WorkOrderStepper({
                   isActive
                     ? "border-primary bg-primary text-primary-foreground ring-2 ring-primary/20 scale-110"
                     : isCompleted
-                      ? "border-green-500 bg-emerald-500 text-white hover:bg-green-600 hover:scale-105 cursor-pointer shadow-sm"
+                      ? "border-emerald-500 bg-emerald-500 text-white hover:bg-emerald-600 hover:scale-105 cursor-pointer shadow-sm"
                       : "border-neutral-400 bg-neutral-400 text-white opacity-70 dark:border-neutral-500 dark:bg-neutral-500",
-                  isClickable && !isActive && "hover:ring-2 hover:ring-green-500/30"
+                  isClickable && !isActive && "hover:ring-2 hover:ring-emerald-500/30"
                 )}
               >
                 {isCompleted ? (
@@ -105,5 +105,5 @@ export function WorkOrderStepper({
 }
 
 // Export default steps for use in other components
-export { DEFAULT_STEPS as WORK_ORDER_STEPS }
-export type { StepConfig, WorkOrderStepperProps }
+export { DEFAULT_STEPS as WORK_ORDER_STEPS, Stepper as WorkOrderStepper }
+export type { StepConfig, StepperProps as WorkOrderStepperProps }

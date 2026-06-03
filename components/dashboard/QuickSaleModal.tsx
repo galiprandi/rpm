@@ -11,10 +11,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Trash2, X } from 'lucide-react';
+import { Search, Trash2, X, ShoppingCart, User, CreditCard } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatARS } from '@/lib/utils/format';
 import { ProductServiceSelector, type SelectedItem } from '@/components/ui/ProductServiceSelector';
+import { Stepper } from '@/components/ui/stepper';
 import {
   Tooltip,
   TooltipContent,
@@ -54,8 +55,14 @@ interface QuickSaleModalProps {
   onSuccess?: () => void;
 }
 
+const QUICK_SALE_STEPS = [
+  { value: 1, label: 'Productos', icon: ShoppingCart },
+  { value: 2, label: 'Cliente', icon: User },
+  { value: 3, label: 'Pago', icon: CreditCard },
+];
+
 export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModalProps) {
-  const [step, setStep] = useState<'search' | 'customer' | 'payment' | 'confirm'>('search');
+  const [step, setStep] = useState<'search' | 'customer' | 'payment'>('search');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [customerId, setCustomerId] = useState<string>('');
   const [customerName, setCustomerName] = useState('Consumidor final');
@@ -82,6 +89,15 @@ export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModal
   const totalPaid = payments.reduce((sum, payment) => sum + payment.amount, 0);
   const remaining = total - totalPaid;
   const newBalanceIfCredit = customerBalance + remaining;
+
+  const currentStepNumber = useMemo(() => {
+    switch (step) {
+      case 'search': return 1;
+      case 'customer': return 2;
+      case 'payment': return 3;
+      default: return 1;
+    }
+  }, [step]);
 
   // Fetch payment methods, price lists and categories on mount
   useEffect(() => {
@@ -273,6 +289,18 @@ export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModal
         <DialogHeader>
           <DialogTitle>Venta Rápida</DialogTitle>
         </DialogHeader>
+
+        <div className="py-4 border-b mb-4">
+          <Stepper
+            currentStep={currentStepNumber}
+            steps={QUICK_SALE_STEPS}
+            onStepClick={(s) => {
+              if (s === 1) setStep('search');
+              if (s === 2 && cart.length > 0) setStep('customer');
+              if (s === 3 && cart.length > 0) setStep('payment');
+            }}
+          />
+        </div>
 
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
@@ -599,6 +627,7 @@ export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModal
               </Button>
               <Button
                 onClick={handleSubmit}
+                loading={loading}
                 disabled={loading || (!sellOnCredit && (payments.length === 0 || totalPaid < total))}
                 className={sellOnCredit ? 'bg-amber-600 hover:bg-amber-700' : ''}
               >
