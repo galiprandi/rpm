@@ -98,7 +98,7 @@ export const navGroups: NavGroup[] = [
 ];
 
 /** Ítems planos para la Command Palette */
-export const flatNavItems: { label: string; href: string; group: string }[] = [
-  { label: homeNavItem.label, href: homeNavItem.href, group: 'Inicio' },
-  ...navGroups.flatMap((g) => g.items.map((i) => ({ label: i.label, href: i.href, group: g.label }))),
+export const flatNavItems: { label: string; href: string; group: string; icon: LucideIcon }[] = [
+  { label: homeNavItem.label, href: homeNavItem.href, group: 'Inicio', icon: homeNavItem.icon },
+  ...navGroups.flatMap((g) => g.items.map((i) => ({ label: i.label, href: i.href, group: g.label, icon: i.icon }))),
 ];
