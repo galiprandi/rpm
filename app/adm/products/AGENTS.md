@@ -29,9 +29,11 @@ Catálogo principal de productos con control de stock, costos dinámicos y preci
 
 ## Development Notes
 
-- Usa `CrudAdmin` con stats cards (productos, categorías, proveedores, stock bajo)
-- Precios calculados dinámicamente via `getProductBaseCost()`
-- Integración completa con módulo de importación masiva
+- Usa `loading.tsx` con esqueletos estructurales para mejorar el performance percibido.
+- Refina `ProductForm` con iconos contextuales, campos monoespaciados (SKU/EAN) y `Select` de shadcn/ui.
+- Usa `CrudAdmin` con stats cards (productos, categorías, proveedores, stock bajo).
+- Precios calculados dinámicamente via `getProductBaseCost()`.
+- Integración completa con módulo de importación masiva.
 - Soporte para múltiples listas de precios por producto
 - Control de stock con alertas de mínimos
 - Historial de movimientos y ajustes
