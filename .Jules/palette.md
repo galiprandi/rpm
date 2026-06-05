@@ -1,0 +1,3 @@
+## 2026-06-05 - Mocking shadcn/ui Select in Vitest
+**Learning:** When mocking shadcn/ui `Select` components (based on Radix UI) for unit tests, rendering a `SelectTrigger` (which often contains SVG icons) inside a mock native HTML `<select>` element causes "In HTML, <svg> cannot be a child of <select>" warnings and potential hydration errors in the test environment.
+**Action:** Use a sophisticated mock that renders the `SelectTrigger` and other metadata outside the native `<select>` element used for capturing `onChange` events, or purely simulate the component logic without nesting invalid HTML.

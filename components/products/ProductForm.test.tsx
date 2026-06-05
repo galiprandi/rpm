@@ -2,6 +2,35 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ProductForm, ProductFormData } from './ProductForm';
 
+// Mock Select component to avoid invalid HTML warnings and handle Radix primitives
+vi.mock('@/components/ui/select', () => ({
+  Select: ({ children, onValueChange, value, required }: any) => (
+    <div data-testid="mock-select" data-value={value} data-aria-required={required}>
+      <select
+        data-testid="native-select-mock"
+        onChange={(e) => onValueChange(e.target.value)}
+        value={value}
+        aria-label="mock-select"
+      >
+        <option value="">Select...</option>
+        {/* Only render SelectItems as options to keep HTML valid */}
+        {Array.isArray(children)
+          ? children.map((child: any, i: number) =>
+              child?.type?.name === 'SelectContent' ? child.props.children : null
+            )
+          : children?.type?.name === 'SelectContent' ? children.props.children : null
+        }
+      </select>
+      {/* Render everything else (like SelectTrigger) outside the select to avoid warnings */}
+      {children}
+    </div>
+  ),
+  SelectTrigger: ({ children }: any) => <div>{children}</div>,
+  SelectValue: ({ placeholder }: any) => <span>{placeholder}</span>,
+  SelectContent: ({ children }: any) => <>{children}</>,
+  SelectItem: ({ children, value }: any) => <option value={value}>{children}</option>,
+}));
+
 describe('ProductForm', () => {
   const mockSetFormData = vi.fn();
   
@@ -56,7 +85,7 @@ describe('ProductForm', () => {
       expect(screen.getAllByText('*')).toHaveLength(7);
     });
 
-    it('should use NativeSelect for category dropdown', () => {
+    it('should use Select for category dropdown', () => {
       render(
         <ProductForm
           formData={defaultFormData}
@@ -66,12 +95,11 @@ describe('ProductForm', () => {
         />
       );
       
-      // NativeSelect renders a native <select> element
-      const categorySelect = screen.getByLabelText(/^Categoría/i);
-      expect(categorySelect.tagName).toBe('SELECT');
+      const selects = screen.getAllByTestId('mock-select');
+      expect(selects[0]).toHaveAttribute('data-aria-required', 'true');
     });
 
-    it('should use NativeSelect for supplier dropdown', () => {
+    it('should use Select for supplier dropdown', () => {
       render(
         <ProductForm
           formData={defaultFormData}
@@ -81,8 +109,8 @@ describe('ProductForm', () => {
         />
       );
       
-      const supplierSelect = screen.getByLabelText(/^Proveedor/i);
-      expect(supplierSelect.tagName).toBe('SELECT');
+      const selects = screen.getAllByTestId('mock-select');
+      expect(selects[1]).toHaveAttribute('data-aria-required', 'true');
     });
   });
 
@@ -97,8 +125,8 @@ describe('ProductForm', () => {
         />
       );
       
-      const categorySelect = screen.getByLabelText(/^Categoría/i);
-      fireEvent.change(categorySelect, { target: { value: 'cat-1' } });
+      const selects = screen.getAllByTestId('native-select-mock');
+      fireEvent.change(selects[0], { target: { value: 'cat-1' } });
       
       expect(mockSetFormData).toHaveBeenCalledWith(
         expect.objectContaining({ categoryId: 'cat-1' })
@@ -115,8 +143,8 @@ describe('ProductForm', () => {
         />
       );
       
-      const supplierSelect = screen.getByLabelText(/^Proveedor/i);
-      fireEvent.change(supplierSelect, { target: { value: 'sup-1' } });
+      const selects = screen.getAllByTestId('native-select-mock');
+      fireEvent.change(selects[1], { target: { value: 'sup-1' } });
       
       expect(mockSetFormData).toHaveBeenCalledWith(
         expect.objectContaining({ supplierId: 'sup-1' })
@@ -137,8 +165,9 @@ describe('ProductForm', () => {
       
       // All required fields should be present
       expect(screen.getByLabelText(/^Producto/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/^Categoría/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/^Proveedor/i)).toBeInTheDocument();
+      // Labels for Selects
+      expect(screen.getByText(/^Categoría$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Proveedor$/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/^Costo\s*\*$/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/Costo de Reposición/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/^Stock\s*\*$/i)).toBeInTheDocument();
