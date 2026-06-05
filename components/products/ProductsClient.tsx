@@ -434,7 +434,12 @@ export function ProductsClient({
             Activo
           </Badge>
         ) : (
-          <Badge variant="secondary">Inactivo</Badge>
+          <Badge
+            variant="outline"
+            className="text-red-600 border-red-200 bg-red-50"
+          >
+            Inactivo
+          </Badge>
         ),
     },
   ];
