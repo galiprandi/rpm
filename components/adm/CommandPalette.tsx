@@ -84,6 +84,11 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
               value={query}
               onChange={(e) => handleQueryChange(e.target.value)}
               autoFocus
+              role="combobox"
+              aria-autocomplete="list"
+              aria-expanded={open}
+              aria-controls="command-palette-results"
+              aria-activedescendant={results.length > 0 ? `result-item-${selectedIndex}` : undefined}
             />
             {query && (
               <button
@@ -102,32 +107,49 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
             </kbd>
           )}
         </div>
-        <div className="max-h-[300px] overflow-y-auto py-2">
+        <div
+          id="command-palette-results"
+          role="listbox"
+          aria-label="Resultados de búsqueda"
+          className="max-h-[300px] overflow-y-auto py-2"
+        >
           {results.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-4">
               No se encontraron resultados
             </p>
           ) : (
-            results.map((item, index) => (
-              <button
-                key={item.href}
-                type="button"
-                onClick={() => handleSelect(item.href)}
-                className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors text-left ${
-                  index === selectedIndex
-                    ? 'bg-accent text-accent-foreground'
-                    : 'hover:bg-accent/50'
-                }`}
-              >
-                <span className="text-muted-foreground text-xs font-medium uppercase w-16 shrink-0">
-                  {item.group}
-                </span>
-                <span className="flex-1">{item.label}</span>
-                {index === selectedIndex && (
-                  <ArrowRight className="size-3.5 text-muted-foreground shrink-0" />
-                )}
-              </button>
-            ))
+            results.map((item, index) => {
+              const Icon = item.icon;
+              const isSelected = index === selectedIndex;
+              return (
+                <button
+                  key={item.href}
+                  id={`result-item-${index}`}
+                  role="option"
+                  aria-selected={isSelected}
+                  type="button"
+                  onClick={() => handleSelect(item.href)}
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors text-left ${
+                    isSelected
+                      ? 'bg-accent text-accent-foreground'
+                      : 'hover:bg-accent/50'
+                  }`}
+                >
+                  <span className="text-muted-foreground text-xs font-medium uppercase w-16 shrink-0">
+                    {item.group}
+                  </span>
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <div className={`p-1.5 rounded-md ${index === selectedIndex ? 'bg-background/20' : 'bg-muted'}`}>
+                      <Icon className="size-4 shrink-0" />
+                    </div>
+                    <span className="truncate">{item.label}</span>
+                  </div>
+                  {index === selectedIndex && (
+                    <ArrowRight className="size-3.5 text-muted-foreground shrink-0" />
+                  )}
+                </button>
+              );
+            })
           )}
         </div>
         <div className="px-4 py-2 border-t flex items-center gap-3 text-xs text-muted-foreground bg-muted/30">
