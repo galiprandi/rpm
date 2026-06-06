@@ -25,6 +25,8 @@ import {
   Package,
   AlertCircle,
   FileText,
+  LayoutGrid,
+  Truck,
 } from 'lucide-react';
 
 export interface ProductFormData {
@@ -164,21 +166,24 @@ export function ProductForm({
 
         <div className="space-y-2">
           <Label htmlFor="categoryId" required>Categoría</Label>
-          <Select
-            value={formData.categoryId}
-            onValueChange={(value) => setFormData({ ...formData, categoryId: value })}
-          >
-            <SelectTrigger id="categoryId" aria-required="true">
-              <SelectValue placeholder="Selecciona categoría" />
-            </SelectTrigger>
-            <SelectContent>
-              {categories.map((cat) => (
-                <SelectItem key={cat.id} value={cat.id}>
-                  {cat.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="relative">
+            <LayoutGrid className="absolute left-3 top-2 h-4 w-4 text-muted-foreground z-10" />
+            <Select
+              value={formData.categoryId}
+              onValueChange={(value) => setFormData({ ...formData, categoryId: value })}
+            >
+              <SelectTrigger id="categoryId" aria-required="true" className="w-full pl-9">
+                <SelectValue placeholder="Selecciona categoría" />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map((cat) => (
+                  <SelectItem key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
 
@@ -186,21 +191,24 @@ export function ProductForm({
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="supplierId" required>Proveedor</Label>
-          <Select
-            value={formData.supplierId}
-            onValueChange={(value) => setFormData({ ...formData, supplierId: value })}
-          >
-            <SelectTrigger id="supplierId" aria-required="true">
-              <SelectValue placeholder="Selecciona proveedor" />
-            </SelectTrigger>
-            <SelectContent>
-              {suppliers.map((sup) => (
-                <SelectItem key={sup.id} value={sup.id}>
-                  {sup.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="relative">
+            <Truck className="absolute left-3 top-2 h-4 w-4 text-muted-foreground z-10" />
+            <Select
+              value={formData.supplierId}
+              onValueChange={(value) => setFormData({ ...formData, supplierId: value })}
+            >
+              <SelectTrigger id="supplierId" aria-required="true" className="w-full pl-9">
+                <SelectValue placeholder="Selecciona proveedor" />
+              </SelectTrigger>
+              <SelectContent>
+                {suppliers.map((sup) => (
+                  <SelectItem key={sup.id} value={sup.id}>
+                    {sup.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         <div className="space-y-2">
