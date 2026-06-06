@@ -6,6 +6,7 @@
 - **Secondary CTAs** (`secondaryActions`): Botones secundarios (filtrar, exportar, navegar a vistas relacionadas) van en `Header.secondaryActions`.
 - **De-duplication**: Si el `Header` ya tiene el botón de creación, configurar `CrudAdmin` con `hideCreateAction={true}`.
 - **Row Actions**: Acciones de fila (editar, eliminar, ver) deben tener `Tooltip` y `aria-label`. Usar preferentemente el icono `Pencil` para editar en lugar de `Edit2` para mantener consistencia.
+- **List Entity Pattern**: Table cells for primary entities (Suppliers, Users, etc.) should use a `w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20` container with a `h-4 w-4 text-primary` Lucide icon, paired with `font-semibold tracking-tight` typography for the entity name.
 
 ## 2. Color Semantics
 
@@ -82,12 +83,12 @@ Reemplazar siempre los `<select>` nativos por el componente `Select` de shadcn/u
 
 ## 8. Metadata Pills & Detail Headers
 
-En vistas de detalle, usar un patrón de "Metadata Pills" para información secundaria en el `Header`:
+En vistas de detalle, usar un patrón de "Metadata Pills" (flex-wrap gap-2 mt-4) para información secundaria en el `Header`:
 
 ```tsx
 <div className="flex flex-wrap items-center gap-2 mt-4">
   <Badge variant="outline" className="...">Estado</Badge>
-  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted/50 border text-xs font-medium text-muted-foreground">
+  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted/50 border text-xs font-medium text-muted-foreground hover:bg-muted transition-colors">
     <Icon className="h-3.5 w-3.5" />
     Valor
   </div>

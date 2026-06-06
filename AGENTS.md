@@ -141,6 +141,7 @@ Cada modificación debe dejar el archivo en mejor estado:
 - **Interaction Feedback**: Los contenedores interactivos (drag & drop, upload) deben tener estados de `hover` visibles (`bg-primary/5`) y transiciones suaves.
 - **Financial Status Colors**: Usar `emerald-600` para saldos positivos/cuadrados y `red-600` para deudas/egresos/faltantes para mantener consistencia financiera.
 - **Settings Layout**: Las páginas de configuración deben usar un `max-w-3xl mx-auto` para el contenedor principal y tarjetas con `overflow-hidden` y `CardHeader` con `bg-muted/20`.
+- **Admin Layout Hygiene**: Los componentes cliente de administración NO deben usar contenedores extra o paddings verticales (ej: `container`, `py-6`). Deben confiar en el `space-y-6` y el layout global.
 
 ---
 
