@@ -16,7 +16,8 @@ import {
   Building2,
   Package,
   Plus,
-  CheckCircle2
+  CheckCircle2,
+  FileText
 } from 'lucide-react';
 import { type ColumnDef } from '@tanstack/react-table';
 import {
@@ -202,11 +203,11 @@ export default function SuppliersClient({ initialSuppliers }: SuppliersClientPro
         accessorKey: 'name',
         header: 'Nombre',
         cell: ({ row }) => (
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded bg-slate-100 flex items-center justify-center">
-              <Truck className="h-3 w-3 text-slate-600" />
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0">
+              <Truck className="h-4 w-4 text-primary" aria-hidden="true" />
             </div>
-            <span className="font-medium">{row.original.name}</span>
+            <span className="font-semibold tracking-tight">{row.original.name}</span>
           </div>
         ),
       },
@@ -270,6 +271,7 @@ export default function SuppliersClient({ initialSuppliers }: SuppliersClientPro
             label: 'Comprobantes',
             href: '/adm/purchase-vouchers',
             variant: 'outline',
+            icon: FileText,
           },
         ]}
         primaryAction={{

@@ -180,13 +180,24 @@ export default function UsersClient({ initialUsers }: UsersClientProps) {
   ];
 
   const getRoleBadge = (role: string) => {
-    const variants: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline'; label: string }> = {
-      ADMIN: { variant: 'destructive', label: 'Admin' },
+    const variants: Record<
+      string,
+      { variant: 'default' | 'secondary' | 'destructive' | 'outline'; label: string; className?: string }
+    > = {
+      ADMIN: {
+        variant: 'outline',
+        label: 'Admin',
+        className: 'text-red-600 border-red-200 bg-red-50',
+      },
       MANAGER: { variant: 'default', label: 'Manager' },
       USER: { variant: 'secondary', label: 'Usuario' },
     };
     const config = variants[role] || variants.USER;
-    return <Badge variant={config.variant}>{config.label}</Badge>;
+    return (
+      <Badge variant={config.variant} className={config.className}>
+        {config.label}
+      </Badge>
+    );
   };
 
   const columns = useMemo<ColumnDef<User>[]>(
@@ -195,12 +206,12 @@ export default function UsersClient({ initialUsers }: UsersClientProps) {
         accessorKey: 'name',
         header: 'Nombre',
         cell: ({ row }) => (
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded bg-slate-100 flex items-center justify-center">
-              <UserCog className="h-3 w-3 text-slate-600" />
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0">
+              <UserCog className="h-4 w-4 text-primary" aria-hidden="true" />
             </div>
             <div>
-              <div className="font-medium">{row.original.name}</div>
+              <div className="font-semibold tracking-tight">{row.original.name}</div>
               <div className="text-xs text-muted-foreground">{row.original.email}</div>
             </div>
           </div>
