@@ -1,12 +1,28 @@
 'use client';
 
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { authClient } from '@/lib/auth-client';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Camera, Fingerprint, ShieldCheck } from 'lucide-react';
+import { Camera, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 
 export default function LoginPage() {
+  const router = useRouter();
+  const { data: session, isPending } = authClient.useSession();
+
+  // Intelligent redirect: if already authenticated, route based on role
+  useEffect(() => {
+    if (!isPending && session?.user) {
+      const role = (session.user as { role?: string }).role;
+      if (role === 'ADMIN' || role === 'STAFF') {
+        router.push('/adm');
+      } else {
+        router.push('/');
+      }
+    }
+  }, [session, isPending, router]);
+
   const handleGoogleLogin = async () => {
     await authClient.signIn.social({
       provider: 'google',
@@ -47,14 +63,7 @@ export default function LoginPage() {
              Continuar con Google
           </Button>
 
-          {/* Biometrics Placeholder (Future implementation with Passkeys) */}
-          <Button 
-            variant="outline"
-            className="w-full h-16 border-white/10 bg-zinc-900/50 text-white hover:bg-zinc-900 font-bold text-lg rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-4"
-          >
-             <Fingerprint className="h-6 w-6 text-brand" />
-             Acceso con Huella / FaceID
-          </Button>
+          {/* Passkey authentication will be added here when better-auth v1.6+ is ready */}
         </div>
 
         <div className="grid grid-cols-2 gap-4">

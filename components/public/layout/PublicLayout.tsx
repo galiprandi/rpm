@@ -1,4 +1,5 @@
 import { ReactNode } from 'react';
+import '@/app/public.css';
 import { PublicHeader } from './PublicHeader';
 import { PublicFooter } from './PublicFooter';
 

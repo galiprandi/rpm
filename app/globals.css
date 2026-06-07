@@ -1,5 +1,40 @@
 @import "tailwindcss";
 
+@theme {
+  /* Define CSS variables as Tailwind colors */
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-cta: hsl(var(--cta));
+  --color-cta-foreground: hsl(var(--cta-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-sidebar: hsl(var(--sidebar));
+  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
+  --color-sidebar-border: hsl(var(--sidebar-border));
+  --color-sidebar-accent: hsl(var(--sidebar-accent));
+  --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
+  --color-sidebar-ring: hsl(var(--sidebar-ring));
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -20,8 +55,6 @@
     --destructive-foreground: 210 40% 98%;
     --cta: 38 92% 50%;
     --cta-foreground: 0 0% 100%;
-    --brand: 20 100% 50%; /* #FF4B00 - Naranja RPM */
-    --brand-foreground: 0 0% 100%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
@@ -42,8 +75,8 @@
     --card-foreground: 210 40% 98%;
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-    --primary: 217 91% 60%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 217 91% 60%; /* Vibrant blue for CTA */
+    --primary-foreground: 222.2 47.4% 11.2%; /* Dark text on bright button */
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
     --muted: 217.2 32.6% 17.5%;
@@ -54,11 +87,9 @@
     --destructive-foreground: 210 40% 98%;
     --cta: 38 92% 50%;
     --cta-foreground: 0 0% 100%;
-    --brand: 20 100% 50%;
-    --brand-foreground: 0 0% 100%;
-    --border: 217.2 32.6% 25%;
+    --border: 217.2 32.6% 25%; /* Slightly lighter border for visibility */
     --input: 217.2 32.6% 17.5%;
-    --ring: 217 91% 60%;
+    --ring: 217 91% 60%; /* Match primary color */
     /* Sidebar */
     --sidebar: 222.2 84% 8%;
     --sidebar-foreground: 210 40% 98%;
@@ -69,70 +100,22 @@
   }
 }
 
-@theme {
-  --color-background: hsl(var(--background));
-  --color-foreground: hsl(var(--foreground));
-  --color-card: hsl(var(--card));
-  --color-card-foreground: hsl(var(--card-foreground));
-  --color-brand: hsl(var(--brand));
-  --color-brand-foreground: hsl(var(--brand-foreground));
-  --color-border: hsl(var(--border));
-  --color-input: hsl(var(--input));
-  --color-ring: hsl(var(--ring));
-  
-  /* Custom animations */
-  --animate-fade-up: fade-up 1s ease-out forwards;
-  --animate-reveal: reveal 1.5s cubic-bezier(0.77, 0, 0.175, 1) forwards;
-  --animate-float: float 6s ease-in-out infinite;
-
-  @keyframes fade-up {
-    from {
-      opacity: 0;
-      transform: translateY(30px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  @keyframes reveal {
-    from {
-      clip-path: inset(0 0 100% 0);
-    }
-    to {
-      clip-path: inset(0 0 0 0);
-    }
-  }
-
-  @keyframes float {
-    0% { transform: translateY(0px); }
-    50% { transform: translateY(-20px); }
-    100% { transform: translateY(0px); }
-  }
-}
-
 @layer base {
-  html {
-    scroll-behavior: smooth;
+  * {
+    border-color: hsl(var(--border));
   }
   body {
-    background-color: #000;
-    color: #fff;
-    -webkit-font-smoothing: antialiased;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
   }
 }
 
-.glass {
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+/* Fix: Prevent focus ring from being clipped in modals */
+[data-slot="dialog-content"] input:focus-visible,
+[data-slot="dialog-content"] textarea:focus-visible,
+[data-slot="dialog-content"] select:focus-visible {
+  outline-offset: -2px;
 }
 
-.text-balance {
-  text-wrap: balance;
-}
-
-.mask-radial {
-  mask-image: radial-gradient(circle at center, black, transparent 80%);
-}
+/* Public site theme extensions (isolated classes — admin does not use them) */
+@import "./public.css";

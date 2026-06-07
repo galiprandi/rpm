@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { Menu, X, MessageCircle } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -54,6 +54,9 @@ export function PublicHeader() {
 
           {/* Actions */}
           <div className="hidden md:flex items-center space-x-6">
+            <Link href="/login" className="text-[13px] font-medium text-gray-400 hover:text-white transition-all duration-300 uppercase tracking-widest">
+              Ingresar
+            </Link>
             <Button variant="ghost" className="text-[13px] font-bold text-white hover:text-brand transition-colors uppercase tracking-widest">
               WhatsApp
             </Button>
@@ -88,6 +91,13 @@ export function PublicHeader() {
             {item.name}
           </Link>
         ))}
+        <Link
+          href="/login"
+          className="text-2xl font-bold text-gray-400 hover:text-white transition-colors"
+          onClick={() => setIsOpen(false)}
+        >
+          Ingresar
+        </Link>
         <Button className="bg-brand text-white text-lg font-bold rounded-full px-12 py-6">
           Contactar ahora
         </Button>
