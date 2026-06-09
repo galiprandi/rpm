@@ -12,7 +12,14 @@ import {
   Pencil,
   UserX,
   UserCheck,
+  User,
 } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
 
 interface User {
   id: string;
@@ -35,19 +42,16 @@ interface UserTableProps {
   currentUserEmail: string;
 }
 
-const getRoleBadgeVariant = (
-  role: string
-): 'default' | 'secondary' | 'outline' | 'destructive' => {
+const getRoleBadgeClasses = (role: string): string => {
   switch (role) {
     case 'ADMIN':
-      return 'default';
+      return 'text-red-600 border-red-200 bg-red-50';
     case 'SELLER':
-      return 'secondary';
     case 'TECHNICIAN':
     case 'CASHIER':
-      return 'outline';
+      return 'text-blue-600 border-blue-200 bg-blue-50';
     default:
-      return 'secondary';
+      return '';
   }
 };
 
@@ -77,29 +81,23 @@ export function UserTable({
         header: 'Usuario',
         cell: ({ row }) => {
           const user = row.original;
-          const initials = user.name
-            .split(' ')
-            .map((n) => n[0])
-            .join('')
-            .toUpperCase()
-            .slice(0, 2);
 
           return (
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0 overflow-hidden">
                 {user.image ? (
                   <Image
                     src={user.image}
                     alt={user.name}
-                    width={40}
-                    height={40}
-                    className="h-10 w-10 rounded-full object-cover"
+                    width={32}
+                    height={32}
+                    className="h-full w-full object-cover"
                   />
                 ) : (
-                  <span className="text-sm font-medium text-slate-600">{initials}</span>
+                  <User className="h-4 w-4 text-primary" aria-hidden="true" />
                 )}
               </div>
-              <div className="font-medium">{user.name}</div>
+              <div className="font-semibold tracking-tight">{user.name}</div>
             </div>
           );
         },
@@ -121,7 +119,10 @@ export function UserTable({
         cell: ({ row }) => {
           const role = row.original.role;
           return (
-            <Badge variant={getRoleBadgeVariant(role)}>
+            <Badge
+              variant="outline"
+              className={cn("font-medium", getRoleBadgeClasses(role))}
+            >
               {getRoleLabel(role)}
             </Badge>
           );
@@ -132,10 +133,13 @@ export function UserTable({
         header: 'Estado',
         cell: ({ row }) => {
           const isActive = row.original.isActive;
-          return isActive ? (
-            <Badge variant="secondary">Activo</Badge>
-          ) : (
-            <Badge variant="destructive">Inactivo</Badge>
+          return (
+            <Badge
+              variant={isActive ? 'outline' : 'secondary'}
+              className={cn(isActive && 'text-emerald-600 border-emerald-200 bg-emerald-50')}
+            >
+              {isActive ? 'Activo' : 'Inactivo'}
+            </Badge>
           );
         },
       },
@@ -149,23 +153,35 @@ export function UserTable({
 
           return (
             <div className="flex justify-center space-x-2">
-              <Button variant="ghost" size="sm" onClick={() => onEdit(user)} aria-label="Editar usuario">
-                <Pencil className="h-4 w-4" />
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="sm" onClick={() => onEdit(user)} aria-label="Editar usuario">
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Editar usuario</TooltipContent>
+              </Tooltip>
               {canToggle && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={user.isActive ? 'text-red-600' : 'text-emerald-600'}
-                  onClick={() => onToggleActive(user)}
-                  aria-label={user.isActive ? "Desactivar usuario" : "Activar usuario"}
-                >
-                  {user.isActive ? (
-                    <UserX className="h-4 w-4" />
-                  ) : (
-                    <UserCheck className="h-4 w-4" />
-                  )}
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={user.isActive ? 'text-red-600' : 'text-emerald-600'}
+                      onClick={() => onToggleActive(user)}
+                      aria-label={user.isActive ? "Desactivar usuario" : "Activar usuario"}
+                    >
+                      {user.isActive ? (
+                        <UserX className="h-4 w-4" />
+                      ) : (
+                        <UserCheck className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {user.isActive ? "Desactivar usuario" : "Activar usuario"}
+                  </TooltipContent>
+                </Tooltip>
               )}
             </div>
           );

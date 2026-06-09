@@ -84,18 +84,23 @@ export default function CustomersClient({ initialCustomers }: CustomersClientPro
         accessorKey: "name",
         header: "Nombre",
         cell: ({ row }) => (
-          <div>
-            <div className="font-medium">{row.original.name}</div>
-            {row.original.email && (
-              <div className="text-sm text-muted-foreground">
-                {row.original.email}
-              </div>
-            )}
-            {isBillingData(row.original.billingData) && (
-              <div className="text-xs text-blue-600">
-                Fact: {(row.original.billingData as { cuit: string; invoiceType: string }).invoiceType} - CUIT: {(row.original.billingData as { cuit: string; invoiceType: string }).cuit}
-              </div>
-            )}
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0">
+              <User className="h-4 w-4 text-primary" aria-hidden="true" />
+            </div>
+            <div>
+              <div className="font-semibold tracking-tight">{row.original.name}</div>
+              {row.original.email && (
+                <div className="text-sm text-muted-foreground">
+                  {row.original.email}
+                </div>
+              )}
+              {isBillingData(row.original.billingData) && (
+                <div className="text-xs text-blue-600">
+                  Fact: {(row.original.billingData as { cuit: string; invoiceType: string }).invoiceType} - CUIT: {(row.original.billingData as { cuit: string; invoiceType: string }).cuit}
+                </div>
+              )}
+            </div>
           </div>
         ),
       },
