@@ -11,7 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Trash2, X, ShoppingCart, User, CreditCard } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Search, Trash2, X, ShoppingCart, User, CreditCard, Phone, Mail, DollarSign } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatARS } from '@/lib/utils/format';
 import { ProductServiceSelector, type SelectedItem } from '@/components/ui/ProductServiceSelector';
@@ -422,29 +423,44 @@ export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModal
 
               {creatingCustomer && (
                 <div className="space-y-3 mt-2 border p-4 rounded-md">
-                  <div>
-                    <Label>Nombre *</Label>
-                    <Input
-                      value={newCustomerData.name}
-                      onChange={(e) => setNewCustomerData({ ...newCustomerData, name: e.target.value })}
-                      placeholder="Nombre del cliente"
-                    />
+                  <div className="space-y-2">
+                    <Label htmlFor="cust-name" required>Nombre</Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="cust-name"
+                        value={newCustomerData.name}
+                        onChange={(e) => setNewCustomerData({ ...newCustomerData, name: e.target.value })}
+                        placeholder="Nombre del cliente"
+                        className="pl-9"
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <Label>Teléfono *</Label>
-                    <Input
-                      value={newCustomerData.phone}
-                      onChange={(e) => setNewCustomerData({ ...newCustomerData, phone: e.target.value })}
-                      placeholder="Teléfono"
-                    />
+                  <div className="space-y-2">
+                    <Label htmlFor="cust-phone" required>Teléfono</Label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="cust-phone"
+                        value={newCustomerData.phone}
+                        onChange={(e) => setNewCustomerData({ ...newCustomerData, phone: e.target.value })}
+                        placeholder="Teléfono"
+                        className="pl-9"
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <Label>Email</Label>
-                    <Input
-                      value={newCustomerData.email}
-                      onChange={(e) => setNewCustomerData({ ...newCustomerData, email: e.target.value })}
-                      placeholder="Email (opcional)"
-                    />
+                  <div className="space-y-2">
+                    <Label htmlFor="cust-email">Email</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="cust-email"
+                        value={newCustomerData.email}
+                        onChange={(e) => setNewCustomerData({ ...newCustomerData, email: e.target.value })}
+                        placeholder="Email (opcional)"
+                        className="pl-9"
+                      />
+                    </div>
                   </div>
                   <div className="flex gap-2">
                     <Button onClick={createCustomer} className="flex-1">
@@ -536,24 +552,22 @@ export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModal
 
             {/* Credit Sale Option */}
             {customerId && remaining > 0 && (
-              <div className="flex items-center gap-2 p-3 border rounded-md bg-amber-50 border-amber-200">
-                <input
-                  type="checkbox"
+              <div className="p-3 border rounded-md bg-amber-50 border-amber-200">
+                <Checkbox
                   id="sellOnCredit"
                   checked={sellOnCredit}
-                  onChange={(e) => setSellOnCredit(e.target.checked)}
-                  className="h-4 w-4 rounded border-amber-300 text-amber-600 focus:ring-amber-500 accent-primary focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 outline-none transition-all"
+                  onCheckedChange={(checked) => setSellOnCredit(!!checked)}
+                  label="Venta a cuenta corriente (dejar saldo pendiente)"
+                  labelClassName="text-amber-900 font-medium"
+                  className="border-amber-300"
                 />
-                <label htmlFor="sellOnCredit" className="text-sm font-medium text-amber-900 cursor-pointer">
-                  Venta a cuenta corriente (dejar saldo pendiente)
-                </label>
               </div>
             )}
 
             {/* Add Payment Form */}
-            <div>
-              <Label>Agregar pago</Label>
-              <div className="flex gap-2 mt-2">
+            <div className="space-y-2">
+              <Label htmlFor="payment-amount">Agregar pago</Label>
+              <div className="flex gap-2">
                 <Select value={paymentMethodId} onValueChange={setPaymentMethodId}>
                   <SelectTrigger className="flex-1">
                     <SelectValue placeholder="Medio de pago" />
@@ -566,19 +580,23 @@ export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModal
                     ))}
                   </SelectContent>
                 </Select>
-                <Input
-                  type="number"
-                  placeholder="Monto"
-                  value={paymentAmount || ''}
-                  onChange={(e) => setPaymentAmount(Number(e.target.value))}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && paymentMethodId && paymentAmount > 0) {
-                      e.preventDefault();
-                      addPayment();
-                    }
-                  }}
-                  className="w-32"
-                />
+                <div className="relative w-32">
+                  <DollarSign className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="payment-amount"
+                    type="number"
+                    placeholder="Monto"
+                    value={paymentAmount || ''}
+                    onChange={(e) => setPaymentAmount(Number(e.target.value))}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && paymentMethodId && paymentAmount > 0) {
+                        e.preventDefault();
+                        addPayment();
+                      }
+                    }}
+                    className="pl-9"
+                  />
+                </div>
                 <Button onClick={addPayment} disabled={!paymentMethodId || paymentAmount <= 0}>
                   Registrar pago
                 </Button>
