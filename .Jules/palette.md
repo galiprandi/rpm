@@ -5,3 +5,7 @@
 ## 2025-05-23 - Form UX Enhancement and Accessibility in Modals
 **Learning:** Form-heavy modals (like `QuickSaleModal`) benefit significantly from the Form UX Enhancement Pattern: using contextual Lucide icons inside relative containers with `pl-9` padding, and strictly linking `Label` components to `Input` elements via `htmlFor` and `id`. This creates a more professional, "delightful" interface while ensuring full accessibility for screen readers. Replacing native HTML checkboxes with the custom `Checkbox` component further ensures theme consistency across complex UI states.
 **Action:** When refactoring or creating forms, prioritize the established Icon + Input wrapper pattern and ensure all `Label` components are correctly linked to their respective `Input` via IDs and use the `required` prop for visual consistency.
+
+## 2026-06-09 - Accessibility and Consistency in User Management
+**Learning:** Transitioning from generic avatars to the Standardized List Row Entity Pattern for users provides a more cohesive administrative experience. Ensuring that all action buttons in high-density tables (like User Management) are accompanied by both Tooltips and descriptive ARIA labels is essential for both power-user efficiency and screen reader accessibility.
+**Action:** In management tables, always wrap icon-only buttons in `Tooltip` components and ensure they have explicit `aria-label` attributes.
