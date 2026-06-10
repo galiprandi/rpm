@@ -78,13 +78,14 @@ export function CustomerForm({
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Nombre */}
       <div className="space-y-2">
-        <Label htmlFor="name">Nombre o Razón Social *</Label>
+        <Label htmlFor="name" required>Nombre o Razón Social</Label>
         <Input
           id="name"
           value={formData.name}
           onChange={(e) => handleChange("name", e.target.value)}
           placeholder="Juan Pérez o Empresa S.A."
           required
+          aria-required="true"
         />
       </div>
 
@@ -159,6 +160,7 @@ export function CustomerForm({
                 <Label htmlFor="cuit">CUIT</Label>
                 <Input
                   id="cuit"
+                  className="font-mono"
                   value={formData.billingData.cuit}
                   onChange={(e) =>
                     setFormData((prev) => ({
@@ -186,7 +188,7 @@ export function CustomerForm({
                     }))
                   }
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id="invoiceType">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
