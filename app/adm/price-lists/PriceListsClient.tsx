@@ -215,11 +215,13 @@ export default function PriceListsClient({ initialPriceLists }: PriceListsClient
         accessorKey: 'name',
         header: 'Nombre',
         cell: ({ row }) => (
-          <div className="flex items-center gap-2">
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0">
+              <DollarSign className="h-4 w-4 text-primary" aria-hidden="true" />
+            </div>
             <Link
               href={`/adm/price-lists/${row.original.id}`}
-              className="font-medium hover:underline text-primary"
+              className="font-semibold tracking-tight hover:underline text-primary"
             >
               {row.original.name}
             </Link>
@@ -275,7 +277,7 @@ export default function PriceListsClient({ initialPriceLists }: PriceListsClient
   );
 
   return (
-    <>
+    <div className="space-y-6">
       <Header
         title="Precios"
         description="Gestiona listas de precios y excepciones"
@@ -303,9 +305,7 @@ export default function PriceListsClient({ initialPriceLists }: PriceListsClient
         ]}
       />
 
-      <div className="mt-4">
-        <CrudStats stats={stats} />
-      </div>
+      <CrudStats stats={stats} />
 
       <CrudAdmin
         items={priceLists}
@@ -388,6 +388,6 @@ export default function PriceListsClient({ initialPriceLists }: PriceListsClient
         open={showAuditModal}
         onClose={() => setShowAuditModal(false)}
       />
-    </>
+    </div>
   );
 }

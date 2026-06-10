@@ -11,7 +11,7 @@
 
 | Contexto | Clase Tailwind | Uso |
 |----------|---------------|-----|
-| Positivo / Saldo a favor / Pagado / Activo | `text-emerald-600` | Saldos favorables, pagos completos, estados "listo" o "activo" |
+| Positivo / Saldo a favor / Pagado / Activo / Activa | `text-emerald-600` | Saldos favorables, pagos completos, estados "listo" o "activo" |
 | Deuda / Negativo / Egreso | `text-red-600` | Deudas pendientes, gastos, saldos negativos |
 | Advertencia / Parcial | `text-amber-600` | Pagos parciales, márgenes bajos, estados de espera |
 | Destructivo | `text-destructive` | Botones de eliminar/desactivar (usa `destructive` token, no `red-600` hardcodeado) |
@@ -123,3 +123,8 @@ secondaryActions={[
 - **Card Organization**: Agrupar configuraciones relacionadas en `Card` con `overflow-hidden` y un `CardHeader` con fondo sutil (`bg-muted/20`) para separar visualmente las secciones.
 - **Navigation Links**: Para enlaces a sub-configuraciones, envolver el `SettingItem` en un `Link` con clase `group` y `hover:bg-muted/30`. Usar un `ChevronRight` como indicador visual de navegación.
 - **Layout**: En páginas de configuración, usar un ancho máximo controlado (ej: `max-w-3xl mx-auto`) para mejorar la legibilidad en pantallas grandes.
+
+## 13. Entity Row Consistency
+
+- **Standardized List Row Entity Pattern**: Para listados de entidades (Proveedores, Listas de Precios, Métodos de Pago, Categorías), la primera columna debe usar un contenedor de `8x8` (`w-8 h-8`) con `rounded-lg`, `bg-primary/10`, `shadow-sm` y `border border-primary/20` para el icono, acompañado de un texto con `font-semibold tracking-tight`.
+- **Dynamic Entity Colors**: En entidades con color propio (Categorías), el fondo del contenedor debe usar ese color y el icono una `drop-shadow-sm` blanca para garantizar legibilidad.
