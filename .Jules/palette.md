@@ -9,3 +9,7 @@
 ## 2026-06-09 - Accessibility and Consistency in User Management
 **Learning:** Transitioning from generic avatars to the Standardized List Row Entity Pattern for users provides a more cohesive administrative experience. Ensuring that all action buttons in high-density tables (like User Management) are accompanied by both Tooltips and descriptive ARIA labels is essential for both power-user efficiency and screen reader accessibility.
 **Action:** In management tables, always wrap icon-only buttons in `Tooltip` components and ensure they have explicit `aria-label` attributes.
+
+## 2026-06-11 - Semantic Consistency in Movement Histories
+**Learning:** Historical data views, like stock movements, benefit from a multi-layered semantic approach: using shadcn/ui `Table` components for structural consistency, applying the Standardized List Row Entity Pattern to actors (Users/System), and utilizing a three-tier badge protocol (emerald/red/amber) for directionality (IN/OUT/ADJUST). This improves information density and scannability without sacrificing accessibility.
+**Action:** When displaying history or logs, use the three-tier semantic badge protocol for statuses and ensure all tables use the shadcn/ui component set instead of native HTML tags.

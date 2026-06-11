@@ -2,7 +2,16 @@
 
 import { ModalBase } from '@/components/ui/ModalBase';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, PackageSearch } from 'lucide-react';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Loader2, PackageSearch, User } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface StockMovement {
   id: string;
@@ -38,9 +47,9 @@ const REASON_LABELS: Record<string, string> = {
 };
 
 const TYPE_CONFIG: Record<string, { label: string; color: string }> = {
-  IN: { label: 'Entrada', color: 'bg-green-100 text-green-800' },
-  OUT: { label: 'Salida', color: 'bg-red-100 text-red-800' },
-  ADJUSTMENT: { label: 'Ajuste', color: 'bg-yellow-100 text-yellow-800' },
+  IN: { label: 'Entrada', color: 'text-emerald-600 border-emerald-200 bg-emerald-50' },
+  OUT: { label: 'Salida', color: 'text-red-600 border-red-200 bg-red-50' },
+  ADJUSTMENT: { label: 'Ajuste', color: 'text-amber-600 border-amber-200 bg-amber-50' },
 };
 
 function formatDate(dateString: string): string {
@@ -92,47 +101,50 @@ export function ProductMovementsModal({
         </div>
       ) : (
         <div className="overflow-auto -mx-6 px-6">
-          <table className="w-full text-sm" aria-label="Historial de movimientos de stock">
-            <thead className="bg-muted sticky top-0">
-              <tr>
-                <th className="text-left p-2 font-medium">Fecha/Hora</th>
-                <th className="text-left p-2 font-medium">Usuario</th>
-                <th className="text-left p-2 font-medium">Tipo</th>
-                <th className="text-right p-2 font-medium">Cantidad</th>
-                <th className="text-center p-2 font-medium">Stock</th>
-                <th className="text-left p-2 font-medium">Motivo</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
+          <Table aria-label="Historial de movimientos de stock">
+            <TableHeader className="bg-muted/50 sticky top-0 z-10">
+              <TableRow>
+                <TableHead className="font-medium">Fecha/Hora</TableHead>
+                <TableHead className="font-medium">Usuario</TableHead>
+                <TableHead className="font-medium">Tipo</TableHead>
+                <TableHead className="text-right font-medium">Cantidad</TableHead>
+                <TableHead className="text-center font-medium">Stock</TableHead>
+                <TableHead className="font-medium">Motivo</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {movements.map((movement) => (
-                <tr key={movement.id} className="hover:bg-muted/50">
-                  <td className="p-2 whitespace-nowrap">
+                <TableRow key={movement.id}>
+                  <TableCell className="whitespace-nowrap">
                     {formatDate(movement.createdAt)}
-                  </td>
-                  <td className="p-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary">
-                        {movement.userName ? movement.userName.charAt(0).toUpperCase() : 'S'}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0 overflow-hidden">
+                        <User className="h-4 w-4 text-primary" aria-hidden="true" />
                       </div>
-                      <span className="truncate max-w-[120px]">
+                      <div className="font-semibold tracking-tight truncate max-w-[150px]">
                         {movement.userName || 'Sistema'}
-                      </span>
+                      </div>
                     </div>
-                  </td>
-                  <td className="p-2">
-                    <Badge className={TYPE_CONFIG[movement.type]?.color || 'bg-gray-100'}>
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant="outline"
+                      className={cn("font-medium", TYPE_CONFIG[movement.type]?.color)}
+                    >
                       {TYPE_CONFIG[movement.type]?.label || movement.type}
                     </Badge>
-                  </td>
-                  <td className="p-2 text-right font-mono">
+                  </TableCell>
+                  <TableCell className="text-right font-mono">
                     <span className={movement.quantity > 0 ? 'text-emerald-600' : 'text-red-600'}>
                       {movement.quantity > 0 ? '+' : ''}{movement.quantity}
                     </span>
-                  </td>
-                  <td className="p-2 text-center font-mono text-muted-foreground">
+                  </TableCell>
+                  <TableCell className="text-center font-mono text-muted-foreground">
                     {movement.previousStock}→{movement.newStock}
-                  </td>
-                  <td className="p-2">
+                  </TableCell>
+                  <TableCell>
                     <div>
                       <div className="font-medium">
                         {REASON_LABELS[movement.reason] || movement.reason}
@@ -143,11 +155,11 @@ export function ProductMovementsModal({
                         </div>
                       )}
                     </div>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       )}
     </ModalBase>
