@@ -188,7 +188,14 @@ export default function PaymentMethodsClient({ initialPaymentMethods }: PaymentM
     {
       accessorKey: 'name',
       header: 'Nombre',
-      cell: ({ row }) => <span className="font-medium">{row.original.name}</span>,
+      cell: ({ row }) => (
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0">
+            <CreditCard className="h-4 w-4 text-primary" aria-hidden="true" />
+          </div>
+          <span className="font-semibold tracking-tight">{row.original.name}</span>
+        </div>
+      ),
     },
     {
       accessorKey: 'code',
@@ -264,7 +271,7 @@ export default function PaymentMethodsClient({ initialPaymentMethods }: PaymentM
   );
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
+    <div className="space-y-6">
       <Header
         title="Métodos de Pago"
         description="Administra los métodos de pago disponibles en el sistema"

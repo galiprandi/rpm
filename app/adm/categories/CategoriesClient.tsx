@@ -201,14 +201,14 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
         accessorKey: 'name',
         header: 'Nombre',
         cell: ({ row }) => (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <div
-              className="w-6 h-6 rounded flex items-center justify-center shadow-sm"
-              style={{ backgroundColor: row.original.color || '#e5e7eb' }}
+              className="w-8 h-8 rounded-lg shadow-sm border border-primary/20 flex items-center justify-center shrink-0"
+              style={{ backgroundColor: row.original.color || 'var(--primary-foreground)' }}
             >
-              <Folder className="h-3 w-3 text-white" />
+              <Folder className="h-4 w-4 text-white drop-shadow-sm" aria-hidden="true" />
             </div>
-            <span className="font-medium">{row.original.name}</span>
+            <span className="font-semibold tracking-tight">{row.original.name}</span>
           </div>
         ),
       },
