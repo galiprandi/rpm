@@ -13,3 +13,7 @@
 ## 2026-06-11 - Semantic Consistency in Movement Histories
 **Learning:** Historical data views, like stock movements, benefit from a multi-layered semantic approach: using shadcn/ui `Table` components for structural consistency, applying the Standardized List Row Entity Pattern to actors (Users/System), and utilizing a three-tier badge protocol (emerald/red/amber) for directionality (IN/OUT/ADJUST). This improves information density and scannability without sacrificing accessibility.
 **Action:** When displaying history or logs, use the three-tier semantic badge protocol for statuses and ensure all tables use the shadcn/ui component set instead of native HTML tags.
+
+## 2026-06-12 - Accessibility for Destructive Actions in Lists
+**Learning:** High-density lists with icon-only destructive actions (like 'Delete') are high-risk for user error and screen reader ambiguity. Wrapping these buttons in a `Tooltip` while simultaneously providing a descriptive `aria-label` ensures both power users and users with assistive technologies have clear confirmation of the action's intent.
+**Action:** Always wrap icon-only action buttons in history or itemized lists with a `Tooltip` and provide a localized `aria-label` (e.g., "Eliminar pago").
