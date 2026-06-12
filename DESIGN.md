@@ -126,5 +126,5 @@ secondaryActions={[
 
 ## 13. Entity Row Consistency
 
-- **Standardized List Row Entity Pattern**: Para listados de entidades (Proveedores, Listas de Precios, Métodos de Pago, Categorías), la primera columna debe usar un contenedor de `8x8` (`w-8 h-8`) con `rounded-lg`, `bg-primary/10`, `shadow-sm` y `border border-primary/20` para el icono, acompañado de un texto con `font-semibold tracking-tight`.
+- **Standardized List Row Entity Pattern**: Para listados de entidades (Proveedores, Listas de Precios, Métodos de Pago, Categorías, Productos en Auditoría), la primera columna debe usar un contenedor de `8x8` (`w-8 h-8`) con `rounded-lg`, `bg-primary/10`, `shadow-sm` y `border border-primary/20` para el icono, acompañado de un texto con `font-semibold tracking-tight`.
 - **Dynamic Entity Colors**: En entidades con color propio (Categorías), el fondo del contenedor debe usar ese color y el icono una `drop-shadow-sm` blanca para garantizar legibilidad.

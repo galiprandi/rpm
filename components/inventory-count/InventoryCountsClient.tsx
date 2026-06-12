@@ -1,14 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Header } from '@/components/adm/Header';
 import { CreateCountOperative } from '@/components/inventory-count/CreateCountOperative';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Eye, Plus } from 'lucide-react';
+import { Eye, Plus, ClipboardCheck, History, CheckCircle2, Clock } from 'lucide-react';
+import { CrudAdmin } from '@/components/adm/CrudAdmin';
+import { CrudStats } from '@/components/adm/CrudStats';
+import { ColumnDef } from '@tanstack/react-table';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface InventoryCountItem {
   id: string;
@@ -25,9 +27,93 @@ interface InventoryCountsClientProps {
 export function InventoryCountsClient({ counts }: InventoryCountsClientProps) {
   const [modalOpen, setModalOpen] = useState(false);
 
+  const stats = useMemo(() => {
+    const total = counts.length;
+    const completed = counts.filter(c => c.status === 'COMPLETED' || c.status === 'APPROVED').length;
+    const inProgress = counts.filter(c => c.status === 'IN_PROGRESS').length;
+    const pending = counts.filter(c => c.status === 'PENDING').length;
+
+    return [
+      {
+        label: 'Total Operativos',
+        value: total.toString(),
+        icon: ClipboardCheck,
+        color: '#6366f1', // Indigo
+      },
+      {
+        label: 'Completados',
+        value: completed.toString(),
+        icon: CheckCircle2,
+        color: '#10b981', // Emerald
+      },
+      {
+        label: 'En Proceso',
+        value: inProgress.toString(),
+        icon: Clock,
+        color: '#3b82f6', // Blue
+      },
+      {
+        label: 'Pendientes',
+        value: pending.toString(),
+        icon: History,
+        color: '#f59e0b', // Amber
+      }
+    ];
+  }, [counts]);
+
+  const columns: ColumnDef<InventoryCountItem>[] = [
+    {
+      accessorKey: 'createdAt',
+      header: 'Fecha',
+      cell: ({ row }) => {
+        const date = new Date(row.original.createdAt);
+        return (
+          <div className="flex flex-col">
+            <span className="font-medium">{date.toLocaleDateString()}</span>
+            <span className="text-xs text-muted-foreground">{date.toLocaleTimeString()}</span>
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: 'itemCount',
+      header: 'Artículos',
+      cell: ({ row }) => <span>{row.original.itemCount} productos</span>,
+    },
+    {
+      id: 'progress',
+      header: 'Avance',
+      cell: ({ row }) => {
+        const reportedCount = row.original.items.filter(item => item.reportedAt !== null).length;
+        const totalCount = row.original.items.length;
+        const progressPercent = totalCount > 0 ? Math.round((reportedCount / totalCount) * 100) : 0;
+
+        return (
+          <div className="flex flex-col gap-1 w-[120px]">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">{reportedCount}/{totalCount}</span>
+              <span className="text-xs text-muted-foreground">({progressPercent}%)</span>
+            </div>
+            <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+              <div
+                className="h-full bg-primary transition-all"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: 'status',
+      header: 'Estado',
+      cell: ({ row }) => <StatusBadge status={row.original.status} />,
+    },
+  ];
+
   return (
     <>
-      <div className="flex flex-col gap-6">
+      <div className="space-y-6">
         <Header
           title="Conteo Cíclico Inteligente"
           description="Auditorías de stock basadas en riesgo y rotación"
@@ -38,75 +124,32 @@ export function InventoryCountsClient({ counts }: InventoryCountsClientProps) {
           }}
         />
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Operativos Recientes</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Fecha</TableHead>
-                  <TableHead>Artículos</TableHead>
-                  <TableHead>Avance</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead className="text-right">Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {counts.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                      No hay operativos registrados. Crea uno nuevo para comenzar.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  counts.map((count) => {
-                    const reportedCount = count.items.filter(item => item.reportedAt !== null).length;
-                    const totalCount = count.items.length;
-                    const progressPercent = totalCount > 0 ? Math.round((reportedCount / totalCount) * 100) : 0;
+        <CrudStats stats={stats} />
 
-                    return (
-                      <TableRow key={count.id}>
-                        <TableCell>
-                          <div className="flex flex-col">
-                            <span className="font-medium">{new Date(count.createdAt).toLocaleDateString()}</span>
-                            <span className="text-xs text-muted-foreground">{new Date(count.createdAt).toLocaleTimeString()}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>{count.itemCount} productos</TableCell>
-                        <TableCell>
-                          <div className="flex flex-col gap-1">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-medium">{reportedCount}/{totalCount}</span>
-                              <span className="text-xs text-muted-foreground">({progressPercent}%)</span>
-                            </div>
-                            <div className="w-24 h-1.5 bg-muted rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-primary transition-all"
-                                style={{ width: `${progressPercent}%` }}
-                              />
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <StatusBadge status={count.status} />
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Link href={`/adm/inventory-counts/${count.id}`}>
-                            <Button size="sm" variant="ghost">
-                              <Eye className="h-4 w-4 mr-2" /> Ver Detalle
-                            </Button>
-                          </Link>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+        <CrudAdmin
+          items={counts}
+          columns={columns}
+          loading={false}
+          createButtonText="Nuevo Conteo"
+          onCreate={() => setModalOpen(true)}
+          hideCreateAction={true}
+          emptyMessage="No hay operativos registrados. Crea uno nuevo para comenzar."
+          tableTitle="Operativos Recientes"
+          rowActions={(count) => (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link href={`/adm/inventory-counts/${count.id}`}>
+                    <Button size="icon" variant="ghost" aria-label="Ver Detalle">
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent>Ver Detalle</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+        />
       </div>
 
       <CreateCountOperative open={modalOpen} onOpenChange={setModalOpen} />
@@ -117,13 +160,29 @@ export function InventoryCountsClient({ counts }: InventoryCountsClientProps) {
 function StatusBadge({ status }: { status: string }) {
   switch (status) {
     case 'PENDING':
-      return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">Pendiente</Badge>;
+      return (
+        <Badge variant="outline" className="text-amber-600 border-amber-200 bg-amber-50">
+          Pendiente
+        </Badge>
+      );
     case 'IN_PROGRESS':
-      return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">En Proceso</Badge>;
+      return (
+        <Badge variant="outline" className="text-blue-600 border-blue-200 bg-blue-50">
+          En Proceso
+        </Badge>
+      );
     case 'COMPLETED':
-      return <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">Realizado</Badge>;
+      return (
+        <Badge variant="outline" className="text-purple-600 border-purple-200 bg-purple-50">
+          Realizado
+        </Badge>
+      );
     case 'APPROVED':
-      return <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">Aprobado</Badge>;
+      return (
+        <Badge variant="outline" className="text-emerald-600 border-emerald-200 bg-emerald-50">
+          Aprobado
+        </Badge>
+      );
     default:
       return <Badge variant="secondary">{status}</Badge>;
   }
