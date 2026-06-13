@@ -1,4 +1,4 @@
-import { streamText, convertToModelMessages, validateUIMessages } from 'ai';
+import { streamText, convertToModelMessages, validateUIMessages, generateId } from 'ai';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { composeSystemPrompt, type BotContext, type UserRole } from '@/lib/agents/utils/promptComposer';
 import { getToolsForRole } from '@/lib/agents/utils/toolsByRole';
@@ -77,16 +77,22 @@ export async function POST(req: Request) {
     const roleTools = getToolsForRole(userRole);
     console.log('🔧 Available tools:', Object.keys(roleTools));
 
+    // Ensure all messages have IDs (required by validateUIMessages)
+    const messagesWithIds = allMessages.map((msg: any) => ({
+      ...msg,
+      id: msg.id || generateId(),
+    }));
+
     // Validate messages with tools (SDK pattern)
     const validatedMessages = await validateUIMessages({
-      messages: allMessages,
+      messages: messagesWithIds,
       tools: roleTools,
     });
 
     console.log('🚀 Starting streamText...');
     const result = streamText({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      model: google(process.env.GEMINI_MODEL || 'gemini-1.5-flash-latest') as any,
+      model: google('gemini-2.5-flash') as any,
       system: systemPrompt,
       messages: await convertToModelMessages(validatedMessages),
       tools: roleTools,
