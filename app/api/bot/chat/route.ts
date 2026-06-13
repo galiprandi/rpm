@@ -97,6 +97,11 @@ export async function POST(req: Request) {
       messages: await convertToModelMessages(validatedMessages),
       tools: roleTools,
       temperature: 0.7,
+      providerOptions: {
+        google: {
+          serviceTier: 'flex', // 50% cheaper than standard
+        },
+      },
     });
 
     console.log('✅ Stream created, returning response');
