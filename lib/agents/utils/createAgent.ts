@@ -1,30 +1,28 @@
-import { ToolLoopAgent } from 'ai';
-import { createOpenAI } from '@ai-sdk/openai';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import logger from './logger';
 
-const openai = createOpenAI({
-  baseURL: process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1',
-  apiKey: process.env.OPENAI_API_KEY,
+const google = createGoogleGenerativeAI({
+  apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
 });
 
 /**
  * Create agent helper - Centralized agent creation
- * 
+ *
  * @param options - Agent configuration options
  * @param options.instructions - System prompt instructions (can be a string or path to .md file)
  * @param options.tools - Tools object for the agent
- * @param options.model - Optional model name (defaults to OPENAI_MODEL env var or gpt-4o-mini)
- * @returns Configured ToolLoopAgent
+ * @param options.model - Optional model name (defaults to GEMINI_MODEL env var or gemini-1.5-flash-latest)
+ * @returns Agent configuration object
  */
- 
+
 export function createAgent(options: {
   instructions: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   tools: Record<string, any>;
   model?: string;
-}): ToolLoopAgent {
+}) {
   let systemPrompt = options.instructions;
 
   // If instructions is a path to a .md file, read it
@@ -39,9 +37,9 @@ export function createAgent(options: {
     }
   }
 
-  return new ToolLoopAgent({
-    model: openai(options.model || process.env.OPENAI_MODEL || 'gpt-4o-mini'),
+  return {
+    model: google(options.model || process.env.GEMINI_MODEL || 'gemini-1.5-flash-latest'),
     instructions: systemPrompt,
     tools: options.tools,
-  });
+  };
 }

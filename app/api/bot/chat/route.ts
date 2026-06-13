@@ -1,13 +1,12 @@
 import { streamText, convertToModelMessages, validateUIMessages } from 'ai';
-import { createOpenAI } from '@ai-sdk/openai';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { composeSystemPrompt, type BotContext, type UserRole } from '@/lib/agents/utils/promptComposer';
 import { getToolsForRole } from '@/lib/agents/utils/toolsByRole';
 import { loadChat, saveChat, type ChatMessage } from '@/lib/agents/utils/chatHistory';
 
-// Configure OpenAI (using Vercel AI Gateway or direct OpenAI)
-const openai = createOpenAI({
-  baseURL: process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1',
-  apiKey: process.env.OPENAI_API_KEY,
+// Configure Google Gemini
+const google = createGoogleGenerativeAI({
+  apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
 });
 
 export async function POST(req: Request) {
@@ -86,7 +85,8 @@ export async function POST(req: Request) {
 
     console.log('🚀 Starting streamText...');
     const result = streamText({
-      model: openai(process.env.OPENAI_MODEL || 'gpt-4o-mini'),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      model: google(process.env.GEMINI_MODEL || 'gemini-1.5-flash-latest') as any,
       system: systemPrompt,
       messages: await convertToModelMessages(validatedMessages),
       tools: roleTools,

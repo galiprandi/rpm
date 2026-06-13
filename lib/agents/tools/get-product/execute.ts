@@ -1,5 +1,4 @@
 import { getProducts } from '@/lib/services/productService';
-import { searchProducts } from '@/lib/services/searchService';
 import { productToMarkdown } from './parser';
 import type { BotContext } from '../../utils/types';
 import { getPriceLists, calculateProductPrice } from '@/lib/services/priceListService';
@@ -72,12 +71,14 @@ export async function executeGetProduct({ query, context }: GetProductInput) {
       return productToMarkdown(limitedProducts, role, context, productPriceMap);
     }
 
-    // 0 results → invoke searchService (fuzzy more broad)
-    return await searchProducts({
-      query: singularQuery,
-      role,
-      context,
-    });
+    // 0 results → try broader fuzzy search
+    const fuzzyResult = await getProducts({ search: singularQuery, isActive: true });
+    if (fuzzyResult.products.length > 0) {
+      const limitedProducts = fuzzyResult.products.slice(0, 5);
+      return productToMarkdown(limitedProducts, role, context, productPriceMap);
+    }
+
+    return 'No encontré productos que coincidan con tu búsqueda. ¿Probás con otro término?';
   } catch (error) {
     console.error('Error in get_product tool:', error);
     return 'Hubo un error al buscar el producto. Por favor, intentá nuevamente.';

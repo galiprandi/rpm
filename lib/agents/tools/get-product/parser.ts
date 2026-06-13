@@ -1,6 +1,6 @@
 import type { Product } from '@/lib/services/productService';
-import type { UserRole } from '../../promptComposer';
-import type { BotContext } from '../../types';
+import type { UserRole } from '../../utils/promptComposer';
+import type { BotContext } from '../../utils/types';
 
 interface ProductWithPrices extends Partial<Product> {
   priceLists?: Array<{

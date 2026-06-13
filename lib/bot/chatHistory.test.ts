@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { loadChat, saveChat, clearChat, getAllChatIds, clearAllHistory, type ChatMessage } from './chatHistory';
+import { loadChat, saveChat, clearChat, getAllChatIds, clearAllHistory, type ChatMessage } from '../agents/utils/chatHistory';
 
 describe('chatHistory', () => {
   beforeEach(() => {

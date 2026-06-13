@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useChat } from '@ai-sdk/react';
-import { DefaultChatTransport } from 'ai';
 import { MessageSquare, X, Send, Plus, FileImage, Camera as CameraIcon, Maximize2, Minimize2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,24 +19,17 @@ export function ChatFloating({ isOpen: controlledIsOpen, onOpenChange }: { isOpe
   const [internalIsOpen, setInternalIsOpen] = useState(false);
   const isOpen = controlledIsOpen !== undefined ? controlledIsOpen : internalIsOpen;
   const setIsOpen = onOpenChange || setInternalIsOpen;
-  const [input, setInput] = useState('');
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const { messages, sendMessage, status, stop } = useChat({
-    transport: new DefaultChatTransport({ 
-      api: '/api/bot/chat',
-      // Send only the last message to the server (SDK pattern)
-      prepareSendMessagesRequest: ({ messages }) => ({
-        body: { 
-          message: messages[messages.length - 1], 
-          context: { role: 'ADMIN' }, // TODO: get from session (userId, email)
-        },
-      }),
-    }),
+  const { messages, input, handleInputChange, handleSubmit, status, stop } = useChat({
+    api: '/api/bot/chat',
+    body: {
+      context: { role: 'ADMIN', url: { path: '/', search: '', hash: '' } },
+    },
   });
 
   // Auto scroll to bottom when new messages arrive
@@ -45,20 +37,12 @@ export function ChatFloating({ isOpen: controlledIsOpen, onOpenChange }: { isOpe
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (input.trim() || attachedFile) {
-      const messageContent = input.trim();
-
-      if (attachedFile) {
-        sendMessage({
-          text: messageContent || `[Archivo adjuntado: ${attachedFile.name}]`,
-        });
-        setAttachedFile(null);
-      } else {
-        sendMessage({ text: messageContent });
-      }
-      setInput('');
+      handleSubmit(e);
+      setAttachedFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
@@ -155,10 +139,12 @@ export function ChatFloating({ isOpen: controlledIsOpen, onOpenChange }: { isOpe
                       if (part.type === 'text') {
                         return <p key={i} className="text-sm whitespace-pre-wrap">{part.text}</p>;
                       }
-                      if (part.type === 'tool-consultarStock' && part.state === 'output-available') {
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      const toolPart = part as any;
+                      if (toolPart.type === 'tool-consultarStock' && toolPart.state === 'output-available') {
                         return (
                           <div key={i} className="text-sm prose prose-sm max-w-none">
-                            <Streamdown>{part.output as string}</Streamdown>
+                            <Streamdown>{toolPart.output as string}</Streamdown>
                           </div>
                         );
                       }
@@ -181,7 +167,7 @@ export function ChatFloating({ isOpen: controlledIsOpen, onOpenChange }: { isOpe
           </div>
 
           {/* Input */}
-          <form onSubmit={handleSubmit} className="p-4 border-t">
+          <form onSubmit={onSubmit} className="p-4 border-t">
             {attachedFile && (
               <div className="mb-2 p-2 bg-muted rounded-md flex items-center justify-between">
                 <span className="text-sm truncate flex-1">{attachedFile.name}</span>
@@ -230,7 +216,7 @@ export function ChatFloating({ isOpen: controlledIsOpen, onOpenChange }: { isOpe
               </DropdownMenu>
               <Input
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={handleInputChange}
                 placeholder="Escribe tu mensaje..."
                 className="flex-1"
                 disabled={status !== 'ready'}
