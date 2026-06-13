@@ -56,7 +56,8 @@
     "overrides": {
       "dompurify": ">=3.4.5",
       "fast-uri": ">=3.1.2",
-      "kysely": "0.28.17"
+      "kysely": "0.28.17",
+      "esbuild": "0.28.1"
     },
     "onlyBuiltDependencies": [
       "@prisma/client",
@@ -67,6 +68,7 @@
     ]
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "@prisma/client": "6.19.3",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.9.1",
