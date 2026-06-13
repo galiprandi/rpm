@@ -46,6 +46,7 @@ export default function SuppliersClient({ initialSuppliers }: SuppliersClientPro
   const { alert, confirm } = useUI();
   const [suppliers, setSuppliers] = useState<Supplier[]>(initialSuppliers);
   const [loading, setLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [createForm, setCreateForm] = useState<SupplierFormData>({
     name: '',
     contactName: '',
@@ -82,8 +83,10 @@ export default function SuppliersClient({ initialSuppliers }: SuppliersClientPro
   };
 
   const handleCreateSupplier = async () => {
+    if (isSubmitting) return;
     if (!createForm.name.trim()) return;
 
+    setIsSubmitting(true);
     try {
       const response = await fetch('/api/suppliers', {
         method: 'POST',
@@ -105,6 +108,8 @@ export default function SuppliersClient({ initialSuppliers }: SuppliersClientPro
       }
     } catch (error) {
       console.error('Error creating supplier:', error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -147,8 +152,10 @@ export default function SuppliersClient({ initialSuppliers }: SuppliersClientPro
 
   const handleEditSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
+    if (isSubmitting) return;
     if (!editingSupplier) return;
 
+    setIsSubmitting(true);
     try {
       const response = await fetch(`/api/suppliers/${editingSupplier.id}`, {
         method: 'PUT',
@@ -175,6 +182,8 @@ export default function SuppliersClient({ initialSuppliers }: SuppliersClientPro
         description: 'Error al actualizar proveedor',
         variant: 'error',
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -347,6 +356,7 @@ export default function SuppliersClient({ initialSuppliers }: SuppliersClientPro
           e?.preventDefault();
           handleCreateSupplier();
         }}
+        isLoading={isSubmitting}
       />
 
       {/* Edit Supplier Dialog */}
@@ -357,6 +367,7 @@ export default function SuppliersClient({ initialSuppliers }: SuppliersClientPro
         formData={editForm}
         setFormData={setEditForm}
         onSubmit={handleEditSubmit}
+        isLoading={isSubmitting}
       />
     </div>
   );

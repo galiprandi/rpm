@@ -43,6 +43,7 @@ export default function ServicesClient({ initialServices }: ServicesClientProps)
   const { alert, confirm } = useUI();
   const [services, setServices] = useState<Service[]>(initialServices);
   const [loading, setLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchServices = async () => {
     try {
@@ -98,6 +99,7 @@ export default function ServicesClient({ initialServices }: ServicesClientProps)
 
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
+    if (isSubmitting) return;
 
     // Validate before submitting
     const missingFields: string[] = [];
@@ -121,6 +123,7 @@ export default function ServicesClient({ initialServices }: ServicesClientProps)
       vehicleFactor: parseFloat(formData.vehicleFactor) || 1.0,
     };
 
+    setIsSubmitting(true);
     try {
       const url = editingService ? `/api/services/${editingService.id}` : '/api/services';
       const method = editingService ? 'PUT' : 'POST';
@@ -150,6 +153,8 @@ export default function ServicesClient({ initialServices }: ServicesClientProps)
         description: 'Error al guardar servicio',
         variant: 'error',
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -352,6 +357,7 @@ export default function ServicesClient({ initialServices }: ServicesClientProps)
         setFormData={setFormData}
         onSubmit={handleSubmit}
         isValid={formValid}
+        isLoading={isSubmitting}
       />
     </div>
   );

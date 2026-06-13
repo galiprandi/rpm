@@ -310,3 +310,51 @@ lib/
 3. Desactivar: `unset DEBUG_AUTH`
 
 ---
+
+# ⚠️ REGLA CRÍTICA: Protección Contra Doble-Click en Formularios
+
+**PROBLEMA:** Los usuarios pueden hacer doble-click rápido en botones de submit, enviando múltiples requests simultáneos. El primero crea el registro, el segundo falla con error de duplicación.
+
+**SOLUCIÓN:** Implementar estado `isSubmitting` en todos los formularios de creación/edición.
+
+**Patrón obligatorio:**
+
+```typescript
+// 1. Agregar estado
+const [isSubmitting, setIsSubmitting] = useState(false);
+
+// 2. Prevenir en handler
+const handleSubmit = async (e?: React.FormEvent) => {
+  e?.preventDefault();
+  if (isSubmitting) return; // ← CRÍTICO
+  
+  setIsSubmitting(true);
+  try {
+    // API call
+  } catch (error) {
+    // error handling
+  } finally {
+    setIsSubmitting(false); // ← CRÍTICO: siempre reset
+  }
+};
+
+// 3. Pasar al Dialog/Footer
+<Dialog
+  onSubmit={handleSubmit}
+  isLoading={isSubmitting} // o isSubmitting según el componente
+/>
+```
+
+**Componentes con protección implementada:**
+- ✅ ProductsClient
+- ✅ CustomerCreditNoteDialog
+- ✅ SuppliersClient
+- ✅ ServicesClient
+- ✅ CategoriesClient (usa `saving` state)
+- ✅ CustomerForm (recibe `isSubmitting` prop)
+
+**❌ PROHIBIDO:** Formularios sin protección contra doble-click
+
+**✅ OBLIGATORIO:** Todo nuevo formulario debe incluir este patrón
+
+---

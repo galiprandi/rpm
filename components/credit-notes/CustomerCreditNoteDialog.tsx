@@ -165,6 +165,10 @@ export function CustomerCreditNoteDialog({ open, onOpenChange, customerId, custo
   const handleCreateCreditNote = async () => {
     if (!selectedSale) return;
 
+    // Prevent double-click
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
     const items = selectedSale.items
       ?.map((item, index) => {
         const qty = selectedItems[index] || 0;
@@ -179,15 +183,16 @@ export function CustomerCreditNoteDialog({ open, onOpenChange, customerId, custo
 
     if (!items || items.length === 0) {
       await alert({ title: 'Error', description: 'Seleccione al menos un item para devolver' });
+      setIsSubmitting(false);
       return;
     }
 
     if (refundMethod === 'CASH' && !selectedPaymentMethodId) {
       await alert({ title: 'Error', description: 'Debe seleccionar un metodo de pago' });
+      setIsSubmitting(false);
       return;
     }
 
-    setIsSubmitting(true);
     try {
       const response = await fetch('/api/credit-notes', {
         method: 'POST',

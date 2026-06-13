@@ -17,6 +17,7 @@ interface ProductDialogProps {
   suppliers: Supplier[];
   isValid: boolean;
   isUploadingImage?: boolean;
+  isSubmitting?: boolean;
   onDeleteImage?: (productId: string) => void;
 }
 
@@ -31,6 +32,7 @@ export function ProductDialog({
   suppliers,
   isValid,
   isUploadingImage = false,
+  isSubmitting = false,
   onDeleteImage,
 }: ProductDialogProps) {
   const [isDeletingImage, setIsDeletingImage] = React.useState(false);
@@ -57,8 +59,8 @@ export function ProductDialog({
           onCancel={onClose}
           onSave={onSubmit}
           saveText={editingProduct ? 'Guardar Cambios' : 'Crear Producto'}
-          isLoading={isUploadingImage}
-          disabled={!isValid || isDeletingImage}
+          isLoading={isUploadingImage || isSubmitting}
+          disabled={!isValid || isDeletingImage || isSubmitting}
         />
       }
     >

@@ -100,6 +100,7 @@ export function ProductsClient({
 
   // Image upload state
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleDeleteImage = async (productId: string) => {
     try {
@@ -204,6 +205,10 @@ export function ProductsClient({
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
     
+    // Prevent double-click
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    
     const missingFields: string[] = [];
     if (!formData.name.trim()) missingFields.push('Nombre');
     if (!formData.categoryId) missingFields.push('Categoría');
@@ -219,6 +224,7 @@ export function ProductsClient({
         description: `Campos obligatorios faltantes: ${missingFields.join(', ')}`,
         variant: 'error',
       });
+      setIsSubmitting(false);
       return;
     }
     
@@ -247,6 +253,7 @@ export function ProductsClient({
           description: error.error || 'Error al guardar producto',
           variant: 'error',
         });
+        setIsSubmitting(false);
         return;
       }
 
@@ -287,6 +294,8 @@ export function ProductsClient({
         description: 'Error al guardar producto',
         variant: 'error',
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -572,6 +581,7 @@ export function ProductsClient({
         suppliers={suppliers}
         isValid={formValid}
         isUploadingImage={isUploadingImage}
+        isSubmitting={isSubmitting}
         onDeleteImage={handleDeleteImage}
       />
 

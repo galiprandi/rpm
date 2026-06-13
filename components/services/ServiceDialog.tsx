@@ -31,6 +31,7 @@ interface ServiceDialogProps {
   setFormData: (data: ServiceFormData) => void;
   onSubmit: (e?: React.FormEvent) => void;
   isValid: boolean;
+  isLoading?: boolean;
 }
 
 export function ServiceDialog({
@@ -41,6 +42,7 @@ export function ServiceDialog({
   setFormData,
   onSubmit,
   isValid,
+  isLoading = false,
 }: ServiceDialogProps) {
   return (
     <ModalBase
@@ -57,6 +59,7 @@ export function ServiceDialog({
           onSave={onSubmit}
           saveText={editingService ? 'Guardar Cambios' : 'Crear Servicio'}
           disabled={!isValid}
+          isLoading={isLoading}
         />
       }
     >
