@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useUI } from '@/components/ui/UIProvider';
-import { Save, Plus, Trash2, CheckCircle, Calendar, CreditCard, DollarSign, Package, AlertCircle, History, Loader2 } from 'lucide-react';
+import { Save, Plus, Trash2, CheckCircle, Calendar, CreditCard, DollarSign, Package, AlertCircle, History, Loader2, Hash } from 'lucide-react';
 import { type PurchaseVoucher } from '@/types/purchaseVoucher';
 import { SearchableSelect } from '@/components/ui/SearchableSelect';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -194,7 +194,7 @@ export default function VoucherDetailClient({ initialVoucher }: VoucherDetailCli
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
       <Header
-        title={`Comprobante ${voucher.letter} - ${voucher.number}`}
+        title={`${voucher.letter} - ${voucher.number}`}
         description={`Proveedor: ${voucher.supplier?.name}`}
         showBackButton
         onBack={() => router.push('/adm/purchase-vouchers')}
@@ -210,28 +210,28 @@ export default function VoucherDetailClient({ initialVoucher }: VoucherDetailCli
       >
         <div className="flex flex-wrap items-center gap-2 mt-4">
           <Badge
-            variant="outline"
+            variant={voucher.status === 'DRAFT' ? 'secondary' : 'outline'}
             className={
-              voucher.status === 'DRAFT'
-                ? 'bg-orange-50 text-orange-700 border-orange-200'
-                : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+              voucher.status === 'FINALIZED'
+                ? 'text-emerald-600 border-emerald-200 bg-emerald-50 font-semibold'
+                : 'font-semibold'
             }
           >
             {voucher.status === 'DRAFT' ? 'Borrador' : 'Finalizado'}
           </Badge>
 
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted/50 border text-xs font-medium text-muted-foreground">
-            <Calendar className="h-3.5 w-3.5" />
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted/50 border text-xs font-medium text-muted-foreground shadow-sm">
+            <Calendar className="h-3.5 w-3.5" aria-hidden="true" />
             {new Date(voucher.date).toLocaleDateString('es-AR')}
           </div>
 
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted/50 border text-xs font-medium text-muted-foreground">
-            <CreditCard className="h-3.5 w-3.5" />
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted/50 border text-xs font-medium text-muted-foreground shadow-sm">
+            <CreditCard className="h-3.5 w-3.5" aria-hidden="true" />
             {voucher.paymentMethod?.name || 'Cuenta Corriente'}
           </div>
 
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-primary/5 border border-primary/10 text-xs font-bold text-primary">
-            <DollarSign className="h-3.5 w-3.5" />
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-primary/5 border border-primary/20 text-xs font-bold text-primary shadow-sm">
+            <DollarSign className="h-3.5 w-3.5" aria-hidden="true" />
             {parseFloat(voucher.totalAmount).toLocaleString('es-AR', {
               style: 'currency',
               currency: 'ARS',
@@ -246,7 +246,7 @@ export default function VoucherDetailClient({ initialVoucher }: VoucherDetailCli
           {voucher.status === 'DRAFT' && (
             <form onSubmit={handleAddItem} className="bg-card border rounded-xl shadow-xs overflow-hidden">
               <div className="p-4 bg-muted/50 border-b flex items-center gap-2">
-                <Plus className="h-4 w-4 text-primary" />
+                <Plus className="h-4 w-4 text-primary" aria-hidden="true" />
                 <h3 className="font-semibold">Agregar Producto al Comprobante</h3>
               </div>
               <div className="p-6 space-y-4">
@@ -265,30 +265,40 @@ export default function VoucherDetailClient({ initialVoucher }: VoucherDetailCli
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <Label htmlFor="qty">Cantidad</Label>
-                      <Input
-                        id="qty"
-                        type="number"
-                        min="1"
-                        value={quantity}
-                        onChange={(e) => setQuantity(e.target.value)}
-                        required
-                        disabled={loading}
-                      />
+                      <Label htmlFor="qty" required>Cantidad</Label>
+                      <div className="relative">
+                        <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+                        <Input
+                          id="qty"
+                          type="number"
+                          min="1"
+                          value={quantity}
+                          onChange={(e) => setQuantity(e.target.value)}
+                          className="pl-9"
+                          required
+                          aria-required="true"
+                          disabled={loading}
+                        />
+                      </div>
                     </div>
                     <div className="space-y-1.5">
-                      <Label htmlFor="cost">Costo Unitario ($)</Label>
-                      <Input
-                        id="cost"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        placeholder="0.00"
-                        value={unitCost}
-                        onChange={(e) => setUnitCost(e.target.value)}
-                        required
-                        disabled={loading}
-                      />
+                      <Label htmlFor="cost" required>Costo Unitario ($)</Label>
+                      <div className="relative">
+                        <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+                        <Input
+                          id="cost"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="0.00"
+                          value={unitCost}
+                          onChange={(e) => setUnitCost(e.target.value)}
+                          className="pl-9"
+                          required
+                          aria-required="true"
+                          disabled={loading}
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -332,22 +342,29 @@ export default function VoucherDetailClient({ initialVoucher }: VoucherDetailCli
                 {(voucher.items || []).length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
-                      <Package className="h-12 w-12 mx-auto mb-4 opacity-20" />
+                      <Package className="h-12 w-12 mx-auto mb-4 opacity-20" aria-hidden="true" />
                       No hay productos cargados en este comprobante
                     </TableCell>
                   </TableRow>
                 ) : (
                   (voucher.items || []).map((item) => (
                     <TableRow key={item.id} className="group">
-                      <TableCell className="px-6 py-4 font-medium">{item.productName}</TableCell>
-                      <TableCell className="px-6 py-4 text-right">{item.quantity}</TableCell>
-                      <TableCell className="px-6 py-4 text-right">
+                      <TableCell className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center flex-shrink-0">
+                            <Package className="h-4 w-4 text-primary" aria-hidden="true" />
+                          </div>
+                          <span className="font-semibold tracking-tight">{item.productName}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="px-6 py-4 text-right font-mono">{item.quantity}</TableCell>
+                      <TableCell className="px-6 py-4 text-right font-mono">
                         {parseFloat(item.unitCost).toLocaleString('es-AR', {
                           style: 'currency',
                           currency: 'ARS',
                         })}
                       </TableCell>
-                      <TableCell className="px-6 py-4 text-right font-semibold">
+                      <TableCell className="px-6 py-4 text-right font-semibold text-emerald-600">
                         {parseFloat(item.subtotal).toLocaleString('es-AR', {
                           style: 'currency',
                           currency: 'ARS',

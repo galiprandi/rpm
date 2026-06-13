@@ -5,10 +5,9 @@ import { CreateDraftVoucherDialog } from '@/components/purchaseVoucher/CreateDra
 import { AddVoucherItemDialog } from '@/components/purchaseVoucher/AddVoucherItemDialog';
 import { VoucherPreviewDialog } from '@/components/purchaseVoucher/VoucherPreviewDialog';
 import { type PurchaseVoucher } from '@/types/purchaseVoucher';
-import { Header, CrudStats } from '@/components/adm';
+import { Header, CrudStats, CrudAdmin } from '@/components/adm';
 import { Button } from '@/components/ui/button';
-import { Receipt, Plus, History, FileText, Trash2, Eye, Play } from 'lucide-react';
-import { DataTable } from '@/components/ui/data-table';
+import { Receipt, Plus, History, FileText, Trash2, Eye, Play, Truck, Pencil } from 'lucide-react';
 import { ColumnDef } from '@tanstack/react-table';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -119,7 +118,17 @@ export default function PurchaseVouchersClient({ initialVouchers }: PurchaseVouc
     {
       accessorKey: 'supplierName',
       header: 'Proveedor',
-      cell: ({ row }) => row.original.supplier?.name || row.original.supplierName || 'Desconocido',
+      cell: ({ row }) => {
+        const name = row.original.supplier?.name || row.original.supplierName || 'Desconocido';
+        return (
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center flex-shrink-0">
+              <Truck className="h-4 w-4 text-primary" aria-hidden="true" />
+            </div>
+            <span className="font-semibold tracking-tight">{name}</span>
+          </div>
+        );
+      },
     },
     {
       accessorKey: 'number',
@@ -155,11 +164,11 @@ export default function PurchaseVouchersClient({ initialVouchers }: PurchaseVouc
         const status = row.original.status;
         return (
           <Badge
-            variant="outline"
+            variant={status === 'DRAFT' ? 'secondary' : 'outline'}
             className={
-              status === 'DRAFT'
-                ? 'bg-orange-50 text-orange-700 border-orange-200'
-                : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+              status === 'FINALIZED'
+                ? 'text-emerald-600 border-emerald-200 bg-emerald-50'
+                : ''
             }
           >
             {status === 'DRAFT' ? 'Borrador' : 'Finalizado'}
@@ -200,14 +209,14 @@ export default function PurchaseVouchersClient({ initialVouchers }: PurchaseVouc
               <span className="text-muted-foreground">
                 {itemsCount} {itemsCount === 1 ? 'ítem' : 'ítems'}
               </span>
-              <span className={`font-medium ${isComplete ? 'text-emerald-600' : 'text-orange-500'}`}>
+              <span className={`font-medium ${isComplete ? 'text-emerald-600' : 'text-amber-600'}`}>
                 {progressPct.toFixed(0)}%
               </span>
             </div>
             <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all ${
-                  isComplete ? 'bg-emerald-500' : 'bg-orange-400'
+                  isComplete ? 'bg-emerald-500' : 'bg-amber-500'
                 }`}
                 style={{ width: `${progressPct}%` }}
               />
@@ -254,100 +263,135 @@ export default function PurchaseVouchersClient({ initialVouchers }: PurchaseVouc
 
       <CrudStats stats={stats} />
 
-      <div className="bg-card rounded-lg border shadow-xs p-6">
-        <DataTable
-          data={vouchers}
-          columns={columns}
-          title="Listado de Comprobantes"
-          enableGlobalFilter
-          globalFilterPlaceholder="Buscar por proveedor o número..."
-          emptyMessage="No hay comprobantes cargados"
-          rowActions={(v) => (
-            <div className="flex items-center justify-end gap-2">
-              {v.status === 'DRAFT' ? (
-                <>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-8 w-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
-                        onClick={() => {
-                          setCurrentVoucherId(v.id);
-                          setCurrentVoucherTotal(parseFloat(v.totalAmount));
-                          setCurrentVoucherPaymentMethodId(v.paymentMethodId ?? null);
-                          setCurrentVoucherLetter(v.letter);
-                          setCurrentVoucherNumber(v.number);
-                          setCurrentVoucherSupplierName(v.supplier?.name || v.supplierName || '');
-                          setIsAddItemDialogOpen(true);
-                        }}
-                        aria-label="Continuar carga de comprobante"
-                      >
-                        <Play className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Continuar carga</TooltipContent>
-                  </Tooltip>
-
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-8 w-8 text-slate-600 hover:text-slate-900"
-                        onClick={() => {
-                          setCurrentVoucherId(v.id);
-                          setCurrentVoucherTotal(parseFloat(v.totalAmount));
-                          setCurrentVoucherPaymentMethodId(v.paymentMethodId ?? null);
-                          setCurrentVoucherLetter(v.letter);
-                          setCurrentVoucherNumber(v.number);
-                          setCurrentVoucherSupplierName(v.supplier?.name || v.supplierName || '');
-                          setIsPreviewOpen(true);
-                        }}
-                        aria-label="Ver vista previa de comprobante"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Vista previa</TooltipContent>
-                  </Tooltip>
-
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                        onClick={() => handleDeleteVoucher(v.id)}
-                        aria-label="Eliminar borrador de comprobante"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Eliminar</TooltipContent>
-                  </Tooltip>
-                </>
-              ) : (
+      <CrudAdmin
+        items={vouchers}
+        columns={columns}
+        loading={false}
+        hideCreateAction
+        createButtonText="Nuevo Comprobante"
+        emptyMessage="No hay comprobantes cargados"
+        tableTitle="Listado de Comprobantes"
+        searchPlaceholder="Buscar por proveedor o número..."
+        rowActions={(v) => (
+          <div className="flex items-center justify-end gap-2">
+            {v.status === 'DRAFT' ? (
+              <>
                 <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-8 w-8 text-slate-600 hover:text-slate-900"
-                        asChild
-                      >
-                        <a href={`/adm/purchase-vouchers/${v.id}`} aria-label="Ver detalle de comprobante">
-                          <Eye className="h-4 w-4" />
-                        </a>
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Ver detalle</TooltipContent>
-                  </Tooltip>
-              )}
-            </div>
-          )}
-        />
-      </div>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                      onClick={() => {
+                        setCurrentVoucherId(v.id);
+                        setCurrentVoucherTotal(parseFloat(v.totalAmount));
+                        setCurrentVoucherPaymentMethodId(v.paymentMethodId ?? null);
+                        setCurrentVoucherLetter(v.letter);
+                        setCurrentVoucherNumber(v.number);
+                        setCurrentVoucherSupplierName(v.supplier?.name || v.supplierName || '');
+                        setIsAddItemDialogOpen(true);
+                      }}
+                      aria-label="Continuar carga de comprobante"
+                    >
+                      <Play className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Continuar carga</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                      onClick={() => {
+                        setCurrentVoucherId(v.id);
+                        setCurrentVoucherTotal(parseFloat(v.totalAmount));
+                        setCurrentVoucherPaymentMethodId(v.paymentMethodId ?? null);
+                        setCurrentVoucherLetter(v.letter);
+                        setCurrentVoucherNumber(v.number);
+                        setCurrentVoucherSupplierName(v.supplier?.name || v.supplierName || '');
+                        setIsPreviewOpen(true);
+                      }}
+                      aria-label="Ver vista previa de comprobante"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Vista previa</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8 text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+                      onClick={async () => {
+                        try {
+                          const response = await fetch(`/api/purchase-vouchers/${v.id}`);
+                          if (response.ok) {
+                            const voucher = await response.json();
+                            setCurrentVoucherId(v.id);
+                            setEditingVoucherData({
+                              supplierId: voucher.supplierId,
+                              letter: voucher.letter,
+                              number: voucher.number,
+                              date: new Date(voucher.date).toISOString().split('T')[0],
+                              totalAmount: voucher.totalAmount.toString(),
+                              paymentMethodId: voucher.paymentMethodId || '',
+                              notes: voucher.notes || '',
+                            });
+                            setIsCreateDialogOpen(true);
+                          }
+                        } catch (error) {
+                          console.error('Error loading voucher data:', error);
+                        }
+                      }}
+                      aria-label="Editar datos de cabecera"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Editar cabecera</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                      onClick={() => handleDeleteVoucher(v.id)}
+                      aria-label="Eliminar borrador de comprobante"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Eliminar</TooltipContent>
+                </Tooltip>
+              </>
+            ) : (
+              <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8 text-slate-600 hover:text-slate-900"
+                      asChild
+                    >
+                      <a href={`/adm/purchase-vouchers/${v.id}`} aria-label="Ver detalle de comprobante">
+                        <Eye className="h-4 w-4" />
+                      </a>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Ver detalle</TooltipContent>
+                </Tooltip>
+            )}
+          </div>
+        )}
+      />
 
       <CreateDraftVoucherDialog
         isOpen={isCreateDialogOpen}
