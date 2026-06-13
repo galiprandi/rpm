@@ -2,29 +2,30 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import { UserRole } from '@/lib/auth/roles';
+import { isDevBypassEnabled, createDevSession } from '@/lib/dev-auth';
 
 /**
  * API Middleware - Global Protection System
- * 
+ *
  * Provides wrapper functions to protect API routes with authentication and role-based access control.
- * 
+ *
  * Usage:
  * ```typescript
  * import { withAuth, withRole } from '@/lib/api-middleware';
  * import { UserRole } from '@/lib/auth/roles';
- * 
+ *
  * // Require authentication only
  * export const GET = withAuth(async (request, session) => {
  *   // session.user is available
  *   return NextResponse.json({ data });
  * });
- * 
+ *
  * // Require specific role
  * export const POST = withRole(UserRole.ADMIN, async (request, session) => {
  *   // Only ADMIN can access
  *   return NextResponse.json({ data });
  * });
- * 
+ *
  * // Require minimum role level (STAFF or above)
  * export const PUT = withRole(UserRole.STAFF, async (request, session) => {
  *   // STAFF and ADMIN can access
@@ -51,8 +52,15 @@ function hasRequiredRole(userRole: UserRole, requiredRole: UserRole): boolean {
 /**
  * Get user session with authentication check
  * Returns null if not authenticated
+ * Supports dev bypass in development (env-var based, no cookies/endpoints)
  */
 async function getSessionWithAuth() {
+  // Dev bypass: pure env-var based, no cookies or endpoints
+  if (isDevBypassEnabled()) {
+    return createDevSession();
+  }
+
+  // Fall back to Better Auth
   const session = await auth.api.getSession({ headers: await headers() });
   return session;
 }

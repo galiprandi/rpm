@@ -294,20 +294,47 @@ lib/
 
 ---
 
-# Debug Mode
+# Development Auth Bypass
 
-**Permite validar UI sin autenticación para QA automatizado.**
+**Permite desarrollo local sin autenticación OAuth.**
 
-**Activación:** Variable de entorno `DEBUG_AUTH="true"` en `.env.local` (NUNCA query parameters)
+**Diseño:** Env-var based. **NO** cookies, **NO** endpoints, **NO** tokens. Impossible de explotar desde fuera del servidor.
 
-**Implementación:** `proxy.ts` - bypass auth cuando `process.env.DEBUG_AUTH === 'true'`
+**Variables de entorno:**
 
-**⚠️ Seguridad:** Solo local/desarrollo, NUNCA en producción
+```bash
+# Requerida para activar
+RPM_DEV_BYPASS_AUTH=true
+
+# Opcionales (con defaults)
+RPM_DEV_BYPASS_ROLE=ADMIN        # USER | STAFF | ADMIN
+RPM_DEV_BYPASS_USER_ID=dev-user  # ID del usuario
+RPM_DEV_BYPASS_NAME=Developer    # Nombre visible
+RPM_DEV_BYPASS_EMAIL=dev@localhost
+```
+
+**Activación:**
+```bash
+RPM_DEV_BYPASS_AUTH=true pnpm dev
+```
+
+**Cómo funciona:**
+- `lib/dev-auth.ts` exporta `isDevBypassEnabled()` y `createDevSession()`
+- `lib/auth-server.ts` y `lib/api-middleware.ts` usan estas funciones
+- Bypass solo activa cuando `NODE_ENV === 'development' && RPM_DEV_BYPASS_AUTH === 'true'`
+- En producción el bypass **literalmente no existe** en el código ejecutable
+
+**⚠️ Seguridad:**
+- ❌ No hay endpoint `/api/auth/debug` (eliminado)
+- ❌ No hay cookie `rpm_debug_auth` (eliminada)
+- ❌ No hay parsing de headers o IPs (eliminado)
+- ✅ Solo env vars del servidor controlan el bypass
 
 **Flujo QA:**
-1. `DEBUG_AUTH="true" pnpm dev`
-2. Validar con Puppeteer MCP
-3. Desactivar: `unset DEBUG_AUTH`
+1. `RPM_DEV_BYPASS_AUTH=true pnpm dev`
+2. Abrir `http://localhost:3000` — auto-logueado como ADMIN
+3. Validar con Puppeteer MCP
+4. Desactivar: `unset RPM_DEV_BYPASS_AUTH`
 
 ---
 

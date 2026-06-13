@@ -37,13 +37,6 @@ export const API_ROUTES_CONFIG: RouteConfig[] = [
     role: 'PUBLIC',
     description: 'Better Auth handler (public OAuth flow)',
   },
-  {
-    path: '/api/auth/debug',
-    methods: ['GET', 'POST', 'DELETE'],
-    role: 'PUBLIC',
-    description: 'Debug auth (only when DEBUG_AUTH_ENABLED=true)',
-  },
-
   // ===== PRODUCTS (CRITICAL - NEEDS PROTECTION) =====
   {
     path: '/api/products',

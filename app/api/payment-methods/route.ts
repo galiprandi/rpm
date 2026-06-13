@@ -1,17 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { withStaff, withAdmin } from "@/lib/api-middleware";
 import { prisma } from "@/lib/prisma";
-import { hasRole, UserRole } from "@/lib/auth/roles";
 
 // GET /api/payment-methods - List all payment methods
-export async function GET() {
+export const GET = withStaff(async () => {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const paymentMethods = await prisma.payment_method.findMany({
       orderBy: [
         { isActive: "desc" },
@@ -28,27 +21,11 @@ export async function GET() {
       { status: 500 }
     );
   }
-}
+});
 
 // POST /api/payment-methods - Create new payment method (ADMIN only)
-export async function POST(request: NextRequest) {
+export const POST = withAdmin(async (request: NextRequest) => {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Check if user is ADMIN
-    const userRole = await hasRole(session.user.id, UserRole.ADMIN);
-    console.log('[PaymentMethods] User ID:', session.user.id);
-    console.log('[PaymentMethods] Has ADMIN role:', userRole);
-    if (!userRole) {
-      return NextResponse.json(
-        { error: "Only ADMIN can create payment methods" },
-        { status: 403 }
-      );
-    }
-
     const body = await request.json();
     const { name, code, description, sortOrder } = body;
 
@@ -98,4 +75,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

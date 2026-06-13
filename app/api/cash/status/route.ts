@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
-import { headers } from 'next/headers';
+import { withStaff } from '@/lib/api-middleware';
 import { prisma } from '@/lib/prisma';
 import { unstable_cache } from 'next/cache';
 import { CACHE_TAGS, CACHE_DURATIONS } from '@/lib/cache';
@@ -13,6 +12,18 @@ function decimalToNumber(decimal: unknown): number {
     return (decimal as { toNumber: () => number }).toNumber();
   }
   return 0;
+}
+
+interface PaymentMethod {
+  code: string;
+  name: string;
+}
+
+interface CashMovement {
+  type: string;
+  method: string;
+  amount: { toNumber: () => number };
+  createdAt: Date;
 }
 
 // Cached function to get cash status - reduces DB queries
@@ -61,7 +72,7 @@ const getCachedCashStatus = unstable_cache(
     }> = {};
 
     // Initialize with all payment methods (including CASH)
-    const allMethods = ['CASH', ...paymentMethods.map((pm: any) => pm.code)];
+    const allMethods = ['CASH', ...paymentMethods.map((pm: PaymentMethod) => pm.code)];
     allMethods.forEach(method => {
       summary[method] = { opening: 0, income: 0, expense: 0, expected: 0 };
     });
@@ -76,7 +87,7 @@ const getCachedCashStatus = unstable_cache(
         },
       });
 
-      movements.forEach((movement: any) => {
+      movements.forEach((movement: CashMovement) => {
         const method = movement.method;
         const amount = decimalToNumber(movement.amount);
 
@@ -130,13 +141,8 @@ const getCachedCashStatus = unstable_cache(
 
 // GET /api/cash/status - Get current cash register status
 // Cache for 5 minutes - invalidated on cash movements
-export async function GET() {
+export const GET = withStaff(async () => {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const data = await getCachedCashStatus();
 
     return NextResponse.json(data);
@@ -147,4 +153,4 @@ export async function GET() {
       { status: 500 }
     );
   }
-}
+});

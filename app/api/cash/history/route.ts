@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
-import { headers } from 'next/headers';
+import { withStaff } from '@/lib/api-middleware';
 import { prisma } from '@/lib/prisma';
 
 // Helper para convertir Decimal a number
@@ -14,13 +13,8 @@ function decimalToNumber(decimal: unknown): number {
 }
 
 // GET /api/cash/history - Get cash register history with pagination
-export async function GET(request: NextRequest) {
+export const GET = withStaff(async (request: NextRequest) => {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     // Parse query parameters
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '30', 10);
@@ -180,4 +174,4 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
