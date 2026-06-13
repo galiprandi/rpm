@@ -17,3 +17,7 @@
 ## 2026-06-12 - Accessibility for Destructive Actions in Lists
 **Learning:** High-density lists with icon-only destructive actions (like 'Delete') are high-risk for user error and screen reader ambiguity. Wrapping these buttons in a `Tooltip` while simultaneously providing a descriptive `aria-label` ensures both power users and users with assistive technologies have clear confirmation of the action's intent.
 **Action:** Always wrap icon-only action buttons in history or itemized lists with a `Tooltip` and provide a localized `aria-label` (e.g., "Eliminar pago").
+
+## 2026-06-14 - Accessible Form Collapsibles and Icon Patterns
+**Learning:** Collapsible form sections (like 'Datos de Facturación') require explicit ARIA attributes (`aria-expanded`, `aria-controls`) paired with structural IDs to be accessible. When implementing the Form UX Enhancement Pattern with shadcn/ui `Select` components, the `SelectTrigger` needs `pl-9` and the icon needs `z-10` to ensure visual and functional correctness.
+**Action:** Always include `aria-expanded` and `aria-controls` on form section toggles. Ensure `SelectTrigger` has `pl-9` when icons are used.

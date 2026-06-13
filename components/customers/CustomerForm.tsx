@@ -12,7 +12,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { ChevronDown } from "lucide-react";
+import {
+  ChevronDown,
+  User,
+  Phone,
+  Mail,
+  MapPin,
+  Hash,
+  FileText,
+  MessageSquare,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const INVOICE_TYPES = ["A", "B", "C", "M"];
@@ -78,60 +87,97 @@ export function CustomerForm({
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Nombre */}
       <div className="space-y-2">
-        <Label htmlFor="name" required>Nombre o Razón Social</Label>
-        <Input
-          id="name"
-          value={formData.name}
-          onChange={(e) => handleChange("name", e.target.value)}
-          placeholder="Juan Pérez o Empresa S.A."
-          required
-          aria-required="true"
-        />
+        <Label htmlFor="name" required>
+          Nombre o Razón Social
+        </Label>
+        <div className="relative">
+          <User
+            className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none"
+            aria-hidden="true"
+          />
+          <Input
+            id="name"
+            value={formData.name}
+            onChange={(e) => handleChange("name", e.target.value)}
+            placeholder="Juan Pérez o Empresa S.A."
+            className="pl-9"
+            required
+            aria-required="true"
+          />
+        </div>
       </div>
 
       {/* Teléfonos */}
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="phone">Teléfono Principal</Label>
-          <Input
-            id="phone"
-            value={formData.phone}
-            onChange={(e) => handleChange("phone", e.target.value)}
-            placeholder="+54 11 1234-5678"
-          />
+          <div className="relative">
+            <Phone
+              className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none"
+              aria-hidden="true"
+            />
+            <Input
+              id="phone"
+              value={formData.phone}
+              onChange={(e) => handleChange("phone", e.target.value)}
+              placeholder="+54 11 1234-5678"
+              className="pl-9"
+            />
+          </div>
         </div>
         <div className="space-y-2">
           <Label htmlFor="phoneAlt">Teléfono Alternativo (WhatsApp)</Label>
-          <Input
-            id="phoneAlt"
-            value={formData.phoneAlt}
-            onChange={(e) => handleChange("phoneAlt", e.target.value)}
-            placeholder="+54 11 9876-5432"
-          />
+          <div className="relative">
+            <MessageSquare
+              className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none"
+              aria-hidden="true"
+            />
+            <Input
+              id="phoneAlt"
+              value={formData.phoneAlt}
+              onChange={(e) => handleChange("phoneAlt", e.target.value)}
+              placeholder="+54 11 9876-5432"
+              className="pl-9"
+            />
+          </div>
         </div>
       </div>
 
       {/* Email */}
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
-        <Input
-          id="email"
-          type="email"
-          value={formData.email}
-          onChange={(e) => handleChange("email", e.target.value)}
-          placeholder="juan@ejemplo.com"
-        />
+        <div className="relative">
+          <Mail
+            className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none"
+            aria-hidden="true"
+          />
+          <Input
+            id="email"
+            type="email"
+            value={formData.email}
+            onChange={(e) => handleChange("email", e.target.value)}
+            placeholder="juan@ejemplo.com"
+            className="pl-9"
+          />
+        </div>
       </div>
 
       {/* Dirección */}
       <div className="space-y-2">
         <Label htmlFor="address">Dirección</Label>
-        <Input
-          id="address"
-          value={formData.address}
-          onChange={(e) => handleChange("address", e.target.value)}
-          placeholder="Av. Siempre Viva 123, Springfield"
-        />
+        <div className="relative">
+          <MapPin
+            className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none"
+            aria-hidden="true"
+          />
+          <Input
+            id="address"
+            value={formData.address}
+            onChange={(e) => handleChange("address", e.target.value)}
+            placeholder="Av. Siempre Viva 123, Springfield"
+            className="pl-9"
+          />
+        </div>
       </div>
 
       {/* Datos de Facturación (colapsable) */}
@@ -139,6 +185,8 @@ export function CustomerForm({
         <button
           type="button"
           onClick={() => setShowBilling(!showBilling)}
+          aria-expanded={showBilling}
+          aria-controls="billing-section"
           className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
         >
           <span className="font-medium">Datos de Facturación (opcional)</span>
@@ -151,54 +199,66 @@ export function CustomerForm({
         </button>
 
         {showBilling && (
-          <div className="p-4 pt-0 space-y-4 border-t">
+          <div id="billing-section" className="p-4 pt-0 space-y-4 border-t">
             <p className="text-sm text-muted-foreground">
               Solo completa si el cliente requiere factura AFIP
             </p>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="cuit">CUIT</Label>
-                <Input
-                  id="cuit"
-                  className="font-mono"
-                  value={formData.billingData.cuit}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      billingData: {
-                        ...prev.billingData,
-                        cuit: e.target.value,
-                      },
-                    }))
-                  }
-                  placeholder="30-12345678-9"
-                />
+                <div className="relative">
+                  <Hash
+                    className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none"
+                    aria-hidden="true"
+                  />
+                  <Input
+                    id="cuit"
+                    className="font-mono pl-9"
+                    value={formData.billingData.cuit}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        billingData: {
+                          ...prev.billingData,
+                          cuit: e.target.value,
+                        },
+                      }))
+                    }
+                    placeholder="30-12345678-9"
+                  />
+                </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="invoiceType">Tipo Factura</Label>
-                <Select
-                  value={formData.billingData.invoiceType}
-                  onValueChange={(value) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      billingData: {
-                        ...prev.billingData,
-                        invoiceType: value,
-                      },
-                    }))
-                  }
-                >
-                  <SelectTrigger id="invoiceType">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {INVOICE_TYPES.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        Factura {type}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="relative">
+                  <FileText
+                    className="absolute left-3 top-2 h-4 w-4 text-muted-foreground z-10 pointer-events-none"
+                    aria-hidden="true"
+                  />
+                  <Select
+                    value={formData.billingData.invoiceType}
+                    onValueChange={(value) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        billingData: {
+                          ...prev.billingData,
+                          invoiceType: value,
+                        },
+                      }))
+                    }
+                  >
+                    <SelectTrigger id="invoiceType" className="pl-9">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {INVOICE_TYPES.map((type) => (
+                        <SelectItem key={type} value={type}>
+                          Factura {type}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
           </div>
@@ -208,13 +268,20 @@ export function CustomerForm({
       {/* Notas */}
       <div className="space-y-2">
         <Label htmlFor="notes">Notas / Observaciones</Label>
-        <Textarea
-          id="notes"
-          value={formData.notes}
-          onChange={(e) => handleChange("notes", e.target.value)}
-          placeholder="Información adicional sobre el cliente..."
-          rows={3}
-        />
+        <div className="relative">
+          <FileText
+            className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none"
+            aria-hidden="true"
+          />
+          <Textarea
+            id="notes"
+            value={formData.notes}
+            onChange={(e) => handleChange("notes", e.target.value)}
+            placeholder="Información adicional sobre el cliente..."
+            rows={3}
+            className="pl-9"
+          />
+        </div>
       </div>
 
       {/* Botones */}
