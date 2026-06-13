@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
-import { UserRole } from '@/lib/auth/roles';
+import { UserRole } from '@/lib/auth/roles-client';
 import { isDevBypassEnabled, createDevSession } from '@/lib/dev-auth';
 
 /**
@@ -12,7 +12,7 @@ import { isDevBypassEnabled, createDevSession } from '@/lib/dev-auth';
  * Usage:
  * ```typescript
  * import { withAuth, withRole } from '@/lib/api-middleware';
- * import { UserRole } from '@/lib/auth/roles';
+ * import { UserRole } from '@/lib/auth/roles-client';
  *
  * // Require authentication only
  * export const GET = withAuth(async (request, session) => {

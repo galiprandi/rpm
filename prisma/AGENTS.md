@@ -1,6 +1,101 @@
 # Prisma Database Rules
 
-## 🚫 PROHIBIDO ABSOLUTO
+## � Client Components: PROHIBIDO importar Prisma directamente
+
+### El problema
+Prisma usa módulos nativos que **no se pueden bundlear en el navegador**. Si se importa Prisma en un client component (`'use client'`), Next.js fallará con error:
+```
+Module not found: Can't resolve '.prisma/client/index-browser'
+```
+
+### ✅ Solución: Separar en server-only y client-safe
+
+**Server-only (con Prisma):**
+```typescript
+// lib/auth/roles.ts - SOLO server components y API routes
+import { prisma } from '@/lib/prisma';
+
+export const getUserRole = async (email: string): Promise<UserRole> => {
+  const user = await prisma.user.findUnique({ where: { email } });
+  // ...
+};
+```
+
+**Client-safe (sin Prisma):**
+```typescript
+// lib/auth/roles-client.ts - Client components
+export const getUserRoleSync = (email: string): UserRole => {
+  // Solo lógica síncrona sin DB
+  if (email.endsWith('@rpmacc.com')) return UserRole.STAFF;
+  return UserRole.USER;
+};
+```
+
+### 📋 Reglas de uso
+
+| Contexto | ✅ Permitido | ❌ Prohibido |
+|-----------|-------------|-------------|
+| **Server Components** | Importar Prisma directamente | - |
+| **API Routes** | Importar Prisma directamente | - |
+| **Client Components** | Usar `roles-client.ts` | Importar Prisma |
+| **Server Actions** | Importar Prisma (son server-side) | - |
+
+### 🔄 Cómo obtener datos en client components
+
+**Opción 1: Server Actions**
+```typescript
+// app/actions.ts
+'use server';
+import { prisma } from '@/lib/prisma';
+
+export async function getCustomers() {
+  return await prisma.customer.findMany();
+}
+
+// components/MyComponent.tsx
+'use client';
+import { getCustomers } from '@/app/actions';
+const customers = await getCustomers(); // ✅
+```
+
+**Opción 2: API Routes**
+```typescript
+// app/api/customers/route.ts
+import { prisma } from '@/lib/prisma';
+export async function GET() {
+  const customers = await prisma.customer.findMany();
+  return Response.json(customers);
+}
+
+// components/MyComponent.tsx
+'use client';
+const customers = await fetch('/api/customers').then(r => r.json()); // ✅
+```
+
+**Opción 3: Server Components (pasar como props)**
+```typescript
+// app/customers/page.tsx (server)
+import { prisma } from '@/lib/prisma';
+export default async function CustomersPage() {
+  const customers = await prisma.customer.findMany();
+  return <CustomersClient initialData={customers} />; // ✅
+}
+```
+
+### 🚫 Anti-patrones
+
+```typescript
+// ❌ NUNCA hacer esto en client components
+'use client';
+import { prisma } from '@/lib/prisma'; // ERROR
+
+// ❌ NUNCA hacer wrapper que importe Prisma
+// lib/prisma-wrapper.ts
+import { PrismaClient } from '@prisma/client'; // ERROR igual
+export const prisma = new PrismaClient();
+```
+
+## �🚫 PROHIBIDO ABSOLUTO
 
 ### Operaciones peligrosas que NUNCA deben ejecutarse
 

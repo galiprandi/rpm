@@ -1,4 +1,4 @@
-🚦 Estado: 🟡 Parcialmente implementado (Lógica en API routes, pendiente refactor a servicios)
+🚦 Estado: 🟡 Parcialmente implementado (Lógica en API routes, refactor a servicio en progreso)
 
 # Clientes y Cuentas Corrientes
 
@@ -10,6 +10,7 @@ Gestionar la base de datos de clientes, sus vehículos asociados (para el taller
 - **Vehículos**: Vincular uno o más vehículos a un cliente por número de patente/identificador.
 - **Cuenta Corriente (Crédito)**: Vender a un cliente "a cuenta", generando una deuda que actualiza el campo `balance` del cliente.
 - **Saldos a favor**: Registro de notas de crédito que pueden impactar en el balance positivo del cliente.
+- **Creación vía Bot**: "Ger, crea un cliente con nombre Pedro Corbalán" -> El bot recopila datos, muestra resumen y pide confirmación antes de crear.
 
 ## 3. Restricciones (Qué NO hace / Fuera de alcance)
 - **RES-01**: No emite resúmenes de cuenta en PDF de forma automatizada en esta fase.
@@ -19,8 +20,9 @@ Gestionar la base de datos de clientes, sus vehículos asociados (para el taller
 - **Límite 1**: El balance del cliente se actualiza automáticamente al crear una OT o realizar una venta directa a cuenta.
 - **Límite 2**: No se puede eliminar un cliente que tiene historial de transacciones (solo desactivar).
 - **Validación 1**: Los pagos realizados por el cliente se registran como `cash_movement` con `referenceType: 'customer_payment'`.
+- **Validación 2**: Para crear clientes vía bot, se requiere confirmación explícita del usuario antes de ejecutar la creación.
 
 ## 5. Dependencias Técnicas Clave
 - **Tablas BD**: `customer`, `vehicle`, `cash_movement`
-- **Servicios**: Pendiente extraer lógica a `customerService.ts`.
+- **Servicios**: `customerService.ts` (pendiente de extraer de `/api/customers`).
 - **Rutas API**: `/api/customers`, `/api/reports/debtors`

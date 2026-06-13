@@ -9,20 +9,27 @@ En lugar de crear UIs específicas para cada nueva funcionalidad, desarrollamos:
 2. **Tools** que expone esos servicios al bot
 3. **Prompts del sistema** compuestos: base común + instrucciones específicas del rol + tools disponibles
 
-## Estado de Implementación (2026-04-17)
+## Estado de Implementación (2026-06-13)
 
 **🟡 PARCIALMENTE IMPLEMENTADO**
 
 ### ✅ Implementado
-- [x] Directorio `lib/bot/` con arquitectura base
-- [x] Integración Vercel AI SDK
+- [x] Directorio `lib/agents/` con arquitectura base
+- [x] Integración Vercel AI SDK v6+
 - [x] Chat flotante UI (desktop/mobile)
-- [x] Tools básicas: `checkStock`, `searchProducts`, `getDailySales`
-- [x] Filtrado de tools por rol ([`toolsByRole.ts`](../lib/bot/toolsByRole.ts))
-- [x] System prompt dinámico por rol ([`promptComposer.ts`](../lib/bot/promptComposer.ts))
-- [x] Variable de entorno `OPENAI_MODEL` configurable
+- [x] Tools básicas: `consultarStock`
+- [x] Filtrado de tools por rol ([`toolsByRole.ts`](../lib/agents/utils/toolsByRole.ts))
+- [x] System prompt dinámico por rol ([`promptComposer.ts`](../lib/agents/utils/promptComposer.ts))
+- [x] Integración con Google Gemini (gemini-2.5-flash + flex tier)
+- [x] Historial de chat in-memory por `chatId`
 
 ### 🚧 En Progreso / Definición
+- [ ] **Subagente Customers** - Crear clientes con confirmación obligatoria
+  - Tools: draftCustomer, createCustomer, searchCustomers
+  - Flujo: recopilar datos → mostrar resumen → pedir confirmación → crear
+- [ ] **Subagente Products** - Crear productos con confirmación obligatoria
+  - Tools: draftProduct, createProduct, searchCategories, searchSuppliers
+  - Flujo: recopilar datos → resolver categoría/proveedor → mostrar resumen → pedir confirmación → crear
 - [ ] **Tool Core: `get_product`** - [Ver Spec](./bot-tools/get-product.md)
   - Contexto inyectado (role + currentUrl)
   - Descripciones en `.md` con cache
@@ -34,6 +41,7 @@ En lugar de crear UIs específicas para cada nueva funcionalidad, desarrollamos:
 
 ### Roadmap
 - **Fase 2 (Semana 7-8)**: Setup LLM + Tools básicas + Chat interface mobile
+- **Fase 2b (Junio 2026)**: Multi-agente + clientes/productos con confirmación obligatoria
 - **Fase 2+ (Semana 9-10)**: Tools avanzadas con contexto y formatos ricos
 - Dependencia: Requiere FASE 2 (Taller) completada
 

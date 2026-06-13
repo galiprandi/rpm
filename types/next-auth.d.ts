@@ -5,7 +5,7 @@
  * and additional user properties from Google OAuth
  */
 
-import { UserRole } from '@/lib/auth/roles';
+import { UserRole } from '@/lib/auth/roles-client';
 
 declare module 'next-auth' {
   /**

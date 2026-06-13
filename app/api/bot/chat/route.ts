@@ -70,7 +70,8 @@ export async function POST(req: Request) {
       email,
     };
 
-    const systemPrompt = composeSystemPrompt(botContext) + conversationContext;
+    const systemPrompt = composeSystemPrompt(botContext) + conversationContext + 
+      (message ? `\n\nCHAT_ID: ${chatId}\n\nIMPORTANTE: Cuando uses las tools consultarCustomers o consultarProducts, incluye el chatId "${chatId}" en el parámetro chatId.` : '');
     console.log('💬 System prompt length:', systemPrompt.length);
 
     // Get tools filtered by user role

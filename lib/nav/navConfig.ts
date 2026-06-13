@@ -17,7 +17,7 @@ import {
   Settings,
   type LucideIcon,
 } from 'lucide-react';
-import { UserRole } from '@/lib/auth/roles';
+import { UserRole } from '@/lib/auth/roles-client';
 
 /** Un ítem navegable en el sidebar */
 export interface NavItem {

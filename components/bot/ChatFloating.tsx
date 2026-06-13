@@ -24,8 +24,9 @@ export function ChatFloating({ isOpen: controlledIsOpen, onOpenChange }: { isOpe
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const { messages, input, handleInputChange, handleSubmit, status, stop } = useChat({
+  const { messages, input, handleInputChange, handleSubmit, status, stop, error } = useChat({
     api: '/api/bot/chat',
     body: {
       context: { role: 'ADMIN', url: { path: '/', search: '', hash: '' } },
@@ -36,6 +37,31 @@ export function ChatFloating({ isOpen: controlledIsOpen, onOpenChange }: { isOpe
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Auto-focus input when chat opens
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 100);
+    }
+  }, [isOpen]);
+
+  // Handle keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!isOpen) return;
+      
+      // Escape to close chat
+      if (e.key === 'Escape') {
+        setIsOpen(false);
+        return;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, setIsOpen]);
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -162,6 +188,22 @@ export function ChatFloating({ isOpen: controlledIsOpen, onOpenChange }: { isOpe
                   </div>
                 </div>
               )}
+
+              {/* Error message */}
+              {error && (
+                <div className="flex justify-start">
+                  <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 flex items-center gap-2">
+                    <X className="h-4 w-4 text-destructive" />
+                    <span className="text-sm text-destructive">
+                      {error.message?.includes('Failed to parse stream') 
+                        ? 'Hubo un problema al procesar la respuesta. Por favor intenta nuevamente con un mensaje más simple.'
+                        : error.message?.includes('quota') || error.message?.includes('limit')
+                        ? 'La quota diaria de la API de Gemini está excedida (20 req/día). Por favor intenta más tarde.'
+                        : error.message || 'Ocurrió un error al procesar tu mensaje. Por favor intenta nuevamente.'}
+                    </span>
+                  </div>
+                </div>
+              )}
               <div ref={messagesEndRef} />
             </div>
           </div>
@@ -215,6 +257,7 @@ export function ChatFloating({ isOpen: controlledIsOpen, onOpenChange }: { isOpe
                 </DropdownMenuContent>
               </DropdownMenu>
               <Input
+                ref={inputRef}
                 value={input}
                 onChange={handleInputChange}
                 placeholder="Escribe tu mensaje..."

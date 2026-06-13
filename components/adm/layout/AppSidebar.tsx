@@ -44,7 +44,7 @@ import {
 import { navGroups, homeNavItem } from '@/lib/nav/navConfig';
 import { canAccess } from '@/lib/nav/canAccess';
 import { usePinnedNav } from '@/hooks/usePinnedNav';
-import { UserRole } from '@/lib/auth/roles';
+import { UserRole } from '@/lib/auth/roles-client';
 import { cn } from '@/lib/utils';
 
 interface AppSidebarProps {

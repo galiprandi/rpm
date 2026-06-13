@@ -1,5 +1,7 @@
 import { type UserRole } from './promptComposer';
 import { consultarStockTool } from '../stock/consultarStock';
+import { consultarCustomersTool } from '../customers/consultarCustomers';
+import { consultarProductsTool } from '../products/consultarProducts';
 
 /**
  * Tools available for each user role
@@ -8,6 +10,8 @@ import { consultarStockTool } from '../stock/consultarStock';
 export const toolsByRole: Record<UserRole, Record<string, any>> = {
   ADMIN: {
     consultarStock: consultarStockTool,
+    consultarCustomers: consultarCustomersTool,
+    consultarProducts: consultarProductsTool,
   },
   SELLER: {
     consultarStock: consultarStockTool,
