@@ -104,6 +104,13 @@ BETTER_AUTH_URL="http://localhost:3000"
 GOOGLE_CLIENT_ID="your-google-client-id"
 GOOGLE_CLIENT_SECRET="your-google-client-secret"
 NEXT_PUBLIC_URL="http://localhost:3000"
+
+# Optional: Development auth bypass (solo local, nunca en producción)
+RPM_DEV_BYPASS_AUTH="true"
+RPM_DEV_BYPASS_ROLE="ADMIN"      # USER | STAFF | ADMIN
+RPM_DEV_BYPASS_USER_ID="dev-user"
+RPM_DEV_BYPASS_NAME="Developer"
+RPM_DEV_BYPASS_EMAIL="dev@localhost"
 ```
 
 ### Base de Datos
@@ -144,6 +151,7 @@ pnpm start
 - **Google OAuth** como proveedor
 - **Sesiones** con cookies seguras
 - **Middleware** para protección de rutas
+- **Development Auth Bypass** — sesión mock por env var (solo `NODE_ENV=development`)
 
 ### Layout
 
@@ -288,6 +296,15 @@ vercel logs
 
 # Probar auth endpoint
 curl https://rpm-wheat.vercel.app/api/auth/ok
+```
+
+**Bypass en desarrollo:**
+```bash
+# El bypass solo funciona si NODE_ENV=development
+# y RPM_DEV_BYPASS_AUTH=true está seteado
+RPM_DEV_BYPASS_AUTH=true pnpm dev
+# No requiere OAuth — genera sesión mock automáticamente
+# No hay endpoints de debug expuestos — es 100% env-var
 ```
 
 **Migraciones fallan:**

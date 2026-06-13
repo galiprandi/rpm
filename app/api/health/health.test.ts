@@ -32,47 +32,20 @@ describe('Health Check API', () => {
     expect(response.status).toBe(200);
     expect(data.status).toBe('healthy');
     expect(data.timestamp).toBeDefined();
-    expect(data.environment).toBe('test');
-  });
-
-  it('should include memory information', async () => {
-    const response = await GET();
-    const data = await response.json();
-
-    expect(data.memory).toBeDefined();
-    expect(data.memory.used).toBeGreaterThan(0);
-    expect(data.memory.total).toBeGreaterThan(0);
-  });
-
-  it('should include environment variables check', async () => {
-    const response = await GET();
-    const data = await response.json();
-
-    expect(data.environment_vars).toBeDefined();
-    expect(data.environment_vars.NODE_ENV).toBe('test');
-    expect(data.environment_vars.VERCEL_ENV).toBe('preview');
+    expect(data.version).toBeDefined();
+    // No expone env vars, memoria, ni uptime por seguridad
+    expect(data.environment_vars).toBeUndefined();
+    expect(data.memory).toBeUndefined();
+    expect(data.uptime).toBeUndefined();
   });
 
   it('should handle errors gracefully', async () => {
-    // Mock para simular un error
-    const originalProcess = global.process;
-    
-    // Simular un escenario de error
-    global.process = {
-      ...originalProcess,
-      env: {},
-    } as NodeJS.Process & { env: Record<string, string | undefined> };
-
     const response = await GET();
     const data = await response.json();
 
     // El endpoint debería manejar el caso gracefully
     expect(response.status).toBe(200);
     expect(data.status).toBe('healthy');
-    expect(data.environment_vars.NODE_ENV).toBeUndefined();
-
-    // Restaurar proceso original
-    global.process = originalProcess;
   });
 
   it('should respond quickly', async () => {

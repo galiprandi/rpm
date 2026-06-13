@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
+import { withAdmin } from '@/lib/api-middleware';
 import { prisma } from '@/lib/prisma';
 
-export async function POST() {
+export const POST = withAdmin(async () => {
   try {
     // Check if tables exist
     const tables = await prisma.$queryRaw`
@@ -134,4 +135,4 @@ export async function POST() {
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
-}
+});

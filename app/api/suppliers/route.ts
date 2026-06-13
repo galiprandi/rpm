@@ -4,11 +4,17 @@
  * Spec: /specs/suppliers.md
  */
 import { NextRequest, NextResponse } from 'next/server';
+import { getSession } from '@/lib/auth-server';
 import { getSuppliers, createSupplier, getSupplierByName } from '@/lib/services/supplierService';
 
 // GET /api/suppliers - Listar proveedores
 export async function GET(request: NextRequest) {
   try {
+    const session = await getSession();
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { searchParams } = request.nextUrl;
     const includeInactive = searchParams.get('includeInactive') === 'true';
 
@@ -27,6 +33,11 @@ export async function GET(request: NextRequest) {
 // POST /api/suppliers - Crear proveedor
 export async function POST(request: NextRequest) {
   try {
+    const session = await getSession();
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
 
     // Validaciones

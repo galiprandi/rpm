@@ -13,8 +13,8 @@ pnpm test:e2e          # Playwright tests
 # Type checking
 pnpm type-check        # npx tsc --noEmit
 
-# Debug mode server
-pnpm start:debug       # DEBUG_AUTH=true next start --port 3333
+# Dev bypass auth (solo desarrollo local)
+RPM_DEV_BYPASS_AUTH=true pnpm dev
 ```
 
 ## Estrategia de Testing
@@ -39,19 +39,19 @@ pnpm start:debug       # DEBUG_AUTH=true next start --port 3333
 - [ ] E2E screenshots validados
 - [ ] Consola sin errores
 
-## Debug Mode (QA Automation)
+## Development Auth Bypass (QA Automation)
 
-Para testing automatizado sin autenticación:
+Para testing automatizado sin autenticación OAuth:
 
 ```bash
-# Terminal 1: Iniciar servidor con debug
-pnpm start:debug
+# Terminal 1: Iniciar servidor con bypass
+RPM_DEV_BYPASS_AUTH=true pnpm dev
 
-# El servidor estará en http://localhost:3333
-# Con DEBUG_AUTH=true, el proxy omite autenticación
+# El servidor estará en http://localhost:3000
+# Con RPM_DEV_BYPASS_AUTH=true, el sistema genera sesión mock en desarrollo
 ```
 
-⚠️ **Seguridad**: NUNCA usar en producción. Solo variable de entorno, nunca query params.
+⚠️ **Seguridad**: Solo funciona en `NODE_ENV=development`. En producción no existe.
 
 ## Troubleshooting
 
@@ -60,7 +60,7 @@ pnpm start:debug
 # Puerto 3000 ocupado
 lsof -ti:3000 | xargs kill -9
 # O usar otro puerto
-pnpm start:debug  # Usa puerto 3333
+RPM_DEV_BYPASS_AUTH=true pnpm dev -- -p 3333
 ```
 
 ### Puppeteer frame detached

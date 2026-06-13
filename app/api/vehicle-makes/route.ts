@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getSession } from "@/lib/auth-server";
 import { prisma } from "@/lib/prisma";
 import { randomUUID } from "crypto";
 import { capitalizeText, normalizeText } from "@/lib/utils/format";
@@ -43,6 +44,11 @@ export async function GET(request: NextRequest) {
 // POST /api/vehicle-makes - Create or find existing make
 export async function POST(request: NextRequest) {
   try {
+    const session = await getSession();
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await request.json();
     const { name, category } = body;
 

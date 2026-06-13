@@ -241,18 +241,17 @@ curl -X GET http://localhost:3000/api/products
 ### Test con rol insuficiente
 
 ```bash
-curl -X POST http://localhost:3000/api/products \
-  -H 'Content-Type: application/json' \
-  -H 'Cookie: rpm_debug_auth=...' \
-  --data '{"name":"Test"}'
-# Expected: 403 Forbidden (si user es STAFF y requiere ADMIN)
+# Development testing with bypass
+# Start dev server with: RPM_DEV_BYPASS_AUTH=true pnpm dev
+curl -X GET http://localhost:3000/api/products
+# Expected: 200 OK (bypass auth en desarrollo con RPM_DEV_BYPASS_AUTH=true)
 ```
 
-### Test con rol correcto
+### Test con rol correcto (producción)
 
 ```bash
 curl -X GET http://localhost:3000/api/products \
-  -H 'Cookie: rpm_debug_auth=...' \
+  -H 'Cookie: better-auth.session=...' \
 # Expected: 200 OK con datos
 ```
 

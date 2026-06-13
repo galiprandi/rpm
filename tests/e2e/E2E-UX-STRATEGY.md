@@ -20,7 +20,7 @@
 ### 1. Preparación Rápida (15s)
 ```bash
 # Servidor corriendo
-DEBUG_AUTH_ENABLED=true pnpm dev -p 3333
+RPM_DEV_BYPASS_AUTH=true pnpm dev -p 3333
 
 # Test data listo
 tests/e2e/product-import-test.csv ✅

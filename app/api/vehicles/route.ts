@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getSession } from "@/lib/auth-server";
 import { prisma } from "@/lib/prisma";
 import { capitalizeText } from "@/lib/utils/format";
 
@@ -19,6 +20,11 @@ interface CreateVehicleInput {
 // GET /api/vehicles - List vehicles with optional filters
 export async function GET(request: NextRequest) {
   try {
+    const session = await getSession();
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { searchParams } = request.nextUrl;
     const customerId = searchParams.get("customerId");
     const identifier = searchParams.get("identifier");
@@ -70,6 +76,11 @@ export async function GET(request: NextRequest) {
 // POST /api/vehicles - Create vehicle/asset
 export async function POST(request: NextRequest) {
   try {
+    const session = await getSession();
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body: CreateVehicleInput = await request.json();
     const {
       identifier,

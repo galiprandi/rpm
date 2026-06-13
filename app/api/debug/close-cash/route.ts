@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
+import { withAdmin } from '@/lib/api-middleware';
 import { prisma } from '@/lib/prisma';
 
 // POST /api/debug/close-cash - Debug endpoint to force close cash register
-export async function POST() {
+export const POST = withAdmin(async () => {
   try {
     // Find the latest OPENING movement
     const lastOpening = await prisma.cash_movement.findFirst({
@@ -39,4 +40,4 @@ export async function POST() {
       { status: 500 }
     );
   }
-}
+});

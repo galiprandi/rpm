@@ -113,7 +113,7 @@ Acceso directo desde el menú lateral:
 ## Auth / Session
 
 - App usa Better Auth (`/api/auth/session`)
-- En dev con `DEBUG_AUTH="true"`, el middleware bypass auth
+- En dev con `RPM_DEV_BYPASS_AUTH=true`, se genera sesión mock automáticamente
 - Si da 404 en `/api/auth/session`, revisar que el server esté corriendo
 
 ---

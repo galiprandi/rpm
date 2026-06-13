@@ -167,7 +167,7 @@ pnpm exec playwright test tests/e2e/product-importer-dry-run.spec.ts --debug
    ```bash
    pnpm dev
    # or
-   DEBUG_AUTH=true pnpm run start:debug
+   RPM_DEV_BYPASS_AUTH=true pnpm dev
    ```
 
 2. **Database seeded** with:
