@@ -38,14 +38,28 @@ export default function PurchaseVouchersLoading() {
 
       <CrudStats stats={stats} />
 
-      <div className="bg-card rounded-lg border shadow-xs p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-8 w-64" />
-          <Skeleton className="h-10 w-72" />
+      <div className="mt-10 space-y-4">
+        <div className="flex justify-between items-center">
+          <Skeleton className="h-8 w-40" />
+          <div className="flex gap-2">
+            <Skeleton className="h-10 w-64" />
+            <Skeleton className="h-10 w-32" />
+          </div>
         </div>
-        <div className="space-y-2">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} className="h-12 w-full" />
+        <div className="border rounded-lg overflow-hidden bg-card">
+          <div className="bg-muted/50 p-4 border-b">
+            <div className="flex gap-4">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <Skeleton key={i} className="h-4 flex-1" />
+              ))}
+            </div>
+          </div>
+          {[1, 2, 3, 4, 5].map((row) => (
+            <div key={row} className="p-4 border-b last:border-0 flex gap-4 items-center">
+              {[1, 2, 3, 4, 5, 6].map((col) => (
+                <Skeleton key={col} className="h-10 flex-1" />
+              ))}
+            </div>
           ))}
         </div>
       </div>

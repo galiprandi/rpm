@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { useUI } from "@/components/ui/UIProvider";
 import { ProductServiceSelector, type SelectedItem } from "@/components/ui/ProductServiceSelector";
 import { calculateFinalPrice, type RoundingRule } from "@/lib/utils/rounding";
-import { Plus, CheckCircle, Package, AlertTriangle, TrendingDown, Trash2, Loader2 } from "lucide-react";
+import { Plus, CheckCircle, Package, AlertTriangle, TrendingDown, Trash2, Loader2, DollarSign, Hash } from "lucide-react";
 import { QuickProductDialog } from "./QuickProductDialog";
 import {
   Table,
@@ -584,34 +584,42 @@ export function AddVoucherItemDialog({
           {selectedProduct && (
             <div className="flex gap-4">
               <div className="flex-1 space-y-2">
-                <Label htmlFor="quantity">Cantidad *</Label>
-                <Input
-                  id="quantity"
-                  type="number"
-                  min={1}
-                  required
-                  value={quantity}
-                  onChange={(e) => setQuantity(parseInt(e.target.value) || 0)}
-                  className={quantity <= 0 ? "border-red-300 focus-visible:ring-red-200" : ""}
-                />
+                <Label htmlFor="quantity" required>Cantidad</Label>
+                <div className="relative">
+                  <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+                  <Input
+                    id="quantity"
+                    type="number"
+                    min={1}
+                    required
+                    aria-required="true"
+                    value={quantity}
+                    onChange={(e) => setQuantity(parseInt(e.target.value) || 0)}
+                    className={`pl-9 ${quantity <= 0 ? "border-red-300 focus-visible:ring-red-200" : ""}`}
+                  />
+                </div>
               </div>
 
               <div className="flex-1 space-y-2">
-                <Label htmlFor="unitCost">Precio ($) *</Label>
-                <Input
-                  id="unitCost"
-                  type="number"
-                  step="1"
-                  min={0}
-                  required
-                  value={unitCost || ""}
-                  onChange={(e) => {
-                    const value = parseFloat(e.target.value) || 0;
-                    setUnitCost(value);
-                    recalculatePrices(value, selectedProduct.allPrices);
-                  }}
-                  className={unitCost <= 0 ? "border-red-300 focus-visible:ring-red-200" : ""}
-                />
+                <Label htmlFor="unitCost" required>Precio ($)</Label>
+                <div className="relative">
+                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+                  <Input
+                    id="unitCost"
+                    type="number"
+                    step="1"
+                    min={0}
+                    required
+                    aria-required="true"
+                    value={unitCost || ""}
+                    onChange={(e) => {
+                      const value = parseFloat(e.target.value) || 0;
+                      setUnitCost(value);
+                      recalculatePrices(value, selectedProduct.allPrices);
+                    }}
+                    className={`pl-9 ${unitCost <= 0 ? "border-red-300 focus-visible:ring-red-200" : ""}`}
+                  />
+                </div>
               </div>
             </div>
           )}
