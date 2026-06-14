@@ -301,7 +301,7 @@ export default function SuppliersClient({ initialSuppliers }: SuppliersClientPro
         onCreate={() => setIsCreateDialogOpen(true)}
         hideCreateAction
         columns={columns}
-        emptyIcon={<Truck className="h-12 w-12 mx-auto text-muted-foreground mb-4" />}
+        emptyIcon={<Truck className="h-12 w-12 mx-auto text-muted-foreground/20 mb-4" />}
         emptyMessage="No hay proveedores creados. Haz clic en 'Nuevo Proveedor' para crear el primero."
         createButtonText="Proveedor"
         tableTitle="Listado de Proveedores"

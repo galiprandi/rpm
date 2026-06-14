@@ -142,6 +142,9 @@ Cada modificación debe dejar el archivo en mejor estado:
 - **Financial Status Colors**: Usar `emerald-600` para saldos positivos/cuadrados y `red-600` para deudas/egresos/faltantes para mantener consistencia financiera.
 - **Settings Layout**: Las páginas de configuración deben usar un `max-w-3xl mx-auto` para el contenedor principal y tarjetas con `overflow-hidden` y `CardHeader` con `bg-muted/20`.
 - **Standardized List Row Entity Pattern**: Las celdas de tabla para entidades principales (Proveedores, Listas de Precios, Categorías, Métodos de Pago, Productos en Auditoría) deben usar un contenedor `w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20` con un icono Lucide de `h-4 w-4`, emparejado con tipografía `font-semibold tracking-tight`.
+- **Form UX Enhancement**: Todo formulario administrativo debe usar iconos contextuales absolutos con `pl-9` en sus inputs y `font-mono` para campos técnicos.
+- **Empty State UI**: Los iconos decorativos en estados vacíos deben usar `text-muted-foreground/20` para evitar ruido visual.
+- **High-Fidelity Skeletons**: Los archivos `loading.tsx` deben usar esqueletos que imiten las proporciones reales de las columnas para mitigar el layout shift.
 
 ---
 
