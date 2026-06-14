@@ -13,7 +13,9 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
+      with:
+        fetch-depth: 0
+
     - name: Install pnpm
       uses: pnpm/action-setup@v4
       with:
@@ -40,6 +42,9 @@ jobs:
     - name: Install dependencies
       run: pnpm install --frozen-lockfile
 
+    - name: Generate Prisma Client
+      run: npx prisma generate
+
     - name: Validate Prisma migrations (idempotent DDL)
       run: npx tsx scripts/validate-migrations.ts --ci
 
@@ -62,8 +67,8 @@ jobs:
           echo "$CHANGED_FILES"
           echo "$CHANGED_FILES" | xargs pnpm lint
           
-          echo "Type-checking changed files:"
-          echo "$CHANGED_FILES" | xargs pnpm tsc --noEmit
+          echo "Type-checking project:"
+          pnpm type-check
         else
           echo "No TypeScript/JavaScript files changed, skipping lint and type-check"
         fi
@@ -79,7 +84,9 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
+      with:
+        fetch-depth: 0
+
     - name: Install pnpm
       uses: pnpm/action-setup@v4
       with:

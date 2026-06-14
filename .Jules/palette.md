@@ -21,3 +21,7 @@
 ## 2026-06-14 - Accessible Form Collapsibles and Icon Patterns
 **Learning:** Collapsible form sections (like 'Datos de Facturación') require explicit ARIA attributes (`aria-expanded`, `aria-controls`) paired with structural IDs to be accessible. When implementing the Form UX Enhancement Pattern with shadcn/ui `Select` components, the `SelectTrigger` needs `pl-9` and the icon needs `z-10` to ensure visual and functional correctness.
 **Action:** Always include `aria-expanded` and `aria-controls` on form section toggles. Ensure `SelectTrigger` has `pl-9` when icons are used.
+
+## 2026-06-16 - Form UX Consistency in Payment Methods
+**Learning:** Applying the Form UX Enhancement Pattern to technical configuration forms (like Payment Methods) provides a more professional feel. Standardizing the 'Code' field with `font-mono` and relevant Lucide icons (e.g., `Hash`) improves scannability. Replacing native checkboxes with the project's custom `Checkbox` component ensures consistent styling and accessibility, provided the `label` prop is used correctly.
+**Action:** Consistently use the Icon + Input wrapper pattern and the custom `Checkbox` component in all administrative forms to maintain the Micro-UX standard.
