@@ -10,7 +10,7 @@ Gestionar la base de datos de clientes, sus vehículos asociados (para el taller
 - **Vehículos**: Vincular uno o más vehículos a un cliente por número de patente/identificador.
 - **Cuenta Corriente (Crédito)**: Vender a un cliente "a cuenta", generando una deuda que actualiza el campo `balance` del cliente.
 - **Saldos a favor**: Registro de notas de crédito que pueden impactar en el balance positivo del cliente.
-- **Creación vía Bot**: "Ger, crea un cliente con nombre Pedro Corbalán" -> El bot recopila datos, muestra resumen y pide confirmación antes de crear.
+- **Creación vía Bot**: "Nitro, crea un cliente con nombre Pedro Corbalán" -> El bot recopila datos, muestra resumen y pide confirmación antes de crear.
 
 ## 3. Restricciones (Qué NO hace / Fuera de alcance)
 - **RES-01**: No emite resúmenes de cuenta en PDF de forma automatizada en esta fase.

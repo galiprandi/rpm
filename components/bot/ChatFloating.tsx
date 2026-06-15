@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useChat } from '@ai-sdk/react';
 import { MessageSquare, X, Send, Plus, FileImage, Camera as CameraIcon, Maximize2, Minimize2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,10 +11,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Streamdown } from 'streamdown';
 
 export function ChatFloating({ isOpen: controlledIsOpen, onOpenChange }: { isOpen?: boolean; onOpenChange?: (open: boolean) => void } = {}) {
   const isMobile = useIsMobile();
+  const isMac = typeof navigator !== 'undefined' && navigator.platform?.toUpperCase().includes('MAC');
+  const shortcutLabel = isMac ? '⌘Shift+M' : 'Ctrl+Shift+M';
   const [internalIsOpen, setInternalIsOpen] = useState(false);
   const isOpen = controlledIsOpen !== undefined ? controlledIsOpen : internalIsOpen;
   const setIsOpen = onOpenChange || setInternalIsOpen;
@@ -25,18 +25,91 @@ export function ChatFloating({ isOpen: controlledIsOpen, onOpenChange }: { isOpe
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  const { messages, input, handleInputChange, handleSubmit, status, stop, error } = useChat({
-    api: '/api/bot/chat',
-    body: {
-      context: { role: 'ADMIN', url: { path: '/', search: '', hash: '' } },
-    },
-  });
+  const [localInput, setLocalInput] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [chatMessages, setChatMessages] = useState<any[]>([]);
+  const [error, setError] = useState<Error | null>(null);
+   
+  // Manual API call since useChat hook doesn't provide handleSubmit due to v6/v7 incompatibility
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const messageText = localInput?.trim();
+    
+    if (!messageText && !attachedFile) return;
+    
+    setIsSubmitting(true);
+    setError(null);
+    
+    // Add user message to chat
+    const userMessage = {
+      role: 'user',
+      content: messageText,
+      id: Date.now().toString(),
+    };
+    setChatMessages(prev => [...prev, userMessage]);
+    
+    try {
+      const response = await fetch('/api/bot/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: userMessage,
+          context: { role: 'ADMIN', url: { path: '/', search: '', hash: '' } },
+        }),
+      });
+      
+      if (!response.ok) throw new Error('Failed to send message');
+      
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error('No response body');
+      
+      let assistantMessage = '';
+      const decoder = new TextDecoder();
+      
+      // Add empty assistant message placeholder
+      setChatMessages(prev => [...prev, {
+        role: 'assistant',
+        content: '',
+        id: (Date.now() + 1).toString(),
+      }]);
+      
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        const chunk = decoder.decode(value);
+        assistantMessage += chunk;
+        
+        // Update assistant message in real-time
+        setChatMessages(prev => {
+          const updated = [...prev];
+          const lastMessage = updated[updated.length - 1];
+          if (lastMessage?.role === 'assistant') {
+            lastMessage.content = assistantMessage;
+          }
+          return updated;
+        });
+      }
+    } catch (err) {
+      console.error('Error sending message:', err);
+      setError(err as Error);
+      setChatMessages(prev => [...prev, {
+        role: 'assistant',
+        content: 'Error al enviar mensaje. Por favor intenta nuevamente.',
+        id: Date.now().toString(),
+      }]);
+    } finally {
+      setIsSubmitting(false);
+      setLocalInput('');
+      setAttachedFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   // Auto scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [chatMessages]);
 
   // Auto-focus input when chat opens
   useEffect(() => {
@@ -47,11 +120,18 @@ export function ChatFloating({ isOpen: controlledIsOpen, onOpenChange }: { isOpe
     }
   }, [isOpen]);
 
-  // Handle keyboard shortcuts
+  // Handle keyboard shortcuts (global - works even when chat is closed)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Cmd+Shift+M (Mac) / Ctrl+Shift+M (Win/Linux) to toggle chat
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'M') {
+        e.preventDefault();
+        setIsOpen(!isOpen);
+        return;
+      }
+
       if (!isOpen) return;
-      
+
       // Escape to close chat
       if (e.key === 'Escape') {
         setIsOpen(false);
@@ -62,15 +142,6 @@ export function ChatFloating({ isOpen: controlledIsOpen, onOpenChange }: { isOpe
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, setIsOpen]);
-
-  const onSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (input.trim() || attachedFile) {
-      handleSubmit(e);
-      setAttachedFile(null);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    }
-  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -113,7 +184,7 @@ export function ChatFloating({ isOpen: controlledIsOpen, onOpenChange }: { isOpe
           {/* Header */}
           <div className="p-4 border-b flex items-center justify-between">
             <div>
-              <h3 className="font-semibold">Ger</h3>
+              <h3 className="font-semibold">Nitro</h3>
               <p className="text-sm text-muted-foreground">Asistente de operaciones</p>
             </div>
             <div className="flex items-center gap-1">
@@ -140,14 +211,14 @@ export function ChatFloating({ isOpen: controlledIsOpen, onOpenChange }: { isOpe
           {/* Messages */}
           <div className="flex-1 p-4 overflow-y-auto">
             <div className="space-y-4">
-              {messages.length === 0 && (
+              {chatMessages.length === 0 && (
                 <div className="text-center text-muted-foreground py-8">
                   <MessageSquare className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                  <p>¡Hola! Soy Ger, tu asistente virtual.</p>
+                  <p>¡Hola! Soy Nitro, tu asistente virtual.</p>
                   <p className="text-sm mt-2">¿En qué puedo ayudarte hoy?</p>
                 </div>
               )}
-              {messages.map((message) => (
+              {chatMessages.map((message: any) => (
                 <div
                   key={message.id}
                   className={`flex ${
@@ -161,30 +232,16 @@ export function ChatFloating({ isOpen: controlledIsOpen, onOpenChange }: { isOpe
                         : 'bg-muted'
                     }`}
                   >
-                    {message.parts.map((part, i) => {
-                      if (part.type === 'text') {
-                        return <p key={i} className="text-sm whitespace-pre-wrap">{part.text}</p>;
-                      }
-                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                      const toolPart = part as any;
-                      if (toolPart.type === 'tool-consultarStock' && toolPart.state === 'output-available') {
-                        return (
-                          <div key={i} className="text-sm prose prose-sm max-w-none">
-                            <Streamdown>{toolPart.output as string}</Streamdown>
-                          </div>
-                        );
-                      }
-                      return null;
-                    })}
+                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                   </div>
                 </div>
               ))}
               {/* Loading indicator */}
-              {(status === 'submitted' || status === 'streaming') && (
+              {isSubmitting && (
                 <div className="flex justify-start">
                   <div className="bg-muted rounded-lg p-3 flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    <span className="text-sm text-muted-foreground">Ger está pensando...</span>
+                    <span className="text-sm text-muted-foreground">Nitro está pensando...</span>
                   </div>
                 </div>
               )}
@@ -258,18 +315,18 @@ export function ChatFloating({ isOpen: controlledIsOpen, onOpenChange }: { isOpe
               </DropdownMenu>
               <Input
                 ref={inputRef}
-                value={input}
-                onChange={handleInputChange}
-                placeholder="Escribe tu mensaje..."
+                value={localInput}
+                onChange={(e) => setLocalInput(e.target.value)}
+                placeholder={`Escribe tu mensaje... (${shortcutLabel} para cerrar)`}
                 className="flex-1"
-                disabled={status !== 'ready'}
+                disabled={isSubmitting}
               />
-              {(status === 'submitted' || status === 'streaming') ? (
-                <Button type="button" variant="ghost" size="icon" onClick={() => stop()}>
+              {isSubmitting ? (
+                <Button type="button" variant="ghost" size="icon" onClick={() => setIsSubmitting(false)}>
                   <X className="h-4 w-4" />
                 </Button>
               ) : (
-                <Button type="submit" size="icon" disabled={!input.trim() && !attachedFile}>
+                <Button type="submit" size="icon" disabled={!localInput?.trim() && !attachedFile}>
                   <Send className="h-4 w-4" />
                 </Button>
               )}

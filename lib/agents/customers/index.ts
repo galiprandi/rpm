@@ -1,21 +1,15 @@
-/**
- * Customers Agent - Subagent specialized in customer management
- *
- * Especificaciones relacionadas:
- * - /specs/features/ai-bot-ger.md (Arquitectura Multi-Agente)
- * - /specs/features/customers.md
- */
-
 import { createAgent } from '../utils/createAgent';
-import { draftCustomerTool } from './tools/draftCustomer';
-import { searchCustomersTool } from './tools/searchCustomers';
-import { createCustomerTool } from './tools/createCustomer';
+import { customerTools } from '@/lib/services/customer';
 
-export const customersAgent = createAgent({
+/**
+ * Customer Agent - Specialized agent for customer management
+ * 
+ * This agent handles all customer-related operations including:
+ * - Creating customers (draft + confirm)
+ * - Searching customers
+ * - Managing customer data
+ */
+export const customerAgent = createAgent({
   instructions: './instructions.md',
-  tools: {
-    draftCustomer: draftCustomerTool,
-    searchCustomers: searchCustomersTool,
-    createCustomer: createCustomerTool,
-  },
+  tools: customerTools,
 });

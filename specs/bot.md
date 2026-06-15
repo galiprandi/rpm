@@ -50,9 +50,9 @@ En lugar de crear UIs específicas para cada nueva funcionalidad, desarrollamos:
 ## Identidad del Empleado Virtual
 
 ### Nombre
-**"Ger"** 
+**"Nitro"** 
 
-> *Corto, amigable, fácil de decir en el taller. "Che Ger, dame la OT".*
+> *Corto, amigable, fácil de decir en el taller. "Che Nitro, dame la OT".*
 
 ### Rol en la Empresa
 - **Cargo**: Asistente de Operaciones
@@ -68,7 +68,7 @@ En lugar de crear UIs específicas para cada nueva funcionalidad, desarrollamos:
 - El bot está siempre disponible, no se cierra automáticamente
 
 **El staff puede llamarlo de cualquier forma natural:**
-- "Ger, dame mis tareas"
+- "Nitro, dame mis tareas"
 - "Che, ¿qué tengo pendiente?"
 - "Bot, pasá la 1245 a lista"
 - "Ayudame con el checklist"
@@ -114,25 +114,25 @@ Antes de:
 - Eliminar/Eliminar (soft)
 
 ```
-Ger: "¿Confirmás pasar la OT #1245 a 'Lista'?"
+Nitro: "¿Confirmás pasar la OT #1245 a 'Lista'?"
       [Confirmar] [Cancelar] [Ver detalle primero]
 ```
 - **URL actual de la vista** (especialmente importante en desktop para entender contexto de la página donde está el usuario)
 
 #### 3. Context Awareness
-Ger recuerda:
+Nitro recuerda:
 - Última OT consultadaiendo en /adm/work-orders/1245?"
 ```
 
 ```
 Usuaro  /am/prductspage=2: "¿Hay stock?"
-Ger: "Viendo que estás en la página de productos (página 2)...
+Nitro: "Viendo que estás en la página de productos (página 2)...
 - Checklist en progreso
 - Conversación reciente (últimos 5 min)
 
 ```
 Juan: "Pasar a lista"
-Ger: "¿La #1245 (Hilux) q numeradasue estabas viendo?"
+Nitro: "¿La #1245 (Hilux) q numeradasue estabas viendo?"
 ```
 
 #### 4. Fallbacks Gráciles
@@ -148,10 +148,10 @@ ué qhce con?
        3. Ver detalle
 ```
 Usuario: "La otra"
-Ger: "¿La Hilux #1245 o la Ranger #1246?"
+Nitro: "¿La Hilux #1245 o la Ranger #1246?"
 
 Usuario: "Terminé"
-Ger: "¿Querés pasar la OT #1245 a 'Lista'? O ¿subir fotos?"
+Nitro: "¿Querés pasar la OT #1245 a 'Lista'? O ¿subir fotos?"
 ```
 
 #### 5. Proactividad Acotada
@@ -168,7 +168,7 @@ Ofrece ayuda relevante, no spam:
 ```
 [9:00 AM - Juan abre app]
 
-Ger: "¡Buen día Juan! 🌅 Tenés 3 OTs para hoy:
+Nitro: "¡Buen día Juan! 🌅 Tenés 3 OTs para hoy:
        
        1️⃣ #1245 Hilux - En Progreso (empezaste ayer)
        2️⃣ #1246 Ranger - Confirmada 10:00
@@ -177,7 +177,7 @@ Ger: "¡Buen día Juan! 🌅 Tenés 3 OTs para hoy:
        ¿Por cuál arrancamos?"
 
 Juan: "La 45"
-Ger: "#1245 Toyota Hilux (AB123CD)
+Nitro: "#1245 Toyota Hilux (AB123CD)
        Estado: En Progreso
        Servicio: Instalación barra LED + polarizado
        
@@ -187,7 +187,7 @@ Ger: "#1245 Toyota Hilux (AB123CD)
 ### Flujo 2: Durante el Trabajo
 ```
 Juan: "Checklist"
-Ger: "Checklist de Ingreso - OT #1245:
+Nitro: "Checklist de Ingreso - OT #1245:
        
        ⬜ Estado óptico previo documentado
        ☑️ Llaves recibidas
@@ -197,10 +197,10 @@ Ger: "Checklist de Ingreso - OT #1245:
        ¿Querés completar el que falta?"
 
 Juan: "Sí"
-Ger: "¿Estado óptico previo o odómetro?"
+Nitro: "¿Estado óptico previo o odómetro?"
 
 Juan: "Odometro 45233"
-Ger: "✅ Guardado: Odómetro 45.233 km
+Nitro: "✅ Guardado: Odómetro 45.233 km
        
        ¿Completamos el checklist de óptico?"
 ```
@@ -208,13 +208,13 @@ Ger: "✅ Guardado: Odómetro 45.233 km
 ### Flujo 3: Finalización
 ```
 Juan: "Terminé la instalación"
-Ger: "¡Buenísimo! ¿Todo salió bien?"
+Nitro: "¡Buenísimo! ¿Todo salió bien?"
 
 Juan: "Sí, todo ok"
-Ger: "¿Confirmás pasar la #1245 a 'Lista para entrega'?"
+Nitro: "¿Confirmás pasar la #1245 a 'Lista para entrega'?"
 
 Juan: "Sí confirmo"
-Ger: "✅ OT #1245 ahora está 'Lista para entrega'
+Nitro: "✅ OT #1245 ahora está 'Lista para entrega'
        
        ¿Querés:
        • Subir fotos antes/después
@@ -225,7 +225,7 @@ Ger: "✅ OT #1245 ahora está 'Lista para entrega'
 ### Flujo 4: Consulta Rápida (Vendedora)
 ```
 María: "Tenemos polarizados 3M?"
-Ger: "📦 Stock Polarizados 3M:
+Nitro: "📦 Stock Polarizados 3M:
        
        ✅ 3M CS35 (35% oscuridad) - 12 rollos
        ✅ 3M CS20 (20% oscuridad) - 8 rollos
@@ -238,7 +238,7 @@ Ger: "📦 Stock Polarizados 3M:
 
 ## Límites y Fronteras
 
-### Qué NO Hace Ger
+### Qué NO Hace Nitro
 | No hace | Razón | Alternativa |
 |---------|-------|-------------|
 | Modificar precios de productos | Solo ADMIN | "Eso lo tiene que hacer el admin desde la PC" |
@@ -683,7 +683,7 @@ Tu próxima OT es:
 **María** → `"Tenés láminas de seguridad para una Amarok?"`
 
 ```
-Ger:
+Nitro:
 "📦 Stock Láminas de Seguridad:
 
 ✅ **3M CS35** (35% osc) - 8 rollos - $45.000/rollo
@@ -696,7 +696,7 @@ Ger:
 **María** → `"Para Carlos Gómez, patente AD234IJ, solo la CS35"`
 
 ```
-Ger:
+Nitro:
 "📋 Presupuesto para Carlos Gómez - Amarok (AD234IJ):
 
 **Items**:
@@ -718,7 +718,7 @@ IVA (21%): $45.150
 **Juan** → `"Checklist de ingreso de la 1235"`
 
 ```
-Ger:
+Nitro:
 "# 📋 Checklist de Ingreso - OT #1235 (Ranger AC456EF)
 
 **Progreso**: 2 de 4 completados
@@ -734,7 +734,7 @@ Ger:
 **Juan** → `"Sí, 45800 km"`
 
 ```
-Ger:
+Nitro:
 "✅ **Guardado**: Odómetro 45.800 km
 
 # 📋 Checklist de Ingreso - OT #1235
@@ -752,7 +752,7 @@ Ger:
 **Juan** → `"GPS y cargador"`
 
 ```
-Ger:
+Nitro:
 "✅ **Guardado**: GPS TomTom + Cargador USB
 Stack Tecnológico
 
@@ -769,7 +769,7 @@ Stack Tecnológico
 
 ### System Prompts por Rol
 
-Ger usa diferentes system prompts según el rol del usuario:
+Nitro usa diferentes system prompts según el rol del usuario:
 
 **ADMIN:**
 - Acceso completo a todas las operaciones
@@ -786,7 +786,7 @@ Ger usa diferentes system prompts según el rol del usuario:
 **EJEMPLO:**
 ```typescript
 const getSystemPrompt = (role: UserRole) => {
-  const basePrompt = "Eres Ger, asistente de operaciones...";
+  const basePrompt = "Eres Nitro, asistente de operaciones...";
   const roleSpecific = {
     ADMIN: "Tienes acceso completo al sistema...",
     STAFF: "Solo puedes operar sobre tus propias OTs y funciones de staff...",
@@ -797,7 +797,7 @@ const getSystemPrompt = (role: UserRole) => {
 
 ### Contexto desde URL
 
-Ger lee la URL actual para entender el contexto:
+Nitro lee la URL actual para entender el contexto:
 
 ```typescript
 const urlContext = {
@@ -855,7 +855,7 @@ import { openai } from '@ai-sdk/openai';
 import { z } from 'zod';
 import { composeSystemPrompt } from './promptComposer';
 
-export class GerAgent {
+export class NitroAgent {
   private systemPrompt: string;
   private userContext: UserContext;
   private availableTools: Record<string, Tool>;
@@ -919,7 +919,7 @@ export class GerAgent {
           notes: z.string().optional(),
         }),
         execute: async ({ workOrderId, newStatus }) => {
-          // Ger pedirá confirmación antes de ejecutar (en el mensaje)
+          // Nitro pedirá confirmación antes de ejecutar (en el mensaje)
           return await workOrderService.updateStatus(workOrderId, newStatus);
         },
       });
@@ -987,15 +987,15 @@ import { getToolsDescriptionForRole } from './tools';
 export function composeSystemPrompt(role: UserRole): string {
   // 1. Archivos base compartidos (conocimiento común)
   const basePrompts = [
-    readFileSync('./prompts/ger-identity.md', 'utf-8'),
-    readFileSync('./prompts/ger-personality.md', 'utf-8'),
-    readFileSync('./prompts/ger-behavior.md', 'utf-8'),
-    readFileSync('./prompts/ger-formatting.md', 'utf-8'), // 📋 Formato de presentación
+    readFileSync('./prompts/nitro-identity.md', 'utf-8'),
+    readFileSync('./prompts/nitro-personality.md', 'utf-8'),
+    readFileSync('./prompts/nitro-behavior.md', 'utf-8'),
+    readFileSync('./prompts/nitro-formatting.md', 'utf-8'), // 📋 Formato de presentación
   ];
   
   // 2. Archivo específico del rol
   const rolePrompt = readFileSync(
-    `./prompts/ger-${role.toLowerCase()}.md`,
+    `./prompts/nitro-${role.toLowerCase()}.md`,
     'utf-8'
   );
   
@@ -1019,13 +1019,13 @@ export function composeSystemPrompt(role: UserRole): string {
 
 ```
 lib/bot/prompts/
-├── ger-identity.md           # Quién es Ger (nombre, cargo, invocación)
-├── ger-personality.md        # Cómo habla (rasgos, tonos)
-├── ger-behavior.md           # Reglas base (confirmaciones, fallbacks)
-├── ger-formatting.md         # 📋 Cómo presenta la info (formatos estándar)
-├── ger-technician.md         # Específico técnico + placeholder tools
-├── ger-seller.md             # Específico vendedor + placeholder tools
-└── ger-admin.md              # Específico admin + placeholder tools
+├── nitro-identity.md           # Quién es Nitro (nombre, cargo, invocación)
+├── nitro-personality.md        # Cómo habla (rasgos, tonos)
+├── nitro-behavior.md           # Reglas base (confirmaciones, fallbacks)
+├── nitro-formatting.md         # 📋 Cómo presenta la info (formatos estándar)
+├── nitro-technician.md         # Específico técnico + placeholder tools
+├── nitro-seller.md             # Específico vendedor + placeholder tools
+└── nitro-admin.md              # Específico admin + placeholder tools
 ```
 
 ### API Endpoint
@@ -1140,7 +1140,7 @@ export default function ChatPage() {
 
 ## Ventajas del Enfoque
 
-| Aspecto | UI Tradicional | Ger (Multi-Agente) |
+| Aspecto | UI Tradicional | Nitro (Multi-Agente) |
 |---------|---------------|-------------------|
 | **Nueva funcionalidad** | Diseño + UI + Test (2-3 días) | Servicio + Tool (4-6 horas) |
 | **Mobile optimization** | Responsive complejo | Chat nativo mobile |

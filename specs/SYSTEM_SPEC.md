@@ -16,7 +16,7 @@ Define exactamente qué hace cada parte de la aplicación, qué no hace, y cuál
 - [Clientes y Cuenta Corriente](features/customers.md) - ABM clientes, vehículos, saldos a favor.
 - [Usuarios, Roles y Autenticación](features/users-and-auth.md) - Better Auth, ABM usuarios.
 - [Proveedores](features/suppliers.md) - Compras y proveedores.
-- [Bot GER (IA)](features/ai-bot-ger.md) - Vercel AI SDK, Tools, asistencia técnica inteligente.
+- [Bot NITRO (IA)](features/ai-bot-nitro.md) - Vercel AI SDK, Tools, asistencia técnica inteligente.
 
 ## 3. Propuestas No Implementadas (`/specs/proposals/`)
 Aquí residen ideas, propuestas o features diseñadas pero que aún no se han llevado a código, mantenidas para referencia futura.

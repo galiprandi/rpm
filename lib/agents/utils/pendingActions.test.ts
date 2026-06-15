@@ -2,7 +2,7 @@
  * Tests for pendingActions utility
  *
  * Especificaciones relacionadas:
- * - /specs/features/ai-bot-ger.md (Sesión Conversacional, Confirmación Obligatoria)
+ * - /specs/features/ai-bot-nitro.md (Sesión Conversacional, Confirmación Obligatoria)
  *
  * Alcance del test:
  * - Validación de guardado y recuperación de acciones pendientes

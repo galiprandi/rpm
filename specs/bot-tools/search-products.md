@@ -1,7 +1,7 @@
 # Service: `searchService`
 
 > **Estado**: ✅ Implementado  
-> **Fase**: Fase 2 - Bot Ger Core Services  
+> **Fase**: Fase 2 - Bot Nitro Core Services  
 > **Tipo**: Servicio interno (no es tool visible para el modelo)
 
 ---

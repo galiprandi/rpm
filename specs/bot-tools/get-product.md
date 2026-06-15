@@ -1,7 +1,7 @@
 # Tool: `get_product`
 
 > **Estado**: ✅ Implementado  
-> **Fase**: Fase 2 - Bot Ger Core Tools  
+> **Fase**: Fase 2 - Bot Nitro Core Tools  
 > **Dependencias**: `productService`, `searchProducts` (fallback)
 
 ---
@@ -146,7 +146,7 @@ Encontré 3 productos. Si no ves el que buscás, refiná la búsqueda o usá la 
 
 ### Contexto de URL (si aplica)
 
-Si `currentUrl.path` incluye `/products`, Ger puede responder:
+Si `currentUrl.path` incluye `/products`, Nitro puede responder:
 > *"Viendo que estás en la lista de productos, ¿querés que te abra el detalle de alguno?"*
 
 ---
@@ -221,7 +221,7 @@ describe('productToMarkdown', () => {
 ## Vinculación
 
 - **Spec principal**: [`/specs/bot.md`](../bot.md) - Arquitectura general del bot
-- **Spec formatting**: [`/specs/ger-formatting.md`](../ger-formatting.md) - Estilo de respuestas
+- **Spec formatting**: [`/specs/nitro-formatting.md`](../nitro-formatting.md) - Estilo de respuestas
 - **Checklist implementación**: [`/specs/checklist-crud-implementation.md`](../checklist-crud-implementation.md) - Proceso de desarrollo
 
 ---

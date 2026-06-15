@@ -1,4 +1,5 @@
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import { createGroq } from '@ai-sdk/groq';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import logger from './logger';
@@ -7,13 +8,18 @@ const google = createGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
 });
 
+const groq = createGroq({
+  apiKey: process.env.GROQ_API_KEY,
+});
+
 /**
  * Create agent helper - Centralized agent creation
+ * Returns configuration object (v6/v7 compatible pattern)
  *
  * @param options - Agent configuration options
  * @param options.instructions - System prompt instructions (can be a string or path to .md file)
  * @param options.tools - Tools object for the agent
- * @param options.model - Optional model name (defaults to GEMINI_MODEL env var or gemini-1.5-flash-latest)
+ * @param options.model - Optional model name (defaults to GROQ_MODEL env var or llama-3.3-70b-versatile)
  * @returns Agent configuration object
  */
 
@@ -37,8 +43,12 @@ export function createAgent(options: {
     }
   }
 
+  // Use Groq if API key is available, otherwise fall back to Google
+  const useGroq = !!process.env.GROQ_API_KEY;
+  const model = options.model || (useGroq ? process.env.GROQ_MODEL : process.env.GEMINI_MODEL) || (useGroq ? 'llama-3.3-70b-versatile' : 'gemini-1.5-flash-latest');
+
   return {
-    model: google(options.model || process.env.GEMINI_MODEL || 'gemini-1.5-flash-latest'),
+    model: useGroq ? groq(model) : google(model),
     instructions: systemPrompt,
     tools: options.tools,
   };
