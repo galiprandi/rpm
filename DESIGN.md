@@ -128,3 +128,22 @@ secondaryActions={[
 
 - **Standardized List Row Entity Pattern**: Para listados de entidades (Proveedores, Listas de Precios, Métodos de Pago, Categorías, Productos en Auditoría), la primera columna debe usar un contenedor de `8x8` (`w-8 h-8`) con `rounded-lg`, `bg-primary/10`, `shadow-sm` y `border border-primary/20` para el icono, acompañado de un texto con `font-semibold tracking-tight`.
 - **Dynamic Entity Colors**: En entidades con color propio (Categorías), el fondo del contenedor debe usar ese color y el icono una `drop-shadow-sm` blanca para garantizar legibilidad.
+
+## 14. Form UX Enhancement Pattern
+
+Los formularios de alta calidad deben usar iconos contextuales de Lucide posicionados de forma absoluta dentro de contenedores relativos para cada input textual:
+- **Iconos**: Usar `absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none` y `aria-hidden="true"`.
+- **Padding**: Aplicar `pl-9` al input para evitar colisiones visuales con el icono.
+- **Tipografía**: Campos técnicos (Teléfonos, CUIT, SKUs, Códigos) deben usar `font-mono`.
+
+## 15. Empty State Protocol
+
+Para estados vacíos en tablas y dashboards:
+- **Iconografía**: El icono decorativo debe ser grande (ej: `h-12 w-12`) y usar la clase `text-muted-foreground/20` para mantener una jerarquía visual sutil.
+- **Mensajería**: El mensaje debe ser claro y estar acompañado de un botón de acción primario si el usuario tiene permisos para crear la entidad.
+
+## 16. Layout Shift Mitigation (Skeletons)
+
+Los `loading.tsx` deben implementar esqueletos que imiten no solo la estructura general, sino también las proporciones de la tabla:
+- **Header**: Usar `bg-muted/50` para el fondo del encabezado del esqueleto.
+- **Columnas**: Definir anchos proporcionales (usando `flex-[valor]` o anchos fijos) que coincidan con la vista final para eliminar saltos de layout al cargar los datos.
