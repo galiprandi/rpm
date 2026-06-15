@@ -97,7 +97,7 @@ export function UserTable({
                   <User className="h-4 w-4 text-primary" aria-hidden="true" />
                 )}
               </div>
-              <div className="font-semibold tracking-tight">{user.name}</div>
+              <div className="font-semibold tracking-tight leading-none">{user.name}</div>
             </div>
           );
         },
@@ -107,7 +107,7 @@ export function UserTable({
         header: 'Email',
         cell: ({ row }) => {
           return (
-            <span className="text-sm text-muted-foreground">
+            <span className="text-sm text-muted-foreground font-mono">
               {row.original.email}
             </span>
           );
