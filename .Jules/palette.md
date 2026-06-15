@@ -25,3 +25,7 @@
 ## 2026-06-16 - Form UX Consistency in Payment Methods
 **Learning:** Applying the Form UX Enhancement Pattern to technical configuration forms (like Payment Methods) provides a more professional feel. Standardizing the 'Code' field with `font-mono` and relevant Lucide icons (e.g., `Hash`) improves scannability. Replacing native checkboxes with the project's custom `Checkbox` component ensures consistent styling and accessibility, provided the `label` prop is used correctly.
 **Action:** Consistently use the Icon + Input wrapper pattern and the custom `Checkbox` component in all administrative forms to maintain the Micro-UX standard.
+
+## 2026-06-18 - Precision and Consistency in Financial Inputs
+**Learning:** Margin and percentage inputs across administrative forms (e.g., `CategoryForm`, `PriceListForm`) must use `type="number"`, `step="0.1"`, and handle value updates using `parseFloat` to ensure consistent decimal precision support. This prevents data loss from `parseInt` and provides a better UX for fine-grained adjustments.
+**Action:** Always use `parseFloat` and `step="0.1"` (or finer) for margin/percentage fields to maintain consistency with the app's financial logic.
