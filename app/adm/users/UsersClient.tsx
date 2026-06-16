@@ -164,7 +164,6 @@ export default function UsersClient({ initialUsers }: UsersClientProps) {
       label: 'Total',
       value: users.length,
       icon: Users,
-      iconColor: '#6366f1', // indigo-500
     },
     {
       label: 'Activos',
@@ -205,15 +204,15 @@ export default function UsersClient({ initialUsers }: UsersClientProps) {
     () => [
       {
         accessorKey: 'name',
-        header: 'Usuario',
+        header: 'Nombre',
         cell: ({ row }) => (
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0">
               <UserCog className="h-4 w-4 text-primary" aria-hidden="true" />
             </div>
             <div>
-              <div className="font-semibold tracking-tight leading-none">{row.original.name}</div>
-              <div className="text-[11px] text-muted-foreground mt-1 font-mono">{row.original.email}</div>
+              <div className="font-semibold tracking-tight">{row.original.name}</div>
+              <div className="text-xs text-muted-foreground">{row.original.email}</div>
             </div>
           </div>
         ),

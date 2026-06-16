@@ -32,5 +32,3 @@ Gestión de usuarios del sistema con roles y permisos. Controla acceso a funcion
 - Soporte para activar/desactivar usuarios (soft delete)
 - Asignación de roles con validaciones específicas
 - Auditoría de cambios en sistema de permisos
-- Implementa el Standardized List Row Entity Pattern en la tabla principal.
-- Implementa el Form UX Enhancement Pattern en el formulario de usuario.

@@ -6,7 +6,7 @@ import { CreateCountOperative } from '@/components/inventory-count/CreateCountOp
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Eye, Plus, History, CheckCircle2, Clock, ClipboardCheck } from 'lucide-react';
+import { Eye, Plus, ClipboardCheck, History, CheckCircle2, Clock } from 'lucide-react';
 import { CrudAdmin } from '@/components/adm/CrudAdmin';
 import { CrudStats } from '@/components/adm/CrudStats';
 import { ColumnDef } from '@tanstack/react-table';
@@ -64,18 +64,13 @@ export function InventoryCountsClient({ counts }: InventoryCountsClientProps) {
   const columns: ColumnDef<InventoryCountItem>[] = [
     {
       accessorKey: 'createdAt',
-      header: 'Operativo',
+      header: 'Fecha',
       cell: ({ row }) => {
         const date = new Date(row.original.createdAt);
         return (
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0">
-              <ClipboardCheck className="h-4 w-4 text-primary" aria-hidden="true" />
-            </div>
-            <div className="flex flex-col">
-              <span className="font-semibold tracking-tight leading-none">{date.toLocaleDateString()}</span>
-              <span className="text-[11px] text-muted-foreground mt-1">{date.toLocaleTimeString()} hs</span>
-            </div>
+          <div className="flex flex-col">
+            <span className="font-medium">{date.toLocaleDateString()}</span>
+            <span className="text-xs text-muted-foreground">{date.toLocaleTimeString()}</span>
           </div>
         );
       },
@@ -83,7 +78,7 @@ export function InventoryCountsClient({ counts }: InventoryCountsClientProps) {
     {
       accessorKey: 'itemCount',
       header: 'Artículos',
-      cell: ({ row }) => <span className="text-sm font-medium">{row.original.itemCount} productos</span>,
+      cell: ({ row }) => <span>{row.original.itemCount} productos</span>,
     },
     {
       id: 'progress',

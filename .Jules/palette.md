@@ -29,3 +29,7 @@
 ## 2026-06-18 - Precision and Consistency in Financial Inputs
 **Learning:** Margin and percentage inputs across administrative forms (e.g., `CategoryForm`, `PriceListForm`) must use `type="number"`, `step="0.1"`, and handle value updates using `parseFloat` to ensure consistent decimal precision support. This prevents data loss from `parseInt` and provides a better UX for fine-grained adjustments.
 **Action:** Always use `parseFloat` and `step="0.1"` (or finer) for margin/percentage fields to maintain consistency with the app's financial logic.
+
+## 2026-06-18 - Standardizing Tables and Warnings in Dialogs
+**Learning:** Dialog-based summaries (like Purchase Voucher previews) benefit from using the project's standard `Table` components and the semantic amber warning protocol (`text-amber-600 border-amber-200 bg-amber-50`). This creates a cohesive "admin" feel and ensures that critical discrepancies are visually distinct from informational states.
+**Action:** When refactoring modal summaries, always replace native HTML tables with the shadcn/ui `Table` set and use the three-tier semantic protocol for alerts.
