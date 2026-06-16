@@ -3,6 +3,15 @@
 import { useState, useEffect } from 'react';
 import { ModalBase } from '@/components/ui/ModalBase';
 import { Button } from '@/components/ui/button';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { Package, ArrowRight, Receipt, AlertTriangle } from 'lucide-react';
 
 interface VoucherItem {
@@ -110,7 +119,7 @@ export function VoucherPreviewDialog({ isOpen, onClose, voucherId, onContinue }:
 
           {/* Variance warning */}
           {isDiscrepant && (
-            <div className="flex items-start gap-2 p-3 rounded-md bg-orange-50 text-orange-700 text-sm">
+            <div className="flex items-start gap-2 p-3 rounded-md text-amber-600 border border-amber-200 bg-amber-50 text-sm">
               <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
               <div>
                 <span className="font-medium">Diferencia detectada:</span>{' '}
@@ -128,35 +137,41 @@ export function VoucherPreviewDialog({ isOpen, onClose, voucherId, onContinue }:
 
             {items.length > 0 ? (
               <div className="border rounded-md overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b bg-muted/50">
-                      <th className="text-left p-2 font-medium">Producto</th>
-                      <th className="text-right p-2 font-medium">Cant.</th>
-                      <th className="text-right p-2 font-medium">Costo Unit.</th>
-                      <th className="text-right p-2 font-medium">Subtotal</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+                <Table>
+                  <TableHeader className="bg-muted/50">
+                    <TableRow>
+                      <TableHead>Producto</TableHead>
+                      <TableHead className="text-right">Cant.</TableHead>
+                      <TableHead className="text-right">Costo Unit.</TableHead>
+                      <TableHead className="text-right">Subtotal</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {items.map((item) => (
-                      <tr key={item.id} className="border-b last:border-0">
-                        <td className="p-2">{item.productName}</td>
-                        <td className="p-2 text-right">{item.quantity}</td>
-                        <td className="p-2 text-right">${Number(item.unitCost).toFixed(2)}</td>
-                        <td className="p-2 text-right font-medium">${Number(item.subtotal).toFixed(2)}</td>
-                      </tr>
+                      <TableRow key={item.id}>
+                        <TableCell>{item.productName}</TableCell>
+                        <TableCell className="text-right">{item.quantity}</TableCell>
+                        <TableCell className="text-right">
+                          ${Number(item.unitCost).toFixed(2)}
+                        </TableCell>
+                        <TableCell className="text-right font-medium">
+                          ${Number(item.subtotal).toFixed(2)}
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                  <tfoot>
-                    <tr className="border-t bg-muted/30">
-                      <td colSpan={3} className="text-right p-2 font-medium">
+                  </TableBody>
+                  <TableFooter className="bg-muted/30">
+                    <TableRow>
+                      <TableCell colSpan={3} className="text-right font-medium">
                         <Receipt className="inline h-3.5 w-3.5 mr-1 text-muted-foreground" />
                         Total cargado:
-                      </td>
-                      <td className="text-right p-2 font-bold">${itemsSubtotal.toFixed(2)}</td>
-                    </tr>
-                  </tfoot>
-                </table>
+                      </TableCell>
+                      <TableCell className="text-right font-bold">
+                        ${itemsSubtotal.toFixed(2)}
+                      </TableCell>
+                    </TableRow>
+                  </TableFooter>
+                </Table>
               </div>
             ) : (
               <div className="text-center py-6 text-muted-foreground border rounded-md">
