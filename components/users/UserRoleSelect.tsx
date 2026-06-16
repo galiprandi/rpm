@@ -1,14 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Shield } from 'lucide-react';
+import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
 
 export interface RoleOption {
   value: string;
@@ -43,40 +36,29 @@ export function UserRoleSelect({ value, onChange, disabled }: UserRoleSelectProp
 
   if (loading) {
     return (
-      <div className="relative">
-        <Shield className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground/50 z-10" aria-hidden="true" />
-        <Select disabled>
-          <SelectTrigger className="w-full pl-9">
-            <SelectValue placeholder="Cargando roles..." />
-          </SelectTrigger>
-        </Select>
-      </div>
+      <NativeSelect disabled value="">
+        <NativeSelectOption value="">Cargando roles...</NativeSelectOption>
+      </NativeSelect>
     );
   }
 
   return (
     <div className="space-y-2">
-      <div className="relative">
-        <Shield className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground z-10 pointer-events-none" aria-hidden="true" />
-        <Select
-          value={value}
-          onValueChange={onChange}
-          disabled={disabled}
-        >
-          <SelectTrigger id="role" className="w-full pl-9">
-            <SelectValue placeholder="Selecciona un rol" />
-          </SelectTrigger>
-          <SelectContent>
-            {roles.map((role) => (
-              <SelectItem key={role.value} value={role.value}>
-                {role.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      <NativeSelect
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        disabled={disabled}
+        className="w-full"
+      >
+        <NativeSelectOption value="">Selecciona un rol</NativeSelectOption>
+        {roles.map((role) => (
+          <NativeSelectOption key={role.value} value={role.value}>
+            {role.label}
+          </NativeSelectOption>
+        ))}
+      </NativeSelect>
       {value && (
-        <p className="text-[11px] text-muted-foreground ml-1">
+        <p className="text-xs text-muted-foreground">
           {roles.find((r) => r.value === value)?.description}
         </p>
       )}
