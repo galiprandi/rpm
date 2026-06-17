@@ -20,7 +20,26 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Save, Car, User, Plus, X, CheckCircle, Eye } from 'lucide-react';
+import {
+  Save,
+  Car,
+  User,
+  Plus,
+  X,
+  CheckCircle,
+  Eye,
+  Search,
+  Phone,
+  Mail,
+  Tag,
+  Hash,
+  CarFront,
+  Calendar,
+  Palette,
+  Package,
+  Wrench,
+  FileText,
+} from 'lucide-react';
 
 const VEHICLE_CATEGORIES = [
   { value: 'CAR', label: 'Auto/Camioneta', icon: '🚗' },
@@ -226,7 +245,7 @@ export function VehicleDialog({
           {!customerId && !customerIdProp && !isCreatingCustomer && (
             <div className="space-y-3 p-4 border rounded-lg bg-muted/50">
               <div className="flex items-center justify-between">
-                <Label required className="flex items-center gap-2">
+                <Label htmlFor="customer-search" required className="flex items-center gap-2">
                   <User className="h-4 w-4" />
                   Buscar Cliente
                 </Label>
@@ -242,12 +261,17 @@ export function VehicleDialog({
                 </Button>
               </div>
               <div className="flex gap-2">
-                <Input
-                  placeholder="Buscar por nombre..."
-                  value={customerSearch}
-                  onChange={(e) => setCustomerSearch(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), searchCustomers())}
-                />
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+                  <Input
+                    id="customer-search"
+                    placeholder="Buscar por nombre..."
+                    value={customerSearch}
+                    onChange={(e) => setCustomerSearch(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), searchCustomers())}
+                    className="pl-9"
+                  />
+                </div>
                 <Button
                   type="button"
                   onClick={searchCustomers}
@@ -314,45 +338,57 @@ export function VehicleDialog({
                 </Button>
               </div>
               <div className="space-y-3">
-                <div>
+                <div className="space-y-2">
                   <Label htmlFor="new-customer-name" required>
                     Nombre
                   </Label>
-                  <Input
-                    id="new-customer-name"
-                    value={newCustomerData.name}
-                    onChange={(e) =>
-                      setNewCustomerData((prev) => ({ ...prev, name: e.target.value }))
-                    }
-                    placeholder="Ej: Juan Pérez"
-                    aria-required="true"
-                  />
+                  <div className="relative">
+                    <User className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+                    <Input
+                      id="new-customer-name"
+                      value={newCustomerData.name}
+                      onChange={(e) =>
+                        setNewCustomerData((prev) => ({ ...prev, name: e.target.value }))
+                      }
+                      placeholder="Ej: Juan Pérez"
+                      className="pl-9"
+                      aria-required="true"
+                    />
+                  </div>
                 </div>
-                <div>
+                <div className="space-y-2">
                   <Label htmlFor="new-customer-phone" required>
                     Teléfono
                   </Label>
-                  <Input
-                    id="new-customer-phone"
-                    value={newCustomerData.phone}
-                    onChange={(e) =>
-                      setNewCustomerData((prev) => ({ ...prev, phone: e.target.value }))
-                    }
-                    placeholder="Ej: 1123456789"
-                    aria-required="true"
-                  />
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+                    <Input
+                      id="new-customer-phone"
+                      value={newCustomerData.phone}
+                      onChange={(e) =>
+                        setNewCustomerData((prev) => ({ ...prev, phone: e.target.value }))
+                      }
+                      placeholder="Ej: 1123456789"
+                      className="pl-9"
+                      aria-required="true"
+                    />
+                  </div>
                 </div>
-                <div>
+                <div className="space-y-2">
                   <Label htmlFor="new-customer-email">Email</Label>
-                  <Input
-                    id="new-customer-email"
-                    type="email"
-                    value={newCustomerData.email}
-                    onChange={(e) =>
-                      setNewCustomerData((prev) => ({ ...prev, email: e.target.value }))
-                    }
-                    placeholder="Ej: cliente@email.com"
-                  />
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+                    <Input
+                      id="new-customer-email"
+                      type="email"
+                      value={newCustomerData.email}
+                      onChange={(e) =>
+                        setNewCustomerData((prev) => ({ ...prev, email: e.target.value }))
+                      }
+                      placeholder="Ej: cliente@email.com"
+                      className="pl-9 font-mono"
+                    />
+                  </div>
                 </div>
                 <Button
                   type="button"
@@ -398,118 +434,153 @@ export function VehicleDialog({
           )}
 
           {/* Categoría */}
-          <div>
-            <Label htmlFor="category">
-              Categoría <span className="text-destructive">*</span>
+          <div className="space-y-2">
+            <Label htmlFor="category" required>
+              Categoría
             </Label>
-            <Select
-              value={formData.category}
-              onValueChange={(value) => handleChange('category', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Seleccione categoría" />
-              </SelectTrigger>
-              <SelectContent>
-                {VEHICLE_CATEGORIES.map((cat) => (
-                  <SelectItem key={cat.value} value={cat.value}>
-                    <span className="mr-2">{cat.icon}</span>
-                    {cat.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="relative">
+              <Tag className="absolute left-3 top-2 h-4 w-4 text-muted-foreground pointer-events-none z-10" aria-hidden="true" />
+              <Select
+                value={formData.category}
+                onValueChange={(value) => handleChange('category', value)}
+              >
+                <SelectTrigger id="category" className="pl-9">
+                  <SelectValue placeholder="Seleccione categoría" />
+                </SelectTrigger>
+                <SelectContent>
+                  {VEHICLE_CATEGORIES.map((cat) => (
+                    <SelectItem key={cat.value} value={cat.value}>
+                      <span className="mr-2">{cat.icon}</span>
+                      {cat.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* Identificador */}
-          <div>
-            <Label htmlFor="identifier">
-              {isVehicle ? 'Patente' : 'Número de Serie/Identificador'} <span className="text-destructive">*</span>
+          <div className="space-y-2">
+            <Label htmlFor="identifier" required>
+              {isVehicle ? 'Patente' : 'Número de Serie/Identificador'}
             </Label>
-            <Input
-              id="identifier"
-              value={formData.identifier}
-              onChange={(e) => handleChange('identifier', e.target.value.toUpperCase())}
-              placeholder={isVehicle ? 'Ej: AB123CD' : 'Ej: SN123456'}
-              required
-              aria-required="true"
-            />
+            <div className="relative">
+              <Hash className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+              <Input
+                id="identifier"
+                value={formData.identifier}
+                onChange={(e) => handleChange('identifier', e.target.value.toUpperCase())}
+                placeholder={isVehicle ? 'Ej: AB123CD' : 'Ej: SN123456'}
+                required
+                className="pl-9 font-mono"
+                aria-required="true"
+              />
+            </div>
           </div>
 
           {/* Campos para vehículos */}
           {isVehicle ? (
             <div className="grid grid-cols-2 gap-4">
-              <div>
+              <div className="space-y-2">
                 <Label htmlFor="makeName">Marca</Label>
-                <Input
-                  id="makeName"
-                  value={formData.makeName}
-                  onChange={(e) => handleChange('makeName', e.target.value)}
-                  placeholder="Ej: Toyota"
-                />
+                <div className="relative">
+                  <Car className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+                  <Input
+                    id="makeName"
+                    value={formData.makeName}
+                    onChange={(e) => handleChange('makeName', e.target.value)}
+                    placeholder="Ej: Toyota"
+                    className="pl-9"
+                  />
+                </div>
               </div>
-              <div>
+              <div className="space-y-2">
                 <Label htmlFor="modelName">Modelo</Label>
-                <Input
-                  id="modelName"
-                  value={formData.modelName}
-                  onChange={(e) => handleChange('modelName', e.target.value)}
-                  placeholder="Ej: Hilux"
-                />
+                <div className="relative">
+                  <CarFront className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+                  <Input
+                    id="modelName"
+                    value={formData.modelName}
+                    onChange={(e) => handleChange('modelName', e.target.value)}
+                    placeholder="Ej: Hilux"
+                    className="pl-9"
+                  />
+                </div>
               </div>
-              <div>
+              <div className="space-y-2">
                 <Label htmlFor="year">Año</Label>
-                <Input
-                  id="year"
-                  type="number"
-                  value={formData.year}
-                  onChange={(e) => handleChange('year', e.target.value)}
-                  placeholder="Ej: 2020"
-                  min="1900"
-                  max={new Date().getFullYear() + 1}
-                />
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+                  <Input
+                    id="year"
+                    type="number"
+                    value={formData.year}
+                    onChange={(e) => handleChange('year', e.target.value)}
+                    placeholder="Ej: 2020"
+                    min="1900"
+                    max={new Date().getFullYear() + 1}
+                    className="pl-9 font-mono"
+                  />
+                </div>
               </div>
-              <div>
+              <div className="space-y-2">
                 <Label htmlFor="color">Color</Label>
-                <Input
-                  id="color"
-                  value={formData.color}
-                  onChange={(e) => handleChange('color', e.target.value)}
-                  placeholder="Ej: Blanco"
-                />
+                <div className="relative">
+                  <Palette className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+                  <Input
+                    id="color"
+                    value={formData.color}
+                    onChange={(e) => handleChange('color', e.target.value)}
+                    placeholder="Ej: Blanco"
+                    className="pl-9"
+                  />
+                </div>
               </div>
             </div>
           ) : (
             /* Campos para equipos */
             <div className="space-y-4">
-              <div>
-                <Label htmlFor="equipmentName">Nombre del Equipo <span className="text-destructive">*</span></Label>
-                <Input
-                  id="equipmentName"
-                  value={formData.equipmentName}
-                  onChange={(e) => handleChange('equipmentName', e.target.value)}
-                  placeholder="Ej: Equipo de Sonido JBL"
-                  required={!isVehicle}
-                  aria-required={!isVehicle}
-                />
+              <div className="space-y-2">
+                <Label htmlFor="equipmentName" required={!isVehicle}>Nombre del Equipo</Label>
+                <div className="relative">
+                  <Package className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+                  <Input
+                    id="equipmentName"
+                    value={formData.equipmentName}
+                    onChange={(e) => handleChange('equipmentName', e.target.value)}
+                    placeholder="Ej: Equipo de Sonido JBL"
+                    required={!isVehicle}
+                    className="pl-9"
+                    aria-required={!isVehicle}
+                  />
+                </div>
               </div>
-              <div>
+              <div className="space-y-2">
                 <Label htmlFor="equipmentType">Tipo de Equipo</Label>
-                <Input
-                  id="equipmentType"
-                  value={formData.equipmentType}
-                  onChange={(e) => handleChange('equipmentType', e.target.value)}
-                  placeholder="Ej: Audio Profesional"
-                />
+                <div className="relative">
+                  <Wrench className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+                  <Input
+                    id="equipmentType"
+                    value={formData.equipmentType}
+                    onChange={(e) => handleChange('equipmentType', e.target.value)}
+                    placeholder="Ej: Audio Profesional"
+                    className="pl-9"
+                  />
+                </div>
               </div>
-              <div>
+              <div className="space-y-2">
                 <Label htmlFor="description">Descripción</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => handleChange('description', e.target.value)}
-                  placeholder="Detalles adicionales del equipo..."
-                  rows={3}
-                />
+                <div className="relative">
+                  <FileText className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+                  <Textarea
+                    id="description"
+                    value={formData.description}
+                    onChange={(e) => handleChange('description', e.target.value)}
+                    placeholder="Detalles adicionales del equipo..."
+                    rows={3}
+                    className="pl-9"
+                  />
+                </div>
               </div>
             </div>
           )}
@@ -532,15 +603,19 @@ export function VehicleDialog({
           )}
 
           {/* Notas */}
-          <div>
+          <div className="space-y-2">
             <Label htmlFor="notes">Notas</Label>
-            <Textarea
-              id="notes"
-              value={formData.notes}
-              onChange={(e) => handleChange('notes', e.target.value)}
-              placeholder="Notas internas sobre el vehículo/equipo..."
-              rows={2}
-            />
+            <div className="relative">
+              <FileText className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+              <Textarea
+                id="notes"
+                value={formData.notes}
+                onChange={(e) => handleChange('notes', e.target.value)}
+                placeholder="Notas internas sobre el vehículo/equipo..."
+                rows={2}
+                className="pl-9"
+              />
+            </div>
           </div>
 
           {/* Actions */}
