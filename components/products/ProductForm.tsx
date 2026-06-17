@@ -120,7 +120,7 @@ export function ProductForm({
         <div className="space-y-2">
           <Label htmlFor="barcode">Código de Barras (EAN)</Label>
           <div className="relative">
-            <Hash className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Hash className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
             <Input
               id="barcode"
               value={formData.barcode}
@@ -134,7 +134,7 @@ export function ProductForm({
         <div className="space-y-2">
           <Label htmlFor="sku">SKU</Label>
           <div className="relative">
-            <Tag className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Tag className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
             <Input
               id="sku"
               value={formData.sku}
@@ -151,7 +151,7 @@ export function ProductForm({
         <div className="space-y-2">
           <Label htmlFor="name" required>Producto</Label>
           <div className="relative">
-            <Box className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Box className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
             <Input
               id="name"
               value={formData.name}
@@ -167,7 +167,7 @@ export function ProductForm({
         <div className="space-y-2">
           <Label htmlFor="categoryId" required>Categoría</Label>
           <div className="relative">
-            <LayoutGrid className="absolute left-3 top-2 h-4 w-4 text-muted-foreground z-10" />
+            <LayoutGrid className="absolute left-3 top-2 h-4 w-4 text-muted-foreground z-10 pointer-events-none" aria-hidden="true" />
             <Select
               value={formData.categoryId}
               onValueChange={(value) => setFormData({ ...formData, categoryId: value })}
@@ -192,7 +192,7 @@ export function ProductForm({
         <div className="space-y-2">
           <Label htmlFor="supplierId" required>Proveedor</Label>
           <div className="relative">
-            <Truck className="absolute left-3 top-2 h-4 w-4 text-muted-foreground z-10" />
+            <Truck className="absolute left-3 top-2 h-4 w-4 text-muted-foreground z-10 pointer-events-none" aria-hidden="true" />
             <Select
               value={formData.supplierId}
               onValueChange={(value) => setFormData({ ...formData, supplierId: value })}
@@ -214,7 +214,7 @@ export function ProductForm({
         <div className="space-y-2">
           <Label htmlFor="location">Ubicación</Label>
           <div className="relative">
-            <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+            <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
             <Input
               id="location"
               value={formData.location}
@@ -231,7 +231,7 @@ export function ProductForm({
         <div className="space-y-2">
           <Label htmlFor="costPrice" required>Costo</Label>
           <div className="relative">
-            <DollarSign className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+            <DollarSign className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
             <Input
               id="costPrice"
               type="number"
@@ -240,7 +240,7 @@ export function ProductForm({
               value={formData.costPrice}
               onChange={(e) => setFormData({ ...formData, costPrice: e.target.value })}
               placeholder="0.00"
-              className="pl-9"
+              className="pl-9 font-mono"
               required
               aria-required="true"
             />
@@ -250,7 +250,7 @@ export function ProductForm({
         <div className="space-y-2">
           <Label htmlFor="replacementCost" required>Reposición</Label>
           <div className="relative">
-            <TrendingUp className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+            <TrendingUp className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
             <Input
               id="replacementCost"
               type="number"
@@ -259,7 +259,7 @@ export function ProductForm({
               value={formData.replacementCost}
               onChange={(e) => setFormData({ ...formData, replacementCost: e.target.value })}
               placeholder="0.00"
-              className="pl-9"
+              className="pl-9 font-mono"
               required
               aria-required="true"
             />
@@ -269,7 +269,7 @@ export function ProductForm({
         <div className="space-y-2">
           <Label htmlFor="stock" required>Stock</Label>
           <div className="relative">
-            <Package className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Package className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
             <Input
               id="stock"
               type="number"
@@ -277,7 +277,7 @@ export function ProductForm({
               value={formData.stock}
               onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
               placeholder="0"
-              className="pl-9"
+              className="pl-9 font-mono"
               required
               aria-required="true"
             />
@@ -287,7 +287,7 @@ export function ProductForm({
         <div className="space-y-2">
           <Label htmlFor="minStock" required>Mínimo</Label>
           <div className="relative">
-            <AlertCircle className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+            <AlertCircle className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
             <Input
               id="minStock"
               type="number"
@@ -295,7 +295,7 @@ export function ProductForm({
               value={formData.minStock}
               onChange={(e) => setFormData({ ...formData, minStock: e.target.value })}
               placeholder="0"
-              className="pl-9"
+              className="pl-9 font-mono"
               required
               aria-required="true"
             />
@@ -307,7 +307,7 @@ export function ProductForm({
       <div className="space-y-2">
         <Label htmlFor="description">Descripción</Label>
         <div className="relative">
-          <FileText className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+          <FileText className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
           <Textarea
             id="description"
             value={formData.description}
