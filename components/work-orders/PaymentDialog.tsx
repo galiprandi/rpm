@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { DollarSign, Plus, Trash2 } from 'lucide-react';
+import { DollarSign, Plus, Trash2, CreditCard, FileText } from 'lucide-react';
 import {
   Tooltip,
   TooltipContent,
@@ -260,28 +260,31 @@ export function PaymentDialog({
               </div>
             )}
             <div className="space-y-2">
-              <Label htmlFor="paymentMethod">Método de Pago *</Label>
-              <Select
-                value={paymentMethodId}
-                onValueChange={setPaymentMethodId}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccione método de pago" />
-                </SelectTrigger>
-                <SelectContent>
+              <Label htmlFor="paymentMethod" required>Método de Pago</Label>
+              <div className="relative">
+                <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" aria-hidden="true" />
+                <Select
+                  value={paymentMethodId}
+                  onValueChange={setPaymentMethodId}
+                >
+                  <SelectTrigger id="paymentMethod" className="pl-9">
+                    <SelectValue placeholder="Seleccione método de pago" />
+                  </SelectTrigger>
+                  <SelectContent>
                   {paymentMethods.map((method) => (
                     <SelectItem key={method.id} value={method.id}>
                       {method.name}
                     </SelectItem>
                   ))}
-                </SelectContent>
-              </Select>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="amount">Monto *</Label>
+              <Label htmlFor="amount" required>Monto</Label>
               <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
                 <Input
                   id="amount"
                   type="number"
@@ -291,7 +294,9 @@ export function PaymentDialog({
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   placeholder={`Máx: $${remainingAmount.toFixed(2)}`}
-                  className="pl-10"
+                  className="pl-9 font-mono"
+                  required
+                  aria-required="true"
                 />
               </div>
               <p className="text-xs text-muted-foreground">
@@ -301,12 +306,16 @@ export function PaymentDialog({
 
             <div className="space-y-2">
               <Label htmlFor="notes">Notas / Referencia</Label>
-              <Input
-                id="notes"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Número de transferencia, últimos dígitos tarjeta, etc."
-              />
+              <div className="relative">
+                <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+                <Input
+                  id="notes"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Número de transferencia, últimos dígitos tarjeta, etc."
+                  className="pl-9"
+                />
+              </div>
             </div>
 
             <Button 
