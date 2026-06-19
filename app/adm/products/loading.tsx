@@ -33,19 +33,34 @@ export default function ProductsLoading() {
           </div>
         </div>
         <div className="border rounded-md">
-          <div className="p-4 border-b">
+          <div className="p-4 border-b bg-muted/50">
             <div className="flex gap-4">
-              {[...Array(6)].map((_, i) => (
-                <Skeleton key={i} className="h-4 flex-1" />
-              ))}
+              <Skeleton className="h-4 flex-[1.5]" /> {/* Producto */}
+              <Skeleton className="h-4 flex-1" /> {/* Categoría */}
+              <Skeleton className="h-4 w-20" /> {/* Stock */}
+              <Skeleton className="h-4 w-24" /> {/* Estado */}
+              <Skeleton className="h-4 w-24 ml-auto" /> {/* Acciones */}
             </div>
           </div>
           {[...Array(5)].map((_, i) => (
             <div key={i} className="p-4 border-b last:border-0">
-              <div className="flex gap-4">
-                {[...Array(6)].map((_, j) => (
-                  <Skeleton key={j} className="h-10 flex-1" />
-                ))}
+              <div className="flex gap-4 items-center">
+                <div className="flex items-center gap-3 flex-[1.5]">
+                  <Skeleton className="h-8 w-8 rounded-lg" />
+                  <div className="space-y-2 flex-1">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-3 w-1/2" />
+                  </div>
+                </div>
+                <Skeleton className="h-6 flex-1 max-w-[120px]" />
+                <Skeleton className="h-8 w-20" />
+                <Skeleton className="h-6 w-24" />
+                <div className="flex gap-2 ml-auto">
+                  <Skeleton className="h-8 w-8" />
+                  <Skeleton className="h-8 w-8" />
+                  <Skeleton className="h-8 w-8" />
+                  <Skeleton className="h-8 w-8" />
+                </div>
               </div>
             </div>
           ))}

@@ -145,6 +145,7 @@ Cada modificación debe dejar el archivo en mejor estado:
 - **Form UX Enhancement**: Todo formulario administrativo debe usar iconos contextuales absolutos con `pl-9` en sus inputs y `font-mono` para campos técnicos.
 - **Empty State UI**: Los iconos decorativos en estados vacíos deben usar `text-muted-foreground/20` para evitar ruido visual.
 - **High-Fidelity Skeletons**: Los archivos `loading.tsx` deben usar esqueletos que imiten las proporciones reales de las columnas para mitigar el layout shift.
+- **Product Module Refinement**: La vista de productos implementa el `Standardized List Row Entity Pattern` y el `Form UX Enhancement Pattern` con `font-mono` para campos técnicos y SKU integrado en la columna principal.
 
 ---
 
