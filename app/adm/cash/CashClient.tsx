@@ -676,15 +676,21 @@ export default function CashClient() {
                             </div>
                           </td>
                           <td className="py-4 px-6">
-                            <div className="flex items-center gap-2 font-medium">
-                               <User className="h-3.5 w-3.5 text-muted-foreground" />
-                               {record.responsibleBy}
-                            </div>
-                            {record.openedBy !== record.responsibleBy && (
-                              <div className="text-[10px] text-muted-foreground ml-5">
-                                Abierto por: {record.openedBy}
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0">
+                                <User className="h-4 w-4 text-primary" aria-hidden="true" />
                               </div>
-                            )}
+                              <div className="flex flex-col">
+                                <span className="font-semibold tracking-tight text-card-foreground">
+                                  {record.responsibleBy}
+                                </span>
+                                {record.openedBy !== record.responsibleBy && (
+                                  <span className="text-[10px] text-muted-foreground">
+                                    Abierto por: {record.openedBy}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
                           </td>
                           <td className="py-4 px-6 text-muted-foreground">{record.closedBy || '-'}</td>
                           <td className="text-right py-4 px-6 font-semibold">
