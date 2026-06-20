@@ -595,7 +595,7 @@ export function AddVoucherItemDialog({
                     aria-required="true"
                     value={quantity}
                     onChange={(e) => setQuantity(parseInt(e.target.value) || 0)}
-                    className={`pl-9 ${quantity <= 0 ? "border-red-300 focus-visible:ring-red-200" : ""}`}
+                    className={`pl-9 font-mono ${quantity <= 0 ? "border-red-300 focus-visible:ring-red-200" : ""}`}
                   />
                 </div>
               </div>
@@ -617,7 +617,7 @@ export function AddVoucherItemDialog({
                       setUnitCost(value);
                       recalculatePrices(value, selectedProduct.allPrices);
                     }}
-                    className={`pl-9 ${unitCost <= 0 ? "border-red-300 focus-visible:ring-red-200" : ""}`}
+                    className={`pl-9 font-mono ${unitCost <= 0 ? "border-red-300 focus-visible:ring-red-200" : ""}`}
                   />
                 </div>
               </div>
@@ -695,7 +695,7 @@ export function AddVoucherItemDialog({
                                   handleFixPrice(pl.priceListId, value);
                                 }
                               }}
-                              className={`h-7 w-20 text-xs text-right ${pl.isBelowMinimum && !pl.isFixed ? "border-red-300" : ""}`}
+                              className={`h-7 w-20 text-xs text-right font-mono ${pl.isBelowMinimum && !pl.isFixed ? "border-red-300" : ""}`}
                             />
                           </div>
                         </TableCell>
@@ -778,18 +778,23 @@ export function AddVoucherItemDialog({
                       }}
                     >
                       <TableCell className="p-2">
-                        <span
-                          className="truncate block text-xs"
-                          title={item.productName}
-                          style={{ maxWidth: "20ch" }}
-                        >
-                          {item.productName}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center flex-shrink-0">
+                            <Package className="h-4 w-4 text-primary" aria-hidden="true" />
+                          </div>
+                          <span
+                            className="truncate block text-xs font-semibold tracking-tight"
+                            title={item.productName}
+                            style={{ maxWidth: "15ch" }}
+                          >
+                            {item.productName}
+                          </span>
+                        </div>
                       </TableCell>
-                      <TableCell className="p-2 text-right font-medium text-xs">
+                      <TableCell className="p-2 text-right font-mono text-xs">
                         {item.quantity}
                       </TableCell>
-                      <TableCell className="p-2 text-right text-muted-foreground text-xs">
+                      <TableCell className="p-2 text-right text-muted-foreground font-mono text-xs">
                         {getProjectedStock(item.productId, item.currentStock)}
                       </TableCell>
                     </TableRow>
