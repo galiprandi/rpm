@@ -134,7 +134,7 @@ export default function PurchaseVouchersClient({ initialVouchers }: PurchaseVouc
       accessorKey: 'number',
       header: 'Comprobante',
       cell: ({ row }) => (
-        <span className="font-medium">
+        <span className="font-medium font-mono">
           {row.original.letter} - {row.original.number}
         </span>
       ),
@@ -182,7 +182,7 @@ export default function PurchaseVouchersClient({ initialVouchers }: PurchaseVouc
       cell: ({ row }) => {
         const amount = parseFloat(row.original.totalAmount);
         return (
-          <div className="text-right font-medium">
+          <div className="text-right font-medium font-mono">
             ${amount.toLocaleString('es-AR', {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2,
@@ -209,7 +209,7 @@ export default function PurchaseVouchersClient({ initialVouchers }: PurchaseVouc
               <span className="text-muted-foreground">
                 {itemsCount} {itemsCount === 1 ? 'ítem' : 'ítems'}
               </span>
-              <span className={`font-medium ${isComplete ? 'text-emerald-600' : 'text-amber-600'}`}>
+              <span className={`font-medium font-mono ${isComplete ? 'text-emerald-600' : 'text-amber-600'}`}>
                 {progressPct.toFixed(0)}%
               </span>
             </div>

@@ -230,7 +230,7 @@ export default function VoucherDetailClient({ initialVoucher }: VoucherDetailCli
             {voucher.paymentMethod?.name || 'Cuenta Corriente'}
           </div>
 
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-primary/5 border border-primary/20 text-xs font-bold text-primary shadow-sm">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-primary/5 border border-primary/20 text-xs font-bold text-primary shadow-sm font-mono">
             <DollarSign className="h-3.5 w-3.5" aria-hidden="true" />
             {parseFloat(voucher.totalAmount).toLocaleString('es-AR', {
               style: 'currency',
@@ -274,7 +274,7 @@ export default function VoucherDetailClient({ initialVoucher }: VoucherDetailCli
                           min="1"
                           value={quantity}
                           onChange={(e) => setQuantity(e.target.value)}
-                          className="pl-9"
+                          className="pl-9 font-mono"
                           required
                           aria-required="true"
                           disabled={loading}
@@ -293,7 +293,7 @@ export default function VoucherDetailClient({ initialVoucher }: VoucherDetailCli
                           placeholder="0.00"
                           value={unitCost}
                           onChange={(e) => setUnitCost(e.target.value)}
-                          className="pl-9"
+                          className="pl-9 font-mono"
                           required
                           aria-required="true"
                           disabled={loading}
@@ -424,18 +424,18 @@ export default function VoucherDetailClient({ initialVoucher }: VoucherDetailCli
             <div className="space-y-4">
               <div className="p-4 rounded-lg bg-primary/5 border border-primary/10">
                 <span className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Monto Declarado</span>
-                <div className="text-2xl font-bold text-primary mt-1">
+                <div className="text-2xl font-bold text-primary mt-1 font-mono">
                   {parseFloat(voucher.totalAmount).toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })}
                 </div>
               </div>
 
-              <div className={`p-4 rounded-lg border ${isComplete ? 'bg-emerald-50 border-emerald-100' : 'bg-orange-50 border-orange-100'}`}>
-                <span className={`text-xs uppercase tracking-wider font-semibold ${isComplete ? 'text-emerald-700' : 'text-orange-700'}`}>Monto Cargado</span>
-                <div className={`text-2xl font-bold mt-1 ${isComplete ? 'text-emerald-700' : 'text-orange-700'}`}>
+              <div className={`p-4 rounded-lg border ${isComplete ? 'bg-emerald-50 border-emerald-100' : 'bg-red-50 border-red-100'}`}>
+                <span className={`text-xs uppercase tracking-wider font-semibold ${isComplete ? 'text-emerald-700' : 'text-red-700'}`}>Monto Cargado</span>
+                <div className={`text-2xl font-bold mt-1 font-mono ${isComplete ? 'text-emerald-700' : 'text-red-700'}`}>
                   {totalCalculated.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })}
                 </div>
                 {!isComplete && (
-                   <div className="flex items-center gap-1.5 mt-2 text-xs text-orange-600 font-medium">
+                   <div className="flex items-center gap-1.5 mt-2 text-xs text-red-600 font-medium font-mono">
                      <AlertCircle className="h-3.5 w-3.5" />
                      Diferencia: {(parseFloat(voucher.totalAmount) - totalCalculated).toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })}
                    </div>
