@@ -33,3 +33,7 @@
 ## 2026-06-18 - Standardizing Tables and Warnings in Dialogs
 **Learning:** Dialog-based summaries (like Purchase Voucher previews) benefit from using the project's standard `Table` components and the semantic amber warning protocol (`text-amber-600 border-amber-200 bg-amber-50`). This creates a cohesive "admin" feel and ensures that critical discrepancies are visually distinct from informational states.
 **Action:** When refactoring modal summaries, always replace native HTML tables with the shadcn/ui `Table` set and use the three-tier semantic protocol for alerts.
+
+## 2026-06-20 - Enhancing Credit Note Form Accessibility and UX
+**Learning:** Applying the Form UX Enhancement Pattern to specialized administrative dialogs (like Customer Credit Notes) significantly improves the professional feel and scannability. Using contextual icons like `Undo2` for refund methods and `font-mono` for financial totals creates clear visual anchors. Explicitly linking `Label` components to `SelectTrigger` components via `id` and `htmlFor` is a critical step for accessibility in shadcn/ui-based forms.
+**Action:** Always ensure that `SelectTrigger` has a unique ID matching its `Label`, and use the relative/absolute icon pattern for all select and input fields in administrative modals.
