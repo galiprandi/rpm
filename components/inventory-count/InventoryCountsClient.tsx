@@ -63,14 +63,25 @@ export function InventoryCountsClient({ counts }: InventoryCountsClientProps) {
 
   const columns: ColumnDef<InventoryCountItem>[] = [
     {
-      accessorKey: 'createdAt',
-      header: 'Fecha',
+      accessorKey: 'id',
+      header: 'Operativo',
       cell: ({ row }) => {
         const date = new Date(row.original.createdAt);
         return (
-          <div className="flex flex-col">
-            <span className="font-medium">{date.toLocaleDateString()}</span>
-            <span className="text-xs text-muted-foreground">{date.toLocaleTimeString()}</span>
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0">
+              <ClipboardCheck className="h-4 w-4 text-primary" />
+            </div>
+            <div className="flex flex-col">
+              <span className="font-semibold tracking-tight text-sm">
+                #{row.original.id.slice(-6).toUpperCase()}
+              </span>
+              <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground font-medium">
+                <span>{date.toLocaleDateString()}</span>
+                <span className="opacity-50">•</span>
+                <span>{date.toLocaleTimeString()}</span>
+              </div>
+            </div>
           </div>
         );
       },

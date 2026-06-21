@@ -209,7 +209,7 @@ export function ApprovalView({ operativeId }: { operativeId: string }) {
                       </div>
                       <div className="min-w-0">
                         <div className="font-semibold tracking-tight text-sm truncate">{item.product.name}</div>
-                        <div className="text-[10px] text-muted-foreground font-mono">SKU: {item.product.sku || 'N/A'}</div>
+                        <div className="text-[10px] text-muted-foreground font-mono font-medium">SKU: {item.product.sku || 'N/A'}</div>
                       </div>
                     </div>
                   </TableCell>
@@ -254,7 +254,7 @@ export function ApprovalView({ operativeId }: { operativeId: string }) {
                         value={adj.stock}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleUpdateAdj(item.id, 'stock', parseInt(e.target.value) || 0)}
                         disabled={isApproved}
-                        className={cn("font-bold text-center h-8 text-sm focus-visible:ring-primary", adj.stock !== item.countedStock && "border-amber-500 ring-amber-500/20")}
+                        className={cn("font-mono font-bold text-center h-8 text-sm focus-visible:ring-primary", adj.stock !== item.countedStock && "border-amber-500 ring-amber-500/20")}
                       />
                       {adj.stock !== item.countedStock && (
                         <div className="text-[9px] text-amber-600 font-medium flex items-center gap-0.5 justify-center">
@@ -271,7 +271,7 @@ export function ApprovalView({ operativeId }: { operativeId: string }) {
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleUpdateAdj(item.id, 'location', e.target.value)}
                         disabled={isApproved}
                         placeholder="Sin ubicación"
-                        className={cn("h-8 text-xs pl-7 focus-visible:ring-primary", adj.location !== item.previousLocation && "border-blue-500 ring-blue-500/20")}
+                        className={cn("h-8 text-xs pl-7 font-mono focus-visible:ring-primary", adj.location !== item.previousLocation && "border-blue-500 ring-blue-500/20")}
                       />
                     </div>
                   </TableCell>

@@ -108,17 +108,18 @@ export function CreateCountOperative({ open, onOpenChange }: CreateCountOperativ
         <div className="flex-1 overflow-auto p-6 space-y-6">
           <div className="flex items-end gap-4 p-4 rounded-xl bg-muted/30 border">
             <div className="grid w-full max-w-[200px] items-center gap-1.5">
-              <Label htmlFor="limit" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <Label htmlFor="limit" required className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Artículos a sugerir
               </Label>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
                 <Input
                   type="number"
                   id="limit"
                   value={limit}
                   onChange={(e) => setLimit(parseInt(e.target.value) || 0)}
-                  className="pl-9 bg-background"
+                  className="pl-9 bg-background font-mono"
+                  aria-required="true"
                 />
               </div>
             </div>
@@ -157,11 +158,11 @@ export function CreateCountOperative({ open, onOpenChange }: CreateCountOperativ
                       <TableRow key={product.id} className={cn(selectedIds.has(product.id) ? "bg-primary/5" : "hover:bg-muted/30")}>
                         <TableCell>
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20">
+                            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20 shadow-sm">
                               <Package className="h-4 w-4 text-primary" />
                             </div>
                             <div className="min-w-0">
-                              <div className="font-semibold text-sm truncate">{product.name}</div>
+                              <div className="font-semibold tracking-tight text-sm truncate">{product.name}</div>
                               <div className="text-[10px] text-muted-foreground font-mono">SKU: {product.sku || 'N/A'} • Stock: {product.stock}</div>
                             </div>
                           </div>
