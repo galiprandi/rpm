@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useUI } from "@/components/ui/UIProvider";
-import { Plus, Truck, CreditCard, Hash, Calendar, DollarSign, FileText } from "lucide-react";
+import { Plus, Truck, CreditCard, Hash, Calendar, DollarSign, FileText, Tag } from "lucide-react";
 import { SupplierDialog } from "@/components/suppliers/SupplierDialog";
 import { type SupplierFormData } from "@/components/suppliers/SupplierForm";
 
@@ -254,7 +254,7 @@ export function CreateDraftVoucherDialog({
                   onValueChange={setSupplierId}
                   required
                 >
-                  <SelectTrigger id="supplier" className="w-full h-9 pl-9">
+                  <SelectTrigger id="supplier" className="w-full h-9 pl-9" aria-required="true">
                     <SelectValue placeholder="Seleccione un proveedor..." />
                   </SelectTrigger>
                   <SelectContent>
@@ -309,22 +309,25 @@ export function CreateDraftVoucherDialog({
         <div className="grid grid-cols-3 gap-4">
           <div className="space-y-2">
             <Label htmlFor="letter" required>Letra</Label>
-            <Select
-              value={letter}
-              onValueChange={setLetter}
-              required
-            >
-              <SelectTrigger id="letter" className="w-full h-9">
-                <SelectValue placeholder="Seleccione..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="A">A</SelectItem>
-                <SelectItem value="B">B</SelectItem>
-                <SelectItem value="C">C</SelectItem>
-                <SelectItem value="X">X</SelectItem>
-                <SelectItem value="M">M</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="relative">
+              <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" aria-hidden="true" />
+              <Select
+                value={letter}
+                onValueChange={setLetter}
+                required
+              >
+                <SelectTrigger id="letter" className="w-full h-9 pl-9" aria-required="true">
+                  <SelectValue placeholder="Seleccione..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="A">A</SelectItem>
+                  <SelectItem value="B">B</SelectItem>
+                  <SelectItem value="C">C</SelectItem>
+                  <SelectItem value="X">X</SelectItem>
+                  <SelectItem value="M">M</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="col-span-2 space-y-2">
@@ -373,7 +376,7 @@ export function CreateDraftVoucherDialog({
                 placeholder="0.00"
                 value={totalAmount}
                 onChange={(e) => setTotalAmount(e.target.value)}
-                className="pl-9"
+                className="pl-9 font-mono"
                 required
                 aria-required="true"
               />
