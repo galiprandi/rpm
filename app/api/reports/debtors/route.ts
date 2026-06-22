@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
-import { headers } from 'next/headers';
+import { requireRole } from '@/lib/auth-server';
 import { prisma } from '@/lib/prisma';
 import { UserRole } from '@/lib/auth/roles';
 
@@ -17,26 +16,7 @@ function decimalToNumber(decimal: unknown): number {
 // GET /api/reports/debtors - Get list of customers with outstanding balance
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-    
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Check if user has required role (STAFF or ADMIN)
-    const userRole = (session.user as { role?: string }).role as UserRole || UserRole.USER;
-    const roleHierarchy = {
-      [UserRole.USER]: 0,
-      [UserRole.STAFF]: 1,
-      [UserRole.ADMIN]: 2,
-    };
-
-    if (roleHierarchy[userRole] < roleHierarchy[UserRole.STAFF]) {
-      return NextResponse.json(
-        { error: 'Forbidden: Insufficient permissions' },
-        { status: 403 }
-      );
-    }
+    await requireRole(UserRole.STAFF);
 
     // Parse query parameters
     const { searchParams } = new URL(request.url);
