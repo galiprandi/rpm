@@ -152,4 +152,4 @@ Los `loading.tsx` deben implementar esqueletos que imiten no solo la estructura 
 
 ## 17. Typography Consistency
 
-- **Technical Data**: Siempre usar `font-mono` para IDs, SKUs, CUIs, Teléfonos, Fechas (en contextos técnicos) y montos monetarios. Esto mejora la legibilidad de datos tabulares y alineación numérica.
+- **Technical Data**: Siempre usar `font-mono` para IDs, SKUs, CUIs, Teléfonos, Fechas (en contextos técnicos), emails y montos monetarios. Esto mejora la legibilidad de datos tabulares y alineación numérica.
