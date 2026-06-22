@@ -7,7 +7,6 @@ import { type ColumnDef } from '@tanstack/react-table';
 import { formatARS } from '@/lib/utils/format';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import {
   Tooltip,
   TooltipContent,
@@ -23,7 +22,8 @@ import {
   TrendingUp,
   TrendingDown,
   Scale,
-  Package
+  Package,
+  LucideIcon
 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -113,7 +113,7 @@ export function DailyOperations() {
           PURCHASE_VOUCHER: 'Compra',
         };
 
-        const icons: Record<string, any> = {
+        const icons: Record<string, LucideIcon> = {
           INCOME: ArrowUpCircle,
           EXPENSE: ArrowDownCircle,
           OPENING: DollarSign,

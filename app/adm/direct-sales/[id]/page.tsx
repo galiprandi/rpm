@@ -4,10 +4,9 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Receipt, User, Calendar, CreditCard, Package, Clock } from "lucide-react";
+import { Receipt, User, Calendar, CreditCard, Package, Clock, DollarSign } from "lucide-react";
 import Link from "next/link";
 import { Header } from "@/components/adm/Header";
-import { cn } from "@/lib/utils";
 
 interface DirectSaleItem {
   id: string;
@@ -162,7 +161,7 @@ export default function DirectSaleDetailPage() {
             <div className="pt-4 border-t">
               <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">Notas</div>
               <div className="text-sm bg-muted/30 p-3 rounded-lg border border-dashed italic text-muted-foreground">
-                "{sale.notes}"
+                &ldquo;{sale.notes}&rdquo;
               </div>
             </div>
           )}
