@@ -1,21 +1,33 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@tanstack/react-table';
 import { formatARS } from '@/lib/utils/format';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { Calendar, ArrowUpCircle, ArrowDownCircle, DollarSign, RefreshCw, Eye } from 'lucide-react';
+import {
+  Calendar,
+  ArrowUpCircle,
+  ArrowDownCircle,
+  DollarSign,
+  RefreshCw,
+  Eye,
+  TrendingUp,
+  TrendingDown,
+  Scale,
+  Package,
+  LucideIcon
+} from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { Header, CrudStats } from '@/components/adm';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
@@ -78,14 +90,18 @@ export function DailyOperations() {
     {
       accessorKey: 'createdAt',
       header: 'Hora',
-      cell: ({ row }) => new Date(row.original.createdAt).toLocaleTimeString('es-AR', {
-        hour: '2-digit',
-        minute: '2-digit',
-      }),
+      cell: ({ row }) => (
+        <span className="font-mono text-xs">
+          {new Date(row.original.createdAt).toLocaleTimeString('es-AR', {
+            hour: '2-digit',
+            minute: '2-digit',
+          })}
+        </span>
+      ),
     },
     {
       accessorKey: 'type',
-      header: 'Tipo',
+      header: 'Operación',
       cell: ({ row }) => {
         const type = row.original.type;
         const labels: Record<string, string> = {
@@ -97,19 +113,24 @@ export function DailyOperations() {
           PURCHASE_VOUCHER: 'Compra',
         };
 
-        const colors: Record<string, string> = {
-          INCOME: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-          EXPENSE: 'bg-red-50 text-red-700 border-red-200',
-          OPENING: 'bg-blue-50 text-blue-700 border-blue-200',
-          CLOSING: 'bg-slate-50 text-slate-700 border-slate-200',
-          ADJUSTMENT: 'bg-amber-50 text-amber-700 border-amber-200',
-          PURCHASE_VOUCHER: 'bg-orange-50 text-orange-700 border-orange-200',
+        const icons: Record<string, LucideIcon> = {
+          INCOME: ArrowUpCircle,
+          EXPENSE: ArrowDownCircle,
+          OPENING: DollarSign,
+          CLOSING: DollarSign,
+          ADJUSTMENT: RefreshCw,
+          PURCHASE_VOUCHER: Package,
         };
 
+        const Icon = icons[type] || DollarSign;
+
         return (
-          <Badge variant="outline" className={cn("font-medium", colors[type])}>
-            {labels[type] || type}
-          </Badge>
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center">
+              <Icon className="h-4 w-4 text-primary" />
+            </div>
+            <span className="font-semibold tracking-tight">{labels[type] || type}</span>
+          </div>
         );
       },
     },
@@ -149,7 +170,10 @@ export function DailyOperations() {
         const amount = row.original.amount;
         const isExpense = row.original.type === 'EXPENSE' || row.original.type === 'PURCHASE_VOUCHER';
         return (
-          <span className={isExpense ? 'text-red-600 font-medium' : 'text-emerald-600 font-medium'}>
+          <span className={cn(
+            "font-mono font-medium",
+            isExpense ? 'text-red-600' : 'text-emerald-600'
+          )}>
             {isExpense ? '-' : '+'}{formatARS(amount)}
           </span>
         );
@@ -183,75 +207,58 @@ export function DailyOperations() {
     },
   ], []);
 
+  const stats = useMemo(() => [
+    {
+      label: 'Ingresos',
+      value: formatARS(data?.summary.totalIncome || 0),
+      icon: TrendingUp,
+      iconColor: '#10b981', // emerald-500
+    },
+    {
+      label: 'Egresos',
+      value: formatARS(data?.summary.totalExpense || 0),
+      icon: TrendingDown,
+      iconColor: '#ef4444', // red-500
+    },
+    {
+      label: 'Balance Neto',
+      value: formatARS(data?.summary.netAmount || 0),
+      icon: Scale,
+      iconColor: (data?.summary.netAmount || 0) >= 0 ? '#3b82f6' : '#ef4444', // blue-500 or red-500
+    },
+  ], [data]);
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-2 bg-background border rounded-lg px-3 py-1 shadow-sm w-fit">
-          <Calendar className="h-4 w-4 text-muted-foreground" />
-          <Input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="border-0 focus-visible:ring-0 h-8 w-40 bg-transparent p-0"
-            aria-label="Seleccionar fecha de operaciones"
-          />
-        </div>
-        <Button
-          onClick={() => fetchOperations(date)}
-          loading={loading}
-          variant="outline"
-          size="sm"
-          className="gap-2"
-        >
-          {!loading && <RefreshCw className="h-4 w-4" />}
-          Actualizar
-        </Button>
-      </div>
+      <Header
+        title="Operaciones Diarias"
+        description="Seguimiento de movimientos de caja y ventas"
+        leftActions={
+          <div className="flex items-center gap-2 bg-background border rounded-lg px-3 py-1 shadow-sm h-9">
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <Input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="border-0 focus-visible:ring-0 h-7 w-32 bg-transparent p-0 text-sm font-mono"
+              aria-label="Seleccionar fecha de operaciones"
+            />
+          </div>
+        }
+        secondaryActions={[
+          {
+            label: "Actualizar",
+            onClick: () => fetchOperations(date),
+            icon: RefreshCw,
+            loading: loading,
+          }
+        ]}
+      />
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ingresos</CardTitle>
-            <ArrowUpCircle className="h-4 w-4 text-emerald-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-emerald-600">
-              {formatARS(data?.summary.totalIncome || 0)}
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Egresos</CardTitle>
-            <ArrowDownCircle className="h-4 w-4 text-red-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">
-              {formatARS(data?.summary.totalExpense || 0)}
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Balance</CardTitle>
-            <DollarSign className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${(data?.summary.netAmount || 0) >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
-              {formatARS(data?.summary.netAmount || 0)}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <CrudStats stats={stats} />
 
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <DollarSign className="h-5 w-5 text-muted-foreground" />
-            Operaciones del Día
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <DataTable
             columns={columns}
             data={data?.movements || []}

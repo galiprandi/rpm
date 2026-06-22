@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useUI } from '@/components/ui/UIProvider';
+import { DataTable } from '@/components/ui/data-table';
+import { type ColumnDef } from '@tanstack/react-table';
 import {
   Select,
   SelectContent,
@@ -14,8 +16,9 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Header, CrudStats } from '@/components/adm';
-import { TrendingDown, Users, Receipt, DollarSign, Phone, Eye, Clock } from 'lucide-react';
+import { TrendingDown, Users, Receipt, DollarSign, Phone, Eye, Clock, User } from 'lucide-react';
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
 
 interface Debtor {
   customerId: string;
@@ -129,6 +132,103 @@ export default function DebtorsClient() {
     },
   ] : [];
 
+  const columns: ColumnDef<Debtor>[] = useMemo(() => [
+    {
+      accessorKey: 'customerName',
+      header: 'Cliente',
+      cell: ({ row }) => {
+        const debtor = row.original;
+        return (
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center">
+              <User className="h-4 w-4 text-primary" />
+            </div>
+            <div>
+              <div className="font-semibold tracking-tight">{debtor.customerName}</div>
+              {debtor.phone && (
+                <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5 font-mono">
+                  <Phone className="h-3 w-3" />
+                  {debtor.phone}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: 'vehicles',
+      header: 'Vehículos',
+      cell: ({ row }) => {
+        const vehicles = row.original.vehicles;
+        return (
+          <div className="text-xs text-muted-foreground max-w-[200px] truncate">
+            {vehicles.slice(0, 2).join(', ')}
+            {vehicles.length > 2 && ` +${vehicles.length - 2}`}
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: 'workOrderCount',
+      header: '# OTs',
+      cell: ({ row }) => (
+        <Badge variant="secondary" className="font-mono text-xs">
+          {row.original.workOrderCount}
+        </Badge>
+      ),
+    },
+    {
+      accessorKey: 'balance',
+      header: 'Deuda Total',
+      cell: ({ row }) => (
+        <div className="font-mono font-bold text-red-600">
+          {formatCurrency(row.original.balance)}
+        </div>
+      ),
+    },
+    {
+      accessorKey: 'oldestDebtDate',
+      header: 'Deuda Más Antigua',
+      cell: ({ row }) => {
+        const date = row.original.oldestDebtDate;
+        const daysSince = getDaysSince(date);
+        return (
+          <div className="space-y-1">
+            <div className="text-sm flex items-center gap-1.5 font-mono">
+              <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+              {formatDate(date)}
+            </div>
+            {daysSince && (
+              <div className={cn(
+                "text-xs font-medium",
+                daysSince > 30 ? "text-red-600" : "text-muted-foreground"
+              )}>
+                {daysSince} días
+              </div>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      id: 'actions',
+      header: '',
+      cell: ({ row }) => (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Link href={`/adm/customers/${row.original.customerId}`}>
+              <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Ver cliente">
+                <Eye className="h-4 w-4" />
+              </Button>
+            </Link>
+          </TooltipTrigger>
+          <TooltipContent>Ver cliente</TooltipContent>
+        </Tooltip>
+      ),
+    },
+  ], []);
+
   return (
     <div className="space-y-6">
       <Header
@@ -153,91 +253,14 @@ export default function DebtorsClient() {
 
       <CrudStats stats={stats} />
 
-      {/* Debtors Table */}
       <Card>
-        <CardHeader>
-          <CardTitle>Lista de Deudores</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="text-center py-8">Cargando reporte...</div>
-          ) : debtors.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No hay clientes con deuda pendiente
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-muted">
-                  <tr>
-                    <th className="text-left py-3 px-4 font-medium">Cliente</th>
-                    <th className="text-left py-3 px-4 font-medium">Vehículos</th>
-                    <th className="text-center py-3 px-4 font-medium"># OTs</th>
-                    <th className="text-right py-3 px-4 font-medium">Deuda Total</th>
-                    <th className="text-left py-3 px-4 font-medium">Deuda Más Antigua</th>
-                    <th className="text-center py-3 px-4 font-medium"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {debtors.map((debtor) => {
-                    const daysSince = getDaysSince(debtor.oldestDebtDate);
-                    return (
-                      <tr key={debtor.customerId} className="border-t hover:bg-muted/30 transition-colors group">
-                        <td className="py-3 px-4">
-                          <div className="font-medium">{debtor.customerName}</div>
-                          {debtor.phone && (
-                            <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                              <Phone className="h-3 w-3" />
-                              {debtor.phone}
-                            </div>
-                          )}
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="text-xs text-muted-foreground">
-                            {debtor.vehicles.slice(0, 2).join(', ')}
-                            {debtor.vehicles.length > 2 && ` +${debtor.vehicles.length - 2}`}
-                          </div>
-                        </td>
-                        <td className="text-center py-3 px-4">
-                          <Badge variant="secondary" className="font-mono text-xs">
-                            {debtor.workOrderCount}
-                          </Badge>
-                        </td>
-                        <td className="text-right py-3 px-4">
-                          <div className="font-bold text-red-600">
-                            {formatCurrency(debtor.balance)}
-                          </div>
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="text-sm flex items-center gap-1.5">
-                            <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                            {formatDate(debtor.oldestDebtDate)}
-                          </div>
-                          {daysSince && (
-                            <div className={`text-xs font-medium ${daysSince > 30 ? 'text-red-600' : 'text-muted-foreground'}`}>
-                              {daysSince} días
-                            </div>
-                          )}
-                        </td>
-                        <td className="text-center py-3 px-4">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Link href={`/adm/customers/${debtor.customerId}`}>
-                                <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Ver cliente">
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                              </Link>
-                            </TooltipTrigger>
-                            <TooltipContent>Ver cliente</TooltipContent>
-                          </Tooltip>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
+        <CardContent className="pt-6">
+          <DataTable
+            columns={columns}
+            data={debtors}
+            pageSize={50}
+            emptyMessage={loading ? "Cargando reporte..." : "No hay clientes con deuda pendiente"}
+          />
         </CardContent>
       </Card>
     </div>

@@ -149,3 +149,7 @@ Para estados vacíos en tablas y dashboards:
 Los `loading.tsx` deben implementar esqueletos que imiten no solo la estructura general, sino también las proporciones de la tabla:
 - **Header**: Usar `bg-muted/50` para el fondo del encabezado del esqueleto.
 - **Columnas**: Definir anchos proporcionales (usando `flex-[valor]` o anchos fijos) que coincidan con la vista final para eliminar saltos de layout al cargar los datos.
+
+## 17. Typography Consistency
+
+- **Technical Data**: Siempre usar `font-mono` para IDs, SKUs, CUIs, Teléfonos, Fechas (en contextos técnicos) y montos monetarios. Esto mejora la legibilidad de datos tabulares y alineación numérica.

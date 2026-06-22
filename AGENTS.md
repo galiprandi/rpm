@@ -148,6 +148,7 @@ Cada modificación debe dejar el archivo en mejor estado:
 - **Product Module Refinement**: La vista de productos implementa el `Standardized List Row Entity Pattern` y el `Form UX Enhancement Pattern` con `font-mono` para campos técnicos y SKU integrado en la columna principal.
 - **Inventory Counts Refinement**: La vista de operativos de inventario utiliza el `Standardized List Row Entity Pattern` (icono `ClipboardCheck`) y asegura que todos los campos técnicos (SKU, Stock, Location, Folios) usen `font-mono`.
 - **Purchase Voucher Refinement**: Los comprobantes de compra implementan el `Standardized List Row Entity Pattern` en tablas de borrador y detalle, y el `Form UX Enhancement Pattern` en diálogos de carga con `font-mono` para montos y cantidades.
+- **Adm Refactor (Daily Ops, Debtors, Direct Sale Detail)**: Implementación de `Standardized List Row Entity Pattern` y `font-mono` para campos técnicos y financieros, integrando los componentes `Header` y `CrudStats` para una consistencia visual total.
 
 ---
 
