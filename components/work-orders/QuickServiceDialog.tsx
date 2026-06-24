@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useUI } from '@/components/ui/UIProvider';
+import { Wrench, FileText, DollarSign, Clock, Truck } from 'lucide-react';
 
 interface Service {
   id: string;
@@ -114,27 +115,43 @@ export function QuickServiceDialog({
           <Label htmlFor="quick-name" required>
             Nombre del Servicio
           </Label>
-          <Input
-            id="quick-name"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            placeholder="Ej: Instalación barras LED"
-            required
-            aria-required="true"
-          />
+          <div className="relative">
+            <Wrench
+              className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none"
+              aria-hidden="true"
+            />
+            <Input
+              id="quick-name"
+              value={formData.name}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
+              placeholder="Ej: Instalación barras LED"
+              className="pl-9"
+              required
+              aria-required="true"
+            />
+          </div>
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="quick-description">Descripción</Label>
-          <Textarea
-            id="quick-description"
-            value={formData.description}
-            onChange={(e) =>
-              setFormData({ ...formData, description: e.target.value })
-            }
-            placeholder="Descripción detallada del servicio..."
-            rows={2}
-          />
+          <div className="relative">
+            <FileText
+              className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none"
+              aria-hidden="true"
+            />
+            <Textarea
+              id="quick-description"
+              value={formData.description}
+              onChange={(e) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
+              placeholder="Descripción detallada del servicio..."
+              rows={2}
+              className="pl-9"
+            />
+          </div>
         </div>
 
         <div className="grid grid-cols-3 gap-4">
@@ -142,53 +159,74 @@ export function QuickServiceDialog({
             <Label htmlFor="quick-baseCost" required>
               Costo Base ($)
             </Label>
-            <Input
-              id="quick-baseCost"
-              type="number"
-              min="0"
-              step="0.01"
-              value={formData.baseCost}
-              onChange={(e) =>
-                setFormData({ ...formData, baseCost: e.target.value })
-              }
-              placeholder="15000"
-              required
-              aria-required="true"
-            />
+            <div className="relative">
+              <DollarSign
+                className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none"
+                aria-hidden="true"
+              />
+              <Input
+                id="quick-baseCost"
+                type="number"
+                min="0"
+                step="0.01"
+                value={formData.baseCost}
+                onChange={(e) =>
+                  setFormData({ ...formData, baseCost: e.target.value })
+                }
+                placeholder="15000"
+                className="pl-9 font-mono"
+                required
+                aria-required="true"
+              />
+            </div>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="quick-timeMinutes" required>
               Tiempo (min)
             </Label>
-            <Input
-              id="quick-timeMinutes"
-              type="number"
-              min="1"
-              value={formData.timeMinutes}
-              onChange={(e) =>
-                setFormData({ ...formData, timeMinutes: e.target.value })
-              }
-              placeholder="60"
-              required
-              aria-required="true"
-            />
+            <div className="relative">
+              <Clock
+                className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none"
+                aria-hidden="true"
+              />
+              <Input
+                id="quick-timeMinutes"
+                type="number"
+                min="1"
+                value={formData.timeMinutes}
+                onChange={(e) =>
+                  setFormData({ ...formData, timeMinutes: e.target.value })
+                }
+                placeholder="60"
+                className="pl-9 font-mono"
+                required
+                aria-required="true"
+              />
+            </div>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="quick-vehicleFactor">Factor Vehículo</Label>
-            <Input
-              id="quick-vehicleFactor"
-              type="number"
-              min="0.1"
-              max="10"
-              step="0.1"
-              value={formData.vehicleFactor}
-              onChange={(e) =>
-                setFormData({ ...formData, vehicleFactor: e.target.value })
-              }
-              placeholder="1.0"
-            />
+            <div className="relative">
+              <Truck
+                className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none"
+                aria-hidden="true"
+              />
+              <Input
+                id="quick-vehicleFactor"
+                type="number"
+                min="0.1"
+                max="10"
+                step="0.1"
+                value={formData.vehicleFactor}
+                onChange={(e) =>
+                  setFormData({ ...formData, vehicleFactor: e.target.value })
+                }
+                placeholder="1.0"
+                className="pl-9 font-mono"
+              />
+            </div>
           </div>
         </div>
       </div>
