@@ -9,7 +9,7 @@ import { ThemeSelector } from '@/components/ui/ThemeSelector';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { SettingItem } from '@/components/settings/SettingItem';
-import { CreditCard, ChevronRight, Palette, Percent } from 'lucide-react';
+import { CreditCard, ChevronRight, Palette, Percent, TrendingUp } from 'lucide-react';
 
 interface SettingsClientProps {
   initialMinimumMargin: number;
@@ -92,6 +92,10 @@ export default function SettingsClient({ initialMinimumMargin }: SettingsClientP
               >
                 <div className="flex items-center gap-3">
                   <div className="relative">
+                    <TrendingUp
+                      className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none"
+                      aria-hidden="true"
+                    />
                     <Input
                       type="number"
                       min={0}
@@ -99,7 +103,7 @@ export default function SettingsClient({ initialMinimumMargin }: SettingsClientP
                       step={0.1}
                       value={minimumMargin}
                       onChange={(e) => setMinimumMargin(e.target.value)}
-                      className="w-24 h-9 text-sm pr-7"
+                      className="w-32 h-9 text-sm pl-9 pr-7 font-mono"
                     />
                     <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium">
                       %

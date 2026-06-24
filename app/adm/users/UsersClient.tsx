@@ -237,11 +237,22 @@ export default function UsersClient({ initialUsers }: UsersClientProps) {
       {
         accessorKey: 'notes',
         header: 'Notas',
-        cell: ({ row }) => (
-          <span className="text-sm text-muted-foreground truncate max-w-[150px]">
-            {row.original.notes || '-'}
-          </span>
-        ),
+        cell: ({ row }) => {
+          const notes = row.original.notes;
+          if (!notes) return <span className="text-muted-foreground">-</span>;
+          return (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="max-w-[150px] truncate cursor-help text-sm text-muted-foreground">
+                  {notes}
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-xs">
+                {notes}
+              </TooltipContent>
+            </Tooltip>
+          );
+        },
       },
     ],
     []
