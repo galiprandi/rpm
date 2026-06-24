@@ -121,7 +121,7 @@ export function CustomerForm({
               value={formData.phone}
               onChange={(e) => handleChange("phone", e.target.value)}
               placeholder="+54 11 1234-5678"
-              className="pl-9"
+            className="pl-9 font-mono"
             />
           </div>
         </div>
@@ -137,7 +137,7 @@ export function CustomerForm({
               value={formData.phoneAlt}
               onChange={(e) => handleChange("phoneAlt", e.target.value)}
               placeholder="+54 11 9876-5432"
-              className="pl-9"
+            className="pl-9 font-mono"
             />
           </div>
         </div>
@@ -157,7 +157,7 @@ export function CustomerForm({
             value={formData.email}
             onChange={(e) => handleChange("email", e.target.value)}
             placeholder="juan@ejemplo.com"
-            className="pl-9"
+            className="pl-9 font-mono"
           />
         </div>
       </div>
@@ -229,7 +229,7 @@ export function CustomerForm({
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="invoiceType">Tipo Factura</Label>
+                <Label htmlFor="customer-invoice-type">Tipo Factura</Label>
                 <div className="relative">
                   <FileText
                     className="absolute left-3 top-2 h-4 w-4 text-muted-foreground z-10 pointer-events-none"
@@ -247,7 +247,7 @@ export function CustomerForm({
                       }))
                     }
                   >
-                    <SelectTrigger id="invoiceType" className="pl-9">
+                    <SelectTrigger id="customer-invoice-type" className="pl-9">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -279,7 +279,7 @@ export function CustomerForm({
             onChange={(e) => handleChange("notes", e.target.value)}
             placeholder="Información adicional sobre el cliente..."
             rows={3}
-            className="pl-9"
+            className="pl-9 min-h-[80px]"
           />
         </div>
       </div>

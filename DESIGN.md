@@ -130,6 +130,7 @@ secondaryActions={[
 - **Dynamic Entity Colors**: En entidades con color propio (Categorías), el fondo del contenedor debe usar ese color y el icono una `drop-shadow-sm` blanca para garantizar legibilidad.
 - **Product Row Pattern**: La celda de producto en la tabla utiliza el `Standardized List Row Entity Pattern` integrando la imagen del producto (o icono `Package`) y el SKU en fuente mono debajo del nombre.
 - **Inventory Operative Pattern**: Los listados de operativos de inventario utilizan el `Standardized List Row Entity Pattern` con el icono `ClipboardCheck`, mostrando el folio (#ID) como título y el timestamp detallado como sub-texto.
+- **Customer List Pattern**: La tabla de clientes utiliza el `Standardized List Row Entity Pattern` con el icono `User`. Los vehículos asociados se muestran como mini-pills con `font-mono` para una rápida identificación de patentes.
 
 ## 14. Form UX Enhancement Pattern
 
