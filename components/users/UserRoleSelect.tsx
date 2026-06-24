@@ -1,7 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Shield } from 'lucide-react';
 
 export interface RoleOption {
   value: string;
@@ -11,12 +18,13 @@ export interface RoleOption {
 }
 
 interface UserRoleSelectProps {
+  id?: string;
   value: string;
   onChange: (value: string) => void;
   disabled?: boolean;
 }
 
-export function UserRoleSelect({ value, onChange, disabled }: UserRoleSelectProps) {
+export function UserRoleSelect({ id, value, onChange, disabled }: UserRoleSelectProps) {
   const [roles, setRoles] = useState<RoleOption[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -36,29 +44,40 @@ export function UserRoleSelect({ value, onChange, disabled }: UserRoleSelectProp
 
   if (loading) {
     return (
-      <NativeSelect disabled value="">
-        <NativeSelectOption value="">Cargando roles...</NativeSelectOption>
-      </NativeSelect>
+      <div className="relative">
+        <Shield className="absolute left-3 top-2 h-4 w-4 text-muted-foreground z-10 pointer-events-none" aria-hidden="true" />
+        <Select disabled value="">
+          <SelectTrigger id={id} className="pl-9">
+            <SelectValue placeholder="Cargando roles..." />
+          </SelectTrigger>
+        </Select>
+      </div>
     );
   }
 
   return (
     <div className="space-y-2">
-      <NativeSelect
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        disabled={disabled}
-        className="w-full"
-      >
-        <NativeSelectOption value="">Selecciona un rol</NativeSelectOption>
-        {roles.map((role) => (
-          <NativeSelectOption key={role.value} value={role.value}>
-            {role.label}
-          </NativeSelectOption>
-        ))}
-      </NativeSelect>
+      <div className="relative">
+        <Shield className="absolute left-3 top-2 h-4 w-4 text-muted-foreground z-10 pointer-events-none" aria-hidden="true" />
+        <Select
+          value={value}
+          onValueChange={onChange}
+          disabled={disabled}
+        >
+          <SelectTrigger id={id} className="pl-9" aria-required="true">
+            <SelectValue placeholder="Selecciona un rol" />
+          </SelectTrigger>
+          <SelectContent>
+            {roles.map((role) => (
+              <SelectItem key={role.value} value={role.value}>
+                {role.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
       {value && (
-        <p className="text-xs text-muted-foreground">
+        <p className="text-xs text-muted-foreground px-1">
           {roles.find((r) => r.value === value)?.description}
         </p>
       )}

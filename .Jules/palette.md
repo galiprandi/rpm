@@ -31,7 +31,7 @@
 **Action:** Always use `parseFloat` and `step="0.1"` (or finer) for margin/percentage fields to maintain consistency with the app's financial logic.
 
 ## 2026-06-18 - Standardizing Tables and Warnings in Dialogs
-**Learning:** Dialog-based summaries (like Purchase Voucher previews) benefit from using the project's standard `Table` components and the semantic amber warning protocol (`text-amber-600 border-amber-200 bg-amber-50`). This creates a cohesive "admin" feel and ensures that critical discrepancies are visually distinct from informational states.
+**Learning:** Dialog-based summaries (like Purchase Voucher previews) benefit from using the project's standard `Table` components and the semantic amber warning protocol (`text-amber-600 border-red-200 bg-red-50`). This creates a cohesive "admin" feel and ensures that critical discrepancies are visually distinct from informational states.
 **Action:** When refactoring modal summaries, always replace native HTML tables with the shadcn/ui `Table` set and use the three-tier semantic protocol for alerts.
 
 ## 2026-06-20 - Enhancing Credit Note Form Accessibility and UX
@@ -41,3 +41,7 @@
 ## 2026-06-22 - Standardizing Administrative Tables and Maintaining Badge Contrast
 **Learning:** Refactoring native HTML tables to the shadcn/ui `Table` set in administrative modules ensures visual consistency and provides better interactive states (hover, borders). When updating status badges, maintaining a `700` text weight on `50` backgrounds (e.g., `text-emerald-700` on `bg-emerald-50`) is critical to meeting WCAG AA contrast requirements (4.5:1), as lighter `600` variants often fall short. Additionally, consistent application of `aria-hidden="true"` to decorative icons and `aria-label` to pagination elements significantly reduces screen reader noise in data-heavy views.
 **Action:** Always use the shadcn/ui `Table` components for administrative data and verify that badge color combinations meet accessibility contrast standards. Ensure all decorative icons are hidden from screen readers.
+
+## 2026-06-25 - Standardizing User Management Forms and Select Accessibility
+**Learning:** Applying the Form UX Enhancement Pattern to User Management creates a more professional and accessible experience. Replacing native selects with shadcn/ui `Select` components featuring contextual icons (like `Shield`) within a relative/absolute wrapper ensures visual harmony with other administrative modules. A critical accessibility requirement for shadcn/ui is explicitly linking the `Label` to the `SelectTrigger` via matching `id` and `htmlFor` attributes, and ensuring the decorative icon is properly layered with `z-10` and `aria-hidden="true"`. Additionally, standardizing technical inputs like Email with `font-mono` typography improves data scannability.
+**Action:** Always refactor native selects to the enhanced `Select` + Icon pattern in administrative forms. Ensure all labels are semantically linked to their interactive triggers and apply `font-mono` to technical/identifier fields.

@@ -77,6 +77,7 @@ export function UserForm({ formData, setFormData, isEditing = false }: UserFormP
           Rol
         </Label>
         <UserRoleSelect
+          id="role"
           value={formData.role}
           onChange={(value) => setFormData({ ...formData, role: value })}
         />
