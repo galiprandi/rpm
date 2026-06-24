@@ -52,6 +52,8 @@ export interface HeaderProps {
   leftActions?: ReactNode;
   /** Clases CSS adicionales para el contenedor */
   className?: string;
+  /** Clases CSS adicionales para el título */
+  titleClassName?: string;
 }
 
 /**
@@ -99,11 +101,12 @@ export function Header({
   onBack,
   leftActions,
   className = '',
+  titleClassName = '',
 }: HeaderProps) {
   return (
     <div className={`flex justify-between items-start ${className}`}>
       <div>
-        <h1 className="text-3xl font-bold text-foreground">{title}</h1>
+        <h1 className={`text-3xl font-bold text-foreground ${titleClassName}`}>{title}</h1>
         {description && (
           <p className="text-muted-foreground mt-1">{description}</p>
         )}

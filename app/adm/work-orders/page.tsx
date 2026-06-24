@@ -12,8 +12,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Plus, LayoutGrid, List, ArrowUpDown, Car, Truck, Wrench, Headphones, Package } from "lucide-react";
+import { Plus, LayoutGrid, List, ArrowUpDown, Car, Truck, Wrench, Headphones, Package, ClipboardList, Wallet, DollarSign } from "lucide-react";
 import { Header } from "@/components/adm/Header";
+import { CrudStats } from "@/components/adm/CrudStats";
 import { cn } from "@/lib/utils";
 import {
   DndContext,
@@ -66,18 +67,18 @@ const getCategoryIcon = (category: string) => {
     case 'CAR':
     case 'SUV':
     case 'PICKUP':
-      return { icon: <Car className="h-4 w-4" />, label: "Automóvil" };
+      return { icon: <Car className="h-4 w-4 pointer-events-none" aria-hidden="true" />, label: "Automóvil" };
     case 'TRUCK':
-      return { icon: <Truck className="h-4 w-4" />, label: "Camión / Pesado" };
+      return { icon: <Truck className="h-4 w-4 pointer-events-none" aria-hidden="true" />, label: "Camión / Pesado" };
     case 'MOTORCYCLE':
-      return { icon: <Wrench className="h-4 w-4" />, label: "Moto / Mecánica" };
+      return { icon: <Wrench className="h-4 w-4 pointer-events-none" aria-hidden="true" />, label: "Moto / Mecánica" };
     case 'AUDIO_EQUIPMENT':
-      return { icon: <Headphones className="h-4 w-4" />, label: "Audio / Electrónica" };
+      return { icon: <Headphones className="h-4 w-4 pointer-events-none" aria-hidden="true" />, label: "Audio / Electrónica" };
     case 'TRAILER':
-      return { icon: <Package className="h-4 w-4" />, label: "Trailer / Remolque" };
+      return { icon: <Package className="h-4 w-4 pointer-events-none" aria-hidden="true" />, label: "Trailer / Remolque" };
     case 'OTHER_EQUIPMENT':
     default:
-      return { icon: <Package className="h-4 w-4" />, label: "Otro / Equipamiento" };
+      return { icon: <Package className="h-4 w-4 pointer-events-none" aria-hidden="true" />, label: "Otro / Equipamiento" };
   }
 };
 
@@ -136,12 +137,12 @@ function KanbanCard({ wo, isOverlay = false }: { wo: WorkOrder; isOverlay?: bool
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-            {wo.vehicle.identifier}
+            <span className="font-mono tracking-tighter">{wo.vehicle.identifier}</span>
           </div>
           <Badge
             variant={wo.isFullyPaid ? "outline" : (wo.totalPaid && wo.totalPaid > 0 ? "secondary" : "outline")}
             className={cn(
-              "text-[10px] px-1.5 py-0 h-5",
+              "text-[10px] px-1.5 py-0 h-5 font-mono",
               wo.isFullyPaid ? "border-emerald-200 bg-emerald-50 text-emerald-700" :
               (wo.totalPaid && wo.totalPaid > 0 ? "border-yellow-200 bg-yellow-50 text-yellow-700" : "text-muted-foreground")
             )}
@@ -157,11 +158,11 @@ function KanbanCard({ wo, isOverlay = false }: { wo: WorkOrder; isOverlay?: bool
           <span className="font-medium">{wo.customer.name}</span>
           {isDelayed(wo) ? (
             <span className="text-orange-600 font-bold flex items-center gap-0.5">
-              <ArrowUpDown className="h-2.5 w-2.5" />
+              <ArrowUpDown className="h-2.5 w-2.5 pointer-events-none" aria-hidden="true" />
               DEMORADA
             </span>
           ) : (
-            <span>
+            <span className="font-mono">
               {new Date(wo.createdAt).toLocaleDateString("es-AR", {
                 day: "2-digit",
                 month: "short"
@@ -292,6 +293,33 @@ export default function WorkOrdersPage() {
   const activeWorkOrder = useMemo(() =>
     activeId ? workOrders.find(wo => wo.id === activeId) : null
   , [activeId, workOrders]);
+
+  const stats = useMemo(() => {
+    const openOrders = workOrders.filter(wo => wo.status !== 'DELIVERED').length;
+    const pendingPayment = workOrders.filter(wo => !wo.isFullyPaid).length;
+    const totalBilling = workOrders.reduce((sum, wo) => sum + Number(wo.total), 0);
+
+    return [
+      {
+        label: "Abiertas",
+        value: openOrders,
+        icon: ClipboardList,
+        iconColor: "#3b82f6", // blue-500
+      },
+      {
+        label: "Pend. Pago",
+        value: pendingPayment,
+        icon: Wallet,
+        iconColor: "#f59e0b", // amber-500
+      },
+      {
+        label: "Facturación Total",
+        value: `$${totalBilling.toLocaleString("es-AR")}`,
+        icon: DollarSign,
+        iconColor: "#10b981", // emerald-500
+      }
+    ];
+  }, [workOrders]);
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string);
@@ -425,7 +453,7 @@ export default function WorkOrdersPage() {
             size="sm"
             onClick={() => setViewMode("kanban")}
           >
-            <LayoutGrid className="h-4 w-4 mr-2" />
+            <LayoutGrid className="h-4 w-4 mr-2 pointer-events-none" aria-hidden="true" />
             Kanban
           </Button>
           <Button
@@ -433,7 +461,7 @@ export default function WorkOrdersPage() {
             size="sm"
             onClick={() => setViewMode("list")}
           >
-            <List className="h-4 w-4 mr-2" />
+            <List className="h-4 w-4 mr-2 pointer-events-none" aria-hidden="true" />
             Lista
           </Button>
           <div className="w-px h-6 bg-border mx-1" />
@@ -445,13 +473,15 @@ export default function WorkOrdersPage() {
           >
             Pendientes de Pago
             {paymentFilter === "pending" && (
-              <span className="ml-2 text-xs bg-white/20 px-1.5 py-0.5 rounded">
+              <span className="ml-2 text-xs bg-white/20 px-1.5 py-0.5 rounded font-mono">
                 {filteredWorkOrders.length}
               </span>
             )}
           </Button>
         </div>
       </Header>
+
+      <CrudStats stats={stats} />
 
       {/* Content */}
       {viewMode === "kanban" ? (
@@ -488,55 +518,60 @@ export default function WorkOrdersPage() {
               No hay órdenes de trabajo
             </div>
           ) : (
-            workOrders.map((wo) => (
-              <Link key={wo.id} href={`/adm/work-orders/${wo.id}`}>
-                <Card className="cursor-pointer hover:bg-muted/50 transition-colors">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2 font-medium text-lg">
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <span className="text-muted-foreground">
-                                  {getCategoryIcon(wo.vehicle.category).icon}
-                                </span>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>{getCategoryIcon(wo.vehicle.category).label}</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                          {wo.vehicle.identifier}
+            workOrders.map((wo) => {
+              const { icon: categoryIcon, label: categoryLabel } = getCategoryIcon(wo.vehicle.category);
+              return (
+                <Link key={wo.id} href={`/adm/work-orders/${wo.id}`}>
+                  <Card className="cursor-pointer hover:bg-muted/50 transition-colors">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          {/* Standardized List Row Entity Pattern */}
+                          <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="text-primary">
+                                    {categoryIcon}
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>{categoryLabel}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </div>
+                          <div>
+                            <div className="font-semibold tracking-tight font-mono">
+                              {wo.vehicle.identifier}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {wo.customer.name} • {wo.vehicle.make?.name} {wo.vehicle.model?.name}
+                            </div>
+                          </div>
                         </div>
-                        <div>
-                          <div className="font-medium">{wo.customer.name}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {wo.vehicle.make?.name} {wo.vehicle.model?.name}
+                        <div className="flex items-center gap-4">
+                          {getStatusBadge(wo.status)}
+                          <Badge
+                            variant={wo.isFullyPaid ? "outline" : (wo.totalPaid && wo.totalPaid > 0 ? "secondary" : "outline")}
+                            className={cn(
+                              "px-2.5 py-0.5 font-mono",
+                              wo.isFullyPaid ? "border-emerald-200 bg-emerald-50 text-emerald-700" :
+                              (wo.totalPaid && wo.totalPaid > 0 ? "border-yellow-200 bg-yellow-50 text-yellow-700" : "text-muted-foreground")
+                            )}
+                          >
+                            ${Number(wo.total).toLocaleString("es-AR")}
+                          </Badge>
+                          <div className="text-sm text-muted-foreground font-mono">
+                            {new Date(wo.createdAt).toLocaleDateString("es-AR")}
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-4">
-                        {getStatusBadge(wo.status)}
-                        <Badge
-                          variant={wo.isFullyPaid ? "outline" : (wo.totalPaid && wo.totalPaid > 0 ? "secondary" : "outline")}
-                          className={cn(
-                            "px-2.5 py-0.5",
-                            wo.isFullyPaid ? "border-emerald-200 bg-emerald-50 text-emerald-700" :
-                            (wo.totalPaid && wo.totalPaid > 0 ? "border-yellow-200 bg-yellow-50 text-yellow-700" : "text-muted-foreground")
-                          )}
-                        >
-                          ${Number(wo.total).toLocaleString("es-AR")}
-                        </Badge>
-                        <div className="text-sm text-muted-foreground">
-                          {new Date(wo.createdAt).toLocaleDateString("es-AR")}
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))
+                    </CardContent>
+                  </Card>
+                </Link>
+              );
+            })
           )}
         </div>
       )}

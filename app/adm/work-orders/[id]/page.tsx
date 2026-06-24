@@ -37,8 +37,10 @@ import {
   Mail,
   Edit,
   X,
-  Loader2,
   Undo2,
+  Package,
+  Wrench,
+  ArrowUpDown,
 } from "lucide-react";
 import { ProductServiceSelector, SelectedItem } from "@/components/ui/ProductServiceSelector";
 import Image from "next/image";
@@ -170,6 +172,8 @@ interface WorkOrderDetail {
   paymentMethod?: string;
   paymentNotes?: string;
   total: number;
+  totalPaid?: number;
+  isFullyPaid?: boolean;
   odometerValue?: number;
   fuelLevel?: number;
   totalProducts: number;
@@ -476,11 +480,14 @@ export default function WorkOrderDetailPage() {
     );
   }
 
+  const balance = Math.max(0, workOrder.total - totalPaid);
+
   return (
     <div className="container mx-auto py-6 space-y-6">
       {/* Header - Vehículo como protagonista */}
       <Header
         title={workOrder.vehicle.identifier}
+        titleClassName="font-mono tracking-tighter"
         showBackButton
         leftActions={
           <Select
@@ -488,7 +495,7 @@ export default function WorkOrderDetailPage() {
             onValueChange={handleStatusChange}
             disabled={updatingStatus}
           >
-            <SelectTrigger className="w-44 h-9">
+            <SelectTrigger className="w-44 h-9" id="status-select">
               <SelectValue placeholder="Estado" />
             </SelectTrigger>
             <SelectContent>
@@ -522,12 +529,15 @@ export default function WorkOrderDetailPage() {
               <div className="text-sm">
                 {editingScheduledDate ? (
                   <div className="flex items-center gap-2">
-                    <Input
-                      type="datetime-local"
-                      value={newScheduledDate}
-                      onChange={(e) => setNewScheduledDate(e.target.value)}
-                      className="h-8 w-48"
-                    />
+                    <div className="relative">
+                      <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" aria-hidden="true" />
+                      <Input
+                        type="datetime-local"
+                        value={newScheduledDate}
+                        onChange={(e) => setNewScheduledDate(e.target.value)}
+                        className="h-8 w-48 pl-9 font-mono"
+                      />
+                    </div>
                     <Button size="sm" onClick={handleUpdateScheduledDate}>
                       Guardar
                     </Button>
@@ -538,20 +548,23 @@ export default function WorkOrderDetailPage() {
                 ) : (
                   <div className="flex items-center gap-2 bg-muted/50 px-3 py-1 rounded-full border">
                     <span className="text-muted-foreground flex items-center gap-1.5 font-medium">
-                      <Clock className="h-3.5 w-3.5 text-primary" />
-                      {new Date(workOrder.scheduledDate).toLocaleString("es-AR", {
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+                      <Clock className="h-3.5 w-3.5 text-primary pointer-events-none" aria-hidden="true" />
+                      <span className="font-mono">
+                        {new Date(workOrder.scheduledDate).toLocaleString("es-AR", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
                     </span>
                     <Button
                       variant="ghost"
                       size="sm"
                       className="h-6 px-2 text-xs hover:bg-primary/10"
                       onClick={() => startEditingScheduledDate()}
+                      aria-label="Editar fecha agendada"
                     >
                       Editar
                     </Button>
@@ -568,21 +581,39 @@ export default function WorkOrderDetailPage() {
               >
                 <span className="font-semibold text-primary">{workOrder.customer?.name}</span>
                 <div className="w-px h-3 bg-primary/30" />
-                <span className="flex items-center gap-1 text-muted-foreground">
-                  <Phone className="h-3.5 w-3.5" />
+                <span className="flex items-center gap-1 text-muted-foreground font-mono">
+                  <Phone className="h-3.5 w-3.5 pointer-events-none" aria-hidden="true" />
                   {workOrder.customer?.phone}
                 </span>
               </a>
               {workOrder.customer?.email && (
                 <a
                   href={`mailto:${workOrder.customer.email}`}
-                  className="flex items-center gap-1.5 text-muted-foreground hover:text-primary transition-colors"
+                  className="flex items-center gap-1.5 text-muted-foreground hover:text-primary transition-colors font-mono"
                 >
-                  <Mail className="h-3.5 w-3.5" />
+                  <Mail className="h-3.5 w-3.5 pointer-events-none" aria-hidden="true" />
                   {workOrder.customer.email}
                 </a>
               )}
             </div>
+          </div>
+
+          {/* Metadata Pills Pattern for Financial Stats */}
+          <div className="flex flex-wrap items-center gap-2 mt-4">
+             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted/50 border text-xs font-medium text-muted-foreground">
+                <DollarSign className="h-3.5 w-3.5 pointer-events-none" aria-hidden="true" />
+                Total: <span className="text-foreground font-mono">${Number(workOrder.total).toLocaleString("es-AR")}</span>
+             </div>
+             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 border border-emerald-200 text-xs font-medium text-emerald-700">
+                <Check className="h-3.5 w-3.5 pointer-events-none" aria-hidden="true" />
+                Pagado: <span className="font-mono">${totalPaid.toLocaleString("es-AR")}</span>
+             </div>
+             {balance > 0 && (
+               <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-50 border border-amber-200 text-xs font-medium text-amber-700">
+                  <Clock className="h-3.5 w-3.5 pointer-events-none" aria-hidden="true" />
+                  Pendiente: <span className="font-mono">${balance.toLocaleString("es-AR")}</span>
+               </div>
+             )}
           </div>
         </div>
       </Header>
@@ -652,18 +683,29 @@ export default function WorkOrderDetailPage() {
                     workOrder.work_order_item.map((item) => (
                       <TableRow key={item.id}>
                         <TableCell className="font-medium">
-                          {item.product?.name || item.service?.name || item.name}
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0">
+                              {item.type === "PRODUCT" ? (
+                                <Package className="h-4 w-4 text-primary pointer-events-none" aria-hidden="true" />
+                              ) : (
+                                <Wrench className="h-4 w-4 text-primary pointer-events-none" aria-hidden="true" />
+                              )}
+                            </div>
+                            <span className="font-semibold tracking-tight">
+                              {item.product?.name || item.service?.name || item.name}
+                            </span>
+                          </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={item.type === "PRODUCT" ? "default" : "secondary"}>
+                          <Badge variant={item.type === "PRODUCT" ? "outline" : "secondary"} className={item.type === "PRODUCT" ? "border-primary/20" : ""}>
                             {item.type === "PRODUCT" ? "Producto" : "Servicio"}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-right">{item.quantity}</TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right font-mono">{item.quantity}</TableCell>
+                        <TableCell className="text-right font-mono">
                           ${Number(item.unitPrice).toLocaleString("es-AR")}
                         </TableCell>
-                        <TableCell className="text-right font-medium">
+                        <TableCell className="text-right font-medium font-mono">
                           ${Number(item.subtotal).toLocaleString("es-AR")}
                         </TableCell>
                       </TableRow>
@@ -676,13 +718,13 @@ export default function WorkOrderDetailPage() {
                 <div className="mt-4 flex justify-end pt-4 border-t">
                   <div className="text-right space-y-1">
                     <div className="text-sm text-muted-foreground">
-                      Productos: ${Number(workOrder.totalProducts).toLocaleString("es-AR")}
+                      Productos: <span className="font-mono">${Number(workOrder.totalProducts).toLocaleString("es-AR")}</span>
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      Servicios: ${Number(workOrder.totalServices).toLocaleString("es-AR")}
+                      Servicios: <span className="font-mono">${Number(workOrder.totalServices).toLocaleString("es-AR")}</span>
                     </div>
                     <div className="text-2xl font-bold pt-1">
-                      Total: ${Number(workOrder.total).toLocaleString("es-AR")}
+                      Total: <span className="font-mono tracking-tight">${Number(workOrder.total).toLocaleString("es-AR")}</span>
                     </div>
                   </div>
                 </div>
@@ -705,16 +747,16 @@ export default function WorkOrderDetailPage() {
             <div className="flex gap-6">
               <div>
                 <p className="text-sm text-muted-foreground">Total OT</p>
-                <p className="text-lg font-semibold">${Number(workOrder.total).toLocaleString("es-AR")}</p>
+                <p className="text-lg font-semibold font-mono">${Number(workOrder.total).toLocaleString("es-AR")}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Pagado</p>
-                <p className="text-lg font-semibold text-emerald-600">${totalPaid.toLocaleString("es-AR")}</p>
+                <p className="text-lg font-semibold text-emerald-600 font-mono">${totalPaid.toLocaleString("es-AR")}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Pendiente</p>
-                <p className={`text-lg font-semibold ${totalPaid >= workOrder.total ? 'text-emerald-600' : 'text-amber-600'}`}>
-                  ${Math.max(0, workOrder.total - totalPaid).toLocaleString("es-AR")}
+                <p className={`text-lg font-semibold font-mono ${totalPaid >= workOrder.total ? 'text-emerald-600' : 'text-amber-600'}`}>
+                  ${balance.toLocaleString("es-AR")}
                 </p>
               </div>
             </div>
@@ -736,11 +778,11 @@ export default function WorkOrderDetailPage() {
                 {payments.map((payment) => (
                   <div key={payment.id} className="flex justify-between items-center p-3 bg-muted rounded-md">
                     <div>
-                      <p className="font-medium">${Number(payment.amount).toLocaleString("es-AR")}</p>
+                      <p className="font-medium font-mono">${Number(payment.amount).toLocaleString("es-AR")}</p>
                       <p className="text-xs text-muted-foreground">{payment.paymentMethod.name}</p>
                       {payment.notes && <p className="text-xs text-muted-foreground">{payment.notes}</p>}
                     </div>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-muted-foreground font-mono">
                       {new Date(payment.createdAt).toLocaleDateString("es-AR")}
                     </p>
                   </div>
@@ -809,14 +851,18 @@ export default function WorkOrderDetailPage() {
                       {editingChecklist === 'entry' ? (
                         <div className="space-y-2">
                           <div className="flex items-center gap-2">
-                            <label className="text-xs font-medium w-24">Kilometraje:</label>
-                            <Input
-                              type="number"
-                              value={editingOdometer ?? ''}
-                              onChange={(e) => setEditingOdometer(e.target.value ? parseInt(e.target.value) : undefined)}
-                              placeholder="km"
-                              className="h-8"
-                            />
+                            <label className="text-xs font-medium w-24" htmlFor="entry-odometer">Kilometraje:</label>
+                            <div className="relative flex-1">
+                              <ArrowUpDown className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" aria-hidden="true" />
+                              <Input
+                                id="entry-odometer"
+                                type="number"
+                                value={editingOdometer ?? ''}
+                                onChange={(e) => setEditingOdometer(e.target.value ? parseInt(e.target.value) : undefined)}
+                                placeholder="km"
+                                className="h-8 pl-9 font-mono"
+                              />
+                            </div>
                           </div>
                           <FuelLevelSlider
                             value={editingFuelLevel ?? 0}
@@ -835,12 +881,12 @@ export default function WorkOrderDetailPage() {
                         <div className="space-y-1">
                           {(workOrder.entryChecklist.odometerValue ?? workOrder.odometerValue) && (
                             <div className="text-xs">
-                              <span className="font-medium">Kilometraje:</span> {workOrder.entryChecklist.odometerValue ?? workOrder.odometerValue} km
+                              <span className="font-medium">Kilometraje:</span> <span className="font-mono">{workOrder.entryChecklist.odometerValue ?? workOrder.odometerValue}</span> km
                             </div>
                           )}
                           {(workOrder.entryChecklist.fuelLevel ?? workOrder.fuelLevel) && (
                             <div className="text-xs">
-                              <span className="font-medium">Combustible:</span> {workOrder.entryChecklist.fuelLevel ?? workOrder.fuelLevel}%
+                              <span className="font-medium">Combustible:</span> <span className="font-mono">{workOrder.entryChecklist.fuelLevel ?? workOrder.fuelLevel}%</span>
                             </div>
                           )}
                         </div>
@@ -902,14 +948,18 @@ export default function WorkOrderDetailPage() {
                       {editingChecklist === 'exit' ? (
                         <div className="space-y-2">
                           <div className="flex items-center gap-2">
-                            <label className="text-xs font-medium w-24">Kilometraje:</label>
-                            <Input
-                              type="number"
-                              value={editingOdometer ?? ''}
-                              onChange={(e) => setEditingOdometer(e.target.value ? parseInt(e.target.value) : undefined)}
-                              placeholder="km"
-                              className="h-8"
-                            />
+                            <label className="text-xs font-medium w-24" htmlFor="exit-odometer">Kilometraje:</label>
+                            <div className="relative flex-1">
+                              <ArrowUpDown className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" aria-hidden="true" />
+                              <Input
+                                id="exit-odometer"
+                                type="number"
+                                value={editingOdometer ?? ''}
+                                onChange={(e) => setEditingOdometer(e.target.value ? parseInt(e.target.value) : undefined)}
+                                placeholder="km"
+                                className="h-8 pl-9 font-mono"
+                              />
+                            </div>
                           </div>
                           <FuelLevelSlider
                             value={editingFuelLevel ?? 0}
@@ -928,12 +978,12 @@ export default function WorkOrderDetailPage() {
                         <div className="space-y-1">
                           {(workOrder.exitChecklist.odometerValue ?? workOrder.odometerValue) && (
                             <div className="text-xs">
-                              <span className="font-medium">Kilometraje:</span> {workOrder.exitChecklist.odometerValue ?? workOrder.odometerValue} km
+                              <span className="font-medium">Kilometraje:</span> <span className="font-mono">{workOrder.exitChecklist.odometerValue ?? workOrder.odometerValue}</span> km
                             </div>
                           )}
                           {(workOrder.exitChecklist.fuelLevel ?? workOrder.fuelLevel) && (
                             <div className="text-xs">
-                              <span className="font-medium">Combustible:</span> {workOrder.exitChecklist.fuelLevel ?? workOrder.fuelLevel}%
+                              <span className="font-medium">Combustible:</span> <span className="font-mono">{workOrder.exitChecklist.fuelLevel ?? workOrder.fuelLevel}%</span>
                             </div>
                           )}
                         </div>
@@ -1100,12 +1150,16 @@ export default function WorkOrderDetailPage() {
                 <CardContent>
                   {editingNotes ? (
                     <div className="space-y-2">
-                      <Textarea
-                        value={newNotes}
-                        onChange={(e) => setNewNotes(e.target.value)}
-                        placeholder="Agregar notas..."
-                        rows={4}
-                      />
+                      <div className="relative">
+                        <FileText className="absolute left-3 top-3 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+                        <Textarea
+                          value={newNotes}
+                          onChange={(e) => setNewNotes(e.target.value)}
+                          placeholder="Agregar notas..."
+                          rows={4}
+                          className="pl-9"
+                        />
+                      </div>
                       <div className="flex gap-2">
                         <Button size="sm" onClick={handleUpdateNotes} loading={savingNotes}>
                           Guardar
