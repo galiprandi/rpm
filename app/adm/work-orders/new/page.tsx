@@ -16,7 +16,7 @@ import { useUI } from "@/components/ui/UIProvider";
 import { ProductServiceSelector } from "@/components/ui/ProductServiceSelector";
 import { VehicleDialog } from "@/components/vehicles/VehicleDialog";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { Save, Plus, Search, Car, User, CheckCircle, Edit, RotateCcw } from "lucide-react";
+import { Save, Plus, Search, Car, User, CheckCircle, Edit, RotateCcw, ArrowUpDown, Clock } from "lucide-react";
 
 // Storage key for wizard persistence
 const WIZARD_STORAGE_KEY = "work-order-wizard-state";
@@ -446,19 +446,21 @@ export default function NewWorkOrderPage() {
 
                   <div className="flex flex-col gap-2 max-w-md mx-auto">
                     <div className="flex gap-2">
-                      <Input
-                        autoFocus
-                        placeholder="Ej: ABC123 o AB123CD"
-                        value={plateSearch}
-                        onChange={(e) => {
-                          setPlateSearch(e.target.value.toUpperCase());
-                          if (plateError) setPlateError(null);
-                        }}
-                        onKeyDown={(e) => e.key === "Enter" && searchVehicle()}
-                        className="flex-1 text-center text-lg uppercase"
-                      />
+                      <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+                        <Input
+                          autoFocus
+                          placeholder="Ej: ABC123 o AB123CD"
+                          value={plateSearch}
+                          onChange={(e) => {
+                            setPlateSearch(e.target.value.toUpperCase());
+                            if (plateError) setPlateError(null);
+                          }}
+                          onKeyDown={(e) => e.key === "Enter" && searchVehicle()}
+                          className="flex-1 text-center text-lg uppercase pl-9 font-mono tracking-widest"
+                        />
+                      </div>
                       <Button onClick={searchVehicle} disabled={searching || !plateSearch.trim()}>
-                        <Search className="h-4 w-4 mr-2" />
                         {searching ? "Buscando..." : "Buscar"}
                       </Button>
                     </div>
@@ -673,14 +675,19 @@ export default function NewWorkOrderPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Odómetro (km)</Label>
-                  <Input
-                    type="number"
-                    placeholder="Ej: 45320"
-                    value={odometerValue}
-                    onChange={(e) => setOdometerValue(e.target.value)}
-                    min={0}
-                  />
+                  <Label htmlFor="odometer">Odómetro (km)</Label>
+                  <div className="relative">
+                    <ArrowUpDown className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+                    <Input
+                      id="odometer"
+                      type="number"
+                      placeholder="Ej: 45320"
+                      value={odometerValue}
+                      onChange={(e) => setOdometerValue(e.target.value)}
+                      min={0}
+                      className="pl-9 font-mono"
+                    />
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <FuelLevelSlider
@@ -693,22 +700,31 @@ export default function NewWorkOrderPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="scheduled-date">Fecha estimada de entrega (opcional)</Label>
-                <Input
-                  id="scheduled-date"
-                  type="datetime-local"
-                  value={scheduledDate}
-                  onChange={(e) => setScheduledDate(e.target.value)}
-                />
+                <div className="relative">
+                  <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+                  <Input
+                    id="scheduled-date"
+                    type="datetime-local"
+                    value={scheduledDate}
+                    onChange={(e) => setScheduledDate(e.target.value)}
+                    className="pl-9 font-mono"
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">
-                <Label>Notas / Observaciones</Label>
-                <Textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Detalles adicionales de la orden de trabajo..."
-                  rows={3}
-                />
+                <Label htmlFor="notes">Notas / Observaciones</Label>
+                <div className="relative">
+                  <Edit className="absolute left-3 top-3 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+                  <Textarea
+                    id="notes"
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="Detalles adicionales de la orden de trabajo..."
+                    rows={3}
+                    className="pl-9"
+                  />
+                </div>
               </div>
 
               <div className="p-4 bg-muted rounded-md">
