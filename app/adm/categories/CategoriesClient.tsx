@@ -66,7 +66,7 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
   };
 
   const handleCreateCategory = async () => {
-    if (!createForm.name.trim()) return;
+    if (!createForm.name.trim() || saving) return;
 
     setSaving(true);
     try {
@@ -142,7 +142,7 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
 
   const handleEditSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (!editingCategory) return;
+    if (!editingCategory || saving) return;
 
     setSaving(true);
     try {
@@ -204,7 +204,7 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
           <div className="flex items-center gap-3">
             <div
               className="w-8 h-8 rounded-lg shadow-sm border border-primary/20 flex items-center justify-center shrink-0"
-              style={{ backgroundColor: row.original.color || 'var(--primary-foreground)' }}
+              style={{ backgroundColor: row.original.color || 'var(--primary)' }}
             >
               <Folder className="h-4 w-4 text-white drop-shadow-sm" aria-hidden="true" />
             </div>
@@ -216,7 +216,7 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
         accessorKey: 'description',
         header: 'Descripción',
         cell: ({ row }) => (
-          <span className="text-muted-foreground text-sm">
+          <span className="text-muted-foreground text-sm line-clamp-1">
             {row.original.description || '-'}
           </span>
         ),
@@ -224,13 +224,15 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
       {
         accessorKey: 'productCount',
         header: 'Productos',
-        cell: ({ row }) => <span>{row.original.productCount}</span>,
+        cell: ({ row }) => <span className="font-mono">{row.original.productCount}</span>,
       },
       {
         accessorKey: 'defaultMarginPercent',
         header: 'Margen',
         cell: ({ row }) => (
-          <Badge variant="secondary">{row.original.defaultMarginPercent}%</Badge>
+          <Badge variant="secondary" className="font-mono">
+            {row.original.defaultMarginPercent}%
+          </Badge>
         ),
       },
       {
@@ -272,7 +274,9 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
         onCreate={() => setIsCreateDialogOpen(true)}
         hideCreateAction
         columns={columns}
-        emptyIcon={<Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />}
+        emptyIcon={
+          <Package className="h-12 w-12 mx-auto text-muted-foreground/20 mb-4" aria-hidden="true" />
+        }
         emptyMessage="No hay categorías creadas. Haz clic en 'Nueva Categoría' para crear la primera."
         createButtonText="Categoría"
         tableTitle="Listado de Categorías"
