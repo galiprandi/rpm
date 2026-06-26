@@ -145,6 +145,8 @@ Cada modificación debe dejar el archivo en mejor estado:
 - **Form UX Enhancement**: Todo formulario administrativo debe usar iconos contextuales absolutos con `pl-9` en sus inputs y `font-mono` para campos técnicos.
 - **Empty State UI**: Los iconos decorativos en estados vacíos deben usar `text-muted-foreground/20` para evitar ruido visual.
 - **High-Fidelity Skeletons**: Los archivos `loading.tsx` deben usar esqueletos que imiten las proporciones reales de las columnas para mitigar el layout shift.
+- **Financial Detail View Refinement**: Las vistas de detalle financiero (como Venta Directa) deben usar el patrón de "Detail Headers" con metadata pills para montos (`font-mono`, `emerald-600`), fechas y conteos de items, y estandarizar las filas de items/pagos con el contenedor de iconos `8x8`.
+- **Operational Log Refinement**: Los listados de operaciones diarias y reportes de deuda deben asegurar el uso estricto de `font-mono` para horas, métodos, patentes y montos, además de aplicar `font-semibold tracking-tight` para nombres de entidades principales.
 - **Product Module Refinement**: La vista de productos implementa el `Standardized List Row Entity Pattern` y el `Form UX Enhancement Pattern` con `font-mono` para campos técnicos y SKU integrado en la columna principal.
 - **Inventory Counts Refinement**: La vista de operativos de inventario utiliza el `Standardized List Row Entity Pattern` (icono `ClipboardCheck`) y asegura que todos los campos técnicos (SKU, Stock, Location, Folios) usen `font-mono`.
 - **Purchase Voucher Refinement**: Los comprobantes de compra implementan el `Standardized List Row Entity Pattern` en tablas de borrador y detalle, y el `Form UX Enhancement Pattern` en diálogos de carga con `font-mono` para montos y cantidades.

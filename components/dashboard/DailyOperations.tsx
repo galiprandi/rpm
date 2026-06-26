@@ -127,7 +127,7 @@ export function DailyOperations() {
         return (
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center">
-              <Icon className="h-4 w-4 text-primary" />
+              <Icon className="h-4 w-4 text-primary pointer-events-none" aria-hidden="true" />
             </div>
             <span className="font-semibold tracking-tight">{labels[type] || type}</span>
           </div>
@@ -137,7 +137,11 @@ export function DailyOperations() {
     {
       accessorKey: 'customer.name',
       header: 'Cliente',
-      cell: ({ row }) => row.original.customer?.name || '-',
+      cell: ({ row }) => (
+        <div className="font-semibold tracking-tight">
+          {row.original.customer?.name || '-'}
+        </div>
+      ),
     },
     {
       accessorKey: 'reason',
@@ -162,6 +166,11 @@ export function DailyOperations() {
     {
       accessorKey: 'methodName',
       header: 'Método',
+      cell: ({ row }) => (
+        <span className="font-mono text-sm">
+          {row.original.methodName}
+        </span>
+      ),
     },
     {
       accessorKey: 'amount',
@@ -195,7 +204,7 @@ export function DailyOperations() {
             <TooltipTrigger asChild>
               <Button asChild variant="ghost" size="sm" className="h-8 w-8 p-0">
                 <Link href={href} aria-label="Ver detalle de la operación">
-                  <Eye className="h-4 w-4" />
+                  <Eye className="h-4 w-4 pointer-events-none" aria-hidden="true" />
                   <span className="sr-only">Ver detalle</span>
                 </Link>
               </Button>
@@ -235,7 +244,7 @@ export function DailyOperations() {
         description="Seguimiento de movimientos de caja y ventas"
         leftActions={
           <div className="flex items-center gap-2 bg-background border rounded-lg px-3 py-1 shadow-sm h-9">
-            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <Calendar className="h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
             <Input
               type="date"
               value={date}

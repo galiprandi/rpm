@@ -88,7 +88,7 @@ export function SupplierForm({
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               placeholder="proveedor@email.com"
-              className="pl-9"
+              className="pl-9 font-mono"
             />
           </div>
         </div>
