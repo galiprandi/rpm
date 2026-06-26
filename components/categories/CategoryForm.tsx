@@ -32,7 +32,7 @@ export function CategoryForm({
   return (
     <form id="category-form" onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="name" required>
+        <Label htmlFor="category-name" required>
           Nombre
         </Label>
         <div className="relative">
@@ -41,7 +41,7 @@ export function CategoryForm({
             aria-hidden="true"
           />
           <Input
-            id="name"
+            id="category-name"
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             placeholder="Ej: Repuestos, Lubricantes..."
@@ -53,14 +53,14 @@ export function CategoryForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="description">Descripción</Label>
+        <Label htmlFor="category-description">Descripción</Label>
         <div className="relative">
           <FileText
             className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none"
             aria-hidden="true"
           />
           <Textarea
-            id="description"
+            id="category-description"
             value={formData.description}
             onChange={(e) =>
               setFormData({ ...formData, description: e.target.value })
@@ -74,14 +74,14 @@ export function CategoryForm({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="defaultMarginPercent">Margen Sugerido (%)</Label>
+          <Label htmlFor="category-margin">Margen Sugerido (%)</Label>
           <div className="relative">
             <TrendingUp
               className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none"
               aria-hidden="true"
             />
             <Input
-              id="defaultMarginPercent"
+              id="category-margin"
               type="number"
               min="0"
               max="500"
@@ -94,13 +94,13 @@ export function CategoryForm({
                 })
               }
               placeholder="40"
-              className="pl-9"
+              className="pl-9 font-mono"
             />
           </div>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="color">Color Visual</Label>
+          <Label htmlFor="category-color">Color Visual</Label>
           <div className="relative">
             <Palette
               className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none"
@@ -108,7 +108,7 @@ export function CategoryForm({
             />
             <div className="flex gap-2 items-center pl-9">
               <Input
-                id="color"
+                id="category-color"
                 type="color"
                 value={formData.color || '#3b82f6'}
                 onChange={(e) =>
