@@ -128,7 +128,7 @@ export default function DirectSaleDetailPage() {
             </div>
             <div className="space-y-1.5">
               <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Total</div>
-              <div className="font-mono font-bold text-xl text-emerald-600">
+              <div className="font-mono font-bold text-xl text-emerald-700">
                 {formatCurrency(sale.total)}
               </div>
             </div>
@@ -205,7 +205,7 @@ export default function DirectSaleDetailPage() {
             ))}
             <div className="flex items-center justify-between p-4 bg-muted/20 rounded-xl border border-dashed font-bold text-xl mt-4">
               <span className="text-muted-foreground text-sm uppercase tracking-widest font-semibold">Total General</span>
-              <span className="font-mono text-emerald-600">{formatCurrency(sale.total)}</span>
+              <span className="font-mono text-emerald-700">{formatCurrency(sale.total)}</span>
             </div>
           </div>
         </CardContent>
@@ -225,7 +225,7 @@ export default function DirectSaleDetailPage() {
               <div key={payment.id} className="flex items-center justify-between p-4 border rounded-xl bg-slate-50/50">
                 <div className="flex items-center gap-4 flex-1">
                   <div className="w-10 h-10 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center">
-                    <DollarSign className="h-5 w-5 text-emerald-600" />
+                    <DollarSign className="h-5 w-5 text-emerald-700" />
                   </div>
                   <div>
                     <div className="font-semibold tracking-tight">{payment.paymentMethod.name}</div>
@@ -239,14 +239,14 @@ export default function DirectSaleDetailPage() {
                     )}
                   </div>
                 </div>
-                <div className="font-mono font-bold text-emerald-600 text-lg">
+                <div className="font-mono font-bold text-emerald-700 text-lg">
                   {formatCurrency(payment.amount)}
                 </div>
               </div>
             ))}
             <div className="flex items-center justify-between p-4 bg-emerald-50/30 rounded-xl border border-emerald-100 font-bold text-xl mt-4">
               <span className="text-emerald-700/60 text-sm uppercase tracking-widest font-semibold">Total Recaudado</span>
-              <span className="font-mono text-emerald-600">{formatCurrency(sale.payments.reduce((sum, p) => sum + p.amount, 0))}</span>
+              <span className="font-mono text-emerald-700">{formatCurrency(sale.payments.reduce((sum, p) => sum + p.amount, 0))}</span>
             </div>
           </div>
         </CardContent>

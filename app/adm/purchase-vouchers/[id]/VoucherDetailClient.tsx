@@ -213,7 +213,7 @@ export default function VoucherDetailClient({ initialVoucher }: VoucherDetailCli
             variant={voucher.status === 'DRAFT' ? 'secondary' : 'outline'}
             className={
               voucher.status === 'FINALIZED'
-                ? 'text-emerald-600 border-emerald-200 bg-emerald-50 font-semibold'
+                ? 'text-emerald-700 border-emerald-200 bg-emerald-50 font-semibold'
                 : 'font-semibold'
             }
           >
@@ -364,7 +364,7 @@ export default function VoucherDetailClient({ initialVoucher }: VoucherDetailCli
                           currency: 'ARS',
                         })}
                       </TableCell>
-                      <TableCell className="px-6 py-4 text-right font-semibold text-emerald-600">
+                      <TableCell className="px-6 py-4 text-right font-semibold text-emerald-700">
                         {parseFloat(item.subtotal).toLocaleString('es-AR', {
                           style: 'currency',
                           currency: 'ARS',

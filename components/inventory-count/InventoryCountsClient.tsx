@@ -190,7 +190,7 @@ function StatusBadge({ status }: { status: string }) {
       );
     case 'APPROVED':
       return (
-        <Badge variant="outline" className="text-emerald-600 border-emerald-200 bg-emerald-50">
+        <Badge variant="outline" className="text-emerald-700 border-emerald-200 bg-emerald-50">
           Aprobado
         </Badge>
       );

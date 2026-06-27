@@ -233,7 +233,7 @@ export default function SuppliersClient({ initialSuppliers }: SuppliersClientPro
         accessorKey: 'phone',
         header: 'Teléfono',
         cell: ({ row }) => (
-          <div className="flex items-center gap-1 text-sm">
+          <div className="flex items-center gap-1 text-sm font-mono">
             {row.original.phone && <Phone className="h-3 w-3 text-muted-foreground" />}
             <span>{row.original.phone || '-'}</span>
           </div>
@@ -243,7 +243,7 @@ export default function SuppliersClient({ initialSuppliers }: SuppliersClientPro
         accessorKey: 'email',
         header: 'Email',
         cell: ({ row }) => (
-          <div className="flex items-center gap-1 text-sm">
+          <div className="flex items-center gap-1 text-sm font-mono">
             {row.original.email && <Mail className="h-3 w-3 text-muted-foreground" />}
             <span>{row.original.email || '-'}</span>
           </div>
@@ -260,7 +260,7 @@ export default function SuppliersClient({ initialSuppliers }: SuppliersClientPro
         cell: ({ row }) => (
           <Badge
             variant={row.original.isActive ? 'outline' : 'secondary'}
-            className={row.original.isActive ? 'text-emerald-600 border-emerald-200 bg-emerald-50' : ''}
+            className={row.original.isActive ? 'text-emerald-700 border-emerald-200 bg-emerald-50' : ''}
           >
             {row.original.isActive ? 'Activo' : 'Inactivo'}
           </Badge>

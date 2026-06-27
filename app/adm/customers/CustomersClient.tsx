@@ -162,7 +162,7 @@ export default function CustomersClient({ initialCustomers }: CustomersClientPro
           }
           // balance < 0 (saldo a favor)
           return (
-            <span className="font-mono font-medium text-emerald-600">
+            <span className="font-mono font-medium text-emerald-700">
               {new Intl.NumberFormat('es-AR', {
                 style: 'currency',
                 currency: 'ARS',
