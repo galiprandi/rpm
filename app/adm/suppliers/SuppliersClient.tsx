@@ -316,7 +316,7 @@ export default function SuppliersClient({ initialSuppliers }: SuppliersClientPro
                   onClick={() => openEditDialog(supplier)}
                   aria-label="Editar proveedor"
                 >
-                  <Pencil className="h-4 w-4" />
+                  <Pencil className="h-4 w-4 pointer-events-none" aria-hidden="true" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Editar proveedor</TooltipContent>
@@ -332,7 +332,7 @@ export default function SuppliersClient({ initialSuppliers }: SuppliersClientPro
                   disabled={supplier.productCount > 0}
                   aria-label="Eliminar proveedor"
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-4 w-4 pointer-events-none" aria-hidden="true" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>

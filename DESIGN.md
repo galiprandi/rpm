@@ -132,6 +132,8 @@ secondaryActions={[
 - **Inventory Operative Pattern**: Los listados de operativos de inventario utilizan el `Standardized List Row Entity Pattern` con el icono `ClipboardCheck`, mostrando el folio (#ID) como título y el timestamp detallado como sub-texto.
 - **Customer List Pattern**: La tabla de clientes utiliza el `Standardized List Row Entity Pattern` con el icono `User`. Los vehículos asociados se muestran como mini-pills con `font-mono` para una rápida identificación de patentes.
 - **Category List Pattern**: La tabla de categorías utiliza el `Standardized List Row Entity Pattern` con el icono `Folder` y el color dinámico de la categoría.
+- **Operational Log Pattern**: En listados de movimientos (Operaciones Diarias), las celdas de "Hora" y "Método" deben usar `font-mono` y un tamaño de fuente ligeramente reducido (`text-xs` o `text-sm`) para maximizar la densidad de información sin perder legibilidad.
+- **Financial Report Pattern**: Los reportes de deudores deben resaltar el saldo pendiente usando `font-mono font-bold text-red-600` y mostrar patentes de vehículos como mini-pills de alta densidad.
 
 ## 14. Form UX Enhancement Pattern
 
