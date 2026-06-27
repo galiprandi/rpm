@@ -15,9 +15,14 @@ export default function DebtorsLoading() {
       </div>
 
       {/* Stats Skeleton */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="flex flex-wrap items-center gap-x-1">
         {[...Array(4)].map((_, i) => (
-          <Skeleton key={i} className="h-28 w-full" />
+          <div key={i} className="flex items-center">
+            <Skeleton className="h-3.5 w-3.5 mr-1" />
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-4 w-16 ml-1" />
+            {i < 3 && <span className="mx-2 text-muted-foreground/50">·</span>}
+          </div>
         ))}
       </div>
 
