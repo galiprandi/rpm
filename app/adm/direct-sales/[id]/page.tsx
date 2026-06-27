@@ -124,7 +124,29 @@ export default function DirectSaleDetailPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="space-y-1.5">
+              <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Fecha</div>
+              <div className="font-mono text-sm flex items-center gap-2 px-2.5 py-1 rounded-md bg-muted/50 border w-fit">
+                <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                {new Date(sale.createdAt).toLocaleDateString('es-AR', {
+                  day: '2-digit',
+                  month: '2-digit',
+                  year: 'numeric',
+                })}
+                <Clock className="h-3.5 w-3.5 ml-1 text-muted-foreground" />
+                {new Date(sale.createdAt).toLocaleTimeString('es-AR', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Total</div>
+              <div className="font-mono font-bold text-xl text-emerald-700">
+                {formatCurrency(sale.total)}
+              </div>
+            </div>
             <div className="space-y-1.5">
               <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Cliente</div>
               <div className="flex items-center gap-3">
@@ -208,7 +230,7 @@ export default function DirectSaleDetailPage() {
             })}
             <div className="flex items-center justify-between p-4 bg-muted/20 rounded-xl border border-dashed font-bold text-xl mt-4">
               <span className="text-muted-foreground text-sm uppercase tracking-widest font-semibold">Total General</span>
-              <span className="font-mono text-emerald-600">{formatCurrency(sale.total)}</span>
+              <span className="font-mono text-emerald-700">{formatCurrency(sale.total)}</span>
             </div>
           </div>
         </CardContent>
@@ -227,8 +249,8 @@ export default function DirectSaleDetailPage() {
             {sale.payments.map((payment) => (
               <div key={payment.id} className="flex items-center justify-between p-4 border rounded-xl bg-slate-50/50">
                 <div className="flex items-center gap-4 flex-1">
-                  <div className="w-10 h-10 rounded-lg bg-emerald-100/50 border border-emerald-200/50 shadow-sm flex items-center justify-center shrink-0">
-                    <DollarSign className="h-5 w-5 text-emerald-600 pointer-events-none" aria-hidden="true" />
+                  <div className="w-10 h-10 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center">
+                    <DollarSign className="h-5 w-5 text-emerald-700" />
                   </div>
                   <div>
                     <div className="font-semibold tracking-tight">{payment.paymentMethod.name}</div>
@@ -242,14 +264,14 @@ export default function DirectSaleDetailPage() {
                     )}
                   </div>
                 </div>
-                <div className="font-mono font-bold text-emerald-600 text-lg">
+                <div className="font-mono font-bold text-emerald-700 text-lg">
                   {formatCurrency(payment.amount)}
                 </div>
               </div>
             ))}
             <div className="flex items-center justify-between p-4 bg-emerald-50/30 rounded-xl border border-emerald-100 font-bold text-xl mt-4">
               <span className="text-emerald-700/60 text-sm uppercase tracking-widest font-semibold">Total Recaudado</span>
-              <span className="font-mono text-emerald-600">{formatCurrency(sale.payments.reduce((sum, p) => sum + p.amount, 0))}</span>
+              <span className="font-mono text-emerald-700">{formatCurrency(sale.payments.reduce((sum, p) => sum + p.amount, 0))}</span>
             </div>
           </div>
         </CardContent>

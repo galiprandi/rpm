@@ -751,11 +751,11 @@ export default function WorkOrderDetailPage() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Pagado</p>
-                <p className="text-lg font-semibold text-emerald-600 font-mono">${totalPaid.toLocaleString("es-AR")}</p>
+                <p className="text-lg font-semibold text-emerald-700 font-mono">${totalPaid.toLocaleString("es-AR")}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Pendiente</p>
-                <p className={`text-lg font-semibold font-mono ${totalPaid >= workOrder.total ? 'text-emerald-600' : 'text-amber-600'}`}>
+                <p className={`text-lg font-semibold font-mono ${totalPaid >= workOrder.total ? 'text-emerald-700' : 'text-amber-600'}`}>
                   ${balance.toLocaleString("es-AR")}
                 </p>
               </div>

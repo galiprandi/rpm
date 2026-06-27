@@ -430,7 +430,7 @@ export default function CustomerDetailPage() {
           <div className="flex items-center justify-between">
             <div>
               <div className="text-sm text-muted-foreground">Saldo Actual</div>
-              <div className={`text-3xl font-bold ${customer.balance > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+              <div className={`text-3xl font-bold ${customer.balance > 0 ? 'text-red-600' : 'text-emerald-700'}`}>
                 {formatCurrency(customer.balance)}
               </div>
               <div className="text-xs text-muted-foreground mt-1">

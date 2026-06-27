@@ -605,7 +605,7 @@ export default function CashClient() {
                           <tr key={method} className="hover:bg-muted/20 transition-colors">
                             <td className="py-4 px-6 font-semibold text-card-foreground">{getMethodName(method)}</td>
                             <td className="text-right py-4 px-6">{formatCurrency(summary.opening)}</td>
-                            <td className="text-right py-4 px-6 text-emerald-600 font-medium">+{formatCurrency(summary.income)}</td>
+                            <td className="text-right py-4 px-6 text-emerald-700 font-medium">+{formatCurrency(summary.income)}</td>
                             <td className="text-right py-4 px-6 text-red-600 font-medium">-{formatCurrency(summary.expense)}</td>
                             <td className="text-right py-4 px-6 font-bold text-base text-primary">
                               {formatCurrency(summary.expected)}
@@ -703,7 +703,7 @@ export default function CashClient() {
                               ? 'text-blue-600'
                               : record.difference < 0
                               ? 'text-red-600'
-                              : 'text-emerald-600'
+                              : 'text-emerald-700'
                           }`}>
                             {record.difference !== 0
                               ? `${record.difference > 0 ? '+' : ''}${formatCurrency(record.difference)}`
@@ -772,7 +772,7 @@ export default function CashClient() {
             <Label htmlFor="openingAmount">
               Monto Inicial Efectivo
               {cashStatus && cashStatus.suggestedOpeningAmount > 0 && (
-                <span className="text-xs text-emerald-600 font-medium ml-2 bg-emerald-50 px-2 py-0.5 rounded-full">
+                <span className="text-xs text-emerald-700 font-medium ml-2 bg-emerald-50 px-2 py-0.5 rounded-full">
                   Sugerido: {formatCurrency(cashStatus.suggestedOpeningAmount)}
                 </span>
               )}
@@ -1010,7 +1010,7 @@ export default function CashClient() {
                           ? diff > 0 
                             ? 'text-blue-600'
                             : 'text-red-600'
-                          : 'text-emerald-600'
+                          : 'text-emerald-700'
                       }`}>
                         {hasDiff ? (
                           <div className="flex items-center justify-end gap-1.5">

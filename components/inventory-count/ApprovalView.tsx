@@ -222,7 +222,7 @@ export function ApprovalView({ operativeId }: { operativeId: string }) {
                     ) : (
                       <div className="flex flex-col items-center">
                         <span className="font-bold text-sm">{item.countedStock}</span>
-                        <span className={cn("text-[10px] font-medium", diff > 0 ? "text-emerald-600" : diff < 0 ? "text-red-600" : "text-muted-foreground")}>
+                        <span className={cn("text-[10px] font-medium", diff > 0 ? "text-emerald-700" : diff < 0 ? "text-red-600" : "text-muted-foreground")}>
                           ({diff > 0 ? '+' : ''}{diff})
                         </span>
                       </div>
@@ -294,7 +294,7 @@ function StatusBadge({ status }: { status: string }) {
     case 'COMPLETED':
       return <Badge variant="outline" className="text-purple-600 border-purple-200 bg-purple-50">Realizado</Badge>;
     case 'APPROVED':
-      return <Badge variant="outline" className="text-emerald-600 border-emerald-200 bg-emerald-50">Aprobado</Badge>;
+      return <Badge variant="outline" className="text-emerald-700 border-emerald-200 bg-emerald-50">Aprobado</Badge>;
     default:
       return <Badge variant="secondary">{status}</Badge>;
   }

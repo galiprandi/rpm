@@ -228,7 +228,7 @@ export default function UsersClient({ initialUsers }: UsersClientProps) {
         cell: ({ row }) => (
           <Badge
             variant={row.original.isActive ? 'outline' : 'secondary'}
-            className={row.original.isActive ? 'text-emerald-600 border-emerald-200 bg-emerald-50' : ''}
+            className={row.original.isActive ? 'text-emerald-700 border-emerald-200 bg-emerald-50' : ''}
           >
             {row.original.isActive ? 'Activo' : 'Inactivo'}
           </Badge>

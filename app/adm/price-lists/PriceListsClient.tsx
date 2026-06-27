@@ -264,7 +264,7 @@ export default function PriceListsClient({ initialPriceLists }: PriceListsClient
           row.original.isActive ? (
             <Badge
               variant="outline"
-              className="text-emerald-600 border-emerald-200 bg-emerald-50"
+              className="text-emerald-700 border-emerald-200 bg-emerald-50"
             >
               Activa
             </Badge>

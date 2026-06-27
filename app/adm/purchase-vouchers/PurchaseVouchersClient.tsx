@@ -167,7 +167,7 @@ export default function PurchaseVouchersClient({ initialVouchers }: PurchaseVouc
             variant={status === 'DRAFT' ? 'secondary' : 'outline'}
             className={
               status === 'FINALIZED'
-                ? 'text-emerald-600 border-emerald-200 bg-emerald-50'
+                ? 'text-emerald-700 border-emerald-200 bg-emerald-50'
                 : ''
             }
           >
@@ -209,7 +209,7 @@ export default function PurchaseVouchersClient({ initialVouchers }: PurchaseVouc
               <span className="text-muted-foreground">
                 {itemsCount} {itemsCount === 1 ? 'ítem' : 'ítems'}
               </span>
-              <span className={`font-medium font-mono ${isComplete ? 'text-emerald-600' : 'text-amber-600'}`}>
+              <span className={`font-medium font-mono ${isComplete ? 'text-emerald-700' : 'text-amber-600'}`}>
                 {progressPct.toFixed(0)}%
               </span>
             </div>
@@ -281,7 +281,7 @@ export default function PurchaseVouchersClient({ initialVouchers }: PurchaseVouc
                     <Button
                       size="icon"
                       variant="ghost"
-                      className="h-8 w-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                      className="h-8 w-8 text-emerald-700 hover:text-emerald-700 hover:bg-emerald-50"
                       onClick={() => {
                         setCurrentVoucherId(v.id);
                         setCurrentVoucherTotal(parseFloat(v.totalAmount));
