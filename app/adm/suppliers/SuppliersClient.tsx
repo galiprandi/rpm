@@ -233,8 +233,8 @@ export default function SuppliersClient({ initialSuppliers }: SuppliersClientPro
         accessorKey: 'phone',
         header: 'Teléfono',
         cell: ({ row }) => (
-          <div className="flex items-center gap-1 text-sm">
-            {row.original.phone && <Phone className="h-3 w-3 text-muted-foreground" />}
+          <div className="flex items-center gap-1 text-sm font-mono">
+            {row.original.phone && <Phone className="h-3 w-3 text-muted-foreground pointer-events-none" aria-hidden="true" />}
             <span>{row.original.phone || '-'}</span>
           </div>
         ),
@@ -243,8 +243,8 @@ export default function SuppliersClient({ initialSuppliers }: SuppliersClientPro
         accessorKey: 'email',
         header: 'Email',
         cell: ({ row }) => (
-          <div className="flex items-center gap-1 text-sm">
-            {row.original.email && <Mail className="h-3 w-3 text-muted-foreground" />}
+          <div className="flex items-center gap-1 text-sm font-mono">
+            {row.original.email && <Mail className="h-3 w-3 text-muted-foreground pointer-events-none" aria-hidden="true" />}
             <span>{row.original.email || '-'}</span>
           </div>
         ),
@@ -316,7 +316,7 @@ export default function SuppliersClient({ initialSuppliers }: SuppliersClientPro
                   onClick={() => openEditDialog(supplier)}
                   aria-label="Editar proveedor"
                 >
-                  <Pencil className="h-4 w-4" />
+                  <Pencil className="h-4 w-4 pointer-events-none" aria-hidden="true" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Editar proveedor</TooltipContent>
@@ -332,7 +332,7 @@ export default function SuppliersClient({ initialSuppliers }: SuppliersClientPro
                   disabled={supplier.productCount > 0}
                   aria-label="Eliminar proveedor"
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-4 w-4 pointer-events-none" aria-hidden="true" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>

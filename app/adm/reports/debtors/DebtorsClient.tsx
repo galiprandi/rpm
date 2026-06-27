@@ -141,13 +141,13 @@ export default function DebtorsClient() {
         return (
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center">
-              <User className="h-4 w-4 text-primary" />
+              <User className="h-4 w-4 text-primary pointer-events-none" aria-hidden="true" />
             </div>
             <div>
               <div className="font-semibold tracking-tight">{debtor.customerName}</div>
               {debtor.phone && (
                 <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5 font-mono">
-                  <Phone className="h-3 w-3" />
+                  <Phone className="h-3 w-3 pointer-events-none" aria-hidden="true" />
                   {debtor.phone}
                 </div>
               )}
@@ -161,10 +161,19 @@ export default function DebtorsClient() {
       header: 'Vehículos',
       cell: ({ row }) => {
         const vehicles = row.original.vehicles;
+        if (!vehicles.length) return '-';
         return (
-          <div className="text-xs text-muted-foreground max-w-[200px] truncate">
-            {vehicles.slice(0, 2).join(', ')}
-            {vehicles.length > 2 && ` +${vehicles.length - 2}`}
+          <div className="flex flex-wrap gap-1 max-w-[200px]">
+            {vehicles.slice(0, 2).map((plate) => (
+              <Badge key={plate} variant="outline" className="font-mono text-[10px] px-1 py-0 h-4 bg-muted/50">
+                {plate}
+              </Badge>
+            ))}
+            {vehicles.length > 2 && (
+              <Badge variant="outline" className="text-[10px] px-1 py-0 h-4">
+                +{vehicles.length - 2}
+              </Badge>
+            )}
           </div>
         );
       },
@@ -196,7 +205,7 @@ export default function DebtorsClient() {
         return (
           <div className="space-y-1">
             <div className="text-sm flex items-center gap-1.5 font-mono">
-              <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+              <Clock className="h-3.5 w-3.5 text-muted-foreground pointer-events-none" aria-hidden="true" />
               {formatDate(date)}
             </div>
             {daysSince && (
@@ -217,11 +226,12 @@ export default function DebtorsClient() {
       cell: ({ row }) => (
         <Tooltip>
           <TooltipTrigger asChild>
-            <Link href={`/adm/customers/${row.original.customerId}`}>
-              <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Ver cliente">
-                <Eye className="h-4 w-4" />
-              </Button>
-            </Link>
+            <Button asChild variant="ghost" size="icon" className="h-8 w-8">
+              <Link href={`/adm/customers/${row.original.customerId}`} aria-label="Ver cliente">
+                <Eye className="h-4 w-4 pointer-events-none" aria-hidden="true" />
+                <span className="sr-only">Ver cliente</span>
+              </Link>
+            </Button>
           </TooltipTrigger>
           <TooltipContent>Ver cliente</TooltipContent>
         </Tooltip>
