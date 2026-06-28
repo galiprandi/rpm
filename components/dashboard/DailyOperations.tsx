@@ -181,7 +181,7 @@ export function DailyOperations() {
         return (
           <span className={cn(
             "font-mono font-medium",
-            isExpense ? 'text-red-600' : 'text-emerald-600'
+            isExpense ? 'text-red-700' : 'text-emerald-700'
           )}>
             {isExpense ? '-' : '+'}{formatARS(amount)}
           </span>
@@ -221,19 +221,19 @@ export function DailyOperations() {
       label: 'Ingresos',
       value: formatARS(data?.summary.totalIncome || 0),
       icon: TrendingUp,
-      iconColor: '#10b981', // emerald-500
+      iconColor: '#047857', // emerald-700
     },
     {
       label: 'Egresos',
       value: formatARS(data?.summary.totalExpense || 0),
       icon: TrendingDown,
-      iconColor: '#ef4444', // red-500
+      iconColor: '#b91c1c', // red-700
     },
     {
       label: 'Balance Neto',
       value: formatARS(data?.summary.netAmount || 0),
       icon: Scale,
-      iconColor: (data?.summary.netAmount || 0) >= 0 ? '#3b82f6' : '#ef4444', // blue-500 or red-500
+      iconColor: (data?.summary.netAmount || 0) >= 0 ? '#1d4ed8' : '#b91c1c', // blue-700 or red-700
     },
   ], [data]);
 
