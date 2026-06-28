@@ -134,6 +134,7 @@ secondaryActions={[
 - **Category List Pattern**: La tabla de categorías utiliza el `Standardized List Row Entity Pattern` con el icono `Folder` y el color dinámico de la categoría.
 - **Operational Log Pattern**: En listados de movimientos (Operaciones Diarias), las celdas de "Hora" y "Método" deben usar `font-mono` y un tamaño de fuente ligeramente reducido (`text-xs` o `text-sm`) para maximizar la densidad de información sin perder legibilidad.
 - **Financial Report Pattern**: Los reportes de deudores deben resaltar el saldo pendiente usando `font-mono font-bold text-red-600` y mostrar patentes de vehículos como mini-pills de alta densidad.
+- **Price List Detail Pattern**: La tabla de excepciones en el detalle de listas de precios utiliza el `Standardized List Row Entity Pattern` (icono `Package`) y aplica `font-mono` a todos los valores técnicos y financieros (SKU, Costos, Márgenes, Precios Finales).
 
 ## 14. Form UX Enhancement Pattern
 

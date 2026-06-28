@@ -153,6 +153,7 @@ Cada modificación debe dejar el archivo en mejor estado:
 - **Customer Module Refinement**: La vista de clientes implementa el `Standardized List Row Entity Pattern` y el `Form UX Enhancement Pattern` con `font-mono` para campos técnicos (Email, Teléfonos, CUIT) y financieros (Saldos).
 - **Adm Refactor (Daily Ops, Debtors, Direct Sale Detail)**: Implementación de `Standardized List Row Entity Pattern` y `font-mono` para campos técnicos y financieros, integrando los componentes `Header` y `CrudStats` para una consistencia visual total.
 - **Users & Settings Refinement**: Refinamiento de la tabla de usuarios con tooltips para notas y aplicación del `Form UX Enhancement Pattern` en el formulario de usuarios y la configuración de margen mínimo global.
+- **Adm Refinement v3 (Price Lists, Credit Notes, Inventory)**: Aplicación del `Standardized List Row Entity Pattern` en excepciones de precios y notas de crédito; implementación del patrón `Detail Headers` en auditorías de inventario y refinamiento de badges de estado con contraste WCAG AA.
 
 ---
 

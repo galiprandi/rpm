@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { ColumnDef } from '@tanstack/react-table';
-import { Plus, Trash2, AlertTriangle, Percent, DollarSign, Calculator, Search } from 'lucide-react';
+import { Plus, Trash2, AlertTriangle, Percent, DollarSign, Calculator, Search, Package } from 'lucide-react';
 import { Header, StatItem, CrudStats } from '@/components/adm';
 import { ModalBase, ModalBaseFooter } from '@/components/ui/ModalBase';
 import { SearchableSelect } from '@/components/ui/SearchableSelect';
@@ -183,11 +183,18 @@ export default function PriceListDetailClient({ initialPriceList }: PriceListDet
       accessorKey: 'productName',
       header: 'Producto',
       cell: ({ row }) => (
-        <div>
-          <div className="font-medium">{row.original.productName}</div>
-          {row.original.productSku && (
-            <div className="text-xs font-mono text-muted-foreground">{row.original.productSku}</div>
-          )}
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0">
+            <Package className="h-4 w-4 text-primary" aria-hidden="true" />
+          </div>
+          <div>
+            <div className="font-semibold tracking-tight">{row.original.productName}</div>
+            {row.original.productSku && (
+              <div className="text-xs font-mono text-muted-foreground">
+                {row.original.productSku}
+              </div>
+            )}
+          </div>
         </div>
       ),
     },
@@ -195,7 +202,9 @@ export default function PriceListDetailClient({ initialPriceList }: PriceListDet
       accessorKey: 'replacementCost',
       header: 'Costo Repo.',
       cell: ({ row }) => (
-        <PriceDisplay value={row.original.replacementCost ?? 0} />
+        <div className="font-mono">
+          <PriceDisplay value={row.original.replacementCost ?? 0} />
+        </div>
       ),
     },
     {
@@ -203,7 +212,9 @@ export default function PriceListDetailClient({ initialPriceList }: PriceListDet
       header: 'Margen Override',
       cell: ({ row }) =>
         row.original.overrideMarginPercentage !== null ? (
-          <Badge variant="secondary">{row.original.overrideMarginPercentage}%</Badge>
+          <Badge variant="secondary" className="font-mono">
+            {row.original.overrideMarginPercentage}%
+          </Badge>
         ) : (
           <span className="text-muted-foreground">-</span>
         ),
@@ -213,7 +224,10 @@ export default function PriceListDetailClient({ initialPriceList }: PriceListDet
       header: 'Precio Fijo',
       cell: ({ row }) =>
         row.original.fixedPrice !== null ? (
-          <Badge variant="outline" className="border-primary/20 bg-primary/5 text-primary">
+          <Badge
+            variant="outline"
+            className="border-primary/20 bg-primary/5 text-primary font-mono"
+          >
             <PriceDisplay value={row.original.fixedPrice} />
           </Badge>
         ) : (
@@ -224,7 +238,7 @@ export default function PriceListDetailClient({ initialPriceList }: PriceListDet
       accessorKey: 'finalPrice',
       header: 'Precio Final',
       cell: ({ row }) => (
-        <div className="font-bold">
+        <div className="font-bold font-mono">
           <PriceDisplay value={row.original.finalPrice} />
         </div>
       ),
@@ -236,10 +250,19 @@ export default function PriceListDetailClient({ initialPriceList }: PriceListDet
         const isLow = row.original.isBelowMinimum;
         return (
           <div className="flex items-center gap-2">
-            <span className={isLow ? 'text-orange-600 font-bold' : ''}>
+            <span
+              className={`font-mono ${
+                isLow ? 'text-orange-700 font-bold' : ''
+              }`}
+            >
               {row.original.actualMargin.toFixed(1)}%
             </span>
-            {isLow && <AlertTriangle className="h-4 w-4 text-orange-500" />}
+            {isLow && (
+              <AlertTriangle
+                className="h-4 w-4 text-orange-500 pointer-events-none"
+                aria-hidden="true"
+              />
+            )}
           </div>
         );
       },
@@ -310,11 +333,9 @@ export default function PriceListDetailClient({ initialPriceList }: PriceListDet
           icon: Plus,
           ariaLabel: 'Agregar nueva excepción de precio',
         }}
-      >
-        <div className="mt-2">
-          <CrudStats stats={stats} />
-        </div>
-      </Header>
+      />
+
+      <CrudStats stats={stats} />
 
       {/* Exceptions Table */}
       <Card>
@@ -373,28 +394,42 @@ export default function PriceListDetailClient({ initialPriceList }: PriceListDet
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="overrideMargin">Margen Override (%)</Label>
-              <Input
-                id="overrideMargin"
-                type="number"
-                min={0}
-                step={0.1}
-                value={overrideMargin}
-                onChange={(e) => setOverrideMargin(e.target.value)}
-                placeholder="Ej: 35"
-              />
+              <div className="relative">
+                <Percent
+                  className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none"
+                  aria-hidden="true"
+                />
+                <Input
+                  id="overrideMargin"
+                  type="number"
+                  min={0}
+                  step={0.1}
+                  value={overrideMargin}
+                  onChange={(e) => setOverrideMargin(e.target.value)}
+                  placeholder="Ej: 35"
+                  className="pl-9 font-mono"
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="fixedPrice">Precio Fijo ($)</Label>
-              <Input
-                id="fixedPrice"
-                type="number"
-                min={0}
-                step={0.01}
-                value={fixedPrice}
-                onChange={(e) => setFixedPrice(e.target.value)}
-                placeholder="Ej: 1500"
-              />
+              <div className="relative">
+                <DollarSign
+                  className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none"
+                  aria-hidden="true"
+                />
+                <Input
+                  id="fixedPrice"
+                  type="number"
+                  min={0}
+                  step={0.01}
+                  value={fixedPrice}
+                  onChange={(e) => setFixedPrice(e.target.value)}
+                  placeholder="Ej: 1500"
+                  className="pl-9 font-mono"
+                />
+              </div>
             </div>
           </div>
 
