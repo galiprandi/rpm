@@ -1,26 +1,38 @@
+'use client';
+
 import { Skeleton } from '@/components/ui/skeleton';
+import { Header, CrudStats } from '@/components/adm';
+import { RefreshCw, TrendingUp, TrendingDown, Scale } from 'lucide-react';
 
 export default function OperationsLoading() {
   return (
     <div className="space-y-6">
-      {/* Header Skeleton */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="space-y-2">
-          <Skeleton className="h-10 w-48" />
-          <Skeleton className="h-4 w-64" />
-        </div>
-        <div className="flex items-center gap-2">
-          <Skeleton className="h-9 w-44" /> {/* Date picker placeholder */}
-          <Skeleton className="h-9 w-28" /> {/* Refresh button */}
-        </div>
-      </div>
+      <Header
+        title="Operaciones Diarias"
+        description="Seguimiento de movimientos de caja y ventas"
+        leftActions={
+          <div className="flex items-center gap-2 bg-background border rounded-lg px-3 py-1 shadow-sm h-9">
+            <div className="w-4 h-4 bg-muted rounded-full animate-pulse" />
+            <Skeleton className="h-7 w-32" />
+          </div>
+        }
+        secondaryActions={[
+          {
+            label: "Actualizar",
+            onClick: () => {},
+            icon: RefreshCw,
+            disabled: true,
+          }
+        ]}
+      />
 
-      {/* Stats Skeleton */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {[...Array(3)].map((_, i) => (
-          <Skeleton key={i} className="h-28 w-full" />
-        ))}
-      </div>
+      <CrudStats
+        stats={[
+          { label: 'Ingresos', value: <Skeleton className="h-4 w-20" />, icon: TrendingUp },
+          { label: 'Egresos', value: <Skeleton className="h-4 w-20" />, icon: TrendingDown },
+          { label: 'Balance Neto', value: <Skeleton className="h-4 w-20" />, icon: Scale },
+        ]}
+      />
 
       {/* DataTable Skeleton */}
       <div className="border rounded-md">
@@ -35,11 +47,14 @@ export default function OperationsLoading() {
             <Skeleton className="h-4 w-8 ml-auto" /> {/* Acciones */}
           </div>
         </div>
-        {[...Array(5)].map((_, i) => (
+        {[...Array(10)].map((_, i) => (
           <div key={i} className="p-4 border-b last:border-0">
             <div className="flex gap-4 items-center">
               <Skeleton className="h-4 w-16" />
-              <Skeleton className="h-6 w-24" />
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-8 w-8 rounded-lg" />
+                <Skeleton className="h-4 w-20" />
+              </div>
               <Skeleton className="h-4 flex-1" />
               <Skeleton className="h-4 flex-1" />
               <Skeleton className="h-4 w-28" />
