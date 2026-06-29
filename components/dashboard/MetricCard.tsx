@@ -29,7 +29,10 @@ export function MetricCard({
         <CardTitle className="text-sm font-medium text-muted-foreground">
           {title}
         </CardTitle>
-        <Icon className="h-4 w-4 text-muted-foreground" />
+        <Icon
+          className="h-4 w-4 text-muted-foreground pointer-events-none"
+          aria-hidden="true"
+        />
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold">{value}</div>
@@ -39,7 +42,7 @@ export function MetricCard({
         {trend && (
           <p
             className={`text-xs mt-1 ${
-              trend.isPositive ? 'text-emerald-600' : 'text-red-600'
+              trend.isPositive ? 'text-emerald-700' : 'text-red-700'
             }`}
           >
             {trend.value}

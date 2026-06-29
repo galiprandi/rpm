@@ -24,7 +24,10 @@ export function SalesCard({
         <CardTitle className="text-sm font-medium text-muted-foreground">
           Ventas Hoy
         </CardTitle>
-        <DollarSign className="h-4 w-4 text-muted-foreground" />
+        <DollarSign
+          className="h-4 w-4 text-muted-foreground pointer-events-none"
+          aria-hidden="true"
+        />
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold">{formatARS(total)}</div>
@@ -33,7 +36,10 @@ export function SalesCard({
             {workOrderCount} OT{workOrderCount !== 1 ? 's' : ''} completada{workOrderCount !== 1 ? 's' : ''}
           </p>
           <div className={`flex items-center gap-1 text-xs ${trend.className}`}>
-            <TrendIcon className="h-3 w-3" />
+            <TrendIcon
+              className="h-3 w-3 pointer-events-none"
+              aria-hidden="true"
+            />
             <span>{trend.text}</span>
           </div>
         </div>
