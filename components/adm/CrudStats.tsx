@@ -23,7 +23,11 @@ export function CrudStats({ stats }: CrudStatsProps) {
         const Icon = stat.icon;
         return (
           <span key={index} className="flex items-center">
-            <Icon className="h-3.5 w-3.5 mr-1" style={{ color: stat.iconColor }} />
+            <Icon
+              className="h-3.5 w-3.5 mr-1 pointer-events-none"
+              style={{ color: stat.iconColor }}
+              aria-hidden="true"
+            />
             <span>{stat.label}:</span>
             <span className="ml-0.5 font-medium text-foreground">{stat.value}</span>
             {index < stats.length - 1 && (

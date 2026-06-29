@@ -135,6 +135,8 @@ secondaryActions={[
 - **Operational Log Pattern**: En listados de movimientos (Operaciones Diarias), las celdas de "Hora" y "Método" deben usar `font-mono` y un tamaño de fuente ligeramente reducido (`text-xs` o `text-sm`) para maximizar la densidad de información sin perder legibilidad.
 - **Financial Report Pattern**: Los reportes de deudores deben resaltar el saldo pendiente usando `font-mono font-bold text-red-600` y mostrar patentes de vehículos como mini-pills de alta densidad.
 - **Price List Detail Pattern**: La tabla de excepciones en el detalle de listas de precios utiliza el `Standardized List Row Entity Pattern` (icono `Package`) y aplica `font-mono` a todos los valores técnicos y financieros (SKU, Costos, Márgenes, Precios Finales).
+- **Detail Financial Summary Pattern**: Las vistas de detalle (OTs, Ventas Directas) deben mostrar un resumen financiero en el `Header` usando metadata pills: `Total` (muted), `Pagado` (emerald) y `Pendiente` (amber), todos con `font-mono` y formateo de moneda estricto.
+- **Checklist Visual Pattern**: Los ítems de checklist deben usar un contenedor de `w-5 h-5` para el estado de verificación, con colores semánticos (`blue-600` para ingreso, `emerald-600` para salida/calidad) y transiciones de escala para el icono `Check`.
 
 ## 14. Form UX Enhancement Pattern
 

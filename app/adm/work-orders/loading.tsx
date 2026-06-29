@@ -28,7 +28,7 @@ export default function WorkOrdersLoading() {
             Lista
           </Button>
           <div className="w-px h-6 bg-border mx-1" />
-          <Button variant="outline" size="sm" disabled>
+          <Button variant="outline" size="sm" disabled className="text-amber-700/50 border-amber-200/50 bg-amber-50/50">
             Pendientes de Pago
           </Button>
         </div>
@@ -42,13 +42,16 @@ export default function WorkOrdersLoading() {
         ]}
       />
 
-      <div className="flex gap-4 h-full overflow-hidden">
-        {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="flex-1 min-w-[250px] space-y-4">
-            <Skeleton className="h-10 w-full rounded-t-lg" />
-            <div className="space-y-3 p-2 bg-muted/10 rounded-b-lg border border-t-0">
-              <Skeleton className="h-28 w-full rounded-xl" />
-              <Skeleton className="h-28 w-full rounded-xl" />
+      <div className="flex gap-2 h-full overflow-hidden">
+        {[1, 2, 3, 4, 5, 6].map((i) => (
+          <div key={i} className="flex-1 min-w-[200px] flex flex-col h-full">
+            <Skeleton className="h-11 w-full rounded-t-lg" />
+            <div className="space-y-3 p-2 bg-muted/30 rounded-b-lg border border-t-0 flex-1">
+              <div className="space-y-3">
+                <Skeleton className="h-28 w-full rounded-xl" />
+                <Skeleton className="h-28 w-full rounded-xl" />
+                <Skeleton className="h-28 w-full rounded-xl" />
+              </div>
             </div>
           </div>
         ))}

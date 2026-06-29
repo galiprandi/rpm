@@ -214,12 +214,14 @@ function KanbanColumn({ status, items }: { status: typeof STATUSES[0]; items: Wo
       </div>
       <div
         ref={setNodeRef}
-        className="bg-muted/30 hover:bg-muted/40 transition-colors rounded-b-lg p-2 flex-1 overflow-y-auto space-y-3 border border-t-0 min-h-[150px]"
+        className="bg-muted/30 hover:bg-muted/40 transition-colors rounded-b-lg p-2 flex-1 overflow-y-auto border border-t-0 min-h-[150px]"
       >
         <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
-          {items.map((wo) => (
-            <KanbanCard key={wo.id} wo={wo} />
-          ))}
+          <div className="space-y-3">
+            {items.map((wo) => (
+              <KanbanCard key={wo.id} wo={wo} />
+            ))}
+          </div>
           {items.length === 0 && (
             <div className="h-full min-h-[100px] flex items-center justify-center text-muted-foreground/50 text-xs text-center px-4 italic">
               Sin órdenes
@@ -272,7 +274,13 @@ export default function WorkOrdersPage() {
   const getStatusBadge = (status: string) => {
     const statusConfig = STATUSES.find((s) => s.id === status);
     return (
-      <Badge variant="outline" className={cn("text-xs", statusConfig?.color)}>
+      <Badge
+        variant="outline"
+        className={cn(
+          "text-xs px-2 py-0.5",
+          statusConfig?.color
+        )}
+      >
         {statusConfig?.label || status}
       </Badge>
     );
@@ -466,10 +474,14 @@ export default function WorkOrdersPage() {
           </Button>
           <div className="w-px h-6 bg-border mx-1" />
           <Button
-            variant={paymentFilter === "pending" ? "default" : "outline"}
+            variant={paymentFilter === "pending" ? "outline" : "outline"}
             size="sm"
             onClick={() => setPaymentFilter(paymentFilter === "pending" ? "all" : "pending")}
-            className={paymentFilter === "pending" ? "bg-amber-600 hover:bg-amber-700" : ""}
+            className={cn(
+              paymentFilter === "pending"
+                ? "text-amber-700 border-amber-200 bg-amber-50 hover:bg-amber-100 hover:text-amber-800"
+                : ""
+            )}
           >
             Pendientes de Pago
             {paymentFilter === "pending" && (

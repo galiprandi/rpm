@@ -23,7 +23,8 @@ import {
   TrendingDown,
   Scale,
   Package,
-  LucideIcon
+  LucideIcon,
+  User
 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -138,8 +139,13 @@ export function DailyOperations() {
       accessorKey: 'customer.name',
       header: 'Cliente',
       cell: ({ row }) => (
-        <div className="font-semibold tracking-tight">
-          {row.original.customer?.name || '-'}
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0">
+            <User className="h-4 w-4 text-primary pointer-events-none" aria-hidden="true" />
+          </div>
+          <div className="font-semibold tracking-tight">
+            {row.original.customer?.name || '-'}
+          </div>
         </div>
       ),
     },
@@ -181,7 +187,7 @@ export function DailyOperations() {
         return (
           <span className={cn(
             "font-mono font-medium",
-            isExpense ? 'text-red-600' : 'text-emerald-600'
+            isExpense ? 'text-red-700' : 'text-emerald-700'
           )}>
             {isExpense ? '-' : '+'}{formatARS(amount)}
           </span>
@@ -221,19 +227,19 @@ export function DailyOperations() {
       label: 'Ingresos',
       value: formatARS(data?.summary.totalIncome || 0),
       icon: TrendingUp,
-      iconColor: '#10b981', // emerald-500
+      iconColor: '#047857', // emerald-700
     },
     {
       label: 'Egresos',
       value: formatARS(data?.summary.totalExpense || 0),
       icon: TrendingDown,
-      iconColor: '#ef4444', // red-500
+      iconColor: '#b91c1c', // red-700
     },
     {
       label: 'Balance Neto',
       value: formatARS(data?.summary.netAmount || 0),
       icon: Scale,
-      iconColor: (data?.summary.netAmount || 0) >= 0 ? '#3b82f6' : '#ef4444', // blue-500 or red-500
+      iconColor: (data?.summary.netAmount || 0) >= 0 ? '#1d4ed8' : '#b91c1c', // blue-700 or red-700
     },
   ], [data]);
 
