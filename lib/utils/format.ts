@@ -119,9 +119,9 @@ export function formatPercentageChange(value: number): {
   
   let className = 'text-gray-600';
   if (value > 0) {
-    className = 'text-emerald-600';
+    className = 'text-emerald-700';
   } else if (value < 0) {
-    className = 'text-red-600';
+    className = 'text-red-700';
   }
   
   return { text, className };

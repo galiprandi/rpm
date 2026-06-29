@@ -19,13 +19,33 @@ export function RecentMovementsCard({
   const getMovementIcon = (type: string) => {
     switch (type) {
       case 'IN':
-        return <ArrowUp className="h-3 w-3 text-emerald-600" />;
+        return (
+          <ArrowUp
+            className="h-3 w-3 text-emerald-700 pointer-events-none"
+            aria-hidden="true"
+          />
+        );
       case 'OUT':
-        return <ArrowDown className="h-3 w-3 text-red-600" />;
+        return (
+          <ArrowDown
+            className="h-3 w-3 text-red-700 pointer-events-none"
+            aria-hidden="true"
+          />
+        );
       case 'ADJUSTMENT':
-        return <Minus className="h-3 w-3 text-yellow-600" />;
+        return (
+          <Minus
+            className="h-3 w-3 text-amber-700 pointer-events-none"
+            aria-hidden="true"
+          />
+        );
       default:
-        return <ArrowUpDown className="h-3 w-3 text-gray-600" />;
+        return (
+          <ArrowUpDown
+            className="h-3 w-3 text-gray-600 pointer-events-none"
+            aria-hidden="true"
+          />
+        );
     }
   };
 
@@ -36,7 +56,10 @@ export function RecentMovementsCard({
           <CardTitle className="text-sm font-medium text-muted-foreground">
             Movimientos de Productos
           </CardTitle>
-          <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+          <ArrowUpDown
+            className="h-4 w-4 text-muted-foreground pointer-events-none"
+            aria-hidden="true"
+          />
         </CardHeader>
         <CardContent>
           <div className="text-center py-4">
@@ -55,7 +78,10 @@ export function RecentMovementsCard({
         <CardTitle className="text-sm font-medium text-muted-foreground">
           Movimientos de Productos
         </CardTitle>
-        <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+        <ArrowUpDown
+          className="h-4 w-4 text-muted-foreground pointer-events-none"
+          aria-hidden="true"
+        />
       </CardHeader>
       <CardContent>
         <div className="space-y-2">
@@ -70,10 +96,10 @@ export function RecentMovementsCard({
                   <span
                     className={`text-sm font-semibold ${
                       movement.type === 'IN'
-                        ? 'text-emerald-600'
+                        ? 'text-emerald-700'
                         : movement.type === 'OUT'
-                        ? 'text-red-600'
-                        : 'text-yellow-600'
+                        ? 'text-red-700'
+                        : 'text-amber-700'
                     }`}
                   >
                     {movement.type === 'IN' ? '+' : movement.type === 'OUT' ? '-' : ''}

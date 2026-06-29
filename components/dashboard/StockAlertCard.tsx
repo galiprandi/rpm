@@ -25,14 +25,17 @@ export function StockAlertCard({
         <CardTitle className="text-sm font-medium text-muted-foreground">
           Alertas Stock
         </CardTitle>
-        <Package className="h-4 w-4 text-muted-foreground" />
+        <Package
+          className="h-4 w-4 text-muted-foreground pointer-events-none"
+          aria-hidden="true"
+        />
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold">
           {hasAlerts ? (
-            <span className="text-orange-600">{lowStockCount} productos</span>
+            <span className="text-orange-700">{lowStockCount} productos</span>
           ) : (
-            <span className="text-emerald-600">OK</span>
+            <span className="text-emerald-700">OK</span>
           )}
         </div>
         {hasAlerts ? (
@@ -44,7 +47,10 @@ export function StockAlertCard({
             <Link href="/adm/products?lowStock=true">
               <Button variant="link" className="p-0 h-auto text-xs mt-2">
                 Ver lista
-                <ArrowRight className="h-3 w-3 ml-1" />
+                <ArrowRight
+                  className="h-3 w-3 ml-1 pointer-events-none"
+                  aria-hidden="true"
+                />
               </Button>
             </Link>
           </>

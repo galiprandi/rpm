@@ -18,20 +18,23 @@ export function WorkshopKanbanCard({
         <CardTitle className="text-sm font-medium text-muted-foreground">
           Taller (Kanban)
         </CardTitle>
-        <Car className="h-4 w-4 text-muted-foreground" />
+        <Car
+          className="h-4 w-4 text-muted-foreground pointer-events-none"
+          aria-hidden="true"
+        />
       </CardHeader>
       <CardContent>
         <div className="flex gap-4 mt-2">
           <div className="flex-1">
-            <div className="text-2xl font-bold text-yellow-600">{byStatus.pending}</div>
+            <div className="text-2xl font-bold text-amber-700">{byStatus.pending}</div>
             <p className="text-xs text-muted-foreground">Pendientes</p>
           </div>
           <div className="flex-1">
-            <div className="text-2xl font-bold text-blue-600">{byStatus.inProgress}</div>
+            <div className="text-2xl font-bold text-blue-700">{byStatus.inProgress}</div>
             <p className="text-xs text-muted-foreground">En proceso</p>
           </div>
           <div className="flex-1">
-            <div className="text-2xl font-bold text-emerald-600">{byStatus.ready}</div>
+            <div className="text-2xl font-bold text-emerald-700">{byStatus.ready}</div>
             <p className="text-xs text-muted-foreground">Listas</p>
           </div>
         </div>
