@@ -77,8 +77,8 @@ export default function CreditNotesClient({ initialCreditNotes }: CreditNotesCli
             <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0">
               <Receipt className="h-4 w-4 text-primary" aria-hidden="true" />
             </div>
-            <span className="font-semibold tracking-tight font-mono text-xs text-muted-foreground">
-              #{(row.getValue('id') as string).slice(0, 8).toUpperCase()}
+            <span className="font-semibold tracking-tight font-mono text-xs text-muted-foreground uppercase">
+              #{(row.getValue('id') as string).slice(0, 8)}
             </span>
           </div>
         ),
@@ -90,11 +90,24 @@ export default function CreditNotesClient({ initialCreditNotes }: CreditNotesCli
           const type = row.getValue('originalSaleType') as string;
           const isDirect = type === 'direct_sale';
           return (
-            <Badge variant="outline" className="text-xs font-medium gap-1.5 px-2">
+            <Badge
+              variant="outline"
+              className={`text-xs font-medium gap-1.5 px-2 ${
+                isDirect
+                  ? 'text-blue-700 border-blue-200 bg-blue-50'
+                  : 'text-orange-700 border-orange-200 bg-orange-50'
+              }`}
+            >
               {isDirect ? (
-                <ShoppingCart className="h-3 w-3 text-blue-500" />
+                <ShoppingCart
+                  className="h-3 w-3 text-blue-600 pointer-events-none"
+                  aria-hidden="true"
+                />
               ) : (
-                <ClipboardList className="h-3 w-3 text-orange-500" />
+                <ClipboardList
+                  className="h-3 w-3 text-orange-600 pointer-events-none"
+                  aria-hidden="true"
+                />
               )}
               {isDirect ? 'Venta Directa' : 'Orden de Trabajo'}
             </Badge>
@@ -106,9 +119,14 @@ export default function CreditNotesClient({ initialCreditNotes }: CreditNotesCli
         header: 'Cliente',
         cell: ({ row }) => (
           <div className="flex items-center gap-2">
-            <User className="h-3.5 w-3.5 text-muted-foreground/70" aria-hidden="true" />
-            <span className="font-medium">
-              {row.original.customer?.name || <span className="text-muted-foreground">—</span>}
+            <User
+              className="h-3.5 w-3.5 text-muted-foreground/70 pointer-events-none"
+              aria-hidden="true"
+            />
+            <span className="font-semibold tracking-tight">
+              {row.original.customer?.name || (
+                <span className="text-muted-foreground font-normal">—</span>
+              )}
             </span>
           </div>
         ),
@@ -140,13 +158,25 @@ export default function CreditNotesClient({ initialCreditNotes }: CreditNotesCli
         cell: ({ row }) => {
           const status = row.getValue('status') as string;
           return status === 'ISSUED' ? (
-            <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 text-xs">
-              <FileText className="h-3 w-3 mr-1" />
+            <Badge
+              variant="outline"
+              className="bg-emerald-50 text-emerald-700 border-emerald-200 text-xs"
+            >
+              <FileText
+                className="h-3 w-3 mr-1 pointer-events-none"
+                aria-hidden="true"
+              />
               Emitida
             </Badge>
           ) : (
-            <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 text-xs">
-              <Ban className="h-3 w-3 mr-1" />
+            <Badge
+              variant="outline"
+              className="bg-red-50 text-red-700 border-red-200 text-xs"
+            >
+              <Ban
+                className="h-3 w-3 mr-1 pointer-events-none"
+                aria-hidden="true"
+              />
               Cancelada
             </Badge>
           );

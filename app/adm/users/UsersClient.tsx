@@ -211,8 +211,12 @@ export default function UsersClient({ initialUsers }: UsersClientProps) {
               <UserCog className="h-4 w-4 text-primary" aria-hidden="true" />
             </div>
             <div>
-              <div className="font-semibold tracking-tight">{row.original.name}</div>
-              <div className="text-xs text-muted-foreground">{row.original.email}</div>
+              <div className="font-semibold tracking-tight">
+                {row.original.name}
+              </div>
+              <div className="text-xs text-muted-foreground font-mono">
+                {row.original.email}
+              </div>
             </div>
           </div>
         ),

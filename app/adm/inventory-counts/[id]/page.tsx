@@ -1,11 +1,71 @@
 import { Header } from '@/components/adm/Header';
 import { ApprovalView } from '@/components/inventory-count/ApprovalView';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { QrCode, Smartphone, Info } from 'lucide-react';
 import { headers } from 'next/headers';
 
-export default async function InventoryCountDetailPage({ params }: { params: Promise<{ id: string }> }) {
+import { prisma } from '@/lib/prisma';
+import { Badge } from '@/components/ui/badge';
+import { Package, ClipboardList, Calendar } from 'lucide-react';
+
+export default async function InventoryCountDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = await params;
+
+  const operative = await prisma.inventory_count_operative.findUnique({
+    where: { id },
+    include: {
+      _count: {
+        select: { items: true },
+      },
+    },
+  });
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'PENDING':
+        return (
+          <Badge
+            variant="outline"
+            className="text-amber-700 border-amber-200 bg-amber-50"
+          >
+            Pendiente
+          </Badge>
+        );
+      case 'IN_PROGRESS':
+        return (
+          <Badge
+            variant="outline"
+            className="text-blue-700 border-blue-200 bg-blue-50"
+          >
+            En Proceso
+          </Badge>
+        );
+      case 'COMPLETED':
+        return (
+          <Badge
+            variant="outline"
+            className="text-purple-700 border-purple-200 bg-purple-50"
+          >
+            Realizado
+          </Badge>
+        );
+      case 'APPROVED':
+        return (
+          <Badge
+            variant="outline"
+            className="text-emerald-700 border-emerald-200 bg-emerald-50"
+          >
+            Aprobado
+          </Badge>
+        );
+      default:
+        return <Badge variant="secondary">{status}</Badge>;
+    }
+  };
 
   // Construct QR URL (using current host)
   const headersList = await headers();
@@ -20,7 +80,35 @@ export default async function InventoryCountDetailPage({ params }: { params: Pro
         title="Detalle de Auditoría"
         description="Monitoreo y aprobación de conteo"
         showBackButton
-      />
+      >
+        {operative && (
+          <div className="flex flex-wrap items-center gap-3 mt-4">
+            {getStatusBadge(operative.status)}
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted/50 border text-xs font-medium text-muted-foreground">
+              <Package
+                className="h-3.5 w-3.5 text-primary pointer-events-none"
+                aria-hidden="true"
+              />
+              <span className="font-mono">{operative._count.items}</span>{' '}
+              Artículos
+            </div>
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted/50 border text-xs font-medium text-muted-foreground">
+              <Calendar
+                className="h-3.5 w-3.5 text-muted-foreground pointer-events-none"
+                aria-hidden="true"
+              />
+              {new Date(operative.createdAt).toLocaleDateString('es-AR')}
+            </div>
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted/50 border text-xs font-medium text-muted-foreground">
+              <ClipboardList
+                className="h-3.5 w-3.5 text-muted-foreground pointer-events-none"
+                aria-hidden="true"
+              />
+              <span className="font-mono uppercase">{operative.id.slice(0, 8)}</span>
+            </div>
+          </div>
+        )}
+      </Header>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <div className="lg:col-span-3">

@@ -201,7 +201,9 @@ export default function PaymentMethodsClient({ initialPaymentMethods }: PaymentM
       accessorKey: 'code',
       header: 'Código',
       cell: ({ row }) => (
-        <code className="bg-muted px-2 py-1 rounded text-sm text-foreground/80 font-mono">{row.original.code}</code>
+        <code className="bg-muted px-2 py-1 rounded text-sm text-foreground/80 font-mono uppercase">
+          {row.original.code}
+        </code>
       ),
     },
     {
