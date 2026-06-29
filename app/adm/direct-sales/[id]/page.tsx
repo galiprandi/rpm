@@ -101,7 +101,7 @@ export default function DirectSaleDetailPage() {
         onBack={() => window.history.back()}
       >
         <div className="flex flex-wrap items-center gap-2 mt-4">
-          <Badge variant="outline" className="text-emerald-600 border-emerald-200 bg-emerald-50 font-mono font-bold text-sm">
+          <Badge variant="outline" className="text-emerald-700 border-emerald-200 bg-emerald-50 font-mono font-bold text-sm">
             {formatCurrency(sale.total)}
           </Badge>
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted/50 border text-xs font-medium text-muted-foreground font-mono">
@@ -183,8 +183,8 @@ export default function DirectSaleDetailPage() {
               return (
                 <div key={item.id} className="flex items-center justify-between p-4 border rounded-xl hover:bg-muted/30 transition-colors group">
                   <div className="flex items-center gap-4 flex-1">
-                    <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 shadow-sm flex items-center justify-center shrink-0">
-                      <Icon className="h-5 w-5 text-primary pointer-events-none" aria-hidden="true" />
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 shadow-sm flex items-center justify-center shrink-0">
+                      <Icon className="h-4 w-4 text-primary pointer-events-none" aria-hidden="true" />
                     </div>
                     <div>
                       <div className="font-semibold tracking-tight">{item.name}</div>
@@ -227,8 +227,8 @@ export default function DirectSaleDetailPage() {
             {sale.payments.map((payment) => (
               <div key={payment.id} className="flex items-center justify-between p-4 border rounded-xl bg-slate-50/50">
                 <div className="flex items-center gap-4 flex-1">
-                  <div className="w-10 h-10 rounded-lg bg-emerald-100/50 border border-emerald-200/50 shadow-sm flex items-center justify-center shrink-0">
-                    <DollarSign className="h-5 w-5 text-emerald-600 pointer-events-none" aria-hidden="true" />
+                  <div className="w-8 h-8 rounded-lg bg-emerald-100/50 border border-emerald-200/50 shadow-sm flex items-center justify-center shrink-0">
+                    <DollarSign className="h-4 w-4 text-emerald-600 pointer-events-none" aria-hidden="true" />
                   </div>
                   <div>
                     <div className="font-semibold tracking-tight">{payment.paymentMethod.name}</div>

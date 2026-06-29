@@ -23,7 +23,8 @@ import {
   TrendingDown,
   Scale,
   Package,
-  LucideIcon
+  LucideIcon,
+  User
 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -138,8 +139,13 @@ export function DailyOperations() {
       accessorKey: 'customer.name',
       header: 'Cliente',
       cell: ({ row }) => (
-        <div className="font-semibold tracking-tight">
-          {row.original.customer?.name || '-'}
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0">
+            <User className="h-4 w-4 text-primary pointer-events-none" aria-hidden="true" />
+          </div>
+          <div className="font-semibold tracking-tight">
+            {row.original.customer?.name || '-'}
+          </div>
         </div>
       ),
     },

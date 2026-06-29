@@ -602,16 +602,16 @@ export default function WorkOrderDetailPage() {
           <div className="flex flex-wrap items-center gap-2 mt-4">
              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted/50 border text-xs font-medium text-muted-foreground">
                 <DollarSign className="h-3.5 w-3.5 pointer-events-none" aria-hidden="true" />
-                Total: <span className="text-foreground font-mono">${Number(workOrder.total).toLocaleString("es-AR")}</span>
+                Total: <span className="text-foreground font-mono">{Number(workOrder.total).toLocaleString("es-AR", { style: 'currency', currency: 'ARS' })}</span>
              </div>
              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 border border-emerald-200 text-xs font-medium text-emerald-700">
                 <Check className="h-3.5 w-3.5 pointer-events-none" aria-hidden="true" />
-                Pagado: <span className="font-mono">${totalPaid.toLocaleString("es-AR")}</span>
+                Pagado: <span className="font-mono">{totalPaid.toLocaleString("es-AR", { style: 'currency', currency: 'ARS' })}</span>
              </div>
              {balance > 0 && (
                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-50 border border-amber-200 text-xs font-medium text-amber-700">
                   <Clock className="h-3.5 w-3.5 pointer-events-none" aria-hidden="true" />
-                  Pendiente: <span className="font-mono">${balance.toLocaleString("es-AR")}</span>
+                  Pendiente: <span className="font-mono">{balance.toLocaleString("es-AR", { style: 'currency', currency: 'ARS' })}</span>
                </div>
              )}
           </div>
@@ -703,10 +703,10 @@ export default function WorkOrderDetailPage() {
                         </TableCell>
                         <TableCell className="text-right font-mono">{item.quantity}</TableCell>
                         <TableCell className="text-right font-mono">
-                          ${Number(item.unitPrice).toLocaleString("es-AR")}
+                          {Number(item.unitPrice).toLocaleString("es-AR", { style: 'currency', currency: 'ARS' })}
                         </TableCell>
                         <TableCell className="text-right font-medium font-mono">
-                          ${Number(item.subtotal).toLocaleString("es-AR")}
+                          {Number(item.subtotal).toLocaleString("es-AR", { style: 'currency', currency: 'ARS' })}
                         </TableCell>
                       </TableRow>
                     ))
@@ -718,13 +718,13 @@ export default function WorkOrderDetailPage() {
                 <div className="mt-4 flex justify-end pt-4 border-t">
                   <div className="text-right space-y-1">
                     <div className="text-sm text-muted-foreground">
-                      Productos: <span className="font-mono">${Number(workOrder.totalProducts).toLocaleString("es-AR")}</span>
+                        Productos: <span className="font-mono">{Number(workOrder.totalProducts).toLocaleString("es-AR", { style: 'currency', currency: 'ARS' })}</span>
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      Servicios: <span className="font-mono">${Number(workOrder.totalServices).toLocaleString("es-AR")}</span>
+                        Servicios: <span className="font-mono">{Number(workOrder.totalServices).toLocaleString("es-AR", { style: 'currency', currency: 'ARS' })}</span>
                     </div>
                     <div className="text-2xl font-bold pt-1">
-                      Total: <span className="font-mono tracking-tight">${Number(workOrder.total).toLocaleString("es-AR")}</span>
+                        Total: <span className="font-mono tracking-tight text-emerald-600">{Number(workOrder.total).toLocaleString("es-AR", { style: 'currency', currency: 'ARS' })}</span>
                     </div>
                   </div>
                 </div>
@@ -747,16 +747,16 @@ export default function WorkOrderDetailPage() {
             <div className="flex gap-6">
               <div>
                 <p className="text-sm text-muted-foreground">Total OT</p>
-                <p className="text-lg font-semibold font-mono">${Number(workOrder.total).toLocaleString("es-AR")}</p>
+                <p className="text-lg font-semibold font-mono">{Number(workOrder.total).toLocaleString("es-AR", { style: 'currency', currency: 'ARS' })}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Pagado</p>
-                <p className="text-lg font-semibold text-emerald-600 font-mono">${totalPaid.toLocaleString("es-AR")}</p>
+                <p className="text-lg font-semibold text-emerald-600 font-mono">{totalPaid.toLocaleString("es-AR", { style: 'currency', currency: 'ARS' })}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Pendiente</p>
                 <p className={`text-lg font-semibold font-mono ${totalPaid >= workOrder.total ? 'text-emerald-600' : 'text-amber-600'}`}>
-                  ${balance.toLocaleString("es-AR")}
+                  {balance.toLocaleString("es-AR", { style: 'currency', currency: 'ARS' })}
                 </p>
               </div>
             </div>
@@ -776,13 +776,18 @@ export default function WorkOrderDetailPage() {
               <p className="text-sm font-medium mb-3">Historial de Pagos</p>
               <div className="space-y-2">
                 {payments.map((payment) => (
-                  <div key={payment.id} className="flex justify-between items-center p-3 bg-muted rounded-md">
-                    <div>
-                      <p className="font-medium font-mono">${Number(payment.amount).toLocaleString("es-AR")}</p>
-                      <p className="text-xs text-muted-foreground">{payment.paymentMethod.name}</p>
-                      {payment.notes && <p className="text-xs text-muted-foreground">{payment.notes}</p>}
+                  <div key={payment.id} className="flex justify-between items-center p-3 bg-muted rounded-md transition-colors hover:bg-muted/70">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-emerald-100/50 border border-emerald-200/50 shadow-sm flex items-center justify-center shrink-0">
+                        <DollarSign className="h-4 w-4 text-emerald-600 pointer-events-none" aria-hidden="true" />
+                      </div>
+                      <div>
+                        <p className="font-bold font-mono text-emerald-700">{Number(payment.amount).toLocaleString("es-AR", { style: 'currency', currency: 'ARS' })}</p>
+                        <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">{payment.paymentMethod.name}</p>
+                        {payment.notes && <p className="text-[10px] text-muted-foreground italic truncate max-w-[200px]">&ldquo;{payment.notes}&rdquo;</p>}
+                      </div>
                     </div>
-                    <p className="text-xs text-muted-foreground font-mono">
+                    <p className="text-xs text-muted-foreground font-mono bg-background/50 px-2 py-0.5 rounded border">
                       {new Date(payment.createdAt).toLocaleDateString("es-AR")}
                     </p>
                   </div>
@@ -901,12 +906,14 @@ export default function WorkOrderDetailPage() {
                           item.checked ? "bg-blue-50/50" : "hover:bg-muted/30"
                         )}>
                           <div className={cn(
-                            "mt-0.5 h-4 w-4 shrink-0 rounded-sm border border-primary flex items-center justify-center",
-                            item.checked ? "bg-primary text-primary-foreground" : "bg-background"
+                            "mt-0.5 w-5 h-5 rounded-md flex items-center justify-center shrink-0 border transition-all shadow-sm",
+                            item.checked
+                              ? "bg-blue-600 border-blue-600 text-white"
+                              : "bg-muted/30 border-muted-foreground/20 text-muted-foreground/30"
                           )}>
-                            {item.checked && <Check className="h-3 w-3" />}
+                            <Check className={cn("h-3.5 w-3.5 transition-transform", item.checked ? "scale-100" : "scale-0")} aria-hidden="true" />
                           </div>
-                          <span className={cn("text-xs leading-none pt-0.5", item.checked ? "font-medium" : "text-muted-foreground")}>
+                          <span className={cn("text-xs leading-none pt-1", item.checked ? "font-semibold text-blue-900" : "text-muted-foreground")}>
                             {item.label}
                           </span>
                         </div>
@@ -998,12 +1005,14 @@ export default function WorkOrderDetailPage() {
                           item.checked ? "bg-emerald-50/50" : "hover:bg-muted/30"
                         )}>
                           <div className={cn(
-                            "mt-0.5 h-4 w-4 shrink-0 rounded-sm border border-primary flex items-center justify-center",
-                            item.checked ? "bg-primary text-primary-foreground" : "bg-background"
+                            "mt-0.5 w-5 h-5 rounded-md flex items-center justify-center shrink-0 border transition-all shadow-sm",
+                            item.checked
+                              ? "bg-emerald-600 border-emerald-600 text-white"
+                              : "bg-muted/30 border-muted-foreground/20 text-muted-foreground/30"
                           )}>
-                            {item.checked && <Check className="h-3 w-3" />}
+                            <Check className={cn("h-3.5 w-3.5 transition-transform", item.checked ? "scale-100" : "scale-0")} aria-hidden="true" />
                           </div>
-                          <span className={cn("text-xs leading-none pt-0.5", item.checked ? "font-medium" : "text-muted-foreground")}>
+                          <span className={cn("text-xs leading-none pt-1", item.checked ? "font-semibold text-emerald-900" : "text-muted-foreground")}>
                             {item.label}
                           </span>
                         </div>
