@@ -11,6 +11,7 @@ import { useUI } from '@/components/ui/UIProvider';
 import { Header, CrudStats } from '@/components/adm';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { formatARS } from '@/lib/utils/format';
 import {
   Select,
   SelectContent,
@@ -22,6 +23,8 @@ import {
   ArrowUpCircle,
   ArrowDownCircle,
   DollarSign,
+  FileText,
+  StickyNote,
   Wallet,
   TrendingUp,
   TrendingDown,
@@ -438,12 +441,6 @@ export default function CashClient() {
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-AR', {
-      style: 'currency',
-      currency: 'ARS',
-    }).format(amount);
-  };
 
 
   const getMethodName = (code: string) => {
@@ -462,25 +459,25 @@ export default function CashClient() {
   const stats = useMemo(() => [
     {
       label: 'Apertura Efectivo',
-      value: formatCurrency(cashStatus?.summary?.CASH?.opening || 0),
+      value: formatARS(cashStatus?.summary?.CASH?.opening || 0),
       icon: ArrowUpCircle,
       iconColor: '#10b981', // emerald-500
     },
     {
       label: 'Ingresos',
-      value: formatCurrency(cashStatus?.summary?.CASH?.income || 0),
+      value: formatARS(cashStatus?.summary?.CASH?.income || 0),
       icon: TrendingUp,
       iconColor: '#3b82f6', // blue-500
     },
     {
       label: 'Egresos',
-      value: formatCurrency(cashStatus?.summary?.CASH?.expense || 0),
+      value: formatARS(cashStatus?.summary?.CASH?.expense || 0),
       icon: TrendingDown,
       iconColor: '#ef4444', // red-500
     },
     {
       label: 'Esperado Efectivo',
-      value: formatCurrency(cashStatus?.summary?.CASH?.expected || 0),
+      value: formatARS(cashStatus?.summary?.CASH?.expected || 0),
       icon: Wallet,
       iconColor: '#9333ea', // purple-600
     }
@@ -545,11 +542,11 @@ export default function CashClient() {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2 max-w-md bg-muted/50 p-1 rounded-lg">
           <TabsTrigger value="status" className="flex items-center gap-2 rounded-md transition-all">
-            <LayoutDashboard className="h-4 w-4" />
+            <LayoutDashboard className="h-4 w-4 pointer-events-none" aria-hidden="true" />
             Estado
           </TabsTrigger>
           <TabsTrigger value="history" className="flex items-center gap-2 rounded-md transition-all">
-            <History className="h-4 w-4" />
+            <History className="h-4 w-4 pointer-events-none" aria-hidden="true" />
             Historial
           </TabsTrigger>
         </TabsList>
@@ -563,7 +560,7 @@ export default function CashClient() {
                 onClick={() => setIsIncomeModalOpen(true)}
                 className="bg-emerald-50 border-emerald-100 text-emerald-700 hover:bg-emerald-100 transition-colors shadow-sm"
               >
-                <TrendingUp className="mr-2 h-5 w-5" />
+                <TrendingUp className="mr-2 h-5 w-5 pointer-events-none" aria-hidden="true" />
                 Registrar Ingreso
               </Button>
 
@@ -573,7 +570,7 @@ export default function CashClient() {
                 onClick={() => setIsExpenseModalOpen(true)}
                 className="bg-white hover:bg-slate-50 transition-colors shadow-sm"
               >
-                <ArrowDownCircle className="mr-2 h-5 w-5 text-red-500" />
+                <ArrowDownCircle className="mr-2 h-5 w-5 text-red-500 pointer-events-none" aria-hidden="true" />
                 Registrar Egreso
               </Button>
             </div>
@@ -583,7 +580,7 @@ export default function CashClient() {
             <Card className="border shadow-xs overflow-hidden">
               <CardHeader className="bg-muted/30 border-b">
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <Wallet className="h-5 w-5 text-muted-foreground" />
+                  <Wallet className="h-5 w-5 text-muted-foreground pointer-events-none" aria-hidden="true" />
                   Desglose por Método de Pago
                 </CardTitle>
               </CardHeader>
@@ -603,12 +600,21 @@ export default function CashClient() {
                       {Object.entries(cashStatus?.summary || {}).map(([method, summary]) => (
                         summary.expected > 0 || summary.opening > 0 ? (
                           <tr key={method} className="hover:bg-muted/20 transition-colors">
-                            <td className="py-4 px-6 font-semibold text-card-foreground">{getMethodName(method)}</td>
-                            <td className="text-right py-4 px-6">{formatCurrency(summary.opening)}</td>
-                            <td className="text-right py-4 px-6 text-emerald-600 font-medium">+{formatCurrency(summary.income)}</td>
-                            <td className="text-right py-4 px-6 text-red-600 font-medium">-{formatCurrency(summary.expense)}</td>
-                            <td className="text-right py-4 px-6 font-bold text-base text-primary">
-                              {formatCurrency(summary.expected)}
+                            <td className="py-4 px-6">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0">
+                                  <Wallet className="h-4 w-4 text-primary pointer-events-none" aria-hidden="true" />
+                                </div>
+                                <span className="font-semibold tracking-tight text-card-foreground">
+                                  {getMethodName(method)}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="text-right py-4 px-6 font-mono text-sm">{formatARS(summary.opening)}</td>
+                            <td className="text-right py-4 px-6 text-emerald-700 font-mono text-sm">+{formatARS(summary.income)}</td>
+                            <td className="text-right py-4 px-6 text-red-700 font-mono text-sm">-{formatARS(summary.expense)}</td>
+                            <td className="text-right py-4 px-6 font-bold text-base text-primary font-mono">
+                              {formatARS(summary.expected)}
                             </td>
                           </tr>
                         ) : null
@@ -620,13 +626,13 @@ export default function CashClient() {
             </Card>
           ) : (
             <div className="text-center py-20 bg-muted/20 rounded-xl border-2 border-dashed border-muted">
-               <XCircle className="h-16 w-16 mx-auto mb-4 text-muted-foreground/30" />
+               <XCircle className="h-16 w-16 mx-auto mb-4 text-muted-foreground/20 pointer-events-none" aria-hidden="true" />
                <h3 className="text-xl font-semibold text-card-foreground">Caja Cerrada</h3>
                <p className="text-muted-foreground max-w-sm mx-auto mt-2">
                  No hay una jornada activa. Abre la caja para comenzar a registrar movimientos.
                </p>
                <Button onClick={() => setIsOpenModalOpen(true)} className="mt-6 bg-emerald-600 hover:bg-emerald-700">
-                  <ArrowUpCircle className="mr-2 h-4 w-4" />
+                  <ArrowUpCircle className="mr-2 h-4 w-4 pointer-events-none" aria-hidden="true" />
                   Abrir Caja Ahora
                </Button>
             </div>
@@ -637,7 +643,7 @@ export default function CashClient() {
           <Card className="border shadow-xs overflow-hidden">
              <CardHeader className="bg-muted/30 border-b">
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <History className="h-5 w-5 text-muted-foreground" />
+                  <History className="h-5 w-5 text-muted-foreground pointer-events-none" aria-hidden="true" />
                   Historial de Arqueos
                 </CardTitle>
             </CardHeader>
@@ -670,7 +676,7 @@ export default function CashClient() {
                           <td className="py-4 px-6">
                             <div className="font-semibold text-card-foreground">{record.date}</div>
                             <div className="text-xs text-muted-foreground flex items-center gap-2 mt-1">
-                              <Clock className="h-3 w-3" />
+                              <Clock className="h-3 w-3 pointer-events-none" aria-hidden="true" />
                               {record.openedAt && `${new Date(record.openedAt).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}`}
                               {record.closedAt && ` - ${new Date(record.closedAt).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}`}
                             </div>
@@ -678,7 +684,7 @@ export default function CashClient() {
                           <td className="py-4 px-6">
                             <div className="flex items-center gap-3">
                               <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0">
-                                <User className="h-4 w-4 text-primary" aria-hidden="true" />
+                                <User className="h-4 w-4 text-primary pointer-events-none" aria-hidden="true" />
                               </div>
                               <div className="flex flex-col">
                                 <span className="font-semibold tracking-tight text-card-foreground">
@@ -693,21 +699,21 @@ export default function CashClient() {
                             </div>
                           </td>
                           <td className="py-4 px-6 text-muted-foreground">{record.closedBy || '-'}</td>
-                          <td className="text-right py-4 px-6 font-semibold">
+                          <td className="text-right py-4 px-6 font-semibold font-mono">
                             {record.closingAmount !== null
-                              ? formatCurrency(record.closingAmount)
+                              ? formatARS(record.closingAmount)
                               : '-'}
                           </td>
-                          <td className={`text-right py-4 px-6 font-bold ${
+                          <td className={`text-right py-4 px-6 font-bold font-mono ${
                             record.difference > 0
-                              ? 'text-blue-600'
+                              ? 'text-blue-700'
                               : record.difference < 0
-                              ? 'text-red-600'
-                              : 'text-emerald-600'
+                              ? 'text-red-700'
+                              : 'text-emerald-700'
                           }`}>
                             {record.difference !== 0
-                              ? `${record.difference > 0 ? '+' : ''}${formatCurrency(record.difference)}`
-                              : <CheckCircle2 className="h-4 w-4 ml-auto" />}
+                              ? `${record.difference > 0 ? '+' : ''}${formatARS(record.difference)}`
+                              : <CheckCircle2 className="h-4 w-4 ml-auto pointer-events-none" aria-hidden="true" />}
                           </td>
                           <td className="text-center py-4 px-6">
                             {!record.isClosed ? (
@@ -735,7 +741,7 @@ export default function CashClient() {
                         disabled={historyPage === 1}
                         className="h-8"
                       >
-                        <ChevronLeft className="h-4 w-4 mr-1" />
+                        <ChevronLeft className="h-4 w-4 mr-1 pointer-events-none" aria-hidden="true" />
                         Anterior
                       </Button>
                       <span className="text-xs text-muted-foreground font-medium">
@@ -749,7 +755,7 @@ export default function CashClient() {
                         className="h-8"
                       >
                         Siguiente
-                        <ChevronRight className="h-4 w-4 ml-1" />
+                        <ChevronRight className="h-4 w-4 ml-1 pointer-events-none" aria-hidden="true" />
                       </Button>
                     </div>
                   )}
@@ -773,12 +779,12 @@ export default function CashClient() {
               Monto Inicial Efectivo
               {cashStatus && cashStatus.suggestedOpeningAmount > 0 && (
                 <span className="text-xs text-emerald-600 font-medium ml-2 bg-emerald-50 px-2 py-0.5 rounded-full">
-                  Sugerido: {formatCurrency(cashStatus.suggestedOpeningAmount)}
+                  Sugerido: {formatARS(cashStatus.suggestedOpeningAmount)}
                 </span>
               )}
             </Label>
             <div className="relative">
-               <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+               <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
                <Input
                  id="openingAmount"
                  type="number"
@@ -786,7 +792,7 @@ export default function CashClient() {
                  step="0.01"
                  value={openingAmount}
                  onChange={(e) => setOpeningAmount(e.target.value)}
-                 className="pl-9"
+                 className="pl-9 font-mono"
                  placeholder="0.00"
                />
             </div>
@@ -794,18 +800,21 @@ export default function CashClient() {
 
           <div className="space-y-2">
             <Label htmlFor="responsible">Responsable de Caja</Label>
-            <Select value={responsibleId} onValueChange={setResponsibleId}>
-               <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Seleccione un responsable" />
-               </SelectTrigger>
-               <SelectContent>
-                  {staffUsers.map((user) => (
-                    <SelectItem key={user.id} value={user.id}>
-                      {user.name} {user.id === currentUserId ? '(Yo)' : ''}
-                    </SelectItem>
-                  ))}
-               </SelectContent>
-            </Select>
+            <div className="relative">
+               <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" aria-hidden="true" />
+               <Select value={responsibleId} onValueChange={setResponsibleId}>
+                  <SelectTrigger className="w-full pl-9">
+                     <SelectValue placeholder="Seleccione un responsable" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {staffUsers.map((user) => (
+                      <SelectItem key={user.id} value={user.id}>
+                        {user.name} {user.id === currentUserId ? '(Yo)' : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+               </Select>
+            </div>
             <p className="text-[11px] text-muted-foreground leading-tight italic">
               El responsable es quien opera físicamente la caja durante el turno. Por defecto es el usuario actual.
             </p>
@@ -833,7 +842,7 @@ export default function CashClient() {
              <div className="space-y-2">
                <Label htmlFor="expenseAmount">Monto</Label>
                <div className="relative">
-                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
                   <Input
                     id="expenseAmount"
                     type="number"
@@ -841,45 +850,55 @@ export default function CashClient() {
                     step="0.01"
                     value={expenseAmount}
                     onChange={(e) => setExpenseAmount(e.target.value)}
-                    className="pl-9"
+                    className="pl-9 font-mono"
                     placeholder="0.00"
                   />
                </div>
              </div>
              <div className="space-y-2">
                <Label htmlFor="expenseMethod">Método de Pago</Label>
-               <Select value={expenseMethod} onValueChange={setExpenseMethod}>
-                  <SelectTrigger className="w-full">
-                     <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                     {paymentMethods.map((method) => (
-                        <SelectItem key={method.code} value={method.code}>
-                          {method.name}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-               </Select>
+               <div className="relative">
+                 <Wallet className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" aria-hidden="true" />
+                 <Select value={expenseMethod} onValueChange={setExpenseMethod}>
+                    <SelectTrigger className="w-full pl-9">
+                       <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                       {paymentMethods.map((method) => (
+                          <SelectItem key={method.code} value={method.code}>
+                            {method.name}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                 </Select>
+               </div>
              </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="expenseReason">Motivo *</Label>
-            <Input
-              id="expenseReason"
-              value={expenseReason}
-              onChange={(e) => setExpenseReason(e.target.value)}
-              placeholder="Ej: Pago proveedor, servicios, etc."
-            />
+            <div className="relative">
+              <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+              <Input
+                id="expenseReason"
+                value={expenseReason}
+                onChange={(e) => setExpenseReason(e.target.value)}
+                className="pl-9"
+                placeholder="Ej: Pago proveedor, servicios, etc."
+              />
+            </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="expenseNotes">Notas (opcional)</Label>
-            <textarea
-              id="expenseNotes"
-              value={expenseNotes}
-              onChange={(e) => setExpenseNotes(e.target.value)}
-              placeholder="Detalles adicionales"
-              className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            />
+            <div className="relative">
+              <StickyNote className="absolute left-3 top-3 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+              <textarea
+                id="expenseNotes"
+                value={expenseNotes}
+                onChange={(e) => setExpenseNotes(e.target.value)}
+                placeholder="Detalles adicionales"
+                className="flex min-h-[80px] w-full rounded-md border border-input bg-background pl-9 pr-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              />
+            </div>
           </div>
           <div className="flex justify-end gap-3 pt-4">
             <Button variant="ghost" onClick={() => setIsExpenseModalOpen(false)}>
@@ -903,7 +922,7 @@ export default function CashClient() {
             <div className="space-y-2">
               <Label htmlFor="incomeAmount">Monto</Label>
               <div className="relative">
-                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
                   <Input
                     id="incomeAmount"
                     type="number"
@@ -911,45 +930,55 @@ export default function CashClient() {
                     step="0.01"
                     value={incomeAmount}
                     onChange={(e) => setIncomeAmount(e.target.value)}
-                    className="pl-9"
+                    className="pl-9 font-mono"
                     placeholder="0.00"
                   />
                </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="incomeMethod">Método de Pago</Label>
-              <Select value={incomeMethod} onValueChange={setIncomeMethod}>
-                  <SelectTrigger className="w-full">
-                     <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {paymentMethods.map((method) => (
-                      <SelectItem key={method.code} value={method.code}>
-                        {method.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-              </Select>
+              <div className="relative">
+                <Wallet className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" aria-hidden="true" />
+                <Select value={incomeMethod} onValueChange={setIncomeMethod}>
+                    <SelectTrigger className="w-full pl-9">
+                       <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {paymentMethods.map((method) => (
+                        <SelectItem key={method.code} value={method.code}>
+                          {method.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="incomeReason">Motivo *</Label>
-            <Input
-              id="incomeReason"
-              value={incomeReason}
-              onChange={(e) => setIncomeReason(e.target.value)}
-              placeholder="Ej: Inyección de capital, reembolso, etc."
-            />
+            <div className="relative">
+              <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+              <Input
+                id="incomeReason"
+                value={incomeReason}
+                onChange={(e) => setIncomeReason(e.target.value)}
+                className="pl-9"
+                placeholder="Ej: Inyección de capital, reembolso, etc."
+              />
+            </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="incomeNotes">Notas (opcional)</Label>
-            <textarea
-              id="incomeNotes"
-              value={incomeNotes}
-              onChange={(e) => setIncomeNotes(e.target.value)}
-              placeholder="Detalles adicionales"
-              className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            />
+            <div className="relative">
+              <StickyNote className="absolute left-3 top-3 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+              <textarea
+                id="incomeNotes"
+                value={incomeNotes}
+                onChange={(e) => setIncomeNotes(e.target.value)}
+                placeholder="Detalles adicionales"
+                className="flex min-h-[80px] w-full rounded-md border border-input bg-background pl-9 pr-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              />
+            </div>
           </div>
           <div className="flex justify-end gap-3 pt-4">
             <Button variant="ghost" onClick={() => setIsIncomeModalOpen(false)}>
@@ -987,43 +1016,52 @@ export default function CashClient() {
                   
                   return (
                     <tr key={method} className="hover:bg-muted/5 transition-colors">
-                      <td className="py-3 px-6 font-semibold text-card-foreground">{getMethodName(method)}</td>
-                      <td className="text-right py-3 px-6 font-medium text-muted-foreground">
-                        {formatCurrency(summary.expected)}
+                      <td className="py-3 px-6">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0">
+                            <Wallet className="h-4 w-4 text-primary pointer-events-none" aria-hidden="true" />
+                          </div>
+                          <span className="font-semibold tracking-tight text-card-foreground">
+                            {getMethodName(method)}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="text-right py-3 px-6 font-mono text-sm text-muted-foreground">
+                        {formatARS(summary.expected)}
                       </td>
                       <td className="text-right py-3 px-6">
                         <div className="relative inline-block w-40">
-                           <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                           <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" aria-hidden="true" />
                            <Input
                              type="number"
                              min="0"
                              step="0.01"
                              value={counts[method] || ''}
                              onChange={(e) => setCounts(prev => ({ ...prev, [method]: e.target.value }))}
-                             className="pl-8 text-right h-9"
+                             className="pl-8 text-right h-9 font-mono"
                              placeholder="0.00"
                            />
                         </div>
                       </td>
-                      <td className={`text-right py-3 px-6 font-bold ${
+                      <td className={`text-right py-3 px-6 font-bold font-mono ${
                         hasDiff 
                           ? diff > 0 
-                            ? 'text-blue-600'
-                            : 'text-red-600'
-                          : 'text-emerald-600'
+                            ? 'text-blue-700'
+                            : 'text-red-700'
+                          : 'text-emerald-700'
                       }`}>
                         {hasDiff ? (
                           <div className="flex items-center justify-end gap-1.5">
-                            {diff > 0 ? '+' : ''}{formatCurrency(diff)}
+                            {diff > 0 ? '+' : ''}{formatARS(diff)}
                             {diff > 0 ? (
-                              <TrendingUp className="h-4 w-4" />
+                              <TrendingUp className="h-4 w-4 pointer-events-none" aria-hidden="true" />
                             ) : (
-                              <TrendingDown className="h-4 w-4" />
+                              <TrendingDown className="h-4 w-4 pointer-events-none" aria-hidden="true" />
                             )}
                           </div>
                         ) : (
                           <div className="flex items-center justify-end gap-1.5">
-                            <CheckCircle2 className="h-4 w-4" />
+                            <CheckCircle2 className="h-4 w-4 pointer-events-none" aria-hidden="true" />
                             <span>Cuadrado</span>
                           </div>
                         )}
@@ -1041,20 +1079,23 @@ export default function CashClient() {
           ) && (
             <div className="space-y-3 p-4 bg-red-50 border border-red-100 rounded-lg animate-in slide-in-from-top-2">
               <div className="flex items-center gap-2 text-red-700">
-                <AlertCircle className="h-5 w-5" />
+                <AlertCircle className="h-5 w-5 pointer-events-none" aria-hidden="true" />
                 <span className="font-bold">Diferencias detectadas</span>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="differenceReason" className="text-red-800">
                   Explicación de las diferencias *
                 </Label>
-                <textarea
-                  id="differenceReason"
-                  value={differenceReason}
-                  onChange={(e) => setDifferenceReason(e.target.value)}
-                  placeholder="Explique las diferencias encontradas (mínimo 5 caracteres)"
-                  className="flex min-h-[100px] w-full rounded-md border-red-200 bg-white px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/20 focus-visible:border-red-300 disabled:cursor-not-allowed disabled:opacity-50 shadow-sm"
-                />
+                <div className="relative">
+                  <StickyNote className="absolute left-3 top-3 h-4 w-4 text-red-400 pointer-events-none" aria-hidden="true" />
+                  <textarea
+                    id="differenceReason"
+                    value={differenceReason}
+                    onChange={(e) => setDifferenceReason(e.target.value)}
+                    placeholder="Explique las diferencias encontradas (mínimo 5 caracteres)"
+                    className="flex min-h-[100px] w-full rounded-md border-red-200 bg-white pl-9 pr-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/20 focus-visible:border-red-300 disabled:cursor-not-allowed disabled:opacity-50 shadow-sm"
+                  />
+                </div>
               </div>
             </div>
           )}
