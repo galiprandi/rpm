@@ -359,7 +359,7 @@ export function ProductsClient({
       label: 'Stock bajo',
       value: lowStockCount,
       icon: AlertTriangle,
-      iconColor: lowStockCount > 0 ? '#f97316' : undefined, // orange-500
+      iconColor: lowStockCount > 0 ? '#c2410c' : undefined, // orange-700
     },
     {
       label: 'Valor inventario',
@@ -384,7 +384,7 @@ export function ProductsClient({
                 className="w-full h-full object-cover"
               />
             ) : (
-              <Package className="h-4 w-4 text-primary" />
+              <Package className="h-4 w-4 text-primary pointer-events-none" aria-hidden="true" />
             )}
           </div>
           <div className="flex flex-col min-w-0">
@@ -429,14 +429,14 @@ export function ProductsClient({
         row.original.isActive ? (
           <Badge
             variant="outline"
-            className="text-emerald-600 border-emerald-200 bg-emerald-50"
+            className="text-emerald-700 border-emerald-200 bg-emerald-50"
           >
             Activo
           </Badge>
         ) : (
           <Badge
             variant="outline"
-            className="text-red-600 border-red-200 bg-red-50"
+            className="text-red-700 border-red-200 bg-red-50"
           >
             Inactivo
           </Badge>
@@ -547,7 +547,7 @@ export function ProductsClient({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    className="text-red-700 hover:text-red-800 hover:bg-red-50"
                     onClick={() => handleDelete(product)}
                     aria-label={`Desactivar producto ${product.name}`}
                   >

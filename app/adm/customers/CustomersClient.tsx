@@ -86,7 +86,7 @@ export default function CustomersClient({ initialCustomers }: CustomersClientPro
         cell: ({ row }) => (
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0">
-              <User className="h-4 w-4 text-primary" aria-hidden="true" />
+              <User className="h-4 w-4 text-primary pointer-events-none" aria-hidden="true" />
             </div>
             <div>
               <div className="font-semibold tracking-tight">{row.original.name}</div>
@@ -109,7 +109,7 @@ export default function CustomersClient({ initialCustomers }: CustomersClientPro
         header: "Teléfono",
         cell: ({ row }) => (
           <div className="flex items-center gap-1.5 font-mono">
-            <Phone className="h-3.5 w-3.5 text-muted-foreground/70" aria-hidden="true" />
+            <Phone className="h-3.5 w-3.5 text-muted-foreground/70 pointer-events-none" aria-hidden="true" />
             {row.original.phone || <span className="text-muted-foreground">-</span>}
           </div>
         ),
@@ -152,7 +152,7 @@ export default function CustomersClient({ initialCustomers }: CustomersClientPro
           }
           if (balance > 0) {
             return (
-              <span className="font-mono font-medium text-red-600">
+              <span className="font-mono font-medium text-red-700">
                 {new Intl.NumberFormat('es-AR', {
                   style: 'currency',
                   currency: 'ARS',
@@ -162,7 +162,7 @@ export default function CustomersClient({ initialCustomers }: CustomersClientPro
           }
           // balance < 0 (saldo a favor)
           return (
-            <span className="font-mono font-medium text-emerald-600">
+            <span className="font-mono font-medium text-emerald-700">
               {new Intl.NumberFormat('es-AR', {
                 style: 'currency',
                 currency: 'ARS',

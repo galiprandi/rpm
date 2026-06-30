@@ -144,7 +144,7 @@ function KanbanCard({ wo, isOverlay = false }: { wo: WorkOrder; isOverlay?: bool
             className={cn(
               "text-[10px] px-1.5 py-0 h-5 font-mono",
               wo.isFullyPaid ? "border-emerald-200 bg-emerald-50 text-emerald-700" :
-              (wo.totalPaid && wo.totalPaid > 0 ? "border-yellow-200 bg-yellow-50 text-yellow-700" : "text-muted-foreground")
+              (wo.totalPaid && wo.totalPaid > 0 ? "border-amber-200 bg-amber-50 text-amber-700" : "text-muted-foreground")
             )}
           >
             ${Number(wo.total).toLocaleString("es-AR")}
@@ -157,7 +157,7 @@ function KanbanCard({ wo, isOverlay = false }: { wo: WorkOrder; isOverlay?: bool
         <div className="flex justify-between items-center text-[10px] text-muted-foreground pt-1.5 border-t mt-1">
           <span className="font-medium">{wo.customer.name}</span>
           {isDelayed(wo) ? (
-            <span className="text-orange-600 font-bold flex items-center gap-0.5">
+            <span className="text-orange-700 font-bold flex items-center gap-0.5">
               <ArrowUpDown className="h-2.5 w-2.5 pointer-events-none" aria-hidden="true" />
               DEMORADA
             </span>
@@ -318,13 +318,13 @@ export default function WorkOrdersPage() {
         label: "Pend. Pago",
         value: pendingPayment,
         icon: Wallet,
-        iconColor: "#f59e0b", // amber-500
+        iconColor: "#b45309", // amber-700
       },
       {
         label: "Facturación Total",
         value: `$${totalBilling.toLocaleString("es-AR")}`,
         icon: DollarSign,
-        iconColor: "#10b981", // emerald-500
+        iconColor: "#047857", // emerald-700
       }
     ];
   }, [workOrders]);
@@ -568,8 +568,11 @@ export default function WorkOrdersPage() {
                             variant={wo.isFullyPaid ? "outline" : (wo.totalPaid && wo.totalPaid > 0 ? "secondary" : "outline")}
                             className={cn(
                               "px-2.5 py-0.5 font-mono",
-                              wo.isFullyPaid ? "border-emerald-200 bg-emerald-50 text-emerald-700" :
-                              (wo.totalPaid && wo.totalPaid > 0 ? "border-yellow-200 bg-yellow-50 text-yellow-700" : "text-muted-foreground")
+                              wo.isFullyPaid
+                                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                                : wo.totalPaid && wo.totalPaid > 0
+                                  ? "border-amber-200 bg-amber-50 text-amber-700"
+                                  : "text-muted-foreground"
                             )}
                           >
                             ${Number(wo.total).toLocaleString("es-AR")}
