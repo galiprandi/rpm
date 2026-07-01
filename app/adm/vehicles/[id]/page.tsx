@@ -83,7 +83,7 @@ export default function VehicleDetailPage() {
         const data = await res.json();
         setVehicle(data);
       } else {
-        console.error("Error fetching vehicle");
+        throw new Error("Error al obtener datos del vehículo");
       }
     } catch (error) {
       console.error("Error fetching vehicle:", error);
@@ -104,14 +104,18 @@ export default function VehicleDetailPage() {
       });
       if (res.ok) {
         router.push("/adm/customers");
+      } else {
+        const error = await res.json();
+        alert(error.error || "Error al eliminar el vehículo");
       }
     } catch (error) {
       console.error("Error deleting vehicle:", error);
+      alert("Error al eliminar el vehículo");
     }
   };
 
   const getStatusBadge = (status: string) => {
-    const statusConfig: Record<string, { label: string; variant: any; className: string }> = {
+    const statusConfig: Record<string, { label: string; variant: "default" | "outline" | "secondary" | "destructive"; className: string }> = {
       CONFIRMED: { label: "Confirmada", variant: "outline", className: "text-blue-700 border-blue-200 bg-blue-50" },
       WAITING: { label: "En espera", variant: "outline", className: "text-amber-700 border-amber-200 bg-amber-50" },
       IN_PROGRESS: { label: "En progreso", variant: "outline", className: "text-orange-700 border-orange-200 bg-orange-50" },
@@ -436,7 +440,6 @@ export default function VehicleDetailPage() {
               title="Órdenes de Trabajo"
               enableGlobalFilter={true}
               globalFilterPlaceholder="Buscar OT..."
-              hideCreateAction
             />
           )}
         </CardContent>
