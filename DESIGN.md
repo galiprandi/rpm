@@ -160,3 +160,15 @@ Los `loading.tsx` deben implementar esqueletos que imiten no solo la estructura 
 ## 17. Typography Consistency
 
 - **Technical Data**: Siempre usar `font-mono` para IDs, SKUs, CUIs, Teléfonos, Fechas (en contextos técnicos), emails y montos monetarios. Esto mejora la legibilidad de datos tabulares y alineación numérica.
+
+## 18. Vehicles & Equipment Refinement
+
+- **Detail Headers**: Utilizar  con  para patentes/IDs. Integrar metadatos técnicos (Categoría, Año, Color) y contactos de clientes en el slot  usando mini-pills con  o colores semánticos (azul para teléfonos).
+- **History Visualization**: El historial de OTs debe seguir el *Standardized List Row Entity Pattern* con el icono  en contenedor 8x8 y  para IDs y montos.
+- **Form Patterns**:  debe implementar el *Form UX Enhancement Pattern* con iconos absolutos y  en todos los campos de identificación y contacto.
+
+## 18. Vehicles & Equipment Refinement
+
+- **Detail Headers**: Utilizar `Header` con `titleClassName="font-mono"` para patentes/IDs. Integrar metadatos técnicos (Categoría, Año, Color) y contactos de clientes en el slot `children` usando mini-pills con `bg-muted/50` o colores semánticos (azul para teléfonos).
+- **History Visualization**: El historial de OTs debe seguir el *Standardized List Row Entity Pattern* con el icono `ClipboardList` en contenedor 8x8 y `font-mono` para IDs y montos.
+- **Form Patterns**: `VehicleDialog` debe implementar el *Form UX Enhancement Pattern* con iconos absolutos y `font-mono` en todos los campos de identificación y contacto.
