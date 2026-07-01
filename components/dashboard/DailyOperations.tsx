@@ -173,7 +173,7 @@ export function DailyOperations() {
       accessorKey: 'methodName',
       header: 'Método',
       cell: ({ row }) => (
-        <span className="font-mono text-sm">
+        <span className="font-mono text-xs">
           {row.original.methodName}
         </span>
       ),
