@@ -186,7 +186,7 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
       label: 'Activas',
       value: categories.filter((c) => c.isActive).length,
       icon: CheckCircle2,
-      iconColor: '#10b981', // emerald-500
+      iconColor: '#047857', // emerald-700
     },
     {
       label: 'Productos',
@@ -206,7 +206,7 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
               className="w-8 h-8 rounded-lg shadow-sm border border-primary/20 flex items-center justify-center shrink-0"
               style={{ backgroundColor: row.original.color || 'var(--primary)' }}
             >
-              <Folder className="h-4 w-4 text-white drop-shadow-sm" aria-hidden="true" />
+              <Folder className="h-4 w-4 text-white drop-shadow-sm pointer-events-none" aria-hidden="true" />
             </div>
             <span className="font-semibold tracking-tight">{row.original.name}</span>
           </div>
@@ -241,7 +241,7 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
         cell: ({ row }) => (
           <Badge
             variant={row.original.isActive ? 'outline' : 'secondary'}
-            className={row.original.isActive ? 'text-emerald-600 border-emerald-200 bg-emerald-50' : ''}
+            className={row.original.isActive ? 'text-emerald-700 border-emerald-200 bg-emerald-50' : ''}
           >
             {row.original.isActive ? 'Activa' : 'Inactiva'}
           </Badge>
