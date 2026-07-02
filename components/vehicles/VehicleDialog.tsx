@@ -231,12 +231,20 @@ export function VehicleDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Car className="h-5 w-5" />
-            Agregar Vehículo
+          <DialogTitle className="flex items-center gap-2 text-xl">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Car className="h-4 w-4 text-primary pointer-events-none" aria-hidden="true" />
+            </div>
+            Agregar Vehículo o Equipo
           </DialogTitle>
           <DialogDescription>
-            {customerId ? `Cliente: ${customerName}` : 'Seleccione un cliente y complete los datos del vehículo'}
+            {customerId ? (
+              <span className="flex items-center gap-1">
+                Cliente: <span className="font-semibold text-foreground">{customerName}</span>
+              </span>
+            ) : (
+              'Seleccione un cliente y complete los datos técnicos del vehículo o equipo'
+            )}
           </DialogDescription>
         </DialogHeader>
 
@@ -256,7 +264,7 @@ export function VehicleDialog({
                   onClick={() => setIsCreatingCustomer(true)}
                   className="text-primary"
                 >
-                  <Plus className="h-4 w-4 mr-1" />
+                  <Plus className="h-4 w-4 mr-1 pointer-events-none" aria-hidden="true" />
                   Crear nuevo
                 </Button>
               </div>
@@ -321,7 +329,7 @@ export function VehicleDialog({
             <div className="space-y-3 p-4 border rounded-lg bg-muted/50">
               <div className="flex items-center justify-between">
                 <Label className="flex items-center gap-2">
-                  <Plus className="h-4 w-4" />
+                  <Plus className="h-4 w-4 pointer-events-none" aria-hidden="true" />
                   Crear Nuevo Cliente
                 </Label>
                 <Button
@@ -333,7 +341,7 @@ export function VehicleDialog({
                     setNewCustomerData({ name: '', phone: '', email: '' });
                   }}
                 >
-                  <X className="h-4 w-4 mr-1" />
+                  <X className="h-4 w-4 mr-1 pointer-events-none" aria-hidden="true" />
                   Cancelar
                 </Button>
               </div>
@@ -343,7 +351,7 @@ export function VehicleDialog({
                     Nombre
                   </Label>
                   <div className="relative">
-                    <User className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
                     <Input
                       id="new-customer-name"
                       value={newCustomerData.name}
@@ -361,7 +369,7 @@ export function VehicleDialog({
                     Teléfono
                   </Label>
                   <div className="relative">
-                    <Phone className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
                     <Input
                       id="new-customer-phone"
                       value={newCustomerData.phone}
@@ -369,7 +377,7 @@ export function VehicleDialog({
                         setNewCustomerData((prev) => ({ ...prev, phone: e.target.value }))
                       }
                       placeholder="Ej: 1123456789"
-                      className="pl-9"
+                      className="pl-9 font-mono"
                       aria-required="true"
                     />
                   </div>
@@ -377,7 +385,7 @@ export function VehicleDialog({
                 <div className="space-y-2">
                   <Label htmlFor="new-customer-email">Email</Label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
                     <Input
                       id="new-customer-email"
                       type="email"
@@ -412,10 +420,12 @@ export function VehicleDialog({
 
           {/* Selected Customer Display */}
           {(customerId || customerIdProp) && (
-            <div className="flex items-center justify-between p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+            <div className="flex items-center justify-between p-3 bg-emerald-50 border border-emerald-200 rounded-lg animate-in fade-in zoom-in-95 duration-200">
               <div className="flex items-center gap-2">
-                <User className="h-4 w-4 text-emerald-600" />
-                <span className="font-medium">{customerName || customerNameProp}</span>
+                <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center">
+                  <User className="h-3.5 w-3.5 text-emerald-600 pointer-events-none" aria-hidden="true" />
+                </div>
+                <span className="font-semibold text-emerald-700">{customerName || customerNameProp}</span>
               </div>
               {!customerIdProp && (
                 <Button
@@ -435,16 +445,16 @@ export function VehicleDialog({
 
           {/* Categoría */}
           <div className="space-y-2">
-            <Label htmlFor="category" required>
+            <Label htmlFor="category-select" required className="flex items-center gap-2">
               Categoría
             </Label>
             <div className="relative">
-              <Tag className="absolute left-3 top-2 h-4 w-4 text-muted-foreground pointer-events-none z-10" aria-hidden="true" />
+              <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" aria-hidden="true" />
               <Select
                 value={formData.category}
                 onValueChange={(value) => handleChange('category', value)}
               >
-                <SelectTrigger id="category" className="pl-9">
+                <SelectTrigger id="category-select" className="pl-9">
                   <SelectValue placeholder="Seleccione categoría" />
                 </SelectTrigger>
                 <SelectContent>
@@ -465,14 +475,14 @@ export function VehicleDialog({
               {isVehicle ? 'Patente' : 'Número de Serie/Identificador'}
             </Label>
             <div className="relative">
-              <Hash className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+              <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
               <Input
                 id="identifier"
                 value={formData.identifier}
                 onChange={(e) => handleChange('identifier', e.target.value.toUpperCase())}
                 placeholder={isVehicle ? 'Ej: AB123CD' : 'Ej: SN123456'}
                 required
-                className="pl-9 font-mono"
+                className="pl-9 font-mono uppercase tracking-wider"
                 aria-required="true"
               />
             </div>
@@ -480,11 +490,11 @@ export function VehicleDialog({
 
           {/* Campos para vehículos */}
           {isVehicle ? (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4 p-4 rounded-lg bg-muted/30 border border-dashed">
               <div className="space-y-2">
                 <Label htmlFor="makeName">Marca</Label>
                 <div className="relative">
-                  <Car className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+                  <Car className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
                   <Input
                     id="makeName"
                     value={formData.makeName}
@@ -497,7 +507,7 @@ export function VehicleDialog({
               <div className="space-y-2">
                 <Label htmlFor="modelName">Modelo</Label>
                 <div className="relative">
-                  <CarFront className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+                  <CarFront className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
                   <Input
                     id="modelName"
                     value={formData.modelName}
@@ -510,7 +520,7 @@ export function VehicleDialog({
               <div className="space-y-2">
                 <Label htmlFor="year">Año</Label>
                 <div className="relative">
-                  <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
                   <Input
                     id="year"
                     type="number"
@@ -526,7 +536,7 @@ export function VehicleDialog({
               <div className="space-y-2">
                 <Label htmlFor="color">Color</Label>
                 <div className="relative">
-                  <Palette className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+                  <Palette className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
                   <Input
                     id="color"
                     value={formData.color}
@@ -539,11 +549,11 @@ export function VehicleDialog({
             </div>
           ) : (
             /* Campos para equipos */
-            <div className="space-y-4">
+            <div className="space-y-4 p-4 rounded-lg bg-muted/30 border border-dashed">
               <div className="space-y-2">
                 <Label htmlFor="equipmentName" required={!isVehicle}>Nombre del Equipo</Label>
                 <div className="relative">
-                  <Package className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+                  <Package className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
                   <Input
                     id="equipmentName"
                     value={formData.equipmentName}
@@ -558,7 +568,7 @@ export function VehicleDialog({
               <div className="space-y-2">
                 <Label htmlFor="equipmentType">Tipo de Equipo</Label>
                 <div className="relative">
-                  <Wrench className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+                  <Wrench className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
                   <Input
                     id="equipmentType"
                     value={formData.equipmentType}
@@ -571,7 +581,7 @@ export function VehicleDialog({
               <div className="space-y-2">
                 <Label htmlFor="description">Descripción</Label>
                 <div className="relative">
-                  <FileText className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+                  <FileText className="absolute left-3 top-3 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
                   <Textarea
                     id="description"
                     value={formData.description}
@@ -587,17 +597,19 @@ export function VehicleDialog({
 
           {/* Vehicle Summary Preview */}
           {(formData.makeName || formData.modelName || formData.color || formData.year) && (
-            <div className="p-4 bg-muted/50 rounded-lg border">
-              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-2">
-                <Eye className="h-4 w-4" />
-                Resumen del vehículo a crear
+            <div className="p-4 bg-primary/[0.02] rounded-lg border border-primary/10 border-dashed">
+              <div className="flex items-center gap-2 text-xs font-semibold text-primary/60 uppercase tracking-widest mb-3">
+                <Eye className="h-3.5 w-3.5 pointer-events-none" aria-hidden="true" />
+                Vista previa técnica
               </div>
               <div className="flex items-center gap-2 flex-wrap">
-                <Badge variant="outline">{formData.identifier || 'Sin patente'}</Badge>
-                {formData.makeName && <Badge variant="secondary">{formData.makeName}</Badge>}
-                {formData.modelName && <Badge variant="secondary">{formData.modelName}</Badge>}
-                {formData.year && <Badge variant="outline">{formData.year}</Badge>}
-                {formData.color && <Badge variant="outline" className="border-dashed">{formData.color}</Badge>}
+                <Badge variant="outline" className="font-mono bg-background shadow-sm border-primary/20 text-primary">
+                  {formData.identifier || 'SIN ID'}
+                </Badge>
+                {formData.makeName && <Badge variant="secondary" className="font-medium">{formData.makeName}</Badge>}
+                {formData.modelName && <Badge variant="secondary" className="font-medium">{formData.modelName}</Badge>}
+                {formData.year && <Badge variant="outline" className="font-mono">{formData.year}</Badge>}
+                {formData.color && <Badge variant="outline" className="border-dashed text-muted-foreground bg-muted/30">{formData.color}</Badge>}
               </div>
             </div>
           )}
@@ -606,14 +618,14 @@ export function VehicleDialog({
           <div className="space-y-2">
             <Label htmlFor="notes">Notas</Label>
             <div className="relative">
-              <FileText className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+              <FileText className="absolute left-3 top-3 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
               <Textarea
                 id="notes"
                 value={formData.notes}
                 onChange={(e) => handleChange('notes', e.target.value)}
                 placeholder="Notas internas sobre el vehículo/equipo..."
                 rows={2}
-                className="pl-9"
+                className="pl-9 min-h-[80px]"
               />
             </div>
           </div>
@@ -628,9 +640,15 @@ export function VehicleDialog({
             >
               Cancelar
             </Button>
-            <Button type="submit" disabled={loading} className="gap-2">
-              <Save className="h-4 w-4" />
-              {loading ? 'Guardando...' : 'Guardar Vehículo'}
+            <Button type="submit" disabled={loading} className="gap-2 shadow-sm min-w-[140px]">
+              {loading ? (
+                'Guardando...'
+              ) : (
+                <>
+                  <Save className="h-4 w-4 pointer-events-none" aria-hidden="true" />
+                  Guardar Vehículo
+                </>
+              )}
             </Button>
           </div>
         </form>
