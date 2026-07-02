@@ -68,8 +68,9 @@ export default function SettingsClient({ initialMinimumMargin }: SettingsClientP
                 title="Tema del Sistema"
                 description="Selecciona entre tema claro, oscuro o sincronizado con el sistema"
                 icon={Palette}
+                htmlFor="theme-selector"
               >
-                <ThemeSelector />
+                <ThemeSelector id="theme-selector" />
               </SettingItem>
             </div>
           </CardContent>
@@ -89,6 +90,7 @@ export default function SettingsClient({ initialMinimumMargin }: SettingsClientP
                 title="Margen Mínimo Global"
                 description="Alerta cuando una lista o excepción quede por debajo de este valor"
                 icon={Percent}
+                htmlFor="minimum-margin"
               >
                 <div className="flex items-center gap-3">
                   <div className="relative">
@@ -97,6 +99,7 @@ export default function SettingsClient({ initialMinimumMargin }: SettingsClientP
                       aria-hidden="true"
                     />
                     <Input
+                      id="minimum-margin"
                       type="number"
                       min={0}
                       max={100}
@@ -114,6 +117,7 @@ export default function SettingsClient({ initialMinimumMargin }: SettingsClientP
                     className="h-9 px-4"
                     onClick={handleSave}
                     loading={saving}
+                    aria-label="Guardar margen mínimo"
                   >
                     Guardar
                   </Button>
