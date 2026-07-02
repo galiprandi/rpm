@@ -3,6 +3,7 @@
 import { ReactNode } from 'react';
 import { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Label } from '@/components/ui/label';
 
 interface SettingItemProps {
   title: string;
@@ -10,6 +11,7 @@ interface SettingItemProps {
   icon?: LucideIcon;
   children: ReactNode;
   className?: string;
+  htmlFor?: string;
 }
 
 /**
@@ -21,7 +23,8 @@ export function SettingItem({
   description,
   icon: Icon,
   children,
-  className
+  className,
+  htmlFor
 }: SettingItemProps) {
   return (
     <div className={cn(
@@ -31,11 +34,23 @@ export function SettingItem({
       <div className="flex gap-3 flex-1 min-w-0">
         {Icon && (
           <div className="shrink-0 mt-0.5">
-            <Icon className="h-4 w-4 text-muted-foreground" />
+            <Icon
+              className="h-4 w-4 text-muted-foreground pointer-events-none"
+              aria-hidden="true"
+            />
           </div>
         )}
         <div className="flex-1 min-w-0">
-          <h4 className="text-[0.925rem] font-medium leading-none mb-1.5">{title}</h4>
+          {htmlFor ? (
+            <Label
+              htmlFor={htmlFor}
+              className="text-[0.925rem] font-medium leading-none mb-1.5 cursor-pointer block"
+            >
+              {title}
+            </Label>
+          ) : (
+            <h4 className="text-[0.925rem] font-medium leading-none mb-1.5">{title}</h4>
+          )}
           {description && (
             <p className="text-[0.8rem] text-muted-foreground leading-relaxed line-clamp-2">
               {description}
