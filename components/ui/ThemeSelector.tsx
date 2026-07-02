@@ -18,7 +18,7 @@ const themes: { value: Theme; label: string; icon: React.ComponentType<{ classNa
   { value: 'system', label: 'Sistema', icon: Monitor },
 ];
 
-export function ThemeSelector() {
+export function ThemeSelector({ id }: { id?: string }) {
   const { theme, setTheme } = useTheme();
 
   return (
@@ -32,6 +32,7 @@ export function ThemeSelector() {
         onValueChange={(value) => setTheme(value as Theme)}
       >
         <SelectTrigger
+          id={id}
           className="w-40 pl-9"
           aria-label="Seleccionar tema"
         >
