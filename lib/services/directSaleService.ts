@@ -4,6 +4,7 @@
 import { prisma } from '@/lib/prisma';
 import { randomUUID } from 'crypto';
 import { createCashMovement } from './cashMovementService';
+import { createInvoice, determineInvoiceType } from './invoiceService';
 import { revalidatePath } from 'next/cache';
 import { getArgentinaStartOfDay, getArgentinaEndOfDay } from '@/lib/utils/date';
 
@@ -235,6 +236,52 @@ export async function createDirectSale(input: CreateDirectSaleInput) {
 
       // Note: The remaining debt is tracked in customer.balance
       // No separate payment record needed - the balance is the source of truth
+    }
+
+    // --- Generate Pre-Invoice ---
+    try {
+      // Re-fetch customer to get billingData
+      let billingData = null;
+      let customerDoc: string | undefined = undefined;
+      let customerDocType: string | undefined = undefined;
+
+      if (customerId) {
+        const customer = await tx.customer.findUnique({
+          where: { id: customerId },
+          select: { billingData: true }
+        });
+        billingData = customer?.billingData;
+
+        // Extract doc info from billingData if available
+        if (billingData && typeof billingData === 'object') {
+          const bd = billingData as any;
+          customerDoc = bd.cuit || bd.dni || undefined;
+          customerDocType = bd.cuit ? 'CUIT' : (bd.dni ? 'DNI' : undefined);
+        }
+      }
+
+      const invoiceType = determineInvoiceType(billingData, 'FACTURA', true);
+
+      // Calculate taxes (basic implementation for now: assuming 21% if billingData allows, otherwise 0)
+      // For RI customers we might want to calculate desglosado. For CF, it's included.
+      // Initially, let's keep it simple: total is total.
+
+      await createInvoice({
+        type: invoiceType,
+        referenceId: directSale.id,
+        referenceType: 'direct_sale',
+        customerId,
+        customerName,
+        customerDoc,
+        customerDocType,
+        subtotal: Number(total), // Simplified: total = subtotal for pre-invoices without tax breakdown
+        total: Number(total),
+        status: 'DRAFT',
+        createdBy,
+      }, tx);
+    } catch (invoiceError) {
+      // We don't want to fail the whole sale if invoice generation fails
+      console.error('Error generating pre-invoice for direct sale:', invoiceError);
     }
 
     return directSale;
