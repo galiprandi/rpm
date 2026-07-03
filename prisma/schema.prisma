@@ -531,8 +531,14 @@ model invoice {
   referenceType String
   customerId    String?
   customerName  String
+  customerDoc     String?
+  customerDocType String?
   subtotal      Decimal      @db.Decimal(10, 2)
   tax           Decimal?     @db.Decimal(10, 2)
+  iva21         Decimal?     @db.Decimal(10, 2)
+  iva105        Decimal?     @db.Decimal(10, 2)
+  exemptions    Json?
+  perceptions   Json?
   total         Decimal      @db.Decimal(10, 2)
   afipData      Json?
   status        String
@@ -544,6 +550,8 @@ model invoice {
   @@index([number])
   @@index([referenceId])
   @@index([status])
+  @@index([type])
+  @@index([issuedAt])
 }
 
 model credit_note {

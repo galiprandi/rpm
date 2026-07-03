@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
-import { hasRole, UserRole } from '@/lib/auth/roles';
-import { getInvoices, createInvoice, getNextInvoiceNumber } from '@/lib/services/invoiceService';
+import { getInvoices, createInvoice } from '@/lib/services/invoiceService';
 
-// GET /api/invoices - List invoices
 export async function GET(request: NextRequest) {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -12,32 +10,28 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { searchParams } = request.nextUrl;
-    const startDate = searchParams.get('startDate');
-    const endDate = searchParams.get('endDate');
-    const type = searchParams.get('type');
-    const status = searchParams.get('status');
-    const customerId = searchParams.get('customerId');
+    const { searchParams } = new URL(request.url);
 
-    const invoices = await getInvoices({
-      startDate: startDate ? new Date(startDate) : undefined,
-      endDate: endDate ? new Date(endDate) : undefined,
-      type: type || undefined,
-      status: status || undefined,
-      customerId: customerId || undefined,
-    });
+    const filters = {
+      type: searchParams.get('type') || undefined,
+      status: searchParams.get('status') || undefined,
+      customerId: searchParams.get('customerId') || undefined,
+      search: searchParams.get('search') || undefined,
+      startDate: searchParams.get('startDate') ? new Date(searchParams.get('startDate')!) : undefined,
+      endDate: searchParams.get('endDate') ? new Date(searchParams.get('endDate')!) : undefined,
+    };
 
-    return NextResponse.json({ invoices });
+    const invoices = await getInvoices(filters);
+    return NextResponse.json(invoices);
   } catch (error) {
-    console.error("Error fetching invoices:", error);
+    console.error('Error in GET /api/invoices:', error);
     return NextResponse.json(
-      { error: "Failed to fetch invoices" },
+      { error: 'Error al obtener los comprobantes' },
       { status: 500 }
     );
   }
 }
 
-// POST /api/invoices - Create invoice
 export async function POST(request: NextRequest) {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -45,57 +39,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const userRole = await hasRole(session.user.id, UserRole.ADMIN);
-    if (!userRole) {
-      return NextResponse.json(
-        { error: "Only ADMIN can create invoices" },
-        { status: 403 }
-      );
-    }
-
+    // Note: createInvoice already handles internal numbering
     const body = await request.json();
-    const {
-      type,
-      referenceId,
-      referenceType,
-      customerId,
-      customerName,
-      subtotal,
-      tax,
-      total,
-      afipData,
-      status,
-    } = body;
-
-    if (!type || !referenceId || !referenceType || !customerName || !subtotal || !total) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
-    }
-
-    const number = await getNextInvoiceNumber(type);
-
     const invoice = await createInvoice({
-      number,
-      type,
-      referenceId,
-      referenceType,
-      customerId,
-      customerName,
-      subtotal,
-      tax,
-      total,
-      afipData,
-      status: status || 'DRAFT',
+      ...body,
       createdBy: session.user.id,
     });
 
-    return NextResponse.json({ invoice }, { status: 201 });
+    return NextResponse.json(invoice, { status: 201 });
   } catch (error) {
-    console.error("Error creating invoice:", error);
+    console.error('Error in POST /api/invoices:', error);
     return NextResponse.json(
-      { error: "Failed to create invoice" },
+      { error: 'Error al crear el comprobante' },
       { status: 500 }
     );
   }
