@@ -41,12 +41,14 @@ import {
   Package,
   Wrench,
   ArrowUpDown,
+  MessageSquare,
 } from "lucide-react";
 import { ProductServiceSelector, SelectedItem } from "@/components/ui/ProductServiceSelector";
 import Image from "next/image";
 import { Header } from "@/components/adm/Header";
 import { cn } from "@/lib/utils";
 import { CustomerCreditNoteDialog } from "@/components/credit-notes/CustomerCreditNoteDialog";
+import { getWhatsAppLink, getWorkOrderMessage } from "@/lib/utils/whatsapp";
 
 // Timeline Item Component
 function TimelineItem({
@@ -508,6 +510,25 @@ export default function WorkOrderDetailPage() {
           </Select>
         }
         secondaryActions={[
+          ...(workOrder.status === 'READY' || workOrder.status === 'DELIVERED' ? [{
+            label: 'Notificar WhatsApp',
+            onClick: () => {
+              if (workOrder.customer?.phone) {
+                const msg = getWorkOrderMessage({
+                  customerName: workOrder.customer.name,
+                  vehicleIdentifier: workOrder.vehicle.identifier,
+                  status: workOrder.status,
+                  total: Number(workOrder.total),
+                  totalPaid: totalPaid,
+                });
+                window.open(getWhatsAppLink(workOrder.customer.phone, msg), '_blank');
+              }
+            },
+            variant: 'outline' as const,
+            icon: MessageSquare,
+            className: "text-emerald-700 border-emerald-200 bg-emerald-50 hover:bg-emerald-100",
+            ariaLabel: 'Enviar notificación de estado por WhatsApp',
+          }] : []),
           {
             label: 'Devolver',
             onClick: () => setIsCreditNoteDialogOpen(true),
@@ -575,17 +596,39 @@ export default function WorkOrderDetailPage() {
 
             {/* Línea 3: Contacto del cliente */}
             <div className="flex flex-wrap items-center gap-3 text-sm">
-              <a
-                href={`tel:${workOrder.customer?.phone}`}
-                className="flex items-center gap-2 bg-primary/5 hover:bg-primary/10 px-3 py-1 rounded-full border border-primary/20 transition-colors"
-              >
-                <span className="font-semibold text-primary">{workOrder.customer?.name}</span>
-                <div className="w-px h-3 bg-primary/30" />
-                <span className="flex items-center gap-1 text-muted-foreground font-mono">
-                  <Phone className="h-3.5 w-3.5 pointer-events-none" aria-hidden="true" />
-                  {workOrder.customer?.phone}
-                </span>
-              </a>
+              <div className="flex items-center gap-1">
+                <a
+                  href={`tel:${workOrder.customer?.phone}`}
+                  className="flex items-center gap-2 bg-primary/5 hover:bg-primary/10 px-3 py-1 rounded-full border border-primary/20 transition-colors"
+                >
+                  <span className="font-semibold text-primary">{workOrder.customer?.name}</span>
+                  <div className="w-px h-3 bg-primary/30" />
+                  <span className="flex items-center gap-1 text-muted-foreground font-mono">
+                    <Phone className="h-3.5 w-3.5 pointer-events-none" aria-hidden="true" />
+                    {workOrder.customer?.phone}
+                  </span>
+                </a>
+                {workOrder.customer?.phone && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                    onClick={() => {
+                      const msg = getWorkOrderMessage({
+                        customerName: workOrder.customer!.name,
+                        vehicleIdentifier: workOrder.vehicle.identifier,
+                        status: workOrder.status,
+                        total: Number(workOrder.total),
+                        totalPaid: totalPaid,
+                      });
+                      window.open(getWhatsAppLink(workOrder.customer!.phone, msg), '_blank');
+                    }}
+                    aria-label="Enviar WhatsApp"
+                  >
+                    <MessageSquare className="h-4 w-4 pointer-events-none" aria-hidden="true" />
+                  </Button>
+                )}
+              </div>
               {workOrder.customer?.email && (
                 <a
                   href={`mailto:${workOrder.customer.email}`}

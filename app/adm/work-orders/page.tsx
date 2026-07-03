@@ -12,7 +12,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Plus, LayoutGrid, List, ArrowUpDown, Car, Truck, Wrench, Headphones, Package, ClipboardList, Wallet, DollarSign } from "lucide-react";
+import { Plus, LayoutGrid, List, ArrowUpDown, Car, Truck, Wrench, Headphones, Package, ClipboardList, Wallet, DollarSign, MessageSquare } from "lucide-react";
 import { Header } from "@/components/adm/Header";
 import { CrudStats } from "@/components/adm/CrudStats";
 import { cn } from "@/lib/utils";
@@ -35,6 +35,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { toast } from "sonner";
+import { getWhatsAppLink, getWorkOrderMessage } from "@/lib/utils/whatsapp";
 
 interface WorkOrder {
   id: string;
@@ -155,7 +156,32 @@ function KanbanCard({ wo, isOverlay = false }: { wo: WorkOrder; isOverlay?: bool
         </div>
 
         <div className="flex justify-between items-center text-[10px] text-muted-foreground pt-1.5 border-t mt-1">
-          <span className="font-medium">{wo.customer.name}</span>
+          <div className="flex items-center gap-1.5 overflow-hidden">
+            <span className="font-medium truncate">{wo.customer.name}</span>
+            {wo.status === 'READY' && wo.customer.phone && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const msg = getWorkOrderMessage({
+                    customerName: wo.customer.name,
+                    vehicleIdentifier: wo.vehicle.identifier,
+                    status: wo.status,
+                    total: Number(wo.total),
+                    totalPaid: wo.totalPaid || 0,
+                  });
+                  window.open(getWhatsAppLink(wo.customer.phone, msg), '_blank');
+                }}
+                className="h-5 w-5 p-0 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 shrink-0"
+                title="Notificar por WhatsApp"
+                aria-label="Notificar por WhatsApp"
+              >
+                <MessageSquare className="h-3 w-3 pointer-events-none" aria-hidden="true" />
+              </Button>
+            )}
+          </div>
           {isDelayed(wo) ? (
             <span className="text-orange-700 font-bold flex items-center gap-0.5">
               <ArrowUpDown className="h-2.5 w-2.5 pointer-events-none" aria-hidden="true" />
@@ -563,6 +589,28 @@ export default function WorkOrdersPage() {
                           </div>
                         </div>
                         <div className="flex items-center gap-4">
+                          {wo.status === 'READY' && wo.customer.phone && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                const msg = getWorkOrderMessage({
+                                  customerName: wo.customer.name,
+                                  vehicleIdentifier: wo.vehicle.identifier,
+                                  status: wo.status,
+                                  total: Number(wo.total),
+                                  totalPaid: wo.totalPaid || 0,
+                                });
+                                window.open(getWhatsAppLink(wo.customer.phone, msg), '_blank');
+                              }}
+                              aria-label="Notificar por WhatsApp"
+                            >
+                              <MessageSquare className="h-4 w-4 pointer-events-none" aria-hidden="true" />
+                            </Button>
+                          )}
                           {getStatusBadge(wo.status)}
                           <Badge
                             variant={wo.isFullyPaid ? "outline" : (wo.totalPaid && wo.totalPaid > 0 ? "secondary" : "outline")}
