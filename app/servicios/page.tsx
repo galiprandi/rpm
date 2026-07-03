@@ -1,5 +1,11 @@
 import { PublicLayout } from '@/components/public/layout/PublicLayout';
 import { Lightbulb, Sparkles, Compass } from 'lucide-react';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Servicios | RPM Accesorios',
+  description: 'Instalación certificada de iluminación LED, protección PPF y equipamiento off-road en Tucumán.',
+};
 
 const serviceDetails = [
   {
