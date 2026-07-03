@@ -12,7 +12,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Plus, LayoutGrid, List, ArrowUpDown, Car, Truck, Wrench, Headphones, Package, ClipboardList, Wallet, DollarSign, MessageSquare } from "lucide-react";
+import { Plus, LayoutGrid, List, ArrowUpDown, Car, Truck, Wrench, Headphones, Package, ClipboardList, Wallet, DollarSign, MessageSquare, AlertCircle } from "lucide-react";
 import { Header } from "@/components/adm/Header";
 import { CrudStats } from "@/components/adm/CrudStats";
 import { cn } from "@/lib/utils";
@@ -184,7 +184,7 @@ function KanbanCard({ wo, isOverlay = false }: { wo: WorkOrder; isOverlay?: bool
           </div>
           {isDelayed(wo) ? (
             <span className="text-orange-700 font-bold flex items-center gap-0.5">
-              <ArrowUpDown className="h-2.5 w-2.5 pointer-events-none" aria-hidden="true" />
+              <AlertCircle className="h-2.5 w-2.5 pointer-events-none" aria-hidden="true" />
               DEMORADA
             </span>
           ) : (
@@ -215,6 +215,7 @@ function KanbanCard({ wo, isOverlay = false }: { wo: WorkOrder; isOverlay?: bool
 }
 
 function KanbanColumn({ status, items }: { status: typeof STATUSES[0]; items: WorkOrder[] }) {
+  const columnTotal = items.reduce((sum, wo) => sum + Number(wo.total), 0);
   const { setNodeRef } = useSortable({
     id: status.id,
     data: {
@@ -227,16 +228,22 @@ function KanbanColumn({ status, items }: { status: typeof STATUSES[0]; items: Wo
     <div className="flex flex-col flex-1 min-w-[200px] h-full">
       <div
         className={cn(
-          "p-3 rounded-t-lg font-semibold text-sm border sticky top-0 z-10",
+          "p-3 rounded-t-lg border sticky top-0 z-10",
           status.color
         )}
       >
         <div className="flex justify-between items-center">
-          <span>{status.label}</span>
-          <span className="text-muted-foreground text-xs">
+          <span className="font-semibold text-sm">{status.label}</span>
+          <span className="text-muted-foreground text-[10px] font-mono bg-white/50 px-1.5 py-0.5 rounded-full border border-black/5">
             {items.length}
           </span>
         </div>
+        {items.length > 0 && (
+          <div className="mt-1 text-xs font-mono text-muted-foreground/80 flex items-center gap-1">
+            <DollarSign className="h-3 w-3" />
+            {columnTotal.toLocaleString("es-AR", { maximumFractionDigits: 0 })}
+          </div>
+        )}
       </div>
       <div
         ref={setNodeRef}
