@@ -72,9 +72,17 @@ export const navGroups: NavGroup[] = [
     items: [
       { label: 'Arqueo de Caja', href: '/adm/cash', icon: Wallet, roles: [UserRole.ADMIN, UserRole.STAFF] },
       { label: 'Operaciones', href: '/adm/operations', icon: BarChart3, roles: [UserRole.ADMIN, UserRole.STAFF] },
-      { label: 'Deudores', href: '/adm/reports/debtors', icon: TrendingDown, roles: [UserRole.ADMIN, UserRole.STAFF] },
       { label: 'Notas de Crédito', href: '/adm/credit-notes', icon: FileText, roles: [UserRole.ADMIN, UserRole.STAFF] },
       { label: 'Comprobantes', href: '/adm/purchase-vouchers', icon: Receipt, roles: [UserRole.ADMIN, UserRole.STAFF] },
+    ],
+  },
+  {
+    label: 'Reportes',
+    icon: BarChart3,
+    roles: [UserRole.ADMIN, UserRole.STAFF],
+    items: [
+      { label: 'Ventas', href: '/adm/reports/sales', icon: BarChart3, roles: [UserRole.ADMIN, UserRole.STAFF] },
+      { label: 'Deudores', href: '/adm/reports/debtors', icon: TrendingDown, roles: [UserRole.ADMIN, UserRole.STAFF] },
     ],
   },
   {
