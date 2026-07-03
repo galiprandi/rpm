@@ -4,6 +4,292 @@ Mantente al día con las últimas actualizaciones y mejoras
 
 ---
 
+### 🗓️ 2 de Julio de 2026
+
+**🎉 Órdenes de Trabajo**: Ahora puedes enviar el estado de una orden de trabajo por WhatsApp con un solo clic directamente desde la orden.
+
+**🎨 Dashboard**: Refinamiento visual de las tarjetas del panel principal con patrones estandarizados.
+
+**🎨 Configuración**: Mejoras de accesibilidad y experiencia en la página de configuración.
+
+**🎨 Vehículos**: Pulido de interfaz con esqueleto de carga mejorado.
+
+---
+
+### 🗓️ 1 de Julio de 2026
+
+**🎨 Vehículos**: Mejoras de interfaz y manejo de errores más claro.
+
+---
+
+### 🗓️ 30 de Junio de 2026
+
+**🎨 Configuración**: Selector de temas rediseñado con componentes modernos.
+
+**🎨 Sistema**: Estandarización de accesibilidad y contraste de colores en toda la aplicación.
+
+---
+
+### 🗓️ 29 de Junio de 2026
+
+**🎨 Caja y Operaciones**: Refinamiento de interfaz y experiencia visual.
+
+**🎨 Dashboard**: Mejoras de accesibilidad y contraste de color.
+
+**🎨 Administración**: Refinamiento de consistencia visual y patrones de UX.
+
+---
+
+### 🗓️ 28 de Junio de 2026
+
+**🎨 Administración**: Refinamiento de consistencia visual y patrones de UX.
+
+**🎨 Operaciones Diarias**: Mejoras de accesibilidad y fidelidad en estados de carga.
+
+---
+
+### 🗓️ 27 de Junio de 2026
+
+**🎨 Órdenes de Trabajo, Ventas y Reportes**: Refinamiento de interfaz y consistencia visual.
+
+---
+
+### 🗓️ 26 de Junio de 2026
+
+**🎨 Administración**: Refinamiento visual en módulos financieros y operativos.
+
+**🎨 Notas de Crédito**: Mejoras de accesibilidad y experiencia de usuario.
+
+---
+
+### 🗓️ 25 de Junio de 2026
+
+**🎨 Categorías**: Refinamiento de interfaz y adherencia a patrones de diseño.
+
+**🎨 Novedades**: Estandarización del diseño de esta página y mejora del estado de carga.
+
+---
+
+### 🗓️ 24 de Junio de 2026
+
+**🎨 Órdenes de Trabajo**: Refinamiento de interfaz y consistencia visual.
+
+**🎨 Clientes**: Refinamiento de consistencia visual y patrones del módulo.
+
+**🎨 Usuarios**: Mejoras de experiencia en el formulario de usuarios.
+
+**🎨 Órdenes de Trabajo**: Mejoras de experiencia en el diálogo de servicio rápido.
+
+---
+
+### 🗓️ 23 de Junio de 2026
+
+**🎨 Clientes**: Refinamiento de consistencia visual del módulo.
+
+**🎨 Órdenes de Trabajo**: Mejoras de experiencia en el diálogo de servicio rápido.
+
+---
+
+### 🗓️ 22 de Junio de 2026
+
+**🎨 Usuarios y Configuración**: Pulido de interfaz y experiencia.
+
+**🎨 Caja**: Refinamiento de UX y accesibilidad en el módulo de caja.
+
+**🎨 Operaciones, Deudores y Ventas**: Pulido de interfaz para operaciones diarias, deudores y detalle de venta directa.
+
+---
+
+### 🗓️ 21 de Junio de 2026
+
+**🎨 Inventario**: Pulido de interfaz y consistencia en conteos de inventario.
+
+**🎨 Notas de Crédito**: Mejoras de accesibilidad en el diálogo de notas de crédito de clientes.
+
+**🎨 Compras**: Refinamiento de interfaz en comprobantes de compra.
+
+**🎨 Listas de Precios**: Mejoras de accesibilidad con iconos contextuales en el formulario.
+
+---
+
+### 🗓️ 20 de Junio de 2026
+
+**🎨 Compras**: Refinamiento de interfaz y consistencia de patrones en comprobantes de compra.
+
+**🎨 Notas de Crédito**: Mejoras de accesibilidad en el diálogo de notas de crédito.
+
+---
+
+### 🗓️ 19 de Junio de 2026
+
+**🎨 Inventario**: Pulido de interfaz y consistencia en conteos de inventario.
+
+**🎨 Productos**: Refinamiento de interfaz y consistencia visual.
+
+**🎨 Caja**: Mejoras de experiencia y accesibilidad en el módulo de caja e historial.
+
+---
+
+### 🗓️ 18 de Junio de 2026
+
+**🎨 Pagos**: Mejoras de experiencia en el diálogo de pagos con iconos contextuales.
+
+---
+
+### 🗓️ 17 de Junio de 2026
+
+**🎨 Productos**: Refinamiento de interfaz y consistencia visual.
+
+**🎨 Vehículos**: Mejoras de experiencia en el diálogo de vehículos.
+
+**🎨 Servicios**: Mejoras de interfaz y formularios con patrones estandarizados.
+
+---
+
+### 🗓️ 16 de Junio de 2026
+
+**🎨 Servicios**: Mejoras de interfaz con patrones estandarizados y refinamiento de formularios.
+
+**🎨 Compras**: Mejoras en el diálogo de previsualización de comprobantes.
+
+---
+
+### 🗓️ 15 de Junio de 2026
+
+**🎨 Usuarios e Inventario**: Refinamiento de patrones visuales y accesibilidad.
+
+**🎨 Categorías**: Estandarización del formulario con mejoras de experiencia.
+
+**🎨 Proveedores**: Refinamiento de interfaz con esqueletos de alta fidelidad.
+
+---
+
+### 🗓️ 14 de Junio de 2026
+
+**🎨 Proveedores**: Mejoras de interfaz con esqueletos de carga de alta fidelidad.
+
+**🎨 Métodos de Pago**: Mejoras de experiencia y accesibilidad en el formulario.
+
+**🎨 Compras**: Refinamiento de experiencia en comprobantes de compra.
+
+---
+
+### 🗓️ 13 de Junio de 2026
+
+**🔒 Seguridad**: Endurecimiento del sistema de autenticación para mayor protección.
+
+**🐛 Formularios**: Protección contra doble envío accidental en formularios de toda la aplicación.
+
+**🎨 Clientes**: Mejoras de experiencia y accesibilidad en el formulario de clientes.
+
+**🎨 Inventario**: Refinamiento de interfaz en conteos de inventario.
+
+**🎨 Compras**: Refinamiento de experiencia en comprobantes de compra.
+
+---
+
+### 🗓️ 12 de Junio de 2026
+
+**🎨 Inventario**: Refinamiento de interfaz y estandarización de patrones.
+
+**🎨 Pagos**: Tooltip y accesibilidad mejorada en la eliminación de pagos.
+
+---
+
+### 🗓️ 11 de Junio de 2026
+
+**🎨 Movimientos**: Estandarización de la interfaz y accesibilidad en historial de movimientos.
+
+**🎨 Administración**: Estandarización de patrones visuales en catálogos.
+
+---
+
+### 🗓️ 10 de Junio de 2026
+
+**🎨 Clientes**: Mejoras de accesibilidad y consistencia visual en el formulario.
+
+**🎨 Sistema**: Estandarización de filas de listado y accesibilidad en gestión de usuarios.
+
+---
+
+### 🗓️ 9 de Junio de 2026
+
+**🎨 Ventas Rápidas**: Mejoras de experiencia y accesibilidad en el modal de venta.
+
+---
+
+### 🗓️ 7 de Junio de 2026
+
+**✨ Login**: Redirección inteligente según el rol del usuario al iniciar sesión.
+
+**🎨 Sistema**: Estandarización de filas de listado y badges de rol.
+
+---
+
+### 🗓️ 6 de Junio de 2026
+
+**🎨 Productos**: Iconos contextuales añadidos a los selectores del formulario.
+
+---
+
+### 🗓️ 5 de Junio de 2026
+
+**🎨 Productos, Proveedores y Categorías**: Pulido de interfaz y consistencia visual.
+
+---
+
+### 🗓️ 4 de Junio de 2026
+
+**✨ Búsqueda**: Paleta de comandos mejorada con iconos y accesibilidad.
+
+**🎨 Productos**: Mejoras de experiencia y consistencia visual.
+
+---
+
+### 🗓️ 3 de Junio de 2026
+
+**🎉 Precios**: Nuevo asistente para gestión masiva de precios. Actualiza múltiples precios en serie con validación robusta.
+
+**✨ Ventas Rápidas**: Indicador de progreso visual al registrar una venta.
+
+**🎨 Configuración**: Pulido de experiencia y consistencia.
+
+---
+
+### 🗓️ 2 de Junio de 2026
+
+**✨ Búsqueda**: Mejoras en la paleta de comandos y accesibilidad de la barra lateral.
+
+**🎨 Administración**: Estandarización de layout, iconos y colores semánticos.
+
+---
+
+### 🗓️ 1 de Junio de 2026
+
+**🎨 Administración**: Estandarización de layout, iconos y colores semánticos.
+
+**🎨 Compras**: Mejoras de experiencia en la creación de comprobantes de compra.
+
+---
+
+### 🗓️ 31 de Mayo de 2026
+
+**✨ Órdenes de Trabajo**: El asistente ahora guarda el progreso y valida la patente del vehículo.
+
+**🎨 Compras**: Refinamiento de experiencia en comprobantes de compra.
+
+**🎨 Ventas Rápidas**: Mejoras de experiencia y accesibilidad en el modal.
+
+---
+
+### 🗓️ 30 de Mayo de 2026
+
+**🎨 Administración**: Homogeneización visual de las vistas administrativas.
+
+**🎨 Ventas Rápidas**: Mejoras de experiencia y accesibilidad en el modal.
+
+---
+
 ### 🗓️ 29 de Mayo de 2026
 
 **🎉 Compras a Proveedores**: Nuevo sistema completo de órdenes de compra con integración de caja, actualización automática de stock, alertas de margen mínimo y rediseño del modal. Accede desde Administración → Compras a Proveedores o desde la ficha de proveedor (botón "Comprobantes").
