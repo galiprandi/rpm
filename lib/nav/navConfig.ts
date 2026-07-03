@@ -80,6 +80,15 @@ export const navGroups: NavGroup[] = [
     ],
   },
   {
+    label: 'Reportes',
+    icon: BarChart3,
+    roles: [UserRole.ADMIN, UserRole.STAFF],
+    items: [
+      { label: 'Ventas', href: '/adm/reports/sales', icon: BarChart3, roles: [UserRole.ADMIN, UserRole.STAFF] },
+      { label: 'Deudores', href: '/adm/reports/debtors', icon: TrendingDown, roles: [UserRole.ADMIN, UserRole.STAFF] },
+    ],
+  },
+  {
     label: 'Compras',
     icon: Truck,
     roles: [UserRole.ADMIN, UserRole.STAFF],
