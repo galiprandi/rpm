@@ -44,6 +44,7 @@ import {
 import { navGroups, homeNavItem } from '@/lib/nav/navConfig';
 import { canAccess } from '@/lib/nav/canAccess';
 import { usePinnedNav } from '@/hooks/usePinnedNav';
+import { useNovedadesRead } from '@/hooks/useNovedadesRead';
 import { UserRole } from '@/lib/auth/roles';
 import { cn } from '@/lib/utils';
 
@@ -74,6 +75,7 @@ export function AppSidebar({ user, onSignOut, onOpenPalette }: AppSidebarProps) 
   const { isMobile, toggleSidebar, state } = useSidebar();
   const isCollapsed = state === 'collapsed';
   const { isPinned, togglePin } = usePinnedNav();
+  const { hasUnread } = useNovedadesRead();
 
   const userRole = (user.role?.toUpperCase() as UserRole) ?? UserRole.STAFF;
   const roleLabel = userRole === UserRole.ADMIN ? 'Admin' : 'Staff';
@@ -103,6 +105,8 @@ export function AppSidebar({ user, onSignOut, onOpenPalette }: AppSidebarProps) 
       : pathname === item.href || pathname.startsWith(item.href + '/');
     const Icon = item.icon;
     const pinned = isPinned(item.href);
+    const isNovedades = item.href === '/adm/novedades';
+
     return (
       <SidebarMenuItem key={item.href} className="group/item px-1">
         <SidebarMenuButton
@@ -118,13 +122,26 @@ export function AppSidebar({ user, onSignOut, onOpenPalette }: AppSidebarProps) 
           <Link href={item.href}>
             <span
               className={cn(
-                "flex size-7 shrink-0 items-center justify-center rounded-md bg-sidebar-foreground/5 text-sidebar-foreground/68 transition-colors",
+                "relative flex size-7 shrink-0 items-center justify-center rounded-md bg-sidebar-foreground/5 text-sidebar-foreground/68 transition-colors",
                 isActive && "bg-primary/12 text-primary"
               )}
             >
               <Icon className="size-4.5" />
+              {isNovedades && hasUnread && (
+                <span
+                  className="absolute -right-0.5 -top-0.5 flex h-2 w-2 rounded-full bg-primary border border-sidebar shadow-[0_0_8px_hsl(var(--primary)/0.4)]"
+                  aria-hidden="true"
+                />
+              )}
             </span>
             <span className="truncate">{item.label}</span>
+            {isNovedades && hasUnread && (
+              <span
+                className="ml-auto flex h-2 w-2 shrink-0 rounded-full bg-primary shadow-[0_0_8px_hsl(var(--primary)/0.4)] group-data-[collapsible=icon]:hidden"
+                aria-label="Novedades no leídas"
+                role="status"
+              />
+            )}
           </Link>
         </SidebarMenuButton>
         {showPin && (
@@ -201,6 +218,7 @@ export function AppSidebar({ user, onSignOut, onOpenPalette }: AppSidebarProps) 
 
           const open = isGroupOpen(group.label);
           const GroupIcon = group.icon;
+          const hasNovedadesUnread = hasUnread && visibleItems.some((i) => i.href === '/adm/novedades');
 
           return (
             <SidebarGroup key={group.label} className="px-2 py-1">
@@ -211,6 +229,13 @@ export function AppSidebar({ user, onSignOut, onOpenPalette }: AppSidebarProps) 
               >
                 <GroupIcon className="size-3.5 text-sidebar-foreground/42" />
                 <span className="flex-1 text-left">{group.label}</span>
+                {hasNovedadesUnread && !open && (
+                  <span
+                    className="mr-2 flex h-1.5 w-1.5 shrink-0 rounded-full bg-primary"
+                    aria-label="Novedades no leídas"
+                    role="status"
+                  />
+                )}
                 <span className="rounded-full bg-sidebar-foreground/8 px-1.5 py-0.5 text-[10px] text-sidebar-foreground/50">
                   {visibleItems.length}
                 </span>
