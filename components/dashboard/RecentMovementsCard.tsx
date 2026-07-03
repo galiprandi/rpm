@@ -17,36 +17,35 @@ export function RecentMovementsCard({
   recentMovements,
 }: RecentMovementsCardProps) {
   const getMovementIcon = (type: string) => {
+    let Icon = ArrowUpDown;
+    let iconClass = 'text-gray-600';
+    let containerClass = 'bg-gray-100 border-gray-200';
+
     switch (type) {
       case 'IN':
-        return (
-          <ArrowUp
-            className="h-3 w-3 text-emerald-700 pointer-events-none"
-            aria-hidden="true"
-          />
-        );
+        Icon = ArrowUp;
+        iconClass = 'text-emerald-700';
+        containerClass = 'bg-emerald-50 border-emerald-100';
+        break;
       case 'OUT':
-        return (
-          <ArrowDown
-            className="h-3 w-3 text-red-700 pointer-events-none"
-            aria-hidden="true"
-          />
-        );
+        Icon = ArrowDown;
+        iconClass = 'text-red-700';
+        containerClass = 'bg-red-50 border-red-100';
+        break;
       case 'ADJUSTMENT':
-        return (
-          <Minus
-            className="h-3 w-3 text-amber-700 pointer-events-none"
-            aria-hidden="true"
-          />
-        );
-      default:
-        return (
-          <ArrowUpDown
-            className="h-3 w-3 text-gray-600 pointer-events-none"
-            aria-hidden="true"
-          />
-        );
+        Icon = Minus;
+        iconClass = 'text-amber-700';
+        containerClass = 'bg-amber-50 border-amber-100';
+        break;
     }
+
+    return (
+      <div
+        className={`w-8 h-8 rounded-lg shadow-sm border flex items-center justify-center shrink-0 ${containerClass}`}
+      >
+        <Icon className={`h-4 w-4 ${iconClass} pointer-events-none`} aria-hidden="true" />
+      </div>
+    );
   };
 
   if (recentMovements.length === 0) {
@@ -86,15 +85,18 @@ export function RecentMovementsCard({
       <CardContent>
         <div className="space-y-2">
           {recentMovements.map((movement, index) => (
-            <div key={index} className="flex items-center gap-3 p-2 rounded-lg bg-slate-50">
+            <div
+              key={index}
+              className="flex items-center gap-3 p-2 rounded-lg bg-slate-50/50 border border-transparent hover:border-slate-200 transition-colors"
+            >
               <div className="flex-shrink-0">{getMovementIcon(movement.type)}</div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium truncate">
+                  <span className="text-sm font-semibold tracking-tight truncate">
                     {movement.productName}
                   </span>
                   <span
-                    className={`text-sm font-semibold ${
+                    className={`text-sm font-mono font-bold ${
                       movement.type === 'IN'
                         ? 'text-emerald-700'
                         : movement.type === 'OUT'
@@ -106,9 +108,9 @@ export function RecentMovementsCard({
                     {movement.quantity}
                   </span>
                 </div>
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <div className="flex items-center justify-between text-[11px] text-muted-foreground mt-0.5">
                   <span className="truncate">{movement.reason}</span>
-                  <span>{relativeTime(movement.timestamp)}</span>
+                  <span className="shrink-0 ml-2">{relativeTime(movement.timestamp)}</span>
                 </div>
               </div>
             </div>
