@@ -1,5 +1,11 @@
 import { PublicLayout } from '@/components/public/layout/PublicLayout';
 import { Award, Users, CheckCircle2, History } from 'lucide-react';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Sobre Nosotros | RPM Accesorios',
+  description: 'Más de una década de trayectoria equipando los mejores vehículos de Tucumán con estándares de excelencia.',
+};
 
 export default function AboutPage() {
   return (
