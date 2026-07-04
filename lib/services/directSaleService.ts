@@ -116,9 +116,10 @@ export async function createDirectSale(input: CreateDirectSaleInput) {
       },
     });
 
-    // Create items in bulk
+    // Create items in bulk - we must provide IDs because cuid() is not handled by createMany in some Prisma versions/DBs
     await tx.direct_sale_item.createMany({
       data: items.map(item => ({
+        id: randomUUID(),
         directSaleId: directSale.id,
         productId: item.productId,
         serviceId: item.serviceId,
