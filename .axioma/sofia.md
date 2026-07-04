@@ -8,9 +8,9 @@
 - [ ] Implementar un sistema de filtros por categoría en la página de Productos.
 
 ## ✅ DONE
-- [ ] _Sin actividad registrada aún_
+- [x] 2026-07-04 — Centralización de configuración pública y mejora de conversión (PR #sofia/public/conversion-boost)
 
 ## 🧠 LEARNINGS
-## 2025-05-30 - Auditoría Inicial de la Web Pública
-**Learning:** Se identificaron múltiples enlaces rotos (`/taller`, `/privacidad`) y botones decorativos sin funcionalidad en el Header. La falta de metadata específica en cada página afecta el SEO potencial.
-**Action:** Limpiar navegación, funcionalizar botones de contacto directo (WhatsApp/Reservas) y estandarizar metadatos.
+## 2026-07-04 - Centralización y Conversión WhatsApp
+**Learning:** Centralizar la configuración de contacto (WhatsApp, RRSS, dirección) facilita el mantenimiento y asegura consistencia en toda la web pública. Integrar el formulario de contacto directamente con WhatsApp aumenta la tasa de respuesta inmediata para negocios de servicios locales.
+**Action:** Mantener `lib/config/public-site.ts` como fuente de verdad para toda la UI pública y seguir el patrón de redirección con contexto (nombre/email) para otros puntos de contacto.

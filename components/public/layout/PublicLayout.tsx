@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import '@/app/public.css';
 import { PublicHeader } from './PublicHeader';
 import { PublicFooter } from './PublicFooter';
+import { FloatingWhatsApp } from '../FloatingWhatsApp';
 
 interface PublicLayoutProps {
   children: ReactNode;
@@ -15,6 +16,7 @@ export function PublicLayout({ children }: PublicLayoutProps) {
         {children}
       </main>
       <PublicFooter />
+      <FloatingWhatsApp />
     </div>
   );
 }

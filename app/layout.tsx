@@ -16,8 +16,20 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "RPM Accesorios",
-  description: "RPM Accesorios - En desarrollo",
+  title: {
+    default: "RPM Accesorios | Equipamiento Vehicular Premium",
+    template: "%s | RPM Accesorios"
+  },
+  description: "Expertos en iluminación LED, estética y equipamiento off-road en Tucumán. Más de 15 años transformando vehículos con precisión y performance.",
+  keywords: ["accesorios autos", "iluminación led tucumán", "ppf tucumán", "off-road", "estética vehicular", "RPM Accesorios"],
+  authors: [{ name: "RPM Accesorios" }],
+  creator: "RPM Accesorios",
+  publisher: "RPM Accesorios",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
 };
 
 export default function RootLayout({
