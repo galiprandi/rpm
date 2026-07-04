@@ -98,3 +98,8 @@ export {
   type CostUpdatePreviewResult,
   type CostUpdateBatch,
 } from './costUpdateService';
+
+// Work Order Service
+export {
+  generateInvoiceFromWorkOrder,
+} from './workOrderService';

@@ -2,35 +2,36 @@
 
 ## 📋 BACKLOG
 - [ ] Implementación de Fase 1: Cimientos (Esquema, Servicio, Admin Básico, Auto-generación)
+    - [x] Esquema base de `invoice`
+    - [x] `invoiceService.ts` base
+    - [x] Auto-generación desde Venta Directa
+    - [x] Auto-generación desde OT (al pasar a DELIVERED)
+    - [x] Auto-generación desde Nota de Crédito
+    - [x] Desglose impositivo inicial (IVA 21% auto-calculado)
+    - [ ] Desglose impositivo detallado (por item, requiere migración)
 - [ ] Generación de PDFs de pre-facturas con leyenda obligatoria.
 - [ ] Configuración fiscal en settings (CUIT, Punto de Venta, Certificados).
 - [ ] Integración con AFIP (WSFE).
 
 ## ✅ DONE
-- [ ] _Sin actividad registrada aún_
+- [x] 2025-05-21 — Estructura inicial de comprobantes y enlace con ventas directas.
+- [x] 2025-05-22 — Integración de pre-facturas en OTs y Notas de Crédito, y visualización de advertencia fiscal.
 
 ## 🧠 LEARNINGS
-_Sin learnings registrados._
+- **Desglose impositivo:** Para comprobantes tipo B (consumidor final), aunque el total sea lo que ve el cliente, el sistema debe registrar el neto y el IVA por separado para futuros reportes fiscales (Libro IVA Digital). Se implementó un cálculo automático del 21% para pre-facturas.
+- **Esquema:** Se verificó que `work_order.invoiceId` ya existe en el esquema de Prisma, permitiendo la vinculación directa sin migraciones adicionales en este paso.
 
 ---
 
 ## 🛠️ PROPUESTA DE CAMBIO DE SCHEMA
-Para cumplir con la spec de AFIP, se propone extender el modelo `invoice`:
+Para un desglose preciso de IVA por item, se propone agregar `taxRate` a los items de venta:
 
 ```prisma
-model invoice {
-  // ... campos existentes ...
-  customerDoc     String?                 // CUIT/DNI del cliente al momento de emisión
-  customerDocType String?                 // 'CUIT' | 'DNI' | 'SIN_DOC'
-  iva21           Decimal?     @db.Decimal(10, 2)    // IVA 21%
-  iva105          Decimal?     @db.Decimal(10, 2)    // IVA 10.5%
-  exemptions      Json?                  // Detalle de exentos si aplica
-  perceptions     Json?                  // Percepciones (futuro)
-
-  // Nuevos índices
-  @@index([type])
-  @@index([issuedAt])
+// En work_order_item, direct_sale_item, credit_note_item
+model ..._item {
+  // ...
+  taxRate Decimal @db.Decimal(5, 2) @default(21.00) // Alicuota de IVA (21, 10.5, 0)
 }
 ```
 
-**Justificación:** Estos campos son necesarios para el desglose impositivo requerido por AFIP y para la correcta identificación fiscal del cliente al momento de la emisión, independientemente de si el cliente cambia sus datos luego.
+**Justificación:** Actualmente el sistema asume 21% de forma global para pre-facturas. AFIP requiere el desglose por alicuota real en el comprobante oficial. Tenerlo por item permite ventas mixtas y mayor precisión.
