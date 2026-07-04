@@ -56,6 +56,12 @@ export async function GET(request: NextRequest) {
             service: true,
           },
         },
+        technician: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
         photo: true,
         payments: {
           select: {

@@ -42,6 +42,7 @@ import {
   Wrench,
   ArrowUpDown,
   MessageSquare,
+  UserCog,
 } from "lucide-react";
 import { ProductServiceSelector, SelectedItem } from "@/components/ui/ProductServiceSelector";
 import Image from "next/image";
@@ -218,6 +219,8 @@ export default function WorkOrderDetailPage() {
   const [priceLists, setPriceLists] = useState<{ id: string; name: string; baseMarginPercentage: number }[]>([]);
   const [savingItems, setSavingItems] = useState(false);
   const [isCreditNoteDialogOpen, setIsCreditNoteDialogOpen] = useState(false);
+  const [technicians, setTechnicians] = useState<Array<{ id: string; name: string }>>([]);
+  const [updatingTechnician, setUpdatingTechnician] = useState(false);
 
   const fetchWorkOrder = useCallback(async () => {
     try {
@@ -252,20 +255,29 @@ export default function WorkOrderDetailPage() {
     }
   }, [workOrderId]);
 
-  // Fetch price lists for item editing
+  // Fetch price lists and technicians
   useEffect(() => {
-    const fetchPriceLists = async () => {
+    const fetchData = async () => {
       try {
-        const response = await fetch('/api/price-lists');
-        if (response.ok) {
-          const data = await response.json();
+        const [priceListsRes, techniciansRes] = await Promise.all([
+          fetch('/api/price-lists'),
+          fetch('/api/users?role=TECHNICIAN'),
+        ]);
+
+        if (priceListsRes.ok) {
+          const data = await priceListsRes.json();
           setPriceLists(data.priceLists || []);
         }
+
+        if (techniciansRes.ok) {
+          const data = await techniciansRes.json();
+          setTechnicians(data.users || []);
+        }
       } catch (error) {
-        console.error('Error fetching price lists:', error);
+        console.error('Error fetching data:', error);
       }
     };
-    fetchPriceLists();
+    void fetchData();
   }, []);
 
   useEffect(() => {
@@ -295,6 +307,37 @@ export default function WorkOrderDetailPage() {
       });
     } finally {
       setUpdatingStatus(false);
+    }
+  };
+
+  const handleTechnicianChange = async (newTechnicianId: string) => {
+    setUpdatingTechnician(true);
+    try {
+      const response = await fetch(`/api/work-orders/${workOrderId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ technicianId: newTechnicianId === 'unassigned' ? null : newTechnicianId }),
+      });
+
+      if (!response.ok) throw new Error("Failed to update technician");
+
+      const updated = await response.json();
+      setWorkOrder((prev) => (prev ? { ...prev, ...updated } : null));
+
+      await alert({
+        title: 'Éxito',
+        description: 'Técnico asignado correctamente',
+        variant: 'success',
+      });
+    } catch (error) {
+      console.error("Error updating technician:", error);
+      await alert({
+        title: 'Error',
+        description: 'Error al actualizar técnico. Por favor intente nuevamente.',
+        variant: 'error',
+      });
+    } finally {
+      setUpdatingTechnician(false);
     }
   };
 
@@ -657,6 +700,30 @@ export default function WorkOrderDetailPage() {
                   Pendiente: <span className="font-mono">{balance.toLocaleString("es-AR", { style: 'currency', currency: 'ARS' })}</span>
                </div>
              )}
+
+             {/* Technician Assignment Pill */}
+             <div className="flex items-center gap-1.5 px-1 py-1 rounded-md bg-purple-50 border border-purple-200 text-xs font-medium text-purple-700">
+                <div className="relative flex items-center pl-7">
+                  <UserCog className="absolute left-1.5 top-1/2 -translate-y-1/2 h-4 w-4 text-purple-600 pointer-events-none" aria-hidden="true" />
+                  <Select
+                    value={workOrder.technicianId || "unassigned"}
+                    onValueChange={handleTechnicianChange}
+                    disabled={updatingTechnician || workOrder.status === 'DELIVERED'}
+                  >
+                    <SelectTrigger className="h-7 border-none bg-transparent hover:bg-purple-100/50 shadow-none focus:ring-0 px-2 min-w-[140px]">
+                      <SelectValue placeholder="Asignar técnico" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="unassigned">Sin asignar</SelectItem>
+                      {technicians.map((tech) => (
+                        <SelectItem key={tech.id} value={tech.id}>
+                          {tech.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+             </div>
           </div>
         </div>
       </Header>

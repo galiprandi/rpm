@@ -12,7 +12,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Plus, LayoutGrid, List, ArrowUpDown, Car, Truck, Wrench, Headphones, Package, ClipboardList, Wallet, DollarSign, MessageSquare, AlertCircle } from "lucide-react";
+import { Plus, LayoutGrid, List, Car, Truck, Wrench, Headphones, Package, ClipboardList, Wallet, DollarSign, MessageSquare, AlertCircle, UserCog, Eye } from "lucide-react";
 import { Header } from "@/components/adm/Header";
 import { CrudStats } from "@/components/adm/CrudStats";
 import { cn } from "@/lib/utils";
@@ -35,6 +35,13 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { toast } from "sonner";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { getWhatsAppLink, getWorkOrderMessage } from "@/lib/utils/whatsapp";
 
 interface WorkOrder {
@@ -49,6 +56,7 @@ interface WorkOrder {
   startedAt?: string;
   totalPaid?: number;
   isFullyPaid?: boolean;
+  technician?: { name: string };
 }
 
 const STATUSES = [
@@ -118,11 +126,50 @@ function KanbanCard({ wo, isOverlay = false }: { wo: WorkOrder; isOverlay?: bool
 
   const content = (
     <Card className={cn(
-      "group cursor-pointer hover:shadow-md transition-all border-l-4",
+      "group relative cursor-pointer hover:shadow-md transition-all border-l-4",
       isDelayed(wo) ? "border-l-orange-500 bg-orange-50/30" : "border-l-transparent",
       isDragging && !isOverlay && "opacity-30",
       isOverlay && "shadow-xl border-primary ring-2 ring-primary ring-opacity-50 scale-105"
     )}>
+      {/* Quick Actions Overlay */}
+      {!isOverlay && !isDragging && (
+        <div className="absolute inset-0 z-10 bg-white/60 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-2 rounded-lg">
+          <Link href={`/adm/work-orders/${wo.id}`} className="contents">
+            <Button
+              size="sm"
+              variant="secondary"
+              className="h-8 shadow-sm border"
+              onMouseDown={(e) => e.stopPropagation()}
+            >
+              <Eye className="h-4 w-4 mr-1" />
+              Detalle
+            </Button>
+          </Link>
+          {wo.customer.phone && (
+            <Button
+              size="sm"
+              variant="secondary"
+              className="h-8 shadow-sm border text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50"
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const msg = getWorkOrderMessage({
+                  customerName: wo.customer.name,
+                  vehicleIdentifier: wo.vehicle.identifier,
+                  status: wo.status,
+                  total: Number(wo.total),
+                  totalPaid: wo.totalPaid || 0,
+                });
+                window.open(getWhatsAppLink(wo.customer.phone, msg), '_blank');
+              }}
+            >
+              <MessageSquare className="h-4 w-4 mr-1" />
+              WA
+            </Button>
+          )}
+        </div>
+      )}
       <CardContent className="p-3 space-y-1.5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 font-semibold text-sm">
@@ -151,8 +198,16 @@ function KanbanCard({ wo, isOverlay = false }: { wo: WorkOrder; isOverlay?: bool
             ${Number(wo.total).toLocaleString("es-AR")}
           </Badge>
         </div>
-        <div className="text-xs text-muted-foreground">
-          {wo.vehicle.make?.name} {wo.vehicle.model?.name}
+        <div className="flex justify-between items-center gap-2">
+          <div className="text-xs text-muted-foreground truncate">
+            {wo.vehicle.make?.name} {wo.vehicle.model?.name}
+          </div>
+          {wo.technician && (
+            <div className="flex items-center gap-1 text-[10px] bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded border border-purple-100 shrink-0 max-w-[80px]">
+              <UserCog className="h-2.5 w-2.5 shrink-0" />
+              <span className="truncate">{wo.technician.name}</span>
+            </div>
+          )}
         </div>
 
         <div className="flex justify-between items-center text-[10px] text-muted-foreground pt-1.5 border-t mt-1">
@@ -273,6 +328,8 @@ export default function WorkOrdersPage() {
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"kanban" | "list">("kanban");
   const [paymentFilter, setPaymentFilter] = useState<"all" | "pending">("all");
+  const [technicianFilter, setTechnicianFilter] = useState<string>("all");
+  const [technicians, setTechnicians] = useState<Array<{ id: string; name: string }>>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
 
   const sensors = useSensors(
@@ -286,10 +343,19 @@ export default function WorkOrdersPage() {
 
   const fetchWorkOrders = useCallback(async () => {
     try {
-      const response = await fetch("/api/work-orders");
-      if (!response.ok) throw new Error("Failed to fetch");
-      const data = await response.json();
-      setWorkOrders(data.workOrders);
+      const [woRes, techRes] = await Promise.all([
+        fetch("/api/work-orders"),
+        fetch("/api/users?role=TECHNICIAN"),
+      ]);
+
+      if (!woRes.ok) throw new Error("Failed to fetch work orders");
+      const woData = await woRes.json();
+      setWorkOrders(woData.workOrders);
+
+      if (techRes.ok) {
+        const techData = await techRes.json();
+        setTechnicians(techData.users || []);
+      }
     } catch (error) {
       console.error("Error fetching work orders:", error);
       toast.error("Error al cargar las órdenes de trabajo");
@@ -299,10 +365,8 @@ export default function WorkOrdersPage() {
   }, []);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     void fetchWorkOrders();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [fetchWorkOrders]);
 
   const getStatusBadge = (status: string) => {
     const statusConfig = STATUSES.find((s) => s.id === status);
@@ -320,11 +384,12 @@ export default function WorkOrdersPage() {
   };
 
   const filteredWorkOrders = useMemo(() => {
-    if (paymentFilter === "pending") {
-      return workOrders.filter((wo) => !wo.isFullyPaid);
-    }
-    return workOrders;
-  }, [workOrders, paymentFilter]);
+    return workOrders.filter((wo) => {
+      const matchesPayment = paymentFilter === "all" || !wo.isFullyPaid;
+      const matchesTechnician = technicianFilter === "all" || wo.technicianId === technicianFilter;
+      return matchesPayment && matchesTechnician;
+    });
+  }, [workOrders, paymentFilter, technicianFilter]);
 
   const workOrdersByStatus = useMemo(() => STATUSES.map((status) => ({
     ...status,
@@ -523,6 +588,28 @@ export default function WorkOrdersPage() {
               </span>
             )}
           </Button>
+
+          <div className="w-px h-6 bg-border mx-1" />
+
+          <div className="flex items-center gap-2">
+            <UserCog className="h-4 w-4 text-muted-foreground" />
+            <Select
+              value={technicianFilter}
+              onValueChange={setTechnicianFilter}
+            >
+              <SelectTrigger className="h-8 w-[150px] text-xs">
+                <SelectValue placeholder="Técnico" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos los técnicos</SelectItem>
+                {technicians.map((tech) => (
+                  <SelectItem key={tech.id} value={tech.id}>
+                    {tech.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </Header>
 
@@ -596,6 +683,12 @@ export default function WorkOrdersPage() {
                           </div>
                         </div>
                         <div className="flex items-center gap-4">
+                          {wo.technician && (
+                            <div className="flex items-center gap-1 text-[10px] bg-purple-50 text-purple-700 px-2 py-1 rounded border border-purple-100 font-medium">
+                              <UserCog className="h-3 w-3" />
+                              {wo.technician.name}
+                            </div>
+                          )}
                           {wo.status === 'READY' && wo.customer.phone && (
                             <Button
                               variant="ghost"

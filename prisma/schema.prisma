@@ -241,6 +241,7 @@ model User {
   role          String    @default("USER")
   account       Account[]
   session       Session[]
+  work_orders   work_order[]
 
   @@map("user")
 }
@@ -358,6 +359,7 @@ model work_order {
   photo           photo[]
   customer        customer               @relation(fields: [customerId], references: [id], onDelete: Cascade)
   vehicle         vehicle                @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  technician      User?                  @relation(fields: [technicianId], references: [id])
   auditLogs       work_order_audit_log[]
   work_order_item work_order_item[]
 
