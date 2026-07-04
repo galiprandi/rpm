@@ -837,7 +837,7 @@ export default function CustomerDetailPage() {
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Total</span>
                 <span className={`font-semibold ${selectedTransaction.type === 'CREDIT_NOTE' ? 'text-orange-600' : ''}`}>
-                  {selectedTransaction.type === 'CREDIT_NOTE' ? '-' : ''}$${Number(selectedTransaction.total).toLocaleString('es-AR')}
+                  {selectedTransaction.type === 'CREDIT_NOTE' ? '-' : ''}${Number(selectedTransaction.total).toLocaleString('es-AR')}
                 </span>
               </div>
               {selectedTransaction.status && (
