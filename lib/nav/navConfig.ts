@@ -84,6 +84,7 @@ export const navGroups: NavGroup[] = [
     icon: BarChart3,
     roles: [UserRole.ADMIN, UserRole.STAFF],
     items: [
+      { label: 'Resumen', href: '/adm/reports', icon: LayoutDashboard, roles: [UserRole.ADMIN, UserRole.STAFF] },
       { label: 'Ventas', href: '/adm/reports/sales', icon: BarChart3, roles: [UserRole.ADMIN, UserRole.STAFF] },
       { label: 'Deudores', href: '/adm/reports/debtors', icon: TrendingDown, roles: [UserRole.ADMIN, UserRole.STAFF] },
     ],
