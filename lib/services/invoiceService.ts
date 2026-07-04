@@ -46,6 +46,18 @@ export async function createInvoice(data: InvoiceInput, tx?: Prisma.TransactionC
   const execute = async (transaction: Prisma.TransactionClient) => {
     const number = await getNextInvoiceNumber(data.type, transaction);
 
+    // Auto-calculate taxes if not provided
+    let taxes = {
+      subtotal: data.subtotal,
+      tax: data.tax || 0,
+      iva21: data.iva21 || 0,
+      iva105: data.iva105 || 0,
+    };
+
+    if (data.tax === undefined || data.tax === null) {
+      taxes = calculateInvoiceTaxes(data.total, data.type);
+    }
+
     return transaction.invoice.create({
       data: {
         number,
@@ -56,10 +68,10 @@ export async function createInvoice(data: InvoiceInput, tx?: Prisma.TransactionC
         customerName: data.customerName,
         customerDoc: data.customerDoc,
         customerDocType: data.customerDocType,
-        subtotal: data.subtotal,
-        tax: data.tax,
-        iva21: data.iva21,
-        iva105: data.iva105,
+        subtotal: taxes.subtotal,
+        tax: taxes.tax,
+        iva21: taxes.iva21,
+        iva105: taxes.iva105,
         exemptions: data.exemptions,
         perceptions: data.perceptions,
         total: data.total,
@@ -211,4 +223,34 @@ export function determineInvoiceType(
     }
     return `NOTA_CREDITO_${invoiceTypeLetter}` as InvoiceType;
   }
+}
+
+/**
+ * Calculates tax breakdown for an invoice based on its items and customer type.
+ * Initial implementation: defaults everything to 21% if it's a RI customer (Type A),
+ * or includes it in the total if it's B.
+ */
+export function calculateInvoiceTaxes(
+  total: number,
+  invoiceType: InvoiceType
+): {
+  subtotal: number;
+  tax: number;
+  iva21: number;
+  iva105: number;
+} {
+  const isTypeA = invoiceType.endsWith('_A');
+
+  // Regardless of type A or B, for the database and AFIP reporting:
+  // total = net (subtotal) + tax
+  // For pre-invoices, we assume a standard 21% IVA until we have per-item tax rates.
+  const subtotal = total / 1.21;
+  const tax = total - subtotal;
+
+  return {
+    subtotal,
+    tax,
+    iva21: tax,
+    iva105: 0,
+  };
 }

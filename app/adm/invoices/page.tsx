@@ -9,6 +9,7 @@ import { es } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 import { formatARS } from '@/lib/utils/format';
 import { toast } from 'sonner';
+import { AlertCircle } from 'lucide-react';
 import { ColumnDef } from '@tanstack/react-table';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -72,13 +73,21 @@ export default function InvoicesPage() {
       header: 'Número',
       accessorKey: 'number',
       cell: ({ row }) => (
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0" aria-hidden="true">
-            <FileText className="h-4 w-4 text-primary pointer-events-none" />
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0" aria-hidden="true">
+              <FileText className="h-4 w-4 text-primary pointer-events-none" />
+            </div>
+            <span className="font-mono font-semibold tracking-tight">
+              {row.original.number}
+            </span>
           </div>
-          <span className="font-mono font-semibold tracking-tight">
-            {row.original.number}
-          </span>
+          {(row.original.type.startsWith('X_') || row.original.type.startsWith('NOTA_CREDITO_X_')) && (
+            <div className="flex items-center gap-1 text-[10px] font-bold text-orange-700 uppercase tracking-wider ml-11">
+              <AlertCircle className="h-3 w-3" />
+              <span>No válido como comprobante fiscal</span>
+            </div>
+          )}
         </div>
       ),
     },

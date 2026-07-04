@@ -3,6 +3,7 @@
  */
 import { prisma } from '@/lib/prisma';
 import { createCashMovement } from './cashMovementService';
+import { createInvoice, determineInvoiceType } from './invoiceService';
 import { revalidatePath } from 'next/cache';
 import {
   validateCreditNoteCreation,
@@ -132,6 +133,42 @@ export async function createCreditNote(input: CreateCreditNoteInput) {
         createdBy,
       },
     });
+
+    // --- Generate Pre-Invoice (Credit Note) ---
+    try {
+      const customer = await tx.customer.findUnique({
+        where: { id: customerId },
+        select: { billingData: true, name: true }
+      });
+      const billingData = customer?.billingData;
+
+      let customerDoc: string | undefined = undefined;
+      let customerDocType: string | undefined = undefined;
+
+      if (billingData && typeof billingData === 'object') {
+        const bd = billingData as any;
+        customerDoc = bd.cuit || bd.dni || undefined;
+        customerDocType = bd.cuit ? 'CUIT' : (bd.dni ? 'DNI' : undefined);
+      }
+
+      const invoiceType = determineInvoiceType(billingData, 'NOTA_CREDITO', true);
+
+      await createInvoice({
+        type: invoiceType,
+        referenceId: creditNote.id,
+        referenceType: 'credit_note',
+        customerId,
+        customerName: customer?.name || 'Cliente',
+        customerDoc,
+        customerDocType,
+        subtotal: Number(total),
+        total: Number(total),
+        status: 'DRAFT',
+        createdBy,
+      }, tx);
+    } catch (invoiceError) {
+      console.error('Error generating pre-invoice for credit note:', invoiceError);
+    }
 
     // Create items and update stock
     for (const item of creditNoteItems) {
@@ -349,5 +386,4 @@ export async function cancelCreditNote(id: string, reason?: string) {
 
     return updated;
   });
-
 }
