@@ -24,8 +24,17 @@ import {
   ClipboardList,
   Tag,
   FileText,
+  Pencil,
 } from "lucide-react";
 import Link from "next/link";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { VehicleForm } from "@/components/vehicles/VehicleForm";
 
 interface WorkOrder {
   id: string;
@@ -42,6 +51,7 @@ interface VehicleDetail {
   color?: string;
   equipmentName?: string;
   equipmentType?: string;
+  description?: string;
   notes?: string;
   customer?: {
     id: string;
@@ -75,6 +85,8 @@ export default function VehicleDetailPage() {
   const router = useRouter();
   const [vehicle, setVehicle] = useState<VehicleDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   const fetchVehicle = useCallback(async () => {
     try {
@@ -242,6 +254,13 @@ export default function VehicleDetailPage() {
         }}
         secondaryActions={[
           {
+            label: "Editar",
+            onClick: () => setIsEditModalOpen(true),
+            variant: "outline",
+            icon: Pencil,
+            ariaLabel: "Editar los datos de este vehículo o equipo"
+          },
+          {
             label: "Eliminar",
             onClick: handleDelete,
             variant: "outline",
@@ -399,6 +418,58 @@ export default function VehicleDetailPage() {
           </Card>
         )}
       </div>
+
+      {/* Modal de edición */}
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar Vehículo / Equipo</DialogTitle>
+            <DialogDescription>
+              Modifica los datos técnicos y especificaciones del vehículo o equipo.
+            </DialogDescription>
+          </DialogHeader>
+          <VehicleForm
+            initialData={{
+              identifier: vehicle.identifier,
+              category: vehicle.category,
+              makeName: vehicle.make?.name,
+              modelName: vehicle.model?.name,
+              year: vehicle.year,
+              color: vehicle.color,
+              equipmentName: vehicle.equipmentName,
+              equipmentType: vehicle.equipmentType,
+              description: vehicle.description,
+              notes: vehicle.notes,
+            }}
+            onSubmit={async (formData) => {
+              setIsEditing(true);
+              try {
+                const response = await fetch(`/api/vehicles/${vehicleId}`, {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    ...formData,
+                    year: formData.year ? parseInt(formData.year.toString()) : undefined,
+                  }),
+                });
+
+                if (!response.ok) throw new Error("Failed to update vehicle");
+
+                setIsEditModalOpen(false);
+                fetchVehicle();
+              } catch (error) {
+                console.error("Error updating vehicle:", error);
+                alert("Error al actualizar vehículo");
+              } finally {
+                setIsEditing(false);
+              }
+            }}
+            onCancel={() => setIsEditModalOpen(false)}
+            submitLabel="Guardar Cambios"
+            isSubmitting={isEditing}
+          />
+        </DialogContent>
+      </Dialog>
 
       {/* Work Orders - DataTable */}
       <Card>

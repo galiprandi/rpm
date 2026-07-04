@@ -23,6 +23,7 @@ import {
   Wallet,
   ArrowDownLeft,
   Receipt,
+  MessageSquare,
 } from "lucide-react";
 import Link from "next/link";
 import { Header } from "@/components/adm/Header";
@@ -35,6 +36,7 @@ import {
 } from "@/components/ui/dialog";
 import { CustomerForm } from "@/components/customers/CustomerForm";
 import { VehicleDialog } from "@/components/vehicles/VehicleDialog";
+import { getWhatsAppLink } from "@/lib/utils/whatsapp";
 import { CustomerCreditNoteDialog } from "@/components/credit-notes/CustomerCreditNoteDialog";
 
 interface Vehicle {
@@ -371,20 +373,42 @@ export default function CustomerDetailPage() {
         {/* Contactos clickeables */}
         <div className="flex flex-wrap gap-4 mt-2">
           {customer.phone && (
-            <a
-              href={`tel:${customer.phone}`}
-              className="flex items-center gap-1 text-sm hover:underline text-primary"
-            >
-              <Phone className="h-4 w-4" /> {customer.phone}
-            </a>
+            <div className="flex items-center gap-2">
+              <a
+                href={`tel:${customer.phone}`}
+                className="flex items-center gap-1 text-sm hover:underline text-primary font-mono"
+              >
+                <Phone className="h-4 w-4" /> {customer.phone}
+              </a>
+              <a
+                href={getWhatsAppLink(customer.phone, `Hola ${customer.name}!`)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-1 rounded-md hover:bg-emerald-50 text-emerald-600 transition-colors"
+                title="Enviar WhatsApp"
+              >
+                <MessageSquare className="h-4 w-4" />
+              </a>
+            </div>
           )}
           {customer.phoneAlt && (
-            <a
-              href={`tel:${customer.phoneAlt}`}
-              className="flex items-center gap-1 text-sm hover:underline text-primary"
-            >
-              <Phone className="h-4 w-4" /> {customer.phoneAlt} (alt)
-            </a>
+            <div className="flex items-center gap-2">
+              <a
+                href={`tel:${customer.phoneAlt}`}
+                className="flex items-center gap-1 text-sm hover:underline text-primary font-mono"
+              >
+                <Phone className="h-4 w-4" /> {customer.phoneAlt} (alt)
+              </a>
+              <a
+                href={getWhatsAppLink(customer.phoneAlt, `Hola ${customer.name}!`)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-1 rounded-md hover:bg-emerald-50 text-emerald-600 transition-colors"
+                title="Enviar WhatsApp"
+              >
+                <MessageSquare className="h-4 w-4" />
+              </a>
+            </div>
           )}
           {customer.email && (
             <a

@@ -3,7 +3,7 @@
 import { useState, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Header, CrudAdmin, CrudStats, type StatItem } from "@/components/adm";
-import { Phone, User, Eye, TrendingDown, Users, Wallet, Plus } from "lucide-react";
+import { Phone, User, Eye, TrendingDown, Users, Wallet, Plus, MessageSquare } from "lucide-react";
 import Link from "next/link";
 import { type ColumnDef } from "@tanstack/react-table";
 import { CustomerDialog } from "@/components/customers/CustomerDialog";
@@ -14,6 +14,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { getWhatsAppLink } from "@/lib/utils/whatsapp";
 
 interface Customer {
   id: string;
@@ -107,12 +108,33 @@ export default function CustomersClient({ initialCustomers }: CustomersClientPro
       {
         accessorKey: "phone",
         header: "Teléfono",
-        cell: ({ row }) => (
-          <div className="flex items-center gap-1.5 font-mono">
-            <Phone className="h-3.5 w-3.5 text-muted-foreground/70 pointer-events-none" aria-hidden="true" />
-            {row.original.phone || <span className="text-muted-foreground">-</span>}
-          </div>
-        ),
+        cell: ({ row }) => {
+          const phone = row.original.phone;
+          if (!phone) return <span className="text-muted-foreground font-mono">-</span>;
+
+          return (
+            <div className="flex items-center gap-2 font-mono group">
+              <div className="flex items-center gap-1.5">
+                <Phone className="h-3.5 w-3.5 text-muted-foreground/70 pointer-events-none" aria-hidden="true" />
+                {phone}
+              </div>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <a
+                    href={getWhatsAppLink(phone, `Hola ${row.original.name}!`)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-1 rounded-md hover:bg-emerald-50 text-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <MessageSquare className="h-3.5 w-3.5" />
+                  </a>
+                </TooltipTrigger>
+                <TooltipContent>Enviar WhatsApp</TooltipContent>
+              </Tooltip>
+            </div>
+          );
+        },
       },
       {
         accessorKey: "vehicles",
