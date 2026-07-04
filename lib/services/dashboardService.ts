@@ -6,8 +6,12 @@ function decimalToNumber(decimal: unknown): number {
   if (decimal === null || decimal === undefined) return 0;
   if (typeof decimal === 'number') return decimal;
   // Prisma Decimal type
-  if (typeof decimal === 'object' && 'toNumber' in decimal && typeof decimal.toNumber === 'function') {
+  if (typeof decimal === 'object' && 'toNumber' in decimal && typeof (decimal as any).toNumber === 'function') {
     return (decimal as { toNumber: () => number }).toNumber();
+  }
+  // Handle string values (often returned from raw queries or certain DB adapters)
+  if (typeof decimal === 'string') {
+    return Number(decimal) || 0;
   }
   return 0;
 }
@@ -147,7 +151,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     // 1. Ventas del día (aggregate)
     prisma.work_order.aggregate({
       where: {
-        status: { in: ['DELIVERED', 'READY'] },
+        status: { in: ['DELIVERED', 'READY', 'PAID'] },
         completedAt: { gte: today },
       },
       _sum: { total: true },
@@ -156,7 +160,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     // 2. Ventas de ayer (aggregate)
     prisma.work_order.aggregate({
       where: {
-        status: { in: ['DELIVERED', 'READY'] },
+        status: { in: ['DELIVERED', 'READY', 'PAID'] },
         completedAt: { gte: yesterday, lt: today },
       },
       _sum: { total: true },

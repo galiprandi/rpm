@@ -47,7 +47,7 @@ async function getSalesPeriodMetrics(start: Date, end: Date) {
   const [workOrders, directSales] = await Promise.all([
     prisma.work_order.aggregate({
       where: {
-        status: { in: ['DELIVERED', 'READY'] },
+        status: { in: ['DELIVERED', 'READY', 'PAID'] },
         completedAt: { gte: start, lte: end },
       },
       _sum: { total: true },
@@ -91,7 +91,7 @@ export async function getSalesReport(params: SalesReportParams): Promise<SalesRe
   const [workOrders, directSales] = await Promise.all([
     prisma.work_order.findMany({
       where: {
-        status: { in: ['DELIVERED', 'READY'] },
+        status: { in: ['DELIVERED', 'READY', 'PAID'] },
         completedAt: { gte: startDate, lte: endDate },
       },
       select: {
