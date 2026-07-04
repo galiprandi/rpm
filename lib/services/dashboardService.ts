@@ -1,12 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { getArgentinaStartOfDay, getArgentinaEndOfDay, getArgentinaStartOfYesterday } from '@/lib/utils/date';
 
-// Helper para enmascarar teléfono
-function maskPhone(phone: string | null): string {
-  if (!phone) return 'No disponible';
-  return phone.replace(/(\d{3})\d{4}(\d{4})/, '$1-XXXX-$2');
-}
-
 // Helper para formatear Decimal a number
 function decimalToNumber(decimal: unknown): number {
   if (decimal === null || decimal === undefined) return 0;
@@ -52,12 +46,14 @@ export interface DashboardData {
     vehicle: {
       type: 'COMPACT' | 'SEDAN' | 'SUV' | 'PICKUP' | 'TRUCK';
       description: string;
+      identifier: string;
     };
     customer: {
       name: string;
       phone: string;
     };
     total: number;
+    totalPaid: number;
     completedAt: string;
     invoiceStatus: 'ISSUED' | 'PENDING';
   }>;
@@ -206,7 +202,10 @@ export async function getDashboardData(): Promise<DashboardData> {
         select: { name: true, phone: true },
       },
       vehicle: {
-        select: { category: true, description: true },
+        select: { category: true, description: true, identifier: true },
+      },
+      payments: {
+        select: { amount: true },
       },
     },
     take: 5,
@@ -282,20 +281,25 @@ export async function getDashboardData(): Promise<DashboardData> {
     where: { createdAt: { gte: today } },
   });
 
-  const readyForDelivery = readyWorkOrders.map((wo: any) => ({
-    workOrderId: wo.id,
-    vehicle: {
-      type: wo.vehicle.category as 'COMPACT' | 'SEDAN' | 'SUV' | 'PICKUP' | 'TRUCK',
-      description: wo.vehicle.description || `${wo.vehicle.category}`,
-    },
-    customer: {
-      name: wo.customer.name,
-      phone: maskPhone(wo.customer.phone),
-    },
-    total: decimalToNumber(wo.total),
-    completedAt: wo.completedAt?.toISOString() || wo.createdAt.toISOString(),
-    invoiceStatus: wo.invoiceId ? 'ISSUED' as const : 'PENDING' as const,
-  }));
+  const readyForDelivery = readyWorkOrders.map((wo: any) => {
+    const totalPaid = wo.payments.reduce((sum: number, p: any) => sum + decimalToNumber(p.amount), 0);
+    return {
+      workOrderId: wo.id,
+      vehicle: {
+        type: wo.vehicle.category as 'COMPACT' | 'SEDAN' | 'SUV' | 'PICKUP' | 'TRUCK',
+        description: wo.vehicle.description || `${wo.vehicle.category}`,
+        identifier: wo.vehicle.identifier,
+      },
+      customer: {
+        name: wo.customer.name,
+        phone: wo.customer.phone || '',
+      },
+      total: decimalToNumber(wo.total),
+      totalPaid,
+      completedAt: wo.completedAt?.toISOString() || wo.createdAt.toISOString(),
+      invoiceStatus: wo.invoiceId ? 'ISSUED' as const : 'PENDING' as const,
+    };
+  });
 
   const recentMovementsFormatted = recentMovements.map((m: any) => ({
     type: m.type as 'IN' | 'OUT' | 'ADJUSTMENT',
