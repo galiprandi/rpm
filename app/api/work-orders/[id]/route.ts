@@ -25,6 +25,12 @@ export async function GET(
             service: true,
           },
         },
+        technician: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
         photo: true,
       },
     });
@@ -137,6 +143,12 @@ export async function PUT(
           include: {
             product: true,
             service: true,
+          },
+        },
+        technician: {
+          select: {
+            id: true,
+            name: true,
           },
         },
         photo: true,

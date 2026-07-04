@@ -16,7 +16,14 @@ import { useUI } from "@/components/ui/UIProvider";
 import { ProductServiceSelector } from "@/components/ui/ProductServiceSelector";
 import { VehicleDialog } from "@/components/vehicles/VehicleDialog";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { Save, Plus, Search, Car, User, CheckCircle, Edit, RotateCcw, ArrowUpDown, Clock } from "lucide-react";
+import { Save, Plus, Search, Car, User, CheckCircle, Edit, RotateCcw, ArrowUpDown, Clock, UserCog } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // Storage key for wizard persistence
 const WIZARD_STORAGE_KEY = "work-order-wizard-state";
@@ -152,6 +159,8 @@ export default function NewWorkOrderPage() {
   const [fuelLevel, setFuelLevel] = useState<number>(50);
   const [notes, setNotes] = useState("");
   const [scheduledDate, setScheduledDate] = useState("");
+  const [technicians, setTechnicians] = useState<Array<{ id: string; name: string }>>([]);
+  const [selectedTechnicianId, setSelectedTechnicianId] = useState<string>("unassigned");
 
   // Load wizard state from localStorage on mount
   useEffect(() => {
@@ -190,12 +199,13 @@ export default function NewWorkOrderPage() {
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [step, items, plateSearch]);
 
-  // Fetch price lists and settings on mount
+  // Fetch price lists, technicians and settings on mount
   useEffect(() => {
     const fetchData = async () => {
-      const [priceListsRes, settingsRes] = await Promise.all([
+      const [priceListsRes, settingsRes, techniciansRes] = await Promise.all([
         fetch("/api/price-lists"),
         fetch("/api/settings"),
+        fetch("/api/users?role=TECHNICIAN"),
       ]);
       if (priceListsRes.ok) {
         const data = await priceListsRes.json();
@@ -214,8 +224,12 @@ export default function NewWorkOrderPage() {
           setMinimumMargin(parseFloat(minMargin));
         }
       }
+      if (techniciansRes.ok) {
+        const data = await techniciansRes.json();
+        setTechnicians(data.users || []);
+      }
     };
-    fetchData();
+    void fetchData();
   }, []);
 
   // Auto-fetch vehicle if vehicleId is in URL
@@ -364,6 +378,7 @@ export default function NewWorkOrderPage() {
         fuelLevel: fuelLevel > 0 ? fuelLevel : undefined,
         notes,
         scheduledDate: scheduledDate || undefined,
+        technicianId: selectedTechnicianId !== "unassigned" ? selectedTechnicianId : undefined,
         source: "IN_PERSON",
       };
 
@@ -698,17 +713,39 @@ export default function NewWorkOrderPage() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="scheduled-date">Fecha estimada de entrega (opcional)</Label>
-                <div className="relative">
-                  <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
-                  <Input
-                    id="scheduled-date"
-                    type="datetime-local"
-                    value={scheduledDate}
-                    onChange={(e) => setScheduledDate(e.target.value)}
-                    className="pl-9 font-mono"
-                  />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="technician">Técnico Asignado</Label>
+                  <Select
+                    value={selectedTechnicianId}
+                    onValueChange={setSelectedTechnicianId}
+                  >
+                    <SelectTrigger id="technician" className="relative pl-9">
+                      <UserCog className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+                      <SelectValue placeholder="Seleccionar técnico" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="unassigned">Sin asignar</SelectItem>
+                      {technicians.map((tech) => (
+                        <SelectItem key={tech.id} value={tech.id}>
+                          {tech.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="scheduled-date">Fecha estimada de entrega (opcional)</Label>
+                  <div className="relative">
+                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+                    <Input
+                      id="scheduled-date"
+                      type="datetime-local"
+                      value={scheduledDate}
+                      onChange={(e) => setScheduledDate(e.target.value)}
+                      className="pl-9 font-mono"
+                    />
+                  </div>
                 </div>
               </div>
 
