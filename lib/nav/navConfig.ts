@@ -1,6 +1,7 @@
 import {
   LayoutDashboard,
   UserCircle,
+  Car,
   ClipboardList,
   Package,
   Handshake,
@@ -53,6 +54,7 @@ export const navGroups: NavGroup[] = [
     items: [
       { label: 'Órdenes de Trabajo', href: '/adm/work-orders', icon: ClipboardList, roles: [UserRole.ADMIN, UserRole.STAFF] },
       { label: 'Clientes', href: '/adm/customers', icon: UserCircle, roles: [UserRole.ADMIN, UserRole.STAFF] },
+      { label: 'Vehículos', href: '/adm/vehicles', icon: Car, roles: [UserRole.ADMIN, UserRole.STAFF] },
     ],
   },
   {
