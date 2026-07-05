@@ -1,10 +1,10 @@
 # 📓 Journal — Lucía 👥
 
 ## 📋 BACKLOG
-- [ ] Implementar búsqueda avanzada de vehículos por patente o número de serie en el listado global.
 - [ ] Agregar validación de patente argentina (formato nuevo y viejo) en el `VehicleForm`.
 
 ## ✅ DONE
+- [x] 2025-07-05 — Implementación del listado global de vehículos en `/adm/vehicles` (PR lucia/customers/global-vehicles-list)
 - [x] 2025-05-15 — Refactor de `VehicleForm` y habilitación de edición de vehículos (PR lucia/customers/vehicle-edit-refactor)
 - [x] 2025-05-15 — Integración de enlaces directos de WhatsApp en listado y detalle de clientes (PR lucia/customers/vehicle-edit-refactor)
 
