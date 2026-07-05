@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { logWorkOrderChange } from "@/lib/services/auditService";
-import { generateInvoiceFromWorkOrder } from "@/lib/services/workOrderService";
+import { generateDocumentFromWorkOrder } from "@/lib/services/workOrderService";
 
 // GET /api/work-orders/[id] - Get work order by ID
 export async function GET(
@@ -159,7 +159,7 @@ export async function PUT(
     // Auto-generate invoice when marked as DELIVERED
     if (status === 'DELIVERED' && currentWorkOrder?.status !== 'DELIVERED') {
       try {
-        await generateInvoiceFromWorkOrder(id, changedBy);
+        await generateDocumentFromWorkOrder(id, changedBy);
       } catch (invoiceError) {
         console.error("Error auto-generating invoice for work order:", invoiceError);
         // We don't fail the update if invoice generation fails, but it should be logged

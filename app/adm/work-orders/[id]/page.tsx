@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,11 +44,17 @@ import {
   ArrowUpDown,
   MessageSquare,
   UserCog,
+  FileDown,
+  Printer,
+  RefreshCw,
+  Eye,
+  Plus,
 } from "lucide-react";
 import { ProductServiceSelector, SelectedItem } from "@/components/ui/ProductServiceSelector";
 import Image from "next/image";
 import { Header } from "@/components/adm/Header";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import { CustomerCreditNoteDialog } from "@/components/credit-notes/CustomerCreditNoteDialog";
 import { getWhatsAppLink, getWorkOrderMessage } from "@/lib/utils/whatsapp";
 
@@ -177,6 +184,7 @@ interface WorkOrderDetail {
   total: number;
   totalPaid?: number;
   isFullyPaid?: boolean;
+  invoiceId?: string;
   odometerValue?: number;
   fuelLevel?: number;
   totalProducts: number;
@@ -212,6 +220,9 @@ export default function WorkOrderDetailPage() {
   const [newScheduledDate, setNewScheduledDate] = useState<string>('');
   const [newNotes, setNewNotes] = useState<string>('');
   const [isCashOpen, setIsCashOpen] = useState<boolean | null>(null);
+  const [invoices, setInvoices] = useState<any[]>([]);
+  const [loadingInvoices, setLoadingInvoices] = useState(false);
+  const [generatingDocument, setGeneratingDocument] = useState<string | null>(null);
   
   // Items editing state
   const [isEditingItems, setIsEditingItems] = useState(false);
@@ -280,10 +291,26 @@ export default function WorkOrderDetailPage() {
     void fetchData();
   }, []);
 
+  const fetchInvoices = useCallback(async () => {
+    setLoadingInvoices(true);
+    try {
+      const response = await fetch(`/api/invoices?referenceId=${workOrderId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setInvoices(data);
+      }
+    } catch (error) {
+      console.error("Error fetching invoices:", error);
+    } finally {
+      setLoadingInvoices(false);
+    }
+  }, [workOrderId]);
+
   useEffect(() => {
     fetchWorkOrder();
     fetchPayments();
-  }, [fetchWorkOrder, fetchPayments]);
+    fetchInvoices();
+  }, [fetchWorkOrder, fetchPayments, fetchInvoices]);
 
   const handleStatusChange = async (newStatus: string) => {
     setUpdatingStatus(true);
@@ -507,6 +534,40 @@ export default function WorkOrderDetailPage() {
   const startEditingNotes = () => {
     setNewNotes(workOrder?.notes || '');
     setEditingNotes(true);
+  };
+
+  const generateDocument = async (type: string) => {
+    setGeneratingDocument(type);
+    try {
+      const response = await fetch(`/api/work-orders/${workOrderId}/documents`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Error al generar documento');
+      }
+
+      await alert({
+        title: 'Éxito',
+        description: `${type === 'PRESUPUESTO' ? 'Presupuesto' : (type === 'REMITO' ? 'Remito' : 'Comprobante')} generado correctamente`,
+        variant: 'success',
+      });
+
+      fetchInvoices();
+      fetchWorkOrder(); // To update invoiceId if needed
+    } catch (error) {
+      console.error('Error generating document:', error);
+      await alert({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Error al generar documento',
+        variant: 'error',
+      });
+    } finally {
+      setGeneratingDocument(null);
+    }
   };
 
   if (loading) {
@@ -931,6 +992,10 @@ export default function WorkOrderDetailPage() {
               <Camera className="h-4 w-4" />
               <span className="hidden sm:inline">Fotos</span>
             </TabsTrigger>
+            <TabsTrigger value="documents" className="flex items-center gap-2 px-4 py-2 data-[state=active]:after:bg-primary">
+              <FileText className="h-4 w-4" />
+              <span className="hidden sm:inline">Documentos</span>
+            </TabsTrigger>
             <TabsTrigger value="timeline" className="flex items-center gap-2 px-4 py-2 data-[state=active]:after:bg-primary">
               <Clock className="h-4 w-4" />
               <span className="hidden sm:inline">Historial</span>
@@ -1198,6 +1263,106 @@ export default function WorkOrderDetailPage() {
             </Card>
           </div>
         </TabsContent>
+
+          {/* Tab: Documents */}
+          <TabsContent value="documents" className="pt-4 outline-none">
+            <div className="grid md:grid-cols-3 gap-4">
+              <Card className="md:col-span-2">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      Documentos Generados
+                    </CardTitle>
+                    <Button variant="ghost" size="sm" onClick={fetchInvoices} disabled={loadingInvoices}>
+                      <RefreshCw className={cn("h-4 w-4", loadingInvoices && "animate-spin")} />
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {invoices.length > 0 ? (
+                    <div className="space-y-3">
+                      {invoices.map((inv) => (
+                        <div key={inv.id} className="flex items-center justify-between p-3 bg-muted rounded-lg border">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                              <FileText className="h-4 w-4 text-primary" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-bold font-mono">{inv.number}</p>
+                              <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
+                                {inv.type.replace('_', ' ')}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Link href={`/adm/invoices/${inv.id}`}>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Ver Detalle">
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </Link>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              title="Descargar PDF"
+                              onClick={() => toast.info('Generación de PDF en desarrollo')}
+                            >
+                              <FileDown className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground flex flex-col items-center gap-2 border-2 border-dashed rounded-lg">
+                      <FileText className="h-8 w-8 text-muted-foreground/20" />
+                      <p className="text-sm">No hay documentos generados para esta OT</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Plus className="h-4 w-4" />
+                    Acciones
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => generateDocument('PRESUPUESTO')}
+                    loading={generatingDocument === 'PRESUPUESTO'}
+                  >
+                    <Printer className="h-4 w-4 mr-2" />
+                    Generar Presupuesto
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => generateDocument('REMITO')}
+                    loading={generatingDocument === 'REMITO'}
+                  >
+                    <Printer className="h-4 w-4 mr-2" />
+                    Generar Remito
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    className="w-full justify-start"
+                    onClick={() => generateDocument('INVOICE')}
+                    loading={generatingDocument === 'INVOICE'}
+                    disabled={!!workOrder.invoiceId}
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    Generar Pre-Factura
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
 
           {/* Tab: Timeline */}
           <TabsContent value="timeline" className="pt-4 outline-none">
