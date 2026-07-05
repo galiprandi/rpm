@@ -1,12 +1,19 @@
-import { prisma } from '@/lib/prisma';
-import { getArgentinaStartOfDay, getArgentinaEndOfDay } from '@/lib/utils/date';
+import { prisma } from "@/lib/prisma";
+import { getArgentinaStartOfDay, getArgentinaEndOfDay } from "@/lib/utils/date";
+import { invalidateCashStatus } from "@/lib/cache";
 
 export interface CashMovementInput {
-  type: 'INCOME' | 'EXPENSE' | 'OPENING' | 'CLOSING' | 'COUNT';
+  type: "INCOME" | "EXPENSE" | "OPENING" | "CLOSING" | "COUNT";
   amount: number;
   method: string;
   referenceId?: string;
-  referenceType?: 'work_order_payment' | 'direct_sale_payment' | 'customer_payment' | 'credit_note_refund' | 'credit_note_cancelled' | 'manual';
+  referenceType?:
+    | "work_order_payment"
+    | "direct_sale_payment"
+    | "customer_payment"
+    | "credit_note_refund"
+    | "credit_note_cancelled"
+    | "manual";
   reason?: string;
   notes?: string;
   createdBy: string;
@@ -15,10 +22,10 @@ export interface CashMovementInput {
 export async function createCashMovement(
   data: CashMovementInput,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  tx?: any
+  tx?: any,
 ) {
   const client = tx || prisma;
-  return client.cash_movement.create({
+  const result = await client.cash_movement.create({
     data: {
       type: data.type,
       amount: data.amount,
@@ -30,6 +37,13 @@ export async function createCashMovement(
       createdBy: data.createdBy,
     },
   });
+
+  // Invalidate cash status cache so the UI always reflects fresh data
+  if (!tx) {
+    invalidateCashStatus();
+  }
+
+  return result;
 }
 
 export async function getCashMovements(filters: {
@@ -52,7 +66,7 @@ export async function getCashMovements(filters: {
 
   return prisma.cash_movement.findMany({
     where,
-    orderBy: { createdAt: 'desc' },
+    orderBy: { createdAt: "desc" },
   });
 }
 
@@ -80,17 +94,17 @@ export async function getCashMovementSummary(date: Date) {
   for (const movement of movements) {
     const amount = Number(movement.amount);
     switch (movement.type) {
-      case 'OPENING':
+      case "OPENING":
         summary.opening += amount;
         break;
-      case 'INCOME':
+      case "INCOME":
         summary.income += amount;
         break;
-      case 'EXPENSE':
-      case 'PURCHASE_VOUCHER':
+      case "EXPENSE":
+      case "PURCHASE_VOUCHER":
         summary.expense += amount;
         break;
-      case 'CLOSING':
+      case "CLOSING":
         summary.closing += amount;
         break;
     }
@@ -110,11 +124,11 @@ export async function isCashRegisterOpen(): Promise<boolean> {
   const lastMovement = await prisma.cash_movement.findFirst({
     where: {
       type: {
-        in: ['OPENING', 'CLOSING'],
+        in: ["OPENING", "CLOSING"],
       },
     },
     orderBy: {
-      createdAt: 'desc',
+      createdAt: "desc",
     },
   });
 
@@ -122,5 +136,5 @@ export async function isCashRegisterOpen(): Promise<boolean> {
   if (!lastMovement) return false;
 
   // If the last movement was an opening, it's still open
-  return lastMovement.type === 'OPENING';
+  return lastMovement.type === "OPENING";
 }

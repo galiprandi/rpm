@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { createInvoice, determineInvoiceType } from "@/lib/services/invoiceService";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import {
+  createInvoice,
+  determineInvoiceType,
+} from "@/lib/services/invoiceService";
+import { getSessionWithAuth } from "@/lib/api-middleware";
 import { randomUUID } from "crypto";
 
 // Valid work order statuses
@@ -19,18 +21,20 @@ const VALID_STATUSES = [
 // PUT /api/work-orders/[id]/status - Update work order status
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
+    const session = await getSessionWithAuth();
     const { id } = await params;
     const body = await request.json();
     const { status } = body;
 
     if (!status || !VALID_STATUSES.includes(status)) {
       return NextResponse.json(
-        { error: `Invalid status. Must be one of: ${VALID_STATUSES.join(", ")}` },
-        { status: 400 }
+        {
+          error: `Invalid status. Must be one of: ${VALID_STATUSES.join(", ")}`,
+        },
+        { status: 400 },
       );
     }
 
@@ -41,10 +45,10 @@ export async function PUT(
         where: { id },
         include: {
           work_order_item: {
-            where: { type: 'PRODUCT' },
+            where: { type: "PRODUCT" },
           },
-          customer: { select: { name: true } }
-        }
+          customer: { select: { name: true } },
+        },
       });
 
       if (!currentWorkOrder) {
@@ -56,7 +60,10 @@ export async function PUT(
 
       if (status === "IN_PROGRESS" && !currentWorkOrder.startedAt) {
         updateData.startedAt = new Date();
-      } else if (["READY", "PAID", "DELIVERED"].includes(status) && !currentWorkOrder.completedAt) {
+      } else if (
+        ["READY", "PAID", "DELIVERED"].includes(status) &&
+        !currentWorkOrder.completedAt
+      ) {
         updateData.completedAt = new Date();
       }
 
@@ -92,7 +99,7 @@ export async function PUT(
         // Check if already discounted (by looking for movements with this WO ID)
         const woPrefix = id.substring(0, 8);
         const existingMovements = await tx.stock_movement.findFirst({
-          where: { reason: { startsWith: `Venta OT #${woPrefix}` } }
+          where: { reason: { startsWith: `Venta OT #${woPrefix}` } },
         });
 
         if (!existingMovements) {
@@ -121,11 +128,11 @@ export async function PUT(
                     id: randomUUID(),
                     productId: item.productId,
                     quantity: -item.quantity,
-                    type: 'OUT',
+                    type: "OUT",
                     previousStock,
                     newStock,
                     reason: `Venta OT #${woPrefix} - ${currentWorkOrder.customer.name}`,
-                    userName: session?.user.email || 'system',
+                    userName: session?.user.email || "system",
                   },
                 });
               }
@@ -144,28 +151,35 @@ export async function PUT(
         let customerDoc: string | undefined = undefined;
         let customerDocType: string | undefined = undefined;
 
-        if (billingData && typeof billingData === 'object') {
+        if (billingData && typeof billingData === "object") {
           customerDoc = billingData.cuit || billingData.dni || undefined;
-          customerDocType = billingData.cuit ? 'CUIT' : (billingData.dni ? 'DNI' : undefined);
+          customerDocType = billingData.cuit
+            ? "CUIT"
+            : billingData.dni
+              ? "DNI"
+              : undefined;
         }
 
-        const invoiceType = determineInvoiceType(billingData, 'FACTURA', true);
+        const invoiceType = determineInvoiceType(billingData, "FACTURA", true);
 
         await createInvoice({
           type: invoiceType,
           referenceId: workOrder.id,
-          referenceType: 'work_order',
+          referenceType: "work_order",
           customerId: workOrder.customerId,
           customerName: workOrder.customer.name,
           customerDoc,
           customerDocType,
           subtotal: Number(workOrder.total), // Simplified
           total: Number(workOrder.total),
-          status: 'DRAFT',
-          createdBy: session?.user.id || 'system',
+          status: "DRAFT",
+          createdBy: session?.user.id || "system",
         });
       } catch (invoiceError) {
-        console.error('Error generating pre-invoice for work order:', invoiceError);
+        console.error(
+          "Error generating pre-invoice for work order:",
+          invoiceError,
+        );
       }
     }
 
@@ -174,7 +188,7 @@ export async function PUT(
     console.error("Error updating work order status:", error);
     return NextResponse.json(
       { error: "Failed to update work order status" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

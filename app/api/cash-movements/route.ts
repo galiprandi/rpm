@@ -1,23 +1,23 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
-import { headers } from 'next/headers';
-import { hasRole, UserRole } from '@/lib/auth/roles';
-import { prisma } from '@/lib/prisma';
-import { revalidatePath } from 'next/cache';
+import { NextRequest, NextResponse } from "next/server";
+import { getSessionWithAuth } from "@/lib/api-middleware";
+import { hasRole, UserRole } from "@/lib/auth/roles";
+import { prisma } from "@/lib/prisma";
+import { revalidatePath } from "next/cache";
+import { invalidateCashStatus } from "@/lib/cache";
 
 // GET /api/cash-movements - List cash movements
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
+    const session = await getSessionWithAuth();
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { searchParams } = request.nextUrl;
-    const startDate = searchParams.get('startDate');
-    const endDate = searchParams.get('endDate');
-    const type = searchParams.get('type');
-    const method = searchParams.get('method');
+    const startDate = searchParams.get("startDate");
+    const endDate = searchParams.get("endDate");
+    const type = searchParams.get("type");
+    const method = searchParams.get("method");
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const where: any = {};
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
 
     const movements = await prisma.cash_movement.findMany({
       where,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
 
     return NextResponse.json({ movements });
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
     console.error("Error fetching cash movements:", error);
     return NextResponse.json(
       { error: "Failed to fetch cash movements" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
 // POST /api/cash-movements - Create manual cash movement
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
+    const session = await getSessionWithAuth();
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
     if (!userRole) {
       return NextResponse.json(
         { error: "Only ADMIN can create manual cash movements" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
     if (!type || !amount || !method) {
       return NextResponse.json(
         { error: "Type, amount, and method are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
         type,
         amount,
         method,
-        referenceType: 'manual',
+        referenceType: "manual",
         reason,
         notes,
         createdBy: session.user.id,
@@ -85,14 +85,15 @@ export async function POST(request: NextRequest) {
     });
 
     // Invalidate dashboard cache to show fresh data
-    revalidatePath('/adm');
+    revalidatePath("/adm");
+    invalidateCashStatus();
 
     return NextResponse.json({ movement }, { status: 201 });
   } catch (error) {
     console.error("Error creating cash movement:", error);
     return NextResponse.json(
       { error: "Failed to create cash movement" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

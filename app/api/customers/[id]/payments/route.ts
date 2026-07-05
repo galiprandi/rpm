@@ -1,15 +1,19 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
-import { headers } from 'next/headers';
-import { prisma } from '@/lib/prisma';
-import { UserRole } from '@/lib/auth/roles';
-import { revalidatePath } from 'next/cache';
+import { NextRequest, NextResponse } from "next/server";
+import { getSessionWithAuth } from "@/lib/api-middleware";
+import { prisma } from "@/lib/prisma";
+import { UserRole } from "@/lib/auth/roles";
+import { revalidatePath } from "next/cache";
+import { invalidateCashStatus } from "@/lib/cache";
 
 // Helper para convertir Decimal a number
 function decimalToNumber(decimal: unknown): number {
   if (decimal === null || decimal === undefined) return 0;
-  if (typeof decimal === 'number') return decimal;
-  if (typeof decimal === 'object' && 'toNumber' in decimal && typeof (decimal as { toNumber: () => number }).toNumber === 'function') {
+  if (typeof decimal === "number") return decimal;
+  if (
+    typeof decimal === "object" &&
+    "toNumber" in decimal &&
+    typeof (decimal as { toNumber: () => number }).toNumber === "function"
+  ) {
     return (decimal as { toNumber: () => number }).toNumber();
   }
   return 0;
@@ -18,18 +22,19 @@ function decimalToNumber(decimal: unknown): number {
 // POST /api/customers/[id]/payments - Register a payment against customer's balance
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
-    const session = await auth.api.getSession({ headers: await headers() });
-    
+    const session = await getSessionWithAuth();
+
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // Check if user has required role (STAFF or ADMIN)
-    const userRole = (session.user as { role?: string }).role as UserRole || UserRole.USER;
+    const userRole =
+      ((session.user as { role?: string }).role as UserRole) || UserRole.USER;
     const roleHierarchy = {
       [UserRole.USER]: 0,
       [UserRole.STAFF]: 1,
@@ -38,8 +43,8 @@ export async function POST(
 
     if (roleHierarchy[userRole] < roleHierarchy[UserRole.STAFF]) {
       return NextResponse.json(
-        { error: 'Forbidden: Insufficient permissions' },
-        { status: 403 }
+        { error: "Forbidden: Insufficient permissions" },
+        { status: 403 },
       );
     }
 
@@ -47,17 +52,17 @@ export async function POST(
     const { amount, method, notes } = body;
 
     // Validate required fields
-    if (typeof amount !== 'number' || amount <= 0) {
+    if (typeof amount !== "number" || amount <= 0) {
       return NextResponse.json(
-        { error: 'Invalid amount. Must be a positive number' },
-        { status: 400 }
+        { error: "Invalid amount. Must be a positive number" },
+        { status: 400 },
       );
     }
 
-    if (!method || typeof method !== 'string') {
+    if (!method || typeof method !== "string") {
       return NextResponse.json(
-        { error: 'Payment method is required' },
-        { status: 400 }
+        { error: "Payment method is required" },
+        { status: 400 },
       );
     }
 
@@ -68,7 +73,7 @@ export async function POST(
         work_order: {
           where: {
             status: {
-              notIn: ['CANCELLED', 'PAID'],
+              notIn: ["CANCELLED", "PAID"],
             },
           },
         },
@@ -77,8 +82,8 @@ export async function POST(
 
     if (!customer) {
       return NextResponse.json(
-        { error: 'Customer not found' },
-        { status: 404 }
+        { error: "Customer not found" },
+        { status: 404 },
       );
     }
 
@@ -101,12 +106,12 @@ export async function POST(
       // Create a cash movement record for this payment
       const paymentMovement = await tx.cash_movement.create({
         data: {
-          type: 'INCOME',
+          type: "INCOME",
           amount,
           method,
-          referenceType: 'customer_payment',
+          referenceType: "customer_payment",
           referenceId: id,
-          reason: 'Pago de cuenta corriente',
+          reason: "Pago de cuenta corriente",
           notes: notes || undefined,
           createdBy: session.user.id,
         },
@@ -119,11 +124,11 @@ export async function POST(
           where: {
             customerId: id,
             status: {
-              notIn: ['CANCELLED', 'PAID'],
+              notIn: ["CANCELLED", "PAID"],
             },
           },
           data: {
-            status: 'PAID',
+            status: "PAID",
           },
         });
       }
@@ -133,8 +138,9 @@ export async function POST(
 
     // Revalidate relevant paths
     revalidatePath(`/adm/customers/${id}`);
-    revalidatePath('/adm/customers');
-    revalidatePath('/adm/work-orders');
+    revalidatePath("/adm/customers");
+    revalidatePath("/adm/work-orders");
+    invalidateCashStatus();
 
     const finalNewBalance = decimalToNumber(result.updatedCustomer.balance);
 
@@ -156,13 +162,13 @@ export async function POST(
           hasCredit: finalNewBalance < 0, // True if customer has credit (negative balance)
         },
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
-    console.error('Error registering payment:', error);
+    console.error("Error registering payment:", error);
     return NextResponse.json(
-      { error: 'Failed to register payment' },
-      { status: 500 }
+      { error: "Failed to register payment" },
+      { status: 500 },
     );
   }
 }

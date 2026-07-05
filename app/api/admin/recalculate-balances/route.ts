@@ -1,24 +1,24 @@
-import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
-import { headers } from 'next/headers';
-import { prisma } from '@/lib/prisma';
-import { UserRole } from '@/lib/auth/roles';
+import { NextResponse } from "next/server";
+import { getSessionWithAuth } from "@/lib/api-middleware";
+import { prisma } from "@/lib/prisma";
+import { UserRole } from "@/lib/auth/roles";
 
 // POST /api/admin/recalculate-balances - Recalculate all customer balances
 export async function POST() {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-    
+    const session = await getSessionWithAuth();
+
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // Check if user is ADMIN
-    const userRole = (session.user as { role?: string }).role as UserRole || UserRole.USER;
+    const userRole =
+      ((session.user as { role?: string }).role as UserRole) || UserRole.USER;
     if (userRole !== UserRole.ADMIN) {
       return NextResponse.json(
-        { error: 'Forbidden: Admin only' },
-        { status: 403 }
+        { error: "Forbidden: Admin only" },
+        { status: 403 },
       );
     }
 
@@ -28,7 +28,7 @@ export async function POST() {
         work_order: {
           where: {
             status: {
-              notIn: ['CANCELLED', 'PAID'],
+              notIn: ["CANCELLED", "PAID"],
             },
           },
         },
@@ -41,7 +41,7 @@ export async function POST() {
       // Calculate what the balance should be (sum of unpaid work orders)
       const calculatedBalance = customer.work_order.reduce(
         (sum: any, wo: any) => sum + Number(wo.total),
-        0
+        0,
       );
 
       const currentBalance = Number(customer.balance) || 0;
@@ -70,10 +70,10 @@ export async function POST() {
       customers: results,
     });
   } catch (error) {
-    console.error('Error recalculating balances:', error);
+    console.error("Error recalculating balances:", error);
     return NextResponse.json(
-      { error: 'Failed to recalculate balances' },
-      { status: 500 }
+      { error: "Failed to recalculate balances" },
+      { status: 500 },
     );
   }
 }

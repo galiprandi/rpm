@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
-import { headers } from 'next/headers';
-import { UserRole } from '@/lib/auth/roles';
-import { isDevBypassEnabled, createDevSession } from '@/lib/dev-auth';
+import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import { UserRole } from "@/lib/auth/roles";
+import { isDevBypassEnabled, createDevSession } from "@/lib/dev-auth";
 
 /**
  * API Middleware - Global Protection System
@@ -54,7 +54,7 @@ function hasRequiredRole(userRole: UserRole, requiredRole: UserRole): boolean {
  * Returns null if not authenticated
  * Supports dev bypass in development (env-var based, no cookies/endpoints)
  */
-async function getSessionWithAuth() {
+export async function getSessionWithAuth() {
   // Dev bypass: pure env-var based, no cookies or endpoints
   if (isDevBypassEnabled()) {
     return createDevSession();
@@ -72,25 +72,28 @@ async function getSessionWithAuth() {
  * @returns Wrapped handler that requires authentication
  */
 export function withAuth<T extends NextRequest, P = unknown>(
-  handler: (request: T, session: { user: { id: string; email?: string; name?: string; role?: string } }, params?: P) => Promise<NextResponse>
+  handler: (
+    request: T,
+    session: {
+      user: { id: string; email?: string; name?: string; role?: string };
+    },
+    params?: P,
+  ) => Promise<NextResponse>,
 ) {
   return async (request: T, params?: P): Promise<NextResponse> => {
     try {
       const session = await getSessionWithAuth();
 
       if (!session?.user) {
-        return NextResponse.json(
-          { error: 'Unauthorized' },
-          { status: 401 }
-        );
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       }
 
       return await handler(request, session, params);
     } catch (error) {
-      console.error('[withAuth] Error:', error);
+      console.error("[withAuth] Error:", error);
       return NextResponse.json(
-        { error: 'Internal server error' },
-        { status: 500 }
+        { error: "Internal server error" },
+        { status: 500 },
       );
     }
   };
@@ -105,34 +108,38 @@ export function withAuth<T extends NextRequest, P = unknown>(
  */
 export function withRole<T extends NextRequest, P = unknown>(
   requiredRole: UserRole,
-  handler: (request: T, session: { user: { id: string; email?: string; name?: string; role?: string } }, params?: P) => Promise<NextResponse>
+  handler: (
+    request: T,
+    session: {
+      user: { id: string; email?: string; name?: string; role?: string };
+    },
+    params?: P,
+  ) => Promise<NextResponse>,
 ) {
   return async (request: T, params?: P): Promise<NextResponse> => {
     try {
       const session = await getSessionWithAuth();
 
       if (!session?.user) {
-        return NextResponse.json(
-          { error: 'Unauthorized' },
-          { status: 401 }
-        );
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       }
 
-      const userRole = (session.user as { role?: string }).role as UserRole || UserRole.USER;
+      const userRole =
+        ((session.user as { role?: string }).role as UserRole) || UserRole.USER;
 
       if (!hasRequiredRole(userRole, requiredRole)) {
         return NextResponse.json(
-          { error: 'Forbidden: Insufficient permissions' },
-          { status: 403 }
+          { error: "Forbidden: Insufficient permissions" },
+          { status: 403 },
         );
       }
 
       return await handler(request, session, params);
     } catch (error) {
-      console.error('[withRole] Error:', error);
+      console.error("[withRole] Error:", error);
       return NextResponse.json(
-        { error: 'Internal server error' },
-        { status: 500 }
+        { error: "Internal server error" },
+        { status: 500 },
       );
     }
   };
@@ -143,7 +150,13 @@ export function withRole<T extends NextRequest, P = unknown>(
  * Convenience function for admin-only endpoints
  */
 export function withAdmin<T extends NextRequest, P = unknown>(
-  handler: (request: T, session: { user: { id: string; email?: string; name?: string; role?: string } }, params?: P) => Promise<NextResponse>
+  handler: (
+    request: T,
+    session: {
+      user: { id: string; email?: string; name?: string; role?: string };
+    },
+    params?: P,
+  ) => Promise<NextResponse>,
 ) {
   return withRole(UserRole.ADMIN, handler);
 }
@@ -153,7 +166,13 @@ export function withAdmin<T extends NextRequest, P = unknown>(
  * Convenience function for staff/admin endpoints
  */
 export function withStaff<T extends NextRequest, P = unknown>(
-  handler: (request: T, session: { user: { id: string; email?: string; name?: string; role?: string } }, params?: P) => Promise<NextResponse>
+  handler: (
+    request: T,
+    session: {
+      user: { id: string; email?: string; name?: string; role?: string };
+    },
+    params?: P,
+  ) => Promise<NextResponse>,
 ) {
   return withRole(UserRole.STAFF, handler);
 }
@@ -163,34 +182,41 @@ export function withStaff<T extends NextRequest, P = unknown>(
  * For routes like /api/products/[id] that receive { params } as second argument
  */
 export function withAdminDynamic<T extends NextRequest, P>(
-  handler: (request: T, { params }: { params: P }, session: { user: { id: string; email?: string; name?: string; role?: string } }) => Promise<NextResponse>
+  handler: (
+    request: T,
+    { params }: { params: P },
+    session: {
+      user: { id: string; email?: string; name?: string; role?: string };
+    },
+  ) => Promise<NextResponse>,
 ) {
-  return async (request: T, { params }: { params: P }): Promise<NextResponse> => {
+  return async (
+    request: T,
+    { params }: { params: P },
+  ): Promise<NextResponse> => {
     try {
       const session = await getSessionWithAuth();
 
       if (!session?.user) {
-        return NextResponse.json(
-          { error: 'Unauthorized' },
-          { status: 401 }
-        );
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       }
 
-      const userRole = (session.user as { role?: string }).role as UserRole || UserRole.USER;
+      const userRole =
+        ((session.user as { role?: string }).role as UserRole) || UserRole.USER;
 
       if (!hasRequiredRole(userRole, UserRole.ADMIN)) {
         return NextResponse.json(
-          { error: 'Forbidden: Insufficient permissions' },
-          { status: 403 }
+          { error: "Forbidden: Insufficient permissions" },
+          { status: 403 },
         );
       }
 
       return await handler(request, { params }, session);
     } catch (error) {
-      console.error('[withAdminDynamic] Error:', error);
+      console.error("[withAdminDynamic] Error:", error);
       return NextResponse.json(
-        { error: 'Internal server error' },
-        { status: 500 }
+        { error: "Internal server error" },
+        { status: 500 },
       );
     }
   };
@@ -201,34 +227,41 @@ export function withAdminDynamic<T extends NextRequest, P>(
  * For routes like /api/products/[id] that receive { params } as second argument
  */
 export function withStaffDynamic<T extends NextRequest, P>(
-  handler: (request: T, { params }: { params: P }, session: { user: { id: string; email?: string; name?: string; role?: string } }) => Promise<NextResponse>
+  handler: (
+    request: T,
+    { params }: { params: P },
+    session: {
+      user: { id: string; email?: string; name?: string; role?: string };
+    },
+  ) => Promise<NextResponse>,
 ) {
-  return async (request: T, { params }: { params: P }): Promise<NextResponse> => {
+  return async (
+    request: T,
+    { params }: { params: P },
+  ): Promise<NextResponse> => {
     try {
       const session = await getSessionWithAuth();
 
       if (!session?.user) {
-        return NextResponse.json(
-          { error: 'Unauthorized' },
-          { status: 401 }
-        );
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       }
 
-      const userRole = (session.user as { role?: string }).role as UserRole || UserRole.USER;
+      const userRole =
+        ((session.user as { role?: string }).role as UserRole) || UserRole.USER;
 
       if (!hasRequiredRole(userRole, UserRole.STAFF)) {
         return NextResponse.json(
-          { error: 'Forbidden: Insufficient permissions' },
-          { status: 403 }
+          { error: "Forbidden: Insufficient permissions" },
+          { status: 403 },
         );
       }
 
       return await handler(request, { params }, session);
     } catch (error) {
-      console.error('[withStaffDynamic] Error:', error);
+      console.error("[withStaffDynamic] Error:", error);
       return NextResponse.json(
-        { error: 'Internal server error' },
-        { status: 500 }
+        { error: "Internal server error" },
+        { status: 500 },
       );
     }
   };
@@ -236,17 +269,17 @@ export function withStaffDynamic<T extends NextRequest, P>(
 
 /**
  * Optional: Public endpoint (no auth required)
- * 
+ *
  * Useful for:
  * - Health checks
  * - Public APIs
  * - Webhooks
- * 
+ *
  * @param handler - The route handler function
  * @returns Handler as-is (no wrapping)
  */
 export function withPublic<T extends NextRequest>(
-  handler: (request: T) => Promise<NextResponse>
+  handler: (request: T) => Promise<NextResponse>,
 ) {
   return handler;
 }
