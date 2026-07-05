@@ -1,11 +1,14 @@
 import { prisma } from '@/lib/prisma';
-import { createInvoice, determineInvoiceType } from './invoiceService';
+import { createInvoice, determineInvoiceType, type InvoiceType } from './invoiceService';
 
 /**
- * Generates a pre-invoice from a Work Order.
- * Usually called when the Work Order is marked as DELIVERED.
+ * Generates a document (Pre-invoice, Presupuesto, Remito) from a Work Order.
  */
-export async function generateInvoiceFromWorkOrder(workOrderId: string, createdBy: string) {
+export async function generateDocumentFromWorkOrder(
+  workOrderId: string,
+  createdBy: string,
+  options: { type?: InvoiceType; forceNew?: boolean } = {}
+) {
   return await prisma.$transaction(async (tx) => {
     // Fetch work order with items and customer
     const workOrder = await tx.work_order.findUnique({
@@ -20,21 +23,29 @@ export async function generateInvoiceFromWorkOrder(workOrderId: string, createdB
       throw new Error('Orden de trabajo no encontrada');
     }
 
-    // Check if an invoice already exists for this WO to avoid duplicates
-    const existingInvoice = await tx.invoice.findFirst({
-      where: {
-        referenceId: workOrderId,
-        referenceType: 'work_order',
-        status: { not: 'CANCELLED' },
-      },
-    });
-
-    if (existingInvoice) {
-      return existingInvoice;
-    }
-
     const customer = workOrder.customer;
     const billingData = customer?.billingData;
+
+    // Determine document type
+    const docType = options.type || determineInvoiceType(billingData, 'FACTURA', true);
+
+    // Check if a document of this type already exists to avoid duplicates
+    // For PRESUPUESTO and REMITO, we might allow multiple if forceNew is true,
+    // but for invoices we generally want only one active.
+    if (!options.forceNew) {
+      const existingDocument = await tx.invoice.findFirst({
+        where: {
+          referenceId: workOrderId,
+          referenceType: 'work_order',
+          type: docType,
+          status: { notIn: ['CANCELLED', 'ANNULLED'] },
+        },
+      });
+
+      if (existingDocument) {
+        return existingDocument;
+      }
+    }
 
     let customerDoc: string | undefined = undefined;
     let customerDocType: string | undefined = undefined;
@@ -45,14 +56,12 @@ export async function generateInvoiceFromWorkOrder(workOrderId: string, createdB
       customerDocType = bd.cuit ? 'CUIT' : (bd.dni ? 'DNI' : undefined);
     }
 
-    const invoiceType = determineInvoiceType(billingData, 'FACTURA', true);
-
     // Total is already calculated in the work order
     const total = Number(workOrder.total);
 
-    // Create the invoice
-    const invoice = await createInvoice({
-      type: invoiceType,
+    // Create the invoice/document
+    const document = await createInvoice({
+      type: docType,
       referenceId: workOrder.id,
       referenceType: 'work_order',
       customerId: workOrder.customerId,
@@ -65,12 +74,21 @@ export async function generateInvoiceFromWorkOrder(workOrderId: string, createdB
       createdBy,
     }, tx);
 
-    // Update the work order with the invoice ID
-    await tx.work_order.update({
-      where: { id: workOrderId },
-      data: { invoiceId: invoice.id },
-    });
+    // If it's a pre-invoice, update the work order with the invoice ID
+    if (docType.startsWith('X_') || docType.startsWith('FACTURA_')) {
+      await tx.work_order.update({
+        where: { id: workOrderId },
+        data: { invoiceId: document.id },
+      });
+    }
 
-    return invoice;
+    return document;
   });
+}
+
+/**
+ * Backward compatibility wrapper for generateInvoiceFromWorkOrder.
+ */
+export async function generateInvoiceFromWorkOrder(workOrderId: string, createdBy: string) {
+  return generateDocumentFromWorkOrder(workOrderId, createdBy);
 }

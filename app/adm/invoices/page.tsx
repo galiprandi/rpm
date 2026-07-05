@@ -83,7 +83,7 @@ export default function InvoicesPage() {
             </span>
           </div>
           {(row.original.type.startsWith('X_') || row.original.type.startsWith('NOTA_CREDITO_X_')) && (
-            <div className="flex items-center gap-1 text-[10px] font-bold text-orange-700 uppercase tracking-wider ml-11">
+            <div className="flex items-center gap-1 text-[10px] font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded border border-orange-100 uppercase tracking-wider ml-11 w-fit">
               <AlertCircle className="h-3 w-3" />
               <span>No válido como comprobante fiscal</span>
             </div>
