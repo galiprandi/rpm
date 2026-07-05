@@ -5,6 +5,7 @@
 ## ✅ DONE
 - [x] 2025-07-03 — Mejora visual del Kanban: icono de demora más intuitivo y totales por columna (PR #jorge/work-orders/kanban-ux-refinement)
 - [x] 2026-07-04 — Gestión de técnicos y Quick Actions en Kanban (PR #jorge/work-orders/technician-and-quick-actions)
+- [x] 2026-07-05 — Implementación de buscador global y refinamiento de barra de filtros (PR #jorge/work-orders/search-and-filter-refinement)
 
 ## 🧠 LEARNINGS
 ## 2025-07-03 - Visibilidad Financiera en Kanban
@@ -14,3 +15,7 @@
 ## 2026-07-04 - Interacción en Elementos Draggable
 **Learning:** Al añadir botones de acción dentro de elementos arrastrables (como tarjetas de Kanban), es vital usar `onMouseDown={(e) => e.stopPropagation()}` para evitar que el click inicie un arrastre no deseado y la acción se ignore.
 **Action:** Aplicar este patrón en cualquier overlay de acción rápida dentro de listas con Drag & Drop.
+
+## 2026-07-05 - Filtrado Eficiente y UX de Búsqueda
+**Learning:** En módulos con volumen moderado de datos, el filtrado por cliente/vehículo debe ser instantáneo. Seguir el patrón de "Form UX Enhancement" con iconos internos en inputs y botones de "limpiar" reduce significativamente la carga cognitiva del usuario.
+**Action:** Estandarizar la barra de filtros en otros listados administrativos (Clientes, Productos) siguiendo este mismo esquema de segmentado + búsqueda + selects con iconos.

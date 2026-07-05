@@ -12,9 +12,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Plus, LayoutGrid, List, Car, Truck, Wrench, Headphones, Package, ClipboardList, Wallet, DollarSign, MessageSquare, AlertCircle, UserCog, Eye } from "lucide-react";
+import { Plus, LayoutGrid, List, Car, Truck, Wrench, Headphones, Package, ClipboardList, Wallet, DollarSign, MessageSquare, AlertCircle, UserCog, Eye, Search, X } from "lucide-react";
 import { Header } from "@/components/adm/Header";
 import { CrudStats } from "@/components/adm/CrudStats";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import {
   DndContext,
@@ -329,6 +330,7 @@ export default function WorkOrdersPage() {
   const [viewMode, setViewMode] = useState<"kanban" | "list">("kanban");
   const [paymentFilter, setPaymentFilter] = useState<"all" | "pending">("all");
   const [technicianFilter, setTechnicianFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [technicians, setTechnicians] = useState<Array<{ id: string; name: string }>>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
 
@@ -387,9 +389,17 @@ export default function WorkOrdersPage() {
     return workOrders.filter((wo) => {
       const matchesPayment = paymentFilter === "all" || !wo.isFullyPaid;
       const matchesTechnician = technicianFilter === "all" || wo.technicianId === technicianFilter;
-      return matchesPayment && matchesTechnician;
+
+      const searchLower = searchQuery.toLowerCase();
+      const matchesSearch = !searchQuery ||
+        wo.vehicle.identifier.toLowerCase().includes(searchLower) ||
+        wo.customer.name.toLowerCase().includes(searchLower) ||
+        wo.vehicle.make?.name?.toLowerCase().includes(searchLower) ||
+        wo.vehicle.model?.name?.toLowerCase().includes(searchLower);
+
+      return matchesPayment && matchesTechnician && matchesSearch;
     });
-  }, [workOrders, paymentFilter, technicianFilter]);
+  }, [workOrders, paymentFilter, technicianFilter, searchQuery]);
 
   const workOrdersByStatus = useMemo(() => STATUSES.map((status) => ({
     ...status,
@@ -553,29 +563,46 @@ export default function WorkOrdersPage() {
           icon: Plus,
         }}
       >
-        <div className="flex items-center gap-2 mt-2">
-          <Button
-            variant={viewMode === "kanban" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setViewMode("kanban")}
-          >
-            <LayoutGrid className="h-4 w-4 mr-2 pointer-events-none" aria-hidden="true" />
-            Kanban
-          </Button>
-          <Button
-            variant={viewMode === "list" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setViewMode("list")}
-          >
-            <List className="h-4 w-4 mr-2 pointer-events-none" aria-hidden="true" />
-            Lista
-          </Button>
-          <div className="w-px h-6 bg-border mx-1" />
+        <div className="flex flex-wrap items-center gap-2 mt-2">
+          <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-lg border">
+            <Button
+              variant={viewMode === "kanban" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("kanban")}
+              className="h-8 px-3"
+            >
+              <LayoutGrid className="h-4 w-4 mr-2 pointer-events-none" aria-hidden="true" />
+              Kanban
+            </Button>
+            <Button
+              variant={viewMode === "list" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("list")}
+              className="h-8 px-3"
+            >
+              <List className="h-4 w-4 mr-2 pointer-events-none" aria-hidden="true" />
+              Lista
+            </Button>
+          </div>
+
+          <div className="w-px h-6 bg-border mx-1 hidden sm:block" />
+
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+            <Input
+              placeholder="Buscar por patente, cliente..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="h-8 w-[200px] pl-9 text-xs"
+            />
+          </div>
+
           <Button
             variant={paymentFilter === "pending" ? "outline" : "outline"}
             size="sm"
             onClick={() => setPaymentFilter(paymentFilter === "pending" ? "all" : "pending")}
             className={cn(
+              "h-8 text-xs",
               paymentFilter === "pending"
                 ? "text-amber-700 border-amber-200 bg-amber-50 hover:bg-amber-100 hover:text-amber-800"
                 : ""
@@ -583,21 +610,19 @@ export default function WorkOrdersPage() {
           >
             Pendientes de Pago
             {paymentFilter === "pending" && (
-              <span className="ml-2 text-xs bg-white/20 px-1.5 py-0.5 rounded font-mono">
+              <span className="ml-2 text-[10px] bg-amber-700/10 px-1.5 py-0.5 rounded font-mono">
                 {filteredWorkOrders.length}
               </span>
             )}
           </Button>
 
-          <div className="w-px h-6 bg-border mx-1" />
-
-          <div className="flex items-center gap-2">
-            <UserCog className="h-4 w-4 text-muted-foreground" />
+          <div className="relative">
+            <UserCog className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
             <Select
               value={technicianFilter}
               onValueChange={setTechnicianFilter}
             >
-              <SelectTrigger className="h-8 w-[150px] text-xs">
+              <SelectTrigger className="h-8 w-[150px] pl-9 text-xs">
                 <SelectValue placeholder="Técnico" />
               </SelectTrigger>
               <SelectContent>
@@ -610,6 +635,22 @@ export default function WorkOrdersPage() {
               </SelectContent>
             </Select>
           </div>
+
+          {(searchQuery || paymentFilter !== "all" || technicianFilter !== "all") && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSearchQuery("");
+                setPaymentFilter("all");
+                setTechnicianFilter("all");
+              }}
+              className="h-8 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-3.5 w-3.5 mr-1.5" />
+              Limpiar filtros
+            </Button>
+          )}
         </div>
       </Header>
 
