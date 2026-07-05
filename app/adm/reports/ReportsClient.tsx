@@ -80,9 +80,9 @@ export default function ReportsClient() {
     {
       title: "Stock & Inventario",
       description: "Valorización de stock, rotación de productos y alertas de reposición.",
-      href: "#",
+      href: "/adm/reports/stock",
       icon: Package,
-      isAvailable: false
+      isAvailable: true
     },
     {
       title: "Taller & Operación",

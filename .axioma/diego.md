@@ -9,7 +9,13 @@
 - [ ] Implementación de reporte de Finanzas (cash flow avanzado)
 
 ## ✅ DONE
-- [ ] _Sin actividad registrada aún_
+- [x] 2025-07-05 — Implementación de reporte de Stock (valorización, alertas de reposición y distribución por categoría) (PR #diego/reports/stock-report)
 
 ## 🧠 LEARNINGS
-_Sin learnings registrados._
+## 2025-07-05 - Reporte de Stock y Valorización
+**Learning:** El componente `MetricCard` utiliza la propiedad `subtitle` en lugar de `description` para el texto secundario. Es importante verificar las interfaces de componentes compartidos antes de usarlos para evitar errores de tipo en el build.
+**Action:** Consultar siempre la definición del componente en `components/dashboard/MetricCard.tsx`.
+
+## 2025-07-05 - Performance en Reportes
+**Learning:** El cálculo de valorización de inventario puede ser pesado si el catálogo es extenso. La implementación de caching en el API Route (`revalidate` y `Cache-Control`) es fundamental para mantener la respuesta rápida del sistema.
+**Action:** Mantener el patrón de caching en futuros reportes (Ventas, Taller, etc).
