@@ -1,8 +1,6 @@
 import Link from 'next/link';
 import { MapPin, Phone, Mail, Camera, MessageCircle } from 'lucide-react';
-
-const WHATSAPP_URL = "https://wa.me/543813199647?text=Hola%20RPM%20Accesorios!%20Me%20gustaría%20agendar%20un%20turno%20para%20mi%20vehículo.";
-const INSTAGRAM_URL = "https://instagram.com/rpm.accesorios";
+import { PUBLIC_SITE_CONFIG, DEFAULT_WHATSAPP_MESSAGE } from '@/lib/config/public-site';
 
 export function PublicFooter() {
   return (
@@ -15,14 +13,13 @@ export function PublicFooter() {
               RPM<span className="text-[#FF4B00]">ACCESORIOS</span>
             </Link>
             <p className="text-sm leading-relaxed">
-              Especialistas en equipamiento y accesorios para vehículos. 
-              Más de 15 años brindando soluciones de alta calidad en San Miguel de Tucumán.
+              {PUBLIC_SITE_CONFIG.description}
             </p>
             <div className="flex space-x-4">
-              <a href={INSTAGRAM_URL} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors" title="Instagram">
+              <a href={PUBLIC_SITE_CONFIG.instagramUrl} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors" title="Instagram">
                 <Camera className="h-5 w-5" />
               </a>
-              <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors" title="WhatsApp">
+              <a href={PUBLIC_SITE_CONFIG.links.whatsapp(DEFAULT_WHATSAPP_MESSAGE)} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors" title="WhatsApp">
                 <MessageCircle className="h-5 w-5" />
               </a>
             </div>
@@ -45,17 +42,17 @@ export function PublicFooter() {
             <ul className="space-y-4 text-sm">
               <li className="flex items-start space-x-3">
                 <MapPin className="h-5 w-5 text-[#FF4B00] shrink-0" />
-                <span>San Lorenzo 1462, San Miguel de Tucumán</span>
+                <span>{PUBLIC_SITE_CONFIG.address}</span>
               </li>
               <li className="flex items-center space-x-3">
-                <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="flex items-center space-x-3 hover:text-white transition-colors">
+                <a href={PUBLIC_SITE_CONFIG.links.whatsapp(DEFAULT_WHATSAPP_MESSAGE)} target="_blank" rel="noopener noreferrer" className="flex items-center space-x-3 hover:text-white transition-colors">
                   <Phone className="h-5 w-5 text-[#FF4B00] shrink-0" />
-                  <span>+54 381 319-9647</span>
+                  <span>{PUBLIC_SITE_CONFIG.phone}</span>
                 </a>
               </li>
               <li className="flex items-center space-x-3">
                 <Mail className="h-5 w-5 text-[#FF4B00] shrink-0" />
-                <span>contacto@rpmaccesorios.com.ar</span>
+                <span>{PUBLIC_SITE_CONFIG.email}</span>
               </li>
             </ul>
           </div>
@@ -66,11 +63,11 @@ export function PublicFooter() {
             <ul className="space-y-2 text-sm">
               <li className="flex justify-between">
                 <span>Lunes a Viernes</span>
-                <span className="text-white">09:00 - 19:00</span>
+                <span className="text-white">{PUBLIC_SITE_CONFIG.hours.weekdays}</span>
               </li>
               <li className="flex justify-between">
                 <span>Sábados</span>
-                <span className="text-white">09:00 - 13:00</span>
+                <span className="text-white">{PUBLIC_SITE_CONFIG.hours.saturdays}</span>
               </li>
               <li className="pt-4 text-xs italic text-gray-500">
                 Atención personalizada con turno previo.

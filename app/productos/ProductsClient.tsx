@@ -3,6 +3,7 @@
 import { PublicLayout } from '@/components/public/layout/PublicLayout';
 import { Button } from '@/components/ui/button';
 import { Search, ArrowRight } from 'lucide-react';
+import { PUBLIC_SITE_CONFIG } from '@/lib/config/public-site';
 
 const featuredProducts = [
   { id: '1', name: 'Barra LED Ultra-Beam 42"', category: 'Iluminación', price: 125000, image: 'B' },
@@ -55,7 +56,10 @@ export default function ProductsClient() {
                   </div>
                   <div className="flex items-center justify-between opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500">
                     <span className="text-white font-bold">${product.price.toLocaleString()}</span>
-                    <button className="flex items-center text-xs font-bold text-brand hover:text-white transition-colors">
+                    <button
+                      onClick={() => window.open(PUBLIC_SITE_CONFIG.links.whatsapp(`Hola! Me gustaría recibir más información sobre el producto: ${product.name}`), '_blank')}
+                      className="flex items-center text-xs font-bold text-brand hover:text-white transition-colors"
+                    >
                       DETALLES <ArrowRight className="ml-2 h-3 w-3" />
                     </button>
                   </div>

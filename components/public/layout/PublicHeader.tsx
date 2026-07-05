@@ -5,8 +5,7 @@ import { useState, useEffect } from 'react';
 import { Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-
-const WHATSAPP_URL = "https://wa.me/543813199647?text=Hola%20RPM%20Accesorios!%20Me%20gustaría%20agendar%20un%20turno%20para%20mi%20vehículo.";
+import { PUBLIC_SITE_CONFIG, DEFAULT_WHATSAPP_MESSAGE } from '@/lib/config/public-site';
 
 const navItems = [
   { name: 'Productos', href: '/productos' },
@@ -59,7 +58,7 @@ export function PublicHeader() {
             <Link href="/login" className="text-[13px] font-medium text-gray-400 hover:text-white transition-all duration-300 uppercase tracking-widest">
               Ingresar
             </Link>
-            <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
+            <a href={PUBLIC_SITE_CONFIG.links.whatsapp(DEFAULT_WHATSAPP_MESSAGE)} target="_blank" rel="noopener noreferrer">
               <Button variant="ghost" className="text-[13px] font-bold text-white hover:text-brand transition-colors uppercase tracking-widest">
                 WhatsApp
               </Button>
@@ -104,7 +103,7 @@ export function PublicHeader() {
         >
           Ingresar
         </Link>
-        <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" onClick={() => setIsOpen(false)}>
+        <a href={PUBLIC_SITE_CONFIG.links.whatsapp(DEFAULT_WHATSAPP_MESSAGE)} target="_blank" rel="noopener noreferrer" onClick={() => setIsOpen(false)}>
           <Button className="bg-brand text-white text-lg font-bold rounded-full px-12 py-6">
             Contactar ahora
           </Button>
