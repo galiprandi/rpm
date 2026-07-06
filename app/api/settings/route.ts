@@ -109,7 +109,7 @@ export const PUT = withAdmin(async (request: NextRequest, _session) => {
       afipCuit: afipCuit ?? '',
       afipPuntoVenta: afipPuntoVenta ?? '1',
       afipResponsable: afipResponsable ?? 'RI',
-      afipProduction: afipProduction === 'true',
+      afipProduction: !!afipProduction,
       afipCertPath: afipCertPath ?? '',
     });
   } catch (error) {

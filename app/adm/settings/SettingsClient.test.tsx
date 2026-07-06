@@ -43,6 +43,7 @@ vi.mock('lucide-react', () => ({
   ShieldCheck: () => <div data-testid="icon-shieldcheck" />,
   Globe: () => <div data-testid="icon-globe" />,
   FileKey: () => <div data-testid="icon-filekey" />,
+  Hash: () => <div data-testid="icon-hash" />,
 }));
 
 // Mock Switch and Select
