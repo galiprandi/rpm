@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { validatePlate, getPlateFormatHint } from "@/lib/utils/plate-validation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -80,6 +81,8 @@ export function VehicleForm({
     notes: initialData?.notes || "",
   });
 
+  const [plateError, setPlateError] = useState<string | null>(null);
+
   const isVehicle = [
     "CAR",
     "TRUCK",
@@ -91,10 +94,25 @@ export function VehicleForm({
 
   const handleChange = (field: keyof VehicleFormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+    if (field === "identifier") {
+      setPlateError(null);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (isVehicle) {
+      const isValid = validatePlate(formData.identifier);
+      if (!isValid) {
+        setPlateError(
+          `Formato de patente inválido para Argentina. ${getPlateFormatHint(formData.category)}`
+        );
+        return;
+      }
+    }
+
+    setPlateError(null);
     onSubmit(formData);
   };
 
@@ -151,10 +169,17 @@ export function VehicleForm({
             }
             placeholder={isVehicle ? "Ej: AB123CD" : "Ej: SN123456"}
             required
-            className="pl-9 font-mono uppercase tracking-wider"
+            className={`pl-9 font-mono uppercase tracking-wider ${
+              plateError ? "border-destructive focus-visible:ring-destructive" : ""
+            }`}
             aria-required="true"
           />
         </div>
+        {plateError && (
+          <p className="text-[0.8rem] font-medium text-destructive animate-in fade-in slide-in-from-top-1 duration-200">
+            {plateError}
+          </p>
+        )}
       </div>
 
       {/* Campos para vehículos */}
