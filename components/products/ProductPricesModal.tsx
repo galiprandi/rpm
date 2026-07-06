@@ -15,6 +15,11 @@ import { AlertTriangle, Pencil, Calculator } from 'lucide-react';
 import { calculateMarginPercentage, applyRounding, type RoundingRule } from '@/lib/utils/rounding';
 import { DataTable } from '@/components/ui/data-table';
 import { ColumnDef } from '@tanstack/react-table';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import type { PriceList } from '@/lib/services';
 import { formatPrice } from '@/components/ui/price-display';
 import { Button } from '@/components/ui/button';
@@ -307,7 +312,7 @@ export function ProductPricesModal({ isOpen, onClose, product }: ProductPricesMo
       cell: ({ row }) => {
         const isLow = row.original.isBelowMinimum;
         return (
-          <span className={isLow ? 'text-red-600 font-bold' : 'text-muted-foreground'}>
+          <span className={isLow ? 'text-red-700 font-bold' : 'text-muted-foreground'}>
             {row.original.actualMargin.toFixed(1)}%
           </span>
         );
@@ -317,20 +322,27 @@ export function ProductPricesModal({ isOpen, onClose, product }: ProductPricesMo
       id: 'actions',
       header: '',
       cell: ({ row }) => (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8"
-          onClick={() => handleEditMargin(
-            row.original.priceListId,
-            row.original.priceListName,
-            row.original.roundingRule as RoundingRule,
-            row.original.baseMargin
-          )}
-          title="Editar margen específico para este producto"
-        >
-          <Pencil className="h-4 w-4" />
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() =>
+                handleEditMargin(
+                  row.original.priceListId,
+                  row.original.priceListName,
+                  row.original.roundingRule as RoundingRule,
+                  row.original.baseMargin
+                )
+              }
+              aria-label={`Editar margen para ${row.original.priceListName}`}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Editar margen específico</TooltipContent>
+        </Tooltip>
       ),
     },
   ];

@@ -26,7 +26,7 @@ export function StockDisplay({ stock, minStock }: StockDisplayProps) {
       <Tooltip>
         <TooltipTrigger asChild>
           <span
-            className="text-orange-600 font-medium cursor-help outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
+            className="text-orange-700 font-medium cursor-help outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
             aria-label={`Stock bajo: ${stock}. El nivel mínimo es ${minStock}`}
             tabIndex={0}
           >
