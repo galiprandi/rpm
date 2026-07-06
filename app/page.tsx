@@ -1,6 +1,7 @@
 import { PublicLayout } from '@/components/public/layout/PublicLayout';
 import { Hero } from '@/components/public/sections/Hero';
 import { Services } from '@/components/public/sections/Services';
+import { Testimonials } from '@/components/public/sections/Testimonials';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Camera } from 'lucide-react';
 import { PUBLIC_SITE_CONFIG, DEFAULT_WHATSAPP_MESSAGE } from '@/lib/config/public-site';
@@ -18,6 +19,8 @@ export default function HomePage() {
       <Hero />
       
       <Services />
+
+      <Testimonials />
 
       {/* Narrative Section */}
       <section className="py-40 bg-zinc-950 overflow-hidden">
