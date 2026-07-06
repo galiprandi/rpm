@@ -39,16 +39,61 @@ vi.mock('lucide-react', () => ({
   TrendingUp: () => <div data-testid="icon-trendingup" />,
   CreditCard: () => <div data-testid="icon-creditcard" />,
   ChevronRight: () => <div data-testid="icon-chevronright" />,
+  Building2: () => <div data-testid="icon-building2" />,
+  ShieldCheck: () => <div data-testid="icon-shieldcheck" />,
+  Globe: () => <div data-testid="icon-globe" />,
+  FileKey: () => <div data-testid="icon-filekey" />,
+  Hash: () => <div data-testid="icon-hash" />,
+}));
+
+// Mock Switch and Select
+vi.mock('@/components/ui/switch', () => ({
+  Switch: () => <div data-testid="switch" />,
+}));
+
+vi.mock('@/components/ui/select', () => ({
+  Select: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  SelectContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  SelectItem: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  SelectTrigger: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  SelectValue: () => <div data-testid="select-value" />,
 }));
 
 describe('SettingsClient', () => {
+  const initialAfipSettings = {
+    cuit: '30123456789',
+    puntoVenta: '1',
+    responsable: 'RI',
+    production: false,
+    certPath: '/certs/afip.p12',
+  };
+
+  it('renders AFIP settings section', () => {
+    render(
+      <SettingsClient
+        initialMinimumMargin={10}
+        initialAfipSettings={initialAfipSettings}
+      />
+    );
+
+    expect(screen.getByText(/Configuración Fiscal \(AFIP\)/i)).toBeInTheDocument();
+    expect(screen.getByDisplayValue('30123456789')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('1')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('/certs/afip.p12')).toBeInTheDocument();
+  });
+
   it('renders the minimum margin input with TrendingUp icon and proper classes', () => {
-    render(<SettingsClient initialMinimumMargin={10} />);
+    render(
+      <SettingsClient
+        initialMinimumMargin={10}
+        initialAfipSettings={initialAfipSettings}
+      />
+    );
 
     // Check for title
     expect(screen.getByText(/Margen Mínimo Global/i)).toBeInTheDocument();
 
-    // Check for TrendingUp icon (it was added by me)
+    // Check for TrendingUp icon
     expect(screen.getByTestId('icon-trendingup')).toBeInTheDocument();
 
     // Check for input and its classes

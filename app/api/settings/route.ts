@@ -5,21 +5,45 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { withAdmin } from '@/lib/api-middleware';
-import { getMinimumMargin, setSetting } from '@/lib/services';
+import { getMinimumMargin, setSetting, getSetting } from '@/lib/services';
 import { z } from 'zod';
 
 const updateSettingsSchema = z.object({
-  minimumMarginPercentage: z.number().min(0).max(100),
+  minimumMarginPercentage: z.number().min(0).max(100).optional(),
+  afipCuit: z.string().optional(),
+  afipPuntoVenta: z.string().optional(),
+  afipResponsable: z.string().optional(),
+  afipProduction: z.boolean().optional(),
+  afipCertPath: z.string().optional(),
 });
 
 // GET /api/settings - Get global settings (requiere ADMIN)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const GET = withAdmin(async (request: NextRequest, _session) => {
   try {
-    const minimumMarginPercentage = await getMinimumMargin();
+    const [
+      minimumMarginPercentage,
+      afipCuit,
+      afipPuntoVenta,
+      afipResponsable,
+      afipProduction,
+      afipCertPath,
+    ] = await Promise.all([
+      getMinimumMargin(),
+      getSetting('AFIP_CUIT'),
+      getSetting('AFIP_PUNTO_VENTA'),
+      getSetting('AFIP_RESPONSABLE'),
+      getSetting('AFIP_PRODUCTION'),
+      getSetting('AFIP_CERT_PATH'),
+    ]);
 
     return NextResponse.json({
       minimumMarginPercentage,
+      afipCuit,
+      afipPuntoVenta,
+      afipResponsable,
+      afipProduction: afipProduction === 'true',
+      afipCertPath,
     });
   } catch (error) {
     console.error('Error fetching settings:', error);
@@ -44,12 +68,49 @@ export const PUT = withAdmin(async (request: NextRequest, _session) => {
       );
     }
 
-    const { minimumMarginPercentage } = result.data;
+    const {
+      minimumMarginPercentage,
+      afipCuit,
+      afipPuntoVenta,
+      afipResponsable,
+      afipProduction,
+      afipCertPath,
+    } = result.data;
 
-    await setSetting('MINIMUM_MARGIN_PERCENTAGE', minimumMarginPercentage.toString());
+    if (minimumMarginPercentage !== undefined) {
+      await setSetting(
+        'MINIMUM_MARGIN_PERCENTAGE',
+        minimumMarginPercentage.toString()
+      );
+    }
+
+    if (afipCuit !== undefined) {
+      await setSetting('AFIP_CUIT', afipCuit);
+    }
+
+    if (afipPuntoVenta !== undefined) {
+      await setSetting('AFIP_PUNTO_VENTA', afipPuntoVenta);
+    }
+
+    if (afipResponsable !== undefined) {
+      await setSetting('AFIP_RESPONSABLE', afipResponsable);
+    }
+
+    if (afipProduction !== undefined) {
+      await setSetting('AFIP_PRODUCTION', afipProduction.toString());
+    }
+
+    if (afipCertPath !== undefined) {
+      await setSetting('AFIP_CERT_PATH', afipCertPath);
+    }
 
     return NextResponse.json({
       minimumMarginPercentage,
+      afipCuit: afipCuit ?? '',
+      afipPuntoVenta: afipPuntoVenta ?? '1',
+      afipResponsable: afipResponsable ?? 'RI',
+      afipProduction: !!afipProduction,
+      afipCertPath: afipCertPath ?? '',
     });
   } catch (error) {
     console.error('Error updating settings:', error);

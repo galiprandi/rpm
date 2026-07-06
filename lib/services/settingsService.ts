@@ -14,10 +14,21 @@ export interface Setting {
   updatedAt: Date;
 }
 
-export type SettingKey = 'MINIMUM_MARGIN_PERCENTAGE';
+export type SettingKey =
+  | 'MINIMUM_MARGIN_PERCENTAGE'
+  | 'AFIP_CUIT'
+  | 'AFIP_PUNTO_VENTA'
+  | 'AFIP_RESPONSABLE'
+  | 'AFIP_PRODUCTION'
+  | 'AFIP_CERT_PATH';
 
 const DEFAULT_SETTINGS: Record<SettingKey, string> = {
   MINIMUM_MARGIN_PERCENTAGE: '15.0',
+  AFIP_CUIT: '',
+  AFIP_PUNTO_VENTA: '1',
+  AFIP_RESPONSABLE: 'RI',
+  AFIP_PRODUCTION: 'false',
+  AFIP_CERT_PATH: '',
 };
 
 /**

@@ -9,15 +9,48 @@ import { ThemeSelector } from '@/components/ui/ThemeSelector';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { SettingItem } from '@/components/settings/SettingItem';
-import { CreditCard, ChevronRight, Palette, Percent, TrendingUp } from 'lucide-react';
+import {
+  CreditCard,
+  ChevronRight,
+  Palette,
+  Percent,
+  TrendingUp,
+  Building2,
+  ShieldCheck,
+  Globe,
+  FileKey,
+  Hash,
+} from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface SettingsClientProps {
   initialMinimumMargin: number;
+  initialAfipSettings: {
+    cuit: string;
+    puntoVenta: string;
+    responsable: string;
+    production: boolean;
+    certPath: string;
+  };
 }
 
-export default function SettingsClient({ initialMinimumMargin }: SettingsClientProps) {
-  const [minimumMargin, setMinimumMargin] = useState<string>(initialMinimumMargin.toString());
+export default function SettingsClient({
+  initialMinimumMargin,
+  initialAfipSettings,
+}: SettingsClientProps) {
+  const [minimumMargin, setMinimumMargin] = useState<string>(
+    initialMinimumMargin.toString()
+  );
+  const [afipSettings, setAfipSettings] = useState(initialAfipSettings);
   const [saving, setSaving] = useState(false);
+  const [savingAfip, setSavingAfip] = useState(false);
 
   const handleSave = async () => {
     setSaving(true);
@@ -43,6 +76,33 @@ export default function SettingsClient({ initialMinimumMargin }: SettingsClientP
       toast.error('No se pudo guardar la configuración');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleSaveAfip = async () => {
+    setSavingAfip(true);
+    try {
+      const response = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          afipCuit: afipSettings.cuit,
+          afipPuntoVenta: afipSettings.puntoVenta,
+          afipResponsable: afipSettings.responsable,
+          afipProduction: afipSettings.production,
+          afipCertPath: afipSettings.certPath,
+        }),
+      });
+
+      if (response.ok) {
+        toast.success('Configuración fiscal actualizada');
+      } else {
+        throw new Error('Error al guardar');
+      }
+    } catch {
+      toast.error('No se pudo guardar la configuración fiscal');
+    } finally {
+      setSavingAfip(false);
     }
   };
 
@@ -123,6 +183,135 @@ export default function SettingsClient({ initialMinimumMargin }: SettingsClientP
                   </Button>
                 </div>
               </SettingItem>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Configuración Fiscal */}
+        <Card className="overflow-hidden border-muted/60 shadow-sm">
+          <CardHeader className="pb-4 bg-muted/20">
+            <CardTitle className="text-lg">Configuración Fiscal (AFIP)</CardTitle>
+            <CardDescription>
+              Datos del emisor y credenciales para facturación electrónica.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="px-6 space-y-2">
+              <SettingItem
+                title="CUIT del Emisor"
+                description="Número de CUIT sin guiones (11 dígitos)"
+                icon={Building2}
+                htmlFor="afip-cuit"
+              >
+                <div className="relative">
+                  <Input
+                    id="afip-cuit"
+                    type="text"
+                    maxLength={11}
+                    value={afipSettings.cuit}
+                    onChange={(e) =>
+                      setAfipSettings({ ...afipSettings, cuit: e.target.value })
+                    }
+                    className="w-48 h-9 text-sm pl-9 font-mono"
+                    placeholder="30123456789"
+                  />
+                </div>
+              </SettingItem>
+
+              <SettingItem
+                title="Punto de Venta"
+                description="Número de punto de venta habilitado en AFIP"
+                icon={Hash}
+                htmlFor="afip-pv"
+              >
+                <div className="relative">
+                  <Input
+                    id="afip-pv"
+                    type="text"
+                    value={afipSettings.puntoVenta}
+                    onChange={(e) =>
+                      setAfipSettings({
+                        ...afipSettings,
+                        puntoVenta: e.target.value,
+                      })
+                    }
+                    className="w-32 h-9 text-sm pl-9 font-mono"
+                    placeholder="1"
+                  />
+                </div>
+              </SettingItem>
+
+              <SettingItem
+                title="Tipo de Responsable"
+                description="Categoría impositiva ante AFIP"
+                icon={ShieldCheck}
+                htmlFor="afip-responsable"
+              >
+                <Select
+                  value={afipSettings.responsable}
+                  onValueChange={(val) =>
+                    setAfipSettings({ ...afipSettings, responsable: val })
+                  }
+                >
+                  <SelectTrigger id="afip-responsable" className="w-48 h-9 text-sm relative">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="RI">Responsable Inscripto</SelectItem>
+                    <SelectItem value="MONOTRIBUTO">Monotributista</SelectItem>
+                    <SelectItem value="EXENTO">Exento</SelectItem>
+                  </SelectContent>
+                </Select>
+              </SettingItem>
+
+              <SettingItem
+                title="Modo Producción"
+                description="Activar para emitir comprobantes reales (requiere certificados reales)"
+                icon={Globe}
+                htmlFor="afip-production"
+              >
+                <Switch
+                  id="afip-production"
+                  checked={afipSettings.production}
+                  onCheckedChange={(checked) =>
+                    setAfipSettings({ ...afipSettings, production: checked })
+                  }
+                />
+              </SettingItem>
+
+              <SettingItem
+                title="Ruta del Certificado"
+                description="Ruta local al archivo .p12 del certificado"
+                icon={FileKey}
+                htmlFor="afip-cert"
+              >
+                <div className="relative">
+                  <Input
+                    id="afip-cert"
+                    type="text"
+                    value={afipSettings.certPath}
+                    onChange={(e) =>
+                      setAfipSettings({
+                        ...afipSettings,
+                        certPath: e.target.value,
+                      })
+                    }
+                    className="w-80 h-9 text-sm pl-9 font-mono"
+                    placeholder="/path/to/cert.p12"
+                  />
+                </div>
+              </SettingItem>
+
+              <div className="flex justify-end py-4">
+                <Button
+                  size="sm"
+                  onClick={handleSaveAfip}
+                  loading={savingAfip}
+                  aria-label="Guardar configuración fiscal"
+                >
+                  Guardar Configuración Fiscal
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
