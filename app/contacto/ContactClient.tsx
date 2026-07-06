@@ -113,6 +113,34 @@ export default function ContactClient() {
             </div>
           </div>
         </div>
+
+        {/* Interactive Map Section */}
+        <div className="container mx-auto px-6 mt-32">
+          <div className="relative w-full h-[500px] rounded-[40px] overflow-hidden border border-white/5 animate-fade-up opacity-0" style={{ animationDelay: '0.8s' }}>
+            <iframe
+              src={`https://maps.google.com/maps?q=${encodeURIComponent(PUBLIC_SITE_CONFIG.address)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+              width="100%"
+              height="100%"
+              style={{
+                border: 0,
+                filter: 'grayscale(1) invert(0.9) contrast(1.2) opacity(0.8)'
+              }}
+              allowFullScreen
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              title="Ubicación RPM Accesorios"
+            ></iframe>
+
+            {/* Overlay for interaction hint */}
+            <div className="absolute top-8 left-8 bg-zinc-900/80 backdrop-blur-md border border-white/10 p-6 rounded-2xl max-w-xs pointer-events-none">
+              <h4 className="text-white font-bold mb-2">Visitanos</h4>
+              <p className="text-zinc-400 text-sm leading-relaxed">
+                {PUBLIC_SITE_CONFIG.address} <br />
+                San Miguel de Tucumán
+              </p>
+            </div>
+          </div>
+        </div>
       </section>
     </PublicLayout>
   );

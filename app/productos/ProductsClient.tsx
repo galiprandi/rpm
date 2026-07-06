@@ -1,48 +1,95 @@
 'use client';
 
+import { useState } from 'react';
 import { PublicLayout } from '@/components/public/layout/PublicLayout';
 import { Button } from '@/components/ui/button';
-import { Search, ArrowRight } from 'lucide-react';
+import { Search, ArrowRight, X } from 'lucide-react';
 import { PUBLIC_SITE_CONFIG } from '@/lib/config/public-site';
+import { cn } from '@/lib/utils';
+
+const categories = ['Todos', 'Iluminación', 'Estética', 'Equipamiento', 'Seguridad', 'Interior'];
 
 const featuredProducts = [
   { id: '1', name: 'Barra LED Ultra-Beam 42"', category: 'Iluminación', price: 125000, image: 'B' },
   { id: '2', name: 'Protección PPF Pro-Shield', category: 'Estética', price: 85000, image: 'P' },
   { id: '3', name: 'Kit Suspensión Off-Road', category: 'Equipamiento', price: 450000, image: 'S' },
   { id: '4', name: 'Lámina Seguridad 3M CS20', category: 'Seguridad', price: 45000, image: 'L' },
+  { id: '5', name: 'Ópticas Full LED Black', category: 'Iluminación', price: 195000, image: 'O' },
+  { id: '6', name: 'Tratamiento Cerámico 9H', category: 'Estética', price: 65000, image: 'T' },
+  { id: '7', name: 'Malacate Winch 12000lb', category: 'Equipamiento', price: 320000, image: 'M' },
+  { id: '8', name: 'Alfombras Thermo-Fit', category: 'Interior', price: 55000, image: 'A' },
 ];
 
 export default function ProductsClient() {
+  const [selectedCategory, setSelectedCategory] = useState('Todos');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredProducts = featuredProducts.filter(product => {
+    const matchesCategory = selectedCategory === 'Todos' || product.category === selectedCategory;
+    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         product.category.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
+
   return (
     <PublicLayout>
       <section className="pt-40 pb-24 bg-black min-h-screen">
         <div className="container mx-auto px-6">
-          <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-8">
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end mb-16 gap-12">
             <div className="max-w-2xl space-y-4">
               <h1 className="text-brand font-bold tracking-widest uppercase text-xs animate-fade-up opacity-0" style={{ animationDelay: '0.1s' }}>Catálogo Curado</h1>
               <h2 className="text-6xl md:text-8xl font-bold text-white tracking-tighter leading-none animate-fade-up opacity-0" style={{ animationDelay: '0.2s' }}>
                 EQUIPAMIENTO <br /> SUPERIOR.
               </h2>
             </div>
-            <div className="flex gap-4 animate-fade-up opacity-0" style={{ animationDelay: '0.3s' }}>
+
+            <div className="w-full lg:w-auto space-y-8 animate-fade-up opacity-0" style={{ animationDelay: '0.3s' }}>
               <div className="relative group">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500 group-focus-within:text-brand transition-colors" />
                 <input
                   type="text"
                   placeholder="Buscar producto..."
-                  className="h-12 w-64 bg-zinc-900 border border-white/5 rounded-full pl-12 pr-6 text-sm text-white focus:outline-none focus:border-brand/50 transition-all"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="h-14 w-full lg:w-80 bg-zinc-900 border border-white/5 rounded-2xl pl-12 pr-12 text-sm text-white focus:outline-none focus:border-brand/50 transition-all"
                 />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 flex items-center justify-center rounded-full bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {categories.map((category) => (
+                  <button
+                    key={category}
+                    onClick={() => setSelectedCategory(category)}
+                    className={cn(
+                      "px-6 h-10 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-300 border",
+                      selectedCategory === category
+                        ? "bg-brand border-brand text-white shadow-[0_0_20px_rgba(255,75,0,0.3)]"
+                        : "bg-zinc-900 border-white/5 text-zinc-500 hover:text-white hover:border-white/20"
+                    )}
+                  >
+                    {category}
+                  </button>
+                ))}
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {featuredProducts.map((product, index) => (
-              <div
-                key={product.id}
-                className="group relative aspect-[3/4] bg-zinc-900 overflow-hidden rounded-3xl border border-white/5 hover:border-brand/20 transition-all duration-700 animate-fade-up opacity-0"
-                style={{ animationDelay: `${0.4 + (index * 0.1)}s` }}
-              >
+          {filteredProducts.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {filteredProducts.map((product, index) => (
+                <div
+                  key={product.id}
+                  className="group relative aspect-[3/4] bg-zinc-900 overflow-hidden rounded-3xl border border-white/5 hover:border-brand/20 transition-all duration-700 animate-fade-up"
+                  style={{ animationDelay: `${0.1 * (index % 4)}s` }}
+                >
                 <div className="absolute inset-0 flex items-center justify-center text-[180px] font-black text-white/5 select-none transition-transform duration-700 group-hover:scale-110">
                   {product.image}
                 </div>
@@ -67,11 +114,32 @@ export default function ProductsClient() {
               </div>
             ))}
           </div>
+          )}
 
-          <div className="mt-24 text-center animate-fade-up opacity-0" style={{ animationDelay: '0.8s' }}>
-            <p className="text-zinc-500 text-sm mb-8">Mostrando 4 de 124 productos de alta gama</p>
-            <Button variant="outline" className="border-white/10 text-white rounded-full px-12 h-14 hover:bg-white hover:text-black transition-all">
-              Cargar más productos
+          {filteredProducts.length === 0 && (
+            <div className="py-40 text-center animate-fade-up">
+              <div className="w-20 h-20 bg-zinc-900 rounded-full flex items-center justify-center mx-auto mb-8 border border-white/5">
+                <Search className="h-8 w-8 text-zinc-700" />
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-2">No se encontraron productos</h3>
+              <p className="text-zinc-500">Probá con otros filtros o términos de búsqueda.</p>
+              <Button
+                variant="link"
+                className="mt-4 text-brand font-bold"
+                onClick={() => { setSelectedCategory('Todos'); setSearchQuery(''); }}
+              >
+                Limpiar filtros
+              </Button>
+            </div>
+          )}
+
+          <div className="mt-24 text-center animate-fade-up opacity-0" style={{ animationDelay: '0.5s' }}>
+            <p className="text-zinc-500 text-sm mb-8">
+              Mostrando {filteredProducts.length} de {featuredProducts.length} productos destacados
+            </p>
+            <Button variant="outline" className="border-white/10 text-white rounded-full px-12 h-14 hover:bg-white hover:text-black transition-all group">
+              Explorar Catálogo Completo
+              <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
             </Button>
           </div>
         </div>
