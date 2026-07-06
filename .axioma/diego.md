@@ -10,6 +10,7 @@
 
 ## ✅ DONE
 - [x] 2025-07-05 — Implementación de reporte de Stock (valorización, alertas de reposición y distribución por categoría) (PR #diego/reports/stock-report)
+- [x] 2025-07-06 — Implementación de reporte de Taller & Operación (performance, estados y tiempos) (PR #diego/reports/workshop-report)
 
 ## 🧠 LEARNINGS
 ## 2025-07-05 - Reporte de Stock y Valorización

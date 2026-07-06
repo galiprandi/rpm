@@ -87,9 +87,9 @@ export default function ReportsClient() {
     {
       title: "Taller & Operación",
       description: "Eficiencia de técnicos, tiempos de resolución y carga de trabajo.",
-      href: "#",
+      href: "/adm/reports/workshop",
       icon: Wrench,
-      isAvailable: false
+      isAvailable: true
     },
     {
       title: "Finanzas & Flujo",
