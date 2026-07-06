@@ -6,6 +6,7 @@
 - [x] 2025-07-03 — Mejora visual del Kanban: icono de demora más intuitivo y totales por columna (PR #jorge/work-orders/kanban-ux-refinement)
 - [x] 2026-07-04 — Gestión de técnicos y Quick Actions en Kanban (PR #jorge/work-orders/technician-and-quick-actions)
 - [x] 2026-07-05 — Implementación de buscador global y refinamiento de barra de filtros (PR #jorge/work-orders/search-and-filter-refinement)
+- [x] 2026-07-06 — Línea de Tiempo unificada con historial de auditoría detallado (PR #jorge/work-orders/unified-audit-timeline)
 
 ## 🧠 LEARNINGS
 ## 2025-07-03 - Visibilidad Financiera en Kanban
@@ -19,3 +20,7 @@
 ## 2026-07-05 - Filtrado Eficiente y UX de Búsqueda
 **Learning:** En módulos con volumen moderado de datos, el filtrado por cliente/vehículo debe ser instantáneo. Seguir el patrón de "Form UX Enhancement" con iconos internos en inputs y botones de "limpiar" reduce significativamente la carga cognitiva del usuario.
 **Action:** Estandarizar la barra de filtros en otros listados administrativos (Clientes, Productos) siguiendo este mismo esquema de segmentado + búsqueda + selects con iconos.
+
+## 2026-07-06 - Auditoría y Trazabilidad en el Taller
+**Learning:** La trazabilidad es crítica en entornos multi-usuario. Mostrar "quién cambió qué" directamente en la línea de tiempo principal (en lugar de una tabla de logs separada) humaniza el historial y facilita la resolución de dudas sobre el proceso de una OT.
+**Action:** Integrar logs de auditoría en las vistas de "Historial" de otros módulos clave (como Ventas o Vehículos) usando el mismo patrón de línea de tiempo unificada.
