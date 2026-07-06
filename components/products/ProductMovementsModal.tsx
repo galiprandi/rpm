@@ -47,9 +47,9 @@ const REASON_LABELS: Record<string, string> = {
 };
 
 const TYPE_CONFIG: Record<string, { label: string; color: string }> = {
-  IN: { label: 'Entrada', color: 'text-emerald-600 border-emerald-200 bg-emerald-50' },
-  OUT: { label: 'Salida', color: 'text-red-600 border-red-200 bg-red-50' },
-  ADJUSTMENT: { label: 'Ajuste', color: 'text-amber-600 border-amber-200 bg-amber-50' },
+  IN: { label: 'Entrada', color: 'text-emerald-700 border-emerald-200 bg-emerald-50' },
+  OUT: { label: 'Salida', color: 'text-red-700 border-red-200 bg-red-50' },
+  ADJUSTMENT: { label: 'Ajuste', color: 'text-amber-700 border-amber-200 bg-amber-50' },
 };
 
 function formatDate(dateString: string): string {
@@ -137,7 +137,7 @@ export function ProductMovementsModal({
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right font-mono">
-                    <span className={movement.quantity > 0 ? 'text-emerald-600' : 'text-red-600'}>
+                    <span className={movement.quantity > 0 ? 'text-emerald-700' : 'text-red-700'}>
                       {movement.quantity > 0 ? '+' : ''}{movement.quantity}
                     </span>
                   </TableCell>

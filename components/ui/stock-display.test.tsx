@@ -9,7 +9,7 @@ describe('StockDisplay', () => {
 
     const element = screen.getByText('10');
     expect(element).toBeInTheDocument();
-    expect(element).not.toHaveClass('text-orange-600');
+    expect(element).not.toHaveClass('text-orange-700');
     expect(element).toHaveAttribute('aria-label', 'Stock: 10');
   });
 
@@ -22,7 +22,7 @@ describe('StockDisplay', () => {
 
     const element = screen.getByText('3');
     expect(element).toBeInTheDocument();
-    expect(element).toHaveClass('text-orange-600');
+    expect(element).toHaveClass('text-orange-700');
     expect(element).toHaveAttribute('aria-label', 'Stock bajo: 3. El nivel mínimo es 5');
   });
 
@@ -35,6 +35,6 @@ describe('StockDisplay', () => {
 
     const element = screen.getByText('5');
     expect(element).toBeInTheDocument();
-    expect(element).toHaveClass('text-orange-600');
+    expect(element).toHaveClass('text-orange-700');
   });
 });
