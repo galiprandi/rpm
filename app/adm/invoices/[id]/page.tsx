@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { Header } from '@/components/adm/Header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +24,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 export default function InvoiceDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const id = params.id as string;
   const [invoice, setInvoice] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -35,6 +36,11 @@ export default function InvoiceDetailPage() {
         if (response.ok) {
           const data = await response.json();
           setInvoice(data);
+
+          // Auto-print if search param is present
+          if (searchParams.get('print') === 'true') {
+            setTimeout(() => window.print(), 1000);
+          }
         } else {
           toast.error('No se pudo encontrar el comprobante');
         }
@@ -47,7 +53,7 @@ export default function InvoiceDetailPage() {
     };
 
     if (id) fetchInvoice();
-  }, [id]);
+  }, [id, searchParams]);
 
   if (loading) {
     return (
@@ -76,100 +82,199 @@ export default function InvoiceDetailPage() {
 
   const isPreInvoice = invoice.type.startsWith('X_') || invoice.type.startsWith('NOTA_CREDITO_X_');
 
+  const handleCancel = async () => {
+    if (!confirm('¿Está seguro de que desea cancelar este comprobante? Esta acción no se puede deshacer.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/invoices/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'CANCELLED' }),
+      });
+
+      if (response.ok) {
+        toast.success('Comprobante cancelado correctamente');
+        router.refresh();
+        // Re-fetch to update UI state
+        const updatedResponse = await fetch(`/api/invoices/${id}`);
+        if (updatedResponse.ok) {
+          setInvoice(await updatedResponse.json());
+        }
+      } else {
+        const error = await response.json();
+        toast.error(error.error || 'Error al cancelar el comprobante');
+      }
+    } catch (error) {
+      console.error('Error cancelling invoice:', error);
+      toast.error('Error de conexión');
+    }
+  };
+
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <Header
-        title={`${invoice.type.replace('_', ' ')} ${invoice.number}`}
-        description="Detalle del comprobante emitido"
-        showBackButton
-        secondaryActions={[
-          {
-            label: 'Imprimir',
-            onClick: () => window.print(),
-            icon: Printer,
-            variant: 'outline',
-          },
-          {
-            label: 'Descargar PDF',
-            onClick: () => toast.info('Generación de PDF en desarrollo'),
-            icon: Download,
-          },
-        ]}
-      />
+    <div className="container mx-auto py-6 space-y-6 print:py-0 print:space-y-0 max-w-5xl">
+      <div className="print:hidden">
+        <Header
+          title={`${invoice.type.replace('_', ' ')} ${invoice.number}`}
+          description="Detalle del comprobante emitido"
+          showBackButton
+          secondaryActions={[
+            {
+              label: 'Imprimir',
+              onClick: () => window.print(),
+              icon: Printer,
+              variant: 'outline',
+            },
+            {
+              label: 'Descargar PDF',
+              onClick: () => window.print(),
+              icon: Download,
+            },
+            ...(invoice.status === 'DRAFT' ? [{
+              label: 'Cancelar',
+              onClick: handleCancel,
+              icon: AlertCircle,
+              variant: 'destructive' as const,
+            }] : []),
+          ]}
+        />
+      </div>
 
       {isPreInvoice && (
-        <div className="bg-orange-50 border border-orange-200 p-4 rounded-lg flex items-center gap-3 text-orange-800">
-          <AlertCircle className="h-5 w-5" />
-          <span className="font-bold uppercase tracking-tight">No válido como comprobante fiscal</span>
+        <div className="bg-orange-50 border border-orange-200 p-4 rounded-lg flex items-center gap-3 text-orange-800 print:bg-white print:border-2 print:border-black print:text-black print:my-4 print:justify-center">
+          <AlertCircle className="h-5 w-5 print:hidden" />
+          <span className="font-bold uppercase tracking-tight text-center">No válido como comprobante fiscal</span>
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-2 space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                Resumen de Venta
+      {/* Professional Invoice Header (Print Only) */}
+      <div className="hidden print:flex justify-between border-b-2 border-black pb-6 mb-6">
+        <div className="space-y-1">
+          <h1 className="text-4xl font-black tracking-tighter">RPM ACCESORIOS</h1>
+          <p className="text-sm">Ruta 22 y 15, Cipolletti, Río Negro</p>
+          <p className="text-sm">Tel: +54 299 123-4567</p>
+          <p className="text-sm">Email: info@rpmaccesorios.com.ar</p>
+        </div>
+        <div className="text-right space-y-1">
+          <div className="inline-block border-2 border-black px-4 py-2 mb-2">
+            <span className="text-4xl font-bold">{invoice.type.split('_').pop()}</span>
+          </div>
+          <h2 className="text-xl font-bold uppercase">{invoice.type.replace('_', ' ')}</h2>
+          <p className="text-lg font-mono font-bold">{invoice.number}</p>
+          <p className="text-sm">Fecha: {format(new Date(invoice.createdAt), 'dd/MM/yyyy', { locale: es })}</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 print:grid-cols-2 print:gap-10">
+        <div className="md:col-span-2 space-y-6 print:col-span-2">
+          {/* Customer & Info Info for Print */}
+          <div className="hidden print:grid grid-cols-2 gap-8 mb-8">
+            <div className="border p-4 rounded-lg">
+              <h3 className="text-xs font-bold uppercase text-muted-foreground mb-2">Cliente</h3>
+              <p className="text-lg font-bold">{invoice.customerName}</p>
+              {invoice.customerDoc && (
+                <p className="text-sm font-mono uppercase">
+                  {invoice.customerDocType}: {invoice.customerDoc}
+                </p>
+              )}
+            </div>
+            <div className="border p-4 rounded-lg">
+              <h3 className="text-xs font-bold uppercase text-muted-foreground mb-2">Detalles</h3>
+              <p className="text-sm">Condición: Responsable Inscripto</p>
+              <p className="text-sm">Referencia: {invoice.referenceType} #{invoice.referenceId.substring(0, 8)}</p>
+            </div>
+          </div>
+
+          <Card className="print:border-0 print:shadow-none">
+            <CardHeader className="print:px-0">
+              <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider print:text-black print:font-bold">
+                Detalle de Conceptos
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
+            <CardContent className="print:px-0">
+              <Table className="print:border">
+                <TableHeader className="print:bg-gray-100">
                   <TableRow>
-                    <TableHead>Concepto</TableHead>
-                    <TableHead className="text-right">Monto</TableHead>
+                    <TableHead className="print:text-black print:font-bold">Descripción</TableHead>
+                    <TableHead className="text-right print:text-black print:font-bold">Cant.</TableHead>
+                    <TableHead className="text-right print:text-black print:font-bold">P. Unit</TableHead>
+                    <TableHead className="text-right print:text-black print:font-bold">Subtotal</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  <TableRow>
-                    <TableCell>Subtotal</TableCell>
-                    <TableCell className="text-right font-mono">{formatARS(invoice.subtotal)}</TableCell>
-                  </TableRow>
-                  {invoice.iva21 > 0 && (
+                  {invoice.items && invoice.items.length > 0 ? (
+                    invoice.items.map((item: any, idx: number) => (
+                      <TableRow key={idx}>
+                        <TableCell className="font-medium">{item.name}</TableCell>
+                        <TableCell className="text-right font-mono">{item.quantity}</TableCell>
+                        <TableCell className="text-right font-mono">{formatARS(item.unitPrice)}</TableCell>
+                        <TableCell className="text-right font-mono">{formatARS(item.totalPrice)}</TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
                     <TableRow>
-                      <TableCell>IVA (21%)</TableCell>
-                      <TableCell className="text-right font-mono">{formatARS(invoice.iva21)}</TableCell>
+                      <TableCell colSpan={4} className="text-center py-4 text-muted-foreground italic">
+                        Detalle no disponible - Ver totales abajo
+                      </TableCell>
                     </TableRow>
                   )}
-                  {invoice.iva105 > 0 && (
-                    <TableRow>
-                      <TableCell>IVA (10.5%)</TableCell>
-                      <TableCell className="text-right font-mono">{formatARS(invoice.iva105)}</TableCell>
-                    </TableRow>
-                  )}
-                  <TableRow className="bg-muted/50">
-                    <TableCell className="font-bold">Total</TableCell>
-                    <TableCell className="text-right font-bold font-mono text-lg">
-                      {formatARS(invoice.total)}
-                    </TableCell>
-                  </TableRow>
                 </TableBody>
               </Table>
-            </CardContent>
-          </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                Información Adicional
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <p className="text-muted-foreground mb-1">Referencia</p>
-                  <p className="font-medium">{invoice.referenceType} #{invoice.referenceId.substring(0, 8)}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground mb-1">Emitido por</p>
-                  <p className="font-medium">{invoice.createdBy}</p>
+              <div className="mt-8 flex justify-end">
+                <div className="w-full md:w-1/2 space-y-2 border-t pt-4">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground print:text-black">Subtotal Gravado</span>
+                    <span className="font-mono">{formatARS(invoice.subtotal)}</span>
+                  </div>
+                  {invoice.iva21 > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground print:text-black">IVA (21%)</span>
+                      <span className="font-mono">{formatARS(invoice.iva21)}</span>
+                    </div>
+                  )}
+                  {invoice.iva105 > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground print:text-black">IVA (10.5%)</span>
+                      <span className="font-mono">{formatARS(invoice.iva105)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between border-t-2 border-black pt-2 text-xl font-black">
+                    <span>TOTAL</span>
+                    <span className="font-mono">{formatARS(invoice.total)}</span>
+                  </div>
                 </div>
               </div>
             </CardContent>
           </Card>
+
+          <div className="print:hidden">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                  Información de Origen
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-muted-foreground mb-1">Referencia</p>
+                    <p className="font-medium uppercase tracking-tight">
+                      {invoice.referenceType.replace('_', ' ')} #{invoice.referenceId.substring(0, 8)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground mb-1">Emitido por</p>
+                    <p className="font-medium">{invoice.createdBy}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-6 print:hidden">
           <Card>
             <CardHeader>
               <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
@@ -196,25 +301,44 @@ export default function InvoiceDetailPage() {
           <Card>
             <CardHeader>
               <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                Estado
+                Estado Fiscal
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-sm">Estado actual:</span>
-                  <Badge variant="outline">{invoice.status}</Badge>
+                  <Badge variant={invoice.status === 'ISSUED' ? 'default' : 'outline'} className={
+                    invoice.status === 'ISSUED' ? 'bg-emerald-500 hover:bg-emerald-600' : ''
+                  }>
+                    {invoice.status}
+                  </Badge>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm">Fecha:</span>
+                  <span className="text-sm">Fecha emisión:</span>
                   <span className="text-sm font-mono">
                     {format(new Date(invoice.createdAt), 'dd/MM/yyyy HH:mm', { locale: es })}
                   </span>
                 </div>
+                {invoice.issuedAt && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Fecha oficial:</span>
+                    <span className="text-sm font-mono">
+                      {format(new Date(invoice.issuedAt), 'dd/MM/yyyy HH:mm', { locale: es })}
+                    </span>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
         </div>
+      </div>
+
+      {/* Footer for Print */}
+      <div className="hidden print:block mt-20 text-center border-t pt-8">
+        <p className="text-xs text-muted-foreground uppercase tracking-widest italic">
+          Gracias por confiar en RPM Accesorios
+        </p>
       </div>
     </div>
   );

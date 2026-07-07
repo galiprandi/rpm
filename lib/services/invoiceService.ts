@@ -129,12 +129,68 @@ export async function getInvoices(filters: {
 }
 
 export async function getInvoiceById(id: string) {
-  return prisma.invoice.findUnique({
+  const invoice = await prisma.invoice.findUnique({
     where: { id },
     include: {
       customer: true,
     },
   });
+
+  if (!invoice) return null;
+
+  // Fetch line items based on reference type
+  let items: Array<{
+    name: string;
+    quantity: number;
+    unitPrice: number;
+    totalPrice: number;
+  }> = [];
+
+  try {
+    if (invoice.referenceType === 'work_order') {
+      const woItems = await prisma.work_order_item.findMany({
+        where: { workOrderId: invoice.referenceId },
+        include: {
+          product: { select: { name: true } },
+          service: { select: { name: true } },
+        },
+      });
+      items = woItems.map((item) => ({
+        name: item.product?.name || item.service?.name || 'Item sin nombre',
+        quantity: item.quantity,
+        unitPrice: Number(item.unitPrice),
+        totalPrice: Number(item.subtotal),
+      }));
+    } else if (invoice.referenceType === 'direct_sale') {
+      const saleItems = await prisma.direct_sale_item.findMany({
+        where: { directSaleId: invoice.referenceId },
+      });
+      items = saleItems.map((item) => ({
+        name: item.name,
+        quantity: item.quantity,
+        unitPrice: Number(item.unitPrice),
+        totalPrice: Number(item.totalPrice),
+      }));
+    } else if (invoice.referenceType === 'credit_note') {
+      const cnItems = await prisma.credit_note_item.findMany({
+        where: { creditNoteId: invoice.referenceId },
+      });
+      items = cnItems.map((item) => ({
+        name: item.name,
+        quantity: item.quantity,
+        unitPrice: Number(item.unitPrice),
+        totalPrice: Number(item.totalPrice),
+      }));
+    }
+  } catch (error) {
+    console.error('Error fetching items for invoice:', error);
+    // Continue without items if fetch fails
+  }
+
+  return {
+    ...invoice,
+    items,
+  };
 }
 
 export async function updateInvoiceStatus(
