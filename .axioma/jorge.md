@@ -6,7 +6,7 @@
 - [x] 2025-07-03 — Mejora visual del Kanban: icono de demora más intuitivo y totales por columna (PR #jorge/work-orders/kanban-ux-refinement)
 - [x] 2026-07-04 — Gestión de técnicos y Quick Actions en Kanban (PR #jorge/work-orders/technician-and-quick-actions)
 - [x] 2026-07-05 — Implementación de buscador global y refinamiento de barra de filtros (PR #jorge/work-orders/search-and-filter-refinement)
-- [x] 2026-07-06 — Línea de Tiempo unificada con historial de auditoría detallado (PR #jorge/work-orders/unified-audit-timeline)
+- [x] 2026-07-06 — Línea de Tiempo unificada con historial de auditoría detallado (PR #jorge/work-orders/unified-audit-timeline-and-ux)
 
 ## 🧠 LEARNINGS
 ## 2025-07-03 - Visibilidad Financiera en Kanban
