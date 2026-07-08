@@ -1,10 +1,10 @@
-export const dynamic = 'force-dynamic';
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth-server";
 import { UserRole } from "@/lib/auth/roles";
-import { getSalesReport, type GroupBy } from "@/lib/services/reportService";
+import { getFinanceReport, type FinanceGroupBy } from "@/lib/services/financeReportService";
 import { getArgentinaStartOfDay, getArgentinaEndOfDay } from "@/lib/utils/date";
 
+export const dynamic = 'force-dynamic';
 export const revalidate = 600; // 10 minutes
 
 export async function GET(request: Request) {
@@ -25,7 +25,7 @@ export async function GET(request: Request) {
     const endStr = searchParams.get("endDate");
     const compStartStr = searchParams.get("comparisonStartDate");
     const compEndStr = searchParams.get("comparisonEndDate");
-    const groupByParam = searchParams.get("groupBy") as GroupBy | null;
+    const groupByParam = searchParams.get("groupBy") as FinanceGroupBy | null;
 
     if (!startStr || !endStr) {
       return NextResponse.json(
@@ -45,7 +45,7 @@ export async function GET(request: Request) {
       comparisonEndDate = getArgentinaEndOfDay(new Date(compEndStr));
     }
 
-    const report = await getSalesReport({
+    const report = await getFinanceReport({
       startDate,
       endDate,
       comparisonStartDate,
@@ -59,7 +59,7 @@ export async function GET(request: Request) {
       },
     });
   } catch (error) {
-    console.error("Error in reports/sales API:", error);
+    console.error("Error in reports/finance API:", error);
     return NextResponse.json(
       { error: "Error interno del servidor" },
       { status: 500 },
