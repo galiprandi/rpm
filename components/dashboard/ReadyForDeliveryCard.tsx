@@ -105,7 +105,7 @@ export function ReadyForDeliveryCard({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-8 w-8 p-0 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                      className="h-8 w-8 p-0 text-emerald-700 hover:text-emerald-700 hover:bg-emerald-50"
                       onClick={() => {
                         const msg = getWorkOrderMessage({
                           customerName: item.customer.name,
@@ -130,7 +130,7 @@ export function ReadyForDeliveryCard({
                       asChild
                       variant="ghost"
                       size="sm"
-                      className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                      className="h-8 w-8 p-0 text-blue-700 hover:text-blue-700 hover:bg-blue-50"
                     >
                       <a href={`tel:${item.customer.phone}`} aria-label={`Llamar a ${item.customer.name}`}>
                         <Phone className="h-4 w-4 pointer-events-none" aria-hidden="true" />

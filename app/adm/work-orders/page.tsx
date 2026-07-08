@@ -230,7 +230,7 @@ function KanbanCard({ wo, isOverlay = false }: { wo: WorkOrder; isOverlay?: bool
                   });
                   window.open(getWhatsAppLink(wo.customer.phone, msg), '_blank');
                 }}
-                className="h-5 w-5 p-0 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 shrink-0"
+                className="h-5 w-5 p-0 text-emerald-700 hover:text-emerald-700 hover:bg-emerald-50 shrink-0"
                 title="Notificar por WhatsApp"
                 aria-label="Notificar por WhatsApp"
               >
@@ -734,7 +734,7 @@ export default function WorkOrdersPage() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-8 w-8 p-0 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                              className="h-8 w-8 p-0 text-emerald-700 hover:text-emerald-700 hover:bg-emerald-50"
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();

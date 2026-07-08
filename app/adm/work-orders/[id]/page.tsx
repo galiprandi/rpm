@@ -716,7 +716,7 @@ export default function WorkOrderDetailPage() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-8 w-8 p-0 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                    className="h-8 w-8 p-0 text-emerald-700 hover:text-emerald-700 hover:bg-emerald-50"
                     onClick={() => {
                       const msg = getWorkOrderMessage({
                         customerName: workOrder.customer!.name,
@@ -895,7 +895,7 @@ export default function WorkOrderDetailPage() {
                         Servicios: <span className="font-mono">{Number(workOrder.totalServices).toLocaleString("es-AR", { style: 'currency', currency: 'ARS' })}</span>
                     </div>
                     <div className="text-2xl font-bold pt-1">
-                        Total: <span className="font-mono tracking-tight text-emerald-600">{Number(workOrder.total).toLocaleString("es-AR", { style: 'currency', currency: 'ARS' })}</span>
+                        Total: <span className="font-mono tracking-tight text-emerald-700">{Number(workOrder.total).toLocaleString("es-AR", { style: 'currency', currency: 'ARS' })}</span>
                     </div>
                   </div>
                 </div>
@@ -922,11 +922,11 @@ export default function WorkOrderDetailPage() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Pagado</p>
-                <p className="text-lg font-semibold text-emerald-600 font-mono">{totalPaid.toLocaleString("es-AR", { style: 'currency', currency: 'ARS' })}</p>
+                <p className="text-lg font-semibold text-emerald-700 font-mono">{totalPaid.toLocaleString("es-AR", { style: 'currency', currency: 'ARS' })}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Pendiente</p>
-                <p className={`text-lg font-semibold font-mono ${totalPaid >= workOrder.total ? 'text-emerald-600' : 'text-amber-600'}`}>
+                <p className={`text-lg font-semibold font-mono ${totalPaid >= workOrder.total ? 'text-emerald-700' : 'text-amber-700'}`}>
                   {balance.toLocaleString("es-AR", { style: 'currency', currency: 'ARS' })}
                 </p>
               </div>
@@ -950,7 +950,7 @@ export default function WorkOrderDetailPage() {
                   <div key={payment.id} className="flex justify-between items-center p-3 bg-muted rounded-md transition-colors hover:bg-muted/70">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-lg bg-emerald-100/50 border border-emerald-200/50 shadow-sm flex items-center justify-center shrink-0">
-                        <DollarSign className="h-4 w-4 text-emerald-600 pointer-events-none" aria-hidden="true" />
+                        <DollarSign className="h-4 w-4 text-emerald-700 pointer-events-none" aria-hidden="true" />
                       </div>
                       <div>
                         <p className="font-bold font-mono text-emerald-700">{Number(payment.amount).toLocaleString("es-AR", { style: 'currency', currency: 'ARS' })}</p>

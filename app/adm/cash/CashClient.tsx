@@ -954,7 +954,7 @@ export default function CashClient() {
             <Label htmlFor="openingAmount">
               Monto Inicial Efectivo
               {cashStatus && cashStatus.suggestedOpeningAmount > 0 && (
-                <span className="text-xs text-emerald-600 font-medium ml-2 bg-emerald-50 px-2 py-0.5 rounded-full">
+                <span className="text-xs text-emerald-700 font-medium ml-2 bg-emerald-50 px-2 py-0.5 rounded-full">
                   Sugerido: {formatARS(cashStatus.suggestedOpeningAmount)}
                 </span>
               )}

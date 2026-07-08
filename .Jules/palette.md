@@ -69,3 +69,7 @@
 ## 2026-07-10 - Standardizing Product Selector and Select Accessibility
 **Learning:** The `ProductServiceSelector` component, being a high-traffic entry point, benefit from both the Standardized List Row Entity Pattern and the Form UX Enhancement Pattern. Replacing native labels with linked `Label` components and adding contextual icons (`Tags`, `BadgeDollarSign`) to `Select` triggers with `pl-9` padding significantly improves professional feel and accessibility. Furthermore, using `font-mono` for technical metadata (SKU, Stock) helps users distinguish technical IDs from descriptive text at a glance.
 **Action:** When enhancing search or selection components, apply the Row Entity Pattern to result icons and the Select + Icon pattern to filters. Ensure technical fields always use monospaced typography.
+
+## 2026-07-12 - Systematic Accessible Contrast Normalization
+**Learning:** Tailwind "600" weight semantic colors (emerald, blue, red, orange, amber) frequently fail WCAG AA contrast requirements (4.5:1) when used for text or icons on white or 50-weight backgrounds. Elevating these to "700" weight across all administrative modules (Customers, OTs, Invoices, Cash, Users) is a necessary step for baseline accessibility. Inconsistencies often arise where an icon uses 600 while adjacent text uses 700, or vice versa, creating visual disharmony.
+**Action:** Always default to 700-weight for semantic text colors on light backgrounds. Conduct systematic sweeps of new modules to ensure "600" weight contrast traps are not reintroduced.
