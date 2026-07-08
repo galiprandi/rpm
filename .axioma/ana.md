@@ -11,13 +11,14 @@
     - [ ] Desglose impositivo detallado (por item, requiere migración)
 - [x] Generación de PDFs de pre-facturas con leyenda obligatoria (vía Print).
 - [x] Configuración fiscal en settings (CUIT, Punto de Venta, Certificados).
-- [ ] Integración con AFIP (WSFE).
+- [ ] Integración con AFIP (WSFE - Conexión real).
 
 ## ✅ DONE
 - [x] 2025-05-21 — Estructura inicial de comprobantes y enlace con ventas directas.
 - [x] 2025-05-22 — Integración de pre-facturas en OTs y Notas de Crédito, y visualización de advertencia fiscal.
 - [x] 2025-05-24 — Configuración fiscal (AFIP) en el panel de administración (PR #X).
 - [x] 2025-05-26 — Mejora de UI de comprobantes y sistema de impresión profesional para pre-facturas.
+- [x] 2025-05-28 — Implementación del proceso de oficialización (mock) ante AFIP, obtención de CAE y numeración oficial.
 
 ## 🧠 LEARNINGS
 - **Desglose impositivo:** Para comprobantes tipo B (consumidor final), aunque el total sea lo que ve el cliente, el sistema debe registrar el neto y el IVA por separado para futuros reportes fiscales (Libro IVA Digital). Se implementó un cálculo automático del 21% para pre-facturas.
