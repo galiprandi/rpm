@@ -210,6 +210,31 @@ export async function updateInvoiceStatus(
 }
 
 /**
+ * Updates an invoice with official AFIP data after successful authorization.
+ */
+export async function markInvoiceAsOfficial(
+  id: string,
+  data: {
+    number: string;
+    type: InvoiceType;
+    cae: string;
+    caeVencimiento: Date;
+    afipData: Prisma.InputJsonValue;
+  }
+) {
+  return prisma.invoice.update({
+    where: { id },
+    data: {
+      number: data.number,
+      type: data.type,
+      status: 'ISSUED',
+      issuedAt: new Date(),
+      afipData: data.afipData,
+    },
+  });
+}
+
+/**
  * Calculates and returns the next invoice number for a given type.
  * Uses a transaction to ensure no duplicates.
  */
@@ -295,6 +320,7 @@ export function calculateInvoiceTaxes(
   iva21: number;
   iva105: number;
 } {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const isTypeA = invoiceType.endsWith('_A');
 
   // Regardless of type A or B, for the database and AFIP reporting:

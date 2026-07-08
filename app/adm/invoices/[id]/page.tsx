@@ -112,6 +112,30 @@ export default function InvoiceDetailPage() {
     }
   };
 
+  const handleOfficialize = async () => {
+    const toastId = toast.loading('Oficializando comprobante ante AFIP...');
+    try {
+      const response = await fetch(`/api/invoices/${id}/officialize`, {
+        method: 'POST',
+      });
+
+      if (response.ok) {
+        toast.success('Comprobante oficializado con éxito', { id: toastId });
+        // Re-fetch to update UI state
+        const updatedResponse = await fetch(`/api/invoices/${id}`);
+        if (updatedResponse.ok) {
+          setInvoice(await updatedResponse.json());
+        }
+      } else {
+        const error = await response.json();
+        toast.error(error.error || 'Error al oficializar', { id: toastId });
+      }
+    } catch (error) {
+      console.error('Error officializing invoice:', error);
+      toast.error('Error de conexión', { id: toastId });
+    }
+  };
+
   return (
     <div className="container mx-auto py-6 space-y-6 print:py-0 print:space-y-0 max-w-5xl">
       <div className="print:hidden">
@@ -131,6 +155,12 @@ export default function InvoiceDetailPage() {
               onClick: () => window.print(),
               icon: Download,
             },
+            ...(invoice.status === 'DRAFT' && isPreInvoice ? [{
+              label: 'Enviar a AFIP',
+              onClick: handleOfficialize,
+              icon: AlertCircle,
+              variant: 'default' as const,
+            }] : []),
             ...(invoice.status === 'DRAFT' ? [{
               label: 'Cancelar',
               onClick: handleCancel,

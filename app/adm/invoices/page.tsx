@@ -140,6 +140,26 @@ export default function InvoicesPage() {
     },
   ];
 
+  const handleOfficialize = async (id: string) => {
+    const toastId = toast.loading('Oficializando comprobante ante AFIP...');
+    try {
+      const response = await fetch(`/api/invoices/${id}/officialize`, {
+        method: 'POST',
+      });
+
+      if (response.ok) {
+        toast.success('Comprobante oficializado con éxito', { id: toastId });
+        fetchInvoices();
+      } else {
+        const error = await response.json();
+        toast.error(error.error || 'Error al oficializar', { id: toastId });
+      }
+    } catch (error) {
+      console.error('Error officializing invoice:', error);
+      toast.error('Error de conexión', { id: toastId });
+    }
+  };
+
   const rowActions = (row: any) => (
     <div className="flex items-center gap-1">
       <Link href={`/adm/invoices/${row.id}`}>
@@ -159,11 +179,11 @@ export default function InvoicesPage() {
       >
         <Download className="h-4 w-4" />
       </button>
-      {row.status === 'DRAFT' && (
+      {row.status === 'DRAFT' && (row.type.startsWith('X_') || row.type.startsWith('NOTA_CREDITO_X_')) && (
         <button
           className="p-2 hover:bg-primary/10 rounded-md transition-colors text-primary"
           title="Enviar a AFIP"
-          onClick={() => toast.info('La oficialización ante AFIP estará disponible próximamente.')}
+          onClick={() => handleOfficialize(row.id)}
         >
           <Send className="h-4 w-4" />
         </button>
