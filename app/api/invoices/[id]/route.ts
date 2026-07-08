@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionWithAuth } from "@/lib/api-middleware";
+
+export const dynamic = 'force-dynamic';
 import {
   getInvoiceById,
   updateInvoiceStatus,
@@ -24,7 +26,7 @@ export async function GET(
       return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ invoice });
+    return NextResponse.json(invoice);
   } catch (error) {
     console.error("Error fetching invoice:", error);
     return NextResponse.json(

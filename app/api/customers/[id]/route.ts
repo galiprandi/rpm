@@ -23,26 +23,35 @@ export const GET = withAdminDynamic(async (request: NextRequest, { params }: Par
         },
         work_order: {
           orderBy: { createdAt: "desc" },
-          take: 10,
+          take: 50,
           include: {
             vehicle: true,
           },
         },
         direct_sales: {
           orderBy: { createdAt: "desc" },
-          take: 10,
+          take: 50,
           include: {
             items: true,
           },
         },
         credit_notes: {
           orderBy: { createdAt: "desc" },
-          take: 10,
+          take: 50,
           include: {
             items: true,
           },
         },
       },
+    });
+
+    const payments = await prisma.cash_movement.findMany({
+      where: {
+        referenceType: "customer_payment",
+        referenceId: id,
+      },
+      orderBy: { createdAt: "desc" },
+      take: 50,
     });
 
     if (!customer) {
@@ -70,6 +79,7 @@ export const GET = withAdminDynamic(async (request: NextRequest, { params }: Par
       workOrders: customer.work_order || [],
       directSales: customer.direct_sales || [],
       creditNotes: customer.credit_notes || [],
+      payments: payments || [],
       vehicle: undefined,
       work_order: undefined,
       direct_sales: undefined,
