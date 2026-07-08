@@ -172,13 +172,13 @@ function StatusBadge({ status }: { status: string }) {
   switch (status) {
     case 'PENDING':
       return (
-        <Badge variant="outline" className="text-amber-600 border-amber-200 bg-amber-50">
+        <Badge variant="outline" className="text-amber-700 border-amber-200 bg-amber-50">
           Pendiente
         </Badge>
       );
     case 'IN_PROGRESS':
       return (
-        <Badge variant="outline" className="text-blue-600 border-blue-200 bg-blue-50">
+        <Badge variant="outline" className="text-blue-700 border-blue-200 bg-blue-50">
           En Proceso
         </Badge>
       );
@@ -190,7 +190,7 @@ function StatusBadge({ status }: { status: string }) {
       );
     case 'APPROVED':
       return (
-        <Badge variant="outline" className="text-emerald-600 border-emerald-200 bg-emerald-50">
+        <Badge variant="outline" className="text-emerald-700 border-emerald-200 bg-emerald-50">
           Aprobado
         </Badge>
       );

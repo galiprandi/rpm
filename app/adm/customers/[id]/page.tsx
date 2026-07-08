@@ -342,8 +342,8 @@ export default function CustomerDetailPage() {
           const isCreditNote = row.original.type === 'CREDIT_NOTE';
           const isPayment = row.original.type === 'PAYMENT';
           return (
-            <span className={isCreditNote ? 'text-orange-600' : isPayment ? 'text-emerald-600 font-medium' : ''}>
-              {(isCreditNote || isPayment) ? '-' : ''}$${Number(total).toLocaleString("es-AR")}
+            <span className={isCreditNote ? 'text-orange-700' : ''}>
+              {isCreditNote ? '-' : ''}$${Number(total).toLocaleString("es-AR")}
             </span>
           );
         },
@@ -414,7 +414,7 @@ export default function CustomerDetailPage() {
                 href={getWhatsAppLink(customer.phone, `Hola ${customer.name}!`)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-1 rounded-md hover:bg-emerald-50 text-emerald-600 transition-colors"
+                className="p-1 rounded-md hover:bg-emerald-50 text-emerald-700 transition-colors"
                 title="Enviar WhatsApp"
               >
                 <MessageSquare className="h-4 w-4" />
@@ -433,7 +433,7 @@ export default function CustomerDetailPage() {
                 href={getWhatsAppLink(customer.phoneAlt, `Hola ${customer.name}!`)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-1 rounded-md hover:bg-emerald-50 text-emerald-600 transition-colors"
+                className="p-1 rounded-md hover:bg-emerald-50 text-emerald-700 transition-colors"
                 title="Enviar WhatsApp"
               >
                 <MessageSquare className="h-4 w-4" />
@@ -484,7 +484,7 @@ export default function CustomerDetailPage() {
           <div className="flex items-center justify-between">
             <div>
               <div className="text-sm text-muted-foreground">Saldo Actual</div>
-              <div className={`text-3xl font-bold ${customer.balance > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+              <div className={`text-3xl font-bold ${customer.balance > 0 ? 'text-red-700' : 'text-emerald-700'}`}>
                 {formatCurrency(customer.balance)}
               </div>
               <div className="text-xs text-muted-foreground mt-1">
@@ -892,8 +892,8 @@ export default function CustomerDetailPage() {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Total</span>
-                <span className={`font-semibold ${selectedTransaction.type === 'CREDIT_NOTE' ? 'text-orange-600' : selectedTransaction.type === 'PAYMENT' ? 'text-emerald-600' : ''}`}>
-                  {(selectedTransaction.type === 'CREDIT_NOTE' || selectedTransaction.type === 'PAYMENT') ? '-' : ''}${Number(selectedTransaction.total).toLocaleString('es-AR')}
+                <span className={`font-semibold ${selectedTransaction.type === 'CREDIT_NOTE' ? 'text-orange-700' : ''}`}>
+                  {selectedTransaction.type === 'CREDIT_NOTE' ? '-' : ''}${Number(selectedTransaction.total).toLocaleString('es-AR')}
                 </span>
               </div>
               {selectedTransaction.status && (

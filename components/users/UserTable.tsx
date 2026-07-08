@@ -45,11 +45,11 @@ interface UserTableProps {
 const getRoleBadgeClasses = (role: string): string => {
   switch (role) {
     case 'ADMIN':
-      return 'text-red-600 border-red-200 bg-red-50';
+      return 'text-red-700 border-red-200 bg-red-50';
     case 'SELLER':
     case 'TECHNICIAN':
     case 'CASHIER':
-      return 'text-blue-600 border-blue-200 bg-blue-50';
+      return 'text-blue-700 border-blue-200 bg-blue-50';
     default:
       return '';
   }
@@ -136,7 +136,7 @@ export function UserTable({
           return (
             <Badge
               variant={isActive ? 'outline' : 'secondary'}
-              className={cn(isActive && 'text-emerald-600 border-emerald-200 bg-emerald-50')}
+              className={cn(isActive && 'text-emerald-700 border-emerald-200 bg-emerald-50')}
             >
               {isActive ? 'Activo' : 'Inactivo'}
             </Badge>
@@ -167,7 +167,7 @@ export function UserTable({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className={user.isActive ? 'text-red-600' : 'text-emerald-600'}
+                      className={user.isActive ? 'text-red-700' : 'text-emerald-700'}
                       onClick={() => onToggleActive(user)}
                       aria-label={user.isActive ? "Desactivar usuario" : "Activar usuario"}
                     >

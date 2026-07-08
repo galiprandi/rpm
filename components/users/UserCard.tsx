@@ -91,7 +91,7 @@ export function UserCard({ user, onEdit, onToggleActive, canToggle }: UserCardPr
               <Button
                 variant="ghost"
                 size="sm"
-                className={user.isActive ? 'text-red-600' : 'text-emerald-600'}
+                className={user.isActive ? 'text-red-700' : 'text-emerald-700'}
                 onClick={onToggleActive}
                 aria-label={user.isActive ? "Desactivar usuario" : "Activar usuario"}
               >

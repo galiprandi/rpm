@@ -97,7 +97,7 @@ export default function CustomersClient({ initialCustomers }: CustomersClientPro
                 </div>
               )}
               {isBillingData(row.original.billingData) && (
-                <div className="text-xs text-blue-600">
+                <div className="text-xs text-blue-700">
                   Fact: {(row.original.billingData as { cuit: string; invoiceType: string }).invoiceType} - CUIT: <span className="font-mono">{(row.original.billingData as { cuit: string; invoiceType: string }).cuit}</span>
                 </div>
               )}
@@ -124,7 +124,7 @@ export default function CustomersClient({ initialCustomers }: CustomersClientPro
                     href={getWhatsAppLink(phone, `Hola ${row.original.name}!`)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="p-1 rounded-md hover:bg-emerald-50 text-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="p-1 rounded-md hover:bg-emerald-50 text-emerald-700 opacity-0 group-hover:opacity-100 transition-opacity"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <MessageSquare className="h-3.5 w-3.5" />
