@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Header } from '@/components/adm/Header';
 import { DataTable } from '@/components/ui/data-table';
 import { FileText, Search, RefreshCw, Send, Download, Eye } from 'lucide-react';
@@ -141,15 +142,20 @@ export default function InvoicesPage() {
 
   const rowActions = (row: any) => (
     <div className="flex items-center gap-1">
+      <Link href={`/adm/invoices/${row.id}`}>
+        <button
+          className="p-2 hover:bg-muted rounded-md transition-colors text-muted-foreground hover:text-foreground"
+          title="Ver Detalle"
+        >
+          <Eye className="h-4 w-4" />
+        </button>
+      </Link>
       <button
         className="p-2 hover:bg-muted rounded-md transition-colors text-muted-foreground hover:text-foreground"
-        title="Ver Detalle"
-      >
-        <Eye className="h-4 w-4" />
-      </button>
-      <button
-        className="p-2 hover:bg-muted rounded-md transition-colors text-muted-foreground hover:text-foreground"
-        title="Descargar PDF"
+        title="Imprimir / PDF"
+        onClick={() => {
+          window.open(`/adm/invoices/${row.id}?print=true`, '_blank');
+        }}
       >
         <Download className="h-4 w-4" />
       </button>
@@ -157,6 +163,7 @@ export default function InvoicesPage() {
         <button
           className="p-2 hover:bg-primary/10 rounded-md transition-colors text-primary"
           title="Enviar a AFIP"
+          onClick={() => toast.info('La oficialización ante AFIP estará disponible próximamente.')}
         >
           <Send className="h-4 w-4" />
         </button>
