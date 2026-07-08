@@ -94,9 +94,9 @@ export default function ReportsClient() {
     {
       title: "Finanzas & Flujo",
       description: "Ingresos vs egresos, rentabilidad neta y análisis de medios de pago.",
-      href: "#",
+      href: "/adm/reports/finance",
       icon: Wallet,
-      isAvailable: false
+      isAvailable: true
     }
   ];
 
