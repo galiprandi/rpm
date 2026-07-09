@@ -21,3 +21,55 @@
 ## 2026-06-14 - Accessible Form Collapsibles and Icon Patterns
 **Learning:** Collapsible form sections (like 'Datos de Facturación') require explicit ARIA attributes (`aria-expanded`, `aria-controls`) paired with structural IDs to be accessible. When implementing the Form UX Enhancement Pattern with shadcn/ui `Select` components, the `SelectTrigger` needs `pl-9` and the icon needs `z-10` to ensure visual and functional correctness.
 **Action:** Always include `aria-expanded` and `aria-controls` on form section toggles. Ensure `SelectTrigger` has `pl-9` when icons are used.
+
+## 2026-06-16 - Form UX Consistency in Payment Methods
+**Learning:** Applying the Form UX Enhancement Pattern to technical configuration forms (like Payment Methods) provides a more professional feel. Standardizing the 'Code' field with `font-mono` and relevant Lucide icons (e.g., `Hash`) improves scannability. Replacing native checkboxes with the project's custom `Checkbox` component ensures consistent styling and accessibility, provided the `label` prop is used correctly.
+**Action:** Consistently use the Icon + Input wrapper pattern and the custom `Checkbox` component in all administrative forms to maintain the Micro-UX standard.
+
+## 2026-06-18 - Precision and Consistency in Financial Inputs
+**Learning:** Margin and percentage inputs across administrative forms (e.g., `CategoryForm`, `PriceListForm`) must use `type="number"`, `step="0.1"`, and handle value updates using `parseFloat` to ensure consistent decimal precision support. This prevents data loss from `parseInt` and provides a better UX for fine-grained adjustments.
+**Action:** Always use `parseFloat` and `step="0.1"` (or finer) for margin/percentage fields to maintain consistency with the app's financial logic.
+
+## 2026-06-18 - Standardizing Tables and Warnings in Dialogs
+**Learning:** Dialog-based summaries (like Purchase Voucher previews) benefit from using the project's standard `Table` components and the semantic amber warning protocol (`text-amber-600 border-red-200 bg-red-50`). This creates a cohesive "admin" feel and ensures that critical discrepancies are visually distinct from informational states.
+**Action:** When refactoring modal summaries, always replace native HTML tables with the shadcn/ui `Table` set and use the three-tier semantic protocol for alerts.
+
+## 2026-06-20 - Enhancing Credit Note Form Accessibility and UX
+**Learning:** Applying the Form UX Enhancement Pattern to specialized administrative dialogs (like Customer Credit Notes) significantly improves the professional feel and scannability. Using contextual icons like `Undo2` for refund methods and `font-mono` for financial totals creates clear visual anchors. Explicitly linking `Label` components to `SelectTrigger` components via `id` and `htmlFor` is a critical step for accessibility in shadcn/ui-based forms.
+**Action:** Always ensure that `SelectTrigger` has a unique ID matching its `Label`, and use the relative/absolute icon pattern for all select and input fields in administrative modals.
+
+## 2026-06-22 - Standardizing Administrative Tables and Maintaining Badge Contrast
+**Learning:** Refactoring native HTML tables to the shadcn/ui `Table` set in administrative modules ensures visual consistency and provides better interactive states (hover, borders). When updating status badges, maintaining a `700` text weight on `50` backgrounds (e.g., `text-emerald-700` on `bg-emerald-50`) is critical to meeting WCAG AA contrast requirements (4.5:1), as lighter `600` variants often fall short. Additionally, consistent application of `aria-hidden="true"` to decorative icons and `aria-label` to pagination elements significantly reduces screen reader noise in data-heavy views.
+**Action:** Always use the shadcn/ui `Table` components for administrative data and verify that badge color combinations meet accessibility contrast standards. Ensure all decorative icons are hidden from screen readers.
+
+## 2026-06-25 - Standardizing User Management Forms and Select Accessibility
+**Learning:** Applying the Form UX Enhancement Pattern to User Management creates a more professional and accessible experience. Replacing native selects with shadcn/ui `Select` components featuring contextual icons (like `Shield`) within a relative/absolute wrapper ensures visual harmony with other administrative modules. A critical accessibility requirement for shadcn/ui is explicitly linking the `Label` to the `SelectTrigger` via matching `id` and `htmlFor` attributes, and ensuring the decorative icon is properly layered with `z-10` and `aria-hidden="true"`. Additionally, standardizing technical inputs like Email with `font-mono` typography improves data scannability.
+**Action:** Always refactor native selects to the enhanced `Select` + Icon pattern in administrative forms. Ensure all labels are semantically linked to their interactive triggers and apply `font-mono` to technical/identifier fields.
+
+## 2026-06-28 - Accessible Contrast and High-Fidelity Skeletons
+**Learning:** Financial status indicators using `emerald-600` or `red-600` often fail WCAG AA contrast requirements (4.5:1) on white or very light backgrounds. Elevating these to `emerald-700` and `red-700` ensures accessibility while maintaining semantic meaning. Furthermore, "high-fidelity" skeletons that reuse actual layout components (like `Header` and `CrudStats`) in `loading.tsx` provide a much smoother hydration experience by perfectly matching the final layout's structural footprint, effectively eliminating Cumulative Layout Shift (CLS).
+**Action:** Always prioritize `700` weight colors for accessible status text and reuse high-level layout components within loading skeletons to ensure visual stability.
+
+## 2026-06-30 - Enhancing Settings Accessibility and External Labeling
+**Learning:** Shared layout components like `SettingItem` that wrap diverse controls (inputs, selects, links) benefit from a flexible title rendering strategy. By conditionally rendering the title as a `Label` when an `htmlFor` prop is provided, we enable semantic keyboard focus and click-to-activate behavior for the wrapped controls without breaking non-form navigation patterns. Furthermore, extending sub-components like `ThemeSelector` to accept and pass through an `id` to their inner triggers is essential for maintaining this semantic link in complex composite components.
+**Action:** In shared configuration or layout items, support an optional `htmlFor` prop to promote titles to `Label` components. Ensure all internal triggers in composite components accept an `id` to facilitate this association.
+
+## 2026-07-02 - Actionable Dashboard Metrics and Communication UX
+**Learning:** Dashboard cards that represent terminal operational states (like 'Ready for Delivery') should serve as communication hubs rather than just data summaries. Integrating one-click WhatsApp notification buttons using pre-filled templates and verified phone numbers significantly reduces friction for workshop managers. A critical discovery was that backend "privacy" measures like `maskPhone` can inadvertently break these high-value UX flows if applied too aggressively to administrative datasets. Additionally, pairing technical identifiers (like license plates) with `font-mono` and providing accessible tooltips for all icon-only actions ensures both scannability and inclusivity.
+**Action:** Always provide unmasked contact data for administrative communication features. Use the 'One-Click WhatsApp Notification' pattern for status-based dashboard items and ensure all technical IDs use mono typography.
+
+## 2026-07-05 - Status Block Pattern for Dashboard Summary Cards
+**Learning:** Transitioning dashboard summary metrics from plain text to a grid of color-coded "status blocks" significantly improves data scannability and professional feel. Using contextual icons (e.g., `Clock`, `Wrench`, `CheckCircle2`) paired with monospaced typography for numeric values creates clear visual anchors. Maintaining a 700-weight text color on 50-weight backgrounds (e.g., `text-amber-700` on `bg-amber-50`) ensures WCAG AA contrast compliance while preserving semantic meaning. Subtle hover transforms (`scale-[1.02]`) and shadows provide "delight" by signaling interactivity.
+**Action:** When designing dashboard overview components, use the Status Block Pattern with semantic icons and 700-weight contrast-compliant text.
+
+## 2026-07-08 - Standardizing Accessible Contrast in History and Stock Views
+**Learning:** Many built-in status colors like `emerald-600` or `orange-600` fail WCAG AA contrast (4.5:1) on white backgrounds. Elevating these to `700` variants (e.g., `text-emerald-700`, `text-orange-700`) is a low-effort, high-impact way to ensure accessibility without losing semantic meaning. Additionally, icon-only buttons in dense technical views (like Price Lists) must always be paired with a `Tooltip` and an explicit `aria-label` that provides specific context (e.g., "Editar precio de [Lista]") to ensure screen reader users aren't left guessing.
+**Action:** Always verify contrast for semantic text on light backgrounds and ensure all icon-only buttons have descriptive tooltips and ARIA labels.
+
+## 2026-07-10 - Standardizing Product Selector and Select Accessibility
+**Learning:** The `ProductServiceSelector` component, being a high-traffic entry point, benefit from both the Standardized List Row Entity Pattern and the Form UX Enhancement Pattern. Replacing native labels with linked `Label` components and adding contextual icons (`Tags`, `BadgeDollarSign`) to `Select` triggers with `pl-9` padding significantly improves professional feel and accessibility. Furthermore, using `font-mono` for technical metadata (SKU, Stock) helps users distinguish technical IDs from descriptive text at a glance.
+**Action:** When enhancing search or selection components, apply the Row Entity Pattern to result icons and the Select + Icon pattern to filters. Ensure technical fields always use monospaced typography.
+
+## 2026-07-12 - Systematic Accessible Contrast Normalization
+**Learning:** Tailwind "600" weight semantic colors (emerald, blue, red, orange, amber) frequently fail WCAG AA contrast requirements (4.5:1) when used for text or icons on white or 50-weight backgrounds. Elevating these to "700" weight across all administrative modules (Customers, OTs, Invoices, Cash, Users) is a necessary step for baseline accessibility. Inconsistencies often arise where an icon uses 600 while adjacent text uses 700, or vice versa, creating visual disharmony.
+**Action:** Always default to 700-weight for semantic text colors on light backgrounds. Conduct systematic sweeps of new modules to ensure "600" weight contrast traps are not reintroduced.

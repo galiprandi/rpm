@@ -1,15 +1,24 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@tanstack/react-table';
 import { useRouter } from 'next/navigation';
 import { useUI } from '@/components/ui/UIProvider';
-import { Header, CrudStats } from '@/components/adm';
+import { Header, CrudStats, CrudAdmin, type StatItem } from '@/components/adm';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Receipt, Ban, XCircle, Eye, FileText } from 'lucide-react';
+import {
+  Receipt,
+  Ban,
+  XCircle,
+  Eye,
+  FileText,
+  ShoppingCart,
+  ClipboardList,
+  User
+} from 'lucide-react';
+import { formatARS } from '@/lib/utils/format';
 
 interface CreditNote {
   id: string;
@@ -58,128 +67,197 @@ export default function CreditNotesClient({ initialCreditNotes }: CreditNotesCli
     }
   };
 
-  const columns: ColumnDef<CreditNote>[] = [
-    {
-      accessorKey: 'id',
-      header: 'ID',
-      cell: ({ row }) => <span className="text-xs font-mono text-muted-foreground">{(row.getValue('id') as string).slice(0, 8)}…</span>,
-    },
-    {
-      accessorKey: 'originalSaleType',
-      header: 'Tipo',
-      cell: ({ row }) => {
-        const type = row.getValue('originalSaleType') as string;
-        return (
-          <Badge variant="outline" className="text-xs font-medium">
-            {type === 'direct_sale' ? 'Venta Directa' : 'Orden de Trabajo'}
-          </Badge>
-        );
+  const columns = useMemo<ColumnDef<CreditNote>[]>(
+    () => [
+      {
+        accessorKey: 'id',
+        header: 'ID',
+        cell: ({ row }) => (
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0">
+              <Receipt className="h-4 w-4 text-primary" aria-hidden="true" />
+            </div>
+            <span className="font-semibold tracking-tight font-mono text-xs text-muted-foreground uppercase">
+              #{(row.getValue('id') as string).slice(0, 8)}
+            </span>
+          </div>
+        ),
       },
-    },
-    {
-      accessorKey: 'customer',
-      header: 'Cliente',
-      cell: ({ row }) => row.original.customer?.name || <span className="text-muted-foreground">—</span>,
-    },
-    {
-      accessorKey: 'total',
-      header: () => <div className="text-right">Total</div>,
-      cell: ({ row }) => (
-        <div className="text-right font-semibold text-red-600">
-          {(row.getValue('total') as number).toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })}
-        </div>
-      ),
-    },
-    {
-      accessorKey: 'refundMethod',
-      header: 'Método',
-      cell: ({ row }) => {
-        const method = row.getValue('refundMethod') as string;
-        return (
-          <Badge variant="secondary" className="text-xs">
-            {method === 'CASH' ? 'Efectivo' : 'Crédito'}
-          </Badge>
-        );
+      {
+        accessorKey: 'originalSaleType',
+        header: 'Origen',
+        cell: ({ row }) => {
+          const type = row.getValue('originalSaleType') as string;
+          const isDirect = type === 'direct_sale';
+          return (
+            <Badge
+              variant="outline"
+              className={`text-xs font-medium gap-1.5 px-2 ${
+                isDirect
+                  ? 'text-blue-700 border-blue-200 bg-blue-50'
+                  : 'text-orange-700 border-orange-200 bg-orange-50'
+              }`}
+            >
+              {isDirect ? (
+                <ShoppingCart
+                  className="h-3 w-3 text-blue-600 pointer-events-none"
+                  aria-hidden="true"
+                />
+              ) : (
+                <ClipboardList
+                  className="h-3 w-3 text-orange-600 pointer-events-none"
+                  aria-hidden="true"
+                />
+              )}
+              {isDirect ? 'Venta Directa' : 'Orden de Trabajo'}
+            </Badge>
+          );
+        },
       },
-    },
-    {
-      accessorKey: 'status',
-      header: 'Estado',
-      cell: ({ row }) => {
-        const status = row.getValue('status') as string;
-        return status === 'ISSUED' ? (
-          <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 text-xs">
-            <FileText className="h-3 w-3 mr-1" />
-            Emitida
-          </Badge>
-        ) : (
-          <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 text-xs">
-            <Ban className="h-3 w-3 mr-1" />
-            Cancelada
-          </Badge>
-        );
+      {
+        accessorKey: 'customer',
+        header: 'Cliente',
+        cell: ({ row }) => (
+          <div className="flex items-center gap-2">
+            <User
+              className="h-3.5 w-3.5 text-muted-foreground/70 pointer-events-none"
+              aria-hidden="true"
+            />
+            <span className="font-semibold tracking-tight">
+              {row.original.customer?.name || (
+                <span className="text-muted-foreground font-normal">—</span>
+              )}
+            </span>
+          </div>
+        ),
       },
-    },
-    {
-      accessorKey: 'createdAt',
-      header: 'Fecha',
-      cell: ({ row }) => <span className="text-muted-foreground">{new Date(row.getValue('createdAt') as string).toLocaleDateString('es-AR')}</span>,
-    },
-    {
-      id: 'actions',
-      header: '',
-      cell: ({ row }) => (
-        <div className="flex items-center justify-end gap-2">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => router.push(`/adm/credit-notes/${row.original.id}`)} aria-label="Ver detalle de nota de crédito">
-                <Eye className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Ver detalle</TooltipContent>
-          </Tooltip>
-          {row.original.status === 'ISSUED' && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => handleCancel(row.original)} aria-label="Cancelar nota de crédito">
-                  <XCircle className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Cancelar</TooltipContent>
-            </Tooltip>
-          )}
-        </div>
-      ),
-    },
-  ];
+      {
+        accessorKey: 'total',
+        header: () => <div className="text-right">Total</div>,
+        cell: ({ row }) => (
+          <div className="text-right font-bold text-red-600 font-mono">
+            {formatARS(row.getValue('total') as number)}
+          </div>
+        ),
+      },
+      {
+        accessorKey: 'refundMethod',
+        header: 'Método',
+        cell: ({ row }) => {
+          const method = row.getValue('refundMethod') as string;
+          return (
+            <Badge variant="secondary" className="text-xs">
+              {method === 'CASH' ? 'Efectivo' : 'Crédito'}
+            </Badge>
+          );
+        },
+      },
+      {
+        accessorKey: 'status',
+        header: 'Estado',
+        cell: ({ row }) => {
+          const status = row.getValue('status') as string;
+          return status === 'ISSUED' ? (
+            <Badge
+              variant="outline"
+              className="bg-emerald-50 text-emerald-700 border-emerald-200 text-xs"
+            >
+              <FileText
+                className="h-3 w-3 mr-1 pointer-events-none"
+                aria-hidden="true"
+              />
+              Emitida
+            </Badge>
+          ) : (
+            <Badge
+              variant="outline"
+              className="bg-red-50 text-red-700 border-red-200 text-xs"
+            >
+              <Ban
+                className="h-3 w-3 mr-1 pointer-events-none"
+                aria-hidden="true"
+              />
+              Cancelada
+            </Badge>
+          );
+        },
+      },
+      {
+        accessorKey: 'createdAt',
+        header: 'Fecha',
+        cell: ({ row }) => (
+          <span className="text-muted-foreground text-sm">
+            {new Date(row.getValue('createdAt') as string).toLocaleDateString('es-AR')}
+          </span>
+        ),
+      },
+    ],
+    []
+  );
 
   const issuedCount = creditNotes.filter(c => c.status === 'ISSUED').length;
   const cancelledCount = creditNotes.filter(c => c.status === 'CANCELLED').length;
-  const totalAmount = creditNotes
-    .filter(c => c.status === 'ISSUED')
-    .reduce((acc, c) => acc + c.total, 0)
-    .toLocaleString('es-AR', { style: 'currency', currency: 'ARS' });
+  const totalAmountFormatted = formatARS(
+    creditNotes
+      .filter(c => c.status === 'ISSUED')
+      .reduce((acc, c) => acc + c.total, 0)
+  );
 
-  const stats = [
+  const stats: StatItem[] = [
     {
       label: 'Emitidas',
       value: issuedCount,
       icon: FileText,
-      iconColor: 'rgb(16 185 129)', // emerald-500
+      iconColor: '#10b981', // emerald-500
     },
     {
       label: 'Canceladas',
       value: cancelledCount,
       icon: Ban,
-      iconColor: 'rgb(239 68 68)', // red-500
+      iconColor: '#ef4444', // red-500
     },
     {
       label: 'Total Emitido',
-      value: totalAmount,
+      value: totalAmountFormatted,
       icon: Receipt,
-      iconColor: 'rgb(59 130 246)', // blue-500
+      iconColor: '#3b82f6', // blue-500
     },
   ];
+
+  const rowActions = (creditNote: CreditNote) => (
+    <div className="flex items-center justify-end gap-1">
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0"
+            onClick={() => router.push(`/adm/credit-notes/${creditNote.id}`)}
+            aria-label="Ver detalle de nota de crédito"
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="top">Ver detalle</TooltipContent>
+      </Tooltip>
+      {creditNote.status === 'ISSUED' && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+              onClick={() => handleCancel(creditNote)}
+              aria-label="Cancelar nota de crédito"
+            >
+              <XCircle className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="top">Cancelar</TooltipContent>
+        </Tooltip>
+      )}
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -190,26 +268,18 @@ export default function CreditNotesClient({ initialCreditNotes }: CreditNotesCli
 
       <CrudStats stats={stats} />
 
-      {creditNotes.length > 0 ? (
-        <div className="bg-card rounded-lg border shadow-xs p-6">
-          <DataTable
-            data={creditNotes}
-            columns={columns}
-            title="Listado de Notas de Crédito"
-            enableGlobalFilter
-            globalFilterPlaceholder="Buscar por cliente o tipo..."
-            emptyMessage="No hay notas de crédito"
-          />
-        </div>
-      ) : (
-        <div className="p-12 text-center bg-card border rounded-lg shadow-xs">
-          <Receipt className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-20" />
-          <p className="text-muted-foreground mb-2 font-medium">No hay notas de crédito registradas</p>
-          <p className="text-sm text-muted-foreground">
-            Para crear una nota de crédito, seleccione una venta u orden de trabajo y haga clic en Devolver.
-          </p>
-        </div>
-      )}
+      <CrudAdmin
+        items={creditNotes}
+        loading={false}
+        columns={columns}
+        tableTitle="Listado de Notas de Crédito"
+        emptyIcon={<Receipt className="h-12 w-12 mx-auto text-muted-foreground/20" />}
+        emptyMessage="No hay notas de crédito registradas. Para crear una, selecciona una venta y haz clic en Devolver."
+        createButtonText=""
+        hideCreateAction
+        searchPlaceholder="Buscar por cliente o tipo..."
+        rowActions={rowActions}
+      />
     </div>
   );
 }

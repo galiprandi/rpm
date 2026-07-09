@@ -3,6 +3,7 @@
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { PUBLIC_SITE_CONFIG, DEFAULT_WHATSAPP_MESSAGE } from '@/lib/config/public-site';
 
 export function Hero() {
   return (
@@ -18,7 +19,7 @@ export function Hero() {
           {/* Tagline */}
           <div className="overflow-hidden mb-6">
             <p className="text-brand font-bold tracking-[0.2em] uppercase text-xs animate-fade-up opacity-0" style={{ animationDelay: '0.2s' }}>
-              Precision & Performance
+              {PUBLIC_SITE_CONFIG.tagline}
             </p>
           </div>
 
@@ -44,7 +45,7 @@ export function Hero() {
             <Button 
               variant="link" 
               className="text-white text-lg font-bold hover:text-brand transition-colors"
-              onClick={() => window.open('https://wa.me/543813199647?text=Hola%20RPM%20Accesorios!%20Me%20gustaría%20agendar%20un%20turno%20para%20mi%20vehículo.', '_blank')}
+              onClick={() => window.open(PUBLIC_SITE_CONFIG.links.whatsapp(DEFAULT_WHATSAPP_MESSAGE), '_blank')}
             >
               Reservar una consulta
             </Button>

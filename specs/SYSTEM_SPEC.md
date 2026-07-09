@@ -10,7 +10,8 @@ Define las bases técnicas y de infraestructura sobre las que está construida l
 
 ## 2. Módulos de Negocio / Features (`/specs/features/`)
 Define exactamente qué hace cada parte de la aplicación, qué no hace, y cuáles son sus casos límite de fallo.
-- [Ventas, Facturación y Caja](features/sales-and-billing.md) - Ventas, AFIP, Notas de crédito, Cierre de Caja, Listas de Precio.
+- [Ventas, Facturación y Caja](features/sales-and-billing.md) - Ventas, Notas de crédito, Cierre de Caja, Listas de Precio.
+- [Integración AFIP y Comprobantes Fiscales](features/afip-integration.md) - Pre-facturas, oficialización con CAE, wsfe, tipos de comprobante, PDFs.
 - [Productos e Inventario](features/products-and-inventory.md) - Catálogo, Importador, Actualización masiva de costos.
 - [Gestión de Taller (OT)](features/workshop-management.md) - Órdenes de trabajo, checklists, técnicos.
 - [Clientes y Cuenta Corriente](features/customers.md) - ABM clientes, vehículos, saldos a favor.

@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { PUBLIC_SITE_CONFIG, DEFAULT_WHATSAPP_MESSAGE } from '@/lib/config/public-site';
 
 const navItems = [
   { name: 'Productos', href: '/productos' },
@@ -57,12 +58,16 @@ export function PublicHeader() {
             <Link href="/login" className="text-[13px] font-medium text-gray-400 hover:text-white transition-all duration-300 uppercase tracking-widest">
               Ingresar
             </Link>
-            <Button variant="ghost" className="text-[13px] font-bold text-white hover:text-brand transition-colors uppercase tracking-widest">
-              WhatsApp
-            </Button>
-            <Button className="bg-white text-black hover:bg-white/90 text-xs font-black rounded-full px-6 py-2 uppercase tracking-tighter transition-transform active:scale-95">
-              Reservar
-            </Button>
+            <a href={PUBLIC_SITE_CONFIG.links.whatsapp(DEFAULT_WHATSAPP_MESSAGE)} target="_blank" rel="noopener noreferrer">
+              <Button variant="ghost" className="text-[13px] font-bold text-white hover:text-brand transition-colors uppercase tracking-widest">
+                WhatsApp
+              </Button>
+            </a>
+            <Link href="/contacto">
+              <Button className="bg-white text-black hover:bg-white/90 text-xs font-black rounded-full px-6 py-2 uppercase tracking-tighter transition-transform active:scale-95">
+                Reservar
+              </Button>
+            </Link>
           </div>
 
           {/* Mobile Toggle */}
@@ -98,9 +103,11 @@ export function PublicHeader() {
         >
           Ingresar
         </Link>
-        <Button className="bg-brand text-white text-lg font-bold rounded-full px-12 py-6">
-          Contactar ahora
-        </Button>
+        <a href={PUBLIC_SITE_CONFIG.links.whatsapp(DEFAULT_WHATSAPP_MESSAGE)} target="_blank" rel="noopener noreferrer" onClick={() => setIsOpen(false)}>
+          <Button className="bg-brand text-white text-lg font-bold rounded-full px-12 py-6">
+            Contactar ahora
+          </Button>
+        </a>
       </div>
     </header>
   );

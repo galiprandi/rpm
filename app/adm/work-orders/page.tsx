@@ -12,8 +12,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Plus, LayoutGrid, List, ArrowUpDown, Car, Truck, Wrench, Headphones, Package } from "lucide-react";
+import { Plus, LayoutGrid, List, Car, Truck, Wrench, Headphones, Package, ClipboardList, Wallet, DollarSign, MessageSquare, AlertCircle, UserCog, Eye, Search, X, Check } from "lucide-react";
 import { Header } from "@/components/adm/Header";
+import { CrudStats } from "@/components/adm/CrudStats";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import {
   DndContext,
@@ -34,6 +36,22 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { toast } from "sonner";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
+import { getWhatsAppLink, getWorkOrderMessage } from "@/lib/utils/whatsapp";
 
 interface WorkOrder {
   id: string;
@@ -47,6 +65,7 @@ interface WorkOrder {
   startedAt?: string;
   totalPaid?: number;
   isFullyPaid?: boolean;
+  technician?: { id: string; name: string };
 }
 
 const STATUSES = [
@@ -66,18 +85,18 @@ const getCategoryIcon = (category: string) => {
     case 'CAR':
     case 'SUV':
     case 'PICKUP':
-      return { icon: <Car className="h-4 w-4" />, label: "Automóvil" };
+      return { icon: <Car className="h-4 w-4 pointer-events-none" aria-hidden="true" />, label: "Automóvil" };
     case 'TRUCK':
-      return { icon: <Truck className="h-4 w-4" />, label: "Camión / Pesado" };
+      return { icon: <Truck className="h-4 w-4 pointer-events-none" aria-hidden="true" />, label: "Camión / Pesado" };
     case 'MOTORCYCLE':
-      return { icon: <Wrench className="h-4 w-4" />, label: "Moto / Mecánica" };
+      return { icon: <Wrench className="h-4 w-4 pointer-events-none" aria-hidden="true" />, label: "Moto / Mecánica" };
     case 'AUDIO_EQUIPMENT':
-      return { icon: <Headphones className="h-4 w-4" />, label: "Audio / Electrónica" };
+      return { icon: <Headphones className="h-4 w-4 pointer-events-none" aria-hidden="true" />, label: "Audio / Electrónica" };
     case 'TRAILER':
-      return { icon: <Package className="h-4 w-4" />, label: "Trailer / Remolque" };
+      return { icon: <Package className="h-4 w-4 pointer-events-none" aria-hidden="true" />, label: "Trailer / Remolque" };
     case 'OTHER_EQUIPMENT':
     default:
-      return { icon: <Package className="h-4 w-4" />, label: "Otro / Equipamiento" };
+      return { icon: <Package className="h-4 w-4 pointer-events-none" aria-hidden="true" />, label: "Otro / Equipamiento" };
   }
 };
 
@@ -91,7 +110,12 @@ const isDelayed = (wo: WorkOrder) => {
 
 // --- Components ---
 
-function KanbanCard({ wo, isOverlay = false }: { wo: WorkOrder; isOverlay?: boolean }) {
+function KanbanCard({ wo, isOverlay = false, technicians = [], onTechnicianUpdate }: {
+  wo: WorkOrder;
+  isOverlay?: boolean;
+  technicians?: Array<{ id: string; name: string }>;
+  onTechnicianUpdate?: (woId: string, techId: string | null) => Promise<void>;
+}) {
   const {
     attributes,
     listeners,
@@ -116,11 +140,50 @@ function KanbanCard({ wo, isOverlay = false }: { wo: WorkOrder; isOverlay?: bool
 
   const content = (
     <Card className={cn(
-      "group cursor-pointer hover:shadow-md transition-all border-l-4",
+      "group relative cursor-pointer hover:shadow-md transition-all border-l-4",
       isDelayed(wo) ? "border-l-orange-500 bg-orange-50/30" : "border-l-transparent",
       isDragging && !isOverlay && "opacity-30",
       isOverlay && "shadow-xl border-primary ring-2 ring-primary ring-opacity-50 scale-105"
     )}>
+      {/* Quick Actions Overlay */}
+      {!isOverlay && !isDragging && (
+        <div className="absolute inset-0 z-10 bg-white/60 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-2 rounded-lg">
+          <Link href={`/adm/work-orders/${wo.id}`} className="contents">
+            <Button
+              size="sm"
+              variant="secondary"
+              className="h-8 shadow-sm border"
+              onMouseDown={(e) => e.stopPropagation()}
+            >
+              <Eye className="h-4 w-4 mr-1" />
+              Detalle
+            </Button>
+          </Link>
+          {wo.customer.phone && (
+            <Button
+              size="sm"
+              variant="secondary"
+              className="h-8 shadow-sm border text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50"
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const msg = getWorkOrderMessage({
+                  customerName: wo.customer.name,
+                  vehicleIdentifier: wo.vehicle.identifier,
+                  status: wo.status,
+                  total: Number(wo.total),
+                  totalPaid: wo.totalPaid || 0,
+                });
+                window.open(getWhatsAppLink(wo.customer.phone, msg), '_blank');
+              }}
+            >
+              <MessageSquare className="h-4 w-4 mr-1" />
+              WA
+            </Button>
+          )}
+        </div>
+      )}
       <CardContent className="p-3 space-y-1.5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 font-semibold text-sm">
@@ -136,32 +199,99 @@ function KanbanCard({ wo, isOverlay = false }: { wo: WorkOrder; isOverlay?: bool
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-            {wo.vehicle.identifier}
+            <span className="font-mono tracking-tighter">{wo.vehicle.identifier}</span>
           </div>
           <Badge
             variant={wo.isFullyPaid ? "outline" : (wo.totalPaid && wo.totalPaid > 0 ? "secondary" : "outline")}
             className={cn(
-              "text-[10px] px-1.5 py-0 h-5",
+              "text-[10px] px-1.5 py-0 h-5 font-mono",
               wo.isFullyPaid ? "border-emerald-200 bg-emerald-50 text-emerald-700" :
-              (wo.totalPaid && wo.totalPaid > 0 ? "border-yellow-200 bg-yellow-50 text-yellow-700" : "text-muted-foreground")
+              (wo.totalPaid && wo.totalPaid > 0 ? "border-amber-200 bg-amber-50 text-amber-700" : "text-muted-foreground")
             )}
           >
             ${Number(wo.total).toLocaleString("es-AR")}
           </Badge>
         </div>
-        <div className="text-xs text-muted-foreground">
-          {wo.vehicle.make?.name} {wo.vehicle.model?.name}
+        <div className="flex justify-between items-center gap-2">
+          <div className="text-xs text-muted-foreground truncate">
+            {wo.vehicle.make?.name} {wo.vehicle.model?.name}
+          </div>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <div
+                className={cn(
+                  "flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border shrink-0 max-w-[100px] transition-colors cursor-pointer z-20",
+                  wo.technician
+                    ? "bg-purple-50 text-purple-700 border-purple-100 hover:bg-purple-100"
+                    : "bg-muted text-muted-foreground border-transparent hover:bg-muted/80"
+                )}
+                onMouseDown={(e) => e.stopPropagation()}
+              >
+                <UserCog className="h-2.5 w-2.5 shrink-0" />
+                <span className="truncate">{wo.technician?.name || "Sin técnico"}</span>
+              </div>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48" onMouseDown={(e) => e.stopPropagation()}>
+              <DropdownMenuLabel className="text-xs font-semibold">Asignar Técnico</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="text-xs"
+                onClick={() => onTechnicianUpdate?.(wo.id, null)}
+              >
+                <X className="h-3.5 w-3.5 mr-2" />
+                Sin asignar
+                {!wo.technician && <Check className="h-3.5 w-3.5 ml-auto text-primary" />}
+              </DropdownMenuItem>
+              {technicians.map((tech) => (
+                <DropdownMenuItem
+                  key={tech.id}
+                  className="text-xs"
+                  onClick={() => onTechnicianUpdate?.(wo.id, tech.id)}
+                >
+                  <UserCog className="h-3.5 w-3.5 mr-2" />
+                  {tech.name}
+                  {wo.technician?.id === tech.id && <Check className="h-3.5 w-3.5 ml-auto text-primary" />}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         <div className="flex justify-between items-center text-[10px] text-muted-foreground pt-1.5 border-t mt-1">
-          <span className="font-medium">{wo.customer.name}</span>
+          <div className="flex items-center gap-1.5 overflow-hidden">
+            <span className="font-medium truncate">{wo.customer.name}</span>
+            {wo.status === 'READY' && wo.customer.phone && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const msg = getWorkOrderMessage({
+                    customerName: wo.customer.name,
+                    vehicleIdentifier: wo.vehicle.identifier,
+                    status: wo.status,
+                    total: Number(wo.total),
+                    totalPaid: wo.totalPaid || 0,
+                  });
+                  window.open(getWhatsAppLink(wo.customer.phone, msg), '_blank');
+                }}
+                className="h-5 w-5 p-0 text-emerald-700 hover:text-emerald-700 hover:bg-emerald-50 shrink-0"
+                title="Notificar por WhatsApp"
+                aria-label="Notificar por WhatsApp"
+              >
+                <MessageSquare className="h-3 w-3 pointer-events-none" aria-hidden="true" />
+              </Button>
+            )}
+          </div>
           {isDelayed(wo) ? (
-            <span className="text-orange-600 font-bold flex items-center gap-0.5">
-              <ArrowUpDown className="h-2.5 w-2.5" />
+            <span className="text-orange-700 font-bold flex items-center gap-0.5">
+              <AlertCircle className="h-2.5 w-2.5 pointer-events-none" aria-hidden="true" />
               DEMORADA
             </span>
           ) : (
-            <span>
+            <span className="font-mono">
               {new Date(wo.createdAt).toLocaleDateString("es-AR", {
                 day: "2-digit",
                 month: "short"
@@ -180,14 +310,25 @@ function KanbanCard({ wo, isOverlay = false }: { wo: WorkOrder; isOverlay?: bool
       <Link href={`/adm/work-orders/${wo.id}`} onClick={(e) => {
         // Prevent navigation if we just finished dragging
         if (isDragging) e.preventDefault();
-      }}>
+      }} className="block">
         {content}
       </Link>
     </div>
   );
 }
 
-function KanbanColumn({ status, items }: { status: typeof STATUSES[0]; items: WorkOrder[] }) {
+function KanbanColumn({
+  status,
+  items,
+  technicians,
+  onTechnicianUpdate
+}: {
+  status: typeof STATUSES[0];
+  items: WorkOrder[];
+  technicians: Array<{ id: string; name: string }>;
+  onTechnicianUpdate: (woId: string, techId: string | null) => Promise<void>;
+}) {
+  const columnTotal = items.reduce((sum, wo) => sum + Number(wo.total), 0);
   const { setNodeRef } = useSortable({
     id: status.id,
     data: {
@@ -200,25 +341,38 @@ function KanbanColumn({ status, items }: { status: typeof STATUSES[0]; items: Wo
     <div className="flex flex-col flex-1 min-w-[200px] h-full">
       <div
         className={cn(
-          "p-3 rounded-t-lg font-semibold text-sm border sticky top-0 z-10",
+          "p-3 rounded-t-lg border sticky top-0 z-10",
           status.color
         )}
       >
         <div className="flex justify-between items-center">
-          <span>{status.label}</span>
-          <span className="text-muted-foreground text-xs">
+          <span className="font-semibold text-sm">{status.label}</span>
+          <span className="text-muted-foreground text-[10px] font-mono bg-white/50 px-1.5 py-0.5 rounded-full border border-black/5">
             {items.length}
           </span>
         </div>
+        {items.length > 0 && (
+          <div className="mt-1 text-xs font-mono text-muted-foreground/80 flex items-center gap-1">
+            <DollarSign className="h-3 w-3" />
+            {columnTotal.toLocaleString("es-AR", { maximumFractionDigits: 0 })}
+          </div>
+        )}
       </div>
       <div
         ref={setNodeRef}
-        className="bg-muted/30 hover:bg-muted/40 transition-colors rounded-b-lg p-2 flex-1 overflow-y-auto space-y-3 border border-t-0 min-h-[150px]"
+        className="bg-muted/30 hover:bg-muted/40 transition-colors rounded-b-lg p-2 flex-1 overflow-y-auto border border-t-0 min-h-[150px]"
       >
         <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
-          {items.map((wo) => (
-            <KanbanCard key={wo.id} wo={wo} />
-          ))}
+          <div className="space-y-3">
+            {items.map((wo) => (
+              <KanbanCard
+                key={wo.id}
+                wo={wo}
+                technicians={technicians}
+                onTechnicianUpdate={onTechnicianUpdate}
+              />
+            ))}
+          </div>
           {items.length === 0 && (
             <div className="h-full min-h-[100px] flex items-center justify-center text-muted-foreground/50 text-xs text-center px-4 italic">
               Sin órdenes
@@ -237,6 +391,9 @@ export default function WorkOrdersPage() {
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"kanban" | "list">("kanban");
   const [paymentFilter, setPaymentFilter] = useState<"all" | "pending">("all");
+  const [technicianFilter, setTechnicianFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [technicians, setTechnicians] = useState<Array<{ id: string; name: string }>>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
 
   const sensors = useSensors(
@@ -250,10 +407,19 @@ export default function WorkOrdersPage() {
 
   const fetchWorkOrders = useCallback(async () => {
     try {
-      const response = await fetch("/api/work-orders");
-      if (!response.ok) throw new Error("Failed to fetch");
-      const data = await response.json();
-      setWorkOrders(data.workOrders);
+      const [woRes, techRes] = await Promise.all([
+        fetch("/api/work-orders"),
+        fetch("/api/users?role=TECHNICIAN"),
+      ]);
+
+      if (!woRes.ok) throw new Error("Failed to fetch work orders");
+      const woData = await woRes.json();
+      setWorkOrders(woData.workOrders);
+
+      if (techRes.ok) {
+        const techData = await techRes.json();
+        setTechnicians(techData.users || []);
+      }
     } catch (error) {
       console.error("Error fetching work orders:", error);
       toast.error("Error al cargar las órdenes de trabajo");
@@ -263,26 +429,39 @@ export default function WorkOrdersPage() {
   }, []);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     void fetchWorkOrders();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [fetchWorkOrders]);
 
   const getStatusBadge = (status: string) => {
     const statusConfig = STATUSES.find((s) => s.id === status);
     return (
-      <Badge variant="outline" className={cn("text-xs", statusConfig?.color)}>
+      <Badge
+        variant="outline"
+        className={cn(
+          "text-xs px-2 py-0.5",
+          statusConfig?.color
+        )}
+      >
         {statusConfig?.label || status}
       </Badge>
     );
   };
 
   const filteredWorkOrders = useMemo(() => {
-    if (paymentFilter === "pending") {
-      return workOrders.filter((wo) => !wo.isFullyPaid);
-    }
-    return workOrders;
-  }, [workOrders, paymentFilter]);
+    return workOrders.filter((wo) => {
+      const matchesPayment = paymentFilter === "all" || !wo.isFullyPaid;
+      const matchesTechnician = technicianFilter === "all" || wo.technicianId === technicianFilter;
+
+      const searchLower = searchQuery.toLowerCase();
+      const matchesSearch = !searchQuery ||
+        wo.vehicle.identifier.toLowerCase().includes(searchLower) ||
+        wo.customer.name.toLowerCase().includes(searchLower) ||
+        wo.vehicle.make?.name?.toLowerCase().includes(searchLower) ||
+        wo.vehicle.model?.name?.toLowerCase().includes(searchLower);
+
+      return matchesPayment && matchesTechnician && matchesSearch;
+    });
+  }, [workOrders, paymentFilter, technicianFilter, searchQuery]);
 
   const workOrdersByStatus = useMemo(() => STATUSES.map((status) => ({
     ...status,
@@ -292,6 +471,33 @@ export default function WorkOrdersPage() {
   const activeWorkOrder = useMemo(() =>
     activeId ? workOrders.find(wo => wo.id === activeId) : null
   , [activeId, workOrders]);
+
+  const stats = useMemo(() => {
+    const openOrders = workOrders.filter(wo => wo.status !== 'DELIVERED').length;
+    const pendingPayment = workOrders.filter(wo => !wo.isFullyPaid).length;
+    const totalBilling = workOrders.reduce((sum, wo) => sum + Number(wo.total), 0);
+
+    return [
+      {
+        label: "Abiertas",
+        value: openOrders,
+        icon: ClipboardList,
+        iconColor: "#3b82f6", // blue-500
+      },
+      {
+        label: "Pend. Pago",
+        value: pendingPayment,
+        icon: Wallet,
+        iconColor: "#b45309", // amber-700
+      },
+      {
+        label: "Facturación Total",
+        value: `$${totalBilling.toLocaleString("es-AR")}`,
+        icon: DollarSign,
+        iconColor: "#047857", // emerald-700
+      }
+    ];
+  }, [workOrders]);
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string);
@@ -383,6 +589,29 @@ export default function WorkOrdersPage() {
     }
   };
 
+  const handleTechnicianUpdate = async (woId: string, techId: string | null) => {
+    try {
+      const response = await fetch(`/api/work-orders/${woId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ technicianId: techId }),
+      });
+      if (!response.ok) throw new Error("Error al actualizar el técnico");
+
+      const updatedWO = await response.json();
+      setWorkOrders(prev => prev.map(wo => wo.id === woId ? {
+        ...wo,
+        technicianId: updatedWO.technicianId,
+        technician: updatedWO.technician
+      } : wo));
+
+      toast.success("Técnico actualizado correctamente");
+    } catch (e) {
+      console.error("Error updating technician:", e);
+      toast.error("No se pudo actualizar el técnico");
+    }
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto py-6 space-y-4 h-[calc(100vh-6rem)] flex flex-col">
@@ -419,39 +648,98 @@ export default function WorkOrdersPage() {
           icon: Plus,
         }}
       >
-        <div className="flex items-center gap-2 mt-2">
+        <div className="flex flex-wrap items-center gap-2 mt-2">
+          <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-lg border">
+            <Button
+              variant={viewMode === "kanban" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("kanban")}
+              className="h-8 px-3"
+            >
+              <LayoutGrid className="h-4 w-4 mr-2 pointer-events-none" aria-hidden="true" />
+              Kanban
+            </Button>
+            <Button
+              variant={viewMode === "list" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("list")}
+              className="h-8 px-3"
+            >
+              <List className="h-4 w-4 mr-2 pointer-events-none" aria-hidden="true" />
+              Lista
+            </Button>
+          </div>
+
+          <div className="w-px h-6 bg-border mx-1 hidden sm:block" />
+
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+            <Input
+              placeholder="Buscar por patente, cliente..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="h-8 w-[200px] pl-9 text-xs"
+            />
+          </div>
+
           <Button
-            variant={viewMode === "kanban" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setViewMode("kanban")}
-          >
-            <LayoutGrid className="h-4 w-4 mr-2" />
-            Kanban
-          </Button>
-          <Button
-            variant={viewMode === "list" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setViewMode("list")}
-          >
-            <List className="h-4 w-4 mr-2" />
-            Lista
-          </Button>
-          <div className="w-px h-6 bg-border mx-1" />
-          <Button
-            variant={paymentFilter === "pending" ? "default" : "outline"}
+            variant={paymentFilter === "pending" ? "outline" : "outline"}
             size="sm"
             onClick={() => setPaymentFilter(paymentFilter === "pending" ? "all" : "pending")}
-            className={paymentFilter === "pending" ? "bg-amber-600 hover:bg-amber-700" : ""}
+            className={cn(
+              "h-8 text-xs",
+              paymentFilter === "pending"
+                ? "text-amber-700 border-amber-200 bg-amber-50 hover:bg-amber-100 hover:text-amber-800"
+                : ""
+            )}
           >
             Pendientes de Pago
             {paymentFilter === "pending" && (
-              <span className="ml-2 text-xs bg-white/20 px-1.5 py-0.5 rounded">
+              <span className="ml-2 text-[10px] bg-amber-700/10 px-1.5 py-0.5 rounded font-mono">
                 {filteredWorkOrders.length}
               </span>
             )}
           </Button>
+
+          <div className="relative">
+            <UserCog className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+            <Select
+              value={technicianFilter}
+              onValueChange={setTechnicianFilter}
+            >
+              <SelectTrigger className="h-8 w-[150px] pl-9 text-xs">
+                <SelectValue placeholder="Técnico" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos los técnicos</SelectItem>
+                {technicians.map((tech) => (
+                  <SelectItem key={tech.id} value={tech.id}>
+                    {tech.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {(searchQuery || paymentFilter !== "all" || technicianFilter !== "all") && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSearchQuery("");
+                setPaymentFilter("all");
+                setTechnicianFilter("all");
+              }}
+              className="h-8 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-3.5 w-3.5 mr-1.5" />
+              Limpiar filtros
+            </Button>
+          )}
         </div>
       </Header>
+
+      <CrudStats stats={stats} />
 
       {/* Content */}
       {viewMode === "kanban" ? (
@@ -470,12 +758,18 @@ export default function WorkOrdersPage() {
                     key={status.id}
                     status={status}
                     items={status.items}
+                    technicians={technicians}
+                    onTechnicianUpdate={handleTechnicianUpdate}
                   />
                 ))}
               </div>
               <DragOverlay>
                 {activeId && activeWorkOrder ? (
-                  <KanbanCard wo={activeWorkOrder} isOverlay />
+                  <KanbanCard
+                    wo={activeWorkOrder}
+                    isOverlay
+                    technicians={technicians}
+                  />
                 ) : null}
               </DragOverlay>
             </DndContext>
@@ -488,55 +782,91 @@ export default function WorkOrdersPage() {
               No hay órdenes de trabajo
             </div>
           ) : (
-            workOrders.map((wo) => (
-              <Link key={wo.id} href={`/adm/work-orders/${wo.id}`}>
-                <Card className="cursor-pointer hover:bg-muted/50 transition-colors">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2 font-medium text-lg">
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <span className="text-muted-foreground">
-                                  {getCategoryIcon(wo.vehicle.category).icon}
-                                </span>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>{getCategoryIcon(wo.vehicle.category).label}</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                          {wo.vehicle.identifier}
+            workOrders.map((wo) => {
+              const { icon: categoryIcon, label: categoryLabel } = getCategoryIcon(wo.vehicle.category);
+              return (
+                <Link key={wo.id} href={`/adm/work-orders/${wo.id}`}>
+                  <Card className="cursor-pointer hover:bg-muted/50 transition-colors">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          {/* Standardized List Row Entity Pattern */}
+                          <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="text-primary">
+                                    {categoryIcon}
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>{categoryLabel}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </div>
+                          <div>
+                            <div className="font-semibold tracking-tight font-mono">
+                              {wo.vehicle.identifier}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {wo.customer.name} • {wo.vehicle.make?.name} {wo.vehicle.model?.name}
+                            </div>
+                          </div>
                         </div>
-                        <div>
-                          <div className="font-medium">{wo.customer.name}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {wo.vehicle.make?.name} {wo.vehicle.model?.name}
+                        <div className="flex items-center gap-4">
+                          {wo.technician && (
+                            <div className="flex items-center gap-1 text-[10px] bg-purple-50 text-purple-700 px-2 py-1 rounded border border-purple-100 font-medium">
+                              <UserCog className="h-3 w-3" />
+                              {wo.technician.name}
+                            </div>
+                          )}
+                          {wo.status === 'READY' && wo.customer.phone && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-emerald-700 hover:text-emerald-700 hover:bg-emerald-50"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                const msg = getWorkOrderMessage({
+                                  customerName: wo.customer.name,
+                                  vehicleIdentifier: wo.vehicle.identifier,
+                                  status: wo.status,
+                                  total: Number(wo.total),
+                                  totalPaid: wo.totalPaid || 0,
+                                });
+                                window.open(getWhatsAppLink(wo.customer.phone, msg), '_blank');
+                              }}
+                              aria-label="Notificar por WhatsApp"
+                            >
+                              <MessageSquare className="h-4 w-4 pointer-events-none" aria-hidden="true" />
+                            </Button>
+                          )}
+                          {getStatusBadge(wo.status)}
+                          <Badge
+                            variant={wo.isFullyPaid ? "outline" : (wo.totalPaid && wo.totalPaid > 0 ? "secondary" : "outline")}
+                            className={cn(
+                              "px-2.5 py-0.5 font-mono",
+                              wo.isFullyPaid
+                                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                                : wo.totalPaid && wo.totalPaid > 0
+                                  ? "border-amber-200 bg-amber-50 text-amber-700"
+                                  : "text-muted-foreground"
+                            )}
+                          >
+                            ${Number(wo.total).toLocaleString("es-AR")}
+                          </Badge>
+                          <div className="text-sm text-muted-foreground font-mono">
+                            {new Date(wo.createdAt).toLocaleDateString("es-AR")}
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-4">
-                        {getStatusBadge(wo.status)}
-                        <Badge
-                          variant={wo.isFullyPaid ? "outline" : (wo.totalPaid && wo.totalPaid > 0 ? "secondary" : "outline")}
-                          className={cn(
-                            "px-2.5 py-0.5",
-                            wo.isFullyPaid ? "border-emerald-200 bg-emerald-50 text-emerald-700" :
-                            (wo.totalPaid && wo.totalPaid > 0 ? "border-yellow-200 bg-yellow-50 text-yellow-700" : "text-muted-foreground")
-                          )}
-                        >
-                          ${Number(wo.total).toLocaleString("es-AR")}
-                        </Badge>
-                        <div className="text-sm text-muted-foreground">
-                          {new Date(wo.createdAt).toLocaleDateString("es-AR")}
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))
+                    </CardContent>
+                  </Card>
+                </Link>
+              );
+            })
           )}
         </div>
       )}

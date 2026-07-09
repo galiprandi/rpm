@@ -197,7 +197,7 @@ export default function SuppliersClient({ initialSuppliers }: SuppliersClientPro
       label: 'Activos',
       value: suppliers.filter((s) => s.isActive).length,
       icon: CheckCircle2,
-      iconColor: '#10b981', // emerald-500
+      iconColor: '#047857', // emerald-700
     },
     {
       label: 'Con productos',
@@ -214,7 +214,7 @@ export default function SuppliersClient({ initialSuppliers }: SuppliersClientPro
         cell: ({ row }) => (
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0">
-              <Truck className="h-4 w-4 text-primary" aria-hidden="true" />
+              <Truck className="h-4 w-4 text-primary pointer-events-none" aria-hidden="true" />
             </div>
             <span className="font-semibold tracking-tight">{row.original.name}</span>
           </div>
@@ -233,8 +233,8 @@ export default function SuppliersClient({ initialSuppliers }: SuppliersClientPro
         accessorKey: 'phone',
         header: 'Teléfono',
         cell: ({ row }) => (
-          <div className="flex items-center gap-1 text-sm">
-            {row.original.phone && <Phone className="h-3 w-3 text-muted-foreground" />}
+          <div className="flex items-center gap-1 text-sm font-mono">
+            {row.original.phone && <Phone className="h-3 w-3 text-muted-foreground pointer-events-none" aria-hidden="true" />}
             <span>{row.original.phone || '-'}</span>
           </div>
         ),
@@ -243,8 +243,8 @@ export default function SuppliersClient({ initialSuppliers }: SuppliersClientPro
         accessorKey: 'email',
         header: 'Email',
         cell: ({ row }) => (
-          <div className="flex items-center gap-1 text-sm">
-            {row.original.email && <Mail className="h-3 w-3 text-muted-foreground" />}
+          <div className="flex items-center gap-1 text-sm font-mono">
+            {row.original.email && <Mail className="h-3 w-3 text-muted-foreground pointer-events-none" aria-hidden="true" />}
             <span>{row.original.email || '-'}</span>
           </div>
         ),
@@ -260,7 +260,7 @@ export default function SuppliersClient({ initialSuppliers }: SuppliersClientPro
         cell: ({ row }) => (
           <Badge
             variant={row.original.isActive ? 'outline' : 'secondary'}
-            className={row.original.isActive ? 'text-emerald-600 border-emerald-200 bg-emerald-50' : ''}
+            className={row.original.isActive ? 'text-emerald-700 border-emerald-200 bg-emerald-50' : ''}
           >
             {row.original.isActive ? 'Activo' : 'Inactivo'}
           </Badge>
@@ -301,7 +301,7 @@ export default function SuppliersClient({ initialSuppliers }: SuppliersClientPro
         onCreate={() => setIsCreateDialogOpen(true)}
         hideCreateAction
         columns={columns}
-        emptyIcon={<Truck className="h-12 w-12 mx-auto text-muted-foreground mb-4" />}
+        emptyIcon={<Truck className="h-12 w-12 mx-auto text-muted-foreground/20 mb-4" />}
         emptyMessage="No hay proveedores creados. Haz clic en 'Nuevo Proveedor' para crear el primero."
         createButtonText="Proveedor"
         tableTitle="Listado de Proveedores"
@@ -316,7 +316,7 @@ export default function SuppliersClient({ initialSuppliers }: SuppliersClientPro
                   onClick={() => openEditDialog(supplier)}
                   aria-label="Editar proveedor"
                 >
-                  <Pencil className="h-4 w-4" />
+                  <Pencil className="h-4 w-4 pointer-events-none" aria-hidden="true" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Editar proveedor</TooltipContent>
@@ -332,7 +332,7 @@ export default function SuppliersClient({ initialSuppliers }: SuppliersClientPro
                   disabled={supplier.productCount > 0}
                   aria-label="Eliminar proveedor"
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-4 w-4 pointer-events-none" aria-hidden="true" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>

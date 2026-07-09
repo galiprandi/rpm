@@ -235,13 +235,18 @@ export default function ServicesClient({ initialServices }: ServicesClientProps)
         accessorKey: 'name',
         header: 'Servicio',
         cell: ({ row }) => (
-          <div>
-            <div className="font-medium">{row.original.name}</div>
-            {row.original.description && (
-              <div className="text-xs text-muted-foreground truncate max-w-[300px]">
-                {row.original.description}
-              </div>
-            )}
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0">
+              <Wrench className="h-4 w-4 text-primary" aria-hidden="true" />
+            </div>
+            <div>
+              <div className="font-semibold tracking-tight">{row.original.name}</div>
+              {row.original.description && (
+                <div className="text-xs text-muted-foreground truncate max-w-[200px] md:max-w-[300px]">
+                  {row.original.description}
+                </div>
+              )}
+            </div>
           </div>
         ),
       },
@@ -315,7 +320,7 @@ export default function ServicesClient({ initialServices }: ServicesClientProps)
         onCreate={openCreateDialog}
         hideCreateAction
         columns={columns}
-        emptyIcon={<Wrench className="h-12 w-12 mx-auto text-muted-foreground mb-4" />}
+        emptyIcon={<Wrench className="h-12 w-12 mx-auto text-muted-foreground/20 mb-4" />}
         emptyMessage="No hay servicios creados. Haz clic en 'Nuevo Servicio' para crear el primero."
         createButtonText="Servicio"
         tableTitle="Listado de Servicios"

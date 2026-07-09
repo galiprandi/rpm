@@ -14,11 +14,42 @@ export default async function SettingsPage() {
     throw new Error('Acceso denegado');
   }
 
-  const setting = await prisma.setting.findUnique({
-    where: { key: 'MINIMUM_MARGIN_PERCENTAGE' },
+  const settings = await prisma.setting.findMany({
+    where: {
+      key: {
+        in: [
+          'MINIMUM_MARGIN_PERCENTAGE',
+          'AFIP_CUIT',
+          'AFIP_PUNTO_VENTA',
+          'AFIP_RESPONSABLE',
+          'AFIP_PRODUCTION',
+          'AFIP_CERT_PATH',
+        ],
+      },
+    },
   });
 
-  const initialMinimumMargin = setting ? Number(setting.value) : 15.0;
+  const settingsMap = settings.reduce((acc, s) => {
+    acc[s.key] = s.value;
+    return acc;
+  }, {} as Record<string, string>);
 
-  return <SettingsClient initialMinimumMargin={initialMinimumMargin} />;
+  const initialMinimumMargin = settingsMap['MINIMUM_MARGIN_PERCENTAGE']
+    ? Number(settingsMap['MINIMUM_MARGIN_PERCENTAGE'])
+    : 15.0;
+
+  const initialAfipSettings = {
+    cuit: settingsMap['AFIP_CUIT'] || '',
+    puntoVenta: settingsMap['AFIP_PUNTO_VENTA'] || '1',
+    responsable: settingsMap['AFIP_RESPONSABLE'] || 'RI',
+    production: settingsMap['AFIP_PRODUCTION'] === 'true',
+    certPath: settingsMap['AFIP_CERT_PATH'] || '',
+  };
+
+  return (
+    <SettingsClient
+      initialMinimumMargin={initialMinimumMargin}
+      initialAfipSettings={initialAfipSettings}
+    />
+  );
 }

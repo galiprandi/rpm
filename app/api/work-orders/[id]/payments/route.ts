@@ -1,17 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { getSessionWithAuth } from "@/lib/api-middleware";
 import { prisma } from "@/lib/prisma";
 import { hasRole, UserRole } from "@/lib/auth/roles";
-import { isCashRegisterOpen, createCashMovement } from "@/lib/services/cashMovementService";
+import {
+  isCashRegisterOpen,
+  createCashMovement,
+} from "@/lib/services/cashMovementService";
+import { invalidateCashStatus } from "@/lib/cache";
 
 // GET /api/work-orders/[id]/payments - List payments with totals
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
+    const session = await getSessionWithAuth();
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -27,7 +30,7 @@ export async function GET(
     if (!workOrder) {
       return NextResponse.json(
         { error: "Work order not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -49,7 +52,7 @@ export async function GET(
     // Calculate totals
     const totalPaid = payments.reduce(
       (sum, payment) => sum + Number(payment.amount),
-      0
+      0,
     );
     const workOrderTotal = Number(workOrder.total);
     const pendingAmount = Math.max(0, workOrderTotal - totalPaid);
@@ -66,7 +69,7 @@ export async function GET(
     console.error("Error fetching payments:", error);
     return NextResponse.json(
       { error: "Failed to fetch payments" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -74,10 +77,10 @@ export async function GET(
 // POST /api/work-orders/[id]/payments - Register new payment
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
+    const session = await getSessionWithAuth();
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -85,11 +88,11 @@ export async function POST(
     // Check if user is SELLER or ADMIN (only these roles can register payments)
     const isAdmin = await hasRole(session.user.id, UserRole.ADMIN);
     const isStaff = await hasRole(session.user.id, UserRole.STAFF);
-    
+
     if (!isAdmin && !isStaff) {
       return NextResponse.json(
         { error: "Only staff can register payments" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -97,8 +100,11 @@ export async function POST(
     const isOpen = await isCashRegisterOpen();
     if (!isOpen) {
       return NextResponse.json(
-        { error: "La caja está cerrada. Debe abrir la caja para registrar pagos." },
-        { status: 400 }
+        {
+          error:
+            "La caja está cerrada. Debe abrir la caja para registrar pagos.",
+        },
+        { status: 400 },
       );
     }
 
@@ -110,7 +116,7 @@ export async function POST(
     if (!paymentMethodId || !amount || amount <= 0) {
       return NextResponse.json(
         { error: "Payment method and positive amount are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -123,7 +129,7 @@ export async function POST(
     if (!workOrder) {
       return NextResponse.json(
         { error: "Work order not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -135,14 +141,14 @@ export async function POST(
     if (!paymentMethod) {
       return NextResponse.json(
         { error: "Payment method not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     if (!paymentMethod.isActive) {
       return NextResponse.json(
         { error: "Payment method is not active" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -178,7 +184,7 @@ export async function POST(
           reason: `Pago OT #${workOrderId.substring(0, 8)}`,
           createdBy: session.user.id,
         },
-        tx
+        tx,
       );
 
       // Update customer balance if associated with one
@@ -225,26 +231,28 @@ export async function POST(
       select: { amount: true },
     });
 
-    const totalPaid = allPayments.reduce(
-      (sum, p) => sum + Number(p.amount),
-      0
-    );
+    const totalPaid = allPayments.reduce((sum, p) => sum + Number(p.amount), 0);
     const workOrderTotal = Number(workOrder.total);
     const pendingAmount = Math.max(0, workOrderTotal - totalPaid);
     const isFullyPaid = totalPaid >= workOrderTotal;
 
-    return NextResponse.json({
-      payment,
-      totalPaid,
-      pendingAmount,
-      isFullyPaid,
-      workOrderTotal,
-    }, { status: 201 });
+    invalidateCashStatus();
+
+    return NextResponse.json(
+      {
+        payment,
+        totalPaid,
+        pendingAmount,
+        isFullyPaid,
+        workOrderTotal,
+      },
+      { status: 201 },
+    );
   } catch (error: unknown) {
     console.error("Error creating payment:", error);
     return NextResponse.json(
       { error: "Failed to create payment" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { getSessionWithAuth } from "@/lib/api-middleware";
+import { updateWorkOrder } from "@/lib/services/workOrderService";
+
+export const dynamic = 'force-dynamic';
 
 // Valid work order statuses
 const VALID_STATUSES = [
@@ -15,58 +18,39 @@ const VALID_STATUSES = [
 // PUT /api/work-orders/[id]/status - Update work order status
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const session = await getSessionWithAuth();
     const { id } = await params;
     const body = await request.json();
     const { status } = body;
 
     if (!status || !VALID_STATUSES.includes(status)) {
       return NextResponse.json(
-        { error: `Invalid status. Must be one of: ${VALID_STATUSES.join(", ")}` },
-        { status: 400 }
+        {
+          error: `Invalid status. Must be one of: ${VALID_STATUSES.join(", ")}`,
+        },
+        { status: 400 },
       );
     }
 
-    // Build update data with timestamps based on status
-    const updateData: Record<string, unknown> = { status };
+    const ipAddress = request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || undefined;
+    const userAgent = request.headers.get("user-agent") || undefined;
 
-    if (status === "IN_PROGRESS") {
-      updateData.startedAt = new Date();
-    } else if (status === "READY") {
-      updateData.completedAt = new Date();
-    } else if (status === "DELIVERED") {
-      updateData.deliveredAt = new Date();
-    }
-
-    const workOrder = await prisma.work_order.update({
-      where: { id },
-      data: updateData,
-      include: {
-        customer: {
-          select: {
-            id: true,
-            name: true,
-            phone: true,
-          },
-        },
-        vehicle: {
-          select: {
-            id: true,
-            identifier: true,
-            category: true,
-          },
-        },
-      },
+    const updatedWO = await updateWorkOrder(id, { status }, {
+      userId: session?.user.id || "system",
+      userEmail: session?.user.email || "system",
+      ipAddress,
+      userAgent
     });
 
-    return NextResponse.json(workOrder);
+    return NextResponse.json(updatedWO);
   } catch (error) {
     console.error("Error updating work order status:", error);
     return NextResponse.json(
-      { error: "Failed to update work order status" },
-      { status: 500 }
+      { error: error instanceof Error ? error.message : "Failed to update work order status" },
+      { status: 500 },
     );
   }
 }

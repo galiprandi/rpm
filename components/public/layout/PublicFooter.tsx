@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { MapPin, Phone, Mail, Camera, Share2 } from 'lucide-react';
+import { MapPin, Phone, Mail, Camera, MessageCircle } from 'lucide-react';
+import { PUBLIC_SITE_CONFIG, DEFAULT_WHATSAPP_MESSAGE } from '@/lib/config/public-site';
 
 export function PublicFooter() {
   return (
@@ -12,12 +13,15 @@ export function PublicFooter() {
               RPM<span className="text-[#FF4B00]">ACCESORIOS</span>
             </Link>
             <p className="text-sm leading-relaxed">
-              Especialistas en equipamiento y accesorios para vehículos. 
-              Más de 15 años brindando soluciones de alta calidad en San Miguel de Tucumán.
+              {PUBLIC_SITE_CONFIG.description}
             </p>
             <div className="flex space-x-4">
-              <a href="#" className="hover:text-white transition-colors"><Camera className="h-5 w-5" /></a>
-              <a href="#" className="hover:text-white transition-colors"><Share2 className="h-5 w-5" /></a>
+              <a href={PUBLIC_SITE_CONFIG.instagramUrl} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors" title="Instagram">
+                <Camera className="h-5 w-5" />
+              </a>
+              <a href={PUBLIC_SITE_CONFIG.links.whatsapp(DEFAULT_WHATSAPP_MESSAGE)} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors" title="WhatsApp">
+                <MessageCircle className="h-5 w-5" />
+              </a>
             </div>
           </div>
 
@@ -27,7 +31,7 @@ export function PublicFooter() {
             <ul className="space-y-4 text-sm">
               <li><Link href="/productos" className="hover:text-white transition-colors">Catálogo de Productos</Link></li>
               <li><Link href="/servicios" className="hover:text-white transition-colors">Nuestros Servicios</Link></li>
-              <li><Link href="/taller" className="hover:text-white transition-colors">Gestión de Taller</Link></li>
+              <li><Link href="/contacto" className="hover:text-white transition-colors">Contacto</Link></li>
               <li><Link href="/nosotros" className="hover:text-white transition-colors">Sobre Nosotros</Link></li>
             </ul>
           </div>
@@ -38,15 +42,17 @@ export function PublicFooter() {
             <ul className="space-y-4 text-sm">
               <li className="flex items-start space-x-3">
                 <MapPin className="h-5 w-5 text-[#FF4B00] shrink-0" />
-                <span>San Lorenzo 1462, San Miguel de Tucumán</span>
+                <span>{PUBLIC_SITE_CONFIG.address}</span>
               </li>
               <li className="flex items-center space-x-3">
-                <Phone className="h-5 w-5 text-[#FF4B00] shrink-0" />
-                <span>+54 381 319-9647</span>
+                <a href={PUBLIC_SITE_CONFIG.links.whatsapp(DEFAULT_WHATSAPP_MESSAGE)} target="_blank" rel="noopener noreferrer" className="flex items-center space-x-3 hover:text-white transition-colors">
+                  <Phone className="h-5 w-5 text-[#FF4B00] shrink-0" />
+                  <span>{PUBLIC_SITE_CONFIG.phone}</span>
+                </a>
               </li>
               <li className="flex items-center space-x-3">
                 <Mail className="h-5 w-5 text-[#FF4B00] shrink-0" />
-                <span>contacto@rpmaccesorios.com.ar</span>
+                <span>{PUBLIC_SITE_CONFIG.email}</span>
               </li>
             </ul>
           </div>
@@ -57,11 +63,11 @@ export function PublicFooter() {
             <ul className="space-y-2 text-sm">
               <li className="flex justify-between">
                 <span>Lunes a Viernes</span>
-                <span className="text-white">09:00 - 19:00</span>
+                <span className="text-white">{PUBLIC_SITE_CONFIG.hours.weekdays}</span>
               </li>
               <li className="flex justify-between">
                 <span>Sábados</span>
-                <span className="text-white">09:00 - 13:00</span>
+                <span className="text-white">{PUBLIC_SITE_CONFIG.hours.saturdays}</span>
               </li>
               <li className="pt-4 text-xs italic text-gray-500">
                 Atención personalizada con turno previo.
@@ -74,10 +80,6 @@ export function PublicFooter() {
           <p className="text-xs">
             © {new Date().getFullYear()} RPM Accesorios. Todos los derechos reservados.
           </p>
-          <div className="flex space-x-6 text-xs uppercase tracking-widest">
-            <Link href="/privacidad" className="hover:text-white transition-colors">Privacidad</Link>
-            <Link href="/terminos" className="hover:text-white transition-colors">Términos</Link>
-          </div>
         </div>
       </div>
     </footer>

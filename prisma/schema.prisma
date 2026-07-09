@@ -241,6 +241,7 @@ model User {
   role          String    @default("USER")
   account       Account[]
   session       Session[]
+  work_orders   work_order[]
 
   @@map("user")
 }
@@ -358,6 +359,7 @@ model work_order {
   photo           photo[]
   customer        customer               @relation(fields: [customerId], references: [id], onDelete: Cascade)
   vehicle         vehicle                @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  technician      User?                  @relation(fields: [technicianId], references: [id])
   auditLogs       work_order_audit_log[]
   work_order_item work_order_item[]
 
@@ -531,8 +533,14 @@ model invoice {
   referenceType String
   customerId    String?
   customerName  String
+  customerDoc     String?
+  customerDocType String?
   subtotal      Decimal      @db.Decimal(10, 2)
   tax           Decimal?     @db.Decimal(10, 2)
+  iva21         Decimal?     @db.Decimal(10, 2)
+  iva105        Decimal?     @db.Decimal(10, 2)
+  exemptions    Json?
+  perceptions   Json?
   total         Decimal      @db.Decimal(10, 2)
   afipData      Json?
   status        String
@@ -544,6 +552,8 @@ model invoice {
   @@index([number])
   @@index([referenceId])
   @@index([status])
+  @@index([type])
+  @@index([issuedAt])
 }
 
 model credit_note {

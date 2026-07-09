@@ -191,7 +191,7 @@ export default function PaymentMethodsClient({ initialPaymentMethods }: PaymentM
       cell: ({ row }) => (
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0">
-            <CreditCard className="h-4 w-4 text-primary" aria-hidden="true" />
+            <CreditCard className="h-4 w-4 text-primary pointer-events-none" aria-hidden="true" />
           </div>
           <span className="font-semibold tracking-tight">{row.original.name}</span>
         </div>
@@ -201,7 +201,9 @@ export default function PaymentMethodsClient({ initialPaymentMethods }: PaymentM
       accessorKey: 'code',
       header: 'Código',
       cell: ({ row }) => (
-        <code className="bg-muted px-2 py-1 rounded text-sm text-foreground/80 font-mono">{row.original.code}</code>
+        <code className="bg-muted px-2 py-1 rounded text-sm text-foreground/80 font-mono uppercase">
+          {row.original.code}
+        </code>
       ),
     },
     {
@@ -215,7 +217,7 @@ export default function PaymentMethodsClient({ initialPaymentMethods }: PaymentM
       cell: ({ row }) => (
         <Badge
           variant={row.original.isActive ? 'outline' : 'secondary'}
-          className={row.original.isActive ? 'text-emerald-600 border-emerald-200 bg-emerald-50' : ''}
+          className={row.original.isActive ? 'text-emerald-700 border-emerald-200 bg-emerald-50' : ''}
         >
           {row.original.isActive ? 'Activo' : 'Inactivo'}
         </Badge>
@@ -233,7 +235,7 @@ export default function PaymentMethodsClient({ initialPaymentMethods }: PaymentM
       label: 'Activos',
       value: paymentMethods.filter((m) => m.isActive).length,
       icon: CheckCircle2,
-      iconColor: '#10b981', // emerald-500
+      iconColor: '#047857', // emerald-700
     },
   ];
 

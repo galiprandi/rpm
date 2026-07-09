@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useUI } from "@/components/ui/UIProvider";
-import { Plus } from "lucide-react";
+import { Plus, Truck, CreditCard, Hash, Calendar, DollarSign, FileText, Tag } from "lucide-react";
 import { SupplierDialog } from "@/components/suppliers/SupplierDialog";
 import { type SupplierFormData } from "@/components/suppliers/SupplierForm";
 
@@ -247,22 +247,25 @@ export function CreateDraftVoucherDialog({
           <div className="space-y-2">
             <Label htmlFor="supplier" required>Proveedor</Label>
             <div className="flex gap-2">
-              <Select
-                value={supplierId}
-                onValueChange={setSupplierId}
-                required
-              >
-                <SelectTrigger id="supplier" className="w-full h-9">
-                  <SelectValue placeholder="Seleccione un proveedor..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {suppliers.map((s) => (
-                    <SelectItem key={s.id || s.name} value={s.id}>
-                      {s.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="relative flex-1">
+                <Truck className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" aria-hidden="true" />
+                <Select
+                  value={supplierId}
+                  onValueChange={setSupplierId}
+                  required
+                >
+                  <SelectTrigger id="supplier" className="w-full h-9 pl-9" aria-required="true">
+                    <SelectValue placeholder="Seleccione un proveedor..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {suppliers.map((s) => (
+                      <SelectItem key={s.id || s.name} value={s.id}>
+                        {s.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <Button
                 type="button"
                 variant="outline"
@@ -279,99 +282,121 @@ export function CreateDraftVoucherDialog({
 
           <div className="space-y-2">
             <Label htmlFor="paymentMethod">Forma de Pago</Label>
-            <Select
-              value={paymentMethodId}
-              onValueChange={setPaymentMethodId}
-            >
-              <SelectTrigger id="paymentMethod" className="w-full h-9">
-                <SelectValue placeholder="Cuenta Corriente" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Cuenta Corriente</SelectItem>
-                {paymentMethods
-                  .filter((p) => p.id && p.isActive)
-                  .map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.name}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
+            <div className="relative">
+              <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" aria-hidden="true" />
+              <Select
+                value={paymentMethodId}
+                onValueChange={setPaymentMethodId}
+              >
+                <SelectTrigger id="paymentMethod" className="w-full h-9 pl-9">
+                  <SelectValue placeholder="Cuenta Corriente" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Cuenta Corriente</SelectItem>
+                  {paymentMethods
+                    .filter((p) => p.id && p.isActive)
+                    .map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.name}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
 
         <div className="grid grid-cols-3 gap-4">
           <div className="space-y-2">
             <Label htmlFor="letter" required>Letra</Label>
-            <Select
-              value={letter}
-              onValueChange={setLetter}
-              required
-            >
-              <SelectTrigger id="letter" className="w-full h-9">
-                <SelectValue placeholder="Seleccione..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="A">A</SelectItem>
-                <SelectItem value="B">B</SelectItem>
-                <SelectItem value="C">C</SelectItem>
-                <SelectItem value="X">X</SelectItem>
-                <SelectItem value="M">M</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="relative">
+              <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" aria-hidden="true" />
+              <Select
+                value={letter}
+                onValueChange={setLetter}
+                required
+              >
+                <SelectTrigger id="letter" className="w-full h-9 pl-9" aria-required="true">
+                  <SelectValue placeholder="Seleccione..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="A">A</SelectItem>
+                  <SelectItem value="B">B</SelectItem>
+                  <SelectItem value="C">C</SelectItem>
+                  <SelectItem value="X">X</SelectItem>
+                  <SelectItem value="M">M</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="col-span-2 space-y-2">
             <Label htmlFor="number" required>Número de Factura</Label>
-            <Input
-              id="number"
-              placeholder="0001-00000234"
-              value={number}
-              onChange={(e) => setNumber(e.target.value)}
-              required
-              aria-required="true"
-            />
+            <div className="relative">
+              <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+              <Input
+                id="number"
+                placeholder="0001-00000234"
+                value={number}
+                onChange={(e) => setNumber(e.target.value)}
+                className="pl-9 font-mono"
+                required
+                aria-required="true"
+              />
+            </div>
           </div>
         </div>
 
         <div className="grid md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="date" required>Fecha de Emisión</Label>
-            <Input
-              id="date"
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              required
-              aria-required="true"
-            />
+            <div className="relative">
+              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+              <Input
+                id="date"
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="pl-9"
+                required
+                aria-required="true"
+              />
+            </div>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="totalAmount" required>Monto Total ($)</Label>
-            <Input
-              id="totalAmount"
-              type="number"
-              step="0.01"
-              min="0"
-              placeholder="0.00"
-              value={totalAmount}
-              onChange={(e) => setTotalAmount(e.target.value)}
-              required
-              aria-required="true"
-            />
+            <div className="relative">
+              <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+              <Input
+                id="totalAmount"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                value={totalAmount}
+                onChange={(e) => setTotalAmount(e.target.value)}
+                className="pl-9 font-mono"
+                required
+                aria-required="true"
+              />
+            </div>
           </div>
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="notes">Notas / Observaciones</Label>
-          <Textarea
-            id="notes"
-            placeholder="Cargar detalles o notas internas de compra..."
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            rows={2}
-          />
+          <div className="relative">
+            <FileText className="absolute left-3 top-3 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+            <Textarea
+              id="notes"
+              placeholder="Cargar detalles o notas internas de compra..."
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={2}
+              className="pl-9"
+            />
+          </div>
         </div>
       </form>
 

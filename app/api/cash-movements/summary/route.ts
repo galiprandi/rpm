@@ -1,18 +1,17 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
-import { headers } from 'next/headers';
-import { getCashMovementSummary } from '@/lib/services/cashMovementService';
+import { NextRequest, NextResponse } from "next/server";
+import { getSessionWithAuth } from "@/lib/api-middleware";
+import { getCashMovementSummary } from "@/lib/services/cashMovementService";
 
 // GET /api/cash-movements/summary - Get cash summary for a date
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
+    const session = await getSessionWithAuth();
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { searchParams } = request.nextUrl;
-    const dateParam = searchParams.get('date');
+    const dateParam = searchParams.get("date");
     const date = dateParam ? new Date(dateParam) : new Date();
 
     const summary = await getCashMovementSummary(date);
@@ -22,7 +21,7 @@ export async function GET(request: NextRequest) {
     console.error("Error fetching cash summary:", error);
     return NextResponse.json(
       { error: "Failed to fetch cash summary" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

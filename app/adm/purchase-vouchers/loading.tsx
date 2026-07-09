@@ -1,3 +1,5 @@
+'use client';
+
 import { Header, CrudStats } from '@/components/adm';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Receipt, History, FileText, Plus } from 'lucide-react';
@@ -29,23 +31,40 @@ export default function PurchaseVouchersLoading() {
       <Header
         title="Comprobantes de Compra"
         description="Gestión y registro de facturas de proveedores y comprobantes"
-        primaryAction={{
-          label: 'Nuevo Comprobante',
-          icon: Plus,
-          disabled: true,
-        }}
       />
 
       <CrudStats stats={stats} />
 
-      <div className="bg-card rounded-lg border shadow-xs p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-8 w-64" />
-          <Skeleton className="h-10 w-72" />
+      <div className="mt-10 space-y-4">
+        <div className="flex justify-between items-center">
+          <Skeleton className="h-8 w-40" />
+          <div className="flex gap-2">
+            <Skeleton className="h-10 w-64" />
+            <Skeleton className="h-10 w-32" />
+          </div>
         </div>
-        <div className="space-y-2">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} className="h-12 w-full" />
+        <div className="border rounded-lg overflow-hidden bg-card">
+          <div className="bg-muted/50 p-4 border-b">
+          <div className="flex gap-4 px-4">
+            <Skeleton className="h-4 flex-[1.5]" />
+            <Skeleton className="h-4 flex-1" />
+            <Skeleton className="h-4 flex-1" />
+            <Skeleton className="h-4 flex-1" />
+            <Skeleton className="h-4 flex-1" />
+            <Skeleton className="h-4 flex-1" />
+            <Skeleton className="h-4 w-[100px]" />
+            </div>
+          </div>
+          {[1, 2, 3, 4, 5].map((row) => (
+            <div key={row} className="p-4 border-b last:border-0 flex gap-4 items-center">
+            <Skeleton className="h-10 flex-[1.5]" />
+            <Skeleton className="h-10 flex-1" />
+            <Skeleton className="h-10 flex-1" />
+            <Skeleton className="h-10 flex-1" />
+            <Skeleton className="h-10 flex-1" />
+            <Skeleton className="h-10 flex-1" />
+            <Skeleton className="h-10 w-[100px]" />
+            </div>
           ))}
         </div>
       </div>

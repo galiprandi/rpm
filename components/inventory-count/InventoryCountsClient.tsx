@@ -63,14 +63,25 @@ export function InventoryCountsClient({ counts }: InventoryCountsClientProps) {
 
   const columns: ColumnDef<InventoryCountItem>[] = [
     {
-      accessorKey: 'createdAt',
-      header: 'Fecha',
+      accessorKey: 'id',
+      header: 'Operativo',
       cell: ({ row }) => {
         const date = new Date(row.original.createdAt);
         return (
-          <div className="flex flex-col">
-            <span className="font-medium">{date.toLocaleDateString()}</span>
-            <span className="text-xs text-muted-foreground">{date.toLocaleTimeString()}</span>
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0">
+              <ClipboardCheck className="h-4 w-4 text-primary" aria-hidden="true" />
+            </div>
+            <div className="flex flex-col">
+              <span className="font-semibold tracking-tight text-sm">
+                #{row.original.id.slice(-6).toUpperCase()}
+              </span>
+              <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground font-medium">
+                <span>{date.toLocaleDateString()}</span>
+                <span className="opacity-50">•</span>
+                <span>{date.toLocaleTimeString()}</span>
+              </div>
+            </div>
           </div>
         );
       },
@@ -161,25 +172,25 @@ function StatusBadge({ status }: { status: string }) {
   switch (status) {
     case 'PENDING':
       return (
-        <Badge variant="outline" className="text-amber-600 border-amber-200 bg-amber-50">
+        <Badge variant="outline" className="text-amber-700 border-amber-200 bg-amber-50">
           Pendiente
         </Badge>
       );
     case 'IN_PROGRESS':
       return (
-        <Badge variant="outline" className="text-blue-600 border-blue-200 bg-blue-50">
+        <Badge variant="outline" className="text-blue-700 border-blue-200 bg-blue-50">
           En Proceso
         </Badge>
       );
     case 'COMPLETED':
       return (
-        <Badge variant="outline" className="text-purple-600 border-purple-200 bg-purple-50">
+        <Badge variant="outline" className="text-purple-700 border-purple-200 bg-purple-50">
           Realizado
         </Badge>
       );
     case 'APPROVED':
       return (
-        <Badge variant="outline" className="text-emerald-600 border-emerald-200 bg-emerald-50">
+        <Badge variant="outline" className="text-emerald-700 border-emerald-200 bg-emerald-50">
           Aprobado
         </Badge>
       );

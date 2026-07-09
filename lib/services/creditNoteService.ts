@@ -1,18 +1,24 @@
 /**
  * Credit note service - simplified: operational returns only
  */
-import { prisma } from '@/lib/prisma';
-import { createCashMovement } from './cashMovementService';
-import { revalidatePath } from 'next/cache';
+import { prisma } from "@/lib/prisma";
+import { createCashMovement } from "./cashMovementService";
+import { createInvoice, determineInvoiceType } from "./invoiceService";
+import { revalidatePath } from "next/cache";
+import { invalidateCashStatus } from "@/lib/cache";
 import {
   validateCreditNoteCreation,
   type CreateCreditNoteInput,
-} from './creditNoteValidationService';
+} from "./creditNoteValidationService";
 
 function decimalToNumber(decimal: unknown): number {
   if (decimal === null || decimal === undefined) return 0;
-  if (typeof decimal === 'number') return decimal;
-  if (typeof decimal === 'object' && 'toNumber' in decimal && typeof (decimal as { toNumber: () => number }).toNumber === 'function') {
+  if (typeof decimal === "number") return decimal;
+  if (
+    typeof decimal === "object" &&
+    "toNumber" in decimal &&
+    typeof (decimal as { toNumber: () => number }).toNumber === "function"
+  ) {
     return (decimal as { toNumber: () => number }).toNumber();
   }
   return 0;
@@ -21,18 +27,16 @@ function decimalToNumber(decimal: unknown): number {
 // Using 'any' for Prisma types because Prisma generates complex types with many fields
 // that don't match simple interfaces. This is acceptable for service logic.
 /* eslint-disable @typescript-eslint/no-explicit-any */
-function getOriginalItems(
-  saleType: 'direct_sale' | 'work_order',
-  sale: any,
-) {
-  if (saleType === 'direct_sale') {
+function getOriginalItems(saleType: "direct_sale" | "work_order", sale: any) {
+  if (saleType === "direct_sale") {
     return sale.items.map((item: any) => ({
       id: item.id,
       productId: item.productId ?? undefined,
       serviceId: item.serviceId ?? undefined,
       quantity: item.quantity,
       unitPrice: decimalToNumber(item.unitPrice),
-      name: item.name || item.product?.name || item.service?.name || 'Sin nombre',
+      name:
+        item.name || item.product?.name || item.service?.name || "Sin nombre",
     }));
   }
   return sale.work_order_item.map((item: any) => ({
@@ -41,28 +45,42 @@ function getOriginalItems(
     serviceId: item.serviceId ?? undefined,
     quantity: item.quantity,
     unitPrice: decimalToNumber(item.unitPrice),
-    name: item.product?.name || item.service?.name || 'Sin nombre',
+    name: item.product?.name || item.service?.name || "Sin nombre",
   }));
 }
 
 export async function createCreditNote(input: CreateCreditNoteInput) {
-  const { originalSaleId, originalSaleType, items, refundMethod, paymentMethodId, paymentMethodCode, notes, createdBy } = input;
+  const {
+    originalSaleId,
+    originalSaleType,
+    items,
+    refundMethod,
+    paymentMethodId,
+    paymentMethodCode,
+    notes,
+    createdBy,
+  } = input;
 
   // Validate using validation service
   const validation = await validateCreditNoteCreation(input);
   if (!validation.valid) {
-    throw new Error(validation.errors.join('; '));
+    throw new Error(validation.errors.join("; "));
   }
 
   // Fetch original sale
   let sale: any;
   let customerId: string;
 
-  if (originalSaleType === 'direct_sale') {
+  if (originalSaleType === "direct_sale") {
     sale = await prisma.direct_sale.findUnique({
       where: { id: originalSaleId },
       include: {
-        items: { include: { product: { select: { name: true } }, service: { select: { name: true } } } },
+        items: {
+          include: {
+            product: { select: { name: true } },
+            service: { select: { name: true } },
+          },
+        },
         customer: true,
       },
     });
@@ -71,7 +89,12 @@ export async function createCreditNote(input: CreateCreditNoteInput) {
     sale = await prisma.work_order.findUnique({
       where: { id: originalSaleId },
       include: {
-        work_order_item: { include: { product: { select: { name: true } }, service: { select: { name: true } } } },
+        work_order_item: {
+          include: {
+            product: { select: { name: true } },
+            service: { select: { name: true } },
+          },
+        },
         customer: true,
       },
     });
@@ -91,10 +114,9 @@ export async function createCreditNote(input: CreateCreditNoteInput) {
 
   for (const itemInput of items) {
     const original = originalItems.find(
-       
       (oi: any) =>
         (itemInput.productId && oi.productId === itemInput.productId) ||
-        (itemInput.serviceId && oi.serviceId === itemInput.serviceId)
+        (itemInput.serviceId && oi.serviceId === itemInput.serviceId),
     );
 
     const unitPrice = decimalToNumber(original.unitPrice);
@@ -113,7 +135,7 @@ export async function createCreditNote(input: CreateCreditNoteInput) {
   const total = creditNoteItems.reduce((sum, item) => sum + item.totalPrice, 0);
 
   if (total === 0) {
-    throw new Error('El total de la nota de credito no puede ser cero');
+    throw new Error("El total de la nota de credito no puede ser cero");
   }
 
   // Transaction
@@ -126,12 +148,58 @@ export async function createCreditNote(input: CreateCreditNoteInput) {
         customerId,
         total,
         refundMethod,
-        paymentMethodId: refundMethod === 'CASH' ? paymentMethodId : null,
-        status: 'ISSUED',
+        paymentMethodId: refundMethod === "CASH" ? paymentMethodId : null,
+        status: "ISSUED",
         notes,
         createdBy,
       },
     });
+
+    // --- Generate Pre-Invoice (Credit Note) ---
+    try {
+      const customer = await tx.customer.findUnique({
+        where: { id: customerId },
+        select: { billingData: true, name: true },
+      });
+      const billingData = customer?.billingData;
+
+      let customerDoc: string | undefined = undefined;
+      let customerDocType: string | undefined = undefined;
+
+      if (billingData && typeof billingData === "object") {
+        const bd = billingData as any;
+        customerDoc = bd.cuit || bd.dni || undefined;
+        customerDocType = bd.cuit ? "CUIT" : bd.dni ? "DNI" : undefined;
+      }
+
+      const invoiceType = determineInvoiceType(
+        billingData,
+        "NOTA_CREDITO",
+        true,
+      );
+
+      await createInvoice(
+        {
+          type: invoiceType,
+          referenceId: creditNote.id,
+          referenceType: "credit_note",
+          customerId,
+          customerName: customer?.name || "Cliente",
+          customerDoc,
+          customerDocType,
+          subtotal: Number(total),
+          total: Number(total),
+          status: "DRAFT",
+          createdBy,
+        },
+        tx,
+      );
+    } catch (invoiceError) {
+      console.error(
+        "Error generating pre-invoice for credit note:",
+        invoiceError,
+      );
+    }
 
     // Create items and update stock
     for (const item of creditNoteItems) {
@@ -157,7 +225,9 @@ export async function createCreditNote(input: CreateCreditNoteInput) {
         const previousStock = product.stock;
         const newStock = previousStock + item.quantity;
 
-        console.log(`[CreditNote] Updating stock for product ${item.productId}: ${previousStock} -> ${newStock} (+${item.quantity})`);
+        console.log(
+          `[CreditNote] Updating stock for product ${item.productId}: ${previousStock} -> ${newStock} (+${item.quantity})`,
+        );
 
         await tx.product.update({
           where: { id: item.productId },
@@ -169,7 +239,7 @@ export async function createCreditNote(input: CreateCreditNoteInput) {
             id: crypto.randomUUID(),
             productId: item.productId,
             quantity: item.quantity,
-            type: 'IN',
+            type: "IN",
             previousStock,
             newStock,
             reason: `Devolucion NC #${creditNote.id}`,
@@ -178,34 +248,36 @@ export async function createCreditNote(input: CreateCreditNoteInput) {
           },
         });
 
-        console.log(`[CreditNote] Stock movement created for NC ${creditNote.id}`);
+        console.log(
+          `[CreditNote] Stock movement created for NC ${creditNote.id}`,
+        );
       }
     }
 
     // Cash movement if CASH
-    if (refundMethod === 'CASH') {
+    if (refundMethod === "CASH") {
       await createCashMovement(
         {
-          type: 'EXPENSE',
+          type: "EXPENSE",
           amount: total,
-          method: paymentMethodCode || 'CASH',
+          method: paymentMethodCode || "CASH",
           referenceId: creditNote.id,
-          referenceType: 'credit_note_refund',
+          referenceType: "credit_note_refund",
           reason: `Reintegro NC #${creditNote.id}`,
           notes,
           createdBy,
         },
-        tx
+        tx,
       );
     }
 
     // Update customer balance if ACCOUNT_CREDIT
-    if (refundMethod === 'ACCOUNT_CREDIT') {
+    if (refundMethod === "ACCOUNT_CREDIT") {
       const customer = await tx.customer.findUnique({
         where: { id: customerId },
         select: { balance: true },
       });
-      if (!customer) throw new Error('Cliente no encontrado');
+      if (!customer) throw new Error("Cliente no encontrado");
 
       const currentBalance = decimalToNumber(customer.balance);
       const newBalance = currentBalance - total;
@@ -220,7 +292,8 @@ export async function createCreditNote(input: CreateCreditNoteInput) {
   });
 
   // Invalidate dashboard cache to show fresh data
-  revalidatePath('/adm');
+  revalidatePath("/adm");
+  invalidateCashStatus();
 
   return result;
 }
@@ -238,8 +311,10 @@ export async function getCreditNotes(filters: {
   if (filters.status) where.status = filters.status;
   if (filters.startDate || filters.endDate) {
     where.createdAt = {};
-    if (filters.startDate) (where.createdAt as Record<string, unknown>).gte = filters.startDate;
-    if (filters.endDate) (where.createdAt as Record<string, unknown>).lte = filters.endDate;
+    if (filters.startDate)
+      (where.createdAt as Record<string, unknown>).gte = filters.startDate;
+    if (filters.endDate)
+      (where.createdAt as Record<string, unknown>).lte = filters.endDate;
   }
 
   return prisma.credit_note.findMany({
@@ -248,7 +323,7 @@ export async function getCreditNotes(filters: {
       customer: { select: { id: true, name: true, phone: true } },
       _count: { select: { items: true } },
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { createdAt: "desc" },
   });
 }
 
@@ -256,7 +331,15 @@ export async function getCreditNoteById(id: string) {
   return prisma.credit_note.findUnique({
     where: { id },
     include: {
-      customer: { select: { id: true, name: true, phone: true, email: true, balance: true } },
+      customer: {
+        select: {
+          id: true,
+          name: true,
+          phone: true,
+          email: true,
+          balance: true,
+        },
+      },
       items: {
         include: {
           product: { select: { id: true, name: true } },
@@ -275,8 +358,9 @@ export async function cancelCreditNote(id: string, reason?: string) {
       include: { items: true, paymentMethod: { select: { code: true } } },
     });
 
-    if (!creditNote) throw new Error('Nota de credito no encontrada');
-    if (creditNote.status === 'CANCELLED') throw new Error('La nota de credito ya esta cancelada');
+    if (!creditNote) throw new Error("Nota de credito no encontrada");
+    if (creditNote.status === "CANCELLED")
+      throw new Error("La nota de credito ya esta cancelada");
 
     // Reverse stock
     for (const item of creditNote.items) {
@@ -297,12 +381,12 @@ export async function cancelCreditNote(id: string, reason?: string) {
               id: crypto.randomUUID(),
               productId: item.productId,
               quantity: -item.quantity,
-              type: 'OUT',
+              type: "OUT",
               previousStock,
               newStock,
               reason: `Cancelacion NC #${id}`,
               reasonDetails: reason,
-              userName: 'system',
+              userName: "system",
             },
           });
         }
@@ -310,24 +394,24 @@ export async function cancelCreditNote(id: string, reason?: string) {
     }
 
     // Reverse cash movement if CASH
-    if (creditNote.refundMethod === 'CASH' && creditNote.paymentMethodId) {
+    if (creditNote.refundMethod === "CASH" && creditNote.paymentMethodId) {
       await createCashMovement(
         {
-          type: 'INCOME',
+          type: "INCOME",
           amount: Number(creditNote.total),
-          method: creditNote.paymentMethod?.code || 'CASH',
+          method: creditNote.paymentMethod?.code || "CASH",
           referenceId: id,
-          referenceType: 'credit_note_cancelled',
+          referenceType: "credit_note_cancelled",
           reason: `Cancelacion NC #${id}`,
           notes: reason,
-          createdBy: 'system',
+          createdBy: "system",
         },
-        tx
+        tx,
       );
     }
 
     // Reverse customer balance if ACCOUNT_CREDIT
-    if (creditNote.refundMethod === 'ACCOUNT_CREDIT') {
+    if (creditNote.refundMethod === "ACCOUNT_CREDIT") {
       const customer = await tx.customer.findUnique({
         where: { id: creditNote.customerId },
         select: { balance: true },
@@ -344,10 +428,11 @@ export async function cancelCreditNote(id: string, reason?: string) {
 
     const updated = await tx.credit_note.update({
       where: { id },
-      data: { status: 'CANCELLED' },
+      data: { status: "CANCELLED" },
     });
 
     return updated;
   });
 
+  invalidateCashStatus();
 }

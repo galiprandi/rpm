@@ -126,5 +126,43 @@ secondaryActions={[
 
 ## 13. Entity Row Consistency
 
-- **Standardized List Row Entity Pattern**: Para listados de entidades (Proveedores, Listas de Precios, Métodos de Pago, Categorías, Productos en Auditoría), la primera columna debe usar un contenedor de `8x8` (`w-8 h-8`) con `rounded-lg`, `bg-primary/10`, `shadow-sm` y `border border-primary/20` para el icono, acompañado de un texto con `font-semibold tracking-tight`.
+- **Standardized List Row Entity Pattern**: Para listados de entidades (Proveedores, Listas de Precios, Métodos de Pago, Categorías, Comprobantes de Compra, Productos en Auditoría) y tarjetas del Dashboard (Movimientos Recientes, Caja, Listos para Entrega), los elementos de lista deben usar un contenedor de `8x8` (`w-8 h-8`) con `rounded-lg`, `bg-primary/10`, `shadow-sm` y `border border-primary/20` para el icono/emoji, acompañado de un texto con `font-semibold tracking-tight`.
 - **Dynamic Entity Colors**: En entidades con color propio (Categorías), el fondo del contenedor debe usar ese color y el icono una `drop-shadow-sm` blanca para garantizar legibilidad.
+- **Product Row Pattern**: La celda de producto en la tabla utiliza el `Standardized List Row Entity Pattern` integrando la imagen del producto (o icono `Package`) y el SKU en fuente mono debajo del nombre.
+- **Inventory Operative Pattern**: Los listados de operativos de inventario utilizan el `Standardized List Row Entity Pattern` con el icono `ClipboardCheck`, mostrando el folio (#ID) como título y el timestamp detallado como sub-texto.
+- **Customer List Pattern**: La tabla de clientes utiliza el `Standardized List Row Entity Pattern` con el icono `User`. Los vehículos asociados se muestran como mini-pills con `font-mono` para una rápida identificación de patentes.
+- **Category List Pattern**: La tabla de categorías utiliza el `Standardized List Row Entity Pattern` con el icono `Folder` y el color dinámico de la categoría.
+- **Operational Log Pattern**: En listados de movimientos (Operaciones Diarias), las celdas de "Hora" y "Método" deben usar `font-mono` y un tamaño de fuente ligeramente reducido (`text-xs` o `text-sm`) para maximizar la densidad de información sin perder legibilidad.
+- **Financial Report Pattern**: Los reportes de deudores deben resaltar el saldo pendiente usando `font-mono font-bold text-red-600` y mostrar patentes de vehículos como mini-pills de alta densidad.
+- **Price List Detail Pattern**: La tabla de excepciones en el detalle de listas de precios utiliza el `Standardized List Row Entity Pattern` (icono `Package`) y aplica `font-mono` a todos los valores técnicos y financieros (SKU, Costos, Márgenes, Precios Finales).
+- **Detail Financial Summary Pattern**: Las vistas de detalle (OTs, Ventas Directas) deben mostrar un resumen financiero en el `Header` usando metadata pills: `Total` (muted), `Pagado` (emerald) y `Pendiente` (amber), todos con `font-mono` y formateo de moneda estricto.
+- **Checklist Visual Pattern**: Los ítems de checklist deben usar un contenedor de `w-5 h-5` para el estado de verificación, con colores semánticos (`blue-600` para ingreso, `emerald-600` para salida/calidad) y transiciones de escala para el icono `Check`.
+
+## 14. Form UX Enhancement Pattern
+
+Los formularios de alta calidad deben usar iconos contextuales de Lucide posicionados de forma absoluta dentro de contenedores relativos para cada input textual:
+- **Iconos**: Usar `absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none` y `aria-hidden="true"`.
+- **Padding**: Aplicar `pl-9` al input para evitar colisiones visuales con el icono.
+- **Tipografía**: Campos técnicos (Teléfonos, CUIT, SKUs, Códigos) deben usar `font-mono`.
+
+## 15. Empty State Protocol
+
+Para estados vacíos en tablas y dashboards:
+- **Iconografía**: El icono decorativo debe ser grande (ej: `h-12 w-12`) y usar la clase `text-muted-foreground/20` para mantener una jerarquía visual sutil.
+- **Mensajería**: El mensaje debe ser claro y estar acompañado de un botón de acción primario si el usuario tiene permisos para crear la entidad.
+
+## 16. Layout Shift Mitigation (Skeletons)
+
+Los `loading.tsx` deben implementar esqueletos que imiten no solo la estructura general, sino también las proporciones de la tabla:
+- **Header**: Usar `bg-muted/50` para el fondo del encabezado del esqueleto.
+- **Columnas**: Definir anchos proporcionales (usando `flex-[valor]` o anchos fijos) que coincidan con la vista final para eliminar saltos de layout al cargar los datos.
+
+## 17. Typography Consistency
+
+- **Technical Data**: Siempre usar `font-mono` para IDs, SKUs, CUIs, Teléfonos, Fechas (en contextos técnicos), emails y montos monetarios. Esto mejora la legibilidad de datos tabulares y alineación numérica.
+
+## 18. Vehicles & Equipment Refinement
+
+- **Detail Headers**: Utilizar `Header` con `titleClassName="font-mono"` para patentes/IDs. Integrar metadatos técnicos (Categoría, Año, Color) y contactos de clientes en el slot `children` usando mini-pills con `bg-muted/50` o colores semánticos (azul para teléfonos).
+- **History Visualization**: El historial de OTs debe seguir el *Standardized List Row Entity Pattern* con el icono `ClipboardList` en contenedor 8x8 y `font-mono` para IDs y montos.
+- **Form Patterns**: `VehicleDialog` debe implementar el *Form UX Enhancement Pattern* con iconos absolutos y `font-mono` en todos los campos de identificación y contacto.

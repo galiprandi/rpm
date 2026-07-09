@@ -1,12 +1,17 @@
 import { PublicLayout } from '@/components/public/layout/PublicLayout';
 import { Hero } from '@/components/public/sections/Hero';
 import { Services } from '@/components/public/sections/Services';
+import { FeaturedProducts } from '@/components/public/sections/FeaturedProducts';
+import { Testimonials } from '@/components/public/sections/Testimonials';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Camera, Phone, MapPin } from 'lucide-react';
-import Link from 'next/link';
+import { ArrowRight, Camera } from 'lucide-react';
+import { PUBLIC_SITE_CONFIG, DEFAULT_WHATSAPP_MESSAGE } from '@/lib/config/public-site';
+import { Metadata } from 'next';
 
-const WHATSAPP_URL = "https://wa.me/543813199647?text=Hola%20RPM%20Accesorios!%20Me%20gustaría%20agendar%20un%20turno%20para%20mi%20vehículo.";
-const INSTAGRAM_URL = "https://instagram.com/rpm.accesorios"; // Ajustar si es otro el handle
+export const metadata: Metadata = {
+  title: 'Equipá tu Pasión',
+  description: PUBLIC_SITE_CONFIG.description,
+};
 
 export default function HomePage() {
   return (
@@ -15,6 +20,10 @@ export default function HomePage() {
       <Hero />
       
       <Services />
+
+      <FeaturedProducts />
+
+      <Testimonials />
 
       {/* Narrative Section */}
       <section className="py-40 bg-zinc-950 overflow-hidden">
@@ -46,12 +55,12 @@ export default function HomePage() {
               </div>
 
               <div className="flex flex-wrap gap-6">
-                <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
+                <a href={PUBLIC_SITE_CONFIG.links.whatsapp(DEFAULT_WHATSAPP_MESSAGE)} target="_blank" rel="noopener noreferrer">
                   <Button className="bg-white text-black hover:bg-zinc-200 font-bold px-10 h-14 rounded-full transition-all">
                     Agendar Instalación
                   </Button>
                 </a>
-                <a href={INSTAGRAM_URL} target="_blank" rel="noopener noreferrer">
+                <a href={PUBLIC_SITE_CONFIG.instagramUrl} target="_blank" rel="noopener noreferrer">
                   <Button variant="outline" className="border-white/10 text-white hover:bg-white/5 font-bold px-10 h-14 rounded-full gap-2">
                     <Camera className="h-5 w-5" />
                     Ver Trabajos
@@ -69,7 +78,7 @@ export default function HomePage() {
                 <p className="text-brand font-bold uppercase tracking-widest text-xs">Visto en redes</p>
                 <h4 className="text-3xl font-bold text-white tracking-tight italic">ÚLTIMOS TRABAJOS</h4>
                 <a 
-                  href={INSTAGRAM_URL} 
+                  href={PUBLIC_SITE_CONFIG.instagramUrl}
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="flex items-center text-sm font-bold text-white/60 hover:text-white transition-colors group/btn"
@@ -94,7 +103,7 @@ export default function HomePage() {
               ¿Llevamos tu vehículo <br /> al siguiente nivel?
             </h3>
             <div className="flex justify-center">
-               <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
+               <a href={PUBLIC_SITE_CONFIG.links.whatsapp(DEFAULT_WHATSAPP_MESSAGE)} target="_blank" rel="noopener noreferrer">
                  <Button className="bg-brand text-white hover:bg-brand/90 font-bold px-16 h-20 text-xl rounded-full transition-all hover:scale-105 active:scale-95 border-none shadow-[0_0_40px_rgba(255,75,0,0.3)]">
                     Solicitar Cotización
                  </Button>

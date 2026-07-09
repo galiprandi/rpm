@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -10,7 +11,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Loader2, Plus, Search, Trash2, Package, Wrench, Minus, Plus as PlusIcon, X, Check } from 'lucide-react';
+import {
+  Loader2,
+  Plus,
+  Search,
+  Trash2,
+  Package,
+  Wrench,
+  Minus,
+  Plus as PlusIcon,
+  X,
+  Check,
+  Tags,
+  BadgeDollarSign
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatARS } from '@/lib/utils/format';
 import { Badge } from '@/components/ui/badge';
@@ -363,11 +377,13 @@ export function ProductServiceSelector({
           <div className="flex gap-3 w-full">
             {showCategoryFilter && (
               <div className="w-[70%] min-w-[200px] space-y-1.5">
-                <label className="text-sm font-medium">Categoría</label>
-                <Select value={selectedCategoryId} onValueChange={setSelectedCategoryId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Todas las categorías" />
-                  </SelectTrigger>
+                <Label htmlFor="selector-category">Categoría</Label>
+                <div className="relative">
+                  <Tags className="absolute left-3 top-2 h-4 w-4 text-muted-foreground z-10 pointer-events-none" aria-hidden="true" />
+                  <Select value={selectedCategoryId} onValueChange={setSelectedCategoryId}>
+                    <SelectTrigger id="selector-category" className="pl-9">
+                      <SelectValue placeholder="Todas las categorías" />
+                    </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">Todas las categorías</SelectItem>
                     {categories.map(cat => (
@@ -375,16 +391,19 @@ export function ProductServiceSelector({
                     ))}
                   </SelectContent>
                 </Select>
+                </div>
               </div>
             )}
 
             {showPriceListSelector && (
               <div className="w-[30%] min-w-[140px] space-y-1.5">
-                <label className="text-sm font-medium">Lista de Precios</label>
-                <Select value={selectedPriceListId} onValueChange={setSelectedPriceListId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar lista" />
-                  </SelectTrigger>
+                <Label htmlFor="selector-price-list">Lista de Precios</Label>
+                <div className="relative">
+                  <BadgeDollarSign className="absolute left-3 top-2 h-4 w-4 text-muted-foreground z-10 pointer-events-none" aria-hidden="true" />
+                  <Select value={selectedPriceListId} onValueChange={setSelectedPriceListId}>
+                    <SelectTrigger id="selector-price-list" className="pl-9">
+                      <SelectValue placeholder="Seleccionar lista" />
+                    </SelectTrigger>
                   <SelectContent>
                     {priceLists.map(pl => (
                       <SelectItem key={pl.id} value={pl.id}>
@@ -393,6 +412,7 @@ export function ProductServiceSelector({
                     ))}
                   </SelectContent>
                 </Select>
+                </div>
               </div>
             )}
           </div>
@@ -400,7 +420,7 @@ export function ProductServiceSelector({
 
         {/* Search input */}
         <div className="relative w-full">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10 pointer-events-none" aria-hidden="true" />
           <Input
             ref={inputRef}
             placeholder="Buscar: led+cronos (ambas) o filtro aire (cualquiera)"
@@ -410,7 +430,7 @@ export function ProductServiceSelector({
               setShowResults(true);
             }}
             onFocus={() => setShowResults(true)}
-            className={cn("pl-10", searchTerm && "pr-10")}
+            className={cn("pl-9", searchTerm && "pr-10")}
           />
           {searchTerm && (
             <button
@@ -464,21 +484,26 @@ export function ProductServiceSelector({
                       key={result.id}
                       className="w-full px-4 py-2 flex items-center justify-between border-b last:border-0 hover:bg-accent/50"
                     >
-                      <div className="min-w-0 overflow-hidden flex-1 mr-4">
-                        <div className="font-semibold text-sm truncate mb-1">
+                      <div className="min-w-0 overflow-hidden flex-1 mr-4 flex items-center gap-3">
+                        {/* Standardized List Row Entity Pattern */}
+                        <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0">
                           {result.type === 'product' ? (
-                            <Package className="h-4 w-4 text-blue-500 inline mr-1.5 -mt-0.5" />
+                            <Package className="h-4 w-4 text-primary" aria-hidden="true" />
                           ) : (
-                            <Wrench className="h-4 w-4 text-orange-500 inline mr-1.5 -mt-0.5" />
+                            <Wrench className="h-4 w-4 text-primary" aria-hidden="true" />
                           )}
-                          {truncateText(result.name)}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="font-semibold text-sm truncate tracking-tight">
+                            {truncateText(result.name)}
+                          </div>
                         </div>
                         <div className="flex items-center gap-2 min-w-0">
                           <Badge variant="outline" className="text-xs flex-shrink-0 h-5 px-1.5">
                             {result.type === 'product' ? 'Producto' : 'Servicio'}
                           </Badge>
                           {result.type === 'product' ? (
-                            <span className="text-xs text-muted-foreground truncate min-w-0">
+                            <span className="text-xs text-muted-foreground truncate min-w-0 font-mono">
                               {result.sku && <span>SKU: {result.sku}</span>}
                               {result.stock !== undefined && (
                                 <span className="ml-1.5">Stock: {result.stock}</span>
@@ -579,12 +604,14 @@ export function ProductServiceSelector({
           <div className="divide-y overflow-x-hidden min-w-0">
             {cartItems.map((item, index) => (
               <div key={`${item.id}-${index}`} className="p-2 flex items-center gap-3 min-w-0">
-                {/* Icon */}
-                {item.type === 'product' ? (
-                  <Package className="h-4 w-4 text-blue-500 flex-shrink-0" />
-                ) : (
-                  <Wrench className="h-4 w-4 text-orange-500 flex-shrink-0" />
-                )}
+                {/* Standardized List Row Entity Pattern */}
+                <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0">
+                  {item.type === 'product' ? (
+                    <Package className="h-4 w-4 text-primary" aria-hidden="true" />
+                  ) : (
+                    <Wrench className="h-4 w-4 text-primary" aria-hidden="true" />
+                  )}
+                </div>
 
                 {/* Info */}
                 <div className="flex-1 min-w-0">
@@ -596,7 +623,7 @@ export function ProductServiceSelector({
                       </Badge>
                     )}
                   </div>
-                  <div className="text-xs text-muted-foreground mt-0.5">
+                  <div className="text-xs text-muted-foreground mt-0.5 font-mono">
                     {item.type === 'product' && item.stock !== undefined && (
                       <span>Stock: {item.stock}</span>
                     )}

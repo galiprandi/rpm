@@ -1,16 +1,19 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
-import { headers } from 'next/headers';
-import { prisma } from '@/lib/prisma';
-import { UserRole } from '@/lib/auth/roles';
-import { invalidateCashStatus } from '@/lib/cache';
-import { isCashRegisterOpen } from '@/lib/services/cashMovementService';
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { UserRole } from "@/lib/auth/roles";
+import { invalidateCashStatus } from "@/lib/cache";
+import { isCashRegisterOpen } from "@/lib/services/cashMovementService";
+import { getSessionWithAuth } from "@/lib/api-middleware";
 
 // Helper para convertir Decimal a number
 function decimalToNumber(decimal: unknown): number {
   if (decimal === null || decimal === undefined) return 0;
-  if (typeof decimal === 'number') return decimal;
-  if (typeof decimal === 'object' && 'toNumber' in decimal && typeof decimal.toNumber === 'function') {
+  if (typeof decimal === "number") return decimal;
+  if (
+    typeof decimal === "object" &&
+    "toNumber" in decimal &&
+    typeof decimal.toNumber === "function"
+  ) {
     return (decimal as { toNumber: () => number }).toNumber();
   }
   return 0;
@@ -19,13 +22,14 @@ function decimalToNumber(decimal: unknown): number {
 // POST /api/cash/close - Close cash register
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
+    const session = await getSessionWithAuth();
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // Check if user has required role (STAFF or ADMIN)
-    const userRole = (session.user as { role?: string }).role as UserRole || UserRole.USER;
+    const userRole =
+      ((session.user as { role?: string }).role as UserRole) || UserRole.USER;
     const roleHierarchy = {
       [UserRole.USER]: 0,
       [UserRole.STAFF]: 1,
@@ -34,8 +38,8 @@ export async function POST(request: NextRequest) {
 
     if (roleHierarchy[userRole] < roleHierarchy[UserRole.STAFF]) {
       return NextResponse.json(
-        { error: 'Forbidden: Insufficient permissions' },
-        { status: 403 }
+        { error: "Forbidden: Insufficient permissions" },
+        { status: 403 },
       );
     }
 
@@ -43,10 +47,10 @@ export async function POST(request: NextRequest) {
     const { counts, differenceReason } = body;
 
     // Validate counts object
-    if (!counts || typeof counts !== 'object') {
+    if (!counts || typeof counts !== "object") {
       return NextResponse.json(
-        { error: 'Counts object is required with amounts per payment method' },
-        { status: 400 }
+        { error: "Counts object is required with amounts per payment method" },
+        { status: 400 },
       );
     }
 
@@ -55,28 +59,28 @@ export async function POST(request: NextRequest) {
 
     if (!isOpen) {
       return NextResponse.json(
-        { error: 'Cash register is not open. Please open it first.' },
-        { status: 400 }
+        { error: "Cash register is not open. Please open it first." },
+        { status: 400 },
       );
     }
 
     // Get the current opening movement
     const currentOpening = await prisma.cash_movement.findFirst({
-      where: { type: 'OPENING' },
-      orderBy: { createdAt: 'desc' },
+      where: { type: "OPENING" },
+      orderBy: { createdAt: "desc" },
     });
 
     if (!currentOpening) {
       return NextResponse.json(
-        { error: 'Cash register is not open. Please open it first.' },
-        { status: 400 }
+        { error: "Cash register is not open. Please open it first." },
+        { status: 400 },
       );
     }
 
     // Check if already closed
     const closingAfterOpening = await prisma.cash_movement.findFirst({
       where: {
-        type: 'CLOSING',
+        type: "CLOSING",
         createdAt: {
           gte: currentOpening.createdAt,
         },
@@ -85,8 +89,8 @@ export async function POST(request: NextRequest) {
 
     if (closingAfterOpening) {
       return NextResponse.json(
-        { error: 'Cash register is already closed' },
-        { status: 400 }
+        { error: "Cash register is already closed" },
+        { status: 400 },
       );
     }
 
@@ -104,18 +108,18 @@ export async function POST(request: NextRequest) {
     movements.forEach((movement: any) => {
       const method = movement.method;
       const amount = decimalToNumber(movement.amount);
-      
+
       if (!expectedByMethod[method]) {
         expectedByMethod[method] = 0;
       }
 
       switch (movement.type) {
-        case 'OPENING':
-        case 'INCOME':
+        case "OPENING":
+        case "INCOME":
           expectedByMethod[method] += amount;
           break;
-        case 'EXPENSE':
-        case 'PURCHASE_VOUCHER':
+        case "EXPENSE":
+        case "PURCHASE_VOUCHER":
           expectedByMethod[method] -= amount;
           break;
       }
@@ -125,11 +129,11 @@ export async function POST(request: NextRequest) {
     const differences: Record<string, number> = {};
     let hasDifference = false;
 
-    Object.keys(counts).forEach(method => {
+    Object.keys(counts).forEach((method) => {
       const counted = Number(counts[method]) || 0;
       const expected = expectedByMethod[method] || 0;
       const difference = counted - expected;
-      
+
       differences[method] = difference;
       if (Math.abs(difference) > 0.01) {
         hasDifference = true;
@@ -137,15 +141,18 @@ export async function POST(request: NextRequest) {
     });
 
     // Require reason if there's any difference
-    if (hasDifference && (!differenceReason || differenceReason.trim().length < 5)) {
+    if (
+      hasDifference &&
+      (!differenceReason || differenceReason.trim().length < 5)
+    ) {
       return NextResponse.json(
-        { 
-          error: 'Difference reason is required when there are discrepancies',
+        {
+          requiresReason: true,
           differences,
           expected: expectedByMethod,
-          counted: counts
+          counted: counts,
         },
-        { status: 400 }
+        { status: 200 },
       );
     }
 
@@ -153,12 +160,14 @@ export async function POST(request: NextRequest) {
     const cashCounted = Number(counts.CASH) || Number(counts.EFECTIVO) || 0;
     const closing = await prisma.cash_movement.create({
       data: {
-        type: 'CLOSING',
+        type: "CLOSING",
         amount: cashCounted,
-        method: 'CASH',
-        referenceType: 'manual',
-        reason: 'Cierre de caja',
-        notes: hasDifference ? `Diferencias: ${JSON.stringify(differences)}. Motivo: ${differenceReason}` : undefined,
+        method: "CASH",
+        referenceType: "manual",
+        reason: "Cierre de caja",
+        notes: hasDifference
+          ? `Diferencias: ${JSON.stringify(differences)}. Motivo: ${differenceReason}`
+          : undefined,
         createdBy: session.user.id,
       },
     });
@@ -169,11 +178,11 @@ export async function POST(request: NextRequest) {
         if (Math.abs(diff) > 0.01) {
           await prisma.cash_movement.create({
             data: {
-              type: 'ADJUSTMENT',
+              type: "ADJUSTMENT",
               amount: Math.abs(diff),
               method,
-              referenceType: 'manual',
-              reason: diff > 0 ? 'Sobrante en arqueo' : 'Faltante en arqueo',
+              referenceType: "manual",
+              reason: diff > 0 ? "Sobrante en arqueo" : "Faltante en arqueo",
               notes: differenceReason,
               createdBy: session.user.id,
             },
@@ -199,13 +208,13 @@ export async function POST(request: NextRequest) {
         counted: counts,
         hasDifference,
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
-    console.error('Error closing cash register:', error);
+    console.error("Error closing cash register:", error);
     return NextResponse.json(
-      { error: 'Failed to close cash register' },
-      { status: 500 }
+      { error: "Failed to close cash register" },
+      { status: 500 },
     );
   }
 }

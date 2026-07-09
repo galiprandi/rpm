@@ -1,8 +1,16 @@
+'use client';
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Phone, ArrowRight } from 'lucide-react';
+import { Phone, ArrowRight, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { formatARS, getVehicleEmoji } from '@/lib/utils/format';
+import { getWhatsAppLink, getWorkOrderMessage } from '@/lib/utils/whatsapp';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface ReadyForDeliveryCardProps {
   readyForDelivery: Array<{
@@ -10,12 +18,14 @@ interface ReadyForDeliveryCardProps {
     vehicle: {
       type: 'COMPACT' | 'SEDAN' | 'SUV' | 'PICKUP' | 'TRUCK';
       description: string;
+      identifier: string;
     };
     customer: {
       name: string;
       phone: string;
     };
     total: number;
+    totalPaid: number;
     completedAt: string;
     invoiceStatus: 'ISSUED' | 'PENDING';
   }>;
@@ -31,7 +41,10 @@ export function ReadyForDeliveryCard({
           <CardTitle className="text-sm font-medium text-muted-foreground">
             Listos para Entrega
           </CardTitle>
-          <Phone className="h-4 w-4 text-muted-foreground" />
+          <Phone
+            className="h-4 w-4 text-muted-foreground pointer-events-none"
+            aria-hidden="true"
+          />
         </CardHeader>
         <CardContent>
           <div className="text-center py-4">
@@ -50,27 +63,83 @@ export function ReadyForDeliveryCard({
         <CardTitle className="text-sm font-medium text-muted-foreground">
           Listos para Entrega
         </CardTitle>
-        <Phone className="h-4 w-4 text-muted-foreground" />
+        <Phone
+          className="h-4 w-4 text-muted-foreground pointer-events-none"
+          aria-hidden="true"
+        />
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
           {readyForDelivery.map((item) => (
-            <div key={item.workOrderId} className="flex items-start justify-between p-2 rounded-lg bg-slate-50">
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">{getVehicleEmoji(item.vehicle.type)}</span>
-                  <span className="font-medium text-sm">{item.vehicle.description}</span>
+            <div
+              key={item.workOrderId}
+              className="flex items-start justify-between p-2 rounded-lg bg-slate-50/50 border border-transparent hover:border-slate-200 transition-colors"
+            >
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0">
+                  <span className="text-sm" aria-hidden="true">
+                    {getVehicleEmoji(item.vehicle.type)}
+                  </span>
                 </div>
-                <div className="text-xs text-muted-foreground mt-1">
-                  {item.customer.name} · #{item.workOrderId.slice(-4)} · {formatARS(item.total)}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold tracking-tight text-sm truncate font-mono">
+                      {item.vehicle.identifier}
+                    </span>
+                    <span className="text-[11px] text-muted-foreground truncate">
+                      {item.vehicle.description}
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1.5 flex-wrap">
+                    <span className="font-medium">{item.customer.name}</span>
+                    <span className="text-muted-foreground/40">•</span>
+                    <span className="font-mono font-medium text-emerald-700">
+                      {formatARS(item.total)}
+                    </span>
+                  </div>
                 </div>
               </div>
-              <a
-                href={`tel:${item.customer.phone}`}
-                className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800"
-              >
-                <Phone className="h-3 w-3" />
-              </a>
+              <div className="flex items-center gap-1">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 text-emerald-700 hover:text-emerald-700 hover:bg-emerald-50"
+                      onClick={() => {
+                        const msg = getWorkOrderMessage({
+                          customerName: item.customer.name,
+                          vehicleIdentifier: item.vehicle.identifier,
+                          status: 'READY',
+                          total: item.total,
+                          totalPaid: item.totalPaid,
+                        });
+                        window.open(getWhatsAppLink(item.customer.phone, msg), '_blank');
+                      }}
+                      aria-label={`Notificar por WhatsApp a ${item.customer.name}`}
+                    >
+                      <MessageSquare className="h-4 w-4 pointer-events-none" aria-hidden="true" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Notificar por WhatsApp</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      asChild
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 text-blue-700 hover:text-blue-700 hover:bg-blue-50"
+                    >
+                      <a href={`tel:${item.customer.phone}`} aria-label={`Llamar a ${item.customer.name}`}>
+                        <Phone className="h-4 w-4 pointer-events-none" aria-hidden="true" />
+                      </a>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Llamar al cliente</TooltipContent>
+                </Tooltip>
+              </div>
             </div>
           ))}
         </div>

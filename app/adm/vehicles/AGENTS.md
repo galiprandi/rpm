@@ -33,3 +33,5 @@ Gestión de vehículos de clientes con categorías flexibles que soportan tanto 
 - Soporte para equipos no motorizados (audio, trailers, etc.)
 - Vinculado con cálculos de costos de servicios por factor vehículo
 - Historial de servicios a través de órdenes de trabajo
+- **UI/UX Patterns**: Implementa *Metadata Pills* en cabecera y *Standardized List Row Entity Pattern* en tablas de historial. Todos los identificadores técnicos y montos deben usar `font-mono`.
+- **Accessibility**: Todos los iconos decorativos deben tener `aria-hidden="true"` y `pointer-events-none`.

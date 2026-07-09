@@ -3,7 +3,7 @@
 import { useState, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Header, CrudAdmin, CrudStats, type StatItem } from "@/components/adm";
-import { Phone, User, Eye, TrendingDown, Users, Wallet, Plus } from "lucide-react";
+import { Phone, User, Eye, TrendingDown, Users, Wallet, Plus, MessageSquare } from "lucide-react";
 import Link from "next/link";
 import { type ColumnDef } from "@tanstack/react-table";
 import { CustomerDialog } from "@/components/customers/CustomerDialog";
@@ -14,6 +14,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { getWhatsAppLink, getDebtReminderMessage } from "@/lib/utils/whatsapp";
 
 interface Customer {
   id: string;
@@ -86,18 +87,18 @@ export default function CustomersClient({ initialCustomers }: CustomersClientPro
         cell: ({ row }) => (
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0">
-              <User className="h-4 w-4 text-primary" aria-hidden="true" />
+              <User className="h-4 w-4 text-primary pointer-events-none" aria-hidden="true" />
             </div>
             <div>
               <div className="font-semibold tracking-tight">{row.original.name}</div>
               {row.original.email && (
-                <div className="text-sm text-muted-foreground">
+                <div className="text-sm text-muted-foreground font-mono">
                   {row.original.email}
                 </div>
               )}
               {isBillingData(row.original.billingData) && (
-                <div className="text-xs text-blue-600">
-                  Fact: {(row.original.billingData as { cuit: string; invoiceType: string }).invoiceType} - CUIT: {(row.original.billingData as { cuit: string; invoiceType: string }).cuit}
+                <div className="text-xs text-blue-700">
+                  Fact: {(row.original.billingData as { cuit: string; invoiceType: string }).invoiceType} - CUIT: <span className="font-mono">{(row.original.billingData as { cuit: string; invoiceType: string }).cuit}</span>
                 </div>
               )}
             </div>
@@ -107,12 +108,40 @@ export default function CustomersClient({ initialCustomers }: CustomersClientPro
       {
         accessorKey: "phone",
         header: "Teléfono",
-        cell: ({ row }) => (
-          <div className="flex items-center gap-1">
-            <Phone className="h-3 w-3" />
-            {row.original.phone || <span className="text-muted-foreground">-</span>}
-          </div>
-        ),
+        cell: ({ row }) => {
+          const phone = row.original.phone;
+          if (!phone) return <span className="text-muted-foreground font-mono">-</span>;
+
+          return (
+            <div className="flex items-center gap-2 font-mono group">
+              <div className="flex items-center gap-1.5">
+                <Phone className="h-3.5 w-3.5 text-muted-foreground/70 pointer-events-none" aria-hidden="true" />
+                {phone}
+              </div>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <a
+                    href={getWhatsAppLink(
+                      phone,
+                      row.original.balance > 0
+                        ? getDebtReminderMessage(row.original.name, row.original.balance)
+                        : `Hola ${row.original.name}!`
+                    )}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-1 rounded-md hover:bg-emerald-50 text-emerald-700 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <MessageSquare className="h-3.5 w-3.5" />
+                  </a>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {row.original.balance > 0 ? 'Notificar deuda' : 'Enviar WhatsApp'}
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          );
+        },
       },
       {
         accessorKey: "vehicles",
@@ -123,19 +152,19 @@ export default function CustomersClient({ initialCustomers }: CustomersClientPro
             return <span className="text-sm text-muted-foreground">Sin vehículos</span>;
           }
           return (
-            <div className="flex flex-col gap-1">
-              {vehicles.slice(0, 2).map((v) => (
+            <div className="flex flex-wrap gap-1 max-w-[200px]">
+              {vehicles.slice(0, 3).map((v) => (
                 <Link
                   key={v.id}
                   href={`/adm/vehicles/${v.id}`}
-                  className="text-sm bg-muted px-2 py-0.5 rounded hover:bg-muted/80 hover:underline"
+                  className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-secondary/50 text-[10px] font-mono border border-secondary hover:bg-secondary transition-colors"
                 >
                   {v.identifier}
                 </Link>
               ))}
-              {vehicles.length > 2 && (
-                <span className="text-sm text-muted-foreground">
-                  +{vehicles.length - 2} más
+              {vehicles.length > 3 && (
+                <span className="text-[10px] text-muted-foreground self-center">
+                  +{vehicles.length - 3}
                 </span>
               )}
             </div>
@@ -152,7 +181,7 @@ export default function CustomersClient({ initialCustomers }: CustomersClientPro
           }
           if (balance > 0) {
             return (
-              <span className="font-medium text-red-600">
+              <span className="font-mono font-medium text-red-700">
                 {new Intl.NumberFormat('es-AR', {
                   style: 'currency',
                   currency: 'ARS',
@@ -162,7 +191,7 @@ export default function CustomersClient({ initialCustomers }: CustomersClientPro
           }
           // balance < 0 (saldo a favor)
           return (
-            <span className="font-medium text-emerald-600">
+            <span className="font-mono font-medium text-emerald-700">
               {new Intl.NumberFormat('es-AR', {
                 style: 'currency',
                 currency: 'ARS',
@@ -175,7 +204,7 @@ export default function CustomersClient({ initialCustomers }: CustomersClientPro
         accessorKey: "_count.workOrders",
         header: "OTs",
         cell: ({ row }) => (
-          <span className="font-medium">{row.original._count.workOrders}</span>
+          <span className="font-mono font-medium">{row.original._count.workOrders}</span>
         ),
       },
     ],
@@ -268,8 +297,8 @@ export default function CustomersClient({ initialCustomers }: CustomersClientPro
           <Tooltip>
             <TooltipTrigger asChild>
               <Link href={`/adm/customers/${customer.id}`}>
-                <Button variant="ghost" size="sm" aria-label="Ver detalle">
-                  <Eye className="h-4 w-4" />
+                <Button variant="ghost" size="sm" aria-label="Ver detalle del cliente">
+                  <Eye className="h-4 w-4" aria-hidden="true" />
                 </Button>
               </Link>
             </TooltipTrigger>

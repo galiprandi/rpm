@@ -1,15 +1,21 @@
-'use client';
+"use client";
 
-import { Button } from '@/components/ui/button';
-import { ArrowLeft, LucideIcon } from 'lucide-react';
-import { ReactNode } from 'react';
-import Link from 'next/link';
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, LucideIcon } from "lucide-react";
+import { ReactNode } from "react";
+import Link from "next/link";
 
 export interface HeaderAction {
   label: string;
   onClick?: () => void;
   href?: string;
-  variant?: 'default' | 'outline' | 'ghost' | 'secondary' | 'destructive' | 'link';
+  variant?:
+    | "default"
+    | "outline"
+    | "ghost"
+    | "secondary"
+    | "destructive"
+    | "link";
   icon?: LucideIcon;
   className?: string;
   disabled?: boolean;
@@ -23,12 +29,12 @@ export interface HeaderProps {
   title: string;
   /** Subtítulo descriptivo (opcional) */
   description?: string;
-  /** 
+  /**
    * Contenido adicional debajo del título (stats, breadcrumbs, contactos, etc.)
    * Si no se provee, se usa el slot por defecto
    */
   children?: ReactNode;
-  /** 
+  /**
    * Acción principal (CTA) - aparece como botón destacado a la derecha
    * Ej: "Nuevo Producto", "Crear Vehículo"
    */
@@ -38,7 +44,7 @@ export interface HeaderProps {
    * Ej: "Exportar", "Volver", "Eliminar"
    */
   secondaryActions?: HeaderAction[];
-  /** 
+  /**
    * Mostrar botón "Volver" automáticamente
    * Usa router.back() por defecto
    */
@@ -52,15 +58,17 @@ export interface HeaderProps {
   leftActions?: ReactNode;
   /** Clases CSS adicionales para el contenedor */
   className?: string;
+  /** Clases CSS adicionales para el título */
+  titleClassName?: string;
 }
 
 /**
  * Header estándar para vistas del panel de administración.
- * 
+ *
  * @example
  * // Vista de listado simple
- * <Header 
- *   title="Productos" 
+ * <Header
+ *   title="Productos"
  *   description="Gestiona tu catálogo de productos"
  *   primaryAction={{
  *     label: 'Nuevo Producto',
@@ -68,7 +76,7 @@ export interface HeaderProps {
  *     icon: Plus
  *   }}
  * />
- * 
+ *
  * @example
  * // Vista de detalle con acciones múltiples
  * <Header
@@ -98,18 +106,21 @@ export function Header({
   showBackButton = false,
   onBack,
   leftActions,
-  className = '',
+  className = "",
+  titleClassName = "",
 }: HeaderProps) {
   return (
     <div className={`flex justify-between items-start ${className}`}>
       <div>
-        <h1 className="text-3xl font-bold text-foreground">{title}</h1>
+        <h1 className={`text-3xl font-bold text-foreground ${titleClassName}`}>
+          {title}
+        </h1>
         {description && (
           <p className="text-muted-foreground mt-1">{description}</p>
         )}
         {children}
       </div>
-      
+
       <div className="flex items-center gap-2">
         {/* Botón Volver */}
         {showBackButton && (
@@ -133,10 +144,10 @@ export function Header({
           const button = (
             <Button
               key={index}
-              variant={action.variant || 'outline'}
+              variant={action.variant || "outline"}
               size="sm"
               onClick={action.onClick}
-              className={`${action.className || ''} h-8`}
+              className={`${action.className || ""} h-8`}
               disabled={action.disabled}
               title={action.title}
               aria-label={action.ariaLabel}
@@ -157,11 +168,11 @@ export function Header({
         })}
 
         {/* Acción Principal (CTA) */}
-        {primaryAction && (
+        {primaryAction &&
           (() => {
             const button = (
               <Button
-                variant={primaryAction.variant || 'default'}
+                variant={primaryAction.variant || "default"}
                 size="sm"
                 onClick={primaryAction.onClick}
                 disabled={primaryAction.disabled}
@@ -170,7 +181,9 @@ export function Header({
                 aria-label={primaryAction.ariaLabel}
                 className={
                   primaryAction.className ||
-                  `bg-slate-900 text-white hover:bg-slate-800 border border-slate-900 shadow-lg hover:shadow-xl transition-all font-semibold px-4 py-2 h-8 ${primaryAction.disabled ? 'opacity-50 cursor-not-allowed shadow-none hover:shadow-none' : ''}`
+                  (primaryAction.variant && primaryAction.variant !== "default"
+                    ? `font-semibold px-4 py-2 h-8 ${primaryAction.disabled ? "opacity-50 cursor-not-allowed" : ""}`
+                    : `bg-slate-900 text-white hover:bg-slate-800 border border-slate-900 shadow-lg hover:shadow-xl transition-all font-semibold px-4 py-2 h-8 ${primaryAction.disabled ? "opacity-50 cursor-not-allowed shadow-none hover:shadow-none" : ""}`)
                 }
               >
                 {primaryAction.icon && (
@@ -188,8 +201,7 @@ export function Header({
               );
             }
             return button;
-          })()
-        )}
+          })()}
       </div>
     </div>
   );

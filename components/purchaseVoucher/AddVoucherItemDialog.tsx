@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { useUI } from "@/components/ui/UIProvider";
 import { ProductServiceSelector, type SelectedItem } from "@/components/ui/ProductServiceSelector";
 import { calculateFinalPrice, type RoundingRule } from "@/lib/utils/rounding";
-import { Plus, CheckCircle, Package, AlertTriangle, TrendingDown, Trash2, Loader2 } from "lucide-react";
+import { Plus, CheckCircle, Package, AlertTriangle, TrendingDown, Trash2, Loader2, DollarSign, Hash } from "lucide-react";
 import { QuickProductDialog } from "./QuickProductDialog";
 import {
   Table,
@@ -584,34 +584,42 @@ export function AddVoucherItemDialog({
           {selectedProduct && (
             <div className="flex gap-4">
               <div className="flex-1 space-y-2">
-                <Label htmlFor="quantity">Cantidad *</Label>
-                <Input
-                  id="quantity"
-                  type="number"
-                  min={1}
-                  required
-                  value={quantity}
-                  onChange={(e) => setQuantity(parseInt(e.target.value) || 0)}
-                  className={quantity <= 0 ? "border-red-300 focus-visible:ring-red-200" : ""}
-                />
+                <Label htmlFor="quantity" required>Cantidad</Label>
+                <div className="relative">
+                  <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+                  <Input
+                    id="quantity"
+                    type="number"
+                    min={1}
+                    required
+                    aria-required="true"
+                    value={quantity}
+                    onChange={(e) => setQuantity(parseInt(e.target.value) || 0)}
+                    className={`pl-9 font-mono ${quantity <= 0 ? "border-red-300 focus-visible:ring-red-200" : ""}`}
+                  />
+                </div>
               </div>
 
               <div className="flex-1 space-y-2">
-                <Label htmlFor="unitCost">Precio ($) *</Label>
-                <Input
-                  id="unitCost"
-                  type="number"
-                  step="1"
-                  min={0}
-                  required
-                  value={unitCost || ""}
-                  onChange={(e) => {
-                    const value = parseFloat(e.target.value) || 0;
-                    setUnitCost(value);
-                    recalculatePrices(value, selectedProduct.allPrices);
-                  }}
-                  className={unitCost <= 0 ? "border-red-300 focus-visible:ring-red-200" : ""}
-                />
+                <Label htmlFor="unitCost" required>Precio ($)</Label>
+                <div className="relative">
+                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+                  <Input
+                    id="unitCost"
+                    type="number"
+                    step="1"
+                    min={0}
+                    required
+                    aria-required="true"
+                    value={unitCost || ""}
+                    onChange={(e) => {
+                      const value = parseFloat(e.target.value) || 0;
+                      setUnitCost(value);
+                      recalculatePrices(value, selectedProduct.allPrices);
+                    }}
+                    className={`pl-9 font-mono ${unitCost <= 0 ? "border-red-300 focus-visible:ring-red-200" : ""}`}
+                  />
+                </div>
               </div>
             </div>
           )}
@@ -687,7 +695,7 @@ export function AddVoucherItemDialog({
                                   handleFixPrice(pl.priceListId, value);
                                 }
                               }}
-                              className={`h-7 w-20 text-xs text-right ${pl.isBelowMinimum && !pl.isFixed ? "border-red-300" : ""}`}
+                              className={`h-7 w-20 text-xs text-right font-mono ${pl.isBelowMinimum && !pl.isFixed ? "border-red-300" : ""}`}
                             />
                           </div>
                         </TableCell>
@@ -770,18 +778,23 @@ export function AddVoucherItemDialog({
                       }}
                     >
                       <TableCell className="p-2">
-                        <span
-                          className="truncate block text-xs"
-                          title={item.productName}
-                          style={{ maxWidth: "20ch" }}
-                        >
-                          {item.productName}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center flex-shrink-0">
+                            <Package className="h-4 w-4 text-primary" aria-hidden="true" />
+                          </div>
+                          <span
+                            className="truncate block text-xs font-semibold tracking-tight"
+                            title={item.productName}
+                            style={{ maxWidth: "15ch" }}
+                          >
+                            {item.productName}
+                          </span>
+                        </div>
                       </TableCell>
-                      <TableCell className="p-2 text-right font-medium text-xs">
+                      <TableCell className="p-2 text-right font-mono text-xs">
                         {item.quantity}
                       </TableCell>
-                      <TableCell className="p-2 text-right text-muted-foreground text-xs">
+                      <TableCell className="p-2 text-right text-muted-foreground font-mono text-xs">
                         {getProjectedStock(item.productId, item.currentStock)}
                       </TableCell>
                     </TableRow>

@@ -137,11 +137,11 @@ export function ApprovalView({ operativeId }: { operativeId: string }) {
 
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted/50 border text-xs font-medium text-muted-foreground">
-              <Package className="h-3.5 w-3.5 text-primary" />
+              <Package className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
               {stats?.totalCount} Artículos
             </div>
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted/50 border text-xs font-medium text-muted-foreground">
-              <ClipboardList className="h-3.5 w-3.5 text-primary" />
+              <ClipboardList className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
               {stats?.reportedCount} Reportados
             </div>
             <div className="flex items-center gap-3 px-3 py-1.5 rounded-lg bg-muted/50 border">
@@ -209,7 +209,7 @@ export function ApprovalView({ operativeId }: { operativeId: string }) {
                       </div>
                       <div className="min-w-0">
                         <div className="font-semibold tracking-tight text-sm truncate">{item.product.name}</div>
-                        <div className="text-[10px] text-muted-foreground font-mono">SKU: {item.product.sku || 'N/A'}</div>
+                        <div className="text-[10px] text-muted-foreground font-mono font-medium">SKU: {item.product.sku || 'N/A'}</div>
                       </div>
                     </div>
                   </TableCell>
@@ -218,11 +218,11 @@ export function ApprovalView({ operativeId }: { operativeId: string }) {
                   </TableCell>
                   <TableCell className="text-center py-4">
                     {!item.isFound ? (
-                      <Badge variant="outline" className="text-red-600 border-red-200 bg-red-50 text-[10px] h-5">No encontrado</Badge>
+                      <Badge variant="outline" className="text-red-700 border-red-200 bg-red-50 text-[10px] h-5">No encontrado</Badge>
                     ) : (
                       <div className="flex flex-col items-center">
                         <span className="font-bold text-sm">{item.countedStock}</span>
-                        <span className={cn("text-[10px] font-medium", diff > 0 ? "text-emerald-600" : diff < 0 ? "text-red-600" : "text-muted-foreground")}>
+                        <span className={cn("text-[10px] font-medium", diff > 0 ? "text-emerald-700" : diff < 0 ? "text-red-700" : "text-muted-foreground")}>
                           ({diff > 0 ? '+' : ''}{diff})
                         </span>
                       </div>
@@ -233,7 +233,7 @@ export function ApprovalView({ operativeId }: { operativeId: string }) {
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Badge variant="outline" className="cursor-help bg-amber-50 text-amber-600 border-amber-200 text-[10px] h-5 font-bold">
+                            <Badge variant="outline" className="cursor-help bg-amber-50 text-amber-700 border-amber-200 text-[10px] h-5 font-bold">
                               <AlertTriangle className="h-3 w-3 mr-1" /> {item.concurrentMovement > 0 ? '+' : ''}{item.concurrentMovement}
                             </Badge>
                           </TooltipTrigger>
@@ -254,10 +254,11 @@ export function ApprovalView({ operativeId }: { operativeId: string }) {
                         value={adj.stock}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleUpdateAdj(item.id, 'stock', parseInt(e.target.value) || 0)}
                         disabled={isApproved}
-                        className={cn("font-bold text-center h-8 text-sm focus-visible:ring-primary", adj.stock !== item.countedStock && "border-amber-500 ring-amber-500/20")}
+                        aria-label={`Ajuste de stock para ${item.product.name}`}
+                        className={cn("font-mono font-bold text-center h-8 text-sm focus-visible:ring-primary", adj.stock !== item.countedStock && "border-amber-500 ring-amber-500/20")}
                       />
                       {adj.stock !== item.countedStock && (
-                        <div className="text-[9px] text-amber-600 font-medium flex items-center gap-0.5 justify-center">
+                        <div className="text-[9px] text-amber-700 font-medium flex items-center gap-0.5 justify-center">
                           <Info className="h-2 w-2" /> Sug: {item.suggestedStock}
                         </div>
                       )}
@@ -270,8 +271,9 @@ export function ApprovalView({ operativeId }: { operativeId: string }) {
                         value={adj.location}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleUpdateAdj(item.id, 'location', e.target.value)}
                         disabled={isApproved}
+                        aria-label={`Nueva ubicación para ${item.product.name}`}
                         placeholder="Sin ubicación"
-                        className={cn("h-8 text-xs pl-7 focus-visible:ring-primary", adj.location !== item.previousLocation && "border-blue-500 ring-blue-500/20")}
+                        className={cn("h-8 text-xs pl-7 font-mono focus-visible:ring-primary", adj.location !== item.previousLocation && "border-blue-500 ring-blue-500/20")}
                       />
                     </div>
                   </TableCell>
@@ -288,13 +290,13 @@ export function ApprovalView({ operativeId }: { operativeId: string }) {
 function StatusBadge({ status }: { status: string }) {
   switch (status) {
     case 'PENDING':
-      return <Badge variant="outline" className="text-amber-600 border-amber-200 bg-amber-50">Pendiente</Badge>;
+      return <Badge variant="outline" className="text-amber-700 border-amber-200 bg-amber-50">Pendiente</Badge>;
     case 'IN_PROGRESS':
-      return <Badge variant="outline" className="text-blue-600 border-blue-200 bg-blue-50">En Proceso</Badge>;
+      return <Badge variant="outline" className="text-blue-700 border-blue-200 bg-blue-50">En Proceso</Badge>;
     case 'COMPLETED':
-      return <Badge variant="outline" className="text-purple-600 border-purple-200 bg-purple-50">Realizado</Badge>;
+      return <Badge variant="outline" className="text-purple-700 border-purple-200 bg-purple-50">Realizado</Badge>;
     case 'APPROVED':
-      return <Badge variant="outline" className="text-emerald-600 border-emerald-200 bg-emerald-50">Aprobado</Badge>;
+      return <Badge variant="outline" className="text-emerald-700 border-emerald-200 bg-emerald-50">Aprobado</Badge>;
     default:
       return <Badge variant="secondary">{status}</Badge>;
   }

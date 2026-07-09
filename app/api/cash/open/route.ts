@@ -1,20 +1,20 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
-import { headers } from 'next/headers';
-import { prisma } from '@/lib/prisma';
-import { UserRole } from '@/lib/auth/roles';
-import { invalidateCashStatus } from '@/lib/cache';
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { UserRole } from "@/lib/auth/roles";
+import { invalidateCashStatus } from "@/lib/cache";
+import { getSessionWithAuth } from "@/lib/api-middleware";
 
 // POST /api/cash/open - Open cash register
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
+    const session = await getSessionWithAuth();
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // Check if user has required role (STAFF or ADMIN)
-    const userRole = (session.user as { role?: string }).role as UserRole || UserRole.USER;
+    const userRole =
+      ((session.user as { role?: string }).role as UserRole) || UserRole.USER;
     const roleHierarchy = {
       [UserRole.USER]: 0,
       [UserRole.STAFF]: 1,
@@ -23,8 +23,8 @@ export async function POST(request: NextRequest) {
 
     if (roleHierarchy[userRole] < roleHierarchy[UserRole.STAFF]) {
       return NextResponse.json(
-        { error: 'Forbidden: Insufficient permissions' },
-        { status: 403 }
+        { error: "Forbidden: Insufficient permissions" },
+        { status: 403 },
       );
     }
 
@@ -32,10 +32,10 @@ export async function POST(request: NextRequest) {
     const { amount, responsibleId } = body;
 
     // Validate amount
-    if (typeof amount !== 'number' || amount < 0) {
+    if (typeof amount !== "number" || amount < 0) {
       return NextResponse.json(
-        { error: 'Invalid amount. Must be a non-negative number' },
-        { status: 400 }
+        { error: "Invalid amount. Must be a non-negative number" },
+        { status: 400 },
       );
     }
 
@@ -50,16 +50,17 @@ export async function POST(request: NextRequest) {
 
       if (!responsibleUser) {
         return NextResponse.json(
-          { error: 'Responsible user not found' },
-          { status: 400 }
+          { error: "Responsible user not found" },
+          { status: 400 },
         );
       }
 
-      const responsibleRole = responsibleUser.role as UserRole || UserRole.USER;
+      const responsibleRole =
+        (responsibleUser.role as UserRole) || UserRole.USER;
       if (roleHierarchy[responsibleRole] < roleHierarchy[UserRole.STAFF]) {
         return NextResponse.json(
-          { error: 'Responsible user must be STAFF or ADMIN' },
-          { status: 400 }
+          { error: "Responsible user must be STAFF or ADMIN" },
+          { status: 400 },
         );
       }
     } else {
@@ -69,23 +70,28 @@ export async function POST(request: NextRequest) {
 
     // Check if ANY cash register is currently open (global validation)
     const lastOpening = await prisma.cash_movement.findFirst({
-      where: { type: 'OPENING' },
-      orderBy: { createdAt: 'desc' },
+      where: { type: "OPENING" },
+      orderBy: { createdAt: "desc" },
     });
 
     if (lastOpening) {
       const lastClosing = await prisma.cash_movement.findFirst({
         where: {
-          type: 'CLOSING',
+          type: "CLOSING",
           createdAt: { gte: lastOpening.createdAt },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
       });
 
       if (!lastClosing) {
         return NextResponse.json(
-          { error: 'Cash register is already open (opened on ' + lastOpening.createdAt.toISOString().split('T')[0] + ')' },
-          { status: 400 }
+          {
+            error:
+              "Cash register is already open (opened on " +
+              lastOpening.createdAt.toISOString().split("T")[0] +
+              ")",
+          },
+          { status: 400 },
         );
       }
     }
@@ -93,11 +99,11 @@ export async function POST(request: NextRequest) {
     // Create opening movement
     const opening = await prisma.cash_movement.create({
       data: {
-        type: 'OPENING',
+        type: "OPENING",
         amount,
-        method: 'CASH',
-        referenceType: 'manual',
-        reason: 'Apertura de caja',
+        method: "CASH",
+        referenceType: "manual",
+        reason: "Apertura de caja",
         createdBy: session.user.id,
         responsibleId: finalResponsibleId,
       },
@@ -116,13 +122,13 @@ export async function POST(request: NextRequest) {
           createdAt: opening.createdAt,
         },
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
-    console.error('Error opening cash register:', error);
+    console.error("Error opening cash register:", error);
     return NextResponse.json(
-      { error: 'Failed to open cash register' },
-      { status: 500 }
+      { error: "Failed to open cash register" },
+      { status: 500 },
     );
   }
 }

@@ -1,16 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { getSessionWithAuth } from "@/lib/api-middleware";
 import { prisma } from "@/lib/prisma";
 import { hasRole, UserRole } from "@/lib/auth/roles";
 
 // GET /api/payment-methods/[id] - Get single payment method
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
+    const session = await getSessionWithAuth();
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -29,7 +28,7 @@ export async function GET(
     if (!paymentMethod) {
       return NextResponse.json(
         { error: "Payment method not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -38,7 +37,7 @@ export async function GET(
     console.error("Error fetching payment method:", error);
     return NextResponse.json(
       { error: "Failed to fetch payment method" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -46,10 +45,10 @@ export async function GET(
 // PUT /api/payment-methods/[id] - Update payment method (ADMIN only)
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
+    const session = await getSessionWithAuth();
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -58,7 +57,7 @@ export async function PUT(
     if (!(await hasRole(session.user.id, UserRole.ADMIN))) {
       return NextResponse.json(
         { error: "Only ADMIN can update payment methods" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -74,7 +73,7 @@ export async function PUT(
     if (!existing) {
       return NextResponse.json(
         { error: "Payment method not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -93,7 +92,7 @@ export async function PUT(
     console.error("Error updating payment method:", error);
     return NextResponse.json(
       { error: "Failed to update payment method" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -101,10 +100,10 @@ export async function PUT(
 // DELETE /api/payment-methods/[id] - Delete payment method (ADMIN only)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
+    const session = await getSessionWithAuth();
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -113,7 +112,7 @@ export async function DELETE(
     if (!(await hasRole(session.user.id, UserRole.ADMIN))) {
       return NextResponse.json(
         { error: "Only ADMIN can delete payment methods" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -132,7 +131,7 @@ export async function DELETE(
     if (!existing) {
       return NextResponse.json(
         { error: "Payment method not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -143,7 +142,7 @@ export async function DELETE(
           error: "Cannot delete payment method with associated payments",
           paymentsCount: existing._count.payments,
         },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
@@ -156,7 +155,7 @@ export async function DELETE(
     console.error("Error deleting payment method:", error);
     return NextResponse.json(
       { error: "Failed to delete payment method" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -10,7 +10,7 @@ import { ProductPricesModal } from '@/components/products/ProductPricesModal';
 import { QuickSaleModal } from '@/components/dashboard/QuickSaleModal';
 import { useUI } from '@/components/ui/UIProvider';
 import { Header, CrudAdmin, StatItem, CrudStats } from '@/components/adm';
-import { Pencil, Trash2, AlertTriangle, DollarSign, Boxes, Clock, ShoppingCart, FileUp, Plus, RefreshCcw } from 'lucide-react';
+import { Pencil, Trash2, AlertTriangle, DollarSign, Boxes, Clock, ShoppingCart, FileUp, Plus, RefreshCcw, Package } from 'lucide-react';
 import { PriceDisplay } from '@/components/ui/price-display';
 import { StockDisplay } from '@/components/ui/stock-display';
 import {
@@ -359,7 +359,7 @@ export function ProductsClient({
       label: 'Stock bajo',
       value: lowStockCount,
       icon: AlertTriangle,
-      iconColor: lowStockCount > 0 ? '#f97316' : undefined, // orange-500
+      iconColor: lowStockCount > 0 ? '#c2410c' : undefined, // orange-700
     },
     {
       label: 'Valor inventario',
@@ -370,42 +370,33 @@ export function ProductsClient({
 
   const columns: ColumnDef<Product>[] = [
     {
-      accessorKey: 'imageUrl',
-      header: 'Imagen',
-      cell: ({ row }) => (
-        row.original.imageUrl ? (
-          <Image
-            src={`/api/products/${row.original.id}/image`}
-            alt={row.original.name}
-            width={40}
-            height={40}
-            className="w-10 h-10 object-cover rounded"
-          />
-        ) : (
-          <div className="w-10 h-10 bg-muted rounded flex items-center justify-center">
-            <span className="text-xs text-muted-foreground">-</span>
-          </div>
-        )
-      ),
-    },
-    {
-      accessorKey: 'sku',
-      header: 'SKU',
-      cell: ({ row }) => (
-        <span className="font-mono text-xs text-muted-foreground">{row.original.sku}</span>
-      ),
-    },
-    {
       accessorKey: 'name',
       header: 'Producto',
       cell: ({ row }) => (
-        <div>
-          <div className="font-medium">{row.original.name}</div>
-          {row.original.description && (
-            <div className="text-xs text-muted-foreground truncate max-w-[200px]">
-              {row.original.description}
-            </div>
-          )}
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0 overflow-hidden">
+            {row.original.imageUrl ? (
+              <Image
+                src={`/api/products/${row.original.id}/image`}
+                alt={row.original.name}
+                width={32}
+                height={32}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <Package className="h-4 w-4 text-primary pointer-events-none" aria-hidden="true" />
+            )}
+          </div>
+          <div className="flex flex-col min-w-0">
+            <span className="font-semibold tracking-tight truncate">
+              {row.original.name}
+            </span>
+            {row.original.sku && (
+              <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground/70">
+                {row.original.sku}
+              </span>
+            )}
+          </div>
         </div>
       ),
     },
@@ -438,14 +429,14 @@ export function ProductsClient({
         row.original.isActive ? (
           <Badge
             variant="outline"
-            className="text-emerald-600 border-emerald-200 bg-emerald-50"
+            className="text-emerald-700 border-emerald-200 bg-emerald-50"
           >
             Activo
           </Badge>
         ) : (
           <Badge
             variant="outline"
-            className="text-red-600 border-red-200 bg-red-50"
+            className="text-red-700 border-red-200 bg-red-50"
           >
             Inactivo
           </Badge>
@@ -471,14 +462,14 @@ export function ProductsClient({
               href: '/adm/inventory-counts',
               variant: 'outline' as const,
               icon: RefreshCcw,
-              ariaLabel: 'Ir a inventario cíclico',
+              ariaLabel: 'Ir a operativos de conteo de inventario',
             },
             {
-              label: 'Importar Productos',
+              label: 'Importar',
               onClick: goToImporter,
               variant: 'outline' as const,
               icon: FileUp,
-              ariaLabel: 'Importar productos desde archivo',
+              ariaLabel: 'Importar productos desde archivo Excel o CSV',
             },
             {
               label: 'Venta Rápida',
@@ -487,7 +478,7 @@ export function ProductsClient({
               icon: ShoppingCart,
               disabled: isCashOpen === false,
               title: isCashOpen === false ? 'Debe abrir la caja para realizar ventas' : undefined,
-              ariaLabel: 'Realizar una venta rápida',
+              ariaLabel: 'Realizar una venta rápida por mostrador',
             },
           ]}
         />
@@ -556,9 +547,9 @@ export function ProductsClient({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-red-600"
+                    className="text-red-700 hover:text-red-800 hover:bg-red-50"
                     onClick={() => handleDelete(product)}
-                    aria-label="Desactivar producto"
+                    aria-label={`Desactivar producto ${product.name}`}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>

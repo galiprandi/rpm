@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@tanstack/react-table';
 import { useUI } from '@/components/ui/UIProvider';
+import { Undo2, DollarSign, FileText } from 'lucide-react';
 
 interface Sale {
   id: string;
@@ -287,7 +288,14 @@ export function CustomerCreditNoteDialog({ open, onOpenChange, customerId, custo
                 enableGlobalFilter
                 globalFilterPlaceholder="Buscar venta..."
                 rowActions={(sale) => (
-                  <Button variant="default" size="sm" onClick={() => setSelectedSale(sale)}>Seleccionar</Button>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => setSelectedSale(sale)}
+                    aria-label={`Seleccionar venta #${sale.id.slice(0, 8)}`}
+                  >
+                    Seleccionar
+                  </Button>
                 )}
               />
             )}
@@ -297,7 +305,7 @@ export function CustomerCreditNoteDialog({ open, onOpenChange, customerId, custo
             <div className="p-4 bg-muted rounded space-y-1">
               <p className="text-sm"><strong>Venta:</strong> {selectedSale.type === 'direct_sale' ? 'Venta Directa' : 'Orden de Trabajo'} #{selectedSale.id.slice(0, 8)}</p>
               <p className="text-sm"><strong>Total original:</strong> ${Number(selectedSale.total).toFixed(2)}</p>
-              <p className="text-sm"><strong>Total a devolver:</strong> ${calculateRefundTotal().toFixed(2)}</p>
+              <p className="text-sm"><strong>Total a devolver:</strong> <span className="font-mono">${calculateRefundTotal().toFixed(2)}</span></p>
             </div>
 
             <div>
@@ -355,39 +363,48 @@ export function CustomerCreditNoteDialog({ open, onOpenChange, customerId, custo
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Forma de devolucion</Label>
-                <Select value={refundMethod} onValueChange={(v: 'CASH' | 'ACCOUNT_CREDIT') => setRefundMethod(v)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ACCOUNT_CREDIT">Credito a cuenta del cliente</SelectItem>
-                    <SelectItem value="CASH">Efectivo</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              {refundMethod === 'CASH' && (
-                <div>
-                  <Label>Metodo de pago</Label>
-                  <Select value={selectedPaymentMethodId} onValueChange={setSelectedPaymentMethodId}>
-                    <SelectTrigger><SelectValue placeholder="Seleccionar metodo" /></SelectTrigger>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="refund-method">Forma de devolución</Label>
+                <div className="relative">
+                  <Undo2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" aria-hidden="true" />
+                  <Select value={refundMethod} onValueChange={(v: 'CASH' | 'ACCOUNT_CREDIT') => setRefundMethod(v)}>
+                    <SelectTrigger id="refund-method" className="pl-9"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {paymentMethods.map((pm) => (
-                        <SelectItem key={pm.id} value={pm.id}>{pm.name}</SelectItem>
-                      ))}
+                      <SelectItem value="ACCOUNT_CREDIT">Crédito a cuenta del cliente</SelectItem>
+                      <SelectItem value="CASH">Efectivo</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+              </div>
+              {refundMethod === 'CASH' && (
+                <div className="space-y-2">
+                  <Label htmlFor="payment-method">Método de pago</Label>
+                  <div className="relative">
+                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" aria-hidden="true" />
+                    <Select value={selectedPaymentMethodId} onValueChange={setSelectedPaymentMethodId}>
+                      <SelectTrigger id="payment-method" className="pl-9"><SelectValue placeholder="Seleccionar método" /></SelectTrigger>
+                      <SelectContent>
+                        {paymentMethods.map((pm) => (
+                          <SelectItem key={pm.id} value={pm.id}>{pm.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               )}
             </div>
 
-            <div>
-              <Label>Notas (opcional)</Label>
-              <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Notas adicionales..." />
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notas (opcional)</Label>
+              <div className="relative">
+                <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+                <Input id="notes" className="pl-9" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Notas adicionales..." />
+              </div>
             </div>
 
             <DialogFooter>
-              <Button variant="outline" onClick={() => setSelectedSale(null)} disabled={isSubmitting}>Atras</Button>
+              <Button variant="outline" onClick={() => setSelectedSale(null)} disabled={isSubmitting} aria-label="Volver a la selección de venta">Atrás</Button>
               <Button onClick={handleCreateCreditNote} disabled={isSubmitting || calculateRefundTotal() <= 0}>
                 {isSubmitting ? 'Creando...' : 'Crear Nota de Credito'}
               </Button>
