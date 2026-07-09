@@ -49,6 +49,9 @@ import {
   Eye,
   Plus,
   History,
+  AlertCircle,
+  PlayCircle,
+  Loader2,
   FileText,
 } from "lucide-react";
 import { ProductServiceSelector, SelectedItem } from "@/components/ui/ProductServiceSelector";
@@ -59,59 +62,77 @@ import { toast } from "sonner";
 import { CustomerCreditNoteDialog } from "@/components/credit-notes/CustomerCreditNoteDialog";
 import { getWhatsAppLink, getWorkOrderMessage } from "@/lib/utils/whatsapp";
 
+// --- Helpers ---
+
+const getFieldLabel = (field: string) => {
+  const labels: Record<string, string> = {
+    status: "Estado",
+    technicianId: "Técnico",
+    notes: "Notas",
+    scheduledDate: "Fecha Agendada",
+    paymentMethod: "Método de Pago",
+    paymentNotes: "Notas de Pago",
+    startedAt: "Fecha de Inicio",
+    completedAt: "Fecha de Finalización",
+    deliveredAt: "Fecha de Entrega",
+  };
+  return labels[field] || field;
+};
+
+const getStatusLabel = (status: string) => {
+  const statusConfig = STATUSES.find((s) => s.id === status);
+  return statusConfig?.label || status;
+};
+
 // Timeline Item Component
 function TimelineItem({
   title,
+  subtitle,
   date,
   status,
+  icon: Icon = Check,
   isFirst = false,
   isLast = false,
-  description,
-  icon: Icon = Check,
+  variant = "milestone",
 }: {
   title: string;
+  subtitle?: string;
   date: string;
-  status: "completed" | "pending" | "audit";
+  status: "completed" | "pending";
+  icon?: any;
   isFirst?: boolean;
   isLast?: boolean;
-  description?: string;
-  icon?: any;
+  variant?: "milestone" | "audit";
 }) {
   return (
-    <div className="flex gap-3">
+    <div className="flex gap-4">
       <div className="flex flex-col items-center">
         {!isFirst && <div className="w-px h-3 bg-border" />}
         <div
           className={cn(
-            "w-5 h-5 rounded-full flex items-center justify-center shrink-0 border-2",
-            status === "completed"
-              ? "bg-emerald-500 border-emerald-500 text-white"
-              : status === "audit"
-              ? "bg-muted border-muted-foreground/20 text-muted-foreground"
-              : "bg-background border-muted-foreground/30 text-muted-foreground/30"
+            "w-6 h-6 rounded-full flex items-center justify-center shrink-0 shadow-sm border",
+            variant === "milestone"
+              ? (status === "completed" ? "bg-emerald-500 border-emerald-600 text-white" : "bg-muted border-muted-foreground/30 text-muted-foreground")
+              : "bg-primary/10 border-primary/20 text-primary"
           )}
         >
-          <Icon className="h-2.5 w-2.5" />
+          <Icon className="h-3.5 w-3.5" />
         </div>
         {!isLast && <div className="w-px flex-1 bg-border min-h-[24px]" />}
       </div>
-      <div className={cn("pb-4", isLast && "pb-0")}>
-        <div className="flex items-center gap-2">
-           <p className={cn("text-sm font-medium", status === 'audit' && "text-muted-foreground/80")}>{title}</p>
-           <span className="text-[10px] font-mono text-muted-foreground/60 whitespace-nowrap">
+      <div className={cn("pb-6", isLast && "pb-0")}>
+        <div className="flex flex-col sm:flex-row sm:items-baseline gap-x-2">
+          <p className={cn("text-sm font-semibold", variant === "audit" && "text-primary/90")}>{title}</p>
+          <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">
             {new Date(date).toLocaleString("es-AR", {
-              day: "2-digit",
-              month: "2-digit",
+              day: "numeric",
+              month: "short",
               hour: "2-digit",
               minute: "2-digit",
             })}
-           </span>
-        </div>
-        {description && (
-          <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed italic">
-            {description}
           </p>
-        )}
+        </div>
+        {subtitle && <p className="text-xs text-muted-foreground mt-0.5 italic">{subtitle}</p>}
       </div>
     </div>
   );
@@ -230,7 +251,7 @@ export default function WorkOrderDetailPage() {
   }>>([]);
   const [totalPaid, setTotalPaid] = useState(0);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
-  const [loadingLogs, setLoadingLogs] = useState(false);
+  const [loadingAudit, setLoadingAudit] = useState(false);
 
   const [editingChecklist, setEditingChecklist] = useState<'entry' | 'exit' | null>(null);
   const [editingOdometer, setEditingOdometer] = useState<number | undefined>(undefined);
@@ -289,17 +310,17 @@ export default function WorkOrderDetailPage() {
   }, [workOrderId]);
 
   const fetchAuditLogs = useCallback(async () => {
-    setLoadingLogs(true);
+    setLoadingAudit(true);
     try {
-      const response = await fetch(`/api/work-orders/${workOrderId}/audit`);
+      const response = await fetch(`/api/work-orders/${workOrderId}/audit-logs`);
       if (response.ok) {
         const data = await response.json();
-        setAuditLogs(data.logs || []);
+        setAuditLogs(data || []);
       }
     } catch (error) {
       console.error("Error fetching audit logs:", error);
     } finally {
-      setLoadingLogs(false);
+      setLoadingAudit(false);
     }
   }, [workOrderId]);
 
@@ -363,7 +384,7 @@ export default function WorkOrderDetailPage() {
 
       const updated = await response.json();
       setWorkOrder((prev) => (prev ? { ...prev, ...updated } : null));
-      fetchAuditLogs();
+      void fetchAuditLogs();
     } catch (error) {
       console.error("Error updating status:", error);
       await alert({
@@ -389,7 +410,7 @@ export default function WorkOrderDetailPage() {
 
       const updated = await response.json();
       setWorkOrder((prev) => (prev ? { ...prev, ...updated } : null));
-      fetchAuditLogs();
+      void fetchAuditLogs();
 
       await alert({
         title: 'Éxito',
@@ -520,7 +541,7 @@ export default function WorkOrderDetailPage() {
       const updated = await response.json();
       setWorkOrder((prev) => (prev ? { ...prev, ...updated } : null));
       setEditingScheduledDate(false);
-      fetchAuditLogs();
+      void fetchAuditLogs();
       
       await alert({
         title: 'Éxito',
@@ -551,7 +572,7 @@ export default function WorkOrderDetailPage() {
       const updated = await response.json();
       setWorkOrder((prev) => (prev ? { ...prev, ...updated } : null));
       setEditingNotes(false);
-      fetchAuditLogs();
+      void fetchAuditLogs();
       
       await alert({
         title: 'Éxito',
@@ -615,69 +636,90 @@ export default function WorkOrderDetailPage() {
     }
   };
 
-  const getFieldLabel = (field: string) => {
-    const labels: Record<string, string> = {
-      status: 'Estado',
-      technicianId: 'Técnico',
-      notes: 'Notas',
-      scheduledDate: 'Fecha Agendada',
-      paymentMethod: 'Método de Pago',
-      paymentNotes: 'Notas de Pago',
-    };
-    return labels[field] || field;
-  };
-
-  const unifiedTimeline = useMemo(() => {
+  // Merge milestones and audit logs for unified timeline
+  const unifiedTimelineItems = useMemo(() => {
     if (!workOrder) return [];
 
-    const events: Array<{
-      type: "completed" | "pending" | "audit";
-      title: string;
-      date: string;
-      description?: string;
-      icon?: any;
-    }> = [
-      { type: "completed", title: "OT Creada", date: workOrder.createdAt, icon: Package },
+    const items: any[] = [
+      {
+        type: 'milestone',
+        title: 'OT Creada',
+        date: workOrder.createdAt,
+        status: 'completed',
+        icon: Plus,
+      }
     ];
 
     if (workOrder.scheduledDate) {
-      events.push({ type: "completed", title: "Turno Agendado", date: workOrder.scheduledDate, icon: Clock });
-    }
-    if (workOrder.startedAt) {
-      events.push({ type: "completed", title: "Trabajo Iniciado", date: workOrder.startedAt, icon: Wrench });
-    }
-    if (workOrder.completedAt) {
-      events.push({ type: "completed", title: "Trabajo Completado", date: workOrder.completedAt, icon: CheckCircle });
-    }
-    if (workOrder.deliveredAt) {
-      events.push({ type: "completed", title: "Entregado al Cliente", date: workOrder.deliveredAt, icon: Phone });
+      items.push({
+        type: 'milestone',
+        title: 'Turno Agendado',
+        date: workOrder.scheduledDate,
+        status: 'completed',
+        icon: Clock,
+      });
     }
 
-    // Add audit logs
+    if (workOrder.startedAt) {
+      items.push({
+        type: 'milestone',
+        title: 'Trabajo Iniciado',
+        date: workOrder.startedAt,
+        status: 'completed',
+        icon: PlayCircle,
+      });
+    }
+
+    if (workOrder.completedAt) {
+      items.push({
+        type: 'milestone',
+        title: 'Trabajo Completado',
+        date: workOrder.completedAt,
+        status: 'completed',
+        icon: CheckCircle,
+      });
+    }
+
+    if (workOrder.deliveredAt) {
+      items.push({
+        type: 'milestone',
+        title: 'Entregado al Cliente',
+        date: workOrder.deliveredAt,
+        status: 'completed',
+        icon: Package,
+      });
+    }
+
+    // Add granular audit logs
     auditLogs.forEach(log => {
-      // Avoid duplicating status events that are already in hardcoded milestones
+      let title = `Cambio en ${getFieldLabel(log.fieldName)}`;
+      let subtitle = `De "${log.oldValue || 'vacío'}" a "${log.newValue || 'vacío'}"`;
+
       if (log.fieldName === 'status') {
-         const statusLabel = STATUSES.find(s => s.id === log.newValue)?.label || log.newValue;
-         events.push({
-           type: "audit",
-           title: `Estado: ${statusLabel}`,
-           date: log.changedAt,
-           description: `Cambiado por ${log.changedBy}`,
-           icon: RefreshCw
-         });
-      } else {
-        events.push({
-          type: "audit",
-          title: `Cambio en ${getFieldLabel(log.fieldName)}`,
-          date: log.changedAt,
-          description: `Valor anterior: ${log.oldValue || 'vacío'} → Nuevo: ${log.newValue || 'vacío'}. Por ${log.changedBy}`,
-          icon: Edit
-        });
+        title = `Estado cambiado a ${getStatusLabel(log.newValue || '')}`;
+        subtitle = `Por ${log.changedBy}`;
+      } else if (log.fieldName === 'technicianId') {
+        const tech = technicians.find(t => t.id === log.newValue);
+        title = tech ? `Técnico asignado: ${tech.name}` : `Técnico desasignado`;
+        subtitle = `Por ${log.changedBy}`;
+      } else if (log.fieldName === 'notes') {
+        title = 'Notas actualizadas';
+        subtitle = `Por ${log.changedBy}`;
       }
+
+      items.push({
+        type: 'audit',
+        title,
+        subtitle,
+        date: log.changedAt,
+        status: 'completed',
+        icon: History,
+      });
     });
 
-    return events.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  }, [workOrder, auditLogs]);
+    // Sort chronologically
+    return items.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  }, [workOrder, auditLogs, technicians]);
 
   if (loading) {
     return (
@@ -1477,35 +1519,35 @@ export default function WorkOrderDetailPage() {
           <div className="grid md:grid-cols-2 gap-6">
             <Card>
               <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <History className="h-4 w-4" />
-                    Línea de Tiempo Unificada
-                  </CardTitle>
-                  <Button variant="ghost" size="sm" onClick={fetchAuditLogs} disabled={loadingLogs}>
-                    <RefreshCw className={cn("h-4 w-4", loadingLogs && "animate-spin")} />
-                  </Button>
-                </div>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  Línea de Tiempo Unificada
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-0 max-h-[500px] overflow-y-auto pr-2">
-                  {unifiedTimeline.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-8 italic">Sin eventos registrados</p>
-                  ) : (
-                    unifiedTimeline.map((event, idx) => (
+                {loadingAudit ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  </div>
+                ) : unifiedTimelineItems.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground italic">Sin actividad registrada</div>
+                ) : (
+                  <div className="space-y-0 relative before:absolute before:left-3 before:top-4 before:bottom-4 before:w-px before:bg-border/60">
+                    {unifiedTimelineItems.map((item, index) => (
                       <TimelineItem
-                        key={idx}
-                        title={event.title}
-                        date={event.date}
-                        status={event.type}
-                        isFirst={idx === 0}
-                        isLast={idx === unifiedTimeline.length - 1}
-                        description={event.description}
-                        icon={event.icon}
+                        key={`${item.type}-${index}`}
+                        title={item.title}
+                        subtitle={item.subtitle}
+                        date={item.date}
+                        status={item.status}
+                        icon={item.icon}
+                        variant={item.type as any}
+                        isFirst={index === 0}
+                        isLast={index === unifiedTimelineItems.length - 1}
                       />
-                    ))
-                  )}
-                </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -1514,7 +1556,7 @@ export default function WorkOrderDetailPage() {
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-base flex items-center gap-2">
                       <FileText className="h-4 w-4" />
-                      Notas de la OT
+                      Notas de Taller
                     </CardTitle>
                     <Button
                       variant="ghost"
@@ -1548,9 +1590,18 @@ export default function WorkOrderDetailPage() {
                       </div>
                     </div>
                   ) : (
-                    <p className="text-sm whitespace-pre-wrap text-muted-foreground italic">
-                      {workOrder.notes || 'Sin notas descriptivas'}
-                    </p>
+                    <div className="bg-muted/30 p-4 rounded-lg border border-dashed">
+                      {workOrder.notes ? (
+                        <p className="text-sm whitespace-pre-wrap text-muted-foreground">
+                          {workOrder.notes}
+                        </p>
+                      ) : (
+                        <div className="flex flex-col items-center gap-2 py-4 text-muted-foreground">
+                           <AlertCircle className="h-6 w-6 opacity-20" />
+                           <p className="text-xs">Sin notas de taller registradas</p>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </CardContent>
               </Card>

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { updateWorkOrder, generateDocumentFromWorkOrder } from "@/lib/services/workOrderService";
 import { getSessionWithAuth } from "@/lib/api-middleware";
+import { updateWorkOrder } from "@/lib/services/workOrderService";
 
 export const dynamic = 'force-dynamic';
 
@@ -35,28 +35,17 @@ export async function PUT(
       );
     }
 
-    const userId = session?.user.email || "system";
     const ipAddress = request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || undefined;
     const userAgent = request.headers.get("user-agent") || undefined;
 
-    const workOrder = await updateWorkOrder(id, { status }, userId, { ipAddress, userAgent });
+    const updatedWO = await updateWorkOrder(id, { status }, {
+      userId: session?.user.id || "system",
+      userEmail: session?.user.email || "system",
+      ipAddress,
+      userAgent
+    });
 
-    // --- Generate Pre-Invoice on Delivery ---
-    if (status === "DELIVERED") {
-      try {
-        await generateDocumentFromWorkOrder(
-          workOrder.id,
-          userId,
-        );
-      } catch (invoiceError) {
-        console.error(
-          "Error generating pre-invoice for work order:",
-          invoiceError,
-        );
-      }
-    }
-
-    return NextResponse.json(workOrder);
+    return NextResponse.json(updatedWO);
   } catch (error) {
     console.error("Error updating work order status:", error);
     return NextResponse.json(

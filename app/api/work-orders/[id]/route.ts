@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { updateWorkOrder, generateDocumentFromWorkOrder } from "@/lib/services/workOrderService";
+import { updateWorkOrder } from "@/lib/services/workOrderService";
 import { getSessionWithAuth } from "@/lib/api-middleware";
 
 export const dynamic = 'force-dynamic';
@@ -61,24 +61,18 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await getSessionWithAuth();
     const { id } = await params;
     const body = await request.json();
-    const session = await getSessionWithAuth();
-
-    const userId = session?.user.email || "system";
     const ipAddress = request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || undefined;
     const userAgent = request.headers.get("user-agent") || undefined;
 
-    const workOrder = await updateWorkOrder(id, body, userId, { ipAddress, userAgent });
-
-    // Auto-generate invoice when marked as DELIVERED (outside transaction)
-    if (body.status === 'DELIVERED') {
-      try {
-        await generateDocumentFromWorkOrder(id, userId);
-      } catch (invoiceError) {
-        console.error("Error auto-generating invoice for work order:", invoiceError);
-      }
-    }
+    const workOrder = await updateWorkOrder(id, body, {
+      userId: session?.user.id || "system",
+      userEmail: session?.user.email || "system",
+      ipAddress,
+      userAgent
+    });
 
     return NextResponse.json(workOrder);
   } catch (error) {
