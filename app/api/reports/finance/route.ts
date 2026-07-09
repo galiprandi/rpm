@@ -1,26 +1,24 @@
-import { NextResponse } from "next/server";
-import { getSession } from "@/lib/auth-server";
+import { NextRequest, NextResponse } from "next/server";
+import { getSessionWithAuth } from "@/lib/api-middleware";
 import { UserRole } from "@/lib/auth/roles";
 import { getFinanceReport, type FinanceGroupBy } from "@/lib/services/financeReportService";
 import { getArgentinaStartOfDay, getArgentinaEndOfDay } from "@/lib/utils/date";
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 600; // 10 minutes
+export const dynamic = "force-dynamic";
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
-    const session = await getSession();
+    const session = await getSessionWithAuth();
     if (!session?.user) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
-    const userRole =
-      ((session.user as { role?: string }).role as UserRole) || UserRole.USER;
+    const userRole = (session.user as { role?: string }).role as UserRole || UserRole.USER;
     if (userRole !== UserRole.ADMIN && userRole !== UserRole.STAFF) {
       return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
     }
 
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = request.nextUrl;
     const startStr = searchParams.get("startDate");
     const endStr = searchParams.get("endDate");
     const compStartStr = searchParams.get("comparisonStartDate");
@@ -55,11 +53,11 @@ export async function GET(request: Request) {
 
     return NextResponse.json(report, {
       headers: {
-        "Cache-Control": "public, s-maxage=600, stale-while-revalidate=300",
+        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
       },
     });
   } catch (error) {
-    console.error("Error in reports/finance API:", error);
+    console.error("Error in finance report API:", error);
     return NextResponse.json(
       { error: "Error interno del servidor" },
       { status: 500 },

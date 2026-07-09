@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Header } from "@/components/adm/Header";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,10 +8,11 @@ import {
   TrendingUp,
   Calendar,
   DollarSign,
-  ArrowUpCircle,
-  ArrowDownCircle,
   Wallet,
+  ArrowUpRight,
+  ArrowDownRight,
   Clock,
+  CreditCard,
 } from "lucide-react";
 import { formatARS } from "@/lib/utils/format";
 import {
@@ -34,7 +35,7 @@ type Period =
   | "thisYear";
 
 export default function FinanceReportClient() {
-  const [period, setPeriod] = useState<Period>("last7days");
+  const [period, setPeriod] = useState<Period>("last30days");
   const [data, setData] = useState<FinanceReportData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -80,11 +81,7 @@ export default function FinanceReportClient() {
         break;
       case "thisMonth":
         startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-        comparisonStartDate = new Date(
-          now.getFullYear(),
-          now.getMonth() - 1,
-          1,
-        );
+        comparisonStartDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
         comparisonEndDate = new Date(now.getFullYear(), now.getMonth(), 0);
         comparisonEndDate.setHours(23, 59, 59, 999);
         break;
@@ -92,11 +89,7 @@ export default function FinanceReportClient() {
         startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
         endDate = new Date(now.getFullYear(), now.getMonth(), 0);
         endDate.setHours(23, 59, 59, 999);
-        comparisonStartDate = new Date(
-          now.getFullYear(),
-          now.getMonth() - 2,
-          1,
-        );
+        comparisonStartDate = new Date(now.getFullYear(), now.getMonth() - 2, 1);
         comparisonEndDate = new Date(now.getFullYear(), now.getMonth() - 1, 0);
         comparisonEndDate.setHours(23, 59, 59, 999);
         break;
@@ -104,11 +97,7 @@ export default function FinanceReportClient() {
         startDate = new Date(now.getFullYear() - 1, now.getMonth(), 1);
         endDate = new Date(now.getFullYear(), now.getMonth(), 0);
         endDate.setHours(23, 59, 59, 999);
-        comparisonStartDate = new Date(
-          now.getFullYear() - 2,
-          now.getMonth(),
-          1,
-        );
+        comparisonStartDate = new Date(now.getFullYear() - 2, now.getMonth(), 1);
         comparisonEndDate = new Date(now.getFullYear() - 1, now.getMonth(), 0);
         comparisonEndDate.setHours(23, 59, 59, 999);
         break;
@@ -141,9 +130,7 @@ export default function FinanceReportClient() {
 
   useEffect(() => {
     let cancelled = false;
-    Promise.resolve().then(() => {
-      if (!cancelled) setLoading(true);
-    });
+    setLoading(true);
     fetchReport()
       .then((result) => {
         if (!cancelled) setData(result);
@@ -159,22 +146,23 @@ export default function FinanceReportClient() {
     };
   }, [fetchReport]);
 
-  const formatChange = (
-    change: number,
-    current?: number,
-    previous?: number,
-  ) => {
+  const formatChange = (change: number, current?: number, previous?: number) => {
     if (previous === 0 && current === 0) return "Sin movimientos";
     if (previous === 0) return "Nuevo período con actividad";
     const value = Math.abs(change).toFixed(1);
     return `${change > 0 ? "+" : change < 0 ? "-" : ""}${value}% vs período anterior`;
   };
 
+  const maxEvolutionValue = useMemo(() => {
+    if (!data) return 0;
+    return Math.max(...data.evolution.map((e) => Math.max(e.income, e.expense)), 1);
+  }, [data]);
+
   return (
     <div className="space-y-6">
       <Header
-        title="Finanzas & Flujo"
-        description="Análisis de ingresos, egresos y medios de pago."
+        title="Reporte de Finanzas & Flujo"
+        description="Análisis de ingresos, egresos y rentabilidad operativa."
         leftActions={
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
@@ -200,7 +188,7 @@ export default function FinanceReportClient() {
             {data && period === "today" && (
               <div className="flex items-center gap-1 text-xs text-muted-foreground">
                 <Clock className="h-3 w-3" />
-                <span>Delay de hasta 10 min</span>
+                <span>Actualizado en tiempo real</span>
               </div>
             )}
           </div>
@@ -223,7 +211,7 @@ export default function FinanceReportClient() {
               <MetricCard
                 title="Ingresos Totales"
                 value={formatARS(data.totalIncome.current)}
-                icon={ArrowUpCircle}
+                icon={ArrowUpRight}
                 trend={{
                   value: formatChange(
                     data.totalIncome.change,
@@ -235,21 +223,21 @@ export default function FinanceReportClient() {
               />
               <MetricCard
                 title="Egresos Totales"
-                value={formatARS(data.totalExpenses.current)}
-                icon={ArrowDownCircle}
+                value={formatARS(data.totalExpense.current)}
+                icon={ArrowDownRight}
                 trend={{
                   value: formatChange(
-                    data.totalExpenses.change,
-                    data.totalExpenses.current,
-                    data.totalExpenses.previous,
+                    data.totalExpense.change,
+                    data.totalExpense.current,
+                    data.totalExpense.previous,
                   ),
-                  isPositive: data.totalExpenses.change <= 0, // Negative change in expenses is good
+                  isPositive: data.totalExpense.change <= 0,
                 }}
               />
               <MetricCard
                 title="Flujo Neto"
                 value={formatARS(data.netFlow.current)}
-                icon={DollarSign}
+                icon={Wallet}
                 trend={{
                   value: formatChange(
                     data.netFlow.change,
@@ -261,127 +249,157 @@ export default function FinanceReportClient() {
               />
             </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg font-medium flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-primary" />
-                  Evolución: Ingresos vs Egresos
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <div className="relative h-[300px] w-full flex items-end justify-center gap-2 min-w-[600px] pb-6">
-                    {data.evolution.length === 0 ? (
-                      <div className="absolute inset-0 flex items-center justify-center text-muted-foreground italic">
-                        Sin datos para este período
-                      </div>
-                    ) : (
-                      <>
-                        {data.evolution.map((item, idx) => {
-                          const maxVal = Math.max(
-                            ...data.evolution.flatMap((e) => [e.income, e.expenses]),
-                            1,
-                          );
-                          const incomeHeight = (item.income / maxVal) * 100;
-                          const expenseHeight = (item.expenses / maxVal) * 100;
-
-                          return (
-                            <div
-                              key={idx}
-                              className="group relative flex-1 flex flex-col items-center justify-end h-full max-w-[80px]"
-                            >
-                              <div className="flex items-end gap-1 w-full h-full">
-                                <div
-                                  className="flex-1 bg-emerald-500/80 hover:bg-emerald-500 rounded-t-sm transition-all relative group/income"
-                                  style={{ height: `${Math.max(incomeHeight, 1)}%` }}
-                                >
-                                  <div className="opacity-0 group-hover/income:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-popover text-popover-foreground text-[10px] px-2 py-1 rounded shadow-md whitespace-nowrap z-20 font-mono">
-                                    In: {formatARS(item.income)}
-                                  </div>
-                                </div>
-                                <div
-                                  className="flex-1 bg-red-500/80 hover:bg-red-500 rounded-t-sm transition-all relative group/expense"
-                                  style={{ height: `${Math.max(expenseHeight, 1)}%` }}
-                                >
-                                  <div className="opacity-0 group-hover/expense:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-popover text-popover-foreground text-[10px] px-2 py-1 rounded shadow-md whitespace-nowrap z-20 font-mono">
-                                    Out: {formatARS(item.expenses)}
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="absolute -bottom-6 text-[10px] text-muted-foreground text-center whitespace-nowrap overflow-hidden text-ellipsis w-full">
-                                {item.label}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </>
-                    )}
-                  </div>
-                </div>
-                <div className="flex justify-center gap-6 mt-4 text-xs">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-emerald-500 rounded-sm" />
-                    <span>Ingresos</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-red-500 rounded-sm" />
-                    <span>Egresos</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <div className="grid gap-6 md:grid-cols-1">
-              <Card>
+            <div className="grid gap-6 lg:grid-cols-3">
+              <Card className="lg:col-span-2">
                 <CardHeader>
                   <CardTitle className="text-lg font-medium flex items-center gap-2">
-                    <Wallet className="h-5 w-5 text-primary" />
-                    Desglose por Medio de Pago
+                    <TrendingUp className="h-5 w-5 text-primary" />
+                    Evolución de Caja
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="rounded-md border overflow-hidden">
-                    <table className="w-full text-sm">
-                      <thead className="bg-muted/50 border-b">
-                        <tr>
-                          <th className="text-left p-3 font-medium">Medio</th>
-                          <th className="text-right p-3 font-medium text-emerald-700">Ingresos (+)</th>
-                          <th className="text-right p-3 font-medium text-red-700">Egresos (-)</th>
-                          <th className="text-right p-3 font-medium">Flujo Neto</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {data.methodBreakdown.length === 0 ? (
-                          <tr>
-                            <td colSpan={4} className="p-8 text-center text-muted-foreground italic">
-                              No hay movimientos registrados
-                            </td>
-                          </tr>
-                        ) : (
-                          data.methodBreakdown.map((item, idx) => (
-                            <tr key={idx} className="border-b hover:bg-muted/30 transition-colors">
-                              <td className="p-3 font-semibold uppercase tracking-wider text-xs">{item.method}</td>
-                              <td className="p-3 text-right font-mono text-emerald-600">
-                                {formatARS(item.income)}
-                              </td>
-                              <td className="p-3 text-right font-mono text-red-600">
-                                {formatARS(item.expenses)}
-                              </td>
-                              <td className={cn(
-                                "p-3 text-right font-mono font-bold",
-                                item.net > 0 ? "text-emerald-700" : item.net < 0 ? "text-red-700" : ""
-                              )}>
-                                {formatARS(item.net)}
-                              </td>
-                            </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
+                  <div className="h-[300px] w-full flex flex-col justify-end">
+                    <div className="flex-1 flex items-end justify-between gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                      {data.evolution.length === 0 ? (
+                        <div className="w-full h-full flex items-center justify-center text-muted-foreground italic text-sm">
+                          Sin datos para este período
+                        </div>
+                      ) : (
+                        data.evolution.map((item, idx) => {
+                          const incomeHeight = (item.income / maxEvolutionValue) * 100;
+                          const expenseHeight = (item.expense / maxEvolutionValue) * 100;
+                          return (
+                            <div key={idx} className="group relative flex flex-col items-center justify-end h-full min-w-[30px] flex-1 max-w-[60px]">
+                              <div className="w-full flex justify-center gap-0.5 h-full items-end">
+                                <div
+                                  className="w-1/2 bg-emerald-500/80 hover:bg-emerald-500 rounded-t-sm transition-all"
+                                  style={{ height: `${Math.max(incomeHeight, 1)}%` }}
+                                />
+                                <div
+                                  className="w-1/2 bg-red-500/80 hover:bg-red-500 rounded-t-sm transition-all"
+                                  style={{ height: `${Math.max(expenseHeight, 1)}%` }}
+                                />
+                              </div>
+                              <div className="opacity-0 group-hover:opacity-100 absolute -top-12 left-1/2 -translate-x-1/2 bg-popover text-popover-foreground text-[10px] px-2 py-1 rounded shadow-md z-10 whitespace-nowrap border">
+                                <div className="text-emerald-600 font-bold">Ingreso: {formatARS(item.income)}</div>
+                                <div className="text-red-600 font-bold">Egreso: {formatARS(item.expense)}</div>
+                              </div>
+                              <span className="text-[10px] text-muted-foreground mt-2 truncate w-full text-center">
+                                {item.label}
+                              </span>
+                            </div>
+                          )
+                        })
+                      )}
+                    </div>
+                    <div className="flex items-center justify-center gap-4 mt-4 pt-4 border-t">
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-3 h-3 bg-emerald-500 rounded-sm" />
+                        <span className="text-xs text-muted-foreground font-medium">Ingresos</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-3 h-3 bg-red-500 rounded-sm" />
+                        <span className="text-xs text-muted-foreground font-medium">Egresos</span>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg font-medium flex items-center gap-2">
+                    <CreditCard className="h-5 w-5 text-primary" />
+                    Por Medio de Pago
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {data.methodDistribution.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground italic text-sm">
+                        Sin actividad de pago
+                      </div>
+                    ) : (
+                      data.methodDistribution.map((item) => (
+                        <div key={item.method} className="space-y-1.5 group">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="font-semibold tracking-tight uppercase">{item.method}</span>
+                            <span className={cn(
+                              "font-mono font-bold",
+                              item.net >= 0 ? "text-emerald-700" : "text-red-700"
+                            )}>
+                              {formatARS(item.net)}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between text-[10px] text-muted-foreground font-mono">
+                            <span className="text-emerald-600">+{formatARS(item.income)}</span>
+                            <span className="text-red-600">-{formatARS(item.expense)}</span>
+                          </div>
+                          <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">
+                            <div
+                              className={cn(
+                                "h-full rounded-full transition-all duration-500",
+                                item.net >= 0 ? "bg-emerald-500" : "bg-red-500"
+                              )}
+                              style={{
+                                width: `${Math.min(Math.max((Math.abs(item.net) / Math.max(data.totalIncome.current, data.totalExpense.current)) * 100, 5), 100)}%`
+                              }}
+                            />
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </CardContent>
               </Card>
             </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg font-medium">Detalle del Flujo</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="rounded-md border overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/50 border-b">
+                      <tr>
+                        <th className="text-left p-3 font-medium">Período</th>
+                        <th className="text-right p-3 font-medium">Ingresos</th>
+                        <th className="text-right p-3 font-medium">Egresos</th>
+                        <th className="text-right p-3 font-medium">Flujo Neto</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data.evolution.length === 0 ? (
+                        <tr>
+                          <td colSpan={4} className="p-8 text-center text-muted-foreground italic">
+                            No se encontraron movimientos
+                          </td>
+                        </tr>
+                      ) : (
+                        data.evolution.slice().reverse().map((item, idx) => (
+                          <tr key={idx} className="border-b hover:bg-muted/30 transition-colors">
+                            <td className="p-3 font-medium">{item.label}</td>
+                            <td className="p-3 text-right font-mono text-emerald-700">
+                              {formatARS(item.income)}
+                            </td>
+                            <td className="p-3 text-right font-mono text-red-700">
+                              {formatARS(item.expense)}
+                            </td>
+                            <td className={cn(
+                              "p-3 text-right font-mono font-bold",
+                              (item.income - item.expense) >= 0 ? "text-emerald-800" : "text-red-800"
+                            )}>
+                              {formatARS(item.income - item.expense)}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
           </>
         )
       )}

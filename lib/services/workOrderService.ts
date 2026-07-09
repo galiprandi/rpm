@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { createInvoice, determineInvoiceType, type InvoiceType } from './invoiceService';
-import { logWorkOrderChange } from './auditService';
-import { randomUUID } from 'crypto';
+import { logWorkOrderChange } from "./auditService";
+import { randomUUID } from "crypto";
 
 /**
  * Generates a document (Pre-invoice, Presupuesto, Remito) from a Work Order.
@@ -9,9 +9,10 @@ import { randomUUID } from 'crypto';
 export async function generateDocumentFromWorkOrder(
   workOrderId: string,
   createdBy: string,
-  options: { type?: InvoiceType; forceNew?: boolean } = {}
+  options: { type?: InvoiceType; forceNew?: boolean } = {},
+  existingTx?: any
 ) {
-  return await prisma.$transaction(async (tx) => {
+  const execute = async (tx: any) => {
     // Fetch work order with items and customer
     const workOrder = await tx.work_order.findUnique({
       where: { id: workOrderId },
@@ -83,7 +84,13 @@ export async function generateDocumentFromWorkOrder(
     }
 
     return document;
-  });
+  };
+
+  if (existingTx) {
+    return execute(existingTx);
+  }
+
+  return await prisma.$transaction(execute);
 }
 
 /**
@@ -93,122 +100,133 @@ export async function generateInvoiceFromWorkOrder(workOrderId: string, createdB
   return generateDocumentFromWorkOrder(workOrderId, createdBy);
 }
 
-interface UpdateWorkOrderData {
-  status?: string;
-  technicianId?: string | null;
-  notes?: string;
-  entryChecklist?: any;
-  exitChecklist?: any;
-  scheduledDate?: string | Date;
-  startedAt?: string | Date;
-  completedAt?: string | Date;
-  deliveredAt?: string | Date;
-  paymentMethod?: string;
-  paymentNotes?: string;
-}
-
 /**
- * Updates a work order with centralized logic for status transitions,
- * stock discounting, and audit logging.
+ * Updates a Work Order with centralized logic for audit logs, status transitions, and side effects.
  */
 export async function updateWorkOrder(
   id: string,
-  data: UpdateWorkOrderData,
-  userId: string,
-  meta?: { ipAddress?: string; userAgent?: string }
+  data: {
+    status?: string;
+    technicianId?: string | null;
+    entryChecklist?: any;
+    exitChecklist?: any;
+    notes?: string;
+    paymentMethod?: string;
+    paymentNotes?: string;
+    scheduledDate?: string | Date;
+    startedAt?: string | Date;
+    completedAt?: string | Date;
+    deliveredAt?: string | Date;
+  },
+  context: {
+    userId: string;
+    userEmail: string;
+    ipAddress?: string;
+    userAgent?: string;
+  }
 ) {
   return await prisma.$transaction(async (tx) => {
-    // 1. Fetch current state for comparison and logic
-    const current = await tx.work_order.findUnique({
+    const currentWO = await tx.work_order.findUnique({
       where: { id },
       include: {
         work_order_item: {
-          where: { type: 'PRODUCT' }
+          where: { type: "PRODUCT" },
         },
-        customer: { select: { name: true } }
-      }
+        customer: { select: { name: true } },
+      },
     });
 
-    if (!current) throw new Error('Work order not found');
+    if (!currentWO) {
+      throw new Error("Orden de trabajo no encontrada");
+    }
 
-    // 2. Log changes for tracked fields
-    const trackedFields: (keyof UpdateWorkOrderData)[] = [
-      'status', 'technicianId', 'notes', 'scheduledDate', 'paymentMethod', 'paymentNotes'
+    // 2. Track audit changes
+    const trackedFields = [
+      { name: "status", current: currentWO.status, new: data.status },
+      { name: "technicianId", current: currentWO.technicianId, new: data.technicianId },
+      { name: "notes", current: currentWO.notes, new: data.notes },
+      { name: "scheduledDate", current: currentWO.scheduledDate?.toISOString(), new: data.scheduledDate instanceof Date ? data.scheduledDate.toISOString() : (data.scheduledDate ? new Date(data.scheduledDate).toISOString() : undefined) },
+      { name: "paymentMethod", current: currentWO.paymentMethod, new: data.paymentMethod },
+      { name: "paymentNotes", current: currentWO.paymentNotes, new: data.paymentNotes },
     ];
 
     for (const field of trackedFields) {
-      const newValue = data[field];
-      const oldValue = current[field as keyof typeof current];
-
-      if (newValue !== undefined && String(newValue) !== String(oldValue)) {
+      if (field.new !== undefined && String(field.current) !== String(field.new)) {
         await logWorkOrderChange({
           workOrderId: id,
-          fieldName: field,
-          oldValue: oldValue as any,
-          newValue: newValue as any,
-          changedBy: userId,
-          ipAddress: meta?.ipAddress,
-          userAgent: meta?.userAgent,
+          fieldName: field.name,
+          oldValue: field.current,
+          newValue: field.new,
+          changedBy: context.userEmail,
+          ipAddress: context.ipAddress,
+          userAgent: context.userAgent,
         });
       }
     }
 
-    // 3. Prepare update data with status-based timestamps
+    // 3. Status-based timestamp management
     const updateData: any = { ...data };
 
+    if (data.scheduledDate) updateData.scheduledDate = new Date(data.scheduledDate);
+    if (data.startedAt) updateData.startedAt = new Date(data.startedAt);
+    if (data.completedAt) updateData.completedAt = new Date(data.completedAt);
+    if (data.deliveredAt) updateData.deliveredAt = new Date(data.deliveredAt);
+
     if (data.status) {
-      if (data.status === 'IN_PROGRESS' && !current.startedAt) {
+      if (data.status === "IN_PROGRESS" && !currentWO.startedAt) {
         updateData.startedAt = new Date();
-      } else if (['READY', 'DELIVERED'].includes(data.status) && !current.completedAt) {
+      } else if (
+        ["READY", "PAID", "DELIVERED"].includes(data.status) &&
+        !currentWO.completedAt
+      ) {
         updateData.completedAt = new Date();
       }
 
-      if (data.status === 'DELIVERED' && !current.deliveredAt) {
+      if (data.status === "DELIVERED" && !currentWO.deliveredAt) {
         updateData.deliveredAt = new Date();
       }
     }
 
-    // Convert date strings to Date objects if necessary
-    if (typeof updateData.scheduledDate === 'string') updateData.scheduledDate = new Date(updateData.scheduledDate);
-    if (typeof updateData.startedAt === 'string') updateData.startedAt = new Date(updateData.startedAt);
-    if (typeof updateData.completedAt === 'string') updateData.completedAt = new Date(updateData.completedAt);
-    if (typeof updateData.deliveredAt === 'string') updateData.deliveredAt = new Date(updateData.deliveredAt);
-
-    // 4. Update the record
-    const updated = await tx.work_order.update({
+    // 4. Update the Work Order
+    const updatedWO = await tx.work_order.update({
       where: { id },
       data: updateData,
       include: {
-        customer: true,
+        customer: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            billingData: true,
+          },
+        },
         vehicle: {
-          include: {
+          select: {
+            id: true,
+            identifier: true,
+            category: true,
             vehicle_make: true,
             vehicle_model: true,
-          }
-        },
-        work_order_item: {
-          include: {
-            product: true,
-            service: true,
-          }
+          },
         },
         technician: {
-          select: { id: true, name: true }
-        }
-      }
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
     });
 
-    // 5. Stock Discounting Logic
-    const finalStatuses = ['READY', 'DELIVERED'];
-    if (data.status && finalStatuses.includes(data.status)) {
-      // Check if already discounted
+    // 5. Stock discounting logic
+    if (data.status && ["READY", "PAID", "DELIVERED"].includes(data.status)) {
       const woPrefix = id.substring(0, 8);
       const existingMovements = await tx.stock_movement.findFirst({
         where: { reason: { startsWith: `Venta OT #${woPrefix}` } },
       });
 
       if (!existingMovements) {
-        for (const item of current.work_order_item) {
+        for (const item of currentWO.work_order_item) {
           if (item.productId) {
             const product = await tx.product.findUnique({
               where: { id: item.productId },
@@ -216,7 +234,7 @@ export async function updateWorkOrder(
             });
 
             if (product) {
-              const previousStock = product.stock;
+              const previousStock = Number(product.stock);
               const newStock = previousStock - item.quantity;
 
               await tx.product.update({
@@ -232,11 +250,11 @@ export async function updateWorkOrder(
                   id: randomUUID(),
                   productId: item.productId,
                   quantity: -item.quantity,
-                  type: 'OUT',
+                  type: "OUT",
                   previousStock,
                   newStock,
-                  reason: `Venta OT #${woPrefix} - ${current.customer.name}`,
-                  userName: userId,
+                  reason: `Venta OT #${woPrefix} - ${currentWO.customer.name}`,
+                  userName: context.userEmail,
                 },
               });
             }
@@ -245,15 +263,15 @@ export async function updateWorkOrder(
       }
     }
 
-    // 6. Auto-generate invoice if delivered
-    if (data.status === 'DELIVERED' && current.status !== 'DELIVERED') {
-       // We'll call this outside the transaction or use the tx if generateDocumentFromWorkOrder supported it
-       // But generateDocumentFromWorkOrder creates its own transaction.
-       // Actually, we are already inside a transaction here.
-       // Let's keep it simple and just do the update, return, and let the caller handle invoice or try to do it here carefully.
-       // Given the constraints and previous code, auto-generation is usually done after the main update.
+    // 6. Auto-generate document on delivery
+    if (data.status === "DELIVERED" && currentWO.status !== "DELIVERED") {
+      try {
+        await generateDocumentFromWorkOrder(id, context.userId, { type: undefined }, tx);
+      } catch (invoiceError) {
+        console.error("Error auto-generating invoice for work order:", invoiceError);
+      }
     }
 
-    return updated;
+    return updatedWO;
   });
 }

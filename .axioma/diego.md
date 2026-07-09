@@ -21,3 +21,4 @@
 ## 2025-07-05 - Performance en Reportes
 **Learning:** El cálculo de valorización de inventario puede ser pesado si el catálogo es extenso. La implementación de caching en el API Route (`revalidate` y `Cache-Control`) es fundamental para mantener la respuesta rápida del sistema.
 **Action:** Mantener el patrón de caching en futuros reportes (Ventas, Taller, etc).
+- [x] 2025-07-08 — Implementación de reporte de Finanzas & Flujo (ingresos, egresos, flujo neto y distribución por medio de pago) (PR #diego/reports/finance-report)
