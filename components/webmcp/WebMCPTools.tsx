@@ -34,10 +34,10 @@ const inputSchema = {
 
 interface WebMCPTool {
   name: string;
-  title: string;
+  title?: string;
   description: string;
-  inputSchema: Record<string, unknown>;
-  handler: (args: Record<string, unknown>) => Promise<{ content: { type: string; text: string }[] }>;
+  inputSchema?: Record<string, unknown>;
+  execute: (args: Record<string, unknown>) => Promise<unknown>;
 }
 
 async function apiPost(url: string, body: unknown) {
@@ -59,7 +59,7 @@ const tool: Omit<WebMCPTool, 'name'> = {
   title: 'Registrar Cliente y Vehículo',
   description: 'Crea un nuevo cliente y su vehículo en una sola operación. Usar cuando llega un cliente nuevo con un vehículo.',
   inputSchema,
-  handler: async (args) => {
+  execute: async (args) => {
     const customer = await apiPost('/api/customers', {
       name: args.customerName,
       phone: args.customerPhone || undefined,
@@ -95,13 +95,13 @@ const tool: Omit<WebMCPTool, 'name'> = {
 declare global {
   interface Document {
     modelContext?: {
-      registerTool: (tool: WebMCPTool) => void;
+      registerTool: (tool: WebMCPTool) => Promise<void>;
       unregisterTool: (name: string) => void;
     };
   }
   interface Navigator {
     modelContext?: {
-      registerTool: (tool: WebMCPTool) => void;
+      registerTool: (tool: WebMCPTool) => Promise<void>;
       unregisterTool: (name: string) => void;
     };
   }
