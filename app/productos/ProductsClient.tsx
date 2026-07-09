@@ -3,26 +3,23 @@
 import { useState } from 'react';
 import { PublicLayout } from '@/components/public/layout/PublicLayout';
 import { Button } from '@/components/ui/button';
-import { Search, ArrowRight, X } from 'lucide-react';
+import { Search, ArrowRight, X, Check, MessageCircle, Eye } from 'lucide-react';
 import { PUBLIC_SITE_CONFIG } from '@/lib/config/public-site';
 import { cn } from '@/lib/utils';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { featuredProducts } from '@/lib/constants/featured-products';
 
 const categories = ['Todos', 'Iluminación', 'Estética', 'Equipamiento', 'Seguridad', 'Interior'];
-
-const featuredProducts = [
-  { id: '1', name: 'Barra LED Ultra-Beam 42"', category: 'Iluminación', price: 125000, image: 'B' },
-  { id: '2', name: 'Protección PPF Pro-Shield', category: 'Estética', price: 85000, image: 'P' },
-  { id: '3', name: 'Kit Suspensión Off-Road', category: 'Equipamiento', price: 450000, image: 'S' },
-  { id: '4', name: 'Lámina Seguridad 3M CS20', category: 'Seguridad', price: 45000, image: 'L' },
-  { id: '5', name: 'Ópticas Full LED Black', category: 'Iluminación', price: 195000, image: 'O' },
-  { id: '6', name: 'Tratamiento Cerámico 9H', category: 'Estética', price: 65000, image: 'T' },
-  { id: '7', name: 'Malacate Winch 12000lb', category: 'Equipamiento', price: 320000, image: 'M' },
-  { id: '8', name: 'Alfombras Thermo-Fit', category: 'Interior', price: 55000, image: 'A' },
-];
 
 export default function ProductsClient() {
   const [selectedCategory, setSelectedCategory] = useState('Todos');
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedProduct, setSelectedProduct] = useState<typeof featuredProducts[0] | null>(null);
 
   const filteredProducts = featuredProducts.filter(product => {
     const matchesCategory = selectedCategory === 'Todos' || product.category === selectedCategory;
@@ -94,6 +91,16 @@ export default function ProductsClient() {
                   {product.image}
                 </div>
 
+                {/* Quick View Icon Overlay */}
+                <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-x-4 group-hover:translate-x-0">
+                  <div
+                    className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white cursor-pointer hover:bg-brand hover:border-brand transition-colors"
+                    onClick={() => setSelectedProduct(product)}
+                  >
+                    <Eye className="h-4 w-4" />
+                  </div>
+                </div>
+
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />
 
                 <div className="absolute bottom-8 left-8 right-8 space-y-4">
@@ -104,7 +111,7 @@ export default function ProductsClient() {
                   <div className="flex items-center justify-between opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500">
                     <span className="text-white font-bold">${product.price.toLocaleString()}</span>
                     <button
-                      onClick={() => window.open(PUBLIC_SITE_CONFIG.links.whatsapp(`Hola! Me gustaría recibir más información sobre el producto: ${product.name}`), '_blank')}
+                      onClick={() => setSelectedProduct(product)}
                       className="flex items-center text-xs font-bold text-brand hover:text-white transition-colors"
                     >
                       DETALLES <ArrowRight className="ml-2 h-3 w-3" />
@@ -144,6 +151,62 @@ export default function ProductsClient() {
           </div>
         </div>
       </section>
+
+      <Dialog open={!!selectedProduct} onOpenChange={(open) => !open && setSelectedProduct(null)}>
+        <DialogContent className="max-w-3xl bg-zinc-950 border-white/10 p-0 overflow-hidden">
+          {selectedProduct && (
+            <div className="flex flex-col md:flex-row h-full">
+              <div className="md:w-1/2 aspect-square md:aspect-auto bg-zinc-900 flex items-center justify-center relative overflow-hidden">
+                <div className="absolute inset-0 bg-brand/5" />
+                <span className="text-[140px] font-black text-white/5 italic select-none">
+                  {selectedProduct.image}
+                </span>
+                <div className="absolute top-6 left-6">
+                  <span className="px-3 py-1 bg-brand text-white text-[10px] font-bold uppercase tracking-widest rounded-full">
+                    {selectedProduct.category}
+                  </span>
+                </div>
+              </div>
+
+              <div className="md:w-1/2 p-8 md:p-12 flex flex-col justify-center space-y-8">
+                <DialogHeader className="space-y-4">
+                  <DialogTitle className="text-3xl md:text-4xl font-bold text-white tracking-tighter leading-tight">
+                    {selectedProduct.name}
+                  </DialogTitle>
+                  <p className="text-2xl font-bold text-brand">
+                    ${selectedProduct.price.toLocaleString()}
+                  </p>
+                </DialogHeader>
+
+                <div className="space-y-6">
+                  <p className="text-zinc-400 leading-relaxed">
+                    {selectedProduct.description}
+                  </p>
+
+                  <ul className="grid grid-cols-1 gap-3">
+                    {selectedProduct.features.map((feature, i) => (
+                      <li key={i} className="flex items-center text-sm text-zinc-300">
+                        <Check className="h-4 w-4 text-brand mr-3 flex-shrink-0" />
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="pt-4">
+                  <Button
+                    className="w-full bg-white text-black hover:bg-brand hover:text-white font-bold h-14 rounded-2xl transition-all duration-300 gap-3 group"
+                    onClick={() => window.open(PUBLIC_SITE_CONFIG.links.whatsapp(`Hola RPM! Me interesa el producto: ${selectedProduct.name}. ¿Tienen stock disponible?`), '_blank')}
+                  >
+                    <MessageCircle className="h-5 w-5 fill-current transition-transform group-hover:scale-110" />
+                    CONSULTAR POR WHATSAPP
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </PublicLayout>
   );
 }

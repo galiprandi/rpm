@@ -36,7 +36,7 @@ import {
 } from "@/components/ui/dialog";
 import { CustomerForm } from "@/components/customers/CustomerForm";
 import { VehicleDialog } from "@/components/vehicles/VehicleDialog";
-import { getWhatsAppLink } from "@/lib/utils/whatsapp";
+import { getWhatsAppLink, getDebtReminderMessage } from "@/lib/utils/whatsapp";
 import { CustomerCreditNoteDialog } from "@/components/credit-notes/CustomerCreditNoteDialog";
 
 interface Vehicle {
@@ -72,15 +72,17 @@ interface CreditNote {
   items: Array<{ name: string; quantity: number }>;
 }
 
-type TransactionType = 'DIRECT_SALE' | 'CREDIT_NOTE' | 'INVOICE';
+type TransactionType = 'DIRECT_SALE' | 'CREDIT_NOTE' | 'INVOICE' | 'PAYMENT';
 
 interface Transaction {
   id: string;
   type: TransactionType;
   total: number;
   createdAt: string;
-  items: Array<{ name: string; quantity: number }>;
+  items?: Array<{ name: string; quantity: number }>;
   status?: string;
+  method?: string;
+  notes?: string;
 }
 
 interface CustomerDetail {
@@ -101,6 +103,13 @@ interface CustomerDetail {
   workOrders: WorkOrder[];
   directSales: DirectSale[];
   creditNotes: CreditNote[];
+  payments: Array<{
+    id: string;
+    amount: number;
+    method: string;
+    notes?: string;
+    createdAt: string;
+  }>;
 }
 
 export default function CustomerDetailPage() {
@@ -250,8 +259,17 @@ export default function CustomerDetailPage() {
       status: cn.status,
     }));
 
+    const payments: Transaction[] = customer.payments.map(p => ({
+      id: p.id,
+      type: 'PAYMENT' as TransactionType,
+      total: p.amount,
+      createdAt: p.createdAt,
+      method: p.method,
+      notes: p.notes,
+    }));
+
     // Combinar y ordenar por fecha (más reciente primero)
-    return [...sales, ...creditNotes].sort(
+    return [...sales, ...creditNotes, ...payments].sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
   }, [customer]);
@@ -268,6 +286,7 @@ export default function CustomerDetailPage() {
             DIRECT_SALE: { label: "Venta", color: "bg-blue-100 text-blue-800" },
             CREDIT_NOTE: { label: "NC", color: "bg-orange-100 text-orange-800" },
             INVOICE: { label: "Factura", color: "bg-green-100 text-green-800" },
+            PAYMENT: { label: "Pago", color: "bg-emerald-100 text-emerald-800" },
           };
           const config = typeConfig[type];
           return (
@@ -302,8 +321,18 @@ export default function CustomerDetailPage() {
       },
       {
         accessorKey: "items",
-        header: "Items",
-        cell: ({ row }) => row.original.items.map((i: { name: string }) => i.name).join(", "),
+        header: "Concepto / Items",
+        cell: ({ row }) => {
+          if (row.original.type === 'PAYMENT') {
+            return (
+              <div className="flex flex-col">
+                <span className="font-medium text-emerald-700">Pago Recibido ({row.original.method})</span>
+                {row.original.notes && <span className="text-xs text-muted-foreground truncate max-w-[200px]">{row.original.notes}</span>}
+              </div>
+            );
+          }
+          return row.original.items?.map((i: { name: string }) => i.name).join(", ") || "-";
+        },
       },
       {
         accessorKey: "total",
@@ -311,8 +340,9 @@ export default function CustomerDetailPage() {
         cell: ({ row }) => {
           const total = row.original.total;
           const isCreditNote = row.original.type === 'CREDIT_NOTE';
+          const isPayment = row.original.type === 'PAYMENT';
           return (
-            <span className={isCreditNote ? 'text-orange-600' : ''}>
+            <span className={isCreditNote ? 'text-orange-700' : ''}>
               {isCreditNote ? '-' : ''}$${Number(total).toLocaleString("es-AR")}
             </span>
           );
@@ -384,7 +414,7 @@ export default function CustomerDetailPage() {
                 href={getWhatsAppLink(customer.phone, `Hola ${customer.name}!`)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-1 rounded-md hover:bg-emerald-50 text-emerald-600 transition-colors"
+                className="p-1 rounded-md hover:bg-emerald-50 text-emerald-700 transition-colors"
                 title="Enviar WhatsApp"
               >
                 <MessageSquare className="h-4 w-4" />
@@ -403,7 +433,7 @@ export default function CustomerDetailPage() {
                 href={getWhatsAppLink(customer.phoneAlt, `Hola ${customer.name}!`)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-1 rounded-md hover:bg-emerald-50 text-emerald-600 transition-colors"
+                className="p-1 rounded-md hover:bg-emerald-50 text-emerald-700 transition-colors"
                 title="Enviar WhatsApp"
               >
                 <MessageSquare className="h-4 w-4" />
@@ -440,21 +470,43 @@ export default function CustomerDetailPage() {
               <Wallet className="h-4 w-4" />
               Cuenta Corriente
             </CardTitle>
-            <Button
-              onClick={() => setIsPaymentModalOpen(true)}
-              size="sm"
-              className={customer.balance > 0 ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"}
-            >
-              <ArrowDownLeft className="h-4 w-4 mr-1" />
-              Registrar Pago
-            </Button>
+            <div className="flex items-center gap-2">
+              {customer.balance > 0 && (customer.phone || customer.phoneAlt) && (
+                <Button
+                  asChild
+                  variant="outline"
+                  size="sm"
+                  className="border-emerald-600 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800"
+                >
+                  <a
+                    href={getWhatsAppLink(
+                      (customer.phone || customer.phoneAlt)!,
+                      getDebtReminderMessage(customer.name, customer.balance)
+                    )}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <MessageSquare className="h-4 w-4 mr-1" />
+                    Notificar
+                  </a>
+                </Button>
+              )}
+              <Button
+                onClick={() => setIsPaymentModalOpen(true)}
+                size="sm"
+                className={customer.balance > 0 ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"}
+              >
+                <ArrowDownLeft className="h-4 w-4 mr-1" />
+                Registrar Pago
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between">
             <div>
               <div className="text-sm text-muted-foreground">Saldo Actual</div>
-              <div className={`text-3xl font-bold ${customer.balance > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+              <div className={`text-3xl font-bold ${customer.balance > 0 ? 'text-red-700' : 'text-emerald-700'}`}>
                 {formatCurrency(customer.balance)}
               </div>
               <div className="text-xs text-muted-foreground mt-1">
@@ -844,10 +896,12 @@ export default function CustomerDetailPage() {
                 <Badge className={
                   selectedTransaction.type === 'DIRECT_SALE' ? 'bg-blue-100 text-blue-800' :
                   selectedTransaction.type === 'CREDIT_NOTE' ? 'bg-orange-100 text-orange-800' :
+                  selectedTransaction.type === 'PAYMENT' ? 'bg-emerald-100 text-emerald-800' :
                   'bg-green-100 text-green-800'
                 }>
                   {selectedTransaction.type === 'DIRECT_SALE' ? 'Venta' :
-                   selectedTransaction.type === 'CREDIT_NOTE' ? 'NC' : 'Factura'}
+                   selectedTransaction.type === 'CREDIT_NOTE' ? 'NC' :
+                   selectedTransaction.type === 'PAYMENT' ? 'Pago' : 'Factura'}
                 </Badge>
               </div>
               <div className="flex items-center justify-between">
@@ -860,7 +914,7 @@ export default function CustomerDetailPage() {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Total</span>
-                <span className={`font-semibold ${selectedTransaction.type === 'CREDIT_NOTE' ? 'text-orange-600' : ''}`}>
+                <span className={`font-semibold ${selectedTransaction.type === 'CREDIT_NOTE' ? 'text-orange-700' : ''}`}>
                   {selectedTransaction.type === 'CREDIT_NOTE' ? '-' : ''}${Number(selectedTransaction.total).toLocaleString('es-AR')}
                 </span>
               </div>
@@ -874,17 +928,32 @@ export default function CustomerDetailPage() {
                   </span>
                 </div>
               )}
-              <div className="border-t pt-4">
-                <div className="text-sm font-medium mb-2">Items</div>
-                <div className="space-y-2">
-                  {selectedTransaction.items.map((item, index) => (
-                    <div key={index} className="flex items-center justify-between text-sm">
-                      <span>{item.name}</span>
-                      <span className="text-muted-foreground">x{item.quantity}</span>
+              {selectedTransaction.type === 'PAYMENT' ? (
+                <div className="border-t pt-4 space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Método</span>
+                    <span className="font-medium">{selectedTransaction.method}</span>
+                  </div>
+                  {selectedTransaction.notes && (
+                    <div className="pt-2">
+                      <div className="text-xs text-muted-foreground mb-1">Notas</div>
+                      <p className="text-sm bg-muted p-2 rounded">{selectedTransaction.notes}</p>
                     </div>
-                  ))}
+                  )}
                 </div>
-              </div>
+              ) : (
+                <div className="border-t pt-4">
+                  <div className="text-sm font-medium mb-2">Items</div>
+                  <div className="space-y-2">
+                    {selectedTransaction.items?.map((item, index) => (
+                      <div key={index} className="flex items-center justify-between text-sm">
+                        <span>{item.name}</span>
+                        <span className="text-muted-foreground">x{item.quantity}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Botón para cancelar NC si está emitida */}
               {selectedTransaction.type === 'CREDIT_NOTE' && selectedTransaction.status === 'ISSUED' && (

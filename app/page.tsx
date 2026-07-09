@@ -1,6 +1,7 @@
 import { PublicLayout } from '@/components/public/layout/PublicLayout';
 import { Hero } from '@/components/public/sections/Hero';
 import { Services } from '@/components/public/sections/Services';
+import { FeaturedProducts } from '@/components/public/sections/FeaturedProducts';
 import { Testimonials } from '@/components/public/sections/Testimonials';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Camera } from 'lucide-react';
@@ -19,6 +20,8 @@ export default function HomePage() {
       <Hero />
       
       <Services />
+
+      <FeaturedProducts />
 
       <Testimonials />
 

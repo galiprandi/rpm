@@ -6,7 +6,6 @@ import { MetricCard } from "@/components/dashboard/MetricCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   TrendingUp,
-  TrendingDown,
   Calendar,
   DollarSign,
   Wallet,
@@ -23,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FinanceReportData, FinanceGroupBy } from "@/lib/services/financeReportService";
+import { FinanceReportData, type FinanceGroupBy } from "@/lib/services/financeReportService";
 import { cn } from "@/lib/utils";
 
 type Period =

@@ -12,7 +12,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Plus, LayoutGrid, List, Car, Truck, Wrench, Headphones, Package, ClipboardList, Wallet, DollarSign, MessageSquare, AlertCircle, UserCog, Eye, Search, X } from "lucide-react";
+import { Plus, LayoutGrid, List, Car, Truck, Wrench, Headphones, Package, ClipboardList, Wallet, DollarSign, MessageSquare, AlertCircle, UserCog, Eye, Search, X, Check } from "lucide-react";
 import { Header } from "@/components/adm/Header";
 import { CrudStats } from "@/components/adm/CrudStats";
 import { Input } from "@/components/ui/input";
@@ -43,6 +43,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
 import { getWhatsAppLink, getWorkOrderMessage } from "@/lib/utils/whatsapp";
 
 interface WorkOrder {
@@ -57,7 +65,7 @@ interface WorkOrder {
   startedAt?: string;
   totalPaid?: number;
   isFullyPaid?: boolean;
-  technician?: { name: string };
+  technician?: { id: string; name: string };
 }
 
 const STATUSES = [
@@ -102,7 +110,12 @@ const isDelayed = (wo: WorkOrder) => {
 
 // --- Components ---
 
-function KanbanCard({ wo, isOverlay = false }: { wo: WorkOrder; isOverlay?: boolean }) {
+function KanbanCard({ wo, isOverlay = false, technicians = [], onTechnicianUpdate }: {
+  wo: WorkOrder;
+  isOverlay?: boolean;
+  technicians?: Array<{ id: string; name: string }>;
+  onTechnicianUpdate?: (woId: string, techId: string | null) => Promise<void>;
+}) {
   const {
     attributes,
     listeners,
@@ -203,12 +216,46 @@ function KanbanCard({ wo, isOverlay = false }: { wo: WorkOrder; isOverlay?: bool
           <div className="text-xs text-muted-foreground truncate">
             {wo.vehicle.make?.name} {wo.vehicle.model?.name}
           </div>
-          {wo.technician && (
-            <div className="flex items-center gap-1 text-[10px] bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded border border-purple-100 shrink-0 max-w-[80px]">
-              <UserCog className="h-2.5 w-2.5 shrink-0" />
-              <span className="truncate">{wo.technician.name}</span>
-            </div>
-          )}
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <div
+                className={cn(
+                  "flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border shrink-0 max-w-[100px] transition-colors cursor-pointer z-20",
+                  wo.technician
+                    ? "bg-purple-50 text-purple-700 border-purple-100 hover:bg-purple-100"
+                    : "bg-muted text-muted-foreground border-transparent hover:bg-muted/80"
+                )}
+                onMouseDown={(e) => e.stopPropagation()}
+              >
+                <UserCog className="h-2.5 w-2.5 shrink-0" />
+                <span className="truncate">{wo.technician?.name || "Sin técnico"}</span>
+              </div>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48" onMouseDown={(e) => e.stopPropagation()}>
+              <DropdownMenuLabel className="text-xs font-semibold">Asignar Técnico</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="text-xs"
+                onClick={() => onTechnicianUpdate?.(wo.id, null)}
+              >
+                <X className="h-3.5 w-3.5 mr-2" />
+                Sin asignar
+                {!wo.technician && <Check className="h-3.5 w-3.5 ml-auto text-primary" />}
+              </DropdownMenuItem>
+              {technicians.map((tech) => (
+                <DropdownMenuItem
+                  key={tech.id}
+                  className="text-xs"
+                  onClick={() => onTechnicianUpdate?.(wo.id, tech.id)}
+                >
+                  <UserCog className="h-3.5 w-3.5 mr-2" />
+                  {tech.name}
+                  {wo.technician?.id === tech.id && <Check className="h-3.5 w-3.5 ml-auto text-primary" />}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         <div className="flex justify-between items-center text-[10px] text-muted-foreground pt-1.5 border-t mt-1">
@@ -230,7 +277,7 @@ function KanbanCard({ wo, isOverlay = false }: { wo: WorkOrder; isOverlay?: bool
                   });
                   window.open(getWhatsAppLink(wo.customer.phone, msg), '_blank');
                 }}
-                className="h-5 w-5 p-0 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 shrink-0"
+                className="h-5 w-5 p-0 text-emerald-700 hover:text-emerald-700 hover:bg-emerald-50 shrink-0"
                 title="Notificar por WhatsApp"
                 aria-label="Notificar por WhatsApp"
               >
@@ -263,14 +310,24 @@ function KanbanCard({ wo, isOverlay = false }: { wo: WorkOrder; isOverlay?: bool
       <Link href={`/adm/work-orders/${wo.id}`} onClick={(e) => {
         // Prevent navigation if we just finished dragging
         if (isDragging) e.preventDefault();
-      }}>
+      }} className="block">
         {content}
       </Link>
     </div>
   );
 }
 
-function KanbanColumn({ status, items }: { status: typeof STATUSES[0]; items: WorkOrder[] }) {
+function KanbanColumn({
+  status,
+  items,
+  technicians,
+  onTechnicianUpdate
+}: {
+  status: typeof STATUSES[0];
+  items: WorkOrder[];
+  technicians: Array<{ id: string; name: string }>;
+  onTechnicianUpdate: (woId: string, techId: string | null) => Promise<void>;
+}) {
   const columnTotal = items.reduce((sum, wo) => sum + Number(wo.total), 0);
   const { setNodeRef } = useSortable({
     id: status.id,
@@ -308,7 +365,12 @@ function KanbanColumn({ status, items }: { status: typeof STATUSES[0]; items: Wo
         <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
           <div className="space-y-3">
             {items.map((wo) => (
-              <KanbanCard key={wo.id} wo={wo} />
+              <KanbanCard
+                key={wo.id}
+                wo={wo}
+                technicians={technicians}
+                onTechnicianUpdate={onTechnicianUpdate}
+              />
             ))}
           </div>
           {items.length === 0 && (
@@ -527,6 +589,29 @@ export default function WorkOrdersPage() {
     }
   };
 
+  const handleTechnicianUpdate = async (woId: string, techId: string | null) => {
+    try {
+      const response = await fetch(`/api/work-orders/${woId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ technicianId: techId }),
+      });
+      if (!response.ok) throw new Error("Error al actualizar el técnico");
+
+      const updatedWO = await response.json();
+      setWorkOrders(prev => prev.map(wo => wo.id === woId ? {
+        ...wo,
+        technicianId: updatedWO.technicianId,
+        technician: updatedWO.technician
+      } : wo));
+
+      toast.success("Técnico actualizado correctamente");
+    } catch (e) {
+      console.error("Error updating technician:", e);
+      toast.error("No se pudo actualizar el técnico");
+    }
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto py-6 space-y-4 h-[calc(100vh-6rem)] flex flex-col">
@@ -673,12 +758,18 @@ export default function WorkOrdersPage() {
                     key={status.id}
                     status={status}
                     items={status.items}
+                    technicians={technicians}
+                    onTechnicianUpdate={handleTechnicianUpdate}
                   />
                 ))}
               </div>
               <DragOverlay>
                 {activeId && activeWorkOrder ? (
-                  <KanbanCard wo={activeWorkOrder} isOverlay />
+                  <KanbanCard
+                    wo={activeWorkOrder}
+                    isOverlay
+                    technicians={technicians}
+                  />
                 ) : null}
               </DragOverlay>
             </DndContext>
@@ -734,7 +825,7 @@ export default function WorkOrdersPage() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-8 w-8 p-0 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                              className="h-8 w-8 p-0 text-emerald-700 hover:text-emerald-700 hover:bg-emerald-50"
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();

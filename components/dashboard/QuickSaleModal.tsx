@@ -410,7 +410,7 @@ export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModal
                           <div className="font-medium">{customer.name}</div>
                           <div className="text-sm text-muted-foreground">{customer.phone}</div>
                           {customer.balance && customer.balance > 0 && (
-                            <div className="text-xs text-red-600 mt-1">
+                            <div className="text-xs text-red-700 mt-1">
                               Saldo pendiente: {formatARS(customer.balance)}
                             </div>
                           )}
@@ -528,7 +528,7 @@ export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModal
               </div>
               <div className="flex justify-between items-center mt-2">
                 <span className="text-sm text-muted-foreground">Restante</span>
-                <span className={`text-lg font-semibold ${remaining > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+                <span className={`text-lg font-semibold ${remaining > 0 ? 'text-red-700' : 'text-emerald-700'}`}>
                   {formatARS(remaining)}
                 </span>
               </div>
@@ -538,12 +538,12 @@ export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModal
                 <div className="mt-3 pt-3 border-t border-slate-200">
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-muted-foreground">Saldo actual cliente:</span>
-                    <span className="text-red-600 font-medium">{formatARS(customerBalance)}</span>
+                    <span className="text-red-700 font-medium">{formatARS(customerBalance)}</span>
                   </div>
                   {sellOnCredit && remaining > 0 && (
                     <div className="flex justify-between items-center text-sm mt-1">
                       <span className="text-muted-foreground">Nuevo saldo sería:</span>
-                      <span className="text-red-600 font-bold">{formatARS(newBalanceIfCredit)}</span>
+                      <span className="text-red-700 font-bold">{formatARS(newBalanceIfCredit)}</span>
                     </div>
                   )}
                 </div>

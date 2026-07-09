@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,7 +32,6 @@ import {
   Camera,
   Clock,
   DollarSign,
-  FileText,
   Check,
   Phone,
   Mail,
@@ -49,6 +48,11 @@ import {
   RefreshCw,
   Eye,
   Plus,
+  History,
+  AlertCircle,
+  PlayCircle,
+  Loader2,
+  FileText,
 } from "lucide-react";
 import { ProductServiceSelector, SelectedItem } from "@/components/ui/ProductServiceSelector";
 import Image from "next/image";
@@ -58,47 +62,77 @@ import { toast } from "sonner";
 import { CustomerCreditNoteDialog } from "@/components/credit-notes/CustomerCreditNoteDialog";
 import { getWhatsAppLink, getWorkOrderMessage } from "@/lib/utils/whatsapp";
 
+// --- Helpers ---
+
+const getFieldLabel = (field: string) => {
+  const labels: Record<string, string> = {
+    status: "Estado",
+    technicianId: "Técnico",
+    notes: "Notas",
+    scheduledDate: "Fecha Agendada",
+    paymentMethod: "Método de Pago",
+    paymentNotes: "Notas de Pago",
+    startedAt: "Fecha de Inicio",
+    completedAt: "Fecha de Finalización",
+    deliveredAt: "Fecha de Entrega",
+  };
+  return labels[field] || field;
+};
+
+const getStatusLabel = (status: string) => {
+  const statusConfig = STATUSES.find((s) => s.id === status);
+  return statusConfig?.label || status;
+};
+
 // Timeline Item Component
 function TimelineItem({
   title,
+  subtitle,
   date,
   status,
+  icon: Icon = Check,
   isFirst = false,
   isLast = false,
+  variant = "milestone",
 }: {
   title: string;
+  subtitle?: string;
   date: string;
   status: "completed" | "pending";
+  icon?: any;
   isFirst?: boolean;
   isLast?: boolean;
+  variant?: "milestone" | "audit";
 }) {
   return (
-    <div className="flex gap-3">
+    <div className="flex gap-4">
       <div className="flex flex-col items-center">
         {!isFirst && <div className="w-px h-3 bg-border" />}
         <div
           className={cn(
-            "w-5 h-5 rounded-full flex items-center justify-center shrink-0",
-            status === "completed"
-              ? "bg-emerald-500 text-white"
-              : "bg-muted border-2 border-muted-foreground/30"
+            "w-6 h-6 rounded-full flex items-center justify-center shrink-0 shadow-sm border",
+            variant === "milestone"
+              ? (status === "completed" ? "bg-emerald-500 border-emerald-600 text-white" : "bg-muted border-muted-foreground/30 text-muted-foreground")
+              : "bg-primary/10 border-primary/20 text-primary"
           )}
         >
-          {status === "completed" && <Check className="h-3 w-3" />}
+          <Icon className="h-3.5 w-3.5" />
         </div>
         {!isLast && <div className="w-px flex-1 bg-border min-h-[24px]" />}
       </div>
-      <div className={cn("pb-4", isLast && "pb-0")}>
-        <p className="text-sm font-medium">{title}</p>
-        <p className="text-xs text-muted-foreground">
-          {new Date(date).toLocaleString("es-AR", {
-            day: "numeric",
-            month: "short",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-          })}
-        </p>
+      <div className={cn("pb-6", isLast && "pb-0")}>
+        <div className="flex flex-col sm:flex-row sm:items-baseline gap-x-2">
+          <p className={cn("text-sm font-semibold", variant === "audit" && "text-primary/90")}>{title}</p>
+          <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">
+            {new Date(date).toLocaleString("es-AR", {
+              day: "numeric",
+              month: "short",
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </p>
+        </div>
+        {subtitle && <p className="text-xs text-muted-foreground mt-0.5 italic">{subtitle}</p>}
       </div>
     </div>
   );
@@ -120,9 +154,6 @@ const PAYMENT_METHODS = [
   { value: "CARD", label: "Tarjeta" },
   { value: "OTHER", label: "Otro" },
 ];
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const _paymentMethods = PAYMENT_METHODS;
 
 interface WorkOrderDetail {
   id: string;
@@ -193,6 +224,15 @@ interface WorkOrderDetail {
   createdAt: string;
 }
 
+interface AuditLog {
+  id: string;
+  fieldName: string;
+  oldValue: string | null;
+  newValue: string | null;
+  changedBy: string;
+  changedAt: string;
+}
+
 export default function WorkOrderDetailPage() {
   const { alert } = useUI();
   const params = useParams();
@@ -210,6 +250,9 @@ export default function WorkOrderDetailPage() {
     paymentMethod: { name: string };
   }>>([]);
   const [totalPaid, setTotalPaid] = useState(0);
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [loadingAudit, setLoadingAudit] = useState(false);
+
   const [editingChecklist, setEditingChecklist] = useState<'entry' | 'exit' | null>(null);
   const [editingOdometer, setEditingOdometer] = useState<number | undefined>(undefined);
   const [editingFuelLevel, setEditingFuelLevel] = useState<number | undefined>(undefined);
@@ -266,6 +309,21 @@ export default function WorkOrderDetailPage() {
     }
   }, [workOrderId]);
 
+  const fetchAuditLogs = useCallback(async () => {
+    setLoadingAudit(true);
+    try {
+      const response = await fetch(`/api/work-orders/${workOrderId}/audit-logs`);
+      if (response.ok) {
+        const data = await response.json();
+        setAuditLogs(data || []);
+      }
+    } catch (error) {
+      console.error("Error fetching audit logs:", error);
+    } finally {
+      setLoadingAudit(false);
+    }
+  }, [workOrderId]);
+
   // Fetch price lists and technicians
   useEffect(() => {
     const fetchData = async () => {
@@ -310,7 +368,8 @@ export default function WorkOrderDetailPage() {
     fetchWorkOrder();
     fetchPayments();
     fetchInvoices();
-  }, [fetchWorkOrder, fetchPayments, fetchInvoices]);
+    fetchAuditLogs();
+  }, [fetchWorkOrder, fetchPayments, fetchInvoices, fetchAuditLogs]);
 
   const handleStatusChange = async (newStatus: string) => {
     setUpdatingStatus(true);
@@ -325,6 +384,7 @@ export default function WorkOrderDetailPage() {
 
       const updated = await response.json();
       setWorkOrder((prev) => (prev ? { ...prev, ...updated } : null));
+      void fetchAuditLogs();
     } catch (error) {
       console.error("Error updating status:", error);
       await alert({
@@ -350,6 +410,7 @@ export default function WorkOrderDetailPage() {
 
       const updated = await response.json();
       setWorkOrder((prev) => (prev ? { ...prev, ...updated } : null));
+      void fetchAuditLogs();
 
       await alert({
         title: 'Éxito',
@@ -390,6 +451,7 @@ export default function WorkOrderDetailPage() {
       setEditingChecklist(null);
       setEditingOdometer(undefined);
       setEditingFuelLevel(undefined);
+      fetchAuditLogs();
       
       await alert({
         title: 'Éxito',
@@ -447,7 +509,8 @@ export default function WorkOrderDetailPage() {
       if (!response.ok) throw new Error('Failed to update items');
       
       setIsEditingItems(false);
-      fetchWorkOrder(); // Refresh data
+      fetchWorkOrder();
+      fetchAuditLogs();
     } catch (error) {
       console.error('Error updating items:', error);
       await alert({
@@ -478,6 +541,7 @@ export default function WorkOrderDetailPage() {
       const updated = await response.json();
       setWorkOrder((prev) => (prev ? { ...prev, ...updated } : null));
       setEditingScheduledDate(false);
+      void fetchAuditLogs();
       
       await alert({
         title: 'Éxito',
@@ -508,6 +572,7 @@ export default function WorkOrderDetailPage() {
       const updated = await response.json();
       setWorkOrder((prev) => (prev ? { ...prev, ...updated } : null));
       setEditingNotes(false);
+      void fetchAuditLogs();
       
       await alert({
         title: 'Éxito',
@@ -557,7 +622,8 @@ export default function WorkOrderDetailPage() {
       });
 
       fetchInvoices();
-      fetchWorkOrder(); // To update invoiceId if needed
+      fetchWorkOrder();
+      fetchAuditLogs();
     } catch (error) {
       console.error('Error generating document:', error);
       await alert({
@@ -569,6 +635,91 @@ export default function WorkOrderDetailPage() {
       setGeneratingDocument(null);
     }
   };
+
+  // Merge milestones and audit logs for unified timeline
+  const unifiedTimelineItems = useMemo(() => {
+    if (!workOrder) return [];
+
+    const items: any[] = [
+      {
+        type: 'milestone',
+        title: 'OT Creada',
+        date: workOrder.createdAt,
+        status: 'completed',
+        icon: Plus,
+      }
+    ];
+
+    if (workOrder.scheduledDate) {
+      items.push({
+        type: 'milestone',
+        title: 'Turno Agendado',
+        date: workOrder.scheduledDate,
+        status: 'completed',
+        icon: Clock,
+      });
+    }
+
+    if (workOrder.startedAt) {
+      items.push({
+        type: 'milestone',
+        title: 'Trabajo Iniciado',
+        date: workOrder.startedAt,
+        status: 'completed',
+        icon: PlayCircle,
+      });
+    }
+
+    if (workOrder.completedAt) {
+      items.push({
+        type: 'milestone',
+        title: 'Trabajo Completado',
+        date: workOrder.completedAt,
+        status: 'completed',
+        icon: CheckCircle,
+      });
+    }
+
+    if (workOrder.deliveredAt) {
+      items.push({
+        type: 'milestone',
+        title: 'Entregado al Cliente',
+        date: workOrder.deliveredAt,
+        status: 'completed',
+        icon: Package,
+      });
+    }
+
+    // Add granular audit logs
+    auditLogs.forEach(log => {
+      let title = `Cambio en ${getFieldLabel(log.fieldName)}`;
+      let subtitle = `De "${log.oldValue || 'vacío'}" a "${log.newValue || 'vacío'}"`;
+
+      if (log.fieldName === 'status') {
+        title = `Estado cambiado a ${getStatusLabel(log.newValue || '')}`;
+        subtitle = `Por ${log.changedBy}`;
+      } else if (log.fieldName === 'technicianId') {
+        const tech = technicians.find(t => t.id === log.newValue);
+        title = tech ? `Técnico asignado: ${tech.name}` : `Técnico desasignado`;
+        subtitle = `Por ${log.changedBy}`;
+      } else if (log.fieldName === 'notes') {
+        title = 'Notas actualizadas';
+        subtitle = `Por ${log.changedBy}`;
+      }
+
+      items.push({
+        type: 'audit',
+        title,
+        subtitle,
+        date: log.changedAt,
+        status: 'completed',
+        icon: History,
+      });
+    });
+
+    // Sort chronologically
+    return items.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  }, [workOrder, auditLogs, technicians]);
 
   if (loading) {
     return (
@@ -650,8 +801,7 @@ export default function WorkOrderDetailPage() {
 
           <div className="flex flex-wrap items-center gap-y-2 gap-x-6">
             {/* Línea 2: Fecha agendada si existe */}
-            {workOrder.scheduledDate && (
-              <div className="text-sm">
+            <div className="text-sm">
                 {editingScheduledDate ? (
                   <div className="flex items-center gap-2">
                     <div className="relative">
@@ -675,13 +825,13 @@ export default function WorkOrderDetailPage() {
                     <span className="text-muted-foreground flex items-center gap-1.5 font-medium">
                       <Clock className="h-3.5 w-3.5 text-primary pointer-events-none" aria-hidden="true" />
                       <span className="font-mono">
-                        {new Date(workOrder.scheduledDate).toLocaleString("es-AR", {
+                        {workOrder.scheduledDate ? new Date(workOrder.scheduledDate).toLocaleString("es-AR", {
                           day: "2-digit",
                           month: "short",
                           year: "numeric",
                           hour: "2-digit",
                           minute: "2-digit",
-                        })}
+                        }) : "Sin fecha agendada"}
                       </span>
                     </span>
                     <Button
@@ -695,8 +845,7 @@ export default function WorkOrderDetailPage() {
                     </Button>
                   </div>
                 )}
-              </div>
-            )}
+            </div>
 
             {/* Línea 3: Contacto del cliente */}
             <div className="flex flex-wrap items-center gap-3 text-sm">
@@ -716,7 +865,7 @@ export default function WorkOrderDetailPage() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-8 w-8 p-0 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                    className="h-8 w-8 p-0 text-emerald-700 hover:text-emerald-700 hover:bg-emerald-50"
                     onClick={() => {
                       const msg = getWorkOrderMessage({
                         customerName: workOrder.customer!.name,
@@ -794,7 +943,7 @@ export default function WorkOrderDetailPage() {
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg flex items-center gap-2">
-              <DollarSign className="h-5 w-5" />
+              <Package className="h-5 w-5" />
               Servicios y Productos
             </CardTitle>
             {!isEditingItems && workOrder.status !== 'DELIVERED' && (
@@ -895,7 +1044,7 @@ export default function WorkOrderDetailPage() {
                         Servicios: <span className="font-mono">{Number(workOrder.totalServices).toLocaleString("es-AR", { style: 'currency', currency: 'ARS' })}</span>
                     </div>
                     <div className="text-2xl font-bold pt-1">
-                        Total: <span className="font-mono tracking-tight text-emerald-600">{Number(workOrder.total).toLocaleString("es-AR", { style: 'currency', currency: 'ARS' })}</span>
+                        Total: <span className="font-mono tracking-tight text-emerald-700">{Number(workOrder.total).toLocaleString("es-AR", { style: 'currency', currency: 'ARS' })}</span>
                     </div>
                   </div>
                 </div>
@@ -922,11 +1071,11 @@ export default function WorkOrderDetailPage() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Pagado</p>
-                <p className="text-lg font-semibold text-emerald-600 font-mono">{totalPaid.toLocaleString("es-AR", { style: 'currency', currency: 'ARS' })}</p>
+                <p className="text-lg font-semibold text-emerald-700 font-mono">{totalPaid.toLocaleString("es-AR", { style: 'currency', currency: 'ARS' })}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Pendiente</p>
-                <p className={`text-lg font-semibold font-mono ${totalPaid >= workOrder.total ? 'text-emerald-600' : 'text-amber-600'}`}>
+                <p className={`text-lg font-semibold font-mono ${totalPaid >= workOrder.total ? 'text-emerald-700' : 'text-amber-700'}`}>
                   {balance.toLocaleString("es-AR", { style: 'currency', currency: 'ARS' })}
                 </p>
               </div>
@@ -950,7 +1099,7 @@ export default function WorkOrderDetailPage() {
                   <div key={payment.id} className="flex justify-between items-center p-3 bg-muted rounded-md transition-colors hover:bg-muted/70">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-lg bg-emerald-100/50 border border-emerald-200/50 shadow-sm flex items-center justify-center shrink-0">
-                        <DollarSign className="h-4 w-4 text-emerald-600 pointer-events-none" aria-hidden="true" />
+                        <DollarSign className="h-4 w-4 text-emerald-700 pointer-events-none" aria-hidden="true" />
                       </div>
                       <div>
                         <p className="font-bold font-mono text-emerald-700">{Number(payment.amount).toLocaleString("es-AR", { style: 'currency', currency: 'ARS' })}</p>
@@ -978,6 +1127,7 @@ export default function WorkOrderDetailPage() {
         onPaymentRegistered={() => {
           fetchPayments();
           fetchWorkOrder();
+          fetchAuditLogs();
         }}
       />
 
@@ -997,7 +1147,7 @@ export default function WorkOrderDetailPage() {
               <span className="hidden sm:inline">Documentos</span>
             </TabsTrigger>
             <TabsTrigger value="timeline" className="flex items-center gap-2 px-4 py-2 data-[state=active]:after:bg-primary">
-              <Clock className="h-4 w-4" />
+              <History className="h-4 w-4" />
               <span className="hidden sm:inline">Historial</span>
             </TabsTrigger>
           </TabsList>
@@ -1371,47 +1521,33 @@ export default function WorkOrderDetailPage() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Clock className="h-4 w-4" />
-                  Historial de Estados
+                  Línea de Tiempo Unificada
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-0">
-                  <TimelineItem
-                    title="OT Creada"
-                    date={workOrder.createdAt}
-                    status="completed"
-                    isFirst
-                  />
-                  {workOrder.scheduledDate && (
-                    <TimelineItem
-                      title="Turno Agendado"
-                      date={workOrder.scheduledDate}
-                      status="completed"
-                    />
-                  )}
-                  {workOrder.startedAt && (
-                    <TimelineItem
-                      title="Trabajo Iniciado"
-                      date={workOrder.startedAt}
-                      status="completed"
-                    />
-                  )}
-                  {workOrder.completedAt && (
-                    <TimelineItem
-                      title="Trabajo Completado"
-                      date={workOrder.completedAt}
-                      status="completed"
-                    />
-                  )}
-                  {workOrder.deliveredAt && (
-                    <TimelineItem
-                      title="Entregado al Cliente"
-                      date={workOrder.deliveredAt}
-                      status="completed"
-                      isLast
-                    />
-                  )}
-                </div>
+                {loadingAudit ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  </div>
+                ) : unifiedTimelineItems.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground italic">Sin actividad registrada</div>
+                ) : (
+                  <div className="space-y-0 relative before:absolute before:left-3 before:top-4 before:bottom-4 before:w-px before:bg-border/60">
+                    {unifiedTimelineItems.map((item, index) => (
+                      <TimelineItem
+                        key={`${item.type}-${index}`}
+                        title={item.title}
+                        subtitle={item.subtitle}
+                        date={item.date}
+                        status={item.status}
+                        icon={item.icon}
+                        variant={item.type as any}
+                        isFirst={index === 0}
+                        isLast={index === unifiedTimelineItems.length - 1}
+                      />
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -1420,7 +1556,7 @@ export default function WorkOrderDetailPage() {
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-base flex items-center gap-2">
                       <FileText className="h-4 w-4" />
-                      Notas
+                      Notas de Taller
                     </CardTitle>
                     <Button
                       variant="ghost"
@@ -1454,9 +1590,18 @@ export default function WorkOrderDetailPage() {
                       </div>
                     </div>
                   ) : (
-                    <p className="text-sm whitespace-pre-wrap text-muted-foreground">
-                      {workOrder.notes || 'Sin notas'}
-                    </p>
+                    <div className="bg-muted/30 p-4 rounded-lg border border-dashed">
+                      {workOrder.notes ? (
+                        <p className="text-sm whitespace-pre-wrap text-muted-foreground">
+                          {workOrder.notes}
+                        </p>
+                      ) : (
+                        <div className="flex flex-col items-center gap-2 py-4 text-muted-foreground">
+                           <AlertCircle className="h-6 w-6 opacity-20" />
+                           <p className="text-xs">Sin notas de taller registradas</p>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </CardContent>
               </Card>
@@ -1474,6 +1619,7 @@ export default function WorkOrderDetailPage() {
           onSuccess={() => {
             setIsCreditNoteDialogOpen(false);
             fetchWorkOrder();
+            fetchAuditLogs();
           }}
         />
       )}

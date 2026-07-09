@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Header } from '@/components/adm/Header';
 import { DataTable } from '@/components/ui/data-table';
 import { FileText, Search, RefreshCw, Send, Download, Eye } from 'lucide-react';
@@ -83,7 +84,7 @@ export default function InvoicesPage() {
             </span>
           </div>
           {(row.original.type.startsWith('X_') || row.original.type.startsWith('NOTA_CREDITO_X_')) && (
-            <div className="flex items-center gap-1 text-[10px] font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded border border-orange-100 uppercase tracking-wider ml-11 w-fit">
+            <div className="flex items-center gap-1 text-[10px] font-bold text-orange-700 bg-orange-50 px-2 py-0.5 rounded border border-orange-100 uppercase tracking-wider ml-11 w-fit">
               <AlertCircle className="h-3 w-3" />
               <span>No válido como comprobante fiscal</span>
             </div>
@@ -139,24 +140,50 @@ export default function InvoicesPage() {
     },
   ];
 
+  const handleOfficialize = async (id: string) => {
+    const toastId = toast.loading('Oficializando comprobante ante AFIP...');
+    try {
+      const response = await fetch(`/api/invoices/${id}/officialize`, {
+        method: 'POST',
+      });
+
+      if (response.ok) {
+        toast.success('Comprobante oficializado con éxito', { id: toastId });
+        fetchInvoices();
+      } else {
+        const error = await response.json();
+        toast.error(error.error || 'Error al oficializar', { id: toastId });
+      }
+    } catch (error) {
+      console.error('Error officializing invoice:', error);
+      toast.error('Error de conexión', { id: toastId });
+    }
+  };
+
   const rowActions = (row: any) => (
     <div className="flex items-center gap-1">
+      <Link href={`/adm/invoices/${row.id}`}>
+        <button
+          className="p-2 hover:bg-muted rounded-md transition-colors text-muted-foreground hover:text-foreground"
+          title="Ver Detalle"
+        >
+          <Eye className="h-4 w-4" />
+        </button>
+      </Link>
       <button
         className="p-2 hover:bg-muted rounded-md transition-colors text-muted-foreground hover:text-foreground"
-        title="Ver Detalle"
-      >
-        <Eye className="h-4 w-4" />
-      </button>
-      <button
-        className="p-2 hover:bg-muted rounded-md transition-colors text-muted-foreground hover:text-foreground"
-        title="Descargar PDF"
+        title="Imprimir / PDF"
+        onClick={() => {
+          window.open(`/adm/invoices/${row.id}?print=true`, '_blank');
+        }}
       >
         <Download className="h-4 w-4" />
       </button>
-      {row.status === 'DRAFT' && (
+      {row.status === 'DRAFT' && (row.type.startsWith('X_') || row.type.startsWith('NOTA_CREDITO_X_')) && (
         <button
           className="p-2 hover:bg-primary/10 rounded-md transition-colors text-primary"
           title="Enviar a AFIP"
+          onClick={() => handleOfficialize(row.id)}
         >
           <Send className="h-4 w-4" />
         </button>

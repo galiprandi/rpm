@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { validateCUIT, formatCUIT } from "@/lib/utils/cuit-validation";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -61,6 +62,8 @@ export function CustomerForm({
     );
   });
 
+  const [cuitError, setCuitError] = useState<string | null>(null);
+
   const [formData, setFormData] = useState<CustomerFormData>({
     name: initialData?.name || "",
     phone: initialData?.phone || "",
@@ -76,6 +79,15 @@ export function CustomerForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validar CUIT si está presente
+    if (formData.billingData.cuit) {
+      if (!validateCUIT(formData.billingData.cuit)) {
+        setCuitError("CUIT/CUIL inválido (verifique el dígito verificador)");
+        return;
+      }
+    }
+
     await onSubmit(formData);
   };
 
@@ -213,20 +225,35 @@ export function CustomerForm({
                   />
                   <Input
                     id="cuit"
-                    className="font-mono pl-9"
+                    className={cn(
+                      "font-mono pl-9",
+                      cuitError && "border-destructive ring-destructive/20"
+                    )}
                     value={formData.billingData.cuit}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const formatted = formatCUIT(e.target.value);
                       setFormData((prev) => ({
                         ...prev,
                         billingData: {
                           ...prev.billingData,
-                          cuit: e.target.value,
+                          cuit: formatted,
                         },
-                      }))
-                    }
-                    placeholder="30-12345678-9"
+                      }));
+                      if (cuitError) setCuitError(null);
+                    }}
+                    onBlur={(e) => {
+                      if (e.target.value && !validateCUIT(e.target.value)) {
+                        setCuitError("CUIT/CUIL inválido (verifique el dígito verificador)");
+                      }
+                    }}
+                    placeholder="20-XXXXXXXX-X"
                   />
                 </div>
+                {cuitError && (
+                  <p className="text-[0.8rem] font-medium text-destructive mt-1">
+                    {cuitError}
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="customer-invoice-type">Tipo Factura</Label>

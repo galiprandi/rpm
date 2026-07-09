@@ -41,9 +41,6 @@ export interface FinanceReportData {
   generatedAt: string;
 }
 
-/**
- * Helper to convert Decimal to number
- */
 function decimalToNumber(decimal: unknown): number {
   if (decimal === null || decimal === undefined) return 0;
   if (typeof decimal === "number") return decimal;
@@ -58,14 +55,16 @@ function decimalToNumber(decimal: unknown): number {
   return Number(decimal);
 }
 
-/**
- * Gets finance metrics for a specific period
- */
 async function getFinancePeriodMetrics(start: Date, end: Date) {
   const movements = await prisma.cash_movement.findMany({
     where: {
       createdAt: { gte: start, lte: end },
       type: { in: ["INCOME", "EXPENSE", "PURCHASE_VOUCHER", "ADJUSTMENT"] },
+    },
+    select: {
+      type: true,
+      amount: true,
+      reason: true,
     },
   });
 
@@ -79,14 +78,6 @@ async function getFinancePeriodMetrics(start: Date, end: Date) {
     } else if (m.type === "EXPENSE" || m.type === "PURCHASE_VOUCHER") {
       expense += amount;
     } else if (m.type === "ADJUSTMENT") {
-      // For adjustments, we need to know if it was positive or negative.
-      // Looking at cash/close/route.ts, adjustments are created with Math.abs(diff)
-      // and reason "Sobrante en arqueo" (positive) or "Faltante en arqueo" (negative).
-      // This is a bit tricky as we don't store the sign in the amount.
-      // HOWEVER, let's look at the implementation of cash/close/route.ts:
-      // await prisma.cash_movement.create({ data: { type: "ADJUSTMENT", amount: Math.abs(diff), ... }})
-      // and reason: diff > 0 ? "Sobrante" : "Faltante"
-
       if (m.reason?.includes("Sobrante")) {
         income += amount;
       } else if (m.reason?.includes("Faltante")) {
@@ -141,7 +132,6 @@ function getBucketKeyAndLabel(
     const m = parseInt(parts.find((p) => p.type === "month")?.value || "1", 10) - 1;
     return { key, label: monthNames[m] };
   }
-  // day
   const formatter = new Intl.DateTimeFormat("en-CA", {
     timeZone: ARGENTINA_TIMEZONE,
     year: "numeric",
@@ -211,20 +201,24 @@ export async function getFinanceReport(params: FinanceReportParams): Promise<Fin
   const { startDate, endDate, comparisonStartDate, comparisonEndDate } = params;
   const groupBy = params.groupBy || determineGroupBy(startDate, endDate);
 
-  // 1. Current period metrics
   const current = await getFinancePeriodMetrics(startDate, endDate);
 
-  // 2. Previous period metrics
   let previous = { income: 0, expense: 0, net: 0 };
   if (comparisonStartDate && comparisonEndDate) {
     previous = await getFinancePeriodMetrics(comparisonStartDate, comparisonEndDate);
   }
 
-  // 3. Method Distribution and Evolution
   const movements = await prisma.cash_movement.findMany({
     where: {
       createdAt: { gte: startDate, lte: endDate },
       type: { in: ["INCOME", "EXPENSE", "PURCHASE_VOUCHER", "ADJUSTMENT"] },
+    },
+    select: {
+      type: true,
+      amount: true,
+      method: true,
+      createdAt: true,
+      reason: true,
     },
   });
 
