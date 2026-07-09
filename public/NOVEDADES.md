@@ -4,6 +4,118 @@ Mantente al día con las últimas actualizaciones y mejoras
 
 ---
 
+### 🗓️ 9 de Julio de 2026
+
+**✨ Inventario**: Mejoras de accesibilidad y contraste en los conteos de inventario.
+
+---
+
+### 🗓️ 8 de Julio de 2026
+
+**🎉 Reportes**: Nuevo reporte de Finanzas y Flujo de Caja en el centro de reportes.
+
+**🎉 Facturación**: Flujo de oficialización de facturas ante AFIP.
+
+**✨ Clientes**: Notificaciones de deuda por WhatsApp con contexto y contacto rápido con el responsable.
+
+**✨ Órdenes de Trabajo**: Asignación rápida de técnicos y refinamiento de acciones en el Kanban.
+
+**✨ Sitio Web**: Nueva sección de productos destacados en la página de inicio.
+
+**🎨 Sistema**: Mejoras de contraste y accesibilidad para cumplir con WCAG AA.
+
+---
+
+### 🗓️ 7 de Julio de 2026
+
+**🎉 Clientes**: Historial de transacciones unificado y validación de CUIT en el formulario.
+
+**🎉 Facturación**: Mejora en la gestión de facturas y diseño de impresión profesional.
+
+**✨ Productos**: Mejoras de usabilidad en el selector de productos y servicios.
+
+**✨ Órdenes de Trabajo**: Timeline unificado y mejoras de experiencia en el Kanban.
+
+**✨ Sitio Web**: Vista rápida de productos en modal para mejorar la conversión.
+
+**🔒 Seguridad**: Actualización del sistema de autenticación para corregir una vulnerabilidad XSS.
+
+---
+
+### 🗓️ 6 de Julio de 2026
+
+**🎉 Configuración**: Nueva sección de configuración fiscal para la integración con AFIP.
+
+**🎉 Reportes**: Nuevo reporte de Taller y Operaciones en el centro de reportes.
+
+**✨ Vehículos**: Validación de patente argentina en el formulario de vehículos.
+
+**✨ Productos**: Mejoras de accesibilidad, contraste y etiquetado de botones.
+
+**✨ Órdenes de Trabajo**: Nuevo timeline unificado con historial de auditoría detallado.
+
+**✨ Sitio Web**: Mapa interactivo y filtrado de productos en la página de contacto.
+
+---
+
+### 🗓️ 5 de Julio de 2026
+
+**🎉 Vehículos**: Nuevo módulo global de listado de vehículos.
+
+**🎉 Reportes**: Nuevo reporte de Stock e Inventario.
+
+**🎉 Facturación**: Generación y gestión de documentos fiscales para órdenes de trabajo.
+
+**✨ Órdenes de Trabajo**: Búsqueda global y barra de filtros mejorada.
+
+**✨ Dashboard**: Tarjeta de taller Kanban con bloques de estado visuales.
+
+**✨ Reportes de Ventas**: Agrupación adaptativa, manejo seguro de zonas horarias y pulido visual.
+
+**✨ Sitio Web**: Nueva sección de testimonios en la página de inicio.
+
+**🐛 Caja**: Corrección en el manejo de diferencias al cerrar la caja.
+
+**🐛 Operaciones**: Corrección de la zona horaria en la fecha de las operaciones diarias.
+
+**🐛 Reportes**: Corrección de las barras del gráfico de ventas.
+
+---
+
+### 🗓️ 4 de Julio de 2026
+
+**🎉 Centro de Reportes**: Nuevo hub central de reportes en Administración → Reportes.
+
+**🎉 Técnicos**: Gestión de técnicos para órdenes de trabajo con acciones rápidas en el Kanban.
+
+**🎉 Facturación**: Generación automática de facturas para órdenes de trabajo y notas de crédito.
+
+**✨ Órdenes de Trabajo**: Ahora se descuenta stock al asociar productos a una orden.
+
+**✨ Clientes**: Mejoras de experiencia y contacto por WhatsApp desde la ficha del cliente.
+
+**✨ Entregas**: Acciones de WhatsApp en la tarjeta de listas para entregar.
+
+**✨ Vehículos**: Ahora puedes editar vehículos desde el formulario.
+
+**✨ Sitio Web**: Centralización de la configuración pública y mejoras de conversión por WhatsApp.
+
+---
+
+### 🗓️ 3 de Julio de 2026
+
+**🎉 Facturación**: Bases de la integración fiscal con AFIP y pre-facturas.
+
+**🎉 Reportes**: Nuevo módulo de reportes de ventas con navegación centralizada.
+
+**✨ Novedades**: Indicador de no leído en el menú de novedades.
+
+**🎨 Órdenes de Trabajo**: Mejoras en la vista Kanban para ver la información de forma más clara.
+
+**🎨 Sitio Web**: Corrección de enlaces rotos, mejora de SEO y botones de acción funcionales.
+
+---
+
 ### 🗓️ 2 de Julio de 2026
 
 **🎉 Órdenes de Trabajo**: Ahora puedes enviar el estado de una orden de trabajo por WhatsApp con un solo clic directamente desde la orden.
