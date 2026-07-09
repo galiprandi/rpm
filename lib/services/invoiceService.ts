@@ -96,6 +96,7 @@ export async function getInvoices(filters: {
   type?: string;
   status?: string;
   customerId?: string;
+  referenceId?: string;
   search?: string;
 }) {
   const where: Prisma.invoiceWhereInput = {};
@@ -109,6 +110,7 @@ export async function getInvoices(filters: {
   if (filters.type) where.type = filters.type;
   if (filters.status) where.status = filters.status;
   if (filters.customerId) where.customerId = filters.customerId;
+  if (filters.referenceId) where.referenceId = filters.referenceId;
 
   if (filters.search) {
     where.OR = [

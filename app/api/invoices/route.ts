@@ -15,6 +15,7 @@ export async function GET(request: NextRequest) {
       type: searchParams.get("type") || undefined,
       status: searchParams.get("status") || undefined,
       customerId: searchParams.get("customerId") || undefined,
+      referenceId: searchParams.get("referenceId") || undefined,
       search: searchParams.get("search") || undefined,
       startDate: searchParams.get("startDate")
         ? new Date(searchParams.get("startDate")!)

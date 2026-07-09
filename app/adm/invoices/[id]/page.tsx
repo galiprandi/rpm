@@ -80,7 +80,17 @@ export default function InvoiceDetailPage() {
     );
   }
 
-  const isPreInvoice = invoice.type.startsWith('X_') || invoice.type.startsWith('NOTA_CREDITO_X_');
+  const isPreInvoice = invoice.type.startsWith('X_') || invoice.type.startsWith('NOTA_CREDITO_X_') || invoice.type === 'PRESUPUESTO' || invoice.type === 'REMITO';
+
+  const getDocLetter = (type: string) => {
+    if (type.startsWith('X_') || type.startsWith('NOTA_CREDITO_X_')) return 'X';
+    if (type.endsWith('_A')) return 'A';
+    if (type.endsWith('_B')) return 'B';
+    if (type.endsWith('_C')) return 'C';
+    if (type === 'REMITO') return 'R';
+    if (type === 'PRESUPUESTO') return 'P';
+    return type.charAt(0);
+  };
 
   const handleCancel = async () => {
     if (!confirm('¿Está seguro de que desea cancelar este comprobante? Esta acción no se puede deshacer.')) {
@@ -188,9 +198,9 @@ export default function InvoiceDetailPage() {
         </div>
         <div className="text-right space-y-1">
           <div className="inline-block border-2 border-black px-4 py-2 mb-2">
-            <span className="text-4xl font-bold">{invoice.type.split('_').pop()}</span>
+            <span className="text-4xl font-bold">{getDocLetter(invoice.type)}</span>
           </div>
-          <h2 className="text-xl font-bold uppercase">{invoice.type.replace('_', ' ')}</h2>
+          <h2 className="text-xl font-bold uppercase">{invoice.type.replace(/_/g, ' ')}</h2>
           <p className="text-lg font-mono font-bold">{invoice.number}</p>
           <p className="text-sm">Fecha: {format(new Date(invoice.createdAt), 'dd/MM/yyyy', { locale: es })}</p>
         </div>
@@ -365,6 +375,18 @@ export default function InvoiceDetailPage() {
       </div>
 
       {/* Footer for Print */}
+          {invoice.type === 'REMITO' && (
+            <div className="hidden print:grid grid-cols-2 gap-20 mt-20">
+              <div className="border-t border-black pt-2 text-center">
+                <p className="text-xs font-bold uppercase">Entregado por</p>
+              </div>
+              <div className="border-t border-black pt-2 text-center">
+                <p className="text-xs font-bold uppercase">Recibido conforme</p>
+                <p className="text-[10px] text-muted-foreground mt-1">Nombre, DNI y Firma</p>
+              </div>
+            </div>
+          )}
+
       <div className="hidden print:block mt-20 text-center border-t pt-8">
         <p className="text-xs text-muted-foreground uppercase tracking-widest italic">
           Gracias por confiar en RPM Accesorios

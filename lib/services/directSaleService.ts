@@ -4,7 +4,7 @@
 import { prisma } from "@/lib/prisma";
 import { randomUUID } from "crypto";
 import { createCashMovement } from "./cashMovementService";
-import { createInvoice, determineInvoiceType } from "./invoiceService";
+import { createInvoice, determineInvoiceType, InvoiceType } from "./invoiceService";
 import { revalidatePath } from "next/cache";
 import { invalidateCashStatus } from "@/lib/cache";
 import { getArgentinaStartOfDay, getArgentinaEndOfDay } from "@/lib/utils/date";
@@ -40,6 +40,60 @@ export interface CreateDirectSaleInput {
  * Also updates stock for products
  * Supports credit sales (account balance) for registered customers
  */
+/**
+ * Generates a document (PRESUPUESTO, REMITO or PRE-FACTURA) from an existing direct sale.
+ */
+export async function generateDocumentFromDirectSale(
+  directSaleId: string,
+  type: 'PRESUPUESTO' | 'REMITO' | 'INVOICE',
+  userId: string
+) {
+  const sale = await prisma.direct_sale.findUnique({
+    where: { id: directSaleId },
+    include: {
+      customer: { select: { id: true, name: true, billingData: true } },
+    },
+  });
+
+  if (!sale) throw new Error('Venta no encontrada');
+
+  let invoiceType: InvoiceType;
+  const billingData = sale.customer?.billingData;
+
+  if (type === 'PRESUPUESTO') {
+    invoiceType = 'PRESUPUESTO';
+  } else if (type === 'REMITO') {
+    invoiceType = 'REMITO';
+  } else {
+    // Determine pre-invoice type (X_A or X_B)
+    invoiceType = determineInvoiceType(billingData, 'FACTURA', true);
+  }
+
+  // Extract doc info from billingData if available
+  let customerDoc: string | undefined = undefined;
+  let customerDocType: string | undefined = undefined;
+
+  if (billingData && typeof billingData === 'object') {
+    const bd = billingData as any;
+    customerDoc = bd.cuit || bd.dni || undefined;
+    customerDocType = bd.cuit ? 'CUIT' : bd.dni ? 'DNI' : undefined;
+  }
+
+  return await createInvoice({
+    type: invoiceType,
+    referenceId: sale.id,
+    referenceType: 'direct_sale',
+    customerId: sale.customerId || undefined,
+    customerName: sale.customerName,
+    customerDoc,
+    customerDocType,
+    subtotal: Number(sale.total),
+    total: Number(sale.total),
+    status: 'DRAFT',
+    createdBy: userId,
+  });
+}
+
 export async function createDirectSale(input: CreateDirectSaleInput) {
   const {
     customerId,
