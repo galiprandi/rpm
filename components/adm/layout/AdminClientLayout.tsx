@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { authClient } from '@/lib/auth-client';
 import { AppSidebar } from './AppSidebar';
 import { CommandPalette } from '@/components/adm/CommandPalette';
+import { WebMCPTools } from '@/components/webmcp/WebMCPTools';
 import { useUI } from '@/components/ui/UIProvider';
 import {
   SidebarProvider,
@@ -86,6 +87,7 @@ export function AdminClientLayout({ children, user }: AdminClientLayoutProps) {
               {children}
             </main>
           </SidebarInset>
+          <WebMCPTools />
         </>
       )}
     </SidebarProvider>
