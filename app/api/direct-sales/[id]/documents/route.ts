@@ -4,7 +4,7 @@ import { generateDocumentFromDirectSale } from '@/lib/services/directSaleService
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getSessionWithAuth();
@@ -12,7 +12,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
     const { type } = body;
 
@@ -23,10 +23,10 @@ export async function POST(
     const document = await generateDocumentFromDirectSale(id, type, session.user.id);
 
     return NextResponse.json(document, { status: 201 });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error in POST /api/direct-sales/[id]/documents:', error);
     return NextResponse.json(
-      { error: error.message || 'Error al generar el documento' },
+      { error: error instanceof Error ? error.message : 'Error al generar el documento' },
       { status: 500 }
     );
   }

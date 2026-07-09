@@ -55,7 +55,7 @@ export default function DirectSaleDetailPage() {
 
   const [sale, setSale] = useState<DirectSale | null>(null);
   const [loading, setLoading] = useState(true);
-  const [invoices, setInvoices] = useState<any[]>([]);
+  const [invoices, setInvoices] = useState<{ id: string; number: string; type: string }[]>([]);
   const [loadingInvoices, setLoadingInvoices] = useState(false);
   const [generatingDocument, setGeneratingDocument] = useState<string | null>(null);
 
@@ -95,8 +95,10 @@ export default function DirectSaleDetailPage() {
   }, [saleId]);
 
   useEffect(() => {
-    fetchSale();
-    fetchInvoices();
+    const init = async () => {
+      await Promise.all([fetchSale(), fetchInvoices()]);
+    };
+    init();
   }, [fetchSale, fetchInvoices]);
 
   const generateDocument = async (type: string) => {
@@ -345,7 +347,7 @@ export default function DirectSaleDetailPage() {
                           <div>
                             <p className="text-sm font-bold font-mono">{inv.number}</p>
                             <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
-                              {inv.type.replace('_', ' ')}
+                              {inv.type.replace(/_/g, ' ')}
                             </p>
                           </div>
                         </div>

@@ -21,12 +21,41 @@ import { FileText, Download, Printer, AlertCircle, User, ArrowLeft } from 'lucid
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
 
+interface InvoiceItem {
+  name: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+}
+
+interface Invoice {
+  id: string;
+  number: string;
+  type: string;
+  referenceId: string;
+  referenceType: string;
+  customerId?: string;
+  customerName: string;
+  customerDoc?: string;
+  customerDocType?: string;
+  subtotal: number;
+  tax: number;
+  iva21: number;
+  iva105: number;
+  total: number;
+  status: string;
+  createdAt: string;
+  issuedAt?: string;
+  createdBy: string;
+  items: InvoiceItem[];
+}
+
 export default function InvoiceDetailPage() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
   const id = params.id as string;
-  const [invoice, setInvoice] = useState<any>(null);
+  const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -244,7 +273,7 @@ export default function InvoiceDetailPage() {
                 </TableHeader>
                 <TableBody>
                   {invoice.items && invoice.items.length > 0 ? (
-                    invoice.items.map((item: any, idx: number) => (
+                    invoice.items.map((item: InvoiceItem, idx: number) => (
                       <TableRow key={idx}>
                         <TableCell className="font-medium">{item.name}</TableCell>
                         <TableCell className="text-right font-mono">{item.quantity}</TableCell>

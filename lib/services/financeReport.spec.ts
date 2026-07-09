@@ -31,13 +31,13 @@ describe('financeReportService', () => {
     });
 
     expect(report.totalIncome.current).toBe(1500);
-    expect(report.totalExpenses.current).toBe(500);
+    expect(report.totalExpense.current).toBe(500);
     expect(report.netFlow.current).toBe(1000);
 
-    expect(report.methodBreakdown).toContainEqual({
+    expect(report.methodDistribution).toContainEqual({
       method: 'CASH',
       income: 1000,
-      expenses: 200,
+      expense: 200,
       net: 800,
     });
   });

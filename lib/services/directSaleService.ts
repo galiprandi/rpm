@@ -74,8 +74,8 @@ export async function generateDocumentFromDirectSale(
   let customerDocType: string | undefined = undefined;
 
   if (billingData && typeof billingData === 'object') {
-    const bd = billingData as any;
-    customerDoc = bd.cuit || bd.dni || undefined;
+    const bd = billingData as Record<string, unknown>;
+    customerDoc = (bd.cuit as string) || (bd.dni as string) || undefined;
     customerDocType = bd.cuit ? 'CUIT' : bd.dni ? 'DNI' : undefined;
   }
 
@@ -332,8 +332,8 @@ export async function createDirectSale(input: CreateDirectSaleInput) {
 
           // Extract doc info from billingData if available
           if (billingData && typeof billingData === "object") {
-            const bd = billingData as any;
-            customerDoc = bd.cuit || bd.dni || undefined;
+            const bd = billingData as Record<string, unknown>;
+            customerDoc = (bd.cuit as string) || (bd.dni as string) || undefined;
             customerDocType = bd.cuit ? "CUIT" : bd.dni ? "DNI" : undefined;
           }
         }
