@@ -4,12 +4,17 @@
 - [ ] Crear un botón flotante de WhatsApp persistente en todas las páginas públicas.
 
 ## ✅ DONE
+- [x] 2026-07-08 — Sección de Productos Destacados en la Home y centralización de datos (PR #sofia/public/featured-products-section)
 - [x] 2026-07-04 — Centralización de configuración pública y mejora de conversión (PR #sofia/public/conversion-boost)
 - [x] 2026-07-05 — Implementación de sección de Testimonios en la Home (PR #sofia/public/testimonials-section)
 - [x] 2026-07-06 — Integración de mapa interactivo y filtros de catálogo (PR #sofia/public/contact-map-and-filters)
 - [x] 2026-07-07 — Vista rápida de productos con modal y conversión contextual (PR #sofia/public/product-quick-view)
 
 ## 🧠 LEARNINGS
+## 2026-07-08 - Centralización de Datos de Marketing
+**Learning:** Centralizar los datos de productos destacados en `lib/constants/featured-products.ts` permite mantener la consistencia entre la Home y el Catálogo sin duplicar código. Esto facilita actualizaciones rápidas de stock o precios que se reflejan instantáneamente en toda la web pública. La sección de "Productos Destacados" en la Home sirve como un "teaser" efectivo que reduce la fricción hacia el catálogo completo.
+**Action:** Seguir este patrón para "Servicios Destacados" o "Promociones" para asegurar una fuente única de verdad en elementos de marketing.
+
 ## 2026-07-07 - Patrón de Vista Rápida (Quick View)
 **Learning:** En catálogos de productos técnicos o estéticos, permitir al usuario profundizar sin perder el contexto de la lista principal (vía modales) aumenta significativamente el tiempo de sesión y la probabilidad de conversión. Un overlay de "ojo" o "vista rápida" al hacer hover es un patrón estándar que los usuarios premium esperan. La conversión debe ser siempre contextual: el mensaje de WhatsApp debe incluir el nombre exacto del producto que el usuario está viendo.
 **Action:** Implementar modales de detalle similares para servicios complejos en el futuro para mantener la navegación "single-page" en áreas de catálogo.
