@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,7 +32,6 @@ import {
   Camera,
   Clock,
   DollarSign,
-  FileText,
   Check,
   Phone,
   Mail,
@@ -49,6 +48,8 @@ import {
   RefreshCw,
   Eye,
   Plus,
+  History,
+  FileText,
 } from "lucide-react";
 import { ProductServiceSelector, SelectedItem } from "@/components/ui/ProductServiceSelector";
 import Image from "next/image";
@@ -65,12 +66,16 @@ function TimelineItem({
   status,
   isFirst = false,
   isLast = false,
+  description,
+  icon: Icon = Check,
 }: {
   title: string;
   date: string;
-  status: "completed" | "pending";
+  status: "completed" | "pending" | "audit";
   isFirst?: boolean;
   isLast?: boolean;
+  description?: string;
+  icon?: any;
 }) {
   return (
     <div className="flex gap-3">
@@ -78,27 +83,35 @@ function TimelineItem({
         {!isFirst && <div className="w-px h-3 bg-border" />}
         <div
           className={cn(
-            "w-5 h-5 rounded-full flex items-center justify-center shrink-0",
+            "w-5 h-5 rounded-full flex items-center justify-center shrink-0 border-2",
             status === "completed"
-              ? "bg-emerald-500 text-white"
-              : "bg-muted border-2 border-muted-foreground/30"
+              ? "bg-emerald-500 border-emerald-500 text-white"
+              : status === "audit"
+              ? "bg-muted border-muted-foreground/20 text-muted-foreground"
+              : "bg-background border-muted-foreground/30 text-muted-foreground/30"
           )}
         >
-          {status === "completed" && <Check className="h-3 w-3" />}
+          <Icon className="h-2.5 w-2.5" />
         </div>
         {!isLast && <div className="w-px flex-1 bg-border min-h-[24px]" />}
       </div>
       <div className={cn("pb-4", isLast && "pb-0")}>
-        <p className="text-sm font-medium">{title}</p>
-        <p className="text-xs text-muted-foreground">
-          {new Date(date).toLocaleString("es-AR", {
-            day: "numeric",
-            month: "short",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-          })}
-        </p>
+        <div className="flex items-center gap-2">
+           <p className={cn("text-sm font-medium", status === 'audit' && "text-muted-foreground/80")}>{title}</p>
+           <span className="text-[10px] font-mono text-muted-foreground/60 whitespace-nowrap">
+            {new Date(date).toLocaleString("es-AR", {
+              day: "2-digit",
+              month: "2-digit",
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+           </span>
+        </div>
+        {description && (
+          <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed italic">
+            {description}
+          </p>
+        )}
       </div>
     </div>
   );
@@ -120,9 +133,6 @@ const PAYMENT_METHODS = [
   { value: "CARD", label: "Tarjeta" },
   { value: "OTHER", label: "Otro" },
 ];
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const _paymentMethods = PAYMENT_METHODS;
 
 interface WorkOrderDetail {
   id: string;
@@ -193,6 +203,15 @@ interface WorkOrderDetail {
   createdAt: string;
 }
 
+interface AuditLog {
+  id: string;
+  fieldName: string;
+  oldValue: string | null;
+  newValue: string | null;
+  changedBy: string;
+  changedAt: string;
+}
+
 export default function WorkOrderDetailPage() {
   const { alert } = useUI();
   const params = useParams();
@@ -210,6 +229,9 @@ export default function WorkOrderDetailPage() {
     paymentMethod: { name: string };
   }>>([]);
   const [totalPaid, setTotalPaid] = useState(0);
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [loadingLogs, setLoadingLogs] = useState(false);
+
   const [editingChecklist, setEditingChecklist] = useState<'entry' | 'exit' | null>(null);
   const [editingOdometer, setEditingOdometer] = useState<number | undefined>(undefined);
   const [editingFuelLevel, setEditingFuelLevel] = useState<number | undefined>(undefined);
@@ -266,6 +288,21 @@ export default function WorkOrderDetailPage() {
     }
   }, [workOrderId]);
 
+  const fetchAuditLogs = useCallback(async () => {
+    setLoadingLogs(true);
+    try {
+      const response = await fetch(`/api/work-orders/${workOrderId}/audit`);
+      if (response.ok) {
+        const data = await response.json();
+        setAuditLogs(data.logs || []);
+      }
+    } catch (error) {
+      console.error("Error fetching audit logs:", error);
+    } finally {
+      setLoadingLogs(false);
+    }
+  }, [workOrderId]);
+
   // Fetch price lists and technicians
   useEffect(() => {
     const fetchData = async () => {
@@ -310,7 +347,8 @@ export default function WorkOrderDetailPage() {
     fetchWorkOrder();
     fetchPayments();
     fetchInvoices();
-  }, [fetchWorkOrder, fetchPayments, fetchInvoices]);
+    fetchAuditLogs();
+  }, [fetchWorkOrder, fetchPayments, fetchInvoices, fetchAuditLogs]);
 
   const handleStatusChange = async (newStatus: string) => {
     setUpdatingStatus(true);
@@ -325,6 +363,7 @@ export default function WorkOrderDetailPage() {
 
       const updated = await response.json();
       setWorkOrder((prev) => (prev ? { ...prev, ...updated } : null));
+      fetchAuditLogs();
     } catch (error) {
       console.error("Error updating status:", error);
       await alert({
@@ -350,6 +389,7 @@ export default function WorkOrderDetailPage() {
 
       const updated = await response.json();
       setWorkOrder((prev) => (prev ? { ...prev, ...updated } : null));
+      fetchAuditLogs();
 
       await alert({
         title: 'Éxito',
@@ -390,6 +430,7 @@ export default function WorkOrderDetailPage() {
       setEditingChecklist(null);
       setEditingOdometer(undefined);
       setEditingFuelLevel(undefined);
+      fetchAuditLogs();
       
       await alert({
         title: 'Éxito',
@@ -447,7 +488,8 @@ export default function WorkOrderDetailPage() {
       if (!response.ok) throw new Error('Failed to update items');
       
       setIsEditingItems(false);
-      fetchWorkOrder(); // Refresh data
+      fetchWorkOrder();
+      fetchAuditLogs();
     } catch (error) {
       console.error('Error updating items:', error);
       await alert({
@@ -478,6 +520,7 @@ export default function WorkOrderDetailPage() {
       const updated = await response.json();
       setWorkOrder((prev) => (prev ? { ...prev, ...updated } : null));
       setEditingScheduledDate(false);
+      fetchAuditLogs();
       
       await alert({
         title: 'Éxito',
@@ -508,6 +551,7 @@ export default function WorkOrderDetailPage() {
       const updated = await response.json();
       setWorkOrder((prev) => (prev ? { ...prev, ...updated } : null));
       setEditingNotes(false);
+      fetchAuditLogs();
       
       await alert({
         title: 'Éxito',
@@ -557,7 +601,8 @@ export default function WorkOrderDetailPage() {
       });
 
       fetchInvoices();
-      fetchWorkOrder(); // To update invoiceId if needed
+      fetchWorkOrder();
+      fetchAuditLogs();
     } catch (error) {
       console.error('Error generating document:', error);
       await alert({
@@ -569,6 +614,70 @@ export default function WorkOrderDetailPage() {
       setGeneratingDocument(null);
     }
   };
+
+  const getFieldLabel = (field: string) => {
+    const labels: Record<string, string> = {
+      status: 'Estado',
+      technicianId: 'Técnico',
+      notes: 'Notas',
+      scheduledDate: 'Fecha Agendada',
+      paymentMethod: 'Método de Pago',
+      paymentNotes: 'Notas de Pago',
+    };
+    return labels[field] || field;
+  };
+
+  const unifiedTimeline = useMemo(() => {
+    if (!workOrder) return [];
+
+    const events: Array<{
+      type: "completed" | "pending" | "audit";
+      title: string;
+      date: string;
+      description?: string;
+      icon?: any;
+    }> = [
+      { type: "completed", title: "OT Creada", date: workOrder.createdAt, icon: Package },
+    ];
+
+    if (workOrder.scheduledDate) {
+      events.push({ type: "completed", title: "Turno Agendado", date: workOrder.scheduledDate, icon: Clock });
+    }
+    if (workOrder.startedAt) {
+      events.push({ type: "completed", title: "Trabajo Iniciado", date: workOrder.startedAt, icon: Wrench });
+    }
+    if (workOrder.completedAt) {
+      events.push({ type: "completed", title: "Trabajo Completado", date: workOrder.completedAt, icon: CheckCircle });
+    }
+    if (workOrder.deliveredAt) {
+      events.push({ type: "completed", title: "Entregado al Cliente", date: workOrder.deliveredAt, icon: Phone });
+    }
+
+    // Add audit logs
+    auditLogs.forEach(log => {
+      // Avoid duplicating status events that are already in hardcoded milestones
+      if (log.fieldName === 'status') {
+         const statusLabel = STATUSES.find(s => s.id === log.newValue)?.label || log.newValue;
+         events.push({
+           type: "audit",
+           title: `Estado: ${statusLabel}`,
+           date: log.changedAt,
+           description: `Cambiado por ${log.changedBy}`,
+           icon: RefreshCw
+         });
+      } else {
+        events.push({
+          type: "audit",
+          title: `Cambio en ${getFieldLabel(log.fieldName)}`,
+          date: log.changedAt,
+          description: `Valor anterior: ${log.oldValue || 'vacío'} → Nuevo: ${log.newValue || 'vacío'}. Por ${log.changedBy}`,
+          icon: Edit
+        });
+      }
+    });
+
+    return events.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  }, [workOrder, auditLogs]);
 
   if (loading) {
     return (
@@ -650,8 +759,7 @@ export default function WorkOrderDetailPage() {
 
           <div className="flex flex-wrap items-center gap-y-2 gap-x-6">
             {/* Línea 2: Fecha agendada si existe */}
-            {workOrder.scheduledDate && (
-              <div className="text-sm">
+            <div className="text-sm">
                 {editingScheduledDate ? (
                   <div className="flex items-center gap-2">
                     <div className="relative">
@@ -675,13 +783,13 @@ export default function WorkOrderDetailPage() {
                     <span className="text-muted-foreground flex items-center gap-1.5 font-medium">
                       <Clock className="h-3.5 w-3.5 text-primary pointer-events-none" aria-hidden="true" />
                       <span className="font-mono">
-                        {new Date(workOrder.scheduledDate).toLocaleString("es-AR", {
+                        {workOrder.scheduledDate ? new Date(workOrder.scheduledDate).toLocaleString("es-AR", {
                           day: "2-digit",
                           month: "short",
                           year: "numeric",
                           hour: "2-digit",
                           minute: "2-digit",
-                        })}
+                        }) : "Sin fecha agendada"}
                       </span>
                     </span>
                     <Button
@@ -695,8 +803,7 @@ export default function WorkOrderDetailPage() {
                     </Button>
                   </div>
                 )}
-              </div>
-            )}
+            </div>
 
             {/* Línea 3: Contacto del cliente */}
             <div className="flex flex-wrap items-center gap-3 text-sm">
@@ -794,7 +901,7 @@ export default function WorkOrderDetailPage() {
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg flex items-center gap-2">
-              <DollarSign className="h-5 w-5" />
+              <Package className="h-5 w-5" />
               Servicios y Productos
             </CardTitle>
             {!isEditingItems && workOrder.status !== 'DELIVERED' && (
@@ -978,6 +1085,7 @@ export default function WorkOrderDetailPage() {
         onPaymentRegistered={() => {
           fetchPayments();
           fetchWorkOrder();
+          fetchAuditLogs();
         }}
       />
 
@@ -997,7 +1105,7 @@ export default function WorkOrderDetailPage() {
               <span className="hidden sm:inline">Documentos</span>
             </TabsTrigger>
             <TabsTrigger value="timeline" className="flex items-center gap-2 px-4 py-2 data-[state=active]:after:bg-primary">
-              <Clock className="h-4 w-4" />
+              <History className="h-4 w-4" />
               <span className="hidden sm:inline">Historial</span>
             </TabsTrigger>
           </TabsList>
@@ -1369,47 +1477,33 @@ export default function WorkOrderDetailPage() {
           <div className="grid md:grid-cols-2 gap-6">
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Clock className="h-4 w-4" />
-                  Historial de Estados
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <History className="h-4 w-4" />
+                    Línea de Tiempo Unificada
+                  </CardTitle>
+                  <Button variant="ghost" size="sm" onClick={fetchAuditLogs} disabled={loadingLogs}>
+                    <RefreshCw className={cn("h-4 w-4", loadingLogs && "animate-spin")} />
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-0">
-                  <TimelineItem
-                    title="OT Creada"
-                    date={workOrder.createdAt}
-                    status="completed"
-                    isFirst
-                  />
-                  {workOrder.scheduledDate && (
-                    <TimelineItem
-                      title="Turno Agendado"
-                      date={workOrder.scheduledDate}
-                      status="completed"
-                    />
-                  )}
-                  {workOrder.startedAt && (
-                    <TimelineItem
-                      title="Trabajo Iniciado"
-                      date={workOrder.startedAt}
-                      status="completed"
-                    />
-                  )}
-                  {workOrder.completedAt && (
-                    <TimelineItem
-                      title="Trabajo Completado"
-                      date={workOrder.completedAt}
-                      status="completed"
-                    />
-                  )}
-                  {workOrder.deliveredAt && (
-                    <TimelineItem
-                      title="Entregado al Cliente"
-                      date={workOrder.deliveredAt}
-                      status="completed"
-                      isLast
-                    />
+                <div className="space-y-0 max-h-[500px] overflow-y-auto pr-2">
+                  {unifiedTimeline.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-8 italic">Sin eventos registrados</p>
+                  ) : (
+                    unifiedTimeline.map((event, idx) => (
+                      <TimelineItem
+                        key={idx}
+                        title={event.title}
+                        date={event.date}
+                        status={event.type}
+                        isFirst={idx === 0}
+                        isLast={idx === unifiedTimeline.length - 1}
+                        description={event.description}
+                        icon={event.icon}
+                      />
+                    ))
                   )}
                 </div>
               </CardContent>
@@ -1420,7 +1514,7 @@ export default function WorkOrderDetailPage() {
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-base flex items-center gap-2">
                       <FileText className="h-4 w-4" />
-                      Notas
+                      Notas de la OT
                     </CardTitle>
                     <Button
                       variant="ghost"
@@ -1454,8 +1548,8 @@ export default function WorkOrderDetailPage() {
                       </div>
                     </div>
                   ) : (
-                    <p className="text-sm whitespace-pre-wrap text-muted-foreground">
-                      {workOrder.notes || 'Sin notas'}
+                    <p className="text-sm whitespace-pre-wrap text-muted-foreground italic">
+                      {workOrder.notes || 'Sin notas descriptivas'}
                     </p>
                   )}
                 </CardContent>
@@ -1474,6 +1568,7 @@ export default function WorkOrderDetailPage() {
           onSuccess={() => {
             setIsCreditNoteDialogOpen(false);
             fetchWorkOrder();
+            fetchAuditLogs();
           }}
         />
       )}
