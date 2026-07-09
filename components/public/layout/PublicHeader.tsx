@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -15,6 +16,7 @@ const navItems = [
 ];
 
 export function PublicHeader() {
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -42,15 +44,25 @@ export function PublicHeader() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-12">
-            {navItems.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className="text-[13px] font-medium text-gray-400 hover:text-white transition-all duration-300 uppercase tracking-widest"
-              >
-                {item.name}
-              </Link>
-            ))}
+            {navItems.map((item) => {
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={cn(
+                    "text-[13px] font-medium transition-all duration-300 uppercase tracking-widest relative group/link",
+                    isActive ? "text-white" : "text-gray-400 hover:text-white"
+                  )}
+                >
+                  {item.name}
+                  <span className={cn(
+                    "absolute -bottom-2 left-0 h-px bg-brand transition-all duration-300",
+                    isActive ? "w-full" : "w-0 group-hover/link:w-full"
+                  )} />
+                </Link>
+              );
+            })}
           </nav>
 
           {/* Actions */}
@@ -86,16 +98,22 @@ export function PublicHeader() {
           isOpen ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-full pointer-events-none"
         )}
       >
-        {navItems.map((item) => (
-          <Link
-            key={item.name}
-            href={item.href}
-            className="text-4xl font-bold text-white hover:text-brand transition-colors"
-            onClick={() => setIsOpen(false)}
-          >
-            {item.name}
-          </Link>
-        ))}
+        {navItems.map((item) => {
+          const isActive = pathname === item.href;
+          return (
+            <Link
+              key={item.name}
+              href={item.href}
+              className={cn(
+                "text-4xl font-bold transition-colors",
+                isActive ? "text-brand" : "text-white hover:text-brand"
+              )}
+              onClick={() => setIsOpen(false)}
+            >
+              {item.name}
+            </Link>
+          );
+        })}
         <Link
           href="/login"
           className="text-2xl font-bold text-gray-400 hover:text-white transition-colors"
