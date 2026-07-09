@@ -137,11 +137,11 @@ export function ApprovalView({ operativeId }: { operativeId: string }) {
 
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted/50 border text-xs font-medium text-muted-foreground">
-              <Package className="h-3.5 w-3.5 text-primary" />
+              <Package className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
               {stats?.totalCount} Artículos
             </div>
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted/50 border text-xs font-medium text-muted-foreground">
-              <ClipboardList className="h-3.5 w-3.5 text-primary" />
+              <ClipboardList className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
               {stats?.reportedCount} Reportados
             </div>
             <div className="flex items-center gap-3 px-3 py-1.5 rounded-lg bg-muted/50 border">
@@ -254,6 +254,7 @@ export function ApprovalView({ operativeId }: { operativeId: string }) {
                         value={adj.stock}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleUpdateAdj(item.id, 'stock', parseInt(e.target.value) || 0)}
                         disabled={isApproved}
+                        aria-label={`Ajuste de stock para ${item.product.name}`}
                         className={cn("font-mono font-bold text-center h-8 text-sm focus-visible:ring-primary", adj.stock !== item.countedStock && "border-amber-500 ring-amber-500/20")}
                       />
                       {adj.stock !== item.countedStock && (
@@ -270,6 +271,7 @@ export function ApprovalView({ operativeId }: { operativeId: string }) {
                         value={adj.location}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleUpdateAdj(item.id, 'location', e.target.value)}
                         disabled={isApproved}
+                        aria-label={`Nueva ubicación para ${item.product.name}`}
                         placeholder="Sin ubicación"
                         className={cn("h-8 text-xs pl-7 font-mono focus-visible:ring-primary", adj.location !== item.previousLocation && "border-blue-500 ring-blue-500/20")}
                       />
@@ -292,7 +294,7 @@ function StatusBadge({ status }: { status: string }) {
     case 'IN_PROGRESS':
       return <Badge variant="outline" className="text-blue-700 border-blue-200 bg-blue-50">En Proceso</Badge>;
     case 'COMPLETED':
-      return <Badge variant="outline" className="text-purple-600 border-purple-200 bg-purple-50">Realizado</Badge>;
+      return <Badge variant="outline" className="text-purple-700 border-purple-200 bg-purple-50">Realizado</Badge>;
     case 'APPROVED':
       return <Badge variant="outline" className="text-emerald-700 border-emerald-200 bg-emerald-50">Aprobado</Badge>;
     default:
