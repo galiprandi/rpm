@@ -1,35 +1,62 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { Terminal } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useEffect, useState } from "react";
+import { Terminal } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const vehicleCategories = [
-  'CAR', 'TRUCK', 'SUV', 'PICKUP', 'MOTORCYCLE',
-  'TRAILER', 'AUDIO_EQUIPMENT', 'ELECTRIC_SCOOTER', 'OTHER',
+  "CAR",
+  "TRUCK",
+  "SUV",
+  "PICKUP",
+  "MOTORCYCLE",
+  "TRAILER",
+  "AUDIO_EQUIPMENT",
+  "ELECTRIC_SCOOTER",
+  "OTHER",
 ] as const;
 
 const inputSchema = {
-  type: 'object' as const,
+  type: "object" as const,
   properties: {
-    customerName: { type: 'string', description: 'Nombre completo del cliente' },
-    customerPhone: { type: 'string', description: 'Teléfono del cliente' },
-    customerEmail: { type: 'string', description: 'Email del cliente' },
-    customerAddress: { type: 'string', description: 'Dirección del cliente' },
-    customerCuit: { type: 'string', description: 'CUIT/CUIL del cliente (opcional)' },
-    identifier: { type: 'string', description: 'Patente / Identificador del vehículo' },
-    category: {
-      type: 'string' as const,
-      enum: vehicleCategories,
-      description: 'Categoría del vehículo',
+    customerName: {
+      type: "string",
+      description: "Nombre completo del cliente",
     },
-    make: { type: 'string', description: 'Marca del vehículo (ej: Toyota, Ford)' },
-    model: { type: 'string', description: 'Modelo del vehículo (ej: Corolla, Ranger)' },
-    year: { type: 'number', description: 'Año del vehículo' },
-    color: { type: 'string', description: 'Color del vehículo' },
-    notes: { type: 'string', description: 'Notas adicionales' },
+    customerPhone: { type: "string", description: "Teléfono del cliente" },
+    customerEmail: { type: "string", description: "Email del cliente" },
+    customerAddress: { type: "string", description: "Dirección del cliente" },
+    customerCuit: {
+      type: "string",
+      description: "CUIT/CUIL del cliente (opcional)",
+    },
+    identifier: {
+      type: "string",
+      description: "Patente / Identificador del vehículo",
+    },
+    category: {
+      type: "string" as const,
+      enum: vehicleCategories,
+      description: "Categoría del vehículo",
+    },
+    make: {
+      type: "string",
+      description: "Marca del vehículo (ej: Toyota, Ford)",
+    },
+    model: {
+      type: "string",
+      description: "Modelo del vehículo (ej: Corolla, Ranger)",
+    },
+    year: { type: "number", description: "Año del vehículo" },
+    color: { type: "string", description: "Color del vehículo" },
+    notes: { type: "string", description: "Notas adicionales" },
   },
-  required: ['customerName', 'identifier', 'category'],
+  required: ["customerName", "identifier", "category"],
 };
 
 interface WebMCPTool {
@@ -65,11 +92,18 @@ interface WebMCPExecuteOptions {
 }
 
 interface ModelContext {
-  registerTool: (tool: WebMCPTool, options?: WebMCPRegisterOptions) => Promise<void>;
+  registerTool: (
+    tool: WebMCPTool,
+    options?: WebMCPRegisterOptions,
+  ) => Promise<void>;
   getTools: (options?: WebMCPGetToolsOptions) => Promise<WebMCPToolInfo[]>;
-  executeTool: (tool: WebMCPToolInfo, args: string, options?: WebMCPExecuteOptions) => Promise<string | null>;
-  addEventListener: (type: 'toolchange', listener: EventListener) => void;
-  removeEventListener: (type: 'toolchange', listener: EventListener) => void;
+  executeTool: (
+    tool: WebMCPToolInfo,
+    args: string,
+    options?: WebMCPExecuteOptions,
+  ) => Promise<string | null>;
+  addEventListener: (type: "toolchange", listener: EventListener) => void;
+  removeEventListener: (type: "toolchange", listener: EventListener) => void;
 }
 
 declare global {
@@ -80,38 +114,41 @@ declare global {
 
 async function apiPost(url: string, body: unknown) {
   const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ message: 'Error desconocido' }));
+    const err = await res
+      .json()
+      .catch(() => ({ message: "Error desconocido" }));
     throw new Error(err.message || `HTTP ${res.status}`);
   }
 
   return res.json();
 }
 
-const tool: Omit<WebMCPTool, 'name'> = {
-  description: 'Crea un nuevo cliente y su vehículo en una sola operación. Usar cuando llega un cliente nuevo con un vehículo.',
+const tool: Omit<WebMCPTool, "name"> = {
+  description:
+    "Crea un nuevo cliente y su vehículo en una sola operación. Usar cuando llega un cliente nuevo con un vehículo.",
   inputSchema,
   annotations: {
     readOnlyHint: false,
     untrustedContentHint: false,
   },
   execute: async (args) => {
-    const customer = await apiPost('/api/customers', {
+    const customer = await apiPost("/api/customers", {
       name: args.customerName,
       phone: args.customerPhone || undefined,
       email: args.customerEmail || undefined,
       address: args.customerAddress || undefined,
       billingData: args.customerCuit
-        ? { cuit: args.customerCuit, invoiceType: 'B' }
+        ? { cuit: args.customerCuit, invoiceType: "B" }
         : undefined,
     });
 
-    const vehicle = await apiPost('/api/vehicles', {
+    const vehicle = await apiPost("/api/vehicles", {
       identifier: args.identifier,
       category: args.category,
       customerId: customer.id,
@@ -133,7 +170,7 @@ export function WebMCPTools() {
     const mc = document.modelContext;
 
     if (!mc) {
-      console.log('[WebMCP] not available in this browser');
+      console.log("[WebMCP] not available in this browser");
       return;
     }
 
@@ -143,24 +180,32 @@ export function WebMCPTools() {
 
     const onToolChange = () => {
       mc.getTools().then((tools) => {
-        console.log(`[WebMCP] tools changed: ${tools.length} tool(s) available`);
+        console.log(
+          `[WebMCP] tools changed: ${tools.length} tool(s) available`,
+        );
       });
     };
 
-    mc.addEventListener('toolchange', onToolChange);
+    mc.addEventListener("toolchange", onToolChange);
+
+    let registered = false;
 
     mc.registerTool(
-      { name: 'registerCustomerWithVehicle', ...tool },
+      { name: "registerCustomerWithVehicle", ...tool },
       { signal: controller.signal },
-    ).then(() => {
-      console.log('[WebMCP] registered tool: registerCustomerWithVehicle');
-    }).catch((e) => {
-      console.error('[WebMCP] failed to register tool:', e);
-    });
+    )
+      .then(() => {
+        registered = true;
+        console.log("[WebMCP] registered tool: registerCustomerWithVehicle");
+      })
+      .catch((e) => {
+        if (e?.name === "AbortError" || e?.message?.includes("aborted")) return;
+        console.error("[WebMCP] failed to register tool:", e);
+      });
 
     return () => {
-      controller.abort();
-      mc.removeEventListener('toolchange', onToolChange);
+      if (!registered) controller.abort();
+      mc.removeEventListener("toolchange", onToolChange);
     };
   }, []);
 
