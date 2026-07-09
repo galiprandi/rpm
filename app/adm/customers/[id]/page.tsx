@@ -36,7 +36,7 @@ import {
 } from "@/components/ui/dialog";
 import { CustomerForm } from "@/components/customers/CustomerForm";
 import { VehicleDialog } from "@/components/vehicles/VehicleDialog";
-import { getWhatsAppLink } from "@/lib/utils/whatsapp";
+import { getWhatsAppLink, getDebtReminderMessage } from "@/lib/utils/whatsapp";
 import { CustomerCreditNoteDialog } from "@/components/credit-notes/CustomerCreditNoteDialog";
 
 interface Vehicle {
@@ -470,14 +470,36 @@ export default function CustomerDetailPage() {
               <Wallet className="h-4 w-4" />
               Cuenta Corriente
             </CardTitle>
-            <Button
-              onClick={() => setIsPaymentModalOpen(true)}
-              size="sm"
-              className={customer.balance > 0 ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"}
-            >
-              <ArrowDownLeft className="h-4 w-4 mr-1" />
-              Registrar Pago
-            </Button>
+            <div className="flex items-center gap-2">
+              {customer.balance > 0 && (customer.phone || customer.phoneAlt) && (
+                <Button
+                  asChild
+                  variant="outline"
+                  size="sm"
+                  className="border-emerald-600 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800"
+                >
+                  <a
+                    href={getWhatsAppLink(
+                      (customer.phone || customer.phoneAlt)!,
+                      getDebtReminderMessage(customer.name, customer.balance)
+                    )}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <MessageSquare className="h-4 w-4 mr-1" />
+                    Notificar
+                  </a>
+                </Button>
+              )}
+              <Button
+                onClick={() => setIsPaymentModalOpen(true)}
+                size="sm"
+                className={customer.balance > 0 ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"}
+              >
+                <ArrowDownLeft className="h-4 w-4 mr-1" />
+                Registrar Pago
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>

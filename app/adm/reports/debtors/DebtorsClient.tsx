@@ -16,9 +16,10 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Header, CrudStats } from '@/components/adm';
-import { TrendingDown, Users, Receipt, DollarSign, Phone, Eye, Clock, User } from 'lucide-react';
+import { TrendingDown, Users, Receipt, DollarSign, Phone, Eye, Clock, User, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { getWhatsAppLink, getDebtReminderMessage } from '@/lib/utils/whatsapp';
 
 interface Debtor {
   customerId: string;
@@ -223,19 +224,46 @@ export default function DebtorsClient() {
     {
       id: 'actions',
       header: '',
-      cell: ({ row }) => (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button asChild variant="ghost" size="icon" className="h-8 w-8">
-              <Link href={`/adm/customers/${row.original.customerId}`} aria-label="Ver cliente">
-                <Eye className="h-4 w-4 pointer-events-none" aria-hidden="true" />
-                <span className="sr-only">Ver cliente</span>
-              </Link>
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Ver cliente</TooltipContent>
-        </Tooltip>
-      ),
+      cell: ({ row }) => {
+        const debtor = row.original;
+        return (
+          <div className="flex items-center justify-end gap-1">
+            {debtor.phone && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    asChild
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50"
+                  >
+                    <a
+                      href={getWhatsAppLink(debtor.phone, getDebtReminderMessage(debtor.customerName, debtor.balance))}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="Notificar deuda por WhatsApp"
+                    >
+                      <MessageSquare className="h-4 w-4 pointer-events-none" aria-hidden="true" />
+                    </a>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Notificar deuda</TooltipContent>
+              </Tooltip>
+            )}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button asChild variant="ghost" size="icon" className="h-8 w-8">
+                  <Link href={`/adm/customers/${debtor.customerId}`} aria-label="Ver cliente">
+                    <Eye className="h-4 w-4 pointer-events-none" aria-hidden="true" />
+                    <span className="sr-only">Ver cliente</span>
+                  </Link>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Ver cliente</TooltipContent>
+            </Tooltip>
+          </div>
+        );
+      },
     },
   ], []);
 

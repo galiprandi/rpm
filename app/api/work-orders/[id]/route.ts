@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { updateWorkOrder } from "@/lib/services/workOrderService";
 import { getSessionWithAuth } from "@/lib/api-middleware";
 
+export const dynamic = 'force-dynamic';
+
 // GET /api/work-orders/[id] - Get work order by ID
 export async function GET(
   request: NextRequest,
@@ -62,7 +64,6 @@ export async function PUT(
     const session = await getSessionWithAuth();
     const { id } = await params;
     const body = await request.json();
-
     const ipAddress = request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || undefined;
     const userAgent = request.headers.get("user-agent") || undefined;
 

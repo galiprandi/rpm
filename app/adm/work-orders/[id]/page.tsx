@@ -32,7 +32,6 @@ import {
   Camera,
   Clock,
   DollarSign,
-  FileText,
   Check,
   Phone,
   Mail,
@@ -53,6 +52,7 @@ import {
   AlertCircle,
   PlayCircle,
   Loader2,
+  FileText,
 } from "lucide-react";
 import { ProductServiceSelector, SelectedItem } from "@/components/ui/ProductServiceSelector";
 import Image from "next/image";
@@ -155,9 +155,6 @@ const PAYMENT_METHODS = [
   { value: "OTHER", label: "Otro" },
 ];
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const _paymentMethods = PAYMENT_METHODS;
-
 interface WorkOrderDetail {
   id: string;
   status: string;
@@ -229,7 +226,6 @@ interface WorkOrderDetail {
 
 interface AuditLog {
   id: string;
-  workOrderId: string;
   fieldName: string;
   oldValue: string | null;
   newValue: string | null;
@@ -254,6 +250,9 @@ export default function WorkOrderDetailPage() {
     paymentMethod: { name: string };
   }>>([]);
   const [totalPaid, setTotalPaid] = useState(0);
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [loadingAudit, setLoadingAudit] = useState(false);
+
   const [editingChecklist, setEditingChecklist] = useState<'entry' | 'exit' | null>(null);
   const [editingOdometer, setEditingOdometer] = useState<number | undefined>(undefined);
   const [editingFuelLevel, setEditingFuelLevel] = useState<number | undefined>(undefined);
@@ -267,8 +266,6 @@ export default function WorkOrderDetailPage() {
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loadingInvoices, setLoadingInvoices] = useState(false);
   const [generatingDocument, setGeneratingDocument] = useState<string | null>(null);
-  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
-  const [loadingAudit, setLoadingAudit] = useState(false);
   
   // Items editing state
   const [isEditingItems, setIsEditingItems] = useState(false);
@@ -454,6 +451,7 @@ export default function WorkOrderDetailPage() {
       setEditingChecklist(null);
       setEditingOdometer(undefined);
       setEditingFuelLevel(undefined);
+      fetchAuditLogs();
       
       await alert({
         title: 'Éxito',
@@ -511,7 +509,8 @@ export default function WorkOrderDetailPage() {
       if (!response.ok) throw new Error('Failed to update items');
       
       setIsEditingItems(false);
-      fetchWorkOrder(); // Refresh data
+      fetchWorkOrder();
+      fetchAuditLogs();
     } catch (error) {
       console.error('Error updating items:', error);
       await alert({
@@ -623,7 +622,8 @@ export default function WorkOrderDetailPage() {
       });
 
       fetchInvoices();
-      fetchWorkOrder(); // To update invoiceId if needed
+      fetchWorkOrder();
+      fetchAuditLogs();
     } catch (error) {
       console.error('Error generating document:', error);
       await alert({
@@ -666,7 +666,7 @@ export default function WorkOrderDetailPage() {
         title: 'Trabajo Iniciado',
         date: workOrder.startedAt,
         status: 'completed',
-        icon: PlayCircle, // Import added below
+        icon: PlayCircle,
       });
     }
 
@@ -801,8 +801,7 @@ export default function WorkOrderDetailPage() {
 
           <div className="flex flex-wrap items-center gap-y-2 gap-x-6">
             {/* Línea 2: Fecha agendada si existe */}
-            {workOrder.scheduledDate && (
-              <div className="text-sm">
+            <div className="text-sm">
                 {editingScheduledDate ? (
                   <div className="flex items-center gap-2">
                     <div className="relative">
@@ -826,13 +825,13 @@ export default function WorkOrderDetailPage() {
                     <span className="text-muted-foreground flex items-center gap-1.5 font-medium">
                       <Clock className="h-3.5 w-3.5 text-primary pointer-events-none" aria-hidden="true" />
                       <span className="font-mono">
-                        {new Date(workOrder.scheduledDate).toLocaleString("es-AR", {
+                        {workOrder.scheduledDate ? new Date(workOrder.scheduledDate).toLocaleString("es-AR", {
                           day: "2-digit",
                           month: "short",
                           year: "numeric",
                           hour: "2-digit",
                           minute: "2-digit",
-                        })}
+                        }) : "Sin fecha agendada"}
                       </span>
                     </span>
                     <Button
@@ -846,8 +845,7 @@ export default function WorkOrderDetailPage() {
                     </Button>
                   </div>
                 )}
-              </div>
-            )}
+            </div>
 
             {/* Línea 3: Contacto del cliente */}
             <div className="flex flex-wrap items-center gap-3 text-sm">
@@ -945,7 +943,7 @@ export default function WorkOrderDetailPage() {
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg flex items-center gap-2">
-              <DollarSign className="h-5 w-5" />
+              <Package className="h-5 w-5" />
               Servicios y Productos
             </CardTitle>
             {!isEditingItems && workOrder.status !== 'DELIVERED' && (
@@ -1129,6 +1127,7 @@ export default function WorkOrderDetailPage() {
         onPaymentRegistered={() => {
           fetchPayments();
           fetchWorkOrder();
+          fetchAuditLogs();
         }}
       />
 
@@ -1620,6 +1619,7 @@ export default function WorkOrderDetailPage() {
           onSuccess={() => {
             setIsCreditNoteDialogOpen(false);
             fetchWorkOrder();
+            fetchAuditLogs();
           }}
         />
       )}

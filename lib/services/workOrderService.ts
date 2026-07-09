@@ -69,7 +69,7 @@ export async function generateDocumentFromWorkOrder(
       customerName: customer.name,
       customerDoc,
       customerDocType,
-      subtotal: total, // Simplified for now: total = subtotal
+      subtotal: total,
       total: total,
       status: 'DRAFT',
       createdBy,
@@ -126,7 +126,6 @@ export async function updateWorkOrder(
   }
 ) {
   return await prisma.$transaction(async (tx) => {
-    // 1. Get current state for comparisons
     const currentWO = await tx.work_order.findUnique({
       where: { id },
       include: {
@@ -168,7 +167,6 @@ export async function updateWorkOrder(
     // 3. Status-based timestamp management
     const updateData: any = { ...data };
 
-    // Normalize dates
     if (data.scheduledDate) updateData.scheduledDate = new Date(data.scheduledDate);
     if (data.startedAt) updateData.startedAt = new Date(data.startedAt);
     if (data.completedAt) updateData.completedAt = new Date(data.completedAt);
@@ -209,12 +207,6 @@ export async function updateWorkOrder(
             category: true,
             vehicle_make: true,
             vehicle_model: true,
-          },
-        },
-        work_order_item: {
-          include: {
-            product: true,
-            service: true,
           },
         },
         technician: {

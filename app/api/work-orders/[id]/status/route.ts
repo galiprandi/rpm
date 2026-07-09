@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionWithAuth } from "@/lib/api-middleware";
 import { updateWorkOrder } from "@/lib/services/workOrderService";
 
+export const dynamic = 'force-dynamic';
+
 // Valid work order statuses
 const VALID_STATUSES = [
   "CONFIRMED",

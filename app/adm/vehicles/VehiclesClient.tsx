@@ -3,7 +3,7 @@
 import { useState, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Header, CrudAdmin, CrudStats, type StatItem } from "@/components/adm";
-import { Car, Eye, Plus, User, Tag, X, Filter } from "lucide-react";
+import { Car, Eye, Plus, User, Tag, X, Filter, MessageSquare } from "lucide-react";
 import Link from "next/link";
 import { type ColumnDef } from "@tanstack/react-table";
 import {
@@ -18,6 +18,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { getWhatsAppLink } from "@/lib/utils/whatsapp";
 
 interface Vehicle {
   id: string;
@@ -130,7 +131,7 @@ export default function VehiclesClient({ initialVehicles, totalVehicles }: Vehic
         accessorKey: "customer.name",
         header: "Propietario",
         cell: ({ row }) => (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 group/owner">
             <User className="h-3.5 w-3.5 text-muted-foreground pointer-events-none" aria-hidden="true" />
             <Link
               href={`/adm/customers/${row.original.customer.id}`}
@@ -138,6 +139,22 @@ export default function VehiclesClient({ initialVehicles, totalVehicles }: Vehic
             >
               {row.original.customer.name}
             </Link>
+            {row.original.customer.phone && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <a
+                    href={getWhatsAppLink(row.original.customer.phone, `Hola ${row.original.customer.name}!`)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-1 rounded-md hover:bg-emerald-50 text-emerald-700 opacity-0 group-hover/owner:opacity-100 transition-opacity"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <MessageSquare className="h-3.5 w-3.5" />
+                  </a>
+                </TooltipTrigger>
+                <TooltipContent>Enviar WhatsApp</TooltipContent>
+              </Tooltip>
+            )}
           </div>
         ),
       },
