@@ -34,10 +34,48 @@ const inputSchema = {
 
 interface WebMCPTool {
   name: string;
-  title?: string;
   description: string;
-  inputSchema?: Record<string, unknown>;
+  inputSchema: Record<string, unknown>;
   execute: (args: Record<string, unknown>) => Promise<unknown>;
+  annotations?: {
+    readOnlyHint: boolean;
+    untrustedContentHint: boolean;
+  };
+}
+
+interface WebMCPToolInfo {
+  annotations: { readOnlyHint: boolean; untrustedContentHint: boolean };
+  description: string;
+  inputSchema: string;
+  name: string;
+  origin: string;
+  window: Window;
+}
+
+interface WebMCPRegisterOptions {
+  signal?: AbortSignal;
+}
+
+interface WebMCPGetToolsOptions {
+  fromOrigins?: string[];
+}
+
+interface WebMCPExecuteOptions {
+  signal?: AbortSignal;
+}
+
+interface ModelContext {
+  registerTool: (tool: WebMCPTool, options?: WebMCPRegisterOptions) => Promise<void>;
+  getTools: (options?: WebMCPGetToolsOptions) => Promise<WebMCPToolInfo[]>;
+  executeTool: (tool: WebMCPToolInfo, args: string, options?: WebMCPExecuteOptions) => Promise<string | null>;
+  addEventListener: (type: 'toolchange', listener: EventListener) => void;
+  removeEventListener: (type: 'toolchange', listener: EventListener) => void;
+}
+
+declare global {
+  interface Document {
+    modelContext?: ModelContext;
+  }
 }
 
 async function apiPost(url: string, body: unknown) {
@@ -56,9 +94,12 @@ async function apiPost(url: string, body: unknown) {
 }
 
 const tool: Omit<WebMCPTool, 'name'> = {
-  title: 'Registrar Cliente y Vehículo',
   description: 'Crea un nuevo cliente y su vehículo en una sola operación. Usar cuando llega un cliente nuevo con un vehículo.',
   inputSchema,
+  annotations: {
+    readOnlyHint: false,
+    untrustedContentHint: false,
+  },
   execute: async (args) => {
     const customer = await apiPost('/api/customers', {
       name: args.customerName,
@@ -81,68 +122,45 @@ const tool: Omit<WebMCPTool, 'name'> = {
       notes: args.notes || undefined,
     });
 
-    return {
-      content: [
-        {
-          type: 'text',
-          text: JSON.stringify({ customer, vehicle }, null, 2),
-        },
-      ],
-    };
+    return JSON.stringify({ customer, vehicle }, null, 2);
   },
 };
-
-declare global {
-  interface Document {
-    modelContext?: {
-      registerTool: (tool: WebMCPTool) => Promise<void>;
-      unregisterTool: (name: string) => void;
-    };
-  }
-  interface Navigator {
-    modelContext?: {
-      registerTool: (tool: WebMCPTool) => Promise<void>;
-      unregisterTool: (name: string) => void;
-    };
-  }
-}
-
-function getModelContext() {
-  if (typeof document !== 'undefined' && document.modelContext) {
-    return document.modelContext;
-  }
-  if (typeof navigator !== 'undefined' && navigator.modelContext) {
-    return navigator.modelContext;
-  }
-  return null;
-}
 
 export function WebMCPTools() {
   const [supported, setSupported] = useState(false);
 
   useEffect(() => {
-    const ctx = getModelContext();
+    const mc = document.modelContext;
 
-    if (!ctx) {
+    if (!mc) {
       console.log('[WebMCP] not available in this browser');
       return;
     }
 
     setSupported(true);
 
-    try {
-      ctx.registerTool({ name: 'registerCustomerWithVehicle', ...tool });
+    const controller = new AbortController();
+
+    const onToolChange = () => {
+      mc.getTools().then((tools) => {
+        console.log(`[WebMCP] tools changed: ${tools.length} tool(s) available`);
+      });
+    };
+
+    mc.addEventListener('toolchange', onToolChange);
+
+    mc.registerTool(
+      { name: 'registerCustomerWithVehicle', ...tool },
+      { signal: controller.signal },
+    ).then(() => {
       console.log('[WebMCP] registered tool: registerCustomerWithVehicle');
-    } catch (e) {
+    }).catch((e) => {
       console.error('[WebMCP] failed to register tool:', e);
-    }
+    });
 
     return () => {
-      try {
-        ctx.unregisterTool('registerCustomerWithVehicle');
-      } catch {
-        /* ignore on cleanup */
-      }
+      controller.abort();
+      mc.removeEventListener('toolchange', onToolChange);
     };
   }, []);
 

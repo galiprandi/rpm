@@ -5,6 +5,7 @@ import { authClient } from '@/lib/auth-client';
 import { AppSidebar } from './AppSidebar';
 import { CommandPalette } from '@/components/adm/CommandPalette';
 import { WebMCPTools } from '@/components/webmcp/WebMCPTools';
+import { WebMCPNavTools } from '@/components/webmcp/WebMCPNavTools';
 import { useUI } from '@/components/ui/UIProvider';
 import {
   SidebarProvider,
@@ -88,6 +89,7 @@ export function AdminClientLayout({ children, user }: AdminClientLayoutProps) {
             </main>
           </SidebarInset>
           <WebMCPTools />
+          <WebMCPNavTools />
         </>
       )}
     </SidebarProvider>
