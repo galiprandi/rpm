@@ -14,7 +14,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { getWhatsAppLink } from "@/lib/utils/whatsapp";
+import { getWhatsAppLink, getDebtReminderMessage } from "@/lib/utils/whatsapp";
 
 interface Customer {
   id: string;
@@ -121,7 +121,12 @@ export default function CustomersClient({ initialCustomers }: CustomersClientPro
               <Tooltip>
                 <TooltipTrigger asChild>
                   <a
-                    href={getWhatsAppLink(phone, `Hola ${row.original.name}!`)}
+                    href={getWhatsAppLink(
+                      phone,
+                      row.original.balance > 0
+                        ? getDebtReminderMessage(row.original.name, row.original.balance)
+                        : `Hola ${row.original.name}!`
+                    )}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="p-1 rounded-md hover:bg-emerald-50 text-emerald-700 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -130,7 +135,9 @@ export default function CustomersClient({ initialCustomers }: CustomersClientPro
                     <MessageSquare className="h-3.5 w-3.5" />
                   </a>
                 </TooltipTrigger>
-                <TooltipContent>Enviar WhatsApp</TooltipContent>
+                <TooltipContent>
+                  {row.original.balance > 0 ? 'Notificar deuda' : 'Enviar WhatsApp'}
+                </TooltipContent>
               </Tooltip>
             </div>
           );

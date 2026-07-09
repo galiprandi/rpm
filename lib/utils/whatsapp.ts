@@ -61,3 +61,17 @@ export function getWorkOrderMessage(data: NotificationData): string {
 
   return `${greeting}\n\n${statusMessage}${balanceMessage}\n\nQuedamos a tu disposición.`;
 }
+
+/**
+ * Generates a debt reminder message for customers with outstanding balance
+ * @param customerName - Name of the customer
+ * @param balance - Outstanding balance
+ * @returns Formatted message string
+ */
+export function getDebtReminderMessage(customerName: string, balance: number): string {
+  const greeting = `Hola ${customerName}!`;
+  const message = `Te escribimos de *RPM Accesorios* para recordarte que tenés un saldo pendiente de *${formatARS(balance)}* en tu cuenta corriente.`;
+  const footer = `Cualquier duda quedamos a tu disposición. ¡Muchas gracias!`;
+
+  return `${greeting}\n\n${message}\n\n${footer}`;
+}
