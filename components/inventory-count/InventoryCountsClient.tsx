@@ -70,7 +70,7 @@ export function InventoryCountsClient({ counts }: InventoryCountsClientProps) {
         return (
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0">
-              <ClipboardCheck className="h-4 w-4 text-primary" />
+              <ClipboardCheck className="h-4 w-4 text-primary" aria-hidden="true" />
             </div>
             <div className="flex flex-col">
               <span className="font-semibold tracking-tight text-sm">
@@ -184,7 +184,7 @@ function StatusBadge({ status }: { status: string }) {
       );
     case 'COMPLETED':
       return (
-        <Badge variant="outline" className="text-purple-600 border-purple-200 bg-purple-50">
+        <Badge variant="outline" className="text-purple-700 border-purple-200 bg-purple-50">
           Realizado
         </Badge>
       );
