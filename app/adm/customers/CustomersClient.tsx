@@ -174,6 +174,18 @@ export default function CustomersClient({ initialCustomers }: CustomersClientPro
       {
         accessorKey: "balance",
         header: "Saldo",
+        filterFn: (row, id, value) => {
+          if (!value) return true;
+          const search = value.toLowerCase();
+          const customer = row.original;
+          return (
+            customer.name.toLowerCase().includes(search) ||
+            customer.phone?.toLowerCase().includes(search) ||
+            customer.email?.toLowerCase().includes(search) ||
+            customer.vehicles?.some(v => v.identifier.toLowerCase().includes(search)) ||
+            (isBillingData(customer.billingData) && customer.billingData.cuit.includes(search))
+          );
+        },
         cell: ({ row }) => {
           const balance = row.original.balance;
           if (balance === 0) {
@@ -226,6 +238,15 @@ export default function CustomersClient({ initialCustomers }: CustomersClientPro
       value: customers.filter(c => c.balance !== 0).length,
       icon: Wallet,
       iconColor: customers.some(c => c.balance > 0) ? "#f97316" : undefined, // orange-500 if someone owes
+    },
+    {
+      label: "Deuda Total",
+      value: new Intl.NumberFormat('es-AR', {
+        style: 'currency',
+        currency: 'ARS',
+      }).format(customers.reduce((acc, c) => acc + (c.balance > 0 ? c.balance : 0), 0)),
+      icon: TrendingDown,
+      iconColor: "#ef4444", // red-500
     },
   ], [customers]);
 
@@ -292,7 +313,7 @@ export default function CustomersClient({ initialCustomers }: CustomersClientPro
         emptyMessage="No hay clientes registrados. Haz clic en 'Nuevo Cliente' para crear el primero."
         createButtonText="Cliente"
         tableTitle="Listado de Clientes"
-        searchPlaceholder="Buscar por nombre o teléfono..."
+        searchPlaceholder="Buscar por nombre, CUIT, vehículo o patente..."
         rowActions={(customer) => (
           <Tooltip>
             <TooltipTrigger asChild>
