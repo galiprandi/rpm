@@ -3,16 +3,10 @@
 import { useState } from 'react';
 import { PublicLayout } from '@/components/public/layout/PublicLayout';
 import { Button } from '@/components/ui/button';
-import { Search, ArrowRight, X, Check, MessageCircle, Eye } from 'lucide-react';
-import { PUBLIC_SITE_CONFIG } from '@/lib/config/public-site';
+import { Search, ArrowRight, X, Eye } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { featuredProducts } from '@/lib/constants/featured-products';
+import { ProductQuickView } from '@/components/public/ProductQuickView';
 
 const categories = ['Todos', 'Iluminación', 'Estética', 'Equipamiento', 'Seguridad', 'Interior'];
 
@@ -152,61 +146,10 @@ export default function ProductsClient() {
         </div>
       </section>
 
-      <Dialog open={!!selectedProduct} onOpenChange={(open) => !open && setSelectedProduct(null)}>
-        <DialogContent className="max-w-3xl bg-zinc-950 border-white/10 p-0 overflow-hidden">
-          {selectedProduct && (
-            <div className="flex flex-col md:flex-row h-full">
-              <div className="md:w-1/2 aspect-square md:aspect-auto bg-zinc-900 flex items-center justify-center relative overflow-hidden">
-                <div className="absolute inset-0 bg-brand/5" />
-                <span className="text-[140px] font-black text-white/5 italic select-none">
-                  {selectedProduct.image}
-                </span>
-                <div className="absolute top-6 left-6">
-                  <span className="px-3 py-1 bg-brand text-white text-[10px] font-bold uppercase tracking-widest rounded-full">
-                    {selectedProduct.category}
-                  </span>
-                </div>
-              </div>
-
-              <div className="md:w-1/2 p-8 md:p-12 flex flex-col justify-center space-y-8">
-                <DialogHeader className="space-y-4">
-                  <DialogTitle className="text-3xl md:text-4xl font-bold text-white tracking-tighter leading-tight">
-                    {selectedProduct.name}
-                  </DialogTitle>
-                  <p className="text-2xl font-bold text-brand">
-                    ${selectedProduct.price.toLocaleString()}
-                  </p>
-                </DialogHeader>
-
-                <div className="space-y-6">
-                  <p className="text-zinc-400 leading-relaxed">
-                    {selectedProduct.description}
-                  </p>
-
-                  <ul className="grid grid-cols-1 gap-3">
-                    {selectedProduct.features.map((feature, i) => (
-                      <li key={i} className="flex items-center text-sm text-zinc-300">
-                        <Check className="h-4 w-4 text-brand mr-3 flex-shrink-0" />
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div className="pt-4">
-                  <Button
-                    className="w-full bg-white text-black hover:bg-brand hover:text-white font-bold h-14 rounded-2xl transition-all duration-300 gap-3 group"
-                    onClick={() => window.open(PUBLIC_SITE_CONFIG.links.whatsapp(`Hola RPM! Me interesa el producto: ${selectedProduct.name}. ¿Tienen stock disponible?`), '_blank')}
-                  >
-                    <MessageCircle className="h-5 w-5 fill-current transition-transform group-hover:scale-110" />
-                    CONSULTAR POR WHATSAPP
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <ProductQuickView
+        product={selectedProduct}
+        onClose={() => setSelectedProduct(null)}
+      />
     </PublicLayout>
   );
 }
