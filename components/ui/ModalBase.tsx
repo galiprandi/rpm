@@ -91,7 +91,7 @@ export function ModalBase({
           )}
         </DialogHeader>
 
-        <div className="flex-1 overflow-visible py-6 text-foreground">
+        <div className="flex-1 overflow-y-auto py-6 text-foreground">
           {children}
         </div>
 

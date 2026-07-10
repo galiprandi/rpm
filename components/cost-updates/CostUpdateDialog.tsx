@@ -830,7 +830,7 @@ export function CostUpdateDialog({ open, onClose, onSuccess }: CostUpdateDialogP
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 min-h-[400px]">
+        <div className="flex-1 overflow-y-auto p-6">
           {currentStep === 'target' && TargetStep}
           {currentStep === 'selection' && SelectionStep}
           {currentStep === 'adjustment' && AdjustmentStep}
