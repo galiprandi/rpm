@@ -213,6 +213,9 @@ function KanbanCard({
                   totalPaid: wo.totalPaid || 0,
                 });
                 window.open(getWhatsAppLink(wo.customer.phone, msg), "_blank");
+                toast.success("Abriendo WhatsApp...", {
+                  description: `Mensaje preparado para ${wo.customer.name}`,
+                });
               }}
               title="Enviar WhatsApp"
               aria-label="Enviar WhatsApp"
@@ -314,7 +317,7 @@ function KanbanCard({
             </DropdownMenuContent>
           </DropdownMenu>
           {isDelayed(wo) ? (
-            <span className="text-orange-700 font-bold text-[10px] flex items-center gap-0.5 shrink-0">
+            <span className="text-white bg-orange-500 font-bold text-[9px] flex items-center gap-0.5 shrink-0 px-1.5 py-0.5 rounded-full shadow-sm">
               <AlertCircle
                 className="h-2.5 w-2.5 pointer-events-none"
                 aria-hidden="true"
@@ -427,8 +430,12 @@ function KanbanColumn({
             ))}
           </div>
           {items.length === 0 && (
-            <div className="h-full min-h-[100px] flex items-center justify-center text-muted-foreground/50 text-xs text-center px-4 italic">
-              Sin órdenes
+            <div className="h-full min-h-[100px] flex flex-col items-center justify-center text-muted-foreground/40 text-xs text-center px-4 gap-1.5">
+              <ClipboardList
+                className="h-6 w-6 pointer-events-none opacity-40"
+                aria-hidden="true"
+              />
+              <span className="italic">Sin órdenes</span>
             </div>
           )}
         </SortableContext>
@@ -772,10 +779,16 @@ export default function WorkOrdersPage() {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="h-8 w-[200px] pl-9 text-xs"
             />
+            {searchQuery && (
+              <span className="text-[10px] text-muted-foreground font-mono whitespace-nowrap">
+                {filteredWorkOrders.length} resultado
+                {filteredWorkOrders.length !== 1 ? "s" : ""}
+              </span>
+            )}
           </div>
 
           <Button
-            variant={paymentFilter === "pending" ? "outline" : "outline"}
+            variant={paymentFilter === "pending" ? "default" : "outline"}
             size="sm"
             onClick={() =>
               setPaymentFilter(paymentFilter === "pending" ? "all" : "pending")
@@ -783,7 +796,7 @@ export default function WorkOrdersPage() {
             className={cn(
               "h-8 text-xs",
               paymentFilter === "pending"
-                ? "text-amber-700 border-amber-200 bg-amber-50 hover:bg-amber-100 hover:text-amber-800"
+                ? "bg-amber-500 text-white border-amber-500 hover:bg-amber-600 hover:border-amber-600"
                 : "",
             )}
           >
@@ -941,6 +954,9 @@ export default function WorkOrdersPage() {
                                   getWhatsAppLink(wo.customer.phone, msg),
                                   "_blank",
                                 );
+                                toast.success("Abriendo WhatsApp...", {
+                                  description: `Mensaje preparado para ${wo.customer.name}`,
+                                });
                               }}
                               aria-label="Notificar por WhatsApp"
                             >

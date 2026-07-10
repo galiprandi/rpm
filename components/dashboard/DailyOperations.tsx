@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
 import { type ColumnDef } from "@tanstack/react-table";
-import { formatARS } from "@/lib/utils/format";
+import { formatARS, toTitleCase } from "@/lib/utils/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -188,7 +188,9 @@ export function DailyOperations() {
         accessorKey: "methodName",
         header: "Método",
         cell: ({ row }) => (
-          <span className="font-mono text-xs">{row.original.methodName}</span>
+          <span className="font-mono text-xs">
+            {toTitleCase(row.original.methodName)}
+          </span>
         ),
       },
       {

@@ -96,7 +96,7 @@ export function getVehicleEmoji(category: string): string {
 }
 
 /**
- * Format percentage change
+ * Format percentage change with cap for extreme values
  * @param value - Percentage value (e.g., 15 for +15%)
  * @returns Formatted string with sign and color class
  */
@@ -104,8 +104,12 @@ export function formatPercentageChange(value: number): {
   text: string;
   className: string;
 } {
+  const MAX_DISPLAY = 999;
   const sign = value >= 0 ? "+" : "";
-  const text = `${sign}${value.toFixed(1)}%`;
+  const text =
+    Math.abs(value) > MAX_DISPLAY
+      ? `${sign}${MAX_DISPLAY}%`
+      : `${sign}${value.toFixed(1)}%`;
 
   let className = "text-gray-600";
   if (value > 0) {
@@ -115,4 +119,41 @@ export function formatPercentageChange(value: number): {
   }
 
   return { text, className };
+}
+
+/**
+ * Convert text to Title Case (first letter of each word capitalized)
+ * @param text - Text to convert
+ * @returns Title Case text (e.g., "TRANSFER bbva" -> "Transfer Bbva")
+ */
+export function toTitleCase(text: string | null | undefined): string {
+  if (!text) return "";
+  return text
+    .trim()
+    .toLowerCase()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+/**
+ * Format phone number for Argentine numbers
+ * @param phone - Raw phone number string
+ * @returns Formatted phone (e.g., "5493816187329" -> "+54 9 3816 187329")
+ */
+export function formatPhone(phone: string | null | undefined): string {
+  if (!phone) return "";
+  const digits = phone.replace(/\D/g, "");
+  if (digits.length === 0) return phone || "";
+  if (digits.startsWith("549") && digits.length >= 12) {
+    return `+54 9 ${digits.slice(3, 7)} ${digits.slice(7)}`;
+  }
+  if (digits.startsWith("54") && digits.length >= 10) {
+    return `+54 ${digits.slice(2, 6)} ${digits.slice(6)}`;
+  }
+  if (digits.length === 10) {
+    return `${digits.slice(0, 4)}-${digits.slice(4)}`;
+  }
+  if (digits.length === 11) {
+    return `${digits.slice(0, 4)}-${digits.slice(4)}`;
+  }
+  return phone;
 }

@@ -5,7 +5,7 @@ import {
   ArrowDownCircle,
   ExternalLink,
 } from "lucide-react";
-import { formatARS } from "@/lib/utils/format";
+import { formatARS, toTitleCase } from "@/lib/utils/format";
 import Link from "next/link";
 
 interface CashMovement {
@@ -89,7 +89,7 @@ export function CashMovementsCard({ cashMovements }: CashMovementsCardProps) {
       case "CASH":
         return "Efectivo";
       default:
-        return methodName;
+        return toTitleCase(methodName);
     }
   };
 
@@ -161,7 +161,7 @@ export function CashMovementsCard({ cashMovements }: CashMovementsCardProps) {
                     <span className="font-semibold tracking-tight text-xs">
                       {getMovementTypeLabel(movement.type)}
                     </span>
-                    <span className="text-[9px] uppercase font-bold tracking-wider text-muted-foreground/50">
+                    <span className="text-[9px] font-bold tracking-wider text-muted-foreground/50">
                       {getMethodNameLabel(movement.methodName)}
                     </span>
                   </div>
