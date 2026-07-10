@@ -1,27 +1,45 @@
-'use client';
+"use client";
 
-import { useState, useCallback, useEffect } from 'react';
-import Image from 'next/image';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ProductDialog } from '@/components/products/ProductDialog';
-import { ProductMovementsModal } from '@/components/products/ProductMovementsModal';
-import { ProductPricesModal } from '@/components/products/ProductPricesModal';
-import { QuickSaleModal } from '@/components/dashboard/QuickSaleModal';
-import { useUI } from '@/components/ui/UIProvider';
-import { Header, CrudAdmin, StatItem, CrudStats } from '@/components/adm';
-import { Pencil, Trash2, AlertTriangle, DollarSign, Boxes, Clock, ShoppingCart, FileUp, Plus, RefreshCcw, Package } from 'lucide-react';
-import { PriceDisplay } from '@/components/ui/price-display';
-import { StockDisplay } from '@/components/ui/stock-display';
+import { useState, useCallback, useEffect } from "react";
+import Image from "next/image";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ProductDialog } from "@/components/products/ProductDialog";
+import { ProductMovementsModal } from "@/components/products/ProductMovementsModal";
+import { ProductPricesModal } from "@/components/products/ProductPricesModal";
+import { QuickSaleModal } from "@/components/dashboard/QuickSaleModal";
+import { useUI } from "@/components/ui/UIProvider";
+import { toast } from "sonner";
+import { Header, CrudAdmin, StatItem, CrudStats } from "@/components/adm";
+import {
+  Pencil,
+  Trash2,
+  AlertTriangle,
+  DollarSign,
+  Boxes,
+  Clock,
+  ShoppingCart,
+  FileUp,
+  Plus,
+  RefreshCcw,
+  Package,
+} from "lucide-react";
+import { PriceDisplay } from "@/components/ui/price-display";
+import { StockDisplay } from "@/components/ui/stock-display";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { type ColumnDef, type FilterFn } from '@tanstack/react-table';
-import { useRouter } from 'next/navigation';
+} from "@/components/ui/tooltip";
+import { type ColumnDef, type FilterFn } from "@tanstack/react-table";
+import { useRouter } from "next/navigation";
 
-import { type Product, type Category, type Supplier, type ProductFormData } from '@/components/products/types';
+import {
+  type Product,
+  type Category,
+  type Supplier,
+  type ProductFormData,
+} from "@/components/products/types";
 
 interface ProductsClientProps {
   products: Product[];
@@ -31,7 +49,11 @@ interface ProductsClientProps {
   totalInventoryValue: number;
 }
 
-const productSearchFilter: FilterFn<Product> = (row, _columnId, filterValue) => {
+const productSearchFilter: FilterFn<Product> = (
+  row,
+  _columnId,
+  filterValue,
+) => {
   if (!filterValue) return true;
   const terms = String(filterValue).toLowerCase().split(/\s+/).filter(Boolean);
   const p = row.original;
@@ -51,45 +73,49 @@ export function ProductsClient({
   lowStockCount,
   totalInventoryValue,
 }: ProductsClientProps) {
-  const { alert, confirm } = useUI();
+  const { alert } = useUI();
   const router = useRouter();
-  
+
   // Modal states
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [formData, setFormData] = useState<ProductFormData>({
-    sku: '',
-    name: '',
-    description: '',
-    costPrice: '',
-    replacementCost: '',
-    stock: '',
-    minStock: '',
-    categoryId: '',
-    supplierId: '',
-    barcode: '',
-    location: '',
+    sku: "",
+    name: "",
+    description: "",
+    costPrice: "",
+    replacementCost: "",
+    stock: "",
+    minStock: "",
+    categoryId: "",
+    supplierId: "",
+    barcode: "",
+    location: "",
   });
 
   // Movements modal state
   const [movementsModalOpen, setMovementsModalOpen] = useState(false);
-  const [selectedProductForMovements, setSelectedProductForMovements] = useState<Product | null>(null);
-  const [movements, setMovements] = useState<Array<{
-    id: string;
-    type: string;
-    quantity: number;
-    previousStock: number;
-    newStock: number;
-    reason: string;
-    reasonDetails: string | null;
-    userName: string | null;
-    createdAt: string;
-  }>>([]);
+  const [selectedProductForMovements, setSelectedProductForMovements] =
+    useState<Product | null>(null);
+  const [movements, setMovements] = useState<
+    Array<{
+      id: string;
+      type: string;
+      quantity: number;
+      previousStock: number;
+      newStock: number;
+      reason: string;
+      reasonDetails: string | null;
+      userName: string | null;
+      createdAt: string;
+    }>
+  >([]);
   const [movementsLoading, setMovementsLoading] = useState(false);
 
   // Prices modal state
   const [pricesModalOpen, setPricesModalOpen] = useState(false);
-  const [selectedProductForPrices, setSelectedProductForPrices] = useState<Product | null>(null);
+  const [selectedProductForPrices, setSelectedProductForPrices] =
+    useState<Product | null>(null);
 
   // Quick sale modal state
   const [quickSaleModalOpen, setQuickSaleModalOpen] = useState(false);
@@ -99,13 +125,13 @@ export function ProductsClient({
   useEffect(() => {
     const checkCashStatus = async () => {
       try {
-        const res = await fetch('/api/cash/status');
+        const res = await fetch("/api/cash/status");
         if (res.ok) {
           const data = await res.json();
-          setIsCashOpen(data.status === 'OPEN');
+          setIsCashOpen(data.status === "OPEN");
         }
       } catch (error) {
-        console.error('Error checking cash status:', error);
+        console.error("Error checking cash status:", error);
       }
     };
     checkCashStatus();
@@ -118,21 +144,22 @@ export function ProductsClient({
   const handleDeleteImage = async (productId: string) => {
     try {
       const response = await fetch(`/api/products/${productId}/image`, {
-        method: 'DELETE',
+        method: "DELETE",
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Error al eliminar imagen');
+        throw new Error(error.error || "Error al eliminar imagen");
       }
 
       router.refresh();
     } catch (error) {
-      console.error('Error deleting image:', error);
+      console.error("Error deleting image:", error);
       await alert({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Error al eliminar imagen',
-        variant: 'error',
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Error al eliminar imagen",
+        variant: "error",
       });
     }
   };
@@ -154,12 +181,12 @@ export function ProductsClient({
       const data = await response.json();
       setMovements(data.movements || []);
     } catch (error) {
-      console.error('Error fetching movements:', error);
+      console.error("Error fetching movements:", error);
       setMovements([]);
       await alert({
-        title: 'Error',
-        description: 'No se pudieron cargar los movimientos del producto',
-        variant: 'error',
+        title: "Error",
+        description: "No se pudieron cargar los movimientos del producto",
+        variant: "error",
       });
     } finally {
       setMovementsLoading(false);
@@ -173,17 +200,17 @@ export function ProductsClient({
 
   const resetForm = () => {
     setFormData({
-      sku: '',
-      name: '',
-      description: '',
-      costPrice: '',
-      replacementCost: '',
-      stock: '',
-      minStock: '',
-      categoryId: '',
-      supplierId: '',
-      barcode: '',
-      location: '',
+      sku: "",
+      name: "",
+      description: "",
+      costPrice: "",
+      replacementCost: "",
+      stock: "",
+      minStock: "",
+      categoryId: "",
+      supplierId: "",
+      barcode: "",
+      location: "",
     });
     setEditingProduct(null);
   };
@@ -194,7 +221,7 @@ export function ProductsClient({
   };
 
   const goToImporter = () => {
-    router.push('/adm/products/import');
+    router.push("/adm/products/import");
   };
 
   const openEditDialog = (product: Product) => {
@@ -202,45 +229,46 @@ export function ProductsClient({
     setFormData({
       sku: product.sku,
       name: product.name,
-      description: product.description || '',
+      description: product.description || "",
       costPrice: product.costPrice.toString(),
       replacementCost: product.replacementCost.toString(),
       stock: product.stock.toString(),
       minStock: product.minStock.toString(),
       categoryId: product.categoryId,
-      supplierId: product.supplierId || '',
-      barcode: product.barcode || '',
-      location: product.location || '',
+      supplierId: product.supplierId || "",
+      barcode: product.barcode || "",
+      location: product.location || "",
     });
     setIsDialogOpen(true);
   };
 
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    
+
     // Prevent double-click
     if (isSubmitting) return;
     setIsSubmitting(true);
-    
+
     const missingFields: string[] = [];
-    if (!formData.name.trim()) missingFields.push('Nombre');
-    if (!formData.categoryId) missingFields.push('Categoría');
-    if (!formData.supplierId) missingFields.push('Proveedor');
-    if (!formData.costPrice.trim()) missingFields.push('Costo');
-    if (!formData.replacementCost.trim()) missingFields.push('Costo de Reposición');
-    if (!formData.stock.trim()) missingFields.push('Stock');
-    if (!formData.minStock.trim()) missingFields.push('Mínimo');
-    
+    if (!formData.name.trim()) missingFields.push("Nombre");
+    if (!formData.categoryId) missingFields.push("Categoría");
+    if (!formData.supplierId) missingFields.push("Proveedor");
+    if (!formData.costPrice.trim()) missingFields.push("Costo");
+    if (!formData.replacementCost.trim())
+      missingFields.push("Costo de Reposición");
+    if (!formData.stock.trim()) missingFields.push("Stock");
+    if (!formData.minStock.trim()) missingFields.push("Mínimo");
+
     if (missingFields.length > 0) {
       await alert({
-        title: 'Error',
-        description: `Campos obligatorios faltantes: ${missingFields.join(', ')}`,
-        variant: 'error',
+        title: "Error",
+        description: `Campos obligatorios faltantes: ${missingFields.join(", ")}`,
+        variant: "error",
       });
       setIsSubmitting(false);
       return;
     }
-    
+
     const payload = {
       ...formData,
       costPrice: parseFloat(formData.costPrice) || 0,
@@ -250,21 +278,23 @@ export function ProductsClient({
     };
 
     try {
-      const url = editingProduct ? `/api/products/${editingProduct.id}` : '/api/products';
-      const method = editingProduct ? 'PUT' : 'POST';
-      
+      const url = editingProduct
+        ? `/api/products/${editingProduct.id}`
+        : "/api/products";
+      const method = editingProduct ? "PUT" : "POST";
+
       const response = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
         const error = await response.json();
         await alert({
-          title: 'Error',
-          description: error.error || 'Error al guardar producto',
-          variant: 'error',
+          title: "Error",
+          description: error.error || "Error al guardar producto",
+          variant: "error",
         });
         setIsSubmitting(false);
         return;
@@ -277,10 +307,10 @@ export function ProductsClient({
       if (formData.imageFile && productId) {
         setIsUploadingImage(true);
         const formDataImage = new FormData();
-        formDataImage.append('file', formData.imageFile);
+        formDataImage.append("file", formData.imageFile);
 
         const imageResponse = await fetch(`/api/products/${productId}/image`, {
-          method: 'POST',
+          method: "POST",
           body: formDataImage,
         });
 
@@ -288,11 +318,11 @@ export function ProductsClient({
 
         if (!imageResponse.ok) {
           const imageError = await imageResponse.json();
-          console.error('Error uploading image:', imageError);
+          console.error("Error uploading image:", imageError);
           await alert({
-            title: 'Advertencia',
-            description: `Producto guardado pero la imagen no se pudo subir: ${imageError.error || 'Error desconocido'}`,
-            variant: 'warning',
+            title: "Advertencia",
+            description: `Producto guardado pero la imagen no se pudo subir: ${imageError.error || "Error desconocido"}`,
+            variant: "warning",
           });
         }
       }
@@ -301,11 +331,11 @@ export function ProductsClient({
       resetForm();
       router.refresh();
     } catch (error) {
-      console.error('Error saving product:', error);
+      console.error("Error saving product:", error);
       await alert({
-        title: 'Error',
-        description: 'Error al guardar producto',
-        variant: 'error',
+        title: "Error",
+        description: "Error al guardar producto",
+        variant: "error",
       });
     } finally {
       setIsSubmitting(false);
@@ -314,68 +344,79 @@ export function ProductsClient({
 
   const isFormValid = () => {
     return (
-      formData.name.trim() !== '' &&
-      formData.categoryId !== '' &&
-      formData.supplierId !== '' &&
-      formData.costPrice.trim() !== '' &&
-      formData.replacementCost.trim() !== '' &&
-      formData.stock.trim() !== '' &&
-      formData.minStock.trim() !== ''
+      formData.name.trim() !== "" &&
+      formData.categoryId !== "" &&
+      formData.supplierId !== "" &&
+      formData.costPrice.trim() !== "" &&
+      formData.replacementCost.trim() !== "" &&
+      formData.stock.trim() !== "" &&
+      formData.minStock.trim() !== ""
     );
   };
 
   const formValid = isFormValid();
 
-  const handleDelete = useCallback(async (product: Product) => {
-    const confirmed = await confirm({
-      title: 'Desactivar Producto',
-      description: `¿Estás seguro de desactivar "${product.name}"?`,
-      confirmText: 'Desactivar',
-      cancelText: 'Cancelar',
-      variant: 'destructive',
-    });
+  const handleDelete = useCallback(
+    async (product: Product) => {
+      try {
+        const response = await fetch(`/api/products/${product.id}`, {
+          method: "DELETE",
+        });
 
-    if (!confirmed) return;
-
-    try {
-      const response = await fetch(`/api/products/${product.id}`, {
-        method: 'DELETE',
-      });
-
-      if (response.ok) {
-        router.refresh();
-      } else {
-        const error = await response.json();
+        if (response.ok) {
+          router.refresh();
+          toast.success(`Producto "${product.name}" desactivado`, {
+            action: {
+              label: "Deshacer",
+              onClick: async () => {
+                try {
+                  await fetch(`/api/products/${product.id}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ isActive: true }),
+                  });
+                  router.refresh();
+                  toast.success("Producto reactivado");
+                } catch {
+                  toast.error("Error al reactivar producto");
+                }
+              },
+            },
+          });
+        } else {
+          const error = await response.json();
+          await alert({
+            title: "Error",
+            description: error.error || "Error al desactivar producto",
+            variant: "error",
+          });
+        }
+      } catch (error) {
+        console.error("Error deleting product:", error);
         await alert({
-          title: 'Error',
-          description: error.error || 'Error al desactivar producto',
-          variant: 'error',
+          title: "Error",
+          description: "Error al desactivar producto",
+          variant: "error",
         });
       }
-    } catch (error) {
-      console.error('Error deleting product:', error);
-      await alert({
-        title: 'Error',
-        description: 'Error al desactivar producto',
-        variant: 'error',
-      });
-    }
-  }, [alert, confirm, router]);
+    },
+    [alert, router],
+  );
 
   const stats: StatItem[] = [
     {
-      label: 'Total',
+      label: "Total",
       value: products.length,
       icon: Boxes,
     },
     {
-      label: 'Stock bajo',
+      label: "Stock bajo",
       value: lowStockCount,
       icon: AlertTriangle,
-      iconColor: lowStockCount > 0 ? '#c2410c' : undefined, // orange-700
+      iconColor: lowStockCount > 0 ? "#c2410c" : undefined, // orange-700
     },
     {
-      label: 'Valor inventario',
+      label: "Valor inventario",
       value: <PriceDisplay value={totalInventoryValue} />,
       icon: DollarSign,
     },
@@ -383,8 +424,8 @@ export function ProductsClient({
 
   const columns: ColumnDef<Product>[] = [
     {
-      accessorKey: 'name',
-      header: 'Producto',
+      accessorKey: "name",
+      header: "Producto",
       cell: ({ row }) => (
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0 overflow-hidden">
@@ -397,7 +438,10 @@ export function ProductsClient({
                 className="w-full h-full object-cover"
               />
             ) : (
-              <Package className="h-4 w-4 text-primary pointer-events-none" aria-hidden="true" />
+              <Package
+                className="h-4 w-4 text-primary pointer-events-none"
+                aria-hidden="true"
+              />
             )}
           </div>
           <div className="flex flex-col min-w-0">
@@ -414,30 +458,35 @@ export function ProductsClient({
       ),
     },
     {
-      accessorKey: 'category.name',
-      header: 'Categoría',
+      accessorKey: "category.name",
+      header: "Categoría",
       cell: ({ row }) =>
         row.original.category ? (
           <Badge
             variant="secondary"
-            style={{ backgroundColor: row.original.category.color || undefined }}
+            style={{
+              backgroundColor: row.original.category.color || undefined,
+            }}
           >
             {row.original.category.name}
           </Badge>
         ) : (
-          '-'
+          "-"
         ),
     },
     {
-      accessorKey: 'stock',
-      header: 'Stock',
+      accessorKey: "stock",
+      header: "Stock",
       cell: ({ row }) => (
-        <StockDisplay stock={row.original.stock} minStock={row.original.minStock} />
+        <StockDisplay
+          stock={row.original.stock}
+          minStock={row.original.minStock}
+        />
       ),
     },
     {
-      accessorKey: 'isActive',
-      header: 'Estado',
+      accessorKey: "isActive",
+      header: "Estado",
       cell: ({ row }) =>
         row.original.isActive ? (
           <Badge
@@ -464,34 +513,37 @@ export function ProductsClient({
           title="Productos"
           description="Gestiona el inventario de productos y servicios"
           primaryAction={{
-            label: 'Nuevo Producto',
+            label: "Nuevo Producto",
             onClick: openCreateDialog,
             icon: Plus,
-            ariaLabel: 'Crear nuevo producto',
+            ariaLabel: "Crear nuevo producto",
           }}
           secondaryActions={[
             {
-              label: 'Inventario',
-              href: '/adm/inventory-counts',
-              variant: 'outline' as const,
+              label: "Inventario",
+              href: "/adm/inventory-counts",
+              variant: "outline" as const,
               icon: RefreshCcw,
-              ariaLabel: 'Ir a operativos de conteo de inventario',
+              ariaLabel: "Ir a operativos de conteo de inventario",
             },
             {
-              label: 'Importar',
+              label: "Importar",
               onClick: goToImporter,
-              variant: 'outline' as const,
+              variant: "outline" as const,
               icon: FileUp,
-              ariaLabel: 'Importar productos desde archivo Excel o CSV',
+              ariaLabel: "Importar productos desde archivo Excel o CSV",
             },
             {
-              label: 'Venta Rápida',
+              label: "Venta Rápida",
               onClick: () => setQuickSaleModalOpen(true),
-              variant: 'default' as const,
+              variant: "default" as const,
               icon: ShoppingCart,
               disabled: isCashOpen === false,
-              title: isCashOpen === false ? 'Debe abrir la caja para realizar ventas' : undefined,
-              ariaLabel: 'Realizar una venta rápida por mostrador',
+              title:
+                isCashOpen === false
+                  ? "Debe abrir la caja para realizar ventas"
+                  : undefined,
+              ariaLabel: "Realizar una venta rápida por mostrador",
             },
           ]}
         />
@@ -507,7 +559,9 @@ export function ProductsClient({
           hideCreateAction
           columns={columns}
           filterFn={productSearchFilter}
-          emptyIcon={<Boxes className="h-12 w-12 mx-auto text-muted-foreground mb-4" />}
+          emptyIcon={
+            <Boxes className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+          }
           emptyMessage="No hay productos creados. Haz clic en 'Nuevo Producto' para crear el primero."
           createButtonText="Producto"
           tableTitle="Listado de Productos"

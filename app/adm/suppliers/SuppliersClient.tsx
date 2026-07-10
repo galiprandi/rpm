@@ -1,12 +1,13 @@
-'use client';
+"use client";
 
-import { useState, useMemo } from 'react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { useUI } from '@/components/ui/UIProvider';
-import { SupplierDialog } from '@/components/suppliers/SupplierDialog';
-import { type SupplierFormData } from '@/components/suppliers/SupplierForm';
-import { Header, CrudAdmin, CrudStats, type StatItem } from '@/components/adm';
+import { useState, useMemo } from "react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { useUI } from "@/components/ui/UIProvider";
+import { toast } from "sonner";
+import { SupplierDialog } from "@/components/suppliers/SupplierDialog";
+import { type SupplierFormData } from "@/components/suppliers/SupplierForm";
+import { Header, CrudAdmin, CrudStats, type StatItem } from "@/components/adm";
 import {
   Truck,
   Pencil,
@@ -17,14 +18,14 @@ import {
   Package,
   Plus,
   CheckCircle2,
-  FileText
-} from 'lucide-react';
-import { type ColumnDef } from '@tanstack/react-table';
+  FileText,
+} from "lucide-react";
+import { type ColumnDef } from "@tanstack/react-table";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
+} from "@/components/ui/tooltip";
 
 interface Supplier {
   id: string;
@@ -42,41 +43,43 @@ interface SuppliersClientProps {
   initialSuppliers: Supplier[];
 }
 
-export default function SuppliersClient({ initialSuppliers }: SuppliersClientProps) {
-  const { alert, confirm } = useUI();
+export default function SuppliersClient({
+  initialSuppliers,
+}: SuppliersClientProps) {
+  const { alert } = useUI();
   const [suppliers, setSuppliers] = useState<Supplier[]>(initialSuppliers);
   const [loading, setLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createForm, setCreateForm] = useState<SupplierFormData>({
-    name: '',
-    contactName: '',
-    phone: '',
-    email: '',
-    address: '',
-    notes: '',
+    name: "",
+    contactName: "",
+    phone: "",
+    email: "",
+    address: "",
+    notes: "",
   });
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editForm, setEditForm] = useState<SupplierFormData>({
-    name: '',
-    contactName: '',
-    phone: '',
-    email: '',
-    address: '',
-    notes: '',
+    name: "",
+    contactName: "",
+    phone: "",
+    email: "",
+    address: "",
+    notes: "",
   });
 
   const fetchSuppliers = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/suppliers?includeInactive=true');
+      const response = await fetch("/api/suppliers?includeInactive=true");
       const data = await response.json();
       if (data.suppliers) {
         setSuppliers(data.suppliers);
       }
     } catch (error) {
-      console.error('Error fetching suppliers:', error);
+      console.error("Error fetching suppliers:", error);
     } finally {
       setLoading(false);
     }
@@ -88,52 +91,60 @@ export default function SuppliersClient({ initialSuppliers }: SuppliersClientPro
 
     setIsSubmitting(true);
     try {
-      const response = await fetch('/api/suppliers', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/suppliers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(createForm),
       });
 
       if (response.ok) {
         setCreateForm({
-          name: '',
-          contactName: '',
-          phone: '',
-          email: '',
-          address: '',
-          notes: '',
+          name: "",
+          contactName: "",
+          phone: "",
+          email: "",
+          address: "",
+          notes: "",
         });
         setIsCreateDialogOpen(false);
         fetchSuppliers();
       }
     } catch (error) {
-      console.error('Error creating supplier:', error);
+      console.error("Error creating supplier:", error);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleDeleteSupplier = async (supplier: Supplier) => {
-    const confirmed = await confirm({
-      title: 'Desactivar Proveedor',
-      description: `¿Estás seguro de desactivar "${supplier.name}"?`,
-      confirmText: 'Desactivar',
-      cancelText: 'Cancelar',
-      variant: 'destructive',
-    });
-
-    if (!confirmed) return;
-
     try {
       const response = await fetch(`/api/suppliers/${supplier.id}`, {
-        method: 'DELETE',
+        method: "DELETE",
       });
 
       if (response.ok) {
         fetchSuppliers();
+        toast.success(`Proveedor "${supplier.name}" desactivado`, {
+          action: {
+            label: "Deshacer",
+            onClick: async () => {
+              try {
+                await fetch(`/api/suppliers/${supplier.id}`, {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ isActive: true }),
+                });
+                fetchSuppliers();
+                toast.success("Proveedor reactivado");
+              } catch {
+                toast.error("Error al reactivar proveedor");
+              }
+            },
+          },
+        });
       }
     } catch (error) {
-      console.error('Error deleting supplier:', error);
+      console.error("Error deleting supplier:", error);
     }
   };
 
@@ -141,11 +152,11 @@ export default function SuppliersClient({ initialSuppliers }: SuppliersClientPro
     setEditingSupplier(supplier);
     setEditForm({
       name: supplier.name,
-      contactName: supplier.contactName || '',
-      phone: supplier.phone || '',
-      email: supplier.email || '',
-      address: supplier.address || '',
-      notes: supplier.notes || '',
+      contactName: supplier.contactName || "",
+      phone: supplier.phone || "",
+      email: supplier.email || "",
+      address: supplier.address || "",
+      notes: supplier.notes || "",
     });
     setIsDialogOpen(true);
   };
@@ -158,8 +169,8 @@ export default function SuppliersClient({ initialSuppliers }: SuppliersClientPro
     setIsSubmitting(true);
     try {
       const response = await fetch(`/api/suppliers/${editingSupplier.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(editForm),
       });
 
@@ -170,17 +181,17 @@ export default function SuppliersClient({ initialSuppliers }: SuppliersClientPro
       } else {
         const error = await response.json();
         await alert({
-          title: 'Error',
-          description: error.error || 'Error al actualizar proveedor',
-          variant: 'error',
+          title: "Error",
+          description: error.error || "Error al actualizar proveedor",
+          variant: "error",
         });
       }
     } catch (error) {
-      console.error('Error updating supplier:', error);
+      console.error("Error updating supplier:", error);
       await alert({
-        title: 'Error',
-        description: 'Error al actualizar proveedor',
-        variant: 'error',
+        title: "Error",
+        description: "Error al actualizar proveedor",
+        variant: "error",
       });
     } finally {
       setIsSubmitting(false);
@@ -189,18 +200,18 @@ export default function SuppliersClient({ initialSuppliers }: SuppliersClientPro
 
   const stats: StatItem[] = [
     {
-      label: 'Total',
+      label: "Total",
       value: suppliers.length,
       icon: Building2,
     },
     {
-      label: 'Activos',
+      label: "Activos",
       value: suppliers.filter((s) => s.isActive).length,
       icon: CheckCircle2,
-      iconColor: '#047857', // emerald-700
+      iconColor: "#047857", // emerald-700
     },
     {
-      label: 'Con productos',
+      label: "Con productos",
       value: suppliers.filter((s) => s.productCount > 0).length,
       icon: Package,
     },
@@ -209,65 +220,84 @@ export default function SuppliersClient({ initialSuppliers }: SuppliersClientPro
   const columns = useMemo<ColumnDef<Supplier>[]>(
     () => [
       {
-        accessorKey: 'name',
-        header: 'Nombre',
+        accessorKey: "name",
+        header: "Nombre",
         cell: ({ row }) => (
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0">
-              <Truck className="h-4 w-4 text-primary pointer-events-none" aria-hidden="true" />
+              <Truck
+                className="h-4 w-4 text-primary pointer-events-none"
+                aria-hidden="true"
+              />
             </div>
-            <span className="font-semibold tracking-tight">{row.original.name}</span>
+            <span className="font-semibold tracking-tight">
+              {row.original.name}
+            </span>
           </div>
         ),
       },
       {
-        accessorKey: 'contactName',
-        header: 'Contacto',
+        accessorKey: "contactName",
+        header: "Contacto",
         cell: ({ row }) => (
           <span className="text-muted-foreground text-sm">
-            {row.original.contactName || '-'}
+            {row.original.contactName || "-"}
           </span>
         ),
       },
       {
-        accessorKey: 'phone',
-        header: 'Teléfono',
+        accessorKey: "phone",
+        header: "Teléfono",
         cell: ({ row }) => (
           <div className="flex items-center gap-1 text-sm font-mono">
-            {row.original.phone && <Phone className="h-3 w-3 text-muted-foreground pointer-events-none" aria-hidden="true" />}
-            <span>{row.original.phone || '-'}</span>
+            {row.original.phone && (
+              <Phone
+                className="h-3 w-3 text-muted-foreground pointer-events-none"
+                aria-hidden="true"
+              />
+            )}
+            <span>{row.original.phone || "-"}</span>
           </div>
         ),
       },
       {
-        accessorKey: 'email',
-        header: 'Email',
+        accessorKey: "email",
+        header: "Email",
         cell: ({ row }) => (
           <div className="flex items-center gap-1 text-sm font-mono">
-            {row.original.email && <Mail className="h-3 w-3 text-muted-foreground pointer-events-none" aria-hidden="true" />}
-            <span>{row.original.email || '-'}</span>
+            {row.original.email && (
+              <Mail
+                className="h-3 w-3 text-muted-foreground pointer-events-none"
+                aria-hidden="true"
+              />
+            )}
+            <span>{row.original.email || "-"}</span>
           </div>
         ),
       },
       {
-        accessorKey: 'productCount',
-        header: 'Productos',
+        accessorKey: "productCount",
+        header: "Productos",
         cell: ({ row }) => <span>{row.original.productCount}</span>,
       },
       {
-        accessorKey: 'isActive',
-        header: 'Estado',
+        accessorKey: "isActive",
+        header: "Estado",
         cell: ({ row }) => (
           <Badge
-            variant={row.original.isActive ? 'outline' : 'secondary'}
-            className={row.original.isActive ? 'text-emerald-700 border-emerald-200 bg-emerald-50' : ''}
+            variant={row.original.isActive ? "outline" : "secondary"}
+            className={
+              row.original.isActive
+                ? "text-emerald-700 border-emerald-200 bg-emerald-50"
+                : ""
+            }
           >
-            {row.original.isActive ? 'Activo' : 'Inactivo'}
+            {row.original.isActive ? "Activo" : "Inactivo"}
           </Badge>
         ),
       },
     ],
-    []
+    [],
   );
 
   return (
@@ -277,17 +307,17 @@ export default function SuppliersClient({ initialSuppliers }: SuppliersClientPro
         description="Gestiona los proveedores de productos y repuestos"
         secondaryActions={[
           {
-            label: 'Comprobantes',
-            href: '/adm/purchase-vouchers',
-            variant: 'outline',
+            label: "Comprobantes",
+            href: "/adm/purchase-vouchers",
+            variant: "outline",
             icon: FileText,
           },
         ]}
         primaryAction={{
-          label: 'Nuevo Proveedor',
+          label: "Nuevo Proveedor",
           onClick: () => setIsCreateDialogOpen(true),
           icon: Plus,
-          ariaLabel: 'Crear nuevo proveedor',
+          ariaLabel: "Crear nuevo proveedor",
         }}
       />
 
@@ -301,7 +331,9 @@ export default function SuppliersClient({ initialSuppliers }: SuppliersClientPro
         onCreate={() => setIsCreateDialogOpen(true)}
         hideCreateAction
         columns={columns}
-        emptyIcon={<Truck className="h-12 w-12 mx-auto text-muted-foreground/20 mb-4" />}
+        emptyIcon={
+          <Truck className="h-12 w-12 mx-auto text-muted-foreground/20 mb-4" />
+        }
         emptyMessage="No hay proveedores creados. Haz clic en 'Nuevo Proveedor' para crear el primero."
         createButtonText="Proveedor"
         tableTitle="Listado de Proveedores"
@@ -316,7 +348,10 @@ export default function SuppliersClient({ initialSuppliers }: SuppliersClientPro
                   onClick={() => openEditDialog(supplier)}
                   aria-label="Editar proveedor"
                 >
-                  <Pencil className="h-4 w-4 pointer-events-none" aria-hidden="true" />
+                  <Pencil
+                    className="h-4 w-4 pointer-events-none"
+                    aria-hidden="true"
+                  />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Editar proveedor</TooltipContent>
@@ -332,13 +367,16 @@ export default function SuppliersClient({ initialSuppliers }: SuppliersClientPro
                   disabled={supplier.productCount > 0}
                   aria-label="Eliminar proveedor"
                 >
-                  <Trash2 className="h-4 w-4 pointer-events-none" aria-hidden="true" />
+                  <Trash2
+                    className="h-4 w-4 pointer-events-none"
+                    aria-hidden="true"
+                  />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
                 {supplier.productCount > 0
-                  ? 'No se puede eliminar un proveedor con productos asociados'
-                  : 'Eliminar proveedor'}
+                  ? "No se puede eliminar un proveedor con productos asociados"
+                  : "Eliminar proveedor"}
               </TooltipContent>
             </Tooltip>
           </div>

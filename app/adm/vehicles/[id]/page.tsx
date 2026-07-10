@@ -43,6 +43,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { VehicleForm } from "@/components/vehicles/VehicleForm";
+import { useUI } from "@/components/ui/UIProvider";
 
 interface WorkOrder {
   id: string;
@@ -79,6 +80,7 @@ interface VehicleDetail {
 export default function VehicleDetailPage() {
   const { id: vehicleId } = useParams();
   const router = useRouter();
+  const { alert, confirm } = useUI();
   const [vehicle, setVehicle] = useState<VehicleDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -105,7 +107,14 @@ export default function VehicleDetailPage() {
   }, [fetchVehicle]);
 
   const handleDelete = async () => {
-    if (!confirm("¿Está seguro de que desea eliminar este vehículo?")) return;
+    const confirmed = await confirm({
+      title: "Eliminar vehículo",
+      description: "¿Está seguro de que desea eliminar este vehículo?",
+      confirmText: "Eliminar",
+      cancelText: "Cancelar",
+      variant: "destructive",
+    });
+    if (!confirmed) return;
     try {
       const res = await fetch(`/api/vehicles/${vehicleId}`, {
         method: "DELETE",
@@ -114,11 +123,19 @@ export default function VehicleDetailPage() {
         router.push("/adm/customers");
       } else {
         const error = await res.json();
-        alert(error.error || "Error al eliminar el vehículo");
+        await alert({
+          title: "Error",
+          description: error.error || "Error al eliminar el vehículo",
+          variant: "error",
+        });
       }
     } catch (error) {
       console.error("Error deleting vehicle:", error);
-      alert("Error al eliminar el vehículo");
+      await alert({
+        title: "Error",
+        description: "Error al eliminar el vehículo",
+        variant: "error",
+      });
     }
   };
 
@@ -571,7 +588,11 @@ export default function VehicleDetailPage() {
                 fetchVehicle();
               } catch (error) {
                 console.error("Error updating vehicle:", error);
-                alert("Error al actualizar vehículo");
+                await alert({
+                  title: "Error",
+                  description: "Error al actualizar vehículo",
+                  variant: "error",
+                });
               } finally {
                 setIsEditing(false);
               }

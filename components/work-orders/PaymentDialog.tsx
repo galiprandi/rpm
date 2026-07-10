@@ -1,26 +1,27 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { ModalBase } from '@/components/ui/ModalBase';
-import { useUI } from '@/components/ui/UIProvider';
+import * as React from "react";
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { ModalBase } from "@/components/ui/ModalBase";
+import { useUI } from "@/components/ui/UIProvider";
+import { toast } from "sonner";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { DollarSign, Plus, Trash2, CreditCard, FileText } from 'lucide-react';
+} from "@/components/ui/select";
+import { DollarSign, Plus, Trash2, CreditCard, FileText } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
+} from "@/components/ui/tooltip";
 
 interface PaymentMethod {
   id: string;
@@ -56,9 +57,9 @@ export function PaymentDialog({
   const { alert, confirm } = useUI();
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
-  const [paymentMethodId, setPaymentMethodId] = useState('');
-  const [amount, setAmount] = useState('');
-  const [notes, setNotes] = useState('');
+  const [paymentMethodId, setPaymentMethodId] = useState("");
+  const [amount, setAmount] = useState("");
+  const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [totalPaid, setTotalPaid] = useState(0);
   const [isCashOpen, setIsCashOpen] = useState<boolean | null>(null);
@@ -69,14 +70,18 @@ export function PaymentDialog({
 
     const fetchData = async () => {
       // Fetch active payment methods
-      const methodsRes = await fetch('/api/payment-methods');
+      const methodsRes = await fetch("/api/payment-methods");
       if (methodsRes.ok) {
         const data = await methodsRes.json();
-        setPaymentMethods(data.paymentMethods?.filter((m: PaymentMethod) => m.isActive) || []);
+        setPaymentMethods(
+          data.paymentMethods?.filter((m: PaymentMethod) => m.isActive) || [],
+        );
       }
 
       // Fetch existing payments
-      const paymentsRes = await fetch(`/api/work-orders/${workOrderId}/payments`);
+      const paymentsRes = await fetch(
+        `/api/work-orders/${workOrderId}/payments`,
+      );
       if (paymentsRes.ok) {
         const data = await paymentsRes.json();
         setPayments(data.payments || []);
@@ -84,10 +89,10 @@ export function PaymentDialog({
       }
 
       // Check cash status
-      const cashRes = await fetch('/api/cash/status');
+      const cashRes = await fetch("/api/cash/status");
       if (cashRes.ok) {
         const data = await cashRes.json();
-        setIsCashOpen(data.status === 'OPEN');
+        setIsCashOpen(data.status === "OPEN");
       }
     };
 
@@ -98,7 +103,6 @@ export function PaymentDialog({
   useEffect(() => {
     const remaining = Math.max(0, workOrderTotal - totalPaid);
     if (remaining > 0 && isOpen) {
-
       setAmount(remaining.toString());
     }
   }, [totalPaid, workOrderTotal, isOpen]);
@@ -111,30 +115,26 @@ export function PaymentDialog({
 
     if (!paymentMethodId || !amount || parseFloat(amount) <= 0) {
       await alert({
-        title: 'Error',
-        description: 'Seleccione un método de pago e ingrese un monto válido',
-        variant: 'error',
+        title: "Error",
+        description: "Seleccione un método de pago e ingrese un monto válido",
+        variant: "error",
       });
       return;
     }
 
     const paymentAmount = parseFloat(amount);
     if (paymentAmount > remainingAmount) {
-      const confirmed = await confirm({
-        title: 'Monto excede el pendiente',
-        description: `El monto ingresado ($${paymentAmount.toFixed(2)}) excede el saldo pendiente ($${remainingAmount.toFixed(2)}). ¿Desea continuar?`,
-        confirmText: 'Continuar',
-        cancelText: 'Cancelar',
-        variant: 'destructive',
-      });
-      if (!confirmed) return;
+      toast.error(
+        `El monto excede el saldo pendiente ($${remainingAmount.toFixed(2)})`,
+      );
+      return;
     }
 
     setLoading(true);
     try {
       const res = await fetch(`/api/work-orders/${workOrderId}/payments`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           paymentMethodId,
           amount: paymentAmount,
@@ -146,17 +146,17 @@ export function PaymentDialog({
         const data = await res.json();
         setPayments(data.payments || []);
         setTotalPaid(data.totalPaid || 0);
-        
+
         // Reset form
-        setPaymentMethodId('');
-        setAmount('');
-        setNotes('');
+        setPaymentMethodId("");
+        setAmount("");
+        setNotes("");
 
         if (data.isFullyPaid) {
           await alert({
-            title: 'Orden pagada completamente',
-            description: 'El total de la orden ha sido pagado',
-            variant: 'success',
+            title: "Orden pagada completamente",
+            description: "El total de la orden ha sido pagado",
+            variant: "success",
           });
         }
 
@@ -164,17 +164,17 @@ export function PaymentDialog({
       } else {
         const error = await res.json();
         await alert({
-          title: 'Error',
-          description: error.error || 'No se pudo registrar el pago',
-          variant: 'error',
+          title: "Error",
+          description: error.error || "No se pudo registrar el pago",
+          variant: "error",
         });
       }
     } catch (error) {
-      console.error('Error registering payment:', error);
+      console.error("Error registering payment:", error);
       await alert({
-        title: 'Error',
-        description: 'Error al registrar el pago',
-        variant: 'error',
+        title: "Error",
+        description: "Error al registrar el pago",
+        variant: "error",
       });
     } finally {
       setLoading(false);
@@ -183,42 +183,47 @@ export function PaymentDialog({
 
   const handleDeletePayment = async (payment: Payment) => {
     const confirmed = await confirm({
-      title: 'Eliminar pago',
+      title: "Eliminar pago",
       description: `¿Eliminar el pago de $${Number(payment.amount).toFixed(2)}?`,
-      confirmText: 'Eliminar',
-      cancelText: 'Cancelar',
-      variant: 'destructive',
+      confirmText: "Eliminar",
+      cancelText: "Cancelar",
+      variant: "destructive",
     });
 
     if (!confirmed) return;
 
     try {
-      const res = await fetch(`/api/work-orders/${workOrderId}/payments/${payment.id}`, {
-        method: 'DELETE',
-      });
+      const res = await fetch(
+        `/api/work-orders/${workOrderId}/payments/${payment.id}`,
+        {
+          method: "DELETE",
+        },
+      );
 
       if (res.ok) {
         // Refresh payments
-        const paymentsRes = await fetch(`/api/work-orders/${workOrderId}/payments`);
+        const paymentsRes = await fetch(
+          `/api/work-orders/${workOrderId}/payments`,
+        );
         if (paymentsRes.ok) {
           const data = await paymentsRes.json();
           setPayments(data.payments || []);
           setTotalPaid(data.totalPaid || 0);
         }
-        
+
         await alert({
-          title: 'Eliminado',
-          description: 'Pago eliminado correctamente',
-          variant: 'success',
+          title: "Eliminado",
+          description: "Pago eliminado correctamente",
+          variant: "success",
         });
         onPaymentRegistered?.();
       }
     } catch (error) {
-      console.error('Error deleting payment:', error);
+      console.error("Error deleting payment:", error);
       await alert({
-        title: 'Error',
-        description: 'No se pudo eliminar el pago',
-        variant: 'error',
+        title: "Error",
+        description: "No se pudo eliminar el pago",
+        variant: "error",
       });
     }
   };
@@ -235,17 +240,23 @@ export function PaymentDialog({
         <div className="bg-muted p-4 rounded-lg">
           <div className="flex justify-between items-center mb-2">
             <span className="text-sm text-muted-foreground">Total OT:</span>
-            <span className="font-medium">${Number(workOrderTotal).toFixed(2)}</span>
+            <span className="font-medium">
+              ${Number(workOrderTotal).toFixed(2)}
+            </span>
           </div>
           <div className="flex justify-between items-center mb-2">
             <span className="text-sm text-muted-foreground">Pagado:</span>
-            <span className="font-medium text-emerald-600">${totalPaid.toFixed(2)}</span>
+            <span className="font-medium text-emerald-600">
+              ${totalPaid.toFixed(2)}
+            </span>
           </div>
           <div className="flex justify-between items-center pt-2 border-t">
             <span className="text-sm font-medium">
-              {isFullyPaid ? 'Pagado completamente' : 'Pendiente:'}
+              {isFullyPaid ? "Pagado completamente" : "Pendiente:"}
             </span>
-            <span className={`font-bold ${isFullyPaid ? 'text-emerald-600' : 'text-orange-600'}`}>
+            <span
+              className={`font-bold ${isFullyPaid ? "text-emerald-600" : "text-orange-600"}`}
+            >
               ${remainingAmount.toFixed(2)}
             </span>
           </div>
@@ -256,13 +267,19 @@ export function PaymentDialog({
           <form onSubmit={handleSubmit} className="space-y-4">
             {isCashOpen === false && (
               <div className="p-3 bg-amber-50 border border-amber-200 rounded-md text-amber-800 text-sm">
-                <strong>Caja cerrada:</strong> Debe abrir la caja para poder registrar pagos.
+                <strong>Caja cerrada:</strong> Debe abrir la caja para poder
+                registrar pagos.
               </div>
             )}
             <div className="space-y-2">
-              <Label htmlFor="paymentMethod" required>Método de Pago</Label>
+              <Label htmlFor="paymentMethod" required>
+                Método de Pago
+              </Label>
               <div className="relative">
-                <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" aria-hidden="true" />
+                <CreditCard
+                  className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10"
+                  aria-hidden="true"
+                />
                 <Select
                   value={paymentMethodId}
                   onValueChange={setPaymentMethodId}
@@ -271,20 +288,25 @@ export function PaymentDialog({
                     <SelectValue placeholder="Seleccione método de pago" />
                   </SelectTrigger>
                   <SelectContent>
-                  {paymentMethods.map((method) => (
-                    <SelectItem key={method.id} value={method.id}>
-                      {method.name}
-                    </SelectItem>
-                  ))}
+                    {paymentMethods.map((method) => (
+                      <SelectItem key={method.id} value={method.id}>
+                        {method.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="amount" required>Monto</Label>
+              <Label htmlFor="amount" required>
+                Monto
+              </Label>
               <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+                <DollarSign
+                  className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none"
+                  aria-hidden="true"
+                />
                 <Input
                   id="amount"
                   type="number"
@@ -307,7 +329,10 @@ export function PaymentDialog({
             <div className="space-y-2">
               <Label htmlFor="notes">Notas / Referencia</Label>
               <div className="relative">
-                <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+                <FileText
+                  className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none"
+                  aria-hidden="true"
+                />
                 <Input
                   id="notes"
                   value={notes}
@@ -318,14 +343,20 @@ export function PaymentDialog({
               </div>
             </div>
 
-            <Button 
-              type="submit" 
-              disabled={loading || !paymentMethodId || !amount || isCashOpen === false}
+            <Button
+              type="submit"
+              disabled={
+                loading || !paymentMethodId || !amount || isCashOpen === false
+              }
               className="w-full"
-              title={isCashOpen === false ? 'Debe abrir la caja para registrar pagos' : undefined}
+              title={
+                isCashOpen === false
+                  ? "Debe abrir la caja para registrar pagos"
+                  : undefined
+              }
             >
               <Plus className="h-4 w-4 mr-2" />
-              {loading ? 'Registrando...' : 'Registrar Pago'}
+              {loading ? "Registrando..." : "Registrar Pago"}
             </Button>
           </form>
         )}
@@ -343,16 +374,22 @@ export function PaymentDialog({
                   >
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="font-medium">${Number(payment.amount).toFixed(2)}</span>
+                        <span className="font-medium">
+                          ${Number(payment.amount).toFixed(2)}
+                        </span>
                         <span className="text-xs text-muted-foreground">
                           {payment.paymentMethod.name}
                         </span>
                       </div>
                       {payment.notes && (
-                        <p className="text-xs text-muted-foreground">{payment.notes}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {payment.notes}
+                        </p>
                       )}
                       <p className="text-xs text-muted-foreground">
-                        {new Date(payment.createdAt).toLocaleDateString('es-AR')}
+                        {new Date(payment.createdAt).toLocaleDateString(
+                          "es-AR",
+                        )}
                       </p>
                     </div>
                     <Tooltip>

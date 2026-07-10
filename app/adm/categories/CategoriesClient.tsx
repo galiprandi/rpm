@@ -1,19 +1,28 @@
-'use client';
+"use client";
 
-import { useState, useMemo } from 'react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { useUI } from '@/components/ui/UIProvider';
-import { CategoryDialog } from '@/components/categories/CategoryDialog';
-import { type CategoryFormData } from '@/components/categories/CategoryForm';
-import { Header, CrudAdmin, CrudStats, type StatItem } from '@/components/adm';
-import { Folder, Pencil, Trash2, Package, Layers, Plus, CheckCircle2 } from 'lucide-react';
-import { type ColumnDef } from '@tanstack/react-table';
+import { useState, useMemo } from "react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { useUI } from "@/components/ui/UIProvider";
+import { toast } from "sonner";
+import { CategoryDialog } from "@/components/categories/CategoryDialog";
+import { type CategoryFormData } from "@/components/categories/CategoryForm";
+import { Header, CrudAdmin, CrudStats, type StatItem } from "@/components/adm";
+import {
+  Folder,
+  Pencil,
+  Trash2,
+  Package,
+  Layers,
+  Plus,
+  CheckCircle2,
+} from "lucide-react";
+import { type ColumnDef } from "@tanstack/react-table";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
+} from "@/components/ui/tooltip";
 
 interface Category {
   id: string;
@@ -30,36 +39,38 @@ interface CategoriesClientProps {
   initialCategories: Category[];
 }
 
-export default function CategoriesClient({ initialCategories }: CategoriesClientProps) {
-  const { alert, confirm } = useUI();
+export default function CategoriesClient({
+  initialCategories,
+}: CategoriesClientProps) {
+  const { alert } = useUI();
   const [categories, setCategories] = useState<Category[]>(initialCategories);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [createForm, setCreateForm] = useState<CategoryFormData>({
-    name: '',
-    description: '',
+    name: "",
+    description: "",
     defaultMarginPercent: 40,
-    color: '',
+    color: "",
   });
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editForm, setEditForm] = useState<CategoryFormData>({
-    name: '',
-    description: '',
+    name: "",
+    description: "",
     defaultMarginPercent: 40,
-    color: '',
+    color: "",
   });
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch('/api/categories?includeInactive=true');
+      const response = await fetch("/api/categories?includeInactive=true");
       const data = await response.json();
       if (data.categories) {
         setCategories(data.categories);
       }
     } catch (error) {
-      console.error('Error fetching categories:', error);
+      console.error("Error fetching categories:", error);
     } finally {
       setLoading(false);
     }
@@ -70,35 +81,35 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
 
     setSaving(true);
     try {
-      const response = await fetch('/api/categories', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(createForm),
       });
 
       if (response.ok) {
         setCreateForm({
-          name: '',
-          description: '',
+          name: "",
+          description: "",
           defaultMarginPercent: 40,
-          color: '',
+          color: "",
         });
         setIsCreateDialogOpen(false);
         fetchCategories();
       } else {
         const error = await response.json();
         await alert({
-          title: 'Error',
-          description: error.error || 'Error al crear categoría',
-          variant: 'error',
+          title: "Error",
+          description: error.error || "Error al crear categoría",
+          variant: "error",
         });
       }
     } catch (error) {
-      console.error('Error creating category:', error);
+      console.error("Error creating category:", error);
       await alert({
-        title: 'Error',
-        description: 'Error al crear categoría',
-        variant: 'error',
+        title: "Error",
+        description: "Error al crear categoría",
+        variant: "error",
       });
     } finally {
       setSaving(false);
@@ -106,26 +117,34 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
   };
 
   const handleDeleteCategory = async (category: Category) => {
-    const confirmed = await confirm({
-      title: 'Desactivar Categoría',
-      description: `¿Estás seguro de desactivar "${category.name}"?`,
-      confirmText: 'Desactivar',
-      cancelText: 'Cancelar',
-      variant: 'destructive',
-    });
-
-    if (!confirmed) return;
-
     try {
       const response = await fetch(`/api/categories/${category.id}`, {
-        method: 'DELETE',
+        method: "DELETE",
       });
 
       if (response.ok) {
         fetchCategories();
+        toast.success(`Categoría "${category.name}" desactivada`, {
+          action: {
+            label: "Deshacer",
+            onClick: async () => {
+              try {
+                await fetch(`/api/categories/${category.id}`, {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ isActive: true }),
+                });
+                fetchCategories();
+                toast.success("Categoría reactivada");
+              } catch {
+                toast.error("Error al reactivar categoría");
+              }
+            },
+          },
+        });
       }
     } catch (error) {
-      console.error('Error deleting category:', error);
+      console.error("Error deleting category:", error);
     }
   };
 
@@ -133,9 +152,9 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
     setEditingCategory(category);
     setEditForm({
       name: category.name,
-      description: category.description || '',
+      description: category.description || "",
       defaultMarginPercent: category.defaultMarginPercent,
-      color: category.color || '',
+      color: category.color || "",
     });
     setIsDialogOpen(true);
   };
@@ -147,8 +166,8 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
     setSaving(true);
     try {
       const response = await fetch(`/api/categories/${editingCategory.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(editForm),
       });
 
@@ -159,17 +178,17 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
       } else {
         const error = await response.json();
         await alert({
-          title: 'Error',
-          description: error.error || 'Error al actualizar categoría',
-          variant: 'error',
+          title: "Error",
+          description: error.error || "Error al actualizar categoría",
+          variant: "error",
         });
       }
     } catch (error) {
-      console.error('Error updating category:', error);
+      console.error("Error updating category:", error);
       await alert({
-        title: 'Error',
-        description: 'Error al actualizar categoría',
-        variant: 'error',
+        title: "Error",
+        description: "Error al actualizar categoría",
+        variant: "error",
       });
     } finally {
       setSaving(false);
@@ -178,18 +197,18 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
 
   const stats: StatItem[] = [
     {
-      label: 'Total',
+      label: "Total",
       value: categories.length,
       icon: Layers,
     },
     {
-      label: 'Activas',
+      label: "Activas",
       value: categories.filter((c) => c.isActive).length,
       icon: CheckCircle2,
-      iconColor: '#047857', // emerald-700
+      iconColor: "#047857", // emerald-700
     },
     {
-      label: 'Productos',
+      label: "Productos",
       value: categories.reduce((acc, c) => acc + c.productCount, 0),
       icon: Package,
     },
@@ -198,37 +217,46 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
   const columns = useMemo<ColumnDef<Category>[]>(
     () => [
       {
-        accessorKey: 'name',
-        header: 'Nombre',
+        accessorKey: "name",
+        header: "Nombre",
         cell: ({ row }) => (
           <div className="flex items-center gap-3">
             <div
               className="w-8 h-8 rounded-lg shadow-sm border border-primary/20 flex items-center justify-center shrink-0"
-              style={{ backgroundColor: row.original.color || 'var(--primary)' }}
+              style={{
+                backgroundColor: row.original.color || "var(--primary)",
+              }}
             >
-              <Folder className="h-4 w-4 text-white drop-shadow-sm pointer-events-none" aria-hidden="true" />
+              <Folder
+                className="h-4 w-4 text-white drop-shadow-sm pointer-events-none"
+                aria-hidden="true"
+              />
             </div>
-            <span className="font-semibold tracking-tight">{row.original.name}</span>
+            <span className="font-semibold tracking-tight">
+              {row.original.name}
+            </span>
           </div>
         ),
       },
       {
-        accessorKey: 'description',
-        header: 'Descripción',
+        accessorKey: "description",
+        header: "Descripción",
         cell: ({ row }) => (
           <span className="text-muted-foreground text-sm line-clamp-1">
-            {row.original.description || '-'}
+            {row.original.description || "-"}
           </span>
         ),
       },
       {
-        accessorKey: 'productCount',
-        header: 'Productos',
-        cell: ({ row }) => <span className="font-mono">{row.original.productCount}</span>,
+        accessorKey: "productCount",
+        header: "Productos",
+        cell: ({ row }) => (
+          <span className="font-mono">{row.original.productCount}</span>
+        ),
       },
       {
-        accessorKey: 'defaultMarginPercent',
-        header: 'Margen',
+        accessorKey: "defaultMarginPercent",
+        header: "Margen",
         cell: ({ row }) => (
           <Badge variant="secondary" className="font-mono">
             {row.original.defaultMarginPercent}%
@@ -236,19 +264,23 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
         ),
       },
       {
-        accessorKey: 'isActive',
-        header: 'Estado',
+        accessorKey: "isActive",
+        header: "Estado",
         cell: ({ row }) => (
           <Badge
-            variant={row.original.isActive ? 'outline' : 'secondary'}
-            className={row.original.isActive ? 'text-emerald-700 border-emerald-200 bg-emerald-50' : ''}
+            variant={row.original.isActive ? "outline" : "secondary"}
+            className={
+              row.original.isActive
+                ? "text-emerald-700 border-emerald-200 bg-emerald-50"
+                : ""
+            }
           >
-            {row.original.isActive ? 'Activa' : 'Inactiva'}
+            {row.original.isActive ? "Activa" : "Inactiva"}
           </Badge>
         ),
       },
     ],
-    []
+    [],
   );
 
   return (
@@ -257,10 +289,10 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
         title="Categorías"
         description="Gestiona las categorías de productos"
         primaryAction={{
-          label: 'Nueva Categoría',
+          label: "Nueva Categoría",
           onClick: () => setIsCreateDialogOpen(true),
           icon: Plus,
-          ariaLabel: 'Crear nueva categoría',
+          ariaLabel: "Crear nueva categoría",
         }}
       />
 
@@ -275,7 +307,10 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
         hideCreateAction
         columns={columns}
         emptyIcon={
-          <Package className="h-12 w-12 mx-auto text-muted-foreground/20 mb-4" aria-hidden="true" />
+          <Package
+            className="h-12 w-12 mx-auto text-muted-foreground/20 mb-4"
+            aria-hidden="true"
+          />
         }
         emptyMessage="No hay categorías creadas. Haz clic en 'Nueva Categoría' para crear la primera."
         createButtonText="Categoría"

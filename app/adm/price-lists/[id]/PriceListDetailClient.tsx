@@ -1,25 +1,35 @@
-'use client';
+"use client";
 
-import { useState, useCallback } from 'react';
-import { useParams } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { DataTable } from '@/components/ui/data-table';
-import { ColumnDef } from '@tanstack/react-table';
-import { Plus, Trash2, AlertTriangle, Percent, DollarSign, Calculator, Search, Package } from 'lucide-react';
-import { Header, StatItem, CrudStats } from '@/components/adm';
-import { ModalBase, ModalBaseFooter } from '@/components/ui/ModalBase';
-import { SearchableSelect } from '@/components/ui/SearchableSelect';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useUI } from '@/components/ui/UIProvider';
+import { useState, useCallback } from "react";
+import { useParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { DataTable } from "@/components/ui/data-table";
+import { ColumnDef } from "@tanstack/react-table";
+import {
+  Plus,
+  Trash2,
+  AlertTriangle,
+  Percent,
+  DollarSign,
+  Calculator,
+  Search,
+  Package,
+} from "lucide-react";
+import { Header, StatItem, CrudStats } from "@/components/adm";
+import { ModalBase, ModalBaseFooter } from "@/components/ui/ModalBase";
+import { SearchableSelect } from "@/components/ui/SearchableSelect";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useUI } from "@/components/ui/UIProvider";
+import { toast } from "sonner";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { PriceDisplay } from '@/components/ui/price-display';
+} from "@/components/ui/tooltip";
+import { PriceDisplay } from "@/components/ui/price-display";
 
 interface PriceListItem {
   id: string;
@@ -55,27 +65,29 @@ interface PriceListDetailClientProps {
   initialPriceList: PriceListDetail;
 }
 
-export default function PriceListDetailClient({ initialPriceList }: PriceListDetailClientProps) {
+export default function PriceListDetailClient({
+  initialPriceList,
+}: PriceListDetailClientProps) {
   const params = useParams();
   const priceListId = params.id as string;
-  const { alert, confirm } = useUI();
+  const { alert } = useUI();
 
   const [priceList, setPriceList] = useState<PriceListDetail>(initialPriceList);
   const [loading, setLoading] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
-  const [selectedProduct, setSelectedProduct] = useState<string>('');
-  const [overrideMargin, setOverrideMargin] = useState<string>('');
-  const [fixedPrice, setFixedPrice] = useState<string>('');
+  const [selectedProduct, setSelectedProduct] = useState<string>("");
+  const [overrideMargin, setOverrideMargin] = useState<string>("");
+  const [fixedPrice, setFixedPrice] = useState<string>("");
 
   const fetchPriceList = useCallback(async () => {
     try {
       const response = await fetch(`/api/price-lists/${priceListId}`);
-      if (!response.ok) throw new Error('Failed to fetch');
+      if (!response.ok) throw new Error("Failed to fetch");
       const data = await response.json();
       setPriceList(data.priceList);
     } catch (error) {
-      console.error('Error fetching price list:', error);
+      console.error("Error fetching price list:", error);
     } finally {
       setLoading(false);
     }
@@ -83,83 +95,79 @@ export default function PriceListDetailClient({ initialPriceList }: PriceListDet
 
   const fetchProducts = useCallback(async () => {
     try {
-      const response = await fetch('/api/products');
-      if (!response.ok) throw new Error('Failed to fetch products');
+      const response = await fetch("/api/products");
+      if (!response.ok) throw new Error("Failed to fetch products");
       const data = await response.json();
       setProducts(data.products || []);
     } catch (error) {
-      console.error('Error fetching products:', error);
+      console.error("Error fetching products:", error);
     }
   }, []);
 
   const handleAddException = async () => {
     if (!selectedProduct) {
       await alert({
-        title: 'Error',
-        description: 'Selecciona un producto',
-        variant: 'error',
+        title: "Error",
+        description: "Selecciona un producto",
+        variant: "error",
       });
       return;
     }
 
     try {
       const response = await fetch(`/api/price-lists/${priceListId}/items`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           productId: selectedProduct,
-          overrideMarginPercentage: overrideMargin ? parseFloat(overrideMargin) : null,
+          overrideMarginPercentage: overrideMargin
+            ? parseFloat(overrideMargin)
+            : null,
           fixedPrice: fixedPrice ? parseFloat(fixedPrice) : null,
         }),
       });
 
       if (response.ok) {
         setIsAddModalOpen(false);
-        setSelectedProduct('');
-        setOverrideMargin('');
-        setFixedPrice('');
+        setSelectedProduct("");
+        setOverrideMargin("");
+        setFixedPrice("");
         fetchPriceList();
       } else {
         const error = await response.json();
         await alert({
-          title: 'Error',
-          description: error.error || 'Error al agregar excepción',
-          variant: 'error',
+          title: "Error",
+          description: error.error || "Error al agregar excepción",
+          variant: "error",
         });
       }
     } catch (error) {
-      console.error('Error adding exception:', error);
+      console.error("Error adding exception:", error);
     }
   };
 
   const handleDeleteException = async (itemId: string) => {
-    const confirmed = await confirm({
-      title: 'Eliminar Excepción',
-      description: '¿Eliminar esta excepción de precio?',
-      confirmText: 'Eliminar',
-      cancelText: 'Cancelar',
-      variant: 'destructive',
-    });
-
-    if (!confirmed) return;
-
     try {
-      const response = await fetch(`/api/price-lists/${priceListId}/items/${itemId}`, {
-        method: 'DELETE',
-      });
+      const response = await fetch(
+        `/api/price-lists/${priceListId}/items/${itemId}`,
+        {
+          method: "DELETE",
+        },
+      );
 
       if (response.ok) {
         fetchPriceList();
+        toast.success("Excepción de precio eliminada");
       } else {
         const error = await response.json();
         await alert({
-          title: 'Error',
-          description: error.error || 'Error al eliminar excepción',
-          variant: 'error',
+          title: "Error",
+          description: error.error || "Error al eliminar excepción",
+          variant: "error",
         });
       }
     } catch (error) {
-      console.error('Error deleting exception:', error);
+      console.error("Error deleting exception:", error);
     }
   };
 
@@ -170,25 +178,27 @@ export default function PriceListDetailClient({ initialPriceList }: PriceListDet
 
   const getRoundingRuleLabel = (rule: string) => {
     const labels: Record<string, string> = {
-      EXACT: 'Exacto',
-      NEAREST_INTEGER: 'Entero',
-      PSYCHOLOGICAL: 'Psicológico',
-      SMART_HUNDREDS: 'Inteligente',
+      EXACT: "Exacto",
+      NEAREST_INTEGER: "Entero",
+      PSYCHOLOGICAL: "Psicológico",
+      SMART_HUNDREDS: "Inteligente",
     };
     return labels[rule] || rule;
   };
 
   const columns: ColumnDef<PriceListItem>[] = [
     {
-      accessorKey: 'productName',
-      header: 'Producto',
+      accessorKey: "productName",
+      header: "Producto",
       cell: ({ row }) => (
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0">
             <Package className="h-4 w-4 text-primary" aria-hidden="true" />
           </div>
           <div>
-            <div className="font-semibold tracking-tight">{row.original.productName}</div>
+            <div className="font-semibold tracking-tight">
+              {row.original.productName}
+            </div>
             {row.original.productSku && (
               <div className="text-xs font-mono text-muted-foreground">
                 {row.original.productSku}
@@ -199,8 +209,8 @@ export default function PriceListDetailClient({ initialPriceList }: PriceListDet
       ),
     },
     {
-      accessorKey: 'replacementCost',
-      header: 'Costo Repo.',
+      accessorKey: "replacementCost",
+      header: "Costo Repo.",
       cell: ({ row }) => (
         <div className="font-mono">
           <PriceDisplay value={row.original.replacementCost ?? 0} />
@@ -208,8 +218,8 @@ export default function PriceListDetailClient({ initialPriceList }: PriceListDet
       ),
     },
     {
-      accessorKey: 'overrideMarginPercentage',
-      header: 'Margen Override',
+      accessorKey: "overrideMarginPercentage",
+      header: "Margen Override",
       cell: ({ row }) =>
         row.original.overrideMarginPercentage !== null ? (
           <Badge variant="secondary" className="font-mono">
@@ -220,8 +230,8 @@ export default function PriceListDetailClient({ initialPriceList }: PriceListDet
         ),
     },
     {
-      accessorKey: 'fixedPrice',
-      header: 'Precio Fijo',
+      accessorKey: "fixedPrice",
+      header: "Precio Fijo",
       cell: ({ row }) =>
         row.original.fixedPrice !== null ? (
           <Badge
@@ -235,8 +245,8 @@ export default function PriceListDetailClient({ initialPriceList }: PriceListDet
         ),
     },
     {
-      accessorKey: 'finalPrice',
-      header: 'Precio Final',
+      accessorKey: "finalPrice",
+      header: "Precio Final",
       cell: ({ row }) => (
         <div className="font-bold font-mono">
           <PriceDisplay value={row.original.finalPrice} />
@@ -244,15 +254,15 @@ export default function PriceListDetailClient({ initialPriceList }: PriceListDet
       ),
     },
     {
-      accessorKey: 'actualMargin',
-      header: 'Margen Real',
+      accessorKey: "actualMargin",
+      header: "Margen Real",
       cell: ({ row }) => {
         const isLow = row.original.isBelowMinimum;
         return (
           <div className="flex items-center gap-2">
             <span
               className={`font-mono ${
-                isLow ? 'text-orange-700 font-bold' : ''
+                isLow ? "text-orange-700 font-bold" : ""
               }`}
             >
               {row.original.actualMargin.toFixed(1)}%
@@ -268,8 +278,8 @@ export default function PriceListDetailClient({ initialPriceList }: PriceListDet
       },
     },
     {
-      id: 'actions',
-      header: '',
+      id: "actions",
+      header: "",
       cell: ({ row }) => (
         <Tooltip>
           <TooltipTrigger asChild>
@@ -299,25 +309,25 @@ export default function PriceListDetailClient({ initialPriceList }: PriceListDet
 
   const stats: StatItem[] = [
     {
-      label: 'Margen Base',
+      label: "Margen Base",
       value: `${priceList.baseMarginPercentage}%`,
       icon: Percent,
     },
     {
-      label: 'Redondeo',
+      label: "Redondeo",
       value: getRoundingRuleLabel(priceList.roundingRule),
       icon: Calculator,
     },
     {
-      label: 'Excepciones',
+      label: "Excepciones",
       value: priceList.itemCount,
       icon: Search,
     },
     {
-      label: 'Estado',
-      value: priceList.isActive ? 'Activa' : 'Inactiva',
+      label: "Estado",
+      value: priceList.isActive ? "Activa" : "Inactiva",
       icon: DollarSign,
-      iconColor: priceList.isActive ? '#10b981' : '#ef4444',
+      iconColor: priceList.isActive ? "#10b981" : "#ef4444",
     },
   ];
 
@@ -328,10 +338,10 @@ export default function PriceListDetailClient({ initialPriceList }: PriceListDet
         description="Gestiona excepciones y precios específicos para esta lista"
         showBackButton
         primaryAction={{
-          label: 'Agregar Excepción',
+          label: "Agregar Excepción",
           onClick: openAddModal,
           icon: Plus,
-          ariaLabel: 'Agregar nueva excepción de precio',
+          ariaLabel: "Agregar nueva excepción de precio",
         }}
       />
 
@@ -341,7 +351,9 @@ export default function PriceListDetailClient({ initialPriceList }: PriceListDet
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-lg font-semibold">Excepciones de Precio</CardTitle>
+            <CardTitle className="text-lg font-semibold">
+              Excepciones de Precio
+            </CardTitle>
             <Badge variant="outline">{priceList.items.length} ítems</Badge>
           </div>
         </CardHeader>
@@ -351,17 +363,16 @@ export default function PriceListDetailClient({ initialPriceList }: PriceListDet
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
                 <Calculator className="h-8 w-8 text-muted-foreground" />
               </div>
-              <p className="text-muted-foreground mb-4">No hay excepciones configuradas para esta lista.</p>
+              <p className="text-muted-foreground mb-4">
+                No hay excepciones configuradas para esta lista.
+              </p>
               <Button onClick={openAddModal} variant="outline">
                 <Plus className="h-4 w-4 mr-2" />
                 Agregar primera excepción
               </Button>
             </div>
           ) : (
-            <DataTable
-              columns={columns}
-              data={priceList.items}
-            />
+            <DataTable columns={columns} data={priceList.items} />
           )}
         </CardContent>
       </Card>
@@ -382,7 +393,9 @@ export default function PriceListDetailClient({ initialPriceList }: PriceListDet
       >
         <div className="space-y-4 py-2">
           <div className="space-y-2">
-            <Label htmlFor="product" required>Producto</Label>
+            <Label htmlFor="product" required>
+              Producto
+            </Label>
             <SearchableSelect
               apiUrl="/api/products"
               onSelect={(item) => setSelectedProduct(item.id)}
@@ -436,9 +449,10 @@ export default function PriceListDetailClient({ initialPriceList }: PriceListDet
           <div className="p-3 bg-muted/50 rounded-lg text-xs text-muted-foreground flex gap-2">
             <AlertTriangle className="h-4 w-4 shrink-0 text-orange-500" />
             <p>
-              Si defines un <strong>precio fijo</strong>, este prevalecerá.
-              De lo contrario, se usará el <strong>margen override</strong>.
-              Si ambos están vacíos, se aplicará el margen base de la lista ({priceList.baseMarginPercentage}%).
+              Si defines un <strong>precio fijo</strong>, este prevalecerá. De
+              lo contrario, se usará el <strong>margen override</strong>. Si
+              ambos están vacíos, se aplicará el margen base de la lista (
+              {priceList.baseMarginPercentage}%).
             </p>
           </div>
         </div>

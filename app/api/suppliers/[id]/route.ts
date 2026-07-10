@@ -3,18 +3,15 @@
  * Métodos: PUT, DELETE
  * Spec: /specs/suppliers.md
  */
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 
 interface Params {
   params: Promise<{ id: string }>;
 }
 
 // PUT /api/suppliers/[id] - Actualizar proveedor
-export async function PUT(
-  request: NextRequest,
-  { params }: Params
-) {
+export async function PUT(request: NextRequest, { params }: Params) {
   try {
     const { id } = await params;
     const body = await request.json();
@@ -26,8 +23,8 @@ export async function PUT(
 
     if (!existing) {
       return NextResponse.json(
-        { error: 'Proveedor no encontrado' },
-        { status: 404 }
+        { error: "Proveedor no encontrado" },
+        { status: 404 },
       );
     }
 
@@ -39,8 +36,8 @@ export async function PUT(
 
       if (nameExists) {
         return NextResponse.json(
-          { error: 'Ya existe un proveedor con ese nombre' },
-          { status: 409 }
+          { error: "Ya existe un proveedor con ese nombre" },
+          { status: 409 },
         );
       }
     }
@@ -54,24 +51,22 @@ export async function PUT(
         email: body.email,
         address: body.address,
         notes: body.notes,
+        isActive: body.isActive,
       },
     });
 
     return NextResponse.json({ supplier });
   } catch (error) {
-    console.error('Error updating supplier:', error);
+    console.error("Error updating supplier:", error);
     return NextResponse.json(
-      { error: 'Error al actualizar proveedor' },
-      { status: 500 }
+      { error: "Error al actualizar proveedor" },
+      { status: 500 },
     );
   }
 }
 
 // DELETE /api/suppliers/[id] - Desactivar proveedor (soft delete)
-export async function DELETE(
-  request: NextRequest,
-  { params }: Params
-) {
+export async function DELETE(request: NextRequest, { params }: Params) {
   try {
     const { id } = await params;
 
@@ -87,16 +82,16 @@ export async function DELETE(
 
     if (!existing) {
       return NextResponse.json(
-        { error: 'Proveedor no encontrado' },
-        { status: 404 }
+        { error: "Proveedor no encontrado" },
+        { status: 404 },
       );
     }
 
     // No permitir eliminar si tiene productos asociados
     if (existing._count.product > 0) {
       return NextResponse.json(
-        { error: 'No se puede eliminar un proveedor con productos asociados' },
-        { status: 409 }
+        { error: "No se puede eliminar un proveedor con productos asociados" },
+        { status: 409 },
       );
     }
 
@@ -108,10 +103,10 @@ export async function DELETE(
 
     return NextResponse.json({ supplier });
   } catch (error) {
-    console.error('Error deleting supplier:', error);
+    console.error("Error deleting supplier:", error);
     return NextResponse.json(
-      { error: 'Error al eliminar proveedor' },
-      { status: 500 }
+      { error: "Error al eliminar proveedor" },
+      { status: 500 },
     );
   }
 }

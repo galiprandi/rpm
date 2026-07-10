@@ -1,19 +1,20 @@
-'use client';
+"use client";
 
-import { useState, useCallback, useMemo } from 'react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { useUI } from '@/components/ui/UIProvider';
-import { Header, CrudAdmin, CrudStats, type StatItem } from '@/components/adm';
-import { Wrench, Pencil, Trash2, Clock, List, Plus } from 'lucide-react';
-import { PriceDisplay } from '@/components/ui/price-display';
-import { type ColumnDef } from '@tanstack/react-table';
-import { ServiceDialog } from '@/components/services/ServiceDialog';
+import { useState, useCallback, useMemo } from "react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { useUI } from "@/components/ui/UIProvider";
+import { toast } from "sonner";
+import { Header, CrudAdmin, CrudStats, type StatItem } from "@/components/adm";
+import { Wrench, Pencil, Trash2, Clock, List, Plus } from "lucide-react";
+import { PriceDisplay } from "@/components/ui/price-display";
+import { type ColumnDef } from "@tanstack/react-table";
+import { ServiceDialog } from "@/components/services/ServiceDialog";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
+} from "@/components/ui/tooltip";
 
 interface Service {
   id: string;
@@ -39,21 +40,23 @@ interface ServicesClientProps {
   initialServices: Service[];
 }
 
-export default function ServicesClient({ initialServices }: ServicesClientProps) {
-  const { alert, confirm } = useUI();
+export default function ServicesClient({
+  initialServices,
+}: ServicesClientProps) {
+  const { alert } = useUI();
   const [services, setServices] = useState<Service[]>(initialServices);
   const [loading, setLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchServices = async () => {
     try {
-      const response = await fetch('/api/services');
+      const response = await fetch("/api/services");
       const data = await response.json();
       if (data.services) {
         setServices(data.services);
       }
     } catch (error) {
-      console.error('Error fetching services:', error);
+      console.error("Error fetching services:", error);
     } finally {
       setLoading(false);
     }
@@ -62,20 +65,20 @@ export default function ServicesClient({ initialServices }: ServicesClientProps)
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [formData, setFormData] = useState<ServiceFormData>({
-    name: '',
-    description: '',
-    baseCost: '',
-    timeMinutes: '60',
-    vehicleFactor: '1.0',
+    name: "",
+    description: "",
+    baseCost: "",
+    timeMinutes: "60",
+    vehicleFactor: "1.0",
   });
 
   const resetForm = () => {
     setFormData({
-      name: '',
-      description: '',
-      baseCost: '',
-      timeMinutes: '60',
-      vehicleFactor: '1.0',
+      name: "",
+      description: "",
+      baseCost: "",
+      timeMinutes: "60",
+      vehicleFactor: "1.0",
     });
     setEditingService(null);
   };
@@ -89,7 +92,7 @@ export default function ServicesClient({ initialServices }: ServicesClientProps)
     setEditingService(service);
     setFormData({
       name: service.name,
-      description: service.description || '',
+      description: service.description || "",
       baseCost: service.baseCost.toString(),
       timeMinutes: service.timeMinutes.toString(),
       vehicleFactor: service.vehicleFactor.toString(),
@@ -103,15 +106,15 @@ export default function ServicesClient({ initialServices }: ServicesClientProps)
 
     // Validate before submitting
     const missingFields: string[] = [];
-    if (!formData.name.trim()) missingFields.push('Nombre');
-    if (!formData.baseCost.trim()) missingFields.push('Costo base');
-    if (!formData.timeMinutes.trim()) missingFields.push('Tiempo estimado');
+    if (!formData.name.trim()) missingFields.push("Nombre");
+    if (!formData.baseCost.trim()) missingFields.push("Costo base");
+    if (!formData.timeMinutes.trim()) missingFields.push("Tiempo estimado");
 
     if (missingFields.length > 0) {
       await alert({
-        title: 'Error',
-        description: `Campos obligatorios faltantes: ${missingFields.join(', ')}`,
-        variant: 'error',
+        title: "Error",
+        description: `Campos obligatorios faltantes: ${missingFields.join(", ")}`,
+        variant: "error",
       });
       return;
     }
@@ -125,12 +128,14 @@ export default function ServicesClient({ initialServices }: ServicesClientProps)
 
     setIsSubmitting(true);
     try {
-      const url = editingService ? `/api/services/${editingService.id}` : '/api/services';
-      const method = editingService ? 'PUT' : 'POST';
+      const url = editingService
+        ? `/api/services/${editingService.id}`
+        : "/api/services";
+      const method = editingService ? "PUT" : "POST";
 
       const response = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
@@ -141,17 +146,17 @@ export default function ServicesClient({ initialServices }: ServicesClientProps)
       } else {
         const error = await response.json();
         await alert({
-          title: 'Error',
-          description: error.error || 'Error al guardar servicio',
-          variant: 'error',
+          title: "Error",
+          description: error.error || "Error al guardar servicio",
+          variant: "error",
         });
       }
     } catch (error) {
-      console.error('Error saving service:', error);
+      console.error("Error saving service:", error);
       await alert({
-        title: 'Error',
-        description: 'Error al guardar servicio',
-        variant: 'error',
+        title: "Error",
+        description: "Error al guardar servicio",
+        variant: "error",
       });
     } finally {
       setIsSubmitting(false);
@@ -161,69 +166,83 @@ export default function ServicesClient({ initialServices }: ServicesClientProps)
   // Validation: CTA disabled until required fields are filled
   const isFormValid = () => {
     return (
-      formData.name.trim() !== '' &&
-      formData.baseCost.trim() !== '' &&
-      formData.timeMinutes.trim() !== ''
+      formData.name.trim() !== "" &&
+      formData.baseCost.trim() !== "" &&
+      formData.timeMinutes.trim() !== ""
     );
   };
 
   const formValid = isFormValid();
 
-  const handleDelete = useCallback(async (service: Service) => {
-    const confirmed = await confirm({
-      title: 'Desactivar Servicio',
-      description: `¿Estás seguro de desactivar "${service.name}"?`,
-      confirmText: 'Desactivar',
-      cancelText: 'Cancelar',
-      variant: 'destructive',
-    });
+  const handleDelete = useCallback(
+    async (service: Service) => {
+      try {
+        const response = await fetch(`/api/services/${service.id}`, {
+          method: "DELETE",
+        });
 
-    if (!confirmed) return;
-
-    try {
-      const response = await fetch(`/api/services/${service.id}`, {
-        method: 'DELETE',
-      });
-
-      if (response.ok) {
-        fetchServices();
-      } else {
-        const error = await response.json();
+        if (response.ok) {
+          fetchServices();
+          toast.success(`Servicio "${service.name}" desactivado`, {
+            action: {
+              label: "Deshacer",
+              onClick: async () => {
+                try {
+                  await fetch(`/api/services/${service.id}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ isActive: true }),
+                  });
+                  fetchServices();
+                  toast.success("Servicio reactivado");
+                } catch {
+                  toast.error("Error al reactivar servicio");
+                }
+              },
+            },
+          });
+        } else {
+          const error = await response.json();
+          await alert({
+            title: "Error",
+            description: error.error || "Error al desactivar servicio",
+            variant: "error",
+          });
+        }
+      } catch (error) {
+        console.error("Error deleting service:", error);
         await alert({
-          title: 'Error',
-          description: error.error || 'Error al desactivar servicio',
-          variant: 'error',
+          title: "Error",
+          description: "Error al desactivar servicio",
+          variant: "error",
         });
       }
-    } catch (error) {
-      console.error('Error deleting service:', error);
-      await alert({
-        title: 'Error',
-        description: 'Error al desactivar servicio',
-        variant: 'error',
-      });
-    }
-  }, [alert, confirm]);
+    },
+    [alert],
+  );
 
   const activeServices = services.filter((s) => s.isActive).length;
   const totalServices = services.length;
-  const avgTime = services.length > 0
-    ? Math.round(services.reduce((acc, s) => acc + s.timeMinutes, 0) / services.length)
-    : 0;
+  const avgTime =
+    services.length > 0
+      ? Math.round(
+          services.reduce((acc, s) => acc + s.timeMinutes, 0) / services.length,
+        )
+      : 0;
 
   const stats: StatItem[] = [
     {
-      label: 'Total',
+      label: "Total",
       value: totalServices,
       icon: List,
     },
     {
-      label: 'Activos',
+      label: "Activos",
       value: activeServices,
       icon: Wrench,
     },
     {
-      label: 'Tiempo promedio',
+      label: "Tiempo promedio",
       value: `${avgTime} min`,
       icon: Clock,
     },
@@ -232,15 +251,17 @@ export default function ServicesClient({ initialServices }: ServicesClientProps)
   const columns = useMemo<ColumnDef<Service>[]>(
     () => [
       {
-        accessorKey: 'name',
-        header: 'Servicio',
+        accessorKey: "name",
+        header: "Servicio",
         cell: ({ row }) => (
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0">
               <Wrench className="h-4 w-4 text-primary" aria-hidden="true" />
             </div>
             <div>
-              <div className="font-semibold tracking-tight">{row.original.name}</div>
+              <div className="font-semibold tracking-tight">
+                {row.original.name}
+              </div>
               {row.original.description && (
                 <div className="text-xs text-muted-foreground truncate max-w-[200px] md:max-w-[300px]">
                   {row.original.description}
@@ -251,8 +272,8 @@ export default function ServicesClient({ initialServices }: ServicesClientProps)
         ),
       },
       {
-        accessorKey: 'baseCost',
-        header: 'Costo Base',
+        accessorKey: "baseCost",
+        header: "Costo Base",
         cell: ({ row }) => (
           <span className="font-medium">
             <PriceDisplay value={row.original.baseCost} />
@@ -260,8 +281,8 @@ export default function ServicesClient({ initialServices }: ServicesClientProps)
         ),
       },
       {
-        accessorKey: 'timeMinutes',
-        header: 'Tiempo',
+        accessorKey: "timeMinutes",
+        header: "Tiempo",
         cell: ({ row }) => (
           <div className="flex items-center gap-1 text-sm">
             <Clock className="h-3 w-3 text-muted-foreground" />
@@ -270,8 +291,8 @@ export default function ServicesClient({ initialServices }: ServicesClientProps)
         ),
       },
       {
-        accessorKey: 'vehicleFactor',
-        header: 'Factor Vehículo',
+        accessorKey: "vehicleFactor",
+        header: "Factor Vehículo",
         cell: ({ row }) => (
           <span className="text-sm text-muted-foreground">
             {row.original.vehicleFactor}x
@@ -279,8 +300,8 @@ export default function ServicesClient({ initialServices }: ServicesClientProps)
         ),
       },
       {
-        accessorKey: 'isActive',
-        header: 'Estado',
+        accessorKey: "isActive",
+        header: "Estado",
         cell: ({ row }) =>
           row.original.isActive ? (
             <Badge
@@ -294,7 +315,7 @@ export default function ServicesClient({ initialServices }: ServicesClientProps)
           ),
       },
     ],
-    []
+    [],
   );
 
   return (
@@ -303,10 +324,10 @@ export default function ServicesClient({ initialServices }: ServicesClientProps)
         title="Servicios"
         description="Gestiona el catálogo de servicios y mano de obra del taller"
         primaryAction={{
-          label: 'Nuevo Servicio',
+          label: "Nuevo Servicio",
           onClick: openCreateDialog,
           icon: Plus,
-          ariaLabel: 'Crear nuevo servicio',
+          ariaLabel: "Crear nuevo servicio",
         }}
       />
 
@@ -320,7 +341,9 @@ export default function ServicesClient({ initialServices }: ServicesClientProps)
         onCreate={openCreateDialog}
         hideCreateAction
         columns={columns}
-        emptyIcon={<Wrench className="h-12 w-12 mx-auto text-muted-foreground/20 mb-4" />}
+        emptyIcon={
+          <Wrench className="h-12 w-12 mx-auto text-muted-foreground/20 mb-4" />
+        }
         emptyMessage="No hay servicios creados. Haz clic en 'Nuevo Servicio' para crear el primero."
         createButtonText="Servicio"
         tableTitle="Listado de Servicios"
@@ -329,7 +352,12 @@ export default function ServicesClient({ initialServices }: ServicesClientProps)
           <div className="flex gap-1">
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="ghost" size="sm" onClick={() => openEditDialog(service)} aria-label="Editar servicio">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => openEditDialog(service)}
+                  aria-label="Editar servicio"
+                >
                   <Pencil className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
