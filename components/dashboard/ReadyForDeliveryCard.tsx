@@ -1,10 +1,10 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Phone, ArrowRight, MessageSquare } from 'lucide-react';
+import { Phone, ArrowRight, MessageSquare, Car, Truck, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { formatARS, getVehicleEmoji } from '@/lib/utils/format';
+import { formatARS, relativeTime } from '@/lib/utils/format';
 import { getWhatsAppLink, getWorkOrderMessage } from '@/lib/utils/whatsapp';
 import {
   Tooltip,
@@ -34,6 +34,16 @@ interface ReadyForDeliveryCardProps {
 export function ReadyForDeliveryCard({
   readyForDelivery,
 }: ReadyForDeliveryCardProps) {
+  const getVehicleIcon = (type: string) => {
+    switch (type) {
+      case 'PICKUP':
+      case 'TRUCK':
+        return <Truck className="h-4 w-4 text-primary" aria-hidden="true" />;
+      default:
+        return <Car className="h-4 w-4 text-primary" aria-hidden="true" />;
+    }
+  };
+
   if (readyForDelivery.length === 0) {
     return (
       <Card>
@@ -73,13 +83,11 @@ export function ReadyForDeliveryCard({
           {readyForDelivery.map((item) => (
             <div
               key={item.workOrderId}
-              className="flex items-start justify-between p-2 rounded-lg bg-slate-50/50 border border-transparent hover:border-slate-200 transition-colors"
+              className="flex items-start justify-between p-2 rounded-lg bg-slate-50/50 border border-transparent hover:border-slate-200 transition-colors group"
             >
               <div className="flex items-center gap-3 flex-1 min-w-0">
-                <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0">
-                  <span className="text-sm" aria-hidden="true">
-                    {getVehicleEmoji(item.vehicle.type)}
-                  </span>
+                <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                  {getVehicleIcon(item.vehicle.type)}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
@@ -93,7 +101,12 @@ export function ReadyForDeliveryCard({
                   <div className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1.5 flex-wrap">
                     <span className="font-medium">{item.customer.name}</span>
                     <span className="text-muted-foreground/40">•</span>
-                    <span className="font-mono font-medium text-emerald-700">
+                    <div className="flex items-center gap-1 text-muted-foreground">
+                      <Clock className="h-3 w-3" aria-hidden="true" />
+                      <span>{relativeTime(item.completedAt)}</span>
+                    </div>
+                    <span className="text-muted-foreground/40">•</span>
+                    <span className="font-mono font-semibold text-emerald-700">
                       {formatARS(item.total)}
                     </span>
                   </div>
@@ -147,7 +160,7 @@ export function ReadyForDeliveryCard({
           <Link href="/adm/work-orders?status=READY">
             <Button variant="link" className="p-0 h-auto text-xs mt-3 w-full">
               Ver todos
-              <ArrowRight className="h-3 w-3 ml-1" />
+              <ArrowRight className="h-3 w-3 ml-1 pointer-events-none" aria-hidden="true" />
             </Button>
           </Link>
         )}
