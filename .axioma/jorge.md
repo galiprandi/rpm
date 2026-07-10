@@ -2,18 +2,21 @@
 - [ ] Checklist Customization — Allow editing the labels of the entry/exit checklists.
 - [ ] Photo Management — Bulk upload and deletion of work order photos.
 - [ ] Printing — Standardized PDF generation for Remitos and Budgets.
-- [ ] Quick Status Actions — Add context-aware primary actions for faster status transitions in detail view.
-- [ ] Detail Header UX Fixes — Fix navigation and add quick print action to WO detail header.
-- [ ] Kanban Scheduled Date — Display and highlight scheduled dates on Kanban cards.
+- [ ] Personalización de Checklist — Permitir editar las etiquetas de los checklists de entrada/salida.
+- [ ] Gestión de Fotos — Carga y eliminación masiva de fotos de órdenes de trabajo.
+- [ ] Impresión — Generación estandarizada de PDF para Remitos y Presupuestos.
+- [ ] Acciones de estado rápidas: agregue acciones principales que tengan en cuenta el contexto para transiciones de estado más rápidas en la vista de detalles.
+- [ ] Correcciones de UX en el encabezado de detalles: corrija la navegación y agregue una acción de impresión rápida al encabezado de detalles de la orden de trabajo.
+- [ ] Fecha programada en Kanban: muestre y resalte las fechas programadas en las tarjetas Kanban.
 
-## ✅ DONE
-- [x] 2025-07-08 — Centralized WO Service & Unified Timeline (PR #jorge/work-orders/centralized-updates)
+## ✅ COMPLETADO
+- [x] 2025-07-08 — Servicio Centralizado de OT y Timeline Unificado (PR #jorge/work-orders/centralized-updates)
 
-## 🧠 LEARNINGS
-## 2025-07-08 - Kanban UX & Event Propagation
-**Learning:** Nested interactive elements in Kanban cards (like technician dropdowns) require both onMouseDown and onClick stop-propagation to prevent Link navigation and drag-start conflicts.
-**Action:** Use the "Kanban Navigation Guard Pattern" for all future board-like interfaces.
+## 🧠 APRENDIZAJES
+## 2025-07-08 - UX Kanban y Propagación de Eventos
+**Aprendizaje:** Los elementos interactivos anidados en tarjetas Kanban (como dropdowns de técnicos) requieren stop-propagation tanto en onMouseDown como en onClick para evitar la navegación del Link y conflictos con el inicio del arrastre.
+**Acción:** Usar el "Patrón Guardián de Navegación Kanban" para todas las futuras interfaces tipo tablero.
 
-## 2025-07-08 - Centralized Side Effects
-**Learning:** Moving side effects like stock movements and auto-invoicing to a centralized service prevents logic fragmentation and double-triggering during Kanban drag-and-drop.
-**Action:** Always return a boolean status-change flag from update services to allow callers to trigger conditional UI feedback or external notifications.
+## 2025-07-08 - Efectos Secundarios Centralizados
+**Aprendizaje:** Mover los efectos secundarios como movimientos de stock y facturación automática a un servicio centralizado evita la fragmentación de lógica y el doble disparo durante el drag-and-drop del Kanban.
+**Acción:** Siempre devolver un flag booleano de cambio de estado desde los servicios de actualización para permitir que los llamadores disparen retroalimentación condicional de UI o notificaciones externas.

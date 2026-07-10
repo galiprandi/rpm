@@ -18,7 +18,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { type ColumnDef } from '@tanstack/react-table';
+import { type ColumnDef, type FilterFn } from '@tanstack/react-table';
 import { useRouter } from 'next/navigation';
 
 import { type Product, type Category, type Supplier, type ProductFormData } from '@/components/products/types';
@@ -30,6 +30,19 @@ interface ProductsClientProps {
   lowStockCount: number;
   totalInventoryValue: number;
 }
+
+const productSearchFilter: FilterFn<Product> = (row, _columnId, filterValue) => {
+  if (!filterValue) return true;
+  const terms = String(filterValue).toLowerCase().split(/\s+/).filter(Boolean);
+  const p = row.original;
+  return terms.every((term) => {
+    if (p.name?.toLowerCase().includes(term)) return true;
+    if (p.sku?.toLowerCase().includes(term)) return true;
+    if (p.barcode?.toLowerCase().includes(term)) return true;
+    if (p.category?.name?.toLowerCase().includes(term)) return true;
+    return false;
+  });
+};
 
 export function ProductsClient({
   products,
@@ -493,11 +506,12 @@ export function ProductsClient({
           onCreate={openCreateDialog}
           hideCreateAction
           columns={columns}
+          filterFn={productSearchFilter}
           emptyIcon={<Boxes className="h-12 w-12 mx-auto text-muted-foreground mb-4" />}
           emptyMessage="No hay productos creados. Haz clic en 'Nuevo Producto' para crear el primero."
           createButtonText="Producto"
           tableTitle="Listado de Productos"
-          searchPlaceholder="Buscar por SKU, nombre..."
+          searchPlaceholder="Buscar por SKU, nombre, EAN..."
           rowActions={(product: Product) => (
             <div className="flex gap-1">
               <Tooltip>

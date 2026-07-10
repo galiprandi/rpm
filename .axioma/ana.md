@@ -1,13 +1,14 @@
 # 📓 Journal — Ana 🧾
 
 ## 📋 BACKLOG
-- [ ] Implementación de Fase 1: Cimientos (Esquema, Servicio, Admin Básico, Auto-generación)
+- [x] Implementación de Fase 1: Cimientos (Esquema, Servicio, Admin Básico, Auto-generación)
     - [x] Esquema base de `invoice`
     - [x] `invoiceService.ts` base
     - [x] Auto-generación desde Venta Directa
     - [x] Auto-generación desde OT (al pasar a DELIVERED)
     - [x] Auto-generación desde Nota de Crédito
     - [x] Desglose impositivo inicial (IVA 21% auto-calculado)
+    - [x] Generación manual de documentos desde Venta Directa y OT.
     - [ ] Desglose impositivo detallado (por item, requiere migración)
 - [x] Generación de PDFs de pre-facturas con leyenda obligatoria (vía Print).
 - [x] Configuración fiscal en settings (CUIT, Punto de Venta, Certificados).
@@ -19,6 +20,7 @@
 - [x] 2025-05-24 — Configuración fiscal (AFIP) en el panel de administración (PR #X).
 - [x] 2025-05-26 — Mejora de UI de comprobantes y sistema de impresión profesional para pre-facturas.
 - [x] 2025-05-28 — Implementación del proceso de oficialización (mock) ante AFIP, obtención de CAE y numeración oficial.
+- [x] 2025-07-10 — Implementación de generación manual de documentos (Presupuestos, Remitos, Pre-Facturas) desde Ventas Directas.
 
 ## 🧠 LEARNINGS
 - **Desglose impositivo:** Para comprobantes tipo B (consumidor final), aunque el total sea lo que ve el cliente, el sistema debe registrar el neto y el IVA por separado para futuros reportes fiscales (Libro IVA Digital). Se implementó un cálculo automático del 21% para pre-facturas.

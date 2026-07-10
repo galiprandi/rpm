@@ -16,6 +16,7 @@ import {
   type SortingState,
   type ColumnFiltersState,
   type PaginationState,
+  type FilterFn,
 } from '@tanstack/react-table';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -46,6 +47,7 @@ interface DataTableProps<TData> {
   headerActions?: DataTableAction[];
   title?: React.ReactNode;
   rowActions?: (row: TData) => React.ReactNode;
+  filterFn?: FilterFn<TData>;
 }
 export function DataTable<TData>({
   data,
@@ -60,6 +62,7 @@ export function DataTable<TData>({
   headerActions,
   title,
   rowActions,
+  filterFn,
 }: DataTableProps<TData>) {
   // Build columns with optional actions column
   const allColumns = React.useMemo(() => {
@@ -105,6 +108,7 @@ export function DataTable<TData>({
     onGlobalFilterChange: setGlobalFilter,
     onColumnFiltersChange: setColumnFilters,
     onPaginationChange: setPagination,
+    globalFilterFn: filterFn,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
