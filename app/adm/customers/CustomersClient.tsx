@@ -6,6 +6,7 @@ import { Header, CrudAdmin, CrudStats, type StatItem } from "@/components/adm";
 import { Phone, User, Eye, TrendingDown, Users, Wallet, Plus, MessageSquare } from "lucide-react";
 import Link from "next/link";
 import { type ColumnDef } from "@tanstack/react-table";
+import { formatARS } from "@/lib/utils/format";
 import { CustomerDialog } from "@/components/customers/CustomerDialog";
 import { type CustomerFormData } from "@/components/customers/CustomerForm";
 import { useRouter } from "next/navigation";
@@ -193,21 +194,15 @@ export default function CustomersClient({ initialCustomers }: CustomersClientPro
           }
           if (balance > 0) {
             return (
-              <span className="font-mono font-medium text-red-700">
-                {new Intl.NumberFormat('es-AR', {
-                  style: 'currency',
-                  currency: 'ARS',
-                }).format(balance)}
+              <span className="font-mono font-semibold text-red-700">
+                {formatARS(balance)}
               </span>
             );
           }
           // balance < 0 (saldo a favor)
           return (
-            <span className="font-mono font-medium text-emerald-700">
-              {new Intl.NumberFormat('es-AR', {
-                style: 'currency',
-                currency: 'ARS',
-              }).format(balance)}
+            <span className="font-mono font-semibold text-emerald-700">
+              {formatARS(balance)}
             </span>
           );
         },
@@ -241,10 +236,7 @@ export default function CustomersClient({ initialCustomers }: CustomersClientPro
     },
     {
       label: "Deuda Total",
-      value: new Intl.NumberFormat('es-AR', {
-        style: 'currency',
-        currency: 'ARS',
-      }).format(customers.reduce((acc, c) => acc + (c.balance > 0 ? c.balance : 0), 0)),
+      value: formatARS(customers.reduce((acc, c) => acc + (c.balance > 0 ? c.balance : 0), 0)),
       icon: TrendingDown,
       iconColor: "#ef4444", // red-500
     },
