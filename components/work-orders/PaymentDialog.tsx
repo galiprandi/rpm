@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { DollarSign, Plus, Trash2, CreditCard, FileText } from "lucide-react";
+import { toTitleCase } from "@/lib/utils/format";
 import {
   Tooltip,
   TooltipContent,
@@ -125,7 +126,7 @@ export function PaymentDialog({
     const paymentAmount = parseFloat(amount);
     if (paymentAmount > remainingAmount) {
       toast.error(
-        `El monto excede el saldo pendiente ($${remainingAmount.toFixed(2)})`,
+        `El monto excede el saldo pendiente ($${remainingAmount.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`,
       );
       return;
     }
@@ -184,7 +185,7 @@ export function PaymentDialog({
   const handleDeletePayment = async (payment: Payment) => {
     const confirmed = await confirm({
       title: "Eliminar pago",
-      description: `¿Eliminar el pago de $${Number(payment.amount).toFixed(2)}?`,
+      description: `¿Eliminar el pago de $${Number(payment.amount).toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}?`,
       confirmText: "Eliminar",
       cancelText: "Cancelar",
       variant: "destructive",
@@ -239,25 +240,37 @@ export function PaymentDialog({
         {/* Summary */}
         <div className="bg-muted p-4 rounded-lg">
           <div className="flex justify-between items-center mb-2">
-            <span className="text-sm text-muted-foreground">Total OT:</span>
-            <span className="font-medium">
-              ${Number(workOrderTotal).toFixed(2)}
+            <span className="text-sm text-muted-foreground">Total OT</span>
+            <span className="font-medium font-mono">
+              $
+              {Number(workOrderTotal).toLocaleString("es-AR", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
             </span>
           </div>
           <div className="flex justify-between items-center mb-2">
-            <span className="text-sm text-muted-foreground">Pagado:</span>
-            <span className="font-medium text-emerald-600">
-              ${totalPaid.toFixed(2)}
+            <span className="text-sm text-muted-foreground">Pagado</span>
+            <span className="font-medium text-emerald-600 font-mono">
+              $
+              {totalPaid.toLocaleString("es-AR", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
             </span>
           </div>
           <div className="flex justify-between items-center pt-2 border-t">
             <span className="text-sm font-medium">
-              {isFullyPaid ? "Pagado completamente" : "Pendiente:"}
+              {isFullyPaid ? "Pagado completamente" : "Pendiente"}
             </span>
             <span
-              className={`font-bold ${isFullyPaid ? "text-emerald-600" : "text-orange-600"}`}
+              className={`font-bold font-mono ${isFullyPaid ? "text-emerald-600" : "text-orange-600"}`}
             >
-              ${remainingAmount.toFixed(2)}
+              $
+              {remainingAmount.toLocaleString("es-AR", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
             </span>
           </div>
         </div>
@@ -290,7 +303,7 @@ export function PaymentDialog({
                   <SelectContent>
                     {paymentMethods.map((method) => (
                       <SelectItem key={method.id} value={method.id}>
-                        {method.name}
+                        {toTitleCase(method.name)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -315,14 +328,18 @@ export function PaymentDialog({
                   max={remainingAmount}
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  placeholder={`Máx: $${remainingAmount.toFixed(2)}`}
+                  placeholder={`Máx: $${remainingAmount.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                   className="pl-9 font-mono"
                   required
                   aria-required="true"
                 />
               </div>
               <p className="text-xs text-muted-foreground">
-                Pendiente: ${remainingAmount.toFixed(2)}
+                Pendiente: $
+                {remainingAmount.toLocaleString("es-AR", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
               </p>
             </div>
 
@@ -374,11 +391,15 @@ export function PaymentDialog({
                   >
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="font-medium">
-                          ${Number(payment.amount).toFixed(2)}
+                        <span className="font-medium font-mono">
+                          $
+                          {Number(payment.amount).toLocaleString("es-AR", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
                         </span>
                         <span className="text-xs text-muted-foreground">
-                          {payment.paymentMethod.name}
+                          {toTitleCase(payment.paymentMethod.name)}
                         </span>
                       </div>
                       {payment.notes && (
