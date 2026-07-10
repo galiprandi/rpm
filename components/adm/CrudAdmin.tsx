@@ -6,7 +6,7 @@ import { Download, Plus, Package } from 'lucide-react';
 import { ReactNode } from 'react';
 import { CrudStats, StatItem } from './CrudStats';
 import { DataTable } from '@/components/ui/data-table';
-import { type ColumnDef } from '@tanstack/react-table';
+import { type ColumnDef, type FilterFn } from '@tanstack/react-table';
 
 interface CrudAdminProps<T extends { id: string }> {
   title?: string;
@@ -17,6 +17,7 @@ interface CrudAdminProps<T extends { id: string }> {
   hideCreateAction?: boolean;
   columns: ColumnDef<T>[];
   stats?: StatItem[];
+  filterFn?: FilterFn<T>;
   emptyIcon?: ReactNode;
   emptyMessage: string;
   emptyActionText?: string;
@@ -45,6 +46,7 @@ export function CrudAdmin<T extends { id: string }>({
   hideCreateAction = false,
   columns,
   stats,
+  filterFn,
   emptyIcon,
   emptyMessage,
   emptyActionText = 'Crear primero',
@@ -195,6 +197,7 @@ export function CrudAdmin<T extends { id: string }>({
               enableGlobalFilter={enableSearch}
               globalFilterPlaceholder={searchPlaceholder}
               emptyMessage={emptyMessage}
+              filterFn={filterFn}
               headerActions={[
                 ...(enableExport && items.length > 0 ? [exportAction] : []),
                 ...(createAction && !hideCreateAction ? [createAction] : [])
