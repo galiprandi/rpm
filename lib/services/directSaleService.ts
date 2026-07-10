@@ -4,7 +4,7 @@
 import { prisma } from "@/lib/prisma";
 import { randomUUID } from "crypto";
 import { createCashMovement } from "./cashMovementService";
-import { createInvoice, determineInvoiceType } from "./invoiceService";
+import { createInvoice, determineInvoiceType, type InvoiceType } from "./invoiceService";
 import { revalidatePath } from "next/cache";
 import { invalidateCashStatus } from "@/lib/cache";
 import { getArgentinaStartOfDay, getArgentinaEndOfDay } from "@/lib/utils/date";
@@ -33,6 +33,85 @@ export interface CreateDirectSaleInput {
   createdBy: string;
   sellOnCredit?: boolean;
   remainingAmount?: number;
+}
+
+/**
+ * Generates a document (Pre-invoice, Presupuesto, Remito) from a Direct Sale.
+ */
+export async function generateDocumentFromDirectSale(
+  directSaleId: string,
+  createdBy: string,
+  options: { type?: InvoiceType; forceNew?: boolean } = {},
+  existingTx?: any
+) {
+  const execute = async (tx: any) => {
+    // Fetch direct sale with items and customer
+    const directSale = await tx.direct_sale.findUnique({
+      where: { id: directSaleId },
+      include: {
+        customer: true,
+        items: true,
+      },
+    });
+
+    if (!directSale) {
+      throw new Error('Venta no encontrada');
+    }
+
+    const customer = directSale.customer;
+    const billingData = customer?.billingData;
+
+    // Determine document type
+    const docType = options.type || determineInvoiceType(billingData, 'FACTURA', true);
+
+    // Check if a document of this type already exists to avoid duplicates
+    if (!options.forceNew) {
+      const existingDocument = await tx.invoice.findFirst({
+        where: {
+          referenceId: directSaleId,
+          referenceType: 'direct_sale',
+          type: docType,
+          status: { notIn: ['CANCELLED', 'ANNULLED'] },
+        },
+      });
+
+      if (existingDocument) {
+        return existingDocument;
+      }
+    }
+
+    let customerDoc: string | undefined = undefined;
+    let customerDocType: string | undefined = undefined;
+
+    if (billingData && typeof billingData === 'object') {
+      const bd = billingData as any;
+      customerDoc = bd.cuit || bd.dni || undefined;
+      customerDocType = bd.cuit ? 'CUIT' : (bd.dni ? 'DNI' : undefined);
+    }
+
+    const total = Number(directSale.total);
+
+    // Create the invoice/document
+    return await createInvoice({
+      type: docType,
+      referenceId: directSale.id,
+      referenceType: 'direct_sale',
+      customerId: directSale.customerId,
+      customerName: directSale.customerName,
+      customerDoc,
+      customerDocType,
+      subtotal: total,
+      total: total,
+      status: 'DRAFT',
+      createdBy,
+    }, tx);
+  };
+
+  if (existingTx) {
+    return execute(existingTx);
+  }
+
+  return await prisma.$transaction(execute);
 }
 
 /**
