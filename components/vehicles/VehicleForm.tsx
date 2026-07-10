@@ -31,21 +31,10 @@ import {
   Eye,
 } from "lucide-react";
 import { VEHICLE_CATEGORIES } from "@/lib/constants/vehicle-categories";
+import type { VehicleFormData } from "@/lib/types/vehicle";
 
 export { VEHICLE_CATEGORIES };
-
-export interface VehicleFormData {
-  identifier: string;
-  category: string;
-  makeName?: string;
-  modelName?: string;
-  year?: string | number;
-  color?: string;
-  equipmentName?: string;
-  equipmentType?: string;
-  description?: string;
-  notes?: string;
-}
+export type { VehicleFormData };
 
 interface VehicleFormProps {
   initialData?: Partial<VehicleFormData>;

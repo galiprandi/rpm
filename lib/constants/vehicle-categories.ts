@@ -29,3 +29,29 @@ export function getVehicleCategoryLabel(value: string): string {
 export function getVehicleCategoryIcon(value: string): string {
   return getVehicleCategory(value).icon;
 }
+
+/**
+ * Build a standardized vehicle description string.
+ * Format: "🚗 Auto · Fiat Cronos Blanco (2022)"
+ * Omits missing fields gracefully.
+ */
+export function buildVehicleDescription(opts: {
+  category: string;
+  make?: string | null;
+  model?: string | null;
+  color?: string | null;
+  year?: string | number | null;
+}): string {
+  const cat = getVehicleCategory(opts.category);
+  const parts: string[] = [`${cat.icon} ${cat.label}`];
+
+  const makeModel = [opts.make, opts.model].filter(Boolean).join(" ");
+  const colorYear = [opts.color, opts.year ? `(${opts.year})` : null]
+    .filter(Boolean)
+    .join(" ");
+
+  const detail = [makeModel, colorYear].filter(Boolean).join(" ");
+  if (detail) parts.push(detail);
+
+  return parts.join(" · ");
+}

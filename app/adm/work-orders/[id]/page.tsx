@@ -63,7 +63,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { CustomerCreditNoteDialog } from "@/components/credit-notes/CustomerCreditNoteDialog";
 import { getWhatsAppLink, getWorkOrderMessage } from "@/lib/utils/whatsapp";
-import { getVehicleCategory } from "@/lib/constants/vehicle-categories";
+import { buildVehicleDescription } from "@/lib/constants/vehicle-categories";
 
 // --- Helpers ---
 
@@ -203,8 +203,8 @@ interface WorkOrderDetail {
     id: string;
     identifier: string;
     category: string;
-    make?: { name: string };
-    model?: { name: string };
+    vehicle_make?: { name: string };
+    vehicle_model?: { name: string };
     year?: number;
     color?: string;
   };
@@ -815,16 +815,13 @@ export default function WorkOrderDetailPage() {
       <Header
         className="print:hidden"
         title={workOrder.vehicle.identifier}
-        description={[
-          `${getVehicleCategory(workOrder.vehicle.category).icon} ${getVehicleCategory(workOrder.vehicle.category).label}`,
-          workOrder.vehicle.make?.name,
-          workOrder.vehicle.model?.name,
-          [workOrder.vehicle.year, workOrder.vehicle.color]
-            .filter(Boolean)
-            .join(" "),
-        ]
-          .filter(Boolean)
-          .join(" · ")}
+        description={buildVehicleDescription({
+          category: workOrder.vehicle.category,
+          make: workOrder.vehicle.vehicle_make?.name,
+          model: workOrder.vehicle.vehicle_model?.name,
+          color: workOrder.vehicle.color,
+          year: workOrder.vehicle.year,
+        })}
         titleClassName="font-mono tracking-tighter text-2xl"
         primaryAction={
           nextAction
@@ -1022,16 +1019,13 @@ export default function WorkOrderDetailPage() {
               {workOrder.vehicle.identifier}
             </p>
             <p className="text-muted-foreground">
-              {[
-                `${getVehicleCategory(workOrder.vehicle.category).icon} ${getVehicleCategory(workOrder.vehicle.category).label}`,
-                workOrder.vehicle.make?.name,
-                workOrder.vehicle.model?.name,
-                [workOrder.vehicle.year, workOrder.vehicle.color]
-                  .filter(Boolean)
-                  .join(" "),
-              ]
-                .filter(Boolean)
-                .join(" · ")}
+              {buildVehicleDescription({
+                category: workOrder.vehicle.category,
+                make: workOrder.vehicle.vehicle_make?.name,
+                model: workOrder.vehicle.vehicle_model?.name,
+                color: workOrder.vehicle.color,
+                year: workOrder.vehicle.year,
+              })}
             </p>
           </div>
         </div>

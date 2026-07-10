@@ -31,7 +31,10 @@ import {
   Pencil,
 } from "lucide-react";
 import Link from "next/link";
-import { getVehicleCategoryLabel } from "@/lib/constants/vehicle-categories";
+import {
+  getVehicleCategoryLabel,
+  buildVehicleDescription,
+} from "@/lib/constants/vehicle-categories";
 import {
   Dialog,
   DialogContent,
@@ -285,7 +288,13 @@ export default function VehicleDetailPage() {
             : vehicle.identifier
         }
         titleClassName="font-mono tracking-tight"
-        description={`${getVehicleCategoryLabel(vehicle.category)}${vehicle.make?.name ? ` • ${vehicle.make.name} ${vehicle.model?.name || ""}` : ""}`}
+        description={buildVehicleDescription({
+          category: vehicle.category,
+          make: vehicle.make?.name,
+          model: vehicle.model?.name,
+          color: vehicle.color,
+          year: vehicle.year,
+        })}
         showBackButton
         onBack={() => router.back()}
         primaryAction={{

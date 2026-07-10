@@ -40,16 +40,6 @@ import {
 // Storage key for wizard persistence
 const WIZARD_STORAGE_KEY = "work-order-wizard-state";
 
-// Validate Argentine license plate format (old: AAA000, new: AA000AA)
-function isValidPlate(plate: string): boolean {
-  const clean = plate.trim().toUpperCase();
-  // Old format: 3 letters + 3 digits
-  const oldFormat = /^[A-Z]{3}\d{3}$/;
-  // New format: 2 letters + 3 digits + 2 letters
-  const newFormat = /^[A-Z]{2}\d{3}[A-Z]{2}$/;
-  return oldFormat.test(clean) || newFormat.test(clean);
-}
-
 // Normalize plate to uppercase and trim
 function normalizePlate(plate: string): string {
   return plate.trim().toUpperCase();
@@ -65,8 +55,8 @@ interface VehicleWithCustomer {
   id: string;
   identifier: string;
   category: string;
-  make?: { name: string };
-  model?: { name: string };
+  vehicle_make?: { name: string };
+  vehicle_model?: { name: string };
   year?: number;
   color?: string;
   equipmentName?: string;
@@ -135,12 +125,13 @@ export default function NewWorkOrderPage() {
   const [step, setStep] = useState(1);
   const [plateError, setPlateError] = useState<string | null>(null);
 
-  // Step 1: Search by license plate
+  // Step 1: Search by license plate or serial number
   const [plateSearch, setPlateSearch] = useState("");
   const [searching, setSearching] = useState(false);
   const [foundVehicle, setFoundVehicle] = useState<VehicleWithCustomer | null>(
     null,
   );
+  const [searchResults, setSearchResults] = useState<VehicleWithCustomer[]>([]);
   const [showCreateVehicle, setShowCreateVehicle] = useState(false);
   const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
   const [selectedCustomerForNewVehicle, setSelectedCustomerForNewVehicle] =
@@ -292,18 +283,14 @@ export default function NewWorkOrderPage() {
     fetchVehicleById();
   }, [vehicleIdFromUrl]);
 
-  // Search vehicle by identifier
+  // Search vehicle by identifier (patent or serial number)
   const searchVehicle = async () => {
     const normalized = normalizePlate(plateSearch);
     if (!normalized) return;
 
-    // Validate plate format
-    if (!isValidPlate(normalized)) {
-      setPlateError("Formato inválido. Use AAA000 o AA000AA");
-      return;
-    }
     setPlateError(null);
     setSearching(true);
+    setSearchResults([]);
     try {
       const res = await fetch(
         `/api/vehicles/by-identifier/${encodeURIComponent(normalized)}`,
@@ -311,8 +298,12 @@ export default function NewWorkOrderPage() {
       if (res.ok) {
         const data = await res.json();
         if (data.vehicles && data.vehicles.length > 0) {
-          setFoundVehicle(data.vehicles[0]);
-          setShowCreateVehicle(false);
+          if (data.vehicles.length === 1) {
+            setFoundVehicle(data.vehicles[0]);
+            setShowCreateVehicle(false);
+          } else {
+            setSearchResults(data.vehicles);
+          }
         } else {
           setFoundVehicle(null);
           setShowCreateVehicle(true);
@@ -478,6 +469,7 @@ export default function NewWorkOrderPage() {
 
   const resetSearch = () => {
     setFoundVehicle(null);
+    setSearchResults([]);
     setShowCreateVehicle(false);
     setPlateSearch("");
     setPlateError(null);
@@ -514,53 +506,111 @@ export default function NewWorkOrderPage() {
           {/* Step 1: Search Vehicle by License Plate */}
           {step === 1 && (
             <div className="space-y-6">
-              {!foundVehicle && !showCreateVehicle && (
-                <>
+              {!foundVehicle &&
+                !showCreateVehicle &&
+                searchResults.length === 0 && (
+                  <>
+                    <div className="text-center space-y-2">
+                      <Car className="h-12 w-12 mx-auto text-muted-foreground" />
+                      <h3 className="text-lg font-medium">Buscar vehículo</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Ingrese patente o número de serie para buscar el
+                        vehículo y su dueño
+                      </p>
+                    </div>
+
+                    <div className="flex flex-col gap-2 max-w-md mx-auto">
+                      <div className="flex gap-2">
+                        <div className="relative flex-1">
+                          <Search
+                            className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none"
+                            aria-hidden="true"
+                          />
+                          <Input
+                            autoFocus
+                            placeholder="Ej: ABC123, AB123CD o N° de serie"
+                            value={plateSearch}
+                            onChange={(e) => {
+                              setPlateSearch(e.target.value.toUpperCase());
+                              if (plateError) setPlateError(null);
+                            }}
+                            onKeyDown={(e) =>
+                              e.key === "Enter" && searchVehicle()
+                            }
+                            className="flex-1 text-center text-lg uppercase pl-9 font-mono tracking-widest"
+                          />
+                        </div>
+                        <Button
+                          onClick={searchVehicle}
+                          disabled={searching || !plateSearch.trim()}
+                        >
+                          {searching ? "Buscando..." : "Buscar"}
+                        </Button>
+                      </div>
+                      {plateError && (
+                        <p className="text-sm text-destructive text-center">
+                          {plateError}
+                        </p>
+                      )}
+                    </div>
+                  </>
+                )}
+
+              {/* Search Results List */}
+              {searchResults.length > 0 && !foundVehicle && (
+                <div className="space-y-4">
                   <div className="text-center space-y-2">
-                    <Car className="h-12 w-12 mx-auto text-muted-foreground" />
                     <h3 className="text-lg font-medium">
-                      Buscar vehículo por patente
+                      {searchResults.length} vehículo
+                      {searchResults.length > 1 ? "s" : ""} encontrado
+                      {searchResults.length > 1 ? "s" : ""}
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                      Ingrese la patente para buscar el vehículo y su dueño
+                      Seleccione el vehículo correcto
                     </p>
                   </div>
-
-                  <div className="flex flex-col gap-2 max-w-md mx-auto">
-                    <div className="flex gap-2">
-                      <div className="relative flex-1">
-                        <Search
-                          className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none"
-                          aria-hidden="true"
-                        />
-                        <Input
-                          autoFocus
-                          placeholder="Ej: ABC123 o AB123CD"
-                          value={plateSearch}
-                          onChange={(e) => {
-                            setPlateSearch(e.target.value.toUpperCase());
-                            if (plateError) setPlateError(null);
-                          }}
-                          onKeyDown={(e) =>
-                            e.key === "Enter" && searchVehicle()
-                          }
-                          className="flex-1 text-center text-lg uppercase pl-9 font-mono tracking-widest"
-                        />
-                      </div>
-                      <Button
-                        onClick={searchVehicle}
-                        disabled={searching || !plateSearch.trim()}
+                  <div className="max-w-2xl mx-auto space-y-2">
+                    {searchResults.map((vehicle) => (
+                      <button
+                        key={vehicle.id}
+                        onClick={() => {
+                          setFoundVehicle(vehicle);
+                          setSearchResults([]);
+                          setShowCreateVehicle(false);
+                        }}
+                        className="w-full text-left border rounded-lg p-4 hover:bg-primary/5 hover:border-primary/30 transition-colors flex items-center gap-4"
                       >
-                        {searching ? "Buscando..." : "Buscar"}
-                      </Button>
-                    </div>
-                    {plateError && (
-                      <p className="text-sm text-destructive text-center">
-                        {plateError}
-                      </p>
-                    )}
+                        <div className="bg-primary/10 p-2.5 rounded-full shrink-0">
+                          <Car className="h-5 w-5 text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono font-bold text-lg">
+                              {vehicle.identifier}
+                            </span>
+                            <Badge variant="outline">{vehicle.category}</Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground truncate">
+                            {vehicle.vehicle_make?.name}{" "}
+                            {vehicle.vehicle_model?.name}
+                            {vehicle.year ? ` (${vehicle.year})` : ""}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            Dueño: {vehicle.customer.name}
+                          </p>
+                        </div>
+                      </button>
+                    ))}
+                    <Button
+                      variant="outline"
+                      onClick={resetSearch}
+                      className="w-full"
+                    >
+                      <RotateCcw className="h-4 w-4 mr-2" />
+                      Nueva búsqueda
+                    </Button>
                   </div>
-                </>
+                </div>
               )}
 
               {/* Vehicle Found Card */}
@@ -581,7 +631,8 @@ export default function NewWorkOrderPage() {
                           </Badge>
                         </div>
                         <p className="text-muted-foreground">
-                          {foundVehicle.make?.name} {foundVehicle.model?.name}{" "}
+                          {foundVehicle.vehicle_make?.name}{" "}
+                          {foundVehicle.vehicle_model?.name}{" "}
                           {foundVehicle.year && `(${foundVehicle.year})`}
                         </p>
 
@@ -616,7 +667,7 @@ export default function NewWorkOrderPage() {
                 <div className="space-y-4">
                   <div className="text-center">
                     <p className="text-muted-foreground">
-                      No se encontró vehículo con patente{" "}
+                      No se encontró vehículo con identificador{" "}
                       <strong>{plateSearch}</strong>
                     </p>
                     <p className="text-sm">
