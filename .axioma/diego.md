@@ -3,12 +3,10 @@
 ## 📋 BACKLOG
 - [ ] Creación del Hub de Reportes (Index `/adm/reports`)
 - [ ] Mejora de Reporte de Ventas (KPIs, evolución, comparación de períodos)
-- [ ] Implementación de reporte de Stock (valorización, rotación)
-- [ ] Implementación de reporte de Taller (performance por técnico, tiempos)
-- [ ] Implementación de reporte de Clientes (recurrencia, saldo promedio)
-- [ ] Implementación de reporte de Finanzas (cash flow avanzado)
+- [ ] Implementación de reporte de Compras (abastecimiento, proveedores)
 
 ## ✅ DONE
+- [x] 2025-07-10 — Implementación de reporte de Compras (abastecimiento, proveedores y evolución de costos) (PR #diego/reports/purchase-report)
 - [x] 2025-07-05 — Implementación de reporte de Stock (valorización, alertas de reposición y distribución por categoría) (PR #diego/reports/stock-report)
 - [x] 2025-07-06 — Implementación de reporte de Taller & Operación (performance, estados y tiempos) (PR #diego/reports/workshop-report)
 - [x] 2025-07-08 — Implementación de reporte de Finanzas & Flujo (ingresos, egresos y medios de pago) (PR #diego/reports/finance-report)
