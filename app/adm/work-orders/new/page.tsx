@@ -238,7 +238,7 @@ export default function NewWorkOrderPage() {
       const [priceListsRes, settingsRes, techniciansRes] = await Promise.all([
         fetch("/api/price-lists"),
         fetch("/api/settings"),
-        fetch("/api/users?role=TECHNICIAN"),
+        fetch("/api/users?active=true"),
       ]);
       if (priceListsRes.ok) {
         const data = await priceListsRes.json();
@@ -823,7 +823,7 @@ export default function NewWorkOrderPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="technician">Técnico Asignado</Label>
+                  <Label htmlFor="technician">Responsable Asignado</Label>
                   <Select
                     value={selectedTechnicianId}
                     onValueChange={setSelectedTechnicianId}
@@ -833,7 +833,7 @@ export default function NewWorkOrderPage() {
                         className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none"
                         aria-hidden="true"
                       />
-                      <SelectValue placeholder="Seleccionar técnico" />
+                      <SelectValue placeholder="Seleccionar responsable" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="unassigned">Sin asignar</SelectItem>

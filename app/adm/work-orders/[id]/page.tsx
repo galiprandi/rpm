@@ -55,7 +55,10 @@ import {
   Loader2,
   FileText,
 } from "lucide-react";
-import { ProductServiceSelector, SelectedItem } from "@/components/ui/ProductServiceSelector";
+import {
+  ProductServiceSelector,
+  SelectedItem,
+} from "@/components/ui/ProductServiceSelector";
 import Image from "next/image";
 import { Header } from "@/components/adm/Header";
 import { cn } from "@/lib/utils";
@@ -68,7 +71,7 @@ import { getWhatsAppLink, getWorkOrderMessage } from "@/lib/utils/whatsapp";
 const getFieldLabel = (field: string) => {
   const labels: Record<string, string> = {
     status: "Estado",
-    technicianId: "Técnico",
+    technicianId: "Responsable",
     notes: "Notas",
     scheduledDate: "Fecha Agendada",
     paymentMethod: "Método de Pago",
@@ -113,8 +116,10 @@ function TimelineItem({
           className={cn(
             "w-6 h-6 rounded-full flex items-center justify-center shrink-0 shadow-sm border",
             variant === "milestone"
-              ? (status === "completed" ? "bg-emerald-500 border-emerald-600 text-white" : "bg-muted border-muted-foreground/30 text-muted-foreground")
-              : "bg-primary/10 border-primary/20 text-primary"
+              ? status === "completed"
+                ? "bg-emerald-500 border-emerald-600 text-white"
+                : "bg-muted border-muted-foreground/30 text-muted-foreground"
+              : "bg-primary/10 border-primary/20 text-primary",
           )}
         >
           <Icon className="h-3.5 w-3.5" />
@@ -123,7 +128,14 @@ function TimelineItem({
       </div>
       <div className={cn("pb-6", isLast && "pb-0")}>
         <div className="flex flex-col sm:flex-row sm:items-baseline gap-x-2">
-          <p className={cn("text-sm font-semibold", variant === "audit" && "text-primary/90")}>{title}</p>
+          <p
+            className={cn(
+              "text-sm font-semibold",
+              variant === "audit" && "text-primary/90",
+            )}
+          >
+            {title}
+          </p>
           <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">
             {new Date(date).toLocaleString("es-AR", {
               day: "numeric",
@@ -133,7 +145,11 @@ function TimelineItem({
             })}
           </p>
         </div>
-        {subtitle && <p className="text-xs text-muted-foreground mt-0.5 italic">{subtitle}</p>}
+        {subtitle && (
+          <p className="text-xs text-muted-foreground mt-0.5 italic">
+            {subtitle}
+          </p>
+        )}
       </div>
     </div>
   );
@@ -148,8 +164,15 @@ const STATUSES = [
   { id: "DELIVERED", label: "Entregada", color: "bg-gray-100" },
 ];
 
-const NEXT_STATUS_MAP: Record<string, { label: string; next: string; icon: LucideIcon }> = {
-  CONFIRMED: { label: "Iniciar Trabajo", next: "IN_PROGRESS", icon: PlayCircle },
+const NEXT_STATUS_MAP: Record<
+  string,
+  { label: string; next: string; icon: LucideIcon }
+> = {
+  CONFIRMED: {
+    label: "Iniciar Trabajo",
+    next: "IN_PROGRESS",
+    icon: PlayCircle,
+  },
   WAITING: { label: "Iniciar Trabajo", next: "IN_PROGRESS", icon: PlayCircle },
   IN_PROGRESS: { label: "Finalizar Trabajo", next: "READY", icon: CheckCircle },
   QC_CHECK: { label: "Finalizar Trabajo", next: "READY", icon: CheckCircle },
@@ -252,38 +275,52 @@ export default function WorkOrderDetailPage() {
   const [loading, setLoading] = useState(true);
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
-  const [payments, setPayments] = useState<Array<{
-    id: string;
-    amount: number;
-    notes: string | null;
-    createdAt: string;
-    paymentMethod: { name: string };
-  }>>([]);
+  const [payments, setPayments] = useState<
+    Array<{
+      id: string;
+      amount: number;
+      notes: string | null;
+      createdAt: string;
+      paymentMethod: { name: string };
+    }>
+  >([]);
   const [totalPaid, setTotalPaid] = useState(0);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [loadingAudit, setLoadingAudit] = useState(false);
 
-  const [editingChecklist, setEditingChecklist] = useState<'entry' | 'exit' | null>(null);
-  const [editingOdometer, setEditingOdometer] = useState<number | undefined>(undefined);
-  const [editingFuelLevel, setEditingFuelLevel] = useState<number | undefined>(undefined);
+  const [editingChecklist, setEditingChecklist] = useState<
+    "entry" | "exit" | null
+  >(null);
+  const [editingOdometer, setEditingOdometer] = useState<number | undefined>(
+    undefined,
+  );
+  const [editingFuelLevel, setEditingFuelLevel] = useState<number | undefined>(
+    undefined,
+  );
   const [savingChecklist, setSavingChecklist] = useState(false);
   const [editingScheduledDate, setEditingScheduledDate] = useState(false);
   const [editingNotes, setEditingNotes] = useState(false);
   const [savingNotes, setSavingNotes] = useState(false);
-  const [newScheduledDate, setNewScheduledDate] = useState<string>('');
-  const [newNotes, setNewNotes] = useState<string>('');
+  const [newScheduledDate, setNewScheduledDate] = useState<string>("");
+  const [newNotes, setNewNotes] = useState<string>("");
   const [isCashOpen, setIsCashOpen] = useState<boolean | null>(null);
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loadingInvoices, setLoadingInvoices] = useState(false);
-  const [generatingDocument, setGeneratingDocument] = useState<string | null>(null);
-  
+  const [generatingDocument, setGeneratingDocument] = useState<string | null>(
+    null,
+  );
+
   // Items editing state
   const [isEditingItems, setIsEditingItems] = useState(false);
   const [editableItems, setEditableItems] = useState<SelectedItem[]>([]);
-  const [priceLists, setPriceLists] = useState<{ id: string; name: string; baseMarginPercentage: number }[]>([]);
+  const [priceLists, setPriceLists] = useState<
+    { id: string; name: string; baseMarginPercentage: number }[]
+  >([]);
   const [savingItems, setSavingItems] = useState(false);
   const [isCreditNoteDialogOpen, setIsCreditNoteDialogOpen] = useState(false);
-  const [technicians, setTechnicians] = useState<Array<{ id: string; name: string }>>([]);
+  const [technicians, setTechnicians] = useState<
+    Array<{ id: string; name: string }>
+  >([]);
   const [updatingTechnician, setUpdatingTechnician] = useState(false);
 
   const fetchWorkOrder = useCallback(async () => {
@@ -309,10 +346,10 @@ export default function WorkOrderDetailPage() {
       }
 
       // Check cash status
-      const cashRes = await fetch('/api/cash/status');
+      const cashRes = await fetch("/api/cash/status");
       if (cashRes.ok) {
         const data = await cashRes.json();
-        setIsCashOpen(data.status === 'OPEN');
+        setIsCashOpen(data.status === "OPEN");
       }
     } catch (error) {
       console.error("Error fetching payments:", error);
@@ -322,7 +359,9 @@ export default function WorkOrderDetailPage() {
   const fetchAuditLogs = useCallback(async () => {
     setLoadingAudit(true);
     try {
-      const response = await fetch(`/api/work-orders/${workOrderId}/audit-logs`);
+      const response = await fetch(
+        `/api/work-orders/${workOrderId}/audit-logs`,
+      );
       if (response.ok) {
         const data = await response.json();
         setAuditLogs(data || []);
@@ -339,8 +378,8 @@ export default function WorkOrderDetailPage() {
     const fetchData = async () => {
       try {
         const [priceListsRes, techniciansRes] = await Promise.all([
-          fetch('/api/price-lists'),
-          fetch('/api/users?role=TECHNICIAN'),
+          fetch("/api/price-lists"),
+          fetch("/api/users?active=true"),
         ]);
 
         if (priceListsRes.ok) {
@@ -353,7 +392,7 @@ export default function WorkOrderDetailPage() {
           setTechnicians(data.users || []);
         }
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error("Error fetching data:", error);
       }
     };
     void fetchData();
@@ -398,9 +437,10 @@ export default function WorkOrderDetailPage() {
     } catch (error) {
       console.error("Error updating status:", error);
       await alert({
-        title: 'Error',
-        description: 'Error al actualizar estado. Por favor intente nuevamente.',
-        variant: 'error',
+        title: "Error",
+        description:
+          "Error al actualizar estado. Por favor intente nuevamente.",
+        variant: "error",
       });
     } finally {
       setUpdatingStatus(false);
@@ -413,7 +453,10 @@ export default function WorkOrderDetailPage() {
       const response = await fetch(`/api/work-orders/${workOrderId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ technicianId: newTechnicianId === 'unassigned' ? null : newTechnicianId }),
+        body: JSON.stringify({
+          technicianId:
+            newTechnicianId === "unassigned" ? null : newTechnicianId,
+        }),
       });
 
       if (!response.ok) throw new Error("Failed to update technician");
@@ -423,16 +466,17 @@ export default function WorkOrderDetailPage() {
       void fetchAuditLogs();
 
       await alert({
-        title: 'Éxito',
-        description: 'Técnico asignado correctamente',
-        variant: 'success',
+        title: "Éxito",
+        description: "Responsable asignado correctamente",
+        variant: "success",
       });
     } catch (error) {
       console.error("Error updating technician:", error);
       await alert({
-        title: 'Error',
-        description: 'Error al actualizar técnico. Por favor intente nuevamente.',
-        variant: 'error',
+        title: "Error",
+        description:
+          "Error al actualizar responsable. Por favor intente nuevamente.",
+        variant: "error",
       });
     } finally {
       setUpdatingTechnician(false);
@@ -441,18 +485,21 @@ export default function WorkOrderDetailPage() {
 
   const handleSaveChecklistData = async () => {
     if (!editingChecklist) return;
-    
+
     setSavingChecklist(true);
     try {
-      const response = await fetch(`/api/work-orders/${workOrderId}/checklist`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type: editingChecklist,
-          odometerValue: editingOdometer,
-          fuelLevel: editingFuelLevel,
-        }),
-      });
+      const response = await fetch(
+        `/api/work-orders/${workOrderId}/checklist`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: editingChecklist,
+            odometerValue: editingOdometer,
+            fuelLevel: editingFuelLevel,
+          }),
+        },
+      );
 
       if (!response.ok) throw new Error("Failed to update checklist data");
 
@@ -462,26 +509,27 @@ export default function WorkOrderDetailPage() {
       setEditingOdometer(undefined);
       setEditingFuelLevel(undefined);
       fetchAuditLogs();
-      
+
       await alert({
-        title: 'Éxito',
-        description: 'Datos actualizados correctamente',
-        variant: 'success',
+        title: "Éxito",
+        description: "Datos actualizados correctamente",
+        variant: "success",
       });
     } catch (error) {
       console.error("Error updating checklist data:", error);
       await alert({
-        title: 'Error',
-        description: 'Error al actualizar datos. Por favor intente nuevamente.',
-        variant: 'error',
+        title: "Error",
+        description: "Error al actualizar datos. Por favor intente nuevamente.",
+        variant: "error",
       });
     } finally {
       setSavingChecklist(false);
     }
   };
 
-  const startEditingChecklist = (type: 'entry' | 'exit') => {
-    const checklist = type === 'entry' ? workOrder?.entryChecklist : workOrder?.exitChecklist;
+  const startEditingChecklist = (type: "entry" | "exit") => {
+    const checklist =
+      type === "entry" ? workOrder?.entryChecklist : workOrder?.exitChecklist;
     setEditingChecklist(type);
     setEditingOdometer(checklist?.odometerValue ?? workOrder?.odometerValue);
     setEditingFuelLevel(checklist?.fuelLevel ?? workOrder?.fuelLevel);
@@ -490,11 +538,11 @@ export default function WorkOrderDetailPage() {
   // Items editing handlers
   const startEditingItems = () => {
     if (!workOrder) return;
-    
+
     // Map work_order_item to SelectedItem format
-    const mappedItems = workOrder.work_order_item.map(item => ({
-      id: item.type === 'PRODUCT' ? item.productId! : item.serviceId!,
-      type: item.type.toLowerCase() as 'product' | 'service',
+    const mappedItems = workOrder.work_order_item.map((item) => ({
+      id: item.type === "PRODUCT" ? item.productId! : item.serviceId!,
+      type: item.type.toLowerCase() as "product" | "service",
       name: item.product?.name || item.service?.name || item.name,
       quantity: item.quantity,
       unitPrice: Number(item.unitPrice),
@@ -502,7 +550,7 @@ export default function WorkOrderDetailPage() {
       isManualPrice: item.isManualPrice,
       priceListId: item.priceListId,
     }));
-    
+
     setEditableItems(mappedItems);
     setIsEditingItems(true);
   };
@@ -511,22 +559,22 @@ export default function WorkOrderDetailPage() {
     setSavingItems(true);
     try {
       const response = await fetch(`/api/work-orders/${workOrderId}/items`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ items: editableItems }),
       });
 
-      if (!response.ok) throw new Error('Failed to update items');
-      
+      if (!response.ok) throw new Error("Failed to update items");
+
       setIsEditingItems(false);
       fetchWorkOrder();
       fetchAuditLogs();
     } catch (error) {
-      console.error('Error updating items:', error);
+      console.error("Error updating items:", error);
       await alert({
-        title: 'Error',
-        description: 'Error al actualizar items. Por favor intente nuevamente.',
-        variant: 'error',
+        title: "Error",
+        description: "Error al actualizar items. Por favor intente nuevamente.",
+        variant: "error",
       });
     } finally {
       setSavingItems(false);
@@ -552,18 +600,18 @@ export default function WorkOrderDetailPage() {
       setWorkOrder((prev) => (prev ? { ...prev, ...updated } : null));
       setEditingScheduledDate(false);
       void fetchAuditLogs();
-      
+
       await alert({
-        title: 'Éxito',
-        description: 'Fecha agendada actualizada',
-        variant: 'success',
+        title: "Éxito",
+        description: "Fecha agendada actualizada",
+        variant: "success",
       });
     } catch (error) {
       console.error("Error updating scheduled date:", error);
       await alert({
-        title: 'Error',
-        description: 'Error al actualizar fecha agendada',
-        variant: 'error',
+        title: "Error",
+        description: "Error al actualizar fecha agendada",
+        variant: "error",
       });
     }
   };
@@ -583,18 +631,18 @@ export default function WorkOrderDetailPage() {
       setWorkOrder((prev) => (prev ? { ...prev, ...updated } : null));
       setEditingNotes(false);
       void fetchAuditLogs();
-      
+
       await alert({
-        title: 'Éxito',
-        description: 'Notas actualizadas',
-        variant: 'success',
+        title: "Éxito",
+        description: "Notas actualizadas",
+        variant: "success",
       });
     } catch (error) {
       console.error("Error updating notes:", error);
       await alert({
-        title: 'Error',
-        description: 'Error al actualizar notas',
-        variant: 'error',
+        title: "Error",
+        description: "Error al actualizar notas",
+        variant: "error",
       });
     } finally {
       setSavingNotes(false);
@@ -602,44 +650,52 @@ export default function WorkOrderDetailPage() {
   };
 
   const startEditingScheduledDate = () => {
-    setNewScheduledDate(workOrder?.scheduledDate ? new Date(workOrder.scheduledDate).toISOString().slice(0, 16) : '');
+    setNewScheduledDate(
+      workOrder?.scheduledDate
+        ? new Date(workOrder.scheduledDate).toISOString().slice(0, 16)
+        : "",
+    );
     setEditingScheduledDate(true);
   };
 
   const startEditingNotes = () => {
-    setNewNotes(workOrder?.notes || '');
+    setNewNotes(workOrder?.notes || "");
     setEditingNotes(true);
   };
 
   const generateDocument = async (type: string) => {
     setGeneratingDocument(type);
     try {
-      const response = await fetch(`/api/work-orders/${workOrderId}/documents`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type }),
-      });
+      const response = await fetch(
+        `/api/work-orders/${workOrderId}/documents`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type }),
+        },
+      );
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Error al generar documento');
+        throw new Error(error.error || "Error al generar documento");
       }
 
       await alert({
-        title: 'Éxito',
-        description: `${type === 'PRESUPUESTO' ? 'Presupuesto' : (type === 'REMITO' ? 'Remito' : 'Comprobante')} generado correctamente`,
-        variant: 'success',
+        title: "Éxito",
+        description: `${type === "PRESUPUESTO" ? "Presupuesto" : type === "REMITO" ? "Remito" : "Comprobante"} generado correctamente`,
+        variant: "success",
       });
 
       fetchInvoices();
       fetchWorkOrder();
       fetchAuditLogs();
     } catch (error) {
-      console.error('Error generating document:', error);
+      console.error("Error generating document:", error);
       await alert({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Error al generar documento',
-        variant: 'error',
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Error al generar documento",
+        variant: "error",
       });
     } finally {
       setGeneratingDocument(null);
@@ -652,83 +708,87 @@ export default function WorkOrderDetailPage() {
 
     const items: any[] = [
       {
-        type: 'milestone',
-        title: 'OT Creada',
+        type: "milestone",
+        title: "OT Creada",
         date: workOrder.createdAt,
-        status: 'completed',
+        status: "completed",
         icon: Plus,
-      }
+      },
     ];
 
     if (workOrder.scheduledDate) {
       items.push({
-        type: 'milestone',
-        title: 'Turno Agendado',
+        type: "milestone",
+        title: "Turno Agendado",
         date: workOrder.scheduledDate,
-        status: 'completed',
+        status: "completed",
         icon: Clock,
       });
     }
 
     if (workOrder.startedAt) {
       items.push({
-        type: 'milestone',
-        title: 'Trabajo Iniciado',
+        type: "milestone",
+        title: "Trabajo Iniciado",
         date: workOrder.startedAt,
-        status: 'completed',
+        status: "completed",
         icon: PlayCircle,
       });
     }
 
     if (workOrder.completedAt) {
       items.push({
-        type: 'milestone',
-        title: 'Trabajo Completado',
+        type: "milestone",
+        title: "Trabajo Completado",
         date: workOrder.completedAt,
-        status: 'completed',
+        status: "completed",
         icon: CheckCircle,
       });
     }
 
     if (workOrder.deliveredAt) {
       items.push({
-        type: 'milestone',
-        title: 'Entregado al Cliente',
+        type: "milestone",
+        title: "Entregado al Cliente",
         date: workOrder.deliveredAt,
-        status: 'completed',
+        status: "completed",
         icon: Package,
       });
     }
 
     // Add granular audit logs
-    auditLogs.forEach(log => {
+    auditLogs.forEach((log) => {
       let title = `Cambio en ${getFieldLabel(log.fieldName)}`;
-      let subtitle = `De "${log.oldValue || 'vacío'}" a "${log.newValue || 'vacío'}"`;
+      let subtitle = `De "${log.oldValue || "vacío"}" a "${log.newValue || "vacío"}"`;
 
-      if (log.fieldName === 'status') {
-        title = `Estado cambiado a ${getStatusLabel(log.newValue || '')}`;
+      if (log.fieldName === "status") {
+        title = `Estado cambiado a ${getStatusLabel(log.newValue || "")}`;
         subtitle = `Por ${log.changedBy}`;
-      } else if (log.fieldName === 'technicianId') {
-        const tech = technicians.find(t => t.id === log.newValue);
-        title = tech ? `Técnico asignado: ${tech.name}` : `Técnico desasignado`;
+      } else if (log.fieldName === "technicianId") {
+        const tech = technicians.find((t) => t.id === log.newValue);
+        title = tech
+          ? `Responsable asignado: ${tech.name}`
+          : `Responsable desasignado`;
         subtitle = `Por ${log.changedBy}`;
-      } else if (log.fieldName === 'notes') {
-        title = 'Notas actualizadas';
+      } else if (log.fieldName === "notes") {
+        title = "Notas actualizadas";
         subtitle = `Por ${log.changedBy}`;
       }
 
       items.push({
-        type: 'audit',
+        type: "audit",
         title,
         subtitle,
         date: log.changedAt,
-        status: 'completed',
+        status: "completed",
         icon: History,
       });
     });
 
     // Sort chronologically
-    return items.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    return items.sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+    );
   }, [workOrder, auditLogs, technicians]);
 
   if (loading) {
@@ -758,13 +818,17 @@ export default function WorkOrderDetailPage() {
         title={workOrder.vehicle.identifier}
         titleClassName="font-mono tracking-tighter"
         showBackButton
-        onBack={() => router.push('/adm/work-orders')}
-        primaryAction={nextAction ? {
-          label: nextAction.label,
-          icon: nextAction.icon,
-          onClick: () => handleStatusChange(nextAction.next),
-          loading: updatingStatus,
-        } : undefined}
+        onBack={() => router.push("/adm/work-orders")}
+        primaryAction={
+          nextAction
+            ? {
+                label: nextAction.label,
+                icon: nextAction.icon,
+                onClick: () => handleStatusChange(nextAction.next),
+                loading: updatingStatus,
+              }
+            : undefined
+        }
         leftActions={
           <Select
             value={workOrder.status}
@@ -785,91 +849,121 @@ export default function WorkOrderDetailPage() {
         }
         secondaryActions={[
           {
-            label: 'Imprimir',
+            label: "Imprimir",
             onClick: () => window.print(),
             icon: Printer,
-            variant: 'outline',
+            variant: "outline",
           },
-          ...(workOrder.status === 'READY' || workOrder.status === 'DELIVERED' ? [{
-            label: 'Notificar WhatsApp',
-            onClick: () => {
-              if (workOrder.customer?.phone) {
-                const msg = getWorkOrderMessage({
-                  customerName: workOrder.customer.name,
-                  vehicleIdentifier: workOrder.vehicle.identifier,
-                  status: workOrder.status,
-                  total: Number(workOrder.total),
-                  totalPaid: totalPaid,
-                });
-                window.open(getWhatsAppLink(workOrder.customer.phone, msg), '_blank');
-              }
-            },
-            variant: 'outline' as const,
-            icon: MessageSquare,
-            className: "text-emerald-700 border-emerald-200 bg-emerald-50 hover:bg-emerald-100",
-            ariaLabel: 'Enviar notificación de estado por WhatsApp',
-          }] : []),
+          ...(workOrder.status === "READY" || workOrder.status === "DELIVERED"
+            ? [
+                {
+                  label: "Notificar WhatsApp",
+                  onClick: () => {
+                    if (workOrder.customer?.phone) {
+                      const msg = getWorkOrderMessage({
+                        customerName: workOrder.customer.name,
+                        vehicleIdentifier: workOrder.vehicle.identifier,
+                        status: workOrder.status,
+                        total: Number(workOrder.total),
+                        totalPaid: totalPaid,
+                      });
+                      window.open(
+                        getWhatsAppLink(workOrder.customer.phone, msg),
+                        "_blank",
+                      );
+                    }
+                  },
+                  variant: "outline" as const,
+                  icon: MessageSquare,
+                  className:
+                    "text-emerald-700 border-emerald-200 bg-emerald-50 hover:bg-emerald-100",
+                  ariaLabel: "Enviar notificación de estado por WhatsApp",
+                },
+              ]
+            : []),
           {
-            label: 'Devolver',
+            label: "Devolver",
             onClick: () => setIsCreditNoteDialogOpen(true),
-            variant: 'outline',
+            variant: "outline",
             icon: Undo2,
-            ariaLabel: 'Crear nota de crédito por devolución',
+            ariaLabel: "Crear nota de crédito por devolución",
           },
         ]}
       >
         <div className="flex flex-col gap-1.5">
           {/* Línea 1: Info del vehículo */}
           <div className="text-lg font-medium text-muted-foreground">
-            {[workOrder.vehicle.make?.name, workOrder.vehicle.model?.name, workOrder.vehicle.year, workOrder.vehicle.color].filter(Boolean).join(" ")}
+            {[
+              workOrder.vehicle.make?.name,
+              workOrder.vehicle.model?.name,
+              workOrder.vehicle.year,
+              workOrder.vehicle.color,
+            ]
+              .filter(Boolean)
+              .join(" ")}
           </div>
 
           <div className="flex flex-wrap items-center gap-y-2 gap-x-6">
             {/* Línea 2: Fecha agendada si existe */}
             <div className="text-sm">
-                {editingScheduledDate ? (
-                  <div className="flex items-center gap-2">
-                    <div className="relative">
-                      <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" aria-hidden="true" />
-                      <Input
-                        type="datetime-local"
-                        value={newScheduledDate}
-                        onChange={(e) => setNewScheduledDate(e.target.value)}
-                        className="h-8 w-48 pl-9 font-mono"
-                      />
-                    </div>
-                    <Button size="sm" onClick={handleUpdateScheduledDate}>
-                      Guardar
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => setEditingScheduledDate(false)}>
-                      Cancelar
-                    </Button>
+              {editingScheduledDate ? (
+                <div className="flex items-center gap-2">
+                  <div className="relative">
+                    <Clock
+                      className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none"
+                      aria-hidden="true"
+                    />
+                    <Input
+                      type="datetime-local"
+                      value={newScheduledDate}
+                      onChange={(e) => setNewScheduledDate(e.target.value)}
+                      className="h-8 w-48 pl-9 font-mono"
+                    />
                   </div>
-                ) : (
-                  <div className="flex items-center gap-2 bg-muted/50 px-3 py-1 rounded-full border">
-                    <span className="text-muted-foreground flex items-center gap-1.5 font-medium">
-                      <Clock className="h-3.5 w-3.5 text-primary pointer-events-none" aria-hidden="true" />
-                      <span className="font-mono">
-                        {workOrder.scheduledDate ? new Date(workOrder.scheduledDate).toLocaleString("es-AR", {
-                          day: "2-digit",
-                          month: "short",
-                          year: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        }) : "Sin fecha agendada"}
-                      </span>
+                  <Button size="sm" onClick={handleUpdateScheduledDate}>
+                    Guardar
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setEditingScheduledDate(false)}
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 bg-muted/50 px-3 py-1 rounded-full border">
+                  <span className="text-muted-foreground flex items-center gap-1.5 font-medium">
+                    <Clock
+                      className="h-3.5 w-3.5 text-primary pointer-events-none"
+                      aria-hidden="true"
+                    />
+                    <span className="font-mono">
+                      {workOrder.scheduledDate
+                        ? new Date(workOrder.scheduledDate).toLocaleString(
+                            "es-AR",
+                            {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            },
+                          )
+                        : "Sin fecha agendada"}
                     </span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 px-2 text-xs hover:bg-primary/10"
-                      onClick={() => startEditingScheduledDate()}
-                      aria-label="Editar fecha agendada"
-                    >
-                      Editar
-                    </Button>
-                  </div>
-                )}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 text-xs hover:bg-primary/10"
+                    onClick={() => startEditingScheduledDate()}
+                    aria-label="Editar fecha agendada"
+                  >
+                    Editar
+                  </Button>
+                </div>
+              )}
             </div>
 
             {/* Línea 3: Contacto del cliente */}
@@ -879,10 +973,15 @@ export default function WorkOrderDetailPage() {
                   href={`tel:${workOrder.customer?.phone}`}
                   className="flex items-center gap-2 bg-primary/5 hover:bg-primary/10 px-3 py-1 rounded-full border border-primary/20 transition-colors"
                 >
-                  <span className="font-semibold text-primary">{workOrder.customer?.name}</span>
+                  <span className="font-semibold text-primary">
+                    {workOrder.customer?.name}
+                  </span>
                   <div className="w-px h-3 bg-primary/30" />
                   <span className="flex items-center gap-1 text-muted-foreground font-mono">
-                    <Phone className="h-3.5 w-3.5 pointer-events-none" aria-hidden="true" />
+                    <Phone
+                      className="h-3.5 w-3.5 pointer-events-none"
+                      aria-hidden="true"
+                    />
                     {workOrder.customer?.phone}
                   </span>
                 </a>
@@ -899,11 +998,17 @@ export default function WorkOrderDetailPage() {
                         total: Number(workOrder.total),
                         totalPaid: totalPaid,
                       });
-                      window.open(getWhatsAppLink(workOrder.customer!.phone, msg), '_blank');
+                      window.open(
+                        getWhatsAppLink(workOrder.customer!.phone, msg),
+                        "_blank",
+                      );
                     }}
                     aria-label="Enviar WhatsApp"
                   >
-                    <MessageSquare className="h-4 w-4 pointer-events-none" aria-hidden="true" />
+                    <MessageSquare
+                      className="h-4 w-4 pointer-events-none"
+                      aria-hidden="true"
+                    />
                   </Button>
                 )}
               </div>
@@ -912,7 +1017,10 @@ export default function WorkOrderDetailPage() {
                   href={`mailto:${workOrder.customer.email}`}
                   className="flex items-center gap-1.5 text-muted-foreground hover:text-primary transition-colors font-mono"
                 >
-                  <Mail className="h-3.5 w-3.5 pointer-events-none" aria-hidden="true" />
+                  <Mail
+                    className="h-3.5 w-3.5 pointer-events-none"
+                    aria-hidden="true"
+                  />
                   {workOrder.customer.email}
                 </a>
               )}
@@ -921,44 +1029,76 @@ export default function WorkOrderDetailPage() {
 
           {/* Metadata Pills Pattern for Financial Stats */}
           <div className="flex flex-wrap items-center gap-2 mt-4">
-             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted/50 border text-xs font-medium text-muted-foreground">
-                <DollarSign className="h-3.5 w-3.5 pointer-events-none" aria-hidden="true" />
-                Total: <span className="text-foreground font-mono">{Number(workOrder.total).toLocaleString("es-AR", { style: 'currency', currency: 'ARS' })}</span>
-             </div>
-             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 border border-emerald-200 text-xs font-medium text-emerald-700">
-                <Check className="h-3.5 w-3.5 pointer-events-none" aria-hidden="true" />
-                Pagado: <span className="font-mono">{totalPaid.toLocaleString("es-AR", { style: 'currency', currency: 'ARS' })}</span>
-             </div>
-             {balance > 0 && (
-               <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-50 border border-amber-200 text-xs font-medium text-amber-700">
-                  <Clock className="h-3.5 w-3.5 pointer-events-none" aria-hidden="true" />
-                  Pendiente: <span className="font-mono">{balance.toLocaleString("es-AR", { style: 'currency', currency: 'ARS' })}</span>
-               </div>
-             )}
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted/50 border text-xs font-medium text-muted-foreground">
+              <DollarSign
+                className="h-3.5 w-3.5 pointer-events-none"
+                aria-hidden="true"
+              />
+              Total:{" "}
+              <span className="text-foreground font-mono">
+                {Number(workOrder.total).toLocaleString("es-AR", {
+                  style: "currency",
+                  currency: "ARS",
+                })}
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 border border-emerald-200 text-xs font-medium text-emerald-700">
+              <Check
+                className="h-3.5 w-3.5 pointer-events-none"
+                aria-hidden="true"
+              />
+              Pagado:{" "}
+              <span className="font-mono">
+                {totalPaid.toLocaleString("es-AR", {
+                  style: "currency",
+                  currency: "ARS",
+                })}
+              </span>
+            </div>
+            {balance > 0 && (
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-50 border border-amber-200 text-xs font-medium text-amber-700">
+                <Clock
+                  className="h-3.5 w-3.5 pointer-events-none"
+                  aria-hidden="true"
+                />
+                Pendiente:{" "}
+                <span className="font-mono">
+                  {balance.toLocaleString("es-AR", {
+                    style: "currency",
+                    currency: "ARS",
+                  })}
+                </span>
+              </div>
+            )}
 
-             {/* Technician Assignment Pill */}
-             <div className="flex items-center gap-1.5 px-1 py-1 rounded-md bg-purple-50 border border-purple-200 text-xs font-medium text-purple-700">
-                <div className="relative flex items-center pl-7">
-                  <UserCog className="absolute left-1.5 top-1/2 -translate-y-1/2 h-4 w-4 text-purple-600 pointer-events-none" aria-hidden="true" />
-                  <Select
-                    value={workOrder.technicianId || "unassigned"}
-                    onValueChange={handleTechnicianChange}
-                    disabled={updatingTechnician || workOrder.status === 'DELIVERED'}
-                  >
-                    <SelectTrigger className="h-7 border-none bg-transparent hover:bg-purple-100/50 shadow-none focus:ring-0 px-2 min-w-[140px]">
-                      <SelectValue placeholder="Asignar técnico" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="unassigned">Sin asignar</SelectItem>
-                      {technicians.map((tech) => (
-                        <SelectItem key={tech.id} value={tech.id}>
-                          {tech.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-             </div>
+            {/* Technician Assignment Pill */}
+            <div className="flex items-center gap-1.5 px-1 py-1 rounded-md bg-purple-50 border border-purple-200 text-xs font-medium text-purple-700">
+              <div className="relative flex items-center pl-7">
+                <UserCog
+                  className="absolute left-1.5 top-1/2 -translate-y-1/2 h-4 w-4 text-purple-600 pointer-events-none"
+                  aria-hidden="true"
+                />
+                <Select
+                  value={workOrder.technicianId || "unassigned"}
+                  onValueChange={handleTechnicianChange}
+                  disabled={
+                    updatingTechnician || workOrder.status === "DELIVERED"
+                  }
+                >
+                  <SelectTrigger className="h-7 border-none bg-transparent hover:bg-purple-100/50 shadow-none focus:ring-0 px-2 min-w-[140px]">
+                    <SelectValue placeholder="Asignar responsable" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="unassigned">Sin asignar</SelectItem>
+                    {technicians.map((tech) => (
+                      <SelectItem key={tech.id} value={tech.id}>
+                        {tech.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </div>
         </div>
       </Header>
@@ -971,13 +1111,13 @@ export default function WorkOrderDetailPage() {
               <Package className="h-5 w-5" />
               Servicios y Productos
             </CardTitle>
-            {!isEditingItems && workOrder.status !== 'DELIVERED' && (
+            {!isEditingItems && workOrder.status !== "DELIVERED" && (
               <Button variant="outline" size="sm" onClick={startEditingItems}>
                 <Edit className="h-4 w-4 mr-2" />
                 Editar Items
               </Button>
             )}
-            {workOrder.status === 'DELIVERED' && (
+            {workOrder.status === "DELIVERED" && (
               <Badge variant="secondary" className="text-muted-foreground">
                 OT Entregada - No editable
               </Badge>
@@ -995,7 +1135,11 @@ export default function WorkOrderDetailPage() {
                 onSelectionChange={setEditableItems}
               />
               <div className="flex justify-end gap-2 pt-4 border-t">
-                <Button variant="outline" onClick={handleCancelItems} disabled={savingItems}>
+                <Button
+                  variant="outline"
+                  onClick={handleCancelItems}
+                  disabled={savingItems}
+                >
                   <X className="h-4 w-4 mr-2" />
                   Cancelar
                 </Button>
@@ -1020,7 +1164,10 @@ export default function WorkOrderDetailPage() {
                 <TableBody>
                   {workOrder.work_order_item.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                      <TableCell
+                        colSpan={5}
+                        className="text-center text-muted-foreground py-8"
+                      >
                         Sin items registrados
                       </TableCell>
                     </TableRow>
@@ -1031,27 +1178,50 @@ export default function WorkOrderDetailPage() {
                           <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0">
                               {item.type === "PRODUCT" ? (
-                                <Package className="h-4 w-4 text-primary pointer-events-none" aria-hidden="true" />
+                                <Package
+                                  className="h-4 w-4 text-primary pointer-events-none"
+                                  aria-hidden="true"
+                                />
                               ) : (
-                                <Wrench className="h-4 w-4 text-primary pointer-events-none" aria-hidden="true" />
+                                <Wrench
+                                  className="h-4 w-4 text-primary pointer-events-none"
+                                  aria-hidden="true"
+                                />
                               )}
                             </div>
                             <span className="font-semibold tracking-tight">
-                              {item.product?.name || item.service?.name || item.name}
+                              {item.product?.name ||
+                                item.service?.name ||
+                                item.name}
                             </span>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={item.type === "PRODUCT" ? "outline" : "secondary"} className={item.type === "PRODUCT" ? "border-primary/20" : ""}>
+                          <Badge
+                            variant={
+                              item.type === "PRODUCT" ? "outline" : "secondary"
+                            }
+                            className={
+                              item.type === "PRODUCT" ? "border-primary/20" : ""
+                            }
+                          >
                             {item.type === "PRODUCT" ? "Producto" : "Servicio"}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-right font-mono">{item.quantity}</TableCell>
                         <TableCell className="text-right font-mono">
-                          {Number(item.unitPrice).toLocaleString("es-AR", { style: 'currency', currency: 'ARS' })}
+                          {item.quantity}
+                        </TableCell>
+                        <TableCell className="text-right font-mono">
+                          {Number(item.unitPrice).toLocaleString("es-AR", {
+                            style: "currency",
+                            currency: "ARS",
+                          })}
                         </TableCell>
                         <TableCell className="text-right font-medium font-mono">
-                          {Number(item.subtotal).toLocaleString("es-AR", { style: 'currency', currency: 'ARS' })}
+                          {Number(item.subtotal).toLocaleString("es-AR", {
+                            style: "currency",
+                            currency: "ARS",
+                          })}
                         </TableCell>
                       </TableRow>
                     ))
@@ -1063,13 +1233,31 @@ export default function WorkOrderDetailPage() {
                 <div className="mt-4 flex justify-end pt-4 border-t">
                   <div className="text-right space-y-1">
                     <div className="text-sm text-muted-foreground">
-                        Productos: <span className="font-mono">{Number(workOrder.totalProducts).toLocaleString("es-AR", { style: 'currency', currency: 'ARS' })}</span>
+                      Productos:{" "}
+                      <span className="font-mono">
+                        {Number(workOrder.totalProducts).toLocaleString(
+                          "es-AR",
+                          { style: "currency", currency: "ARS" },
+                        )}
+                      </span>
                     </div>
                     <div className="text-sm text-muted-foreground">
-                        Servicios: <span className="font-mono">{Number(workOrder.totalServices).toLocaleString("es-AR", { style: 'currency', currency: 'ARS' })}</span>
+                      Servicios:{" "}
+                      <span className="font-mono">
+                        {Number(workOrder.totalServices).toLocaleString(
+                          "es-AR",
+                          { style: "currency", currency: "ARS" },
+                        )}
+                      </span>
                     </div>
                     <div className="text-2xl font-bold pt-1">
-                        Total: <span className="font-mono tracking-tight text-emerald-700">{Number(workOrder.total).toLocaleString("es-AR", { style: 'currency', currency: 'ARS' })}</span>
+                      Total:{" "}
+                      <span className="font-mono tracking-tight text-emerald-700">
+                        {Number(workOrder.total).toLocaleString("es-AR", {
+                          style: "currency",
+                          currency: "ARS",
+                        })}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -1092,23 +1280,42 @@ export default function WorkOrderDetailPage() {
             <div className="flex gap-6">
               <div>
                 <p className="text-sm text-muted-foreground">Total OT</p>
-                <p className="text-lg font-semibold font-mono">{Number(workOrder.total).toLocaleString("es-AR", { style: 'currency', currency: 'ARS' })}</p>
+                <p className="text-lg font-semibold font-mono">
+                  {Number(workOrder.total).toLocaleString("es-AR", {
+                    style: "currency",
+                    currency: "ARS",
+                  })}
+                </p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Pagado</p>
-                <p className="text-lg font-semibold text-emerald-700 font-mono">{totalPaid.toLocaleString("es-AR", { style: 'currency', currency: 'ARS' })}</p>
+                <p className="text-lg font-semibold text-emerald-700 font-mono">
+                  {totalPaid.toLocaleString("es-AR", {
+                    style: "currency",
+                    currency: "ARS",
+                  })}
+                </p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Pendiente</p>
-                <p className={`text-lg font-semibold font-mono ${totalPaid >= workOrder.total ? 'text-emerald-700' : 'text-amber-700'}`}>
-                  {balance.toLocaleString("es-AR", { style: 'currency', currency: 'ARS' })}
+                <p
+                  className={`text-lg font-semibold font-mono ${totalPaid >= workOrder.total ? "text-emerald-700" : "text-amber-700"}`}
+                >
+                  {balance.toLocaleString("es-AR", {
+                    style: "currency",
+                    currency: "ARS",
+                  })}
                 </p>
               </div>
             </div>
             <Button
               onClick={() => setIsPaymentDialogOpen(true)}
               disabled={isCashOpen === false}
-              title={isCashOpen === false ? 'Debe abrir la caja para registrar pagos' : undefined}
+              title={
+                isCashOpen === false
+                  ? "Debe abrir la caja para registrar pagos"
+                  : undefined
+              }
             >
               <DollarSign className="h-4 w-4 mr-2" />
               Registrar Pago
@@ -1121,15 +1328,32 @@ export default function WorkOrderDetailPage() {
               <p className="text-sm font-medium mb-3">Historial de Pagos</p>
               <div className="space-y-2">
                 {payments.map((payment) => (
-                  <div key={payment.id} className="flex justify-between items-center p-3 bg-muted rounded-md transition-colors hover:bg-muted/70">
+                  <div
+                    key={payment.id}
+                    className="flex justify-between items-center p-3 bg-muted rounded-md transition-colors hover:bg-muted/70"
+                  >
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-lg bg-emerald-100/50 border border-emerald-200/50 shadow-sm flex items-center justify-center shrink-0">
-                        <DollarSign className="h-4 w-4 text-emerald-700 pointer-events-none" aria-hidden="true" />
+                        <DollarSign
+                          className="h-4 w-4 text-emerald-700 pointer-events-none"
+                          aria-hidden="true"
+                        />
                       </div>
                       <div>
-                        <p className="font-bold font-mono text-emerald-700">{Number(payment.amount).toLocaleString("es-AR", { style: 'currency', currency: 'ARS' })}</p>
-                        <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">{payment.paymentMethod.name}</p>
-                        {payment.notes && <p className="text-[10px] text-muted-foreground italic truncate max-w-[200px]">&ldquo;{payment.notes}&rdquo;</p>}
+                        <p className="font-bold font-mono text-emerald-700">
+                          {Number(payment.amount).toLocaleString("es-AR", {
+                            style: "currency",
+                            currency: "ARS",
+                          })}
+                        </p>
+                        <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
+                          {payment.paymentMethod.name}
+                        </p>
+                        {payment.notes && (
+                          <p className="text-[10px] text-muted-foreground italic truncate max-w-[200px]">
+                            &ldquo;{payment.notes}&rdquo;
+                          </p>
+                        )}
                       </div>
                     </div>
                     <p className="text-xs text-muted-foreground font-mono bg-background/50 px-2 py-0.5 rounded border">
@@ -1158,27 +1382,42 @@ export default function WorkOrderDetailPage() {
 
       {/* Tabs Section */}
       <Tabs defaultValue="checklists" className="w-full">
-          <TabsList variant="line" className="w-full justify-start border-b bg-transparent p-0 h-10">
-            <TabsTrigger value="checklists" className="flex items-center gap-2 px-4 py-2 data-[state=active]:after:bg-primary">
-              <CheckCircle className="h-4 w-4" />
-              <span className="hidden sm:inline">Checklists</span>
-            </TabsTrigger>
-            <TabsTrigger value="photos" className="flex items-center gap-2 px-4 py-2 data-[state=active]:after:bg-primary">
-              <Camera className="h-4 w-4" />
-              <span className="hidden sm:inline">Fotos</span>
-            </TabsTrigger>
-            <TabsTrigger value="documents" className="flex items-center gap-2 px-4 py-2 data-[state=active]:after:bg-primary">
-              <FileText className="h-4 w-4" />
-              <span className="hidden sm:inline">Documentos</span>
-            </TabsTrigger>
-            <TabsTrigger value="timeline" className="flex items-center gap-2 px-4 py-2 data-[state=active]:after:bg-primary">
-              <History className="h-4 w-4" />
-              <span className="hidden sm:inline">Historial</span>
-            </TabsTrigger>
-          </TabsList>
+        <TabsList
+          variant="line"
+          className="w-full justify-start border-b bg-transparent p-0 h-10"
+        >
+          <TabsTrigger
+            value="checklists"
+            className="flex items-center gap-2 px-4 py-2 data-[state=active]:after:bg-primary"
+          >
+            <CheckCircle className="h-4 w-4" />
+            <span className="hidden sm:inline">Checklists</span>
+          </TabsTrigger>
+          <TabsTrigger
+            value="photos"
+            className="flex items-center gap-2 px-4 py-2 data-[state=active]:after:bg-primary"
+          >
+            <Camera className="h-4 w-4" />
+            <span className="hidden sm:inline">Fotos</span>
+          </TabsTrigger>
+          <TabsTrigger
+            value="documents"
+            className="flex items-center gap-2 px-4 py-2 data-[state=active]:after:bg-primary"
+          >
+            <FileText className="h-4 w-4" />
+            <span className="hidden sm:inline">Documentos</span>
+          </TabsTrigger>
+          <TabsTrigger
+            value="timeline"
+            className="flex items-center gap-2 px-4 py-2 data-[state=active]:after:bg-primary"
+          >
+            <History className="h-4 w-4" />
+            <span className="hidden sm:inline">Historial</span>
+          </TabsTrigger>
+        </TabsList>
 
-          {/* Tab: Checklists */}
-          <TabsContent value="checklists" className="pt-4 outline-none">
+        {/* Tab: Checklists */}
+        <TabsContent value="checklists" className="pt-4 outline-none">
           <div className="grid md:grid-cols-2 gap-4">
             <Card className="border-l-4 border-l-blue-500">
               <CardHeader className="pb-2">
@@ -1191,7 +1430,7 @@ export default function WorkOrderDetailPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => startEditingChecklist('entry')}
+                      onClick={() => startEditingChecklist("entry")}
                     >
                       Editar
                     </Button>
@@ -1203,17 +1442,31 @@ export default function WorkOrderDetailPage() {
                   <div className="space-y-3">
                     {/* Odometer and Fuel Level */}
                     <div className="p-3 bg-muted/50 rounded-lg space-y-2">
-                      {editingChecklist === 'entry' ? (
+                      {editingChecklist === "entry" ? (
                         <div className="space-y-2">
                           <div className="flex items-center gap-2">
-                            <label className="text-xs font-medium w-24" htmlFor="entry-odometer">Kilometraje:</label>
+                            <label
+                              className="text-xs font-medium w-24"
+                              htmlFor="entry-odometer"
+                            >
+                              Kilometraje:
+                            </label>
                             <div className="relative flex-1">
-                              <ArrowUpDown className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" aria-hidden="true" />
+                              <ArrowUpDown
+                                className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none"
+                                aria-hidden="true"
+                              />
                               <Input
                                 id="entry-odometer"
                                 type="number"
-                                value={editingOdometer ?? ''}
-                                onChange={(e) => setEditingOdometer(e.target.value ? parseInt(e.target.value) : undefined)}
+                                value={editingOdometer ?? ""}
+                                onChange={(e) =>
+                                  setEditingOdometer(
+                                    e.target.value
+                                      ? parseInt(e.target.value)
+                                      : undefined,
+                                  )
+                                }
                                 placeholder="km"
                                 className="h-8 pl-9 font-mono"
                               />
@@ -1224,57 +1477,102 @@ export default function WorkOrderDetailPage() {
                             onChange={setEditingFuelLevel}
                           />
                           <div className="flex gap-2 mt-2">
-                            <Button size="sm" onClick={handleSaveChecklistData} loading={savingChecklist}>
+                            <Button
+                              size="sm"
+                              onClick={handleSaveChecklistData}
+                              loading={savingChecklist}
+                            >
                               Guardar
                             </Button>
-                            <Button size="sm" variant="outline" onClick={() => setEditingChecklist(null)}>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setEditingChecklist(null)}
+                            >
                               Cancelar
                             </Button>
                           </div>
                         </div>
                       ) : (
                         <div className="space-y-1">
-                          {(workOrder.entryChecklist.odometerValue ?? workOrder.odometerValue) && (
+                          {(workOrder.entryChecklist.odometerValue ??
+                            workOrder.odometerValue) && (
                             <div className="text-xs">
-                              <span className="font-medium">Kilometraje:</span> <span className="font-mono">{workOrder.entryChecklist.odometerValue ?? workOrder.odometerValue}</span> km
+                              <span className="font-medium">Kilometraje:</span>{" "}
+                              <span className="font-mono">
+                                {workOrder.entryChecklist.odometerValue ??
+                                  workOrder.odometerValue}
+                              </span>{" "}
+                              km
                             </div>
                           )}
-                          {(workOrder.entryChecklist.fuelLevel ?? workOrder.fuelLevel) && (
+                          {(workOrder.entryChecklist.fuelLevel ??
+                            workOrder.fuelLevel) && (
                             <div className="text-xs">
-                              <span className="font-medium">Combustible:</span> <span className="font-mono">{workOrder.entryChecklist.fuelLevel ?? workOrder.fuelLevel}%</span>
+                              <span className="font-medium">Combustible:</span>{" "}
+                              <span className="font-mono">
+                                {workOrder.entryChecklist.fuelLevel ??
+                                  workOrder.fuelLevel}
+                                %
+                              </span>
                             </div>
                           )}
                         </div>
                       )}
                     </div>
-                    
+
                     {/* Checklist Items */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
                       {workOrder.entryChecklist.items.map((item, index) => (
-                        <div key={index} className={cn(
-                          "flex items-start gap-3 p-2 rounded-md transition-colors",
-                          item.checked ? "bg-blue-50/50" : "hover:bg-muted/30"
-                        )}>
-                          <div className={cn(
-                            "mt-0.5 w-5 h-5 rounded-md flex items-center justify-center shrink-0 border transition-all shadow-sm",
+                        <div
+                          key={index}
+                          className={cn(
+                            "flex items-start gap-3 p-2 rounded-md transition-colors",
                             item.checked
-                              ? "bg-blue-600 border-blue-600 text-white"
-                              : "bg-muted/30 border-muted-foreground/20 text-muted-foreground/30"
-                          )}>
-                            <Check className={cn("h-3.5 w-3.5 transition-transform", item.checked ? "scale-100" : "scale-0")} aria-hidden="true" />
+                              ? "bg-blue-50/50"
+                              : "hover:bg-muted/30",
+                          )}
+                        >
+                          <div
+                            className={cn(
+                              "mt-0.5 w-5 h-5 rounded-md flex items-center justify-center shrink-0 border transition-all shadow-sm",
+                              item.checked
+                                ? "bg-blue-600 border-blue-600 text-white"
+                                : "bg-muted/30 border-muted-foreground/20 text-muted-foreground/30",
+                            )}
+                          >
+                            <Check
+                              className={cn(
+                                "h-3.5 w-3.5 transition-transform",
+                                item.checked ? "scale-100" : "scale-0",
+                              )}
+                              aria-hidden="true"
+                            />
                           </div>
-                          <span className={cn("text-xs leading-none pt-1", item.checked ? "font-semibold text-blue-900" : "text-muted-foreground")}>
+                          <span
+                            className={cn(
+                              "text-xs leading-none pt-1",
+                              item.checked
+                                ? "font-semibold text-blue-900"
+                                : "text-muted-foreground",
+                            )}
+                          >
                             {item.label}
                           </span>
                         </div>
                       ))}
                     </div>
                     <div className="text-xs text-muted-foreground mt-4 pt-3 border-t">
-                      Completado: {new Date(workOrder.entryChecklist.completedAt).toLocaleString("es-AR")}
+                      Completado:{" "}
+                      {new Date(
+                        workOrder.entryChecklist.completedAt,
+                      ).toLocaleString("es-AR")}
                     </div>
                   </div>
                 ) : (
-                  <div className="text-muted-foreground py-4">Sin checklist de ingreso registrado</div>
+                  <div className="text-muted-foreground py-4">
+                    Sin checklist de ingreso registrado
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -1290,7 +1588,7 @@ export default function WorkOrderDetailPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => startEditingChecklist('exit')}
+                      onClick={() => startEditingChecklist("exit")}
                     >
                       Editar
                     </Button>
@@ -1302,17 +1600,31 @@ export default function WorkOrderDetailPage() {
                   <div className="space-y-3">
                     {/* Odometer and Fuel Level */}
                     <div className="p-3 bg-muted/50 rounded-lg space-y-2">
-                      {editingChecklist === 'exit' ? (
+                      {editingChecklist === "exit" ? (
                         <div className="space-y-2">
                           <div className="flex items-center gap-2">
-                            <label className="text-xs font-medium w-24" htmlFor="exit-odometer">Kilometraje:</label>
+                            <label
+                              className="text-xs font-medium w-24"
+                              htmlFor="exit-odometer"
+                            >
+                              Kilometraje:
+                            </label>
                             <div className="relative flex-1">
-                              <ArrowUpDown className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" aria-hidden="true" />
+                              <ArrowUpDown
+                                className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none"
+                                aria-hidden="true"
+                              />
                               <Input
                                 id="exit-odometer"
                                 type="number"
-                                value={editingOdometer ?? ''}
-                                onChange={(e) => setEditingOdometer(e.target.value ? parseInt(e.target.value) : undefined)}
+                                value={editingOdometer ?? ""}
+                                onChange={(e) =>
+                                  setEditingOdometer(
+                                    e.target.value
+                                      ? parseInt(e.target.value)
+                                      : undefined,
+                                  )
+                                }
                                 placeholder="km"
                                 className="h-8 pl-9 font-mono"
                               />
@@ -1323,65 +1635,110 @@ export default function WorkOrderDetailPage() {
                             onChange={setEditingFuelLevel}
                           />
                           <div className="flex gap-2 mt-2">
-                            <Button size="sm" onClick={handleSaveChecklistData} loading={savingChecklist}>
+                            <Button
+                              size="sm"
+                              onClick={handleSaveChecklistData}
+                              loading={savingChecklist}
+                            >
                               Guardar
                             </Button>
-                            <Button size="sm" variant="outline" onClick={() => setEditingChecklist(null)}>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setEditingChecklist(null)}
+                            >
                               Cancelar
                             </Button>
                           </div>
                         </div>
                       ) : (
                         <div className="space-y-1">
-                          {(workOrder.exitChecklist.odometerValue ?? workOrder.odometerValue) && (
+                          {(workOrder.exitChecklist.odometerValue ??
+                            workOrder.odometerValue) && (
                             <div className="text-xs">
-                              <span className="font-medium">Kilometraje:</span> <span className="font-mono">{workOrder.exitChecklist.odometerValue ?? workOrder.odometerValue}</span> km
+                              <span className="font-medium">Kilometraje:</span>{" "}
+                              <span className="font-mono">
+                                {workOrder.exitChecklist.odometerValue ??
+                                  workOrder.odometerValue}
+                              </span>{" "}
+                              km
                             </div>
                           )}
-                          {(workOrder.exitChecklist.fuelLevel ?? workOrder.fuelLevel) && (
+                          {(workOrder.exitChecklist.fuelLevel ??
+                            workOrder.fuelLevel) && (
                             <div className="text-xs">
-                              <span className="font-medium">Combustible:</span> <span className="font-mono">{workOrder.exitChecklist.fuelLevel ?? workOrder.fuelLevel}%</span>
+                              <span className="font-medium">Combustible:</span>{" "}
+                              <span className="font-mono">
+                                {workOrder.exitChecklist.fuelLevel ??
+                                  workOrder.fuelLevel}
+                                %
+                              </span>
                             </div>
                           )}
                         </div>
                       )}
                     </div>
-                    
+
                     {/* Checklist Items */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
                       {workOrder.exitChecklist.items.map((item, index) => (
-                        <div key={index} className={cn(
-                          "flex items-start gap-3 p-2 rounded-md transition-colors",
-                          item.checked ? "bg-emerald-50/50" : "hover:bg-muted/30"
-                        )}>
-                          <div className={cn(
-                            "mt-0.5 w-5 h-5 rounded-md flex items-center justify-center shrink-0 border transition-all shadow-sm",
+                        <div
+                          key={index}
+                          className={cn(
+                            "flex items-start gap-3 p-2 rounded-md transition-colors",
                             item.checked
-                              ? "bg-emerald-600 border-emerald-600 text-white"
-                              : "bg-muted/30 border-muted-foreground/20 text-muted-foreground/30"
-                          )}>
-                            <Check className={cn("h-3.5 w-3.5 transition-transform", item.checked ? "scale-100" : "scale-0")} aria-hidden="true" />
+                              ? "bg-emerald-50/50"
+                              : "hover:bg-muted/30",
+                          )}
+                        >
+                          <div
+                            className={cn(
+                              "mt-0.5 w-5 h-5 rounded-md flex items-center justify-center shrink-0 border transition-all shadow-sm",
+                              item.checked
+                                ? "bg-emerald-600 border-emerald-600 text-white"
+                                : "bg-muted/30 border-muted-foreground/20 text-muted-foreground/30",
+                            )}
+                          >
+                            <Check
+                              className={cn(
+                                "h-3.5 w-3.5 transition-transform",
+                                item.checked ? "scale-100" : "scale-0",
+                              )}
+                              aria-hidden="true"
+                            />
                           </div>
-                          <span className={cn("text-xs leading-none pt-1", item.checked ? "font-semibold text-emerald-900" : "text-muted-foreground")}>
+                          <span
+                            className={cn(
+                              "text-xs leading-none pt-1",
+                              item.checked
+                                ? "font-semibold text-emerald-900"
+                                : "text-muted-foreground",
+                            )}
+                          >
                             {item.label}
                           </span>
                         </div>
                       ))}
                     </div>
                     <div className="text-xs text-muted-foreground mt-4 pt-3 border-t">
-                      Completado: {new Date(workOrder.exitChecklist.completedAt).toLocaleString("es-AR")}
+                      Completado:{" "}
+                      {new Date(
+                        workOrder.exitChecklist.completedAt,
+                      ).toLocaleString("es-AR")}
                     </div>
                   </div>
                 ) : (
-                  <div className="text-muted-foreground py-4">Sin checklist de calidad registrado</div>
+                  <div className="text-muted-foreground py-4">
+                    Sin checklist de calidad registrado
+                  </div>
                 )}
               </CardContent>
             </Card>
           </div>
         </TabsContent>
 
-          {/* Tab: Photos */}
-          <TabsContent value="photos" className="pt-4 outline-none">
+        {/* Tab: Photos */}
+        <TabsContent value="photos" className="pt-4 outline-none">
           <div className="grid md:grid-cols-2 gap-4">
             <Card>
               <CardHeader className="pb-2">
@@ -1405,7 +1762,9 @@ export default function WorkOrderDetailPage() {
                     ))}
                   </div>
                 ) : (
-                  <div className="text-muted-foreground py-8 text-center">Sin fotos de ingreso</div>
+                  <div className="text-muted-foreground py-8 text-center">
+                    Sin fotos de ingreso
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -1432,115 +1791,141 @@ export default function WorkOrderDetailPage() {
                     ))}
                   </div>
                 ) : (
-                  <div className="text-muted-foreground py-8 text-center">Sin fotos de egreso</div>
+                  <div className="text-muted-foreground py-8 text-center">
+                    Sin fotos de egreso
+                  </div>
                 )}
               </CardContent>
             </Card>
           </div>
         </TabsContent>
 
-          {/* Tab: Documents */}
-          <TabsContent value="documents" className="pt-4 outline-none">
-            <div className="grid md:grid-cols-3 gap-4">
-              <Card className="md:col-span-2">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <FileText className="h-4 w-4" />
-                      Documentos Generados
-                    </CardTitle>
-                    <Button variant="ghost" size="sm" onClick={fetchInvoices} disabled={loadingInvoices}>
-                      <RefreshCw className={cn("h-4 w-4", loadingInvoices && "animate-spin")} />
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  {invoices.length > 0 ? (
-                    <div className="space-y-3">
-                      {invoices.map((inv) => (
-                        <div key={inv.id} className="flex items-center justify-between p-3 bg-muted rounded-lg border">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                              <FileText className="h-4 w-4 text-primary" />
-                            </div>
-                            <div>
-                              <p className="text-sm font-bold font-mono">{inv.number}</p>
-                              <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
-                                {inv.type.replace('_', ' ')}
-                              </p>
-                            </div>
+        {/* Tab: Documents */}
+        <TabsContent value="documents" className="pt-4 outline-none">
+          <div className="grid md:grid-cols-3 gap-4">
+            <Card className="md:col-span-2">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    Documentos Generados
+                  </CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={fetchInvoices}
+                    disabled={loadingInvoices}
+                  >
+                    <RefreshCw
+                      className={cn(
+                        "h-4 w-4",
+                        loadingInvoices && "animate-spin",
+                      )}
+                    />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {invoices.length > 0 ? (
+                  <div className="space-y-3">
+                    {invoices.map((inv) => (
+                      <div
+                        key={inv.id}
+                        className="flex items-center justify-between p-3 bg-muted rounded-lg border"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                            <FileText className="h-4 w-4 text-primary" />
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Link href={`/adm/invoices/${inv.id}`}>
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Ver Detalle">
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                            </Link>
+                          <div>
+                            <p className="text-sm font-bold font-mono">
+                              {inv.number}
+                            </p>
+                            <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
+                              {inv.type.replace("_", " ")}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Link href={`/adm/invoices/${inv.id}`}>
                             <Button
                               variant="ghost"
                               size="sm"
                               className="h-8 w-8 p-0"
-                              title="Descargar PDF"
-                              onClick={() => toast.info('Generación de PDF en desarrollo')}
+                              title="Ver Detalle"
                             >
-                              <FileDown className="h-4 w-4" />
+                              <Eye className="h-4 w-4" />
                             </Button>
-                          </div>
+                          </Link>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            title="Descargar PDF"
+                            onClick={() =>
+                              toast.info("Generación de PDF en desarrollo")
+                            }
+                          >
+                            <FileDown className="h-4 w-4" />
+                          </Button>
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8 text-muted-foreground flex flex-col items-center gap-2 border-2 border-dashed rounded-lg">
-                      <FileText className="h-8 w-8 text-muted-foreground/20" />
-                      <p className="text-sm">No hay documentos generados para esta OT</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground flex flex-col items-center gap-2 border-2 border-dashed rounded-lg">
+                    <FileText className="h-8 w-8 text-muted-foreground/20" />
+                    <p className="text-sm">
+                      No hay documentos generados para esta OT
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Plus className="h-4 w-4" />
-                    Acciones
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start"
-                    onClick={() => generateDocument('PRESUPUESTO')}
-                    loading={generatingDocument === 'PRESUPUESTO'}
-                  >
-                    <Printer className="h-4 w-4 mr-2" />
-                    Generar Presupuesto
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start"
-                    onClick={() => generateDocument('REMITO')}
-                    loading={generatingDocument === 'REMITO'}
-                  >
-                    <Printer className="h-4 w-4 mr-2" />
-                    Generar Remito
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    className="w-full justify-start"
-                    onClick={() => generateDocument('INVOICE')}
-                    loading={generatingDocument === 'INVOICE'}
-                    disabled={!!workOrder.invoiceId}
-                  >
-                    <FileText className="h-4 w-4 mr-2" />
-                    Generar Pre-Factura
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Plus className="h-4 w-4" />
+                  Acciones
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  onClick={() => generateDocument("PRESUPUESTO")}
+                  loading={generatingDocument === "PRESUPUESTO"}
+                >
+                  <Printer className="h-4 w-4 mr-2" />
+                  Generar Presupuesto
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  onClick={() => generateDocument("REMITO")}
+                  loading={generatingDocument === "REMITO"}
+                >
+                  <Printer className="h-4 w-4 mr-2" />
+                  Generar Remito
+                </Button>
+                <Button
+                  variant="secondary"
+                  className="w-full justify-start"
+                  onClick={() => generateDocument("INVOICE")}
+                  loading={generatingDocument === "INVOICE"}
+                  disabled={!!workOrder.invoiceId}
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  Generar Pre-Factura
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
 
-          {/* Tab: Timeline */}
-          <TabsContent value="timeline" className="pt-4 outline-none">
+        {/* Tab: Timeline */}
+        <TabsContent value="timeline" className="pt-4 outline-none">
           <div className="grid md:grid-cols-2 gap-6">
             <Card>
               <CardHeader className="pb-3">
@@ -1555,7 +1940,9 @@ export default function WorkOrderDetailPage() {
                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                   </div>
                 ) : unifiedTimelineItems.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground italic">Sin actividad registrada</div>
+                  <div className="text-center py-12 text-muted-foreground italic">
+                    Sin actividad registrada
+                  </div>
                 ) : (
                   <div className="space-y-0 relative before:absolute before:left-3 before:top-4 before:bottom-4 before:w-px before:bg-border/60">
                     {unifiedTimelineItems.map((item, index) => (
@@ -1577,59 +1964,73 @@ export default function WorkOrderDetailPage() {
             </Card>
 
             <Card>
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <FileText className="h-4 w-4" />
-                      Notas de Taller
-                    </CardTitle>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => startEditingNotes()}
-                    >
-                      {workOrder.notes ? 'Editar' : 'Agregar'}
-                    </Button>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    Notas de Taller
+                  </CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => startEditingNotes()}
+                  >
+                    {workOrder.notes ? "Editar" : "Agregar"}
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {editingNotes ? (
+                  <div className="space-y-2">
+                    <div className="relative">
+                      <FileText
+                        className="absolute left-3 top-3 h-4 w-4 text-muted-foreground pointer-events-none"
+                        aria-hidden="true"
+                      />
+                      <Textarea
+                        value={newNotes}
+                        onChange={(e) => setNewNotes(e.target.value)}
+                        placeholder="Agregar notas..."
+                        rows={4}
+                        className="pl-9"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={handleUpdateNotes}
+                        loading={savingNotes}
+                      >
+                        Guardar
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setEditingNotes(false)}
+                        disabled={savingNotes}
+                      >
+                        Cancelar
+                      </Button>
+                    </div>
                   </div>
-                </CardHeader>
-                <CardContent>
-                  {editingNotes ? (
-                    <div className="space-y-2">
-                      <div className="relative">
-                        <FileText className="absolute left-3 top-3 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
-                        <Textarea
-                          value={newNotes}
-                          onChange={(e) => setNewNotes(e.target.value)}
-                          placeholder="Agregar notas..."
-                          rows={4}
-                          className="pl-9"
-                        />
-                      </div>
-                      <div className="flex gap-2">
-                        <Button size="sm" onClick={handleUpdateNotes} loading={savingNotes}>
-                          Guardar
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={() => setEditingNotes(false)} disabled={savingNotes}>
-                          Cancelar
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="bg-muted/30 p-4 rounded-lg border border-dashed">
-                      {workOrder.notes ? (
-                        <p className="text-sm whitespace-pre-wrap text-muted-foreground">
-                          {workOrder.notes}
+                ) : (
+                  <div className="bg-muted/30 p-4 rounded-lg border border-dashed">
+                    {workOrder.notes ? (
+                      <p className="text-sm whitespace-pre-wrap text-muted-foreground">
+                        {workOrder.notes}
+                      </p>
+                    ) : (
+                      <div className="flex flex-col items-center gap-2 py-4 text-muted-foreground">
+                        <AlertCircle className="h-6 w-6 opacity-20" />
+                        <p className="text-xs">
+                          Sin notas de taller registradas
                         </p>
-                      ) : (
-                        <div className="flex flex-col items-center gap-2 py-4 text-muted-foreground">
-                           <AlertCircle className="h-6 w-6 opacity-20" />
-                           <p className="text-xs">Sin notas de taller registradas</p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
       </Tabs>

@@ -330,7 +330,7 @@ function KanbanCard({
               >
                 <UserCog className="h-2.5 w-2.5 shrink-0" />
                 <span className="truncate">
-                  {wo.technician?.name || "Sin técnico"}
+                  {wo.technician?.name || "Sin asignar"}
                 </span>
               </div>
             </DropdownMenuTrigger>
@@ -340,7 +340,7 @@ function KanbanCard({
               onMouseDown={(e) => e.stopPropagation()}
             >
               <DropdownMenuLabel className="text-xs font-semibold">
-                Asignar Técnico
+                Asignar Responsable
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem
@@ -553,7 +553,7 @@ export default function WorkOrdersPage() {
     try {
       const [woRes, techRes] = await Promise.all([
         fetch("/api/work-orders"),
-        fetch("/api/users?role=TECHNICIAN"),
+        fetch("/api/users?active=true"),
       ]);
 
       if (!woRes.ok) throw new Error("Failed to fetch work orders");
@@ -759,7 +759,7 @@ export default function WorkOrdersPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ technicianId: techId }),
       });
-      if (!response.ok) throw new Error("Error al actualizar el técnico");
+      if (!response.ok) throw new Error("Error al actualizar el responsable");
 
       const updatedWO = await response.json();
       setWorkOrders((prev) =>
@@ -774,10 +774,10 @@ export default function WorkOrdersPage() {
         ),
       );
 
-      toast.success("Técnico actualizado correctamente");
+      toast.success("Responsable actualizado correctamente");
     } catch (e) {
       console.error("Error updating technician:", e);
-      toast.error("No se pudo actualizar el técnico");
+      toast.error("No se pudo actualizar el responsable");
     }
   };
 
@@ -891,10 +891,10 @@ export default function WorkOrdersPage() {
               onValueChange={setTechnicianFilter}
             >
               <SelectTrigger className="h-8 w-[150px] pl-9 text-xs">
-                <SelectValue placeholder="Técnico" />
+                <SelectValue placeholder="Responsable" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todos los técnicos</SelectItem>
+                <SelectItem value="all">Todos los responsables</SelectItem>
                 {technicians.map((tech) => (
                   <SelectItem key={tech.id} value={tech.id}>
                     {tech.name}
