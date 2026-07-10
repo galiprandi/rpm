@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { CreditCard } from "lucide-react";
-import { formatARS } from "@/lib/utils/format";
+import { formatARS, toTitleCase } from "@/lib/utils/format";
 
 interface PaymentMethodsCardProps {
   paymentsByMethod?: Array<{
@@ -58,7 +58,7 @@ export function PaymentMethodsCard({
               <div key={method.code} className="space-y-1">
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-semibold tracking-tight">
-                    {method.name}
+                    {toTitleCase(method.name)}
                   </span>
                   <div className="flex items-center gap-1.5">
                     <span className="text-[9px] font-mono font-bold text-muted-foreground/50 bg-muted/60 px-1 rounded tabular-nums">
