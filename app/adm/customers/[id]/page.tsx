@@ -181,6 +181,23 @@ export default function CustomerDetailPage() {
   const vehicleColumns: ColumnDef<Vehicle>[] = useMemo(
     () => [
       {
+        id: "actions_quick",
+        header: "",
+        cell: ({ row }) => (
+          <Button
+            asChild
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+            title="Nueva Orden para este vehículo"
+          >
+            <Link href={`/adm/work-orders/new?customerId=${customerId}&vehicleId=${row.original.id}`}>
+              <Plus className="h-4 w-4" />
+            </Link>
+          </Button>
+        ),
+      },
+      {
         accessorKey: "identifier",
         header: "Identificador",
         cell: ({ row }) => (

@@ -19,6 +19,20 @@ export const GET = withAdmin(async (request: NextRequest, _session) => {
           OR: [
             { name: { contains: search, mode: "insensitive" as const } },
             { phone: { contains: search, mode: "insensitive" as const } },
+            { email: { contains: search, mode: "insensitive" as const } },
+            {
+              billingData: {
+                path: ["cuit"],
+                string_contains: search,
+              },
+            },
+            {
+              vehicle: {
+                some: {
+                  identifier: { contains: search, mode: "insensitive" as const },
+                },
+              },
+            },
           ],
         }
       : {};

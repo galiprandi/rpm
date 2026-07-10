@@ -3,6 +3,7 @@
 ## 📋 BACKLOG
 
 ## ✅ DONE
+- [x] 2025-07-10 — Mejoras de visibilidad financiera y atajos de taller (PR lucia/customers/ux-improvements-debt-quick-ot)
 - [x] 2025-07-08 — Notificaciones de deuda por WhatsApp y contacto rápido en vehículos (PR lucia/customers/debt-whatsapp-notif)
 - [x] 2025-07-06 — Implementación de validación de patentes argentinas en `VehicleForm` (PR lucia/customers/plate-validation)
 - [x] 2025-07-05 — Implementación del listado global de vehículos en `/adm/vehicles` (PR lucia/customers/global-vehicles-list)
@@ -10,6 +11,10 @@
 - [x] 2025-05-15 — Integración de enlaces directos de WhatsApp en listado y detalle de clientes (PR lucia/customers/vehicle-edit-refactor)
 
 ## 🧠 LEARNINGS
+## 2025-07-10 - Visibilidad Financiera y Atajos Proactivos
+**Learning:** Integrar métricas financieras (Deuda Total) directamente en los listados operativos aumenta la conciencia sobre la salud de la cartera sin requerir navegar a reportes específicos. Además, los atajos proactivos (Nueva OT desde Vehículo) reducen la fricción cognitiva al mantener el contexto del cliente/vehículo.
+**Action:** Buscar otros "puntos de entrada" de datos donde se pueda pre-rellenar información para agilizar la carga de documentos.
+
 ## 2025-07-08 - Notificaciones Contextuales
 **Learning:** La integración de herramientas de comunicación (WhatsApp) directamente en los puntos de fricción (reporte de deudores, ficha con saldo) reduce drásticamente el esfuerzo operativo. Usar mensajes pre-formateados asegura profesionalismo y consistencia en el trato con el cliente.
 **Action:** Continuar identificando flujos donde el contacto con el cliente sea una acción primaria (ej: recordatorio de turnos) para automatizar el mensaje inicial.
