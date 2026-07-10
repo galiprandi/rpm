@@ -9,6 +9,7 @@ import {
   Package,
   Wrench,
   Wallet,
+  ShoppingCart,
   Users,
   ArrowRight,
   LucideIcon
@@ -97,6 +98,13 @@ export default function ReportsClient() {
       description: "Ingresos vs egresos, rentabilidad neta y análisis de medios de pago.",
       href: "/adm/reports/finance",
       icon: Wallet,
+      isAvailable: true
+    },
+    {
+      title: "Compras",
+      description: "Análisis de abastecimiento, evolución de costos y compras por proveedor.",
+      href: "/adm/reports/purchases",
+      icon: ShoppingCart,
       isAvailable: true
     },
     {
