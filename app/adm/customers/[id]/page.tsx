@@ -33,6 +33,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { Header } from "@/components/adm/Header";
+import { formatARS } from "@/lib/utils/format";
+import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -144,12 +146,6 @@ export default function CustomerDetailPage() {
     string | undefined
   >(undefined);
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("es-AR", {
-      style: "currency",
-      currency: "ARS",
-    }).format(value);
-  };
 
   const fetchCustomer = useCallback(async () => {
     try {
@@ -195,6 +191,44 @@ export default function CustomerDetailPage() {
   const vehicleColumns: ColumnDef<Vehicle>[] = useMemo(
     () => [
       {
+        accessorKey: "identifier",
+        header: "Vehículo",
+        cell: ({ row }) => (
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0">
+              <Car
+                className="h-4 w-4 text-primary pointer-events-none"
+                aria-hidden="true"
+              />
+            </div>
+            <span className="font-semibold font-mono tracking-tight">
+              {row.original.identifier}
+            </span>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "make.name",
+        header: "Marca/Modelo",
+        cell: ({ row }) => (
+          <div className="flex flex-col">
+            <span className="font-medium">
+              {row.original.make?.name} {row.original.model?.name}
+            </span>
+            <span className="text-[10px] text-muted-foreground uppercase">
+              {row.original.category}
+            </span>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "year",
+        header: "Año",
+        cell: ({ row }) => (
+          <span className="font-mono">{row.original.year || "-"}</span>
+        ),
+      },
+      {
         id: "actions_quick",
         header: "",
         cell: ({ row }) => (
@@ -213,33 +247,8 @@ export default function CustomerDetailPage() {
           </Button>
         ),
       },
-      {
-        accessorKey: "identifier",
-        header: "Identificador",
-        cell: ({ row }) => (
-          <span className="font-medium">{row.original.identifier}</span>
-        ),
-      },
-      {
-        accessorKey: "category",
-        header: "Categoría",
-      },
-      {
-        accessorKey: "make.name",
-        header: "Marca/Modelo",
-        cell: ({ row }) => (
-          <span>
-            {row.original.make?.name} {row.original.model?.name}
-          </span>
-        ),
-      },
-      {
-        accessorKey: "year",
-        header: "Año",
-        cell: ({ row }) => row.original.year || "-",
-      },
     ],
-    [],
+    [customerId],
   );
 
   // Columnas para DataTable de OTs
@@ -258,8 +267,11 @@ export default function CustomerDetailPage() {
       {
         accessorKey: "total",
         header: "Total",
-        cell: ({ row }) =>
-          `$${Number(row.original.total).toLocaleString("es-AR")}`,
+        cell: ({ row }) => (
+          <span className="font-mono font-semibold">
+            {formatARS(Number(row.original.total))}
+          </span>
+        ),
       },
       {
         accessorKey: "createdAt",
@@ -393,12 +405,17 @@ export default function CustomerDetailPage() {
         accessorKey: "total",
         header: "Total",
         cell: ({ row }) => {
-          const total = row.original.total;
+          const total = Number(row.original.total);
           const isCreditNote = row.original.type === "CREDIT_NOTE";
-          const isPayment = row.original.type === "PAYMENT";
           return (
-            <span className={isCreditNote ? "text-orange-700" : ""}>
-              {isCreditNote ? "-" : ""}$${Number(total).toLocaleString("es-AR")}
+            <span
+              className={cn(
+                "font-mono font-semibold",
+                isCreditNote ? "text-orange-700" : "",
+              )}
+            >
+              {isCreditNote ? "-" : ""}
+              {formatARS(total)}
             </span>
           );
         },
@@ -581,9 +598,12 @@ export default function CustomerDetailPage() {
                   Saldo Actual
                 </div>
                 <div
-                  className={`text-3xl font-bold ${customer.balance > 0 ? "text-red-700" : "text-emerald-700"}`}
+                  className={cn(
+                    "text-3xl font-bold font-mono",
+                    customer.balance > 0 ? "text-red-700" : "text-emerald-700",
+                  )}
                 >
-                  {formatCurrency(customer.balance)}
+                  {formatARS(customer.balance)}
                 </div>
                 <div className="text-xs text-muted-foreground mt-1">
                   {customer.balance > 0
@@ -638,8 +658,8 @@ export default function CustomerDetailPage() {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium">
-                            {formatCurrency(wo.total)}
+                          <span className="text-sm font-semibold font-mono">
+                            {formatARS(Number(wo.total))}
                           </span>
                           {getStatusBadge(wo.status)}
                         </div>
@@ -799,7 +819,7 @@ export default function CustomerDetailPage() {
             <DialogDescription>
               Cliente: {customer?.name}
               <br />
-              Saldo actual: {customer && formatCurrency(customer.balance)}
+            Saldo actual: {customer && formatARS(customer.balance)}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -813,10 +833,11 @@ export default function CustomerDetailPage() {
                 placeholder="Ej: 5000"
                 value={paymentAmount}
                 onChange={(e) => setPaymentAmount(e.target.value)}
+                className="font-mono"
               />
               {customer && customer.balance > 0 && (
                 <p className="text-xs text-muted-foreground mt-1">
-                  Máximo: {formatCurrency(customer.balance)}
+                  Máximo: {formatARS(customer.balance)}
                 </p>
               )}
             </div>
@@ -1034,10 +1055,15 @@ export default function CustomerDetailPage() {
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Total</span>
                 <span
-                  className={`font-semibold ${selectedTransaction.type === "CREDIT_NOTE" ? "text-orange-700" : ""}`}
+                  className={cn(
+                    "font-mono font-semibold",
+                    selectedTransaction.type === "CREDIT_NOTE"
+                      ? "text-orange-700"
+                      : "",
+                  )}
                 >
-                  {selectedTransaction.type === "CREDIT_NOTE" ? "-" : ""}$
-                  {Number(selectedTransaction.total).toLocaleString("es-AR")}
+                  {selectedTransaction.type === "CREDIT_NOTE" ? "-" : ""}
+                  {formatARS(Number(selectedTransaction.total))}
                 </span>
               </div>
               {selectedTransaction.status && (

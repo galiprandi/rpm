@@ -99,7 +99,7 @@ export function CustomerForm({
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Nombre */}
       <div className="space-y-2">
-        <Label htmlFor="name" required>
+        <Label htmlFor="customer-name" required>
           Nombre o Razón Social
         </Label>
         <div className="relative">
@@ -108,7 +108,7 @@ export function CustomerForm({
             aria-hidden="true"
           />
           <Input
-            id="name"
+            id="customer-name"
             value={formData.name}
             onChange={(e) => handleChange("name", e.target.value)}
             placeholder="Juan Pérez o Empresa S.A."
@@ -122,34 +122,36 @@ export function CustomerForm({
       {/* Teléfonos */}
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="phone">Teléfono Principal</Label>
+          <Label htmlFor="customer-phone">Teléfono Principal</Label>
           <div className="relative">
             <Phone
               className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none"
               aria-hidden="true"
             />
             <Input
-              id="phone"
+              id="customer-phone"
               value={formData.phone}
               onChange={(e) => handleChange("phone", e.target.value)}
               placeholder="+54 11 1234-5678"
-            className="pl-9 font-mono"
+              className="pl-9 font-mono"
+              aria-label="Teléfono Principal"
             />
           </div>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="phoneAlt">Teléfono Alternativo (WhatsApp)</Label>
+          <Label htmlFor="customer-phone-alt">Teléfono Alternativo (WhatsApp)</Label>
           <div className="relative">
             <MessageSquare
               className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none"
               aria-hidden="true"
             />
             <Input
-              id="phoneAlt"
+              id="customer-phone-alt"
               value={formData.phoneAlt}
               onChange={(e) => handleChange("phoneAlt", e.target.value)}
               placeholder="+54 11 9876-5432"
-            className="pl-9 font-mono"
+              className="pl-9 font-mono"
+              aria-label="Teléfono Alternativo (WhatsApp)"
             />
           </div>
         </div>
@@ -157,37 +159,39 @@ export function CustomerForm({
 
       {/* Email */}
       <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="customer-email">Email</Label>
         <div className="relative">
           <Mail
             className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none"
             aria-hidden="true"
           />
           <Input
-            id="email"
+            id="customer-email"
             type="email"
             value={formData.email}
             onChange={(e) => handleChange("email", e.target.value)}
             placeholder="juan@ejemplo.com"
             className="pl-9 font-mono"
+            aria-label="Correo electrónico"
           />
         </div>
       </div>
 
       {/* Dirección */}
       <div className="space-y-2">
-        <Label htmlFor="address">Dirección</Label>
+        <Label htmlFor="customer-address">Dirección</Label>
         <div className="relative">
           <MapPin
             className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none"
             aria-hidden="true"
           />
           <Input
-            id="address"
+            id="customer-address"
             value={formData.address}
             onChange={(e) => handleChange("address", e.target.value)}
             placeholder="Av. Siempre Viva 123, Springfield"
             className="pl-9"
+            aria-label="Dirección de domicilio"
           />
         </div>
       </div>
@@ -217,14 +221,14 @@ export function CustomerForm({
             </p>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="cuit">CUIT</Label>
+                <Label htmlFor="customer-cuit">CUIT</Label>
                 <div className="relative">
                   <Hash
                     className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none"
                     aria-hidden="true"
                   />
                   <Input
-                    id="cuit"
+                    id="customer-cuit"
                     className={cn(
                       "font-mono pl-9",
                       cuitError && "border-destructive ring-destructive/20"
@@ -247,6 +251,7 @@ export function CustomerForm({
                       }
                     }}
                     placeholder="20-XXXXXXXX-X"
+                    aria-label="CUIT o CUIL para facturación"
                   />
                 </div>
                 {cuitError && (
@@ -294,19 +299,20 @@ export function CustomerForm({
 
       {/* Notas */}
       <div className="space-y-2">
-        <Label htmlFor="notes">Notas / Observaciones</Label>
+        <Label htmlFor="customer-notes">Notas / Observaciones</Label>
         <div className="relative">
           <FileText
             className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none"
             aria-hidden="true"
           />
           <Textarea
-            id="notes"
+            id="customer-notes"
             value={formData.notes}
             onChange={(e) => handleChange("notes", e.target.value)}
             placeholder="Información adicional sobre el cliente..."
             rows={3}
             className="pl-9 min-h-[80px]"
+            aria-label="Notas u observaciones adicionales"
           />
         </div>
       </div>
