@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -136,6 +137,7 @@ function KanbanCard({ wo, isOverlay = false, technicians = [], onTechnicianUpdat
     transition,
   };
 
+  const router = useRouter();
   const { icon: categoryIcon, label: categoryLabel } = getCategoryIcon(wo.vehicle.category);
 
   const content = (
@@ -148,17 +150,20 @@ function KanbanCard({ wo, isOverlay = false, technicians = [], onTechnicianUpdat
       {/* Quick Actions Overlay */}
       {!isOverlay && !isDragging && (
         <div className="absolute inset-0 z-10 bg-white/60 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-2 rounded-lg">
-          <Link href={`/adm/work-orders/${wo.id}`} className="contents">
-            <Button
-              size="sm"
-              variant="secondary"
-              className="h-8 shadow-sm border"
-              onMouseDown={(e) => e.stopPropagation()}
-            >
-              <Eye className="h-4 w-4 mr-1" />
-              Detalle
-            </Button>
-          </Link>
+          <Button
+            size="sm"
+            variant="secondary"
+            className="h-8 shadow-sm border"
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              router.push(`/adm/work-orders/${wo.id}`);
+            }}
+          >
+            <Eye className="h-4 w-4 mr-1" />
+            Detalle
+          </Button>
           {wo.customer.phone && (
             <Button
               size="sm"
