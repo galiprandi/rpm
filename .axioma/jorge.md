@@ -2,6 +2,9 @@
 - [ ] Checklist Customization — Allow editing the labels of the entry/exit checklists.
 - [ ] Photo Management — Bulk upload and deletion of work order photos.
 - [ ] Printing — Standardized PDF generation for Remitos and Budgets.
+- [ ] Quick Status Actions — Add context-aware primary actions for faster status transitions in detail view.
+- [ ] Detail Header UX Fixes — Fix navigation and add quick print action to WO detail header.
+- [ ] Kanban Scheduled Date — Display and highlight scheduled dates on Kanban cards.
 
 ## ✅ DONE
 - [x] 2025-07-08 — Centralized WO Service & Unified Timeline (PR #jorge/work-orders/centralized-updates)
