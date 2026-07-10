@@ -29,12 +29,12 @@ export function normalizeText(text: string | null | undefined): string {
  * @param amount - Amount to format
  * @returns Formatted string (e.g., "$485.000")
  */
-export function formatARS(amount: number): string {
+export function formatARS(amount: number, decimals: number = 0): string {
   return new Intl.NumberFormat("es-AR", {
     style: "currency",
     currency: "ARS",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
   }).format(amount);
 }
 

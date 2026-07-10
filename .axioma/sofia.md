@@ -6,6 +6,7 @@
 - [ ] Optimizar imágenes de la galería "Nosotros" para mejorar el LCP.
 
 ## ✅ DONE
+- [x] 2026-07-10 — Unificación de Vista Rápida de productos y mejora de UX en Home (PR #sofia/public/unified-product-quick-view)
 - [x] 2026-07-09 — Indicadores de navegación activa y mejora narrativa en Servicios (PR #sofia/public/header-active-and-services-depth)
 - [x] 2026-07-08 — Sección de Productos Destacados en la Home y centralización de datos (PR #sofia/public/featured-products-section)
 - [x] 2026-07-04 — Centralización de configuración pública y mejora de conversión (PR #sofia/public/conversion-boost)

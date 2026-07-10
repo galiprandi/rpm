@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { type ColumnDef } from "@tanstack/react-table";
+import { formatARS } from "@/lib/utils/format";
 import { CustomerDialog } from "@/components/customers/CustomerDialog";
 import { type CustomerFormData } from "@/components/customers/CustomerForm";
 import { useRouter } from "next/navigation";

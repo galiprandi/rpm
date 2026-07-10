@@ -104,7 +104,7 @@ export function VehicleForm({
       {/* Categoría */}
       <div className="space-y-2">
         <Label
-          htmlFor="category-select"
+          htmlFor="vehicle-category-select"
           required
           className="flex items-center gap-2"
         >
@@ -119,7 +119,7 @@ export function VehicleForm({
             value={formData.category}
             onValueChange={(value) => handleChange("category", value)}
           >
-            <SelectTrigger id="category-select" className="pl-9">
+            <SelectTrigger id="vehicle-category-select" className="pl-9" aria-label="Categoría de vehículo o equipo">
               <SelectValue placeholder="Seleccione categoría" />
             </SelectTrigger>
             <SelectContent>
@@ -136,7 +136,7 @@ export function VehicleForm({
 
       {/* Identificador */}
       <div className="space-y-2">
-        <Label htmlFor="identifier" required>
+        <Label htmlFor="vehicle-identifier" required>
           {isVehicle ? "Patente" : "Número de Serie/Identificador"}
         </Label>
         <div className="relative">
@@ -145,7 +145,7 @@ export function VehicleForm({
             aria-hidden="true"
           />
           <Input
-            id="identifier"
+            id="vehicle-identifier"
             value={formData.identifier}
             onChange={(e) =>
               handleChange("identifier", e.target.value.toUpperCase())
@@ -158,6 +158,7 @@ export function VehicleForm({
                 : ""
             }`}
             aria-required="true"
+            aria-label={isVehicle ? "Patente del vehículo" : "Número de serie o identificador del equipo"}
           />
         </div>
         {plateError && (
@@ -346,19 +347,20 @@ export function VehicleForm({
 
       {/* Notas */}
       <div className="space-y-2">
-        <Label htmlFor="notes">Notas</Label>
+        <Label htmlFor="vehicle-notes">Notas</Label>
         <div className="relative">
           <FileText
             className="absolute left-3 top-3 h-4 w-4 text-muted-foreground pointer-events-none"
             aria-hidden="true"
           />
           <Textarea
-            id="notes"
+            id="vehicle-notes"
             value={formData.notes}
             onChange={(e) => handleChange("notes", e.target.value)}
             placeholder="Notas internas sobre el vehículo/equipo..."
             rows={2}
             className="pl-9 min-h-[80px]"
+            aria-label="Notas internas adicionales"
           />
         </div>
       </div>
