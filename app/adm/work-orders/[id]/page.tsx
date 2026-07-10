@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  LucideIcon,
   CheckCircle,
   Camera,
   Clock,
@@ -147,6 +148,14 @@ const STATUSES = [
   { id: "DELIVERED", label: "Entregada", color: "bg-gray-100" },
 ];
 
+const NEXT_STATUS_MAP: Record<string, { label: string; next: string; icon: LucideIcon }> = {
+  CONFIRMED: { label: "Iniciar Trabajo", next: "IN_PROGRESS", icon: PlayCircle },
+  WAITING: { label: "Iniciar Trabajo", next: "IN_PROGRESS", icon: PlayCircle },
+  IN_PROGRESS: { label: "Finalizar Trabajo", next: "READY", icon: CheckCircle },
+  QC_CHECK: { label: "Finalizar Trabajo", next: "READY", icon: CheckCircle },
+  READY: { label: "Entregar Vehículo", next: "DELIVERED", icon: Package },
+};
+
 const PAYMENT_METHODS = [
   { value: "CASH", label: "Efectivo" },
   { value: "TRANSFER", label: "Transferencia" },
@@ -236,6 +245,7 @@ interface AuditLog {
 export default function WorkOrderDetailPage() {
   const { alert } = useUI();
   const params = useParams();
+  const router = useRouter();
   const workOrderId = params.id as string;
 
   const [workOrder, setWorkOrder] = useState<WorkOrderDetail | null>(null);
@@ -739,6 +749,8 @@ export default function WorkOrderDetailPage() {
 
   const balance = Math.max(0, workOrder.total - totalPaid);
 
+  const nextAction = NEXT_STATUS_MAP[workOrder.status];
+
   return (
     <div className="container mx-auto py-6 space-y-6">
       {/* Header - Vehículo como protagonista */}
@@ -746,6 +758,13 @@ export default function WorkOrderDetailPage() {
         title={workOrder.vehicle.identifier}
         titleClassName="font-mono tracking-tighter"
         showBackButton
+        onBack={() => router.push('/adm/work-orders')}
+        primaryAction={nextAction ? {
+          label: nextAction.label,
+          icon: nextAction.icon,
+          onClick: () => handleStatusChange(nextAction.next),
+          loading: updatingStatus,
+        } : undefined}
         leftActions={
           <Select
             value={workOrder.status}
@@ -765,6 +784,12 @@ export default function WorkOrderDetailPage() {
           </Select>
         }
         secondaryActions={[
+          {
+            label: 'Imprimir',
+            onClick: () => window.print(),
+            icon: Printer,
+            variant: 'outline',
+          },
           ...(workOrder.status === 'READY' || workOrder.status === 'DELIVERED' ? [{
             label: 'Notificar WhatsApp',
             onClick: () => {

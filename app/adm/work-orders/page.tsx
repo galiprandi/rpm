@@ -13,7 +13,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Plus, LayoutGrid, List, Car, Truck, Wrench, Headphones, Package, ClipboardList, Wallet, DollarSign, MessageSquare, AlertCircle, UserCog, Eye, Search, X, Check } from "lucide-react";
+import { Plus, LayoutGrid, List, Car, Truck, Wrench, Headphones, Package, ClipboardList, Wallet, DollarSign, MessageSquare, AlertCircle, UserCog, Eye, Search, X, Check, Calendar } from "lucide-react";
 import { Header } from "@/components/adm/Header";
 import { CrudStats } from "@/components/adm/CrudStats";
 import { Input } from "@/components/ui/input";
@@ -294,6 +294,14 @@ function KanbanCard({ wo, isOverlay = false, technicians = [], onTechnicianUpdat
             <span className="text-orange-700 font-bold flex items-center gap-0.5">
               <AlertCircle className="h-2.5 w-2.5 pointer-events-none" aria-hidden="true" />
               DEMORADA
+            </span>
+          ) : wo.scheduledDate ? (
+            <span className="text-primary font-bold flex items-center gap-0.5">
+              <Calendar className="h-2.5 w-2.5 pointer-events-none" aria-hidden="true" />
+              {new Date(wo.scheduledDate).toLocaleDateString("es-AR", {
+                day: "2-digit",
+                month: "short"
+              })}
             </span>
           ) : (
             <span className="font-mono">
