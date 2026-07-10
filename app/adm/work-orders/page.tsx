@@ -17,11 +17,6 @@ import {
   Plus,
   LayoutGrid,
   List,
-  Car,
-  Truck,
-  Wrench,
-  Headphones,
-  Package,
   ClipboardList,
   Wallet,
   DollarSign,
@@ -38,6 +33,7 @@ import { Header } from "@/components/adm/Header";
 import { CrudStats } from "@/components/adm/CrudStats";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { getVehicleCategory } from "@/lib/constants/vehicle-categories";
 import {
   DndContext,
   DragOverlay,
@@ -118,57 +114,8 @@ const STATUSES = [
 // --- Helper Functions ---
 
 const getCategoryIcon = (category: string) => {
-  const normalizedCategory = category?.toUpperCase() || "";
-  switch (normalizedCategory) {
-    case "CAR":
-    case "SUV":
-    case "PICKUP":
-      return {
-        icon: (
-          <Car className="h-4 w-4 pointer-events-none" aria-hidden="true" />
-        ),
-        label: "Automóvil",
-      };
-    case "TRUCK":
-      return {
-        icon: (
-          <Truck className="h-4 w-4 pointer-events-none" aria-hidden="true" />
-        ),
-        label: "Camión / Pesado",
-      };
-    case "MOTORCYCLE":
-      return {
-        icon: (
-          <Wrench className="h-4 w-4 pointer-events-none" aria-hidden="true" />
-        ),
-        label: "Moto / Mecánica",
-      };
-    case "AUDIO_EQUIPMENT":
-      return {
-        icon: (
-          <Headphones
-            className="h-4 w-4 pointer-events-none"
-            aria-hidden="true"
-          />
-        ),
-        label: "Audio / Electrónica",
-      };
-    case "TRAILER":
-      return {
-        icon: (
-          <Package className="h-4 w-4 pointer-events-none" aria-hidden="true" />
-        ),
-        label: "Trailer / Remolque",
-      };
-    case "OTHER_EQUIPMENT":
-    default:
-      return {
-        icon: (
-          <Package className="h-4 w-4 pointer-events-none" aria-hidden="true" />
-        ),
-        label: "Otro / Equipamiento",
-      };
-  }
+  const cat = getVehicleCategory(category);
+  return { icon: cat.icon, label: cat.label };
 };
 
 const isDelayed = (wo: WorkOrder) => {
@@ -231,28 +178,29 @@ function KanbanCard({
           "shadow-xl border-primary ring-2 ring-primary ring-opacity-50 scale-105",
       )}
     >
-      {/* Quick Actions - bottom reveal on hover */}
+      {/* Floating action icons - top right corner on hover */}
       {!isOverlay && !isDragging && (
-        <div className="absolute bottom-0 left-0 right-0 z-10 flex items-center justify-end gap-1.5 px-3 py-1.5 bg-gradient-to-t from-white/95 to-white/0 opacity-0 group-hover:opacity-100 transition-all duration-150 rounded-b-lg pointer-events-none group-hover:pointer-events-auto">
+        <div className="absolute top-1.5 right-1.5 z-20 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
           <Button
-            size="sm"
             variant="secondary"
-            className="h-7 px-2.5 text-xs shadow-sm border"
+            size="sm"
+            className="h-6 w-6 p-0 shadow-sm border bg-white/90 hover:bg-white"
             onMouseDown={(e) => e.stopPropagation()}
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
               router.push(`/adm/work-orders/${wo.id}`);
             }}
+            title="Ver detalle"
+            aria-label="Ver detalle"
           >
-            <Eye className="h-3.5 w-3.5 mr-1" />
-            Detalle
+            <Eye className="h-3.5 w-3.5" aria-hidden="true" />
           </Button>
           {wo.customer.phone && (
             <Button
-              size="sm"
               variant="secondary"
-              className="h-7 px-2.5 text-xs shadow-sm border text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50"
+              size="sm"
+              className="h-6 w-6 p-0 shadow-sm border bg-white/90 text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50"
               onMouseDown={(e) => e.stopPropagation()}
               onClick={(e) => {
                 e.preventDefault();
@@ -266,42 +214,42 @@ function KanbanCard({
                 });
                 window.open(getWhatsAppLink(wo.customer.phone, msg), "_blank");
               }}
+              title="Enviar WhatsApp"
+              aria-label="Enviar WhatsApp"
             >
-              <MessageSquare className="h-3.5 w-3.5 mr-1" />
-              WA
+              <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />
             </Button>
           )}
         </div>
       )}
-      <CardContent className="p-3 space-y-1.5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 font-semibold text-sm">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="text-muted-foreground group-hover:text-primary transition-colors">
-                    {categoryIcon}
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{categoryLabel}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <span className="font-mono tracking-tighter">
-              {wo.vehicle.identifier}
-            </span>
-          </div>
+      <CardContent className="p-2.5 space-y-1">
+        {/* Line 1: Category icon + Plate/SN (full width, no competition) */}
+        <div className="flex items-center gap-1.5">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="text-muted-foreground shrink-0">
+                  {categoryIcon}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{categoryLabel}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <span className="font-mono text-sm font-semibold tracking-tighter truncate">
+            {wo.vehicle.identifier}
+          </span>
+        </div>
+        {/* Line 2: Customer name + Amount (always visible) */}
+        <div className="flex items-center justify-between gap-1.5">
+          <span className="text-xs font-medium truncate">
+            {wo.customer.name}
+          </span>
           <Badge
-            variant={
-              wo.isFullyPaid
-                ? "outline"
-                : wo.totalPaid && wo.totalPaid > 0
-                  ? "secondary"
-                  : "outline"
-            }
+            variant="outline"
             className={cn(
-              "text-[10px] px-1.5 py-0 h-5 font-mono",
+              "text-[10px] px-1.5 py-0 h-5 font-mono shrink-0",
               wo.isFullyPaid
                 ? "border-emerald-200 bg-emerald-50 text-emerald-700"
                 : wo.totalPaid && wo.totalPaid > 0
@@ -312,16 +260,13 @@ function KanbanCard({
             ${Number(wo.total).toLocaleString("es-AR")}
           </Badge>
         </div>
-        <div className="flex justify-between items-center gap-2">
-          <div className="text-xs text-muted-foreground truncate">
-            {wo.vehicle.make?.name} {wo.vehicle.model?.name}
-          </div>
-
+        {/* Line 3: Responsible dropdown + Date/Delayed status */}
+        <div className="flex items-center justify-between gap-1.5 pt-0.5">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <div
                 className={cn(
-                  "flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border shrink-0 max-w-[100px] transition-colors cursor-pointer z-20",
+                  "flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border shrink-0 max-w-[110px] transition-colors cursor-pointer",
                   wo.technician
                     ? "bg-purple-50 text-purple-700 border-purple-100 hover:bg-purple-100"
                     : "bg-muted text-muted-foreground border-transparent hover:bg-muted/80",
@@ -335,7 +280,7 @@ function KanbanCard({
               </div>
             </DropdownMenuTrigger>
             <DropdownMenuContent
-              align="end"
+              align="start"
               className="w-48"
               onMouseDown={(e) => e.stopPropagation()}
             >
@@ -368,43 +313,8 @@ function KanbanCard({
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
-        </div>
-
-        <div className="flex justify-between items-center text-[10px] text-muted-foreground pt-1.5 border-t mt-1">
-          <div className="flex items-center gap-1.5 overflow-hidden">
-            <span className="font-medium truncate">{wo.customer.name}</span>
-            {wo.status === "READY" && wo.customer.phone && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  const msg = getWorkOrderMessage({
-                    customerName: wo.customer.name,
-                    vehicleIdentifier: wo.vehicle.identifier,
-                    status: wo.status,
-                    total: Number(wo.total),
-                    totalPaid: wo.totalPaid || 0,
-                  });
-                  window.open(
-                    getWhatsAppLink(wo.customer.phone, msg),
-                    "_blank",
-                  );
-                }}
-                className="h-5 w-5 p-0 text-emerald-700 hover:text-emerald-700 hover:bg-emerald-50 shrink-0"
-                title="Notificar por WhatsApp"
-                aria-label="Notificar por WhatsApp"
-              >
-                <MessageSquare
-                  className="h-3 w-3 pointer-events-none"
-                  aria-hidden="true"
-                />
-              </Button>
-            )}
-          </div>
           {isDelayed(wo) ? (
-            <span className="text-orange-700 font-bold flex items-center gap-0.5">
+            <span className="text-orange-700 font-bold text-[10px] flex items-center gap-0.5 shrink-0">
               <AlertCircle
                 className="h-2.5 w-2.5 pointer-events-none"
                 aria-hidden="true"
@@ -412,7 +322,7 @@ function KanbanCard({
               DEMORADA
             </span>
           ) : wo.scheduledDate ? (
-            <span className="text-primary font-bold flex items-center gap-0.5">
+            <span className="text-primary font-bold text-[10px] flex items-center gap-0.5 shrink-0">
               <Calendar
                 className="h-2.5 w-2.5 pointer-events-none"
                 aria-hidden="true"
@@ -423,7 +333,7 @@ function KanbanCard({
               })}
             </span>
           ) : (
-            <span className="font-mono">
+            <span className="font-mono text-[10px] text-muted-foreground/70 shrink-0">
               {new Date(wo.createdAt).toLocaleDateString("es-AR", {
                 day: "2-digit",
                 month: "short",
@@ -474,7 +384,7 @@ function KanbanColumn({
   });
 
   return (
-    <div className="flex flex-col flex-1 min-w-[200px] h-full">
+    <div className="flex flex-col w-[190px] shrink-0 h-full">
       <div
         className={cn(
           "p-3 rounded-t-lg border sticky top-0 z-10",
@@ -487,12 +397,16 @@ function KanbanColumn({
             {items.length}
           </span>
         </div>
-        {items.length > 0 && (
-          <div className="mt-1 text-xs font-mono text-muted-foreground/80 flex items-center gap-1">
-            <DollarSign className="h-3 w-3" />
-            {columnTotal.toLocaleString("es-AR", { maximumFractionDigits: 0 })}
-          </div>
-        )}
+        <div className="mt-1 text-xs font-mono text-muted-foreground/80 flex items-center gap-1 min-h-[16px]">
+          {items.length > 0 && (
+            <>
+              <DollarSign className="h-3 w-3" />
+              {columnTotal.toLocaleString("es-AR", {
+                maximumFractionDigits: 0,
+              })}
+            </>
+          )}
+        </div>
       </div>
       <div
         ref={setNodeRef}
@@ -937,7 +851,7 @@ export default function WorkOrdersPage() {
               onDragOver={handleDragOver}
               onDragEnd={handleDragEnd}
             >
-              <div className="flex gap-2 h-full pb-2 px-1">
+              <div className="flex gap-1.5 h-full pb-2 px-1">
                 {workOrdersByStatus.map((status) => (
                   <KanbanColumn
                     key={status.id}

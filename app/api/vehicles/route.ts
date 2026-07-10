@@ -2,11 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth-server";
 import { prisma } from "@/lib/prisma";
 import { capitalizeText } from "@/lib/utils/format";
+import { resolveMakeModel } from "@/lib/utils/vehicle-helpers";
 
 interface CreateVehicleInput {
   identifier: string;
   category: string;
   customerId: string;
+  makeName?: string;
+  modelName?: string;
   makeId?: string;
   modelId?: string;
   year?: number;
@@ -35,7 +38,8 @@ export async function GET(request: NextRequest) {
     // Build where clause
     const where: Record<string, unknown> = {};
     if (customerId) where.customerId = customerId;
-    if (identifier) where.identifier = { contains: identifier, mode: "insensitive" };
+    if (identifier)
+      where.identifier = { contains: identifier, mode: "insensitive" };
     if (category) where.category = category;
 
     const vehicles = await prisma.vehicle.findMany({
@@ -68,7 +72,7 @@ export async function GET(request: NextRequest) {
     console.error("Error fetching vehicles:", error);
     return NextResponse.json(
       { error: "Failed to fetch vehicles" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -86,8 +90,10 @@ export async function POST(request: NextRequest) {
       identifier,
       category,
       customerId,
-      makeId,
-      modelId,
+      makeName,
+      modelName,
+      makeId: rawMakeId,
+      modelId: rawModelId,
       year,
       color,
       equipmentName,
@@ -100,7 +106,7 @@ export async function POST(request: NextRequest) {
     if (!identifier || !category || !customerId) {
       return NextResponse.json(
         { error: "Missing required fields: identifier, category, customerId" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -118,10 +124,17 @@ export async function POST(request: NextRequest) {
     ];
     if (!validCategories.includes(category)) {
       return NextResponse.json(
-        { error: `Invalid category. Must be one of: ${validCategories.join(", ")}` },
-        { status: 400 }
+        {
+          error: `Invalid category. Must be one of: ${validCategories.join(", ")}`,
+        },
+        { status: 400 },
       );
     }
+
+    // Resolve make/model from names (upsert) or use raw IDs if provided
+    const { makeId, modelId } = makeName
+      ? await resolveMakeModel(makeName, modelName)
+      : { makeId: rawMakeId, modelId: rawModelId };
 
     const vehicle = await prisma.vehicle.create({
       data: {
@@ -151,7 +164,7 @@ export async function POST(request: NextRequest) {
     console.error("Error creating vehicle:", error);
     return NextResponse.json(
       { error: "Failed to create vehicle" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

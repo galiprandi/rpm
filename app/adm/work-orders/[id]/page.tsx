@@ -34,8 +34,6 @@ import {
   Clock,
   DollarSign,
   Check,
-  Phone,
-  Mail,
   Edit,
   X,
   Undo2,
@@ -65,6 +63,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { CustomerCreditNoteDialog } from "@/components/credit-notes/CustomerCreditNoteDialog";
 import { getWhatsAppLink, getWorkOrderMessage } from "@/lib/utils/whatsapp";
+import { getVehicleCategory } from "@/lib/constants/vehicle-categories";
 
 // --- Helpers ---
 
@@ -812,13 +811,21 @@ export default function WorkOrderDetailPage() {
   const nextAction = NEXT_STATUS_MAP[workOrder.status];
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      {/* Header - Vehículo como protagonista */}
+    <div className="container mx-auto py-4 space-y-4 print:py-0 print:space-y-2 print:max-w-none">
       <Header
+        className="print:hidden"
         title={workOrder.vehicle.identifier}
-        titleClassName="font-mono tracking-tighter"
-        showBackButton
-        onBack={() => router.push("/adm/work-orders")}
+        description={[
+          `${getVehicleCategory(workOrder.vehicle.category).icon} ${getVehicleCategory(workOrder.vehicle.category).label}`,
+          workOrder.vehicle.make?.name,
+          workOrder.vehicle.model?.name,
+          [workOrder.vehicle.year, workOrder.vehicle.color]
+            .filter(Boolean)
+            .join(" "),
+        ]
+          .filter(Boolean)
+          .join(" · ")}
+        titleClassName="font-mono tracking-tighter text-2xl"
         primaryAction={
           nextAction
             ? {
@@ -829,543 +836,593 @@ export default function WorkOrderDetailPage() {
               }
             : undefined
         }
-        leftActions={
-          <Select
-            value={workOrder.status}
-            onValueChange={handleStatusChange}
-            disabled={updatingStatus}
-          >
-            <SelectTrigger className="w-44 h-9" id="status-select">
-              <SelectValue placeholder="Estado" />
-            </SelectTrigger>
-            <SelectContent>
-              {STATUSES.map((status) => (
-                <SelectItem key={status.id} value={status.id}>
-                  {status.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        }
         secondaryActions={[
-          {
-            label: "Imprimir",
-            onClick: () => window.print(),
-            icon: Printer,
-            variant: "outline",
-          },
-          ...(workOrder.status === "READY" || workOrder.status === "DELIVERED"
+          ...(workOrder.customer?.phone
             ? [
                 {
-                  label: "Notificar WhatsApp",
+                  label: "WhatsApp",
                   onClick: () => {
-                    if (workOrder.customer?.phone) {
-                      const msg = getWorkOrderMessage({
-                        customerName: workOrder.customer.name,
-                        vehicleIdentifier: workOrder.vehicle.identifier,
-                        status: workOrder.status,
-                        total: Number(workOrder.total),
-                        totalPaid: totalPaid,
-                      });
-                      window.open(
-                        getWhatsAppLink(workOrder.customer.phone, msg),
-                        "_blank",
-                      );
-                    }
+                    const msg = getWorkOrderMessage({
+                      customerName: workOrder.customer!.name,
+                      vehicleIdentifier: workOrder.vehicle.identifier,
+                      status: workOrder.status,
+                      total: Number(workOrder.total),
+                      totalPaid: totalPaid,
+                    });
+                    window.open(
+                      getWhatsAppLink(workOrder.customer!.phone, msg),
+                      "_blank",
+                    );
                   },
                   variant: "outline" as const,
                   icon: MessageSquare,
                   className:
                     "text-emerald-700 border-emerald-200 bg-emerald-50 hover:bg-emerald-100",
-                  ariaLabel: "Enviar notificación de estado por WhatsApp",
+                  ariaLabel: "Enviar notificación por WhatsApp",
                 },
               ]
             : []),
           {
+            label: "Imprimir",
+            onClick: () => window.print(),
+            icon: Printer,
+            variant: "ghost",
+          },
+          {
             label: "Devolver",
             onClick: () => setIsCreditNoteDialogOpen(true),
-            variant: "outline",
+            variant: "ghost",
             icon: Undo2,
             ariaLabel: "Crear nota de crédito por devolución",
           },
         ]}
       >
-        <div className="flex flex-col gap-1.5">
-          {/* Línea 1: Info del vehículo */}
-          <div className="text-lg font-medium text-muted-foreground">
-            {[
-              workOrder.vehicle.make?.name,
-              workOrder.vehicle.model?.name,
-              workOrder.vehicle.year,
-              workOrder.vehicle.color,
-            ]
-              .filter(Boolean)
-              .join(" ")}
-          </div>
-
-          <div className="flex flex-wrap items-center gap-y-2 gap-x-6">
-            {/* Línea 2: Fecha agendada si existe */}
-            <div className="text-sm">
-              {editingScheduledDate ? (
-                <div className="flex items-center gap-2">
-                  <div className="relative">
-                    <Clock
-                      className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none"
-                      aria-hidden="true"
-                    />
-                    <Input
-                      type="datetime-local"
-                      value={newScheduledDate}
-                      onChange={(e) => setNewScheduledDate(e.target.value)}
-                      className="h-8 w-48 pl-9 font-mono"
-                    />
-                  </div>
-                  <Button size="sm" onClick={handleUpdateScheduledDate}>
-                    Guardar
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setEditingScheduledDate(false)}
-                  >
-                    Cancelar
-                  </Button>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2 bg-muted/50 px-3 py-1 rounded-full border">
-                  <span className="text-muted-foreground flex items-center gap-1.5 font-medium">
-                    <Clock
-                      className="h-3.5 w-3.5 text-primary pointer-events-none"
-                      aria-hidden="true"
-                    />
-                    <span className="font-mono">
-                      {workOrder.scheduledDate
-                        ? new Date(workOrder.scheduledDate).toLocaleString(
-                            "es-AR",
-                            {
-                              day: "2-digit",
-                              month: "short",
-                              year: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            },
-                          )
-                        : "Sin fecha agendada"}
-                    </span>
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 px-2 text-xs hover:bg-primary/10"
-                    onClick={() => startEditingScheduledDate()}
-                    aria-label="Editar fecha agendada"
-                  >
-                    Editar
-                  </Button>
-                </div>
-              )}
-            </div>
-
-            {/* Línea 3: Contacto del cliente */}
-            <div className="flex flex-wrap items-center gap-3 text-sm">
-              <div className="flex items-center gap-1">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-2">
+          {/* Cliente */}
+          <div className="flex items-center gap-2">
+            <div className="flex flex-col">
+              <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground/60">
+                Cliente
+              </span>
+              <div className="flex items-center gap-2">
                 <a
                   href={`tel:${workOrder.customer?.phone}`}
-                  className="flex items-center gap-2 bg-primary/5 hover:bg-primary/10 px-3 py-1 rounded-full border border-primary/20 transition-colors"
+                  className="text-sm font-semibold text-foreground hover:text-primary transition-colors"
                 >
-                  <span className="font-semibold text-primary">
-                    {workOrder.customer?.name}
-                  </span>
-                  <div className="w-px h-3 bg-primary/30" />
-                  <span className="flex items-center gap-1 text-muted-foreground font-mono">
-                    <Phone
-                      className="h-3.5 w-3.5 pointer-events-none"
-                      aria-hidden="true"
-                    />
-                    {workOrder.customer?.phone}
-                  </span>
+                  {workOrder.customer?.name}
                 </a>
                 {workOrder.customer?.phone && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 w-8 p-0 text-emerald-700 hover:text-emerald-700 hover:bg-emerald-50"
-                    onClick={() => {
-                      const msg = getWorkOrderMessage({
-                        customerName: workOrder.customer!.name,
-                        vehicleIdentifier: workOrder.vehicle.identifier,
-                        status: workOrder.status,
-                        total: Number(workOrder.total),
-                        totalPaid: totalPaid,
-                      });
-                      window.open(
-                        getWhatsAppLink(workOrder.customer!.phone, msg),
-                        "_blank",
-                      );
-                    }}
-                    aria-label="Enviar WhatsApp"
-                  >
-                    <MessageSquare
-                      className="h-4 w-4 pointer-events-none"
-                      aria-hidden="true"
-                    />
-                  </Button>
+                  <span className="text-xs text-muted-foreground font-mono">
+                    {workOrder.customer.phone}
+                  </span>
                 )}
               </div>
-              {workOrder.customer?.email && (
-                <a
-                  href={`mailto:${workOrder.customer.email}`}
-                  className="flex items-center gap-1.5 text-muted-foreground hover:text-primary transition-colors font-mono"
-                >
-                  <Mail
-                    className="h-3.5 w-3.5 pointer-events-none"
-                    aria-hidden="true"
-                  />
-                  {workOrder.customer.email}
-                </a>
-              )}
             </div>
           </div>
 
-          {/* Metadata Pills Pattern for Financial Stats */}
-          <div className="flex flex-wrap items-center gap-2 mt-4">
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted/50 border text-xs font-medium text-muted-foreground">
-              <DollarSign
-                className="h-3.5 w-3.5 pointer-events-none"
-                aria-hidden="true"
-              />
-              Total:{" "}
-              <span className="text-foreground font-mono">
-                {Number(workOrder.total).toLocaleString("es-AR", {
-                  style: "currency",
-                  currency: "ARS",
-                })}
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 border border-emerald-200 text-xs font-medium text-emerald-700">
-              <Check
-                className="h-3.5 w-3.5 pointer-events-none"
-                aria-hidden="true"
-              />
-              Pagado:{" "}
-              <span className="font-mono">
-                {totalPaid.toLocaleString("es-AR", {
-                  style: "currency",
-                  currency: "ARS",
-                })}
-              </span>
-            </div>
-            {balance > 0 && (
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-50 border border-amber-200 text-xs font-medium text-amber-700">
-                <Clock
-                  className="h-3.5 w-3.5 pointer-events-none"
-                  aria-hidden="true"
-                />
-                Pendiente:{" "}
-                <span className="font-mono">
-                  {balance.toLocaleString("es-AR", {
-                    style: "currency",
-                    currency: "ARS",
-                  })}
-                </span>
-              </div>
-            )}
+          <div className="w-px h-8 bg-border" />
 
-            {/* Technician Assignment Pill */}
-            <div className="flex items-center gap-1.5 px-1 py-1 rounded-md bg-purple-50 border border-purple-200 text-xs font-medium text-purple-700">
-              <div className="relative flex items-center pl-7">
-                <UserCog
-                  className="absolute left-1.5 top-1/2 -translate-y-1/2 h-4 w-4 text-purple-600 pointer-events-none"
-                  aria-hidden="true"
+          {/* Ingreso - días transcurridos */}
+          <div className="flex flex-col">
+            <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground/60">
+              Ingreso
+            </span>
+            <span className="text-sm font-mono text-muted-foreground">
+              {new Date(workOrder.createdAt).toLocaleDateString("es-AR", {
+                day: "2-digit",
+                month: "short",
+              })}
+              <span className="text-muted-foreground/50 ml-1">
+                (
+                {Math.floor(
+                  (new Date().getTime() -
+                    new Date(workOrder.createdAt).getTime()) /
+                    86400000,
+                )}
+                d)
+              </span>
+            </span>
+          </div>
+
+          {/* Fecha prometida */}
+          <div className="flex flex-col">
+            <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground/60">
+              Prometida
+            </span>
+            {editingScheduledDate ? (
+              <div className="flex items-center gap-1">
+                <Input
+                  type="datetime-local"
+                  value={newScheduledDate}
+                  onChange={(e) => setNewScheduledDate(e.target.value)}
+                  className="h-7 w-40 font-mono text-xs"
                 />
-                <Select
-                  value={workOrder.technicianId || "unassigned"}
-                  onValueChange={handleTechnicianChange}
-                  disabled={
-                    updatingTechnician || workOrder.status === "DELIVERED"
-                  }
+                <Button
+                  size="sm"
+                  className="h-7 px-2"
+                  onClick={handleUpdateScheduledDate}
                 >
-                  <SelectTrigger className="h-7 border-none bg-transparent hover:bg-purple-100/50 shadow-none focus:ring-0 px-2 min-w-[140px]">
-                    <SelectValue placeholder="Asignar responsable" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="unassigned">Sin asignar</SelectItem>
-                    {technicians.map((tech) => (
-                      <SelectItem key={tech.id} value={tech.id}>
-                        {tech.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  OK
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 px-2"
+                  onClick={() => setEditingScheduledDate(false)}
+                >
+                  ✕
+                </Button>
               </div>
+            ) : (
+              <button
+                onClick={() => startEditingScheduledDate()}
+                className="text-sm font-mono text-left hover:text-primary transition-colors"
+              >
+                {workOrder.scheduledDate ? (
+                  new Date(workOrder.scheduledDate).toLocaleString("es-AR", {
+                    day: "2-digit",
+                    month: "short",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })
+                ) : (
+                  <span className="text-muted-foreground/50">Sin asignar</span>
+                )}
+              </button>
+            )}
+          </div>
+
+          <div className="w-px h-8 bg-border" />
+
+          {/* Responsable */}
+          <div className="flex flex-col">
+            <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground/60">
+              Responsable
+            </span>
+            <div className="flex items-center gap-1 bg-purple-50 border border-purple-200 rounded-md text-xs font-medium text-purple-700">
+              <UserCog
+                className="h-3.5 w-3.5 ml-1.5 text-purple-600 pointer-events-none"
+                aria-hidden="true"
+              />
+              <Select
+                value={workOrder.technicianId || "unassigned"}
+                onValueChange={handleTechnicianChange}
+                disabled={
+                  updatingTechnician || workOrder.status === "DELIVERED"
+                }
+              >
+                <SelectTrigger className="h-7 border-none bg-transparent hover:bg-purple-100/50 shadow-none focus:ring-0 px-1.5 min-w-[100px] text-xs">
+                  <SelectValue placeholder="Sin asignar" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="unassigned">Sin asignar</SelectItem>
+                  {technicians.map((tech) => (
+                    <SelectItem key={tech.id} value={tech.id}>
+                      {tech.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>
       </Header>
 
-      {/* Servicios y Productos - Editable con ProductServiceSelector */}
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Package className="h-5 w-5" />
-              Servicios y Productos
-            </CardTitle>
-            {!isEditingItems && workOrder.status !== "DELIVERED" && (
-              <Button variant="outline" size="sm" onClick={startEditingItems}>
-                <Edit className="h-4 w-4 mr-2" />
-                Editar Items
-              </Button>
-            )}
-            {workOrder.status === "DELIVERED" && (
-              <Badge variant="secondary" className="text-muted-foreground">
-                OT Entregada - No editable
-              </Badge>
-            )}
+      {/* Print-only header */}
+      <div className="hidden print:block border-b-2 border-black pb-3 mb-2">
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-2xl font-black tracking-tighter">
+              RPM ACCESORIOS
+            </h1>
+            <p className="text-xs text-muted-foreground">Orden de Trabajo</p>
           </div>
-        </CardHeader>
-        <CardContent>
-          {isEditingItems ? (
-            <div className="space-y-4">
-              <ProductServiceSelector
-                showPriceListSelector
-                priceLists={priceLists}
-                defaultPriceListId={workOrder.work_order_item[0]?.priceListId}
-                initialItems={editableItems}
-                onSelectionChange={setEditableItems}
-              />
-              <div className="flex justify-end gap-2 pt-4 border-t">
+          <div className="text-right text-sm">
+            <p className="font-mono font-bold text-lg">
+              {workOrder.vehicle.identifier}
+            </p>
+            <p className="text-muted-foreground">
+              {[
+                `${getVehicleCategory(workOrder.vehicle.category).icon} ${getVehicleCategory(workOrder.vehicle.category).label}`,
+                workOrder.vehicle.make?.name,
+                workOrder.vehicle.model?.name,
+                [workOrder.vehicle.year, workOrder.vehicle.color]
+                  .filter(Boolean)
+                  .join(" "),
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
+          </div>
+        </div>
+        <div className="grid grid-cols-3 gap-4 mt-3 text-xs">
+          <div>
+            <p className="font-bold uppercase text-muted-foreground">Cliente</p>
+            <p className="font-semibold">{workOrder.customer?.name}</p>
+            <p className="font-mono text-muted-foreground">
+              {workOrder.customer?.phone}
+            </p>
+          </div>
+          <div>
+            <p className="font-bold uppercase text-muted-foreground">Ingreso</p>
+            <p className="font-mono">
+              {new Date(workOrder.createdAt).toLocaleDateString("es-AR")}
+            </p>
+          </div>
+          <div>
+            <p className="font-bold uppercase text-muted-foreground">Estado</p>
+            <p className="font-semibold">
+              {STATUSES.find((s) => s.id === workOrder.status)?.label}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Main grid: Work (left 2/3) + Payments+Notes (right 1/3) */}
+      <div className="grid lg:grid-cols-3 gap-4 print:grid-cols-1 print:gap-2 lg:items-stretch">
+        {/* Left column: Items */}
+        <div className="lg:col-span-2">
+          {/* Servicios y Productos - Editable con ProductServiceSelector */}
+          <Card className="h-full">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Package className="h-5 w-5" />
+                  Servicios y Productos
+                </CardTitle>
+                {!isEditingItems && workOrder.status !== "DELIVERED" && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={startEditingItems}
+                    className="print:hidden"
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Editar Items
+                  </Button>
+                )}
+                {workOrder.status === "DELIVERED" && (
+                  <Badge
+                    variant="secondary"
+                    className="text-muted-foreground print:hidden"
+                  >
+                    OT Entregada - No editable
+                  </Badge>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              {isEditingItems ? (
+                <div className="space-y-4">
+                  <ProductServiceSelector
+                    showPriceListSelector
+                    priceLists={priceLists}
+                    defaultPriceListId={
+                      workOrder.work_order_item[0]?.priceListId
+                    }
+                    initialItems={editableItems}
+                    onSelectionChange={setEditableItems}
+                  />
+                  <div className="flex justify-end gap-2 pt-4 border-t">
+                    <Button
+                      variant="outline"
+                      onClick={handleCancelItems}
+                      disabled={savingItems}
+                    >
+                      <X className="h-4 w-4 mr-2" />
+                      Cancelar
+                    </Button>
+                    <Button onClick={handleSaveItems} loading={savingItems}>
+                      <Check className="h-4 w-4 mr-2" />
+                      Guardar Cambios
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Item</TableHead>
+                        <TableHead>Tipo</TableHead>
+                        <TableHead className="text-right">Cantidad</TableHead>
+                        <TableHead className="text-right">
+                          Precio Unit.
+                        </TableHead>
+                        <TableHead className="text-right">Subtotal</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {workOrder.work_order_item.length === 0 ? (
+                        <TableRow>
+                          <TableCell
+                            colSpan={5}
+                            className="text-center text-muted-foreground py-8"
+                          >
+                            Sin items registrados
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        workOrder.work_order_item.map((item) => (
+                          <TableRow key={item.id}>
+                            <TableCell className="font-medium">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0">
+                                  {item.type === "PRODUCT" ? (
+                                    <Package
+                                      className="h-4 w-4 text-primary pointer-events-none"
+                                      aria-hidden="true"
+                                    />
+                                  ) : (
+                                    <Wrench
+                                      className="h-4 w-4 text-primary pointer-events-none"
+                                      aria-hidden="true"
+                                    />
+                                  )}
+                                </div>
+                                <span className="font-semibold tracking-tight">
+                                  {item.product?.name ||
+                                    item.service?.name ||
+                                    item.name}
+                                </span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={
+                                  item.type === "PRODUCT"
+                                    ? "outline"
+                                    : "secondary"
+                                }
+                                className={
+                                  item.type === "PRODUCT"
+                                    ? "border-primary/20"
+                                    : ""
+                                }
+                              >
+                                {item.type === "PRODUCT"
+                                  ? "Producto"
+                                  : "Servicio"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right font-mono">
+                              {item.quantity}
+                            </TableCell>
+                            <TableCell className="text-right font-mono">
+                              {Number(item.unitPrice).toLocaleString("es-AR", {
+                                style: "currency",
+                                currency: "ARS",
+                              })}
+                            </TableCell>
+                            <TableCell className="text-right font-medium font-mono">
+                              {Number(item.subtotal).toLocaleString("es-AR", {
+                                style: "currency",
+                                currency: "ARS",
+                              })}
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+
+                  {workOrder.work_order_item.length > 0 && (
+                    <div className="mt-4 flex justify-end pt-4 border-t">
+                      <div className="text-right space-y-1">
+                        <div className="text-sm text-muted-foreground">
+                          Productos:{" "}
+                          <span className="font-mono">
+                            {Number(workOrder.totalProducts).toLocaleString(
+                              "es-AR",
+                              { style: "currency", currency: "ARS" },
+                            )}
+                          </span>
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          Servicios:{" "}
+                          <span className="font-mono">
+                            {Number(workOrder.totalServices).toLocaleString(
+                              "es-AR",
+                              { style: "currency", currency: "ARS" },
+                            )}
+                          </span>
+                        </div>
+                        <div className="text-2xl font-bold pt-1">
+                          Total:{" "}
+                          <span className="font-mono tracking-tight text-emerald-700">
+                            {Number(workOrder.total).toLocaleString("es-AR", {
+                              style: "currency",
+                              currency: "ARS",
+                            })}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right column: Payments + Notes */}
+        <div className="space-y-4 flex flex-col">
+          {/* Payment Summary Card */}
+          <Card className="lg:sticky lg:top-4 print:border-0 print:shadow-none print:break-inside-avoid">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <DollarSign className="h-5 w-5" />
+                Pagos
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Total</p>
+                    <p className="text-base font-semibold font-mono">
+                      {Number(workOrder.total).toLocaleString("es-AR", {
+                        style: "currency",
+                        currency: "ARS",
+                      })}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Pagado</p>
+                    <p className="text-base font-semibold text-emerald-700 font-mono">
+                      {totalPaid.toLocaleString("es-AR", {
+                        style: "currency",
+                        currency: "ARS",
+                      })}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Pendiente</p>
+                    <p
+                      className={`text-base font-semibold font-mono ${totalPaid >= workOrder.total ? "text-emerald-700" : "text-amber-700"}`}
+                    >
+                      {balance.toLocaleString("es-AR", {
+                        style: "currency",
+                        currency: "ARS",
+                      })}
+                    </p>
+                  </div>
+                </div>
                 <Button
-                  variant="outline"
-                  onClick={handleCancelItems}
-                  disabled={savingItems}
+                  className="w-full print:hidden"
+                  onClick={() => setIsPaymentDialogOpen(true)}
+                  disabled={isCashOpen === false}
+                  title={
+                    isCashOpen === false
+                      ? "Debe abrir la caja para registrar pagos"
+                      : undefined
+                  }
                 >
-                  <X className="h-4 w-4 mr-2" />
-                  Cancelar
-                </Button>
-                <Button onClick={handleSaveItems} loading={savingItems}>
-                  <Check className="h-4 w-4 mr-2" />
-                  Guardar Cambios
+                  <DollarSign className="h-4 w-4 mr-2" />
+                  Registrar Pago
                 </Button>
               </div>
-            </div>
-          ) : (
-            <>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Item</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead className="text-right">Cantidad</TableHead>
-                    <TableHead className="text-right">Precio Unit.</TableHead>
-                    <TableHead className="text-right">Subtotal</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {workOrder.work_order_item.length === 0 ? (
-                    <TableRow>
-                      <TableCell
-                        colSpan={5}
-                        className="text-center text-muted-foreground py-8"
-                      >
-                        Sin items registrados
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    workOrder.work_order_item.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell className="font-medium">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0">
-                              {item.type === "PRODUCT" ? (
-                                <Package
-                                  className="h-4 w-4 text-primary pointer-events-none"
-                                  aria-hidden="true"
-                                />
-                              ) : (
-                                <Wrench
-                                  className="h-4 w-4 text-primary pointer-events-none"
-                                  aria-hidden="true"
-                                />
-                              )}
-                            </div>
-                            <span className="font-semibold tracking-tight">
-                              {item.product?.name ||
-                                item.service?.name ||
-                                item.name}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={
-                              item.type === "PRODUCT" ? "outline" : "secondary"
-                            }
-                            className={
-                              item.type === "PRODUCT" ? "border-primary/20" : ""
-                            }
-                          >
-                            {item.type === "PRODUCT" ? "Producto" : "Servicio"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right font-mono">
-                          {item.quantity}
-                        </TableCell>
-                        <TableCell className="text-right font-mono">
-                          {Number(item.unitPrice).toLocaleString("es-AR", {
-                            style: "currency",
-                            currency: "ARS",
-                          })}
-                        </TableCell>
-                        <TableCell className="text-right font-medium font-mono">
-                          {Number(item.subtotal).toLocaleString("es-AR", {
-                            style: "currency",
-                            currency: "ARS",
-                          })}
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
 
-              {workOrder.work_order_item.length > 0 && (
-                <div className="mt-4 flex justify-end pt-4 border-t">
-                  <div className="text-right space-y-1">
-                    <div className="text-sm text-muted-foreground">
-                      Productos:{" "}
-                      <span className="font-mono">
-                        {Number(workOrder.totalProducts).toLocaleString(
-                          "es-AR",
-                          { style: "currency", currency: "ARS" },
-                        )}
-                      </span>
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      Servicios:{" "}
-                      <span className="font-mono">
-                        {Number(workOrder.totalServices).toLocaleString(
-                          "es-AR",
-                          { style: "currency", currency: "ARS" },
-                        )}
-                      </span>
-                    </div>
-                    <div className="text-2xl font-bold pt-1">
-                      Total:{" "}
-                      <span className="font-mono tracking-tight text-emerald-700">
-                        {Number(workOrder.total).toLocaleString("es-AR", {
-                          style: "currency",
-                          currency: "ARS",
-                        })}
-                      </span>
-                    </div>
+              {/* Payment History */}
+              {payments.length > 0 && (
+                <div className="mt-6 pt-4 border-t">
+                  <p className="text-sm font-medium mb-3">Historial de Pagos</p>
+                  <div className="space-y-2">
+                    {payments.map((payment) => (
+                      <div
+                        key={payment.id}
+                        className="flex justify-between items-center p-3 bg-muted rounded-md transition-colors hover:bg-muted/70"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-emerald-100/50 border border-emerald-200/50 shadow-sm flex items-center justify-center shrink-0">
+                            <DollarSign
+                              className="h-4 w-4 text-emerald-700 pointer-events-none"
+                              aria-hidden="true"
+                            />
+                          </div>
+                          <div>
+                            <p className="font-bold font-mono text-emerald-700">
+                              {Number(payment.amount).toLocaleString("es-AR", {
+                                style: "currency",
+                                currency: "ARS",
+                              })}
+                            </p>
+                            <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
+                              {payment.paymentMethod.name}
+                            </p>
+                            {payment.notes && (
+                              <p className="text-[10px] text-muted-foreground italic truncate max-w-[200px]">
+                                &ldquo;{payment.notes}&rdquo;
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground font-mono bg-background/50 px-2 py-0.5 rounded border">
+                          {new Date(payment.createdAt).toLocaleDateString(
+                            "es-AR",
+                          )}
+                        </p>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
-            </>
-          )}
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
 
-      {/* Payment Summary Card */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <DollarSign className="h-5 w-5" />
-            Pagos
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="flex gap-6">
-              <div>
-                <p className="text-sm text-muted-foreground">Total OT</p>
-                <p className="text-lg font-semibold font-mono">
-                  {Number(workOrder.total).toLocaleString("es-AR", {
-                    style: "currency",
-                    currency: "ARS",
-                  })}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Pagado</p>
-                <p className="text-lg font-semibold text-emerald-700 font-mono">
-                  {totalPaid.toLocaleString("es-AR", {
-                    style: "currency",
-                    currency: "ARS",
-                  })}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Pendiente</p>
-                <p
-                  className={`text-lg font-semibold font-mono ${totalPaid >= workOrder.total ? "text-emerald-700" : "text-amber-700"}`}
-                >
-                  {balance.toLocaleString("es-AR", {
-                    style: "currency",
-                    currency: "ARS",
-                  })}
-                </p>
-              </div>
-            </div>
-            <Button
-              onClick={() => setIsPaymentDialogOpen(true)}
-              disabled={isCashOpen === false}
-              title={
-                isCashOpen === false
-                  ? "Debe abrir la caja para registrar pagos"
-                  : undefined
-              }
-            >
-              <DollarSign className="h-4 w-4 mr-2" />
-              Registrar Pago
-            </Button>
-          </div>
-
-          {/* Payment History */}
-          {payments.length > 0 && (
-            <div className="mt-6 pt-4 border-t">
-              <p className="text-sm font-medium mb-3">Historial de Pagos</p>
-              <div className="space-y-2">
-                {payments.map((payment) => (
-                  <div
-                    key={payment.id}
-                    className="flex justify-between items-center p-3 bg-muted rounded-md transition-colors hover:bg-muted/70"
+          {/* Notas de Taller */}
+          <Card className="flex-1 print:border-0 print:shadow-none print:break-inside-avoid">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Notas de Taller
+                </CardTitle>
+                {!editingNotes && workOrder.status !== "DELIVERED" && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => startEditingNotes()}
+                    className="print:hidden"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-emerald-100/50 border border-emerald-200/50 shadow-sm flex items-center justify-center shrink-0">
-                        <DollarSign
-                          className="h-4 w-4 text-emerald-700 pointer-events-none"
-                          aria-hidden="true"
-                        />
-                      </div>
-                      <div>
-                        <p className="font-bold font-mono text-emerald-700">
-                          {Number(payment.amount).toLocaleString("es-AR", {
-                            style: "currency",
-                            currency: "ARS",
-                          })}
-                        </p>
-                        <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
-                          {payment.paymentMethod.name}
-                        </p>
-                        {payment.notes && (
-                          <p className="text-[10px] text-muted-foreground italic truncate max-w-[200px]">
-                            &ldquo;{payment.notes}&rdquo;
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <p className="text-xs text-muted-foreground font-mono bg-background/50 px-2 py-0.5 rounded border">
-                      {new Date(payment.createdAt).toLocaleDateString("es-AR")}
-                    </p>
-                  </div>
-                ))}
+                    <Edit className="h-4 w-4 mr-2" />
+                    {workOrder.notes ? "Editar" : "Agregar"}
+                  </Button>
+                )}
               </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            </CardHeader>
+            <CardContent>
+              {editingNotes ? (
+                <div className="space-y-2">
+                  <div className="relative">
+                    <FileText
+                      className="absolute left-3 top-3 h-4 w-4 text-muted-foreground pointer-events-none"
+                      aria-hidden="true"
+                    />
+                    <Textarea
+                      value={newNotes}
+                      onChange={(e) => setNewNotes(e.target.value)}
+                      placeholder="Ej: Revisar frenos delanteros, cambiar aceite, alinear dirección..."
+                      rows={4}
+                      className="pl-9"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={handleUpdateNotes}
+                      loading={savingNotes}
+                    >
+                      Guardar
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setEditingNotes(false)}
+                      disabled={savingNotes}
+                    >
+                      Cancelar
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-muted/30 p-4 rounded-lg border border-dashed h-full">
+                  {workOrder.notes ? (
+                    <p className="text-sm whitespace-pre-wrap text-muted-foreground">
+                      {workOrder.notes}
+                    </p>
+                  ) : (
+                    <div className="flex flex-col items-center gap-2 py-4 text-muted-foreground">
+                      <AlertCircle className="h-6 w-6 opacity-20" />
+                      <p className="text-xs">Sin notas de taller registradas</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
 
       {/* Payment Dialog */}
       <PaymentDialog
@@ -1380,8 +1437,8 @@ export default function WorkOrderDetailPage() {
         }}
       />
 
-      {/* Tabs Section */}
-      <Tabs defaultValue="checklists" className="w-full">
+      {/* Tabs Section - hidden in print */}
+      <Tabs defaultValue="checklists" className="w-full print:hidden">
         <TabsList
           variant="line"
           className="w-full justify-start border-b bg-transparent p-0 h-10"
@@ -1958,75 +2015,6 @@ export default function WorkOrderDetailPage() {
                         isLast={index === unifiedTimelineItems.length - 1}
                       />
                     ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <FileText className="h-4 w-4" />
-                    Notas de Taller
-                  </CardTitle>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => startEditingNotes()}
-                  >
-                    {workOrder.notes ? "Editar" : "Agregar"}
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {editingNotes ? (
-                  <div className="space-y-2">
-                    <div className="relative">
-                      <FileText
-                        className="absolute left-3 top-3 h-4 w-4 text-muted-foreground pointer-events-none"
-                        aria-hidden="true"
-                      />
-                      <Textarea
-                        value={newNotes}
-                        onChange={(e) => setNewNotes(e.target.value)}
-                        placeholder="Agregar notas..."
-                        rows={4}
-                        className="pl-9"
-                      />
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        onClick={handleUpdateNotes}
-                        loading={savingNotes}
-                      >
-                        Guardar
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setEditingNotes(false)}
-                        disabled={savingNotes}
-                      >
-                        Cancelar
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="bg-muted/30 p-4 rounded-lg border border-dashed">
-                    {workOrder.notes ? (
-                      <p className="text-sm whitespace-pre-wrap text-muted-foreground">
-                        {workOrder.notes}
-                      </p>
-                    ) : (
-                      <div className="flex flex-col items-center gap-2 py-4 text-muted-foreground">
-                        <AlertCircle className="h-6 w-6 opacity-20" />
-                        <p className="text-xs">
-                          Sin notas de taller registradas
-                        </p>
-                      </div>
-                    )}
                   </div>
                 )}
               </CardContent>

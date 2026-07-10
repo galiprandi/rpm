@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { validatePlate, getPlateFormatHint } from "@/lib/utils/plate-validation";
+import {
+  validatePlate,
+  getPlateFormatHint,
+} from "@/lib/utils/plate-validation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,18 +30,9 @@ import {
   FileText,
   Eye,
 } from "lucide-react";
+import { VEHICLE_CATEGORIES } from "@/lib/constants/vehicle-categories";
 
-export const VEHICLE_CATEGORIES = [
-  { value: "CAR", label: "Auto/Camioneta", icon: "🚗" },
-  { value: "SUV", label: "SUV/4x4", icon: "🚙" },
-  { value: "PICKUP", label: "Pickup", icon: "🛻" },
-  { value: "TRUCK", label: "Camión", icon: "🚚" },
-  { value: "MOTORCYCLE", label: "Moto", icon: "🏍️" },
-  { value: "TRAILER", label: "Trailer/Acoplado", icon: "🚛" },
-  { value: "AUDIO_EQUIPMENT", label: "Equipo de Audio", icon: "🔊" },
-  { value: "ELECTRIC_SCOOTER", label: "Monopatín Eléctrico", icon: "🛴" },
-  { value: "OTHER", label: "Otro Equipo", icon: "📦" },
-];
+export { VEHICLE_CATEGORIES };
 
 export interface VehicleFormData {
   identifier: string;
@@ -106,7 +100,7 @@ export function VehicleForm({
       const isValid = validatePlate(formData.identifier);
       if (!isValid) {
         setPlateError(
-          `Formato de patente inválido para Argentina. ${getPlateFormatHint(formData.category)}`
+          `Formato de patente inválido para Argentina. ${getPlateFormatHint(formData.category)}`,
         );
         return;
       }
@@ -170,7 +164,9 @@ export function VehicleForm({
             placeholder={isVehicle ? "Ej: AB123CD" : "Ej: SN123456"}
             required
             className={`pl-9 font-mono uppercase tracking-wider ${
-              plateError ? "border-destructive focus-visible:ring-destructive" : ""
+              plateError
+                ? "border-destructive focus-visible:ring-destructive"
+                : ""
             }`}
             aria-required="true"
           />
@@ -399,7 +395,10 @@ export function VehicleForm({
             "Guardando..."
           ) : (
             <>
-              <Save className="h-4 w-4 pointer-events-none" aria-hidden="true" />
+              <Save
+                className="h-4 w-4 pointer-events-none"
+                aria-hidden="true"
+              />
               {submitLabel}
             </>
           )}
