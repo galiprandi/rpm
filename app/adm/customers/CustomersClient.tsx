@@ -1,9 +1,18 @@
-'use client';
+"use client";
 
 import { useState, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Header, CrudAdmin, CrudStats, type StatItem } from "@/components/adm";
-import { Phone, User, Eye, TrendingDown, Users, Wallet, Plus, MessageSquare } from "lucide-react";
+import {
+  Phone,
+  User,
+  Eye,
+  TrendingDown,
+  Users,
+  Wallet,
+  Plus,
+  MessageSquare,
+} from "lucide-react";
 import Link from "next/link";
 import { type ColumnDef } from "@tanstack/react-table";
 import { CustomerDialog } from "@/components/customers/CustomerDialog";
@@ -15,6 +24,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { getWhatsAppLink, getDebtReminderMessage } from "@/lib/utils/whatsapp";
+import { formatPhone } from "@/lib/utils/format";
 
 interface Customer {
   id: string;
@@ -38,16 +48,22 @@ interface CustomersClientProps {
   initialCustomers: Customer[];
 }
 
-function isBillingData(data: unknown): data is { cuit: string; invoiceType: string } {
-  return typeof data === 'object' &&
-         data !== null &&
-         'cuit' in data &&
-         'invoiceType' in data &&
-         typeof (data as { cuit: unknown }).cuit === 'string' &&
-         typeof (data as { invoiceType: unknown }).invoiceType === 'string';
+function isBillingData(
+  data: unknown,
+): data is { cuit: string; invoiceType: string } {
+  return (
+    typeof data === "object" &&
+    data !== null &&
+    "cuit" in data &&
+    "invoiceType" in data &&
+    typeof (data as { cuit: unknown }).cuit === "string" &&
+    typeof (data as { invoiceType: unknown }).invoiceType === "string"
+  );
 }
 
-export default function CustomersClient({ initialCustomers }: CustomersClientProps) {
+export default function CustomersClient({
+  initialCustomers,
+}: CustomersClientProps) {
   const router = useRouter();
   const [customers, setCustomers] = useState<Customer[]>(initialCustomers);
   const [loading, setLoading] = useState(false);
@@ -58,7 +74,7 @@ export default function CustomersClient({ initialCustomers }: CustomersClientPro
   // Filter customers based on balance
   const filteredCustomers = useMemo(() => {
     if (!showOnlyWithBalance) return customers;
-    return customers.filter(c => c.balance !== 0);
+    return customers.filter((c) => c.balance !== 0);
   }, [customers, showOnlyWithBalance]);
 
   const fetchCustomers = useCallback(async () => {
@@ -87,10 +103,15 @@ export default function CustomersClient({ initialCustomers }: CustomersClientPro
         cell: ({ row }) => (
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0">
-              <User className="h-4 w-4 text-primary pointer-events-none" aria-hidden="true" />
+              <User
+                className="h-4 w-4 text-primary pointer-events-none"
+                aria-hidden="true"
+              />
             </div>
             <div>
-              <div className="font-semibold tracking-tight">{row.original.name}</div>
+              <div className="font-semibold tracking-tight">
+                {row.original.name}
+              </div>
               {row.original.email && (
                 <div className="text-sm text-muted-foreground font-mono">
                   {row.original.email}
@@ -98,7 +119,26 @@ export default function CustomersClient({ initialCustomers }: CustomersClientPro
               )}
               {isBillingData(row.original.billingData) && (
                 <div className="text-xs text-blue-700">
-                  Fact: {(row.original.billingData as { cuit: string; invoiceType: string }).invoiceType} - CUIT: <span className="font-mono">{(row.original.billingData as { cuit: string; invoiceType: string }).cuit}</span>
+                  Fact:{" "}
+                  {
+                    (
+                      row.original.billingData as {
+                        cuit: string;
+                        invoiceType: string;
+                      }
+                    ).invoiceType
+                  }{" "}
+                  - CUIT:{" "}
+                  <span className="font-mono">
+                    {
+                      (
+                        row.original.billingData as {
+                          cuit: string;
+                          invoiceType: string;
+                        }
+                      ).cuit
+                    }
+                  </span>
                 </div>
               )}
             </div>
@@ -110,13 +150,17 @@ export default function CustomersClient({ initialCustomers }: CustomersClientPro
         header: "Teléfono",
         cell: ({ row }) => {
           const phone = row.original.phone;
-          if (!phone) return <span className="text-muted-foreground font-mono">-</span>;
+          if (!phone)
+            return <span className="text-muted-foreground font-mono">-</span>;
 
           return (
             <div className="flex items-center gap-2 font-mono group">
               <div className="flex items-center gap-1.5">
-                <Phone className="h-3.5 w-3.5 text-muted-foreground/70 pointer-events-none" aria-hidden="true" />
-                {phone}
+                <Phone
+                  className="h-3.5 w-3.5 text-muted-foreground/70 pointer-events-none"
+                  aria-hidden="true"
+                />
+                {formatPhone(phone)}
               </div>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -124,8 +168,11 @@ export default function CustomersClient({ initialCustomers }: CustomersClientPro
                     href={getWhatsAppLink(
                       phone,
                       row.original.balance > 0
-                        ? getDebtReminderMessage(row.original.name, row.original.balance)
-                        : `Hola ${row.original.name}!`
+                        ? getDebtReminderMessage(
+                            row.original.name,
+                            row.original.balance,
+                          )
+                        : `Hola ${row.original.name}!`,
                     )}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -136,7 +183,9 @@ export default function CustomersClient({ initialCustomers }: CustomersClientPro
                   </a>
                 </TooltipTrigger>
                 <TooltipContent>
-                  {row.original.balance > 0 ? 'Notificar deuda' : 'Enviar WhatsApp'}
+                  {row.original.balance > 0
+                    ? "Notificar deuda"
+                    : "Enviar WhatsApp"}
                 </TooltipContent>
               </Tooltip>
             </div>
@@ -149,7 +198,11 @@ export default function CustomersClient({ initialCustomers }: CustomersClientPro
         cell: ({ row }) => {
           const vehicles = row.original.vehicles || [];
           if (!vehicles || vehicles.length === 0) {
-            return <span className="text-sm text-muted-foreground">Sin vehículos</span>;
+            return (
+              <span className="text-sm text-muted-foreground">
+                Sin vehículos
+              </span>
+            );
           }
           return (
             <div className="flex flex-wrap gap-1 max-w-[200px]">
@@ -182,8 +235,11 @@ export default function CustomersClient({ initialCustomers }: CustomersClientPro
             customer.name.toLowerCase().includes(search) ||
             customer.phone?.toLowerCase().includes(search) ||
             customer.email?.toLowerCase().includes(search) ||
-            customer.vehicles?.some(v => v.identifier.toLowerCase().includes(search)) ||
-            (isBillingData(customer.billingData) && customer.billingData.cuit.includes(search))
+            customer.vehicles?.some((v) =>
+              v.identifier.toLowerCase().includes(search),
+            ) ||
+            (isBillingData(customer.billingData) &&
+              customer.billingData.cuit.includes(search))
           );
         },
         cell: ({ row }) => {
@@ -194,21 +250,28 @@ export default function CustomersClient({ initialCustomers }: CustomersClientPro
           if (balance > 0) {
             return (
               <span className="font-mono font-medium text-red-700">
-                {new Intl.NumberFormat('es-AR', {
-                  style: 'currency',
-                  currency: 'ARS',
+                {new Intl.NumberFormat("es-AR", {
+                  style: "currency",
+                  currency: "ARS",
                 }).format(balance)}
               </span>
             );
           }
           // balance < 0 (saldo a favor)
           return (
-            <span className="font-mono font-medium text-emerald-700">
-              {new Intl.NumberFormat('es-AR', {
-                style: 'currency',
-                currency: 'ARS',
-              }).format(balance)}
-            </span>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="font-mono font-medium text-emerald-700 cursor-help">
+                  {new Intl.NumberFormat("es-AR", {
+                    style: "currency",
+                    currency: "ARS",
+                  }).format(balance)}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                <p>Saldo a favor del cliente</p>
+              </TooltipContent>
+            </Tooltip>
           );
         },
       },
@@ -216,46 +279,58 @@ export default function CustomersClient({ initialCustomers }: CustomersClientPro
         accessorKey: "_count.workOrders",
         header: "OTs",
         cell: ({ row }) => (
-          <span className="font-mono font-medium">{row.original._count.workOrders}</span>
+          <span className="font-mono font-medium">
+            {row.original._count.workOrders}
+          </span>
         ),
       },
     ],
-    []
+    [],
   );
 
   const handleCreate = () => {
     setIsCreateModalOpen(true);
   };
 
-  const stats: StatItem[] = useMemo(() => [
-    {
-      label: "Total Clientes",
-      value: customers.length,
-      icon: Users,
-    },
-    {
-      label: "Con Saldo",
-      value: customers.filter(c => c.balance !== 0).length,
-      icon: Wallet,
-      iconColor: customers.some(c => c.balance > 0) ? "#f97316" : undefined, // orange-500 if someone owes
-    },
-    {
-      label: "Deuda Total",
-      value: new Intl.NumberFormat('es-AR', {
-        style: 'currency',
-        currency: 'ARS',
-      }).format(customers.reduce((acc, c) => acc + (c.balance > 0 ? c.balance : 0), 0)),
-      icon: TrendingDown,
-      iconColor: "#ef4444", // red-500
-    },
-  ], [customers]);
+  const stats: StatItem[] = useMemo(
+    () => [
+      {
+        label: "Total Clientes",
+        value: customers.length,
+        icon: Users,
+      },
+      {
+        label: "Con Saldo",
+        value: customers.filter((c) => c.balance !== 0).length,
+        icon: Wallet,
+        iconColor: customers.some((c) => c.balance > 0) ? "#f97316" : undefined, // orange-500 if someone owes
+      },
+      {
+        label: "Deuda Total",
+        value: new Intl.NumberFormat("es-AR", {
+          style: "currency",
+          currency: "ARS",
+        }).format(
+          customers.reduce(
+            (acc, c) => acc + (c.balance > 0 ? c.balance : 0),
+            0,
+          ),
+        ),
+        icon: TrendingDown,
+        iconColor: "#ef4444", // red-500
+      },
+    ],
+    [customers],
+  );
 
   const handleCreateSubmit = async (formData: CustomerFormData) => {
     setIsCreating(true);
     try {
       const payload = {
         ...formData,
-        billingData: formData.billingData?.cuit ? formData.billingData : undefined,
+        billingData: formData.billingData?.cuit
+          ? formData.billingData
+          : undefined,
       };
 
       const response = await fetch("/api/customers", {
@@ -284,16 +359,18 @@ export default function CustomersClient({ initialCustomers }: CustomersClientPro
         title="Clientes"
         description="Gestiona las fichas de tus clientes y sus saldos"
         primaryAction={{
-          label: 'Nuevo Cliente',
+          label: "Nuevo Cliente",
           onClick: handleCreate,
           icon: Plus,
-          ariaLabel: 'Crear nuevo cliente',
+          ariaLabel: "Crear nuevo cliente",
+          className:
+            "bg-slate-900 text-white hover:bg-slate-800 border border-slate-900 shadow-lg hover:shadow-xl transition-all font-semibold px-4 py-2 h-8 whitespace-nowrap",
         }}
         secondaryActions={[
           {
-            label: showOnlyWithBalance ? 'Ver Todos' : 'Filtrar con Saldo',
+            label: showOnlyWithBalance ? "Ver Todos" : "Filtrar con Saldo",
             onClick: () => setShowOnlyWithBalance(!showOnlyWithBalance),
-            variant: 'outline',
+            variant: "outline",
             icon: TrendingDown,
           },
         ]}
@@ -309,7 +386,9 @@ export default function CustomersClient({ initialCustomers }: CustomersClientPro
         onCreate={handleCreate}
         hideCreateAction
         columns={columns}
-        emptyIcon={<User className="h-12 w-12 mx-auto text-muted-foreground mb-4" />}
+        emptyIcon={
+          <User className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+        }
         emptyMessage="No hay clientes registrados. Haz clic en 'Nuevo Cliente' para crear el primero."
         createButtonText="Cliente"
         tableTitle="Listado de Clientes"
@@ -318,7 +397,11 @@ export default function CustomersClient({ initialCustomers }: CustomersClientPro
           <Tooltip>
             <TooltipTrigger asChild>
               <Link href={`/adm/customers/${customer.id}`}>
-                <Button variant="ghost" size="sm" aria-label="Ver detalle del cliente">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  aria-label="Ver detalle del cliente"
+                >
                   <Eye className="h-4 w-4" aria-hidden="true" />
                 </Button>
               </Link>
