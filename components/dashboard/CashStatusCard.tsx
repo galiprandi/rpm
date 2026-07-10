@@ -47,8 +47,7 @@ export function CashStatusCard({
         <p className="text-[11px] text-muted-foreground mt-1.5">
           {isOpen && openedTime ? (
             <>
-              Desde <span className="font-mono tabular-nums">{openedTime}</span>{" "}
-              hs
+              Desde <span className="font-mono tabular-nums">{openedTime}</span>
             </>
           ) : (
             <>Sin abrir hoy</>
