@@ -1,12 +1,16 @@
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { DollarSign, ArrowUpCircle, ArrowDownCircle, ExternalLink } from 'lucide-react';
-import { formatARS } from '@/lib/utils/format';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  DollarSign,
+  ArrowUpCircle,
+  ArrowDownCircle,
+  ExternalLink,
+} from "lucide-react";
+import { formatARS } from "@/lib/utils/format";
+import Link from "next/link";
 
 interface CashMovement {
   id: string;
-  type: 'INCOME' | 'EXPENSE' | 'OPENING' | 'CLOSING' | 'PURCHASE_VOUCHER';
+  type: "INCOME" | "EXPENSE" | "OPENING" | "CLOSING" | "PURCHASE_VOUCHER";
   amount: number;
   method: string;
   methodName: string;
@@ -26,48 +30,53 @@ export function CashMovementsCard({ cashMovements }: CashMovementsCardProps) {
 
   const getMovementIcon = (type: string) => {
     let Icon = DollarSign;
-    let iconClass = 'text-muted-foreground';
-    let containerClass = 'bg-slate-100 border-slate-200';
+    let iconClass = "text-muted-foreground";
+    let containerClass = "bg-slate-100 border-slate-200";
 
     switch (type) {
-      case 'INCOME':
+      case "INCOME":
         Icon = ArrowUpCircle;
-        iconClass = 'text-emerald-700';
-        containerClass = 'bg-emerald-50 border-emerald-100';
+        iconClass = "text-emerald-600";
+        containerClass = "bg-emerald-500/10 border-emerald-500/20";
         break;
-      case 'EXPENSE':
-      case 'PURCHASE_VOUCHER':
+      case "EXPENSE":
+      case "PURCHASE_VOUCHER":
         Icon = ArrowDownCircle;
-        iconClass = 'text-red-700';
-        containerClass = 'bg-red-50 border-red-100';
+        iconClass = "text-red-600";
+        containerClass = "bg-red-500/10 border-red-500/20";
         break;
-      case 'OPENING':
-      case 'CLOSING':
+      case "OPENING":
+      case "CLOSING":
         Icon = DollarSign;
-        iconClass = 'text-blue-700';
-        containerClass = 'bg-blue-50 border-blue-100';
+        iconClass = "text-blue-600";
+        containerClass = "bg-blue-500/10 border-blue-500/20";
         break;
     }
 
     return (
-      <div className={`w-8 h-8 rounded-lg shadow-sm border flex items-center justify-center shrink-0 ${containerClass}`}>
-        <Icon className={`h-4 w-4 ${iconClass} pointer-events-none`} aria-hidden="true" />
+      <div
+        className={`w-7 h-7 rounded-lg border flex items-center justify-center shrink-0 ${containerClass}`}
+      >
+        <Icon
+          className={`h-3.5 w-3.5 ${iconClass} pointer-events-none`}
+          aria-hidden="true"
+        />
       </div>
     );
   };
 
   const getMovementTypeLabel = (type: string) => {
     switch (type) {
-      case 'INCOME':
-        return 'Ingreso';
-      case 'EXPENSE':
-        return 'Egreso';
-      case 'PURCHASE_VOUCHER':
-        return 'Compra';
-      case 'OPENING':
-        return 'Apertura';
-      case 'CLOSING':
-        return 'Cierre';
+      case "INCOME":
+        return "Ingreso";
+      case "EXPENSE":
+        return "Egreso";
+      case "PURCHASE_VOUCHER":
+        return "Compra";
+      case "OPENING":
+        return "Apertura";
+      case "CLOSING":
+        return "Cierre";
       default:
         return type;
     }
@@ -75,10 +84,10 @@ export function CashMovementsCard({ cashMovements }: CashMovementsCardProps) {
 
   const getMethodNameLabel = (methodName: string) => {
     switch (methodName) {
-      case 'PURCHASE':
-        return 'Compra';
-      case 'CASH':
-        return 'Efectivo';
+      case "PURCHASE":
+        return "Compra";
+      case "CASH":
+        return "Efectivo";
       default:
         return methodName;
     }
@@ -86,99 +95,108 @@ export function CashMovementsCard({ cashMovements }: CashMovementsCardProps) {
 
   const getAmountClass = (type: string) => {
     switch (type) {
-      case 'INCOME':
-        return 'text-emerald-700';
-      case 'EXPENSE':
-      case 'PURCHASE_VOUCHER':
-        return 'text-red-700';
+      case "INCOME":
+        return "text-emerald-600";
+      case "EXPENSE":
+      case "PURCHASE_VOUCHER":
+        return "text-red-600";
       default:
-        return 'text-foreground';
+        return "text-foreground";
     }
   };
 
   if (movements.length === 0) {
     return (
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">
-            Movimientos de Caja
-          </CardTitle>
-          <DollarSign className="h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-4">
-            <p className="text-sm text-muted-foreground">
-              Sin movimientos hoy
-            </p>
+      <Card className="relative overflow-hidden border-l-2 border-l-cyan-500/40">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+              Movimientos
+            </span>
+            <DollarSign
+              className="h-3.5 w-3.5 text-muted-foreground/40 pointer-events-none"
+              aria-hidden="true"
+            />
           </div>
+          <p className="text-xs text-muted-foreground/60 py-3 text-center">
+            Sin movimientos hoy
+          </p>
+          <Link
+            href="/adm/operations"
+            className="text-[10px] text-primary hover:underline font-medium flex items-center gap-1"
+          >
+            Ver operaciones
+            <ExternalLink
+              className="h-2.5 w-2.5 pointer-events-none"
+              aria-hidden="true"
+            />
+          </Link>
         </CardContent>
-        <CardFooter className="pt-2 border-t">
-          <Button asChild variant="ghost" size="sm" className="w-full text-xs gap-2">
-            <Link href="/adm/operations">
-              Ver operaciones detalladas
-              <ExternalLink className="h-3 w-3" />
-            </Link>
-          </Button>
-        </CardFooter>
       </Card>
     );
   }
 
   return (
-    <Card className="flex flex-col h-full">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
-          Movimientos de Caja
-        </CardTitle>
-        <DollarSign className="h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
-      </CardHeader>
-      <CardContent className="flex-1 overflow-hidden">
-        <div className="space-y-3 mt-2 max-h-[300px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-200">
+    <Card className="relative overflow-hidden border-l-2 border-l-cyan-500/40 flex flex-col h-full">
+      <CardContent className="p-4 flex-1 overflow-hidden">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+            Movimientos
+          </span>
+          <DollarSign
+            className="h-3.5 w-3.5 text-muted-foreground/40 pointer-events-none"
+            aria-hidden="true"
+          />
+        </div>
+        <div className="space-y-1.5 max-h-[280px] overflow-y-auto pr-1">
           {movements.map((movement) => (
             <div
               key={movement.id}
-              className="flex items-center justify-between py-2.5 border-b last:border-0 hover:bg-slate-50/50 transition-colors px-1 rounded-md"
+              className="flex items-center justify-between py-1.5 border-b last:border-0 border-border/30 hover:bg-muted/30 transition-colors px-1 rounded"
             >
-              <div className="flex items-start gap-3 flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
                 {getMovementIcon(movement.type)}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold tracking-tight text-sm">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-semibold tracking-tight text-xs">
                       {getMovementTypeLabel(movement.type)}
                     </span>
-                    <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground/60 truncate">
+                    <span className="text-[9px] uppercase font-bold tracking-wider text-muted-foreground/50">
                       {getMethodNameLabel(movement.methodName)}
                     </span>
                   </div>
-                  {movement.reason && (
-                    <div className="text-[11px] text-muted-foreground truncate mt-0.5">
-                      {movement.reason}
-                    </div>
-                  )}
-                  <div className="text-[10px] font-mono text-muted-foreground/70 mt-0.5">
-                    {new Date(movement.createdAt).toLocaleTimeString('es-AR', {
-                      hour: '2-digit',
-                      minute: '2-digit',
+                  <div className="text-[10px] font-mono text-muted-foreground/60 tabular-nums">
+                    {new Date(movement.createdAt).toLocaleTimeString("es-AR", {
+                      hour: "2-digit",
+                      minute: "2-digit",
                     })}
+                    {movement.reason && ` · ${movement.reason}`}
                   </div>
                 </div>
               </div>
-              <div className={`text-sm font-mono font-bold whitespace-nowrap ml-2 ${getAmountClass(movement.type)}`}>
-                {movement.type === 'EXPENSE' || movement.type === 'PURCHASE_VOUCHER' ? '-' : '+'}
+              <div
+                className={`text-xs font-mono font-bold whitespace-nowrap ml-2 tabular-nums ${getAmountClass(movement.type)}`}
+              >
+                {movement.type === "EXPENSE" ||
+                movement.type === "PURCHASE_VOUCHER"
+                  ? "-"
+                  : "+"}
                 {formatARS(movement.amount)}
               </div>
             </div>
           ))}
         </div>
+        <Link
+          href="/adm/operations"
+          className="text-[10px] text-primary hover:underline font-medium flex items-center gap-1 mt-3 pt-2 border-t border-border/40"
+        >
+          Ver todas las operaciones
+          <ExternalLink
+            className="h-2.5 w-2.5 pointer-events-none"
+            aria-hidden="true"
+          />
+        </Link>
       </CardContent>
-      <CardFooter className="pt-2 border-t mt-auto">
-        <Button asChild variant="ghost" size="sm" className="w-full text-xs gap-2">
-          <Link href="/adm/operations">
-            Ver todas las operaciones
-            <ExternalLink className="h-3 w-3" />
-          </Link>
-        </Button>
-      </CardFooter>
     </Card>
   );
 }

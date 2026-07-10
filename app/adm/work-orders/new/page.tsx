@@ -16,7 +16,19 @@ import { useUI } from "@/components/ui/UIProvider";
 import { ProductServiceSelector } from "@/components/ui/ProductServiceSelector";
 import { VehicleDialog } from "@/components/vehicles/VehicleDialog";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { Save, Plus, Search, Car, User, CheckCircle, Edit, RotateCcw, ArrowUpDown, Clock, UserCog } from "lucide-react";
+import {
+  Save,
+  Plus,
+  Search,
+  Car,
+  User,
+  CheckCircle,
+  Edit,
+  RotateCcw,
+  ArrowUpDown,
+  Clock,
+  UserCog,
+} from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -78,16 +90,20 @@ interface Product {
   id: string;
   name: string;
   replacementCost: number;
-  costPrice?: number;  // Fallback when replacementCost is 0
+  costPrice?: number; // Fallback when replacementCost is 0
 }
 
 // Client-side helper to calculate effective product base cost
 // Uses replacementCost if > 0, otherwise falls back to costPrice
 function getProductBaseCost(
   replacementCost: number | null | undefined,
-  costPrice: number | null | undefined
+  costPrice: number | null | undefined,
 ): number {
-  if (replacementCost !== null && replacementCost !== undefined && replacementCost > 0) {
+  if (
+    replacementCost !== null &&
+    replacementCost !== undefined &&
+    replacementCost > 0
+  ) {
     return replacementCost;
   }
   if (costPrice !== null && costPrice !== undefined) {
@@ -103,10 +119,10 @@ interface WorkOrderItem {
   name: string;
   quantity: number;
   unitPrice: number;
-  priceListId?: string;      // Lista usada como base
-  isManualPrice?: boolean;   // true = precio editado manualmente
-  originalPrice?: number;    // Precio calculado original (para comparar)
-  replacementCost?: number;  // Costo de reposición (para calcular margen)
+  priceListId?: string; // Lista usada como base
+  isManualPrice?: boolean; // true = precio editado manualmente
+  originalPrice?: number; // Precio calculado original (para comparar)
+  replacementCost?: number; // Costo de reposición (para calcular margen)
 }
 
 export default function NewWorkOrderPage() {
@@ -122,10 +138,13 @@ export default function NewWorkOrderPage() {
   // Step 1: Search by license plate
   const [plateSearch, setPlateSearch] = useState("");
   const [searching, setSearching] = useState(false);
-  const [foundVehicle, setFoundVehicle] = useState<VehicleWithCustomer | null>(null);
+  const [foundVehicle, setFoundVehicle] = useState<VehicleWithCustomer | null>(
+    null,
+  );
   const [showCreateVehicle, setShowCreateVehicle] = useState(false);
   const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
-  const [selectedCustomerForNewVehicle, setSelectedCustomerForNewVehicle] = useState<string | null>(null);
+  const [selectedCustomerForNewVehicle, setSelectedCustomerForNewVehicle] =
+    useState<string | null>(null);
 
   // Step 1b: Create new vehicle (if not found)
   const [newVehicleData, setNewVehicleData] = useState({
@@ -139,7 +158,9 @@ export default function NewWorkOrderPage() {
     equipmentType: "",
     description: "",
   });
-  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(
+    null,
+  );
   const [newCustomerData] = useState({
     name: "",
     phone: "",
@@ -149,7 +170,9 @@ export default function NewWorkOrderPage() {
   // Step 2: Items
   const [items, setItems] = useState<WorkOrderItem[]>([]);
   const [selectedPriceList, setSelectedPriceList] = useState<string>("");
-  const [priceLists, setPriceLists] = useState<Array<{ id: string; name: string; baseMarginPercentage: number }>>([]);
+  const [priceLists, setPriceLists] = useState<
+    Array<{ id: string; name: string; baseMarginPercentage: number }>
+  >([]);
   const [, setMinimumMargin] = useState<number>(15); // Default 15%
   const [showQuickServiceDialog, setShowQuickServiceDialog] = useState(false);
 
@@ -159,8 +182,11 @@ export default function NewWorkOrderPage() {
   const [fuelLevel, setFuelLevel] = useState<number>(50);
   const [notes, setNotes] = useState("");
   const [scheduledDate, setScheduledDate] = useState("");
-  const [technicians, setTechnicians] = useState<Array<{ id: string; name: string }>>([]);
-  const [selectedTechnicianId, setSelectedTechnicianId] = useState<string>("unassigned");
+  const [technicians, setTechnicians] = useState<
+    Array<{ id: string; name: string }>
+  >([]);
+  const [selectedTechnicianId, setSelectedTechnicianId] =
+    useState<string>("unassigned");
 
   // Load wizard state from localStorage on mount
   useEffect(() => {
@@ -169,7 +195,6 @@ export default function NewWorkOrderPage() {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed.step) setStep(parsed.step);
-        if (parsed.plateSearch) setPlateSearch(parsed.plateSearch);
         if (parsed.checklist) setChecklist(parsed.checklist);
         if (parsed.odometerValue) setOdometerValue(parsed.odometerValue);
         if (parsed.fuelLevel !== undefined) setFuelLevel(parsed.fuelLevel);
@@ -183,9 +208,17 @@ export default function NewWorkOrderPage() {
 
   // Save wizard state to localStorage on changes
   useEffect(() => {
-    const state = { step, plateSearch, checklist, odometerValue, fuelLevel, notes, scheduledDate, items };
+    const state = {
+      step,
+      checklist,
+      odometerValue,
+      fuelLevel,
+      notes,
+      scheduledDate,
+      items,
+    };
     localStorage.setItem(WIZARD_STORAGE_KEY, JSON.stringify(state));
-  }, [step, plateSearch, checklist, odometerValue, fuelLevel, notes, scheduledDate, items]);
+  }, [step, checklist, odometerValue, fuelLevel, notes, scheduledDate, items]);
 
   // Warn before leaving if wizard has data
   useEffect(() => {
@@ -212,14 +245,18 @@ export default function NewWorkOrderPage() {
         const lists = data.priceLists || [];
         setPriceLists(lists);
         // Auto-select first active price list if available
-        const firstActive = lists.find((pl: { isActive: boolean }) => pl.isActive);
+        const firstActive = lists.find(
+          (pl: { isActive: boolean }) => pl.isActive,
+        );
         if (firstActive) {
           setSelectedPriceList(firstActive.id);
         }
       }
       if (settingsRes.ok) {
         const data = await settingsRes.json();
-        const minMargin = data.settings?.find((s: { key: string }) => s.key === "MINIMUM_MARGIN_PERCENTAGE")?.value;
+        const minMargin = data.settings?.find(
+          (s: { key: string }) => s.key === "MINIMUM_MARGIN_PERCENTAGE",
+        )?.value;
         if (minMargin) {
           setMinimumMargin(parseFloat(minMargin));
         }
@@ -268,7 +305,9 @@ export default function NewWorkOrderPage() {
     setPlateError(null);
     setSearching(true);
     try {
-      const res = await fetch(`/api/vehicles/by-identifier/${encodeURIComponent(normalized)}`);
+      const res = await fetch(
+        `/api/vehicles/by-identifier/${encodeURIComponent(normalized)}`,
+      );
       if (res.ok) {
         const data = await res.json();
         if (data.vehicles && data.vehicles.length > 0) {
@@ -277,7 +316,7 @@ export default function NewWorkOrderPage() {
         } else {
           setFoundVehicle(null);
           setShowCreateVehicle(true);
-          setNewVehicleData(prev => ({ ...prev, identifier: normalized }));
+          setNewVehicleData((prev) => ({ ...prev, identifier: normalized }));
           // Pre-select customer if we already have one from previous search
           if (selectedCustomerId) {
             setSelectedCustomerForNewVehicle(selectedCustomerId);
@@ -291,8 +330,10 @@ export default function NewWorkOrderPage() {
     }
   };
 
-
-  const addItem = async (type: "PRODUCT" | "SERVICE", item: Service | Product) => {
+  const addItem = async (
+    type: "PRODUCT" | "SERVICE",
+    item: Service | Product,
+  ) => {
     let unitPrice: number;
     let priceListId: string | undefined;
 
@@ -303,22 +344,33 @@ export default function NewWorkOrderPage() {
       const product = item as Product;
       if (selectedPriceList) {
         try {
-          const res = await fetch(`/api/price-lists/${selectedPriceList}/calculate-price?productId=${product.id}`);
+          const res = await fetch(
+            `/api/price-lists/${selectedPriceList}/calculate-price?productId=${product.id}`,
+          );
           if (res.ok) {
             const data = await res.json();
             unitPrice = data.finalPrice;
             priceListId = selectedPriceList;
           } else {
             // Fallback to base cost with default margin if calculation fails
-            const baseCost = getProductBaseCost(product.replacementCost, product.costPrice);
+            const baseCost = getProductBaseCost(
+              product.replacementCost,
+              product.costPrice,
+            );
             unitPrice = baseCost * 1.4; // 40% default margin
           }
         } catch {
-          const baseCost = getProductBaseCost(product.replacementCost, product.costPrice);
+          const baseCost = getProductBaseCost(
+            product.replacementCost,
+            product.costPrice,
+          );
           unitPrice = baseCost * 1.4; // 40% default margin
         }
       } else {
-        const baseCost = getProductBaseCost(product.replacementCost, product.costPrice);
+        const baseCost = getProductBaseCost(
+          product.replacementCost,
+          product.costPrice,
+        );
         unitPrice = baseCost * 1.4; // 40% default margin
       }
     }
@@ -334,9 +386,13 @@ export default function NewWorkOrderPage() {
         priceListId,
         isManualPrice: false,
         originalPrice: Number(unitPrice),
-        replacementCost: type === "PRODUCT" 
-          ? getProductBaseCost((item as Product).replacementCost, (item as Product).costPrice) 
-          : undefined,
+        replacementCost:
+          type === "PRODUCT"
+            ? getProductBaseCost(
+                (item as Product).replacementCost,
+                (item as Product).costPrice,
+              )
+            : undefined,
       },
     ]);
   };
@@ -378,7 +434,10 @@ export default function NewWorkOrderPage() {
         fuelLevel: fuelLevel > 0 ? fuelLevel : undefined,
         notes,
         scheduledDate: scheduledDate || undefined,
-        technicianId: selectedTechnicianId !== "unassigned" ? selectedTechnicianId : undefined,
+        technicianId:
+          selectedTechnicianId !== "unassigned"
+            ? selectedTechnicianId
+            : undefined,
         source: "IN_PERSON",
       };
 
@@ -402,13 +461,15 @@ export default function NewWorkOrderPage() {
       if (!response.ok) throw new Error("Failed to create work order");
 
       const workOrder = await response.json();
+      localStorage.removeItem(WIZARD_STORAGE_KEY);
       router.push(`/adm/work-orders/${workOrder.id}`);
     } catch (error) {
       console.error("Error creating work order:", error);
       await alert({
-        title: 'Error',
-        description: 'Error al crear orden de trabajo. Por favor intente nuevamente.',
-        variant: 'error',
+        title: "Error",
+        description:
+          "Error al crear orden de trabajo. Por favor intente nuevamente.",
+        variant: "error",
       });
     } finally {
       setLoading(false);
@@ -435,17 +496,21 @@ export default function NewWorkOrderPage() {
 
   return (
     <TooltipProvider>
-    <div className="container mx-auto py-6 max-w-4xl space-y-6">
-      <Header
-        title="Nueva Orden de Trabajo"
-        description="Crear una nueva orden de trabajo para un vehículo"
-        showBackButton
-        onBack={() => router.push("/adm/work-orders")}
-      />
+      <div className="container mx-auto py-6 max-w-4xl space-y-6">
+        <Header
+          title="Nueva Orden de Trabajo"
+          description="Crear una nueva orden de trabajo para un vehículo"
+          showBackButton
+          onBack={() => router.push("/adm/work-orders")}
+        />
 
-      <WorkOrderStepper currentStep={step} className="mb-8" onStepClick={handleStepClick} />
+        <WorkOrderStepper
+          currentStep={step}
+          className="mb-8"
+          onStepClick={handleStepClick}
+        />
 
-      <div className="space-y-6">
+        <div className="space-y-6">
           {/* Step 1: Search Vehicle by License Plate */}
           {step === 1 && (
             <div className="space-y-6">
@@ -453,7 +518,9 @@ export default function NewWorkOrderPage() {
                 <>
                   <div className="text-center space-y-2">
                     <Car className="h-12 w-12 mx-auto text-muted-foreground" />
-                    <h3 className="text-lg font-medium">Buscar vehículo por patente</h3>
+                    <h3 className="text-lg font-medium">
+                      Buscar vehículo por patente
+                    </h3>
                     <p className="text-sm text-muted-foreground">
                       Ingrese la patente para buscar el vehículo y su dueño
                     </p>
@@ -462,7 +529,10 @@ export default function NewWorkOrderPage() {
                   <div className="flex flex-col gap-2 max-w-md mx-auto">
                     <div className="flex gap-2">
                       <div className="relative flex-1">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+                        <Search
+                          className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none"
+                          aria-hidden="true"
+                        />
                         <Input
                           autoFocus
                           placeholder="Ej: ABC123 o AB123CD"
@@ -471,16 +541,23 @@ export default function NewWorkOrderPage() {
                             setPlateSearch(e.target.value.toUpperCase());
                             if (plateError) setPlateError(null);
                           }}
-                          onKeyDown={(e) => e.key === "Enter" && searchVehicle()}
+                          onKeyDown={(e) =>
+                            e.key === "Enter" && searchVehicle()
+                          }
                           className="flex-1 text-center text-lg uppercase pl-9 font-mono tracking-widest"
                         />
                       </div>
-                      <Button onClick={searchVehicle} disabled={searching || !plateSearch.trim()}>
+                      <Button
+                        onClick={searchVehicle}
+                        disabled={searching || !plateSearch.trim()}
+                      >
                         {searching ? "Buscando..." : "Buscar"}
                       </Button>
                     </div>
                     {plateError && (
-                      <p className="text-sm text-destructive text-center">{plateError}</p>
+                      <p className="text-sm text-destructive text-center">
+                        {plateError}
+                      </p>
                     )}
                   </div>
                 </>
@@ -496,13 +573,18 @@ export default function NewWorkOrderPage() {
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <h3 className="text-xl font-bold">{foundVehicle.identifier}</h3>
-                          <Badge variant="outline">{foundVehicle.category}</Badge>
+                          <h3 className="text-xl font-bold">
+                            {foundVehicle.identifier}
+                          </h3>
+                          <Badge variant="outline">
+                            {foundVehicle.category}
+                          </Badge>
                         </div>
                         <p className="text-muted-foreground">
-                          {foundVehicle.make?.name} {foundVehicle.model?.name} {foundVehicle.year && `(${foundVehicle.year})`}
+                          {foundVehicle.make?.name} {foundVehicle.model?.name}{" "}
+                          {foundVehicle.year && `(${foundVehicle.year})`}
                         </p>
-                        
+
                         <div className="mt-4 p-3 bg-white rounded border">
                           <div className="flex items-center gap-2 text-sm font-medium">
                             <User className="h-4 w-4" />
@@ -534,20 +616,30 @@ export default function NewWorkOrderPage() {
                 <div className="space-y-4">
                   <div className="text-center">
                     <p className="text-muted-foreground">
-                      No se encontró vehículo con patente <strong>{plateSearch}</strong>
+                      No se encontró vehículo con patente{" "}
+                      <strong>{plateSearch}</strong>
                     </p>
-                    <p className="text-sm">Haga clic para crear el vehículo y la orden</p>
+                    <p className="text-sm">
+                      Haga clic para crear el vehículo y la orden
+                    </p>
                   </div>
 
                   <div className="flex gap-2">
-                    <Button variant="outline" onClick={resetSearch} className="flex-1">
+                    <Button
+                      variant="outline"
+                      onClick={resetSearch}
+                      className="flex-1"
+                    >
                       <RotateCcw className="h-4 w-4 mr-2" />
                       Volver a buscar
                     </Button>
                     <Button
                       onClick={() => {
                         // Pre-fill the identifier and open modal
-                        setNewVehicleData(prev => ({ ...prev, identifier: plateSearch.toUpperCase() }));
+                        setNewVehicleData((prev) => ({
+                          ...prev,
+                          identifier: plateSearch.toUpperCase(),
+                        }));
                         setIsVehicleModalOpen(true);
                       }}
                       className="flex-1"
@@ -588,9 +680,9 @@ export default function NewWorkOrderPage() {
                 categories={[]}
                 priceLists={priceLists}
                 defaultPriceListId={selectedPriceList}
-                initialItems={items.map(item => ({
-                  id: item.productId || item.serviceId || '',
-                  type: item.type === 'PRODUCT' ? 'product' : 'service',
+                initialItems={items.map((item) => ({
+                  id: item.productId || item.serviceId || "",
+                  type: item.type === "PRODUCT" ? "product" : "service",
                   name: item.name,
                   quantity: item.quantity,
                   unitPrice: item.unitPrice,
@@ -600,20 +692,24 @@ export default function NewWorkOrderPage() {
                 }))}
                 onSelectionChange={(selectedItems) => {
                   // Convert component items to WorkOrderItem format
-                  const workOrderItems: WorkOrderItem[] = selectedItems.map(item => ({
-                    type: item.type === 'product' ? 'PRODUCT' : 'SERVICE',
-                    ...(item.type === 'product'
-                      ? { productId: item.id }
-                      : { serviceId: item.id }
-                    ),
-                    name: item.name,
-                    quantity: item.quantity,
-                    unitPrice: item.unitPrice,
-                    priceListId: item.priceListId,
-                    isManualPrice: item.isManualPrice,
-                    originalPrice: item.originalPrice,
-                    replacementCost: item.type === 'product' ? item.originalPrice : undefined,
-                  }));
+                  const workOrderItems: WorkOrderItem[] = selectedItems.map(
+                    (item) => ({
+                      type: item.type === "product" ? "PRODUCT" : "SERVICE",
+                      ...(item.type === "product"
+                        ? { productId: item.id }
+                        : { serviceId: item.id }),
+                      name: item.name,
+                      quantity: item.quantity,
+                      unitPrice: item.unitPrice,
+                      priceListId: item.priceListId,
+                      isManualPrice: item.isManualPrice,
+                      originalPrice: item.originalPrice,
+                      replacementCost:
+                        item.type === "product"
+                          ? item.originalPrice
+                          : undefined,
+                    }),
+                  );
                   setItems(workOrderItems);
                 }}
                 onQuickCreate={() => setShowQuickServiceDialog(true)}
@@ -623,7 +719,9 @@ export default function NewWorkOrderPage() {
               {items.length > 0 && (
                 <div className="sticky bottom-0 z-10 bg-background border rounded-lg shadow-lg p-4">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">{items.length} ítem{items.length !== 1 ? 's' : ''}</span>
+                    <span className="text-sm text-muted-foreground">
+                      {items.length} ítem{items.length !== 1 ? "s" : ""}
+                    </span>
                     <span className="text-xl font-bold">
                       Total: ${calculateTotal().toLocaleString("es-AR")}
                     </span>
@@ -635,7 +733,10 @@ export default function NewWorkOrderPage() {
                 <Button variant="outline" onClick={() => setStep(1)}>
                   Anterior
                 </Button>
-                <Button onClick={() => setStep(3)} disabled={items.length === 0}>
+                <Button
+                  onClick={() => setStep(3)}
+                  disabled={items.length === 0}
+                >
                   Siguiente
                 </Button>
               </div>
@@ -661,7 +762,8 @@ export default function NewWorkOrderPage() {
                     {foundVehicle?.identifier || newVehicleData.identifier}
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    {foundVehicle?.customer.name || newCustomerData.name} • {items.length} items
+                    {foundVehicle?.customer.name || newCustomerData.name} •{" "}
+                    {items.length} items
                   </div>
                 </div>
                 <Button variant="ghost" size="sm" onClick={() => setStep(1)}>
@@ -678,7 +780,10 @@ export default function NewWorkOrderPage() {
                       id={`checklist-${item.id}`}
                       checked={checklist[item.id] || false}
                       onCheckedChange={(checked: boolean) =>
-                        setChecklist((prev) => ({ ...prev, [item.id]: checked }))
+                        setChecklist((prev) => ({
+                          ...prev,
+                          [item.id]: checked,
+                        }))
                       }
                       label={item.label}
                       labelClassName={item.required ? "font-medium" : ""}
@@ -692,7 +797,10 @@ export default function NewWorkOrderPage() {
                 <div className="space-y-2">
                   <Label htmlFor="odometer">Odómetro (km)</Label>
                   <div className="relative">
-                    <ArrowUpDown className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+                    <ArrowUpDown
+                      className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none"
+                      aria-hidden="true"
+                    />
                     <Input
                       id="odometer"
                       type="number"
@@ -721,7 +829,10 @@ export default function NewWorkOrderPage() {
                     onValueChange={setSelectedTechnicianId}
                   >
                     <SelectTrigger id="technician" className="relative pl-9">
-                      <UserCog className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+                      <UserCog
+                        className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none"
+                        aria-hidden="true"
+                      />
                       <SelectValue placeholder="Seleccionar técnico" />
                     </SelectTrigger>
                     <SelectContent>
@@ -735,9 +846,14 @@ export default function NewWorkOrderPage() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="scheduled-date">Fecha estimada de entrega (opcional)</Label>
+                  <Label htmlFor="scheduled-date">
+                    Fecha estimada de entrega (opcional)
+                  </Label>
                   <div className="relative">
-                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+                    <Clock
+                      className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none"
+                      aria-hidden="true"
+                    />
                     <Input
                       id="scheduled-date"
                       type="datetime-local"
@@ -752,7 +868,10 @@ export default function NewWorkOrderPage() {
               <div className="space-y-2">
                 <Label htmlFor="notes">Notas / Observaciones</Label>
                 <div className="relative">
-                  <Edit className="absolute left-3 top-3 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+                  <Edit
+                    className="absolute left-3 top-3 h-4 w-4 text-muted-foreground pointer-events-none"
+                    aria-hidden="true"
+                  />
                   <Textarea
                     id="notes"
                     value={notes}
@@ -779,7 +898,12 @@ export default function NewWorkOrderPage() {
                 </Button>
                 <Button
                   onClick={handleSubmit}
-                  disabled={loading || !ENTRY_CHECKLIST.every(item => !item.required || checklist[item.id])}
+                  disabled={
+                    loading ||
+                    !ENTRY_CHECKLIST.every(
+                      (item) => !item.required || checklist[item.id],
+                    )
+                  }
                 >
                   <Save className="h-4 w-4 mr-2" />
                   {loading ? "Creando..." : "Crear Orden de Trabajo"}

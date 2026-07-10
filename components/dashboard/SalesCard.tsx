@@ -1,6 +1,6 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DollarSign, TrendingUp, TrendingDown } from 'lucide-react';
-import { formatARS, formatPercentageChange } from '@/lib/utils/format';
+import { Card, CardContent } from "@/components/ui/card";
+import { TrendingUp, TrendingDown } from "lucide-react";
+import { formatARS, formatPercentageChange } from "@/lib/utils/format";
 
 interface SalesCardProps {
   total: number;
@@ -19,33 +19,34 @@ export function SalesCard({
   const TrendIcon = vsYesterday >= 0 ? TrendingUp : TrendingDown;
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
-          Ventas Hoy
-        </CardTitle>
-        <DollarSign
-          className="h-4 w-4 text-muted-foreground pointer-events-none"
-          aria-hidden="true"
-        />
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{formatARS(total)}</div>
-        <div className="flex items-center gap-2 mt-1">
-          <p className="text-xs text-muted-foreground">
-            {workOrderCount} OT{workOrderCount !== 1 ? 's' : ''} completada{workOrderCount !== 1 ? 's' : ''}
-          </p>
-          <div className={`flex items-center gap-1 text-xs ${trend.className}`}>
+    <Card className="relative overflow-hidden border-l-2 border-l-emerald-500/60">
+      <CardContent className="p-3.5">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+            Ventas Hoy
+          </span>
+          <div
+            className={`flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded ${vsYesterday >= 0 ? "bg-emerald-500/10 text-emerald-600" : "bg-red-500/10 text-red-600"}`}
+          >
             <TrendIcon
-              className="h-3 w-3 pointer-events-none"
+              className="h-2.5 w-2.5 pointer-events-none"
               aria-hidden="true"
             />
             <span>{trend.text}</span>
           </div>
         </div>
-        <p className="text-xs text-muted-foreground mt-2">
-          Ticket promedio: {formatARS(ticketAverage)}
-        </p>
+        <div className="text-xl font-bold tracking-tight tabular-nums">
+          {formatARS(total)}
+        </div>
+        <div className="flex items-center gap-2 mt-1.5 text-[11px] text-muted-foreground">
+          <span className="font-medium">
+            {workOrderCount} op{workOrderCount !== 1 ? "s" : ""}
+          </span>
+          <span className="text-muted-foreground/30">·</span>
+          <span className="tabular-nums" title="Ticket promedio por operación">
+            ticket {formatARS(ticketAverage)}
+          </span>
+        </div>
       </CardContent>
     </Card>
   );
