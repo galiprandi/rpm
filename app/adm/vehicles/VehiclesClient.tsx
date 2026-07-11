@@ -14,7 +14,7 @@ import {
   MessageSquare,
 } from "lucide-react";
 import Link from "next/link";
-import { type ColumnDef } from "@tanstack/react-table";
+import { type ColumnDef, type FilterFn } from "@tanstack/react-table";
 import {
   getVehicleCategoryLabel,
   VEHICLE_CATEGORIES,
@@ -91,6 +91,19 @@ export default function VehiclesClient({
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  const vehicleFilterFn = useCallback<FilterFn<Vehicle>>((row, id, value) => {
+    if (!value) return true;
+    const search = value.toLowerCase();
+    const vehicle = row.original;
+    return !!(
+      (vehicle.identifier?.toLowerCase() ?? "").includes(search) ||
+      (vehicle.customer?.name?.toLowerCase() ?? "").includes(search) ||
+      (vehicle.equipmentName?.toLowerCase() ?? "").includes(search) ||
+      (vehicle.vehicle_make?.name?.toLowerCase() ?? "").includes(search) ||
+      (vehicle.vehicle_model?.name?.toLowerCase() ?? "").includes(search)
+    );
   }, []);
 
   const columns = useMemo<ColumnDef<Vehicle & { id: string }>[]>(
@@ -261,6 +274,7 @@ export default function VehiclesClient({
         items={filteredVehicles as any}
         loading={loading}
         columns={columns}
+        filterFn={vehicleFilterFn as any}
         emptyIcon={
           <Car className="h-12 w-12 mx-auto text-muted-foreground/20 mb-4" />
         }
