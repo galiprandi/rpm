@@ -28,13 +28,13 @@ export function DebtorsCard({
             Deudores
           </span>
           {hasDebt && (
-            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-500/10 text-red-600">
+            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-500/10 text-red-700">
               {count} cliente{count !== 1 ? "s" : ""}
             </span>
           )}
         </div>
         <div
-          className={`text-xl font-bold tracking-tight tabular-nums ${hasDebt ? "text-red-600" : "text-emerald-600"}`}
+          className={`text-xl font-bold tracking-tight tabular-nums ${hasDebt ? "text-red-700" : "text-emerald-700"}`}
         >
           {hasDebt ? formatARS(totalDebt) : "Sin deuda"}
         </div>

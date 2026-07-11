@@ -106,7 +106,7 @@ export function ReadyForDeliveryCard({
                       <span>{relativeTime(item.completedAt)}</span>
                     </div>
                     <span className="text-muted-foreground/30">·</span>
-                    <span className="font-mono font-semibold text-emerald-600 tabular-nums">
+                    <span className="font-mono font-semibold text-emerald-700 tabular-nums">
                       {formatARS(item.total)}
                     </span>
                   </div>
@@ -118,7 +118,7 @@ export function ReadyForDeliveryCard({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-7 w-7 p-0 text-emerald-600 hover:text-emerald-600 hover:bg-emerald-500/10"
+                      className="h-7 w-7 p-0 text-emerald-700 hover:text-emerald-700 hover:bg-emerald-500/10"
                       onClick={() => {
                         const msg = getWorkOrderMessage({
                           customerName: item.customer.name,
@@ -149,7 +149,7 @@ export function ReadyForDeliveryCard({
                       asChild
                       variant="ghost"
                       size="sm"
-                      className="h-7 w-7 p-0 text-blue-600 hover:text-blue-600 hover:bg-blue-500/10"
+                      className="h-7 w-7 p-0 text-blue-700 hover:text-blue-700 hover:bg-blue-500/10"
                     >
                       <a
                         href={`tel:${item.customer.phone}`}

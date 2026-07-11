@@ -60,7 +60,7 @@ export function TopProductsCard({ topProducts }: TopProductsCardProps) {
                     <span className="text-[9px] font-mono font-bold text-muted-foreground/50 bg-muted/60 px-1 rounded tabular-nums">
                       x{product.quantity}
                     </span>
-                    <span className="font-mono font-bold text-emerald-600 tabular-nums">
+                    <span className="font-mono font-bold text-emerald-700 tabular-nums">
                       {formatARS(product.revenue)}
                     </span>
                   </div>

@@ -29,7 +29,7 @@ export function WorkOrdersCard({
       label: "Pendientes",
       value: byStatus.pending,
       icon: Clock,
-      colorClass: "text-amber-600",
+      colorClass: "text-amber-700",
       bgClass: "bg-amber-500/5",
       borderClass: "border-amber-500/20",
       dotClass: "bg-amber-500",
@@ -38,7 +38,7 @@ export function WorkOrdersCard({
       label: "En proceso",
       value: byStatus.inProgress,
       icon: Wrench,
-      colorClass: "text-blue-600",
+      colorClass: "text-blue-700",
       bgClass: "bg-blue-500/5",
       borderClass: "border-blue-500/20",
       dotClass: "bg-blue-500",
@@ -47,7 +47,7 @@ export function WorkOrdersCard({
       label: "Listas",
       value: byStatus.ready,
       icon: CheckCircle2,
-      colorClass: "text-emerald-600",
+      colorClass: "text-emerald-700",
       bgClass: "bg-emerald-500/5",
       borderClass: "border-emerald-500/20",
       dotClass: "bg-emerald-500",
@@ -69,7 +69,7 @@ export function WorkOrdersCard({
             <span className="text-[11px] text-muted-foreground">activas</span>
           </div>
           {newToday > 0 && (
-            <div className="flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600">
+            <div className="flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-700">
               <ArrowUp
                 className="h-2.5 w-2.5 pointer-events-none"
                 aria-hidden="true"
@@ -110,7 +110,7 @@ export function WorkOrdersCard({
           <div className="border-t border-border/40 pt-2.5">
             <div className="flex items-center gap-1.5 mb-1.5">
               <Timer
-                className="h-3 w-3 text-amber-600 pointer-events-none"
+                className="h-3 w-3 text-amber-700 pointer-events-none"
                 aria-hidden="true"
               />
               <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
@@ -135,7 +135,7 @@ export function WorkOrdersCard({
                       {wo.customerName}
                     </span>
                   </div>
-                  <span className="text-[10px] font-mono tabular-nums text-amber-600 shrink-0">
+                  <span className="text-[10px] font-mono tabular-nums text-amber-700 shrink-0">
                     {relativeTime(wo.createdAt)}
                   </span>
                 </div>

@@ -26,7 +26,7 @@ export function SalesCard({
             Ventas Hoy
           </span>
           <div
-            className={`flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded ${vsYesterday >= 0 ? "bg-emerald-500/10 text-emerald-600" : "bg-red-500/10 text-red-600"}`}
+            className={`flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded ${vsYesterday >= 0 ? "bg-emerald-500/10 text-emerald-700" : "bg-red-500/10 text-red-700"}`}
           >
             <TrendIcon
               className="h-2.5 w-2.5 pointer-events-none"
