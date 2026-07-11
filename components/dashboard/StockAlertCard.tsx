@@ -33,13 +33,13 @@ export function StockAlertCard({
             Stock Bajo
           </span>
           {hasAlerts && (
-            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-600">
+            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-700">
               {lowStockCount} prod.
             </span>
           )}
         </div>
         <div
-          className={`text-xl font-bold tracking-tight tabular-nums ${hasAlerts ? "text-orange-600" : "text-emerald-600"}`}
+          className={`text-xl font-bold tracking-tight tabular-nums ${hasAlerts ? "text-orange-700" : "text-emerald-700"}`}
         >
           {hasAlerts ? lowStockCount : "OK"}
         </div>
@@ -64,7 +64,7 @@ export function StockAlertCard({
                       className="flex justify-between gap-2 text-xs"
                     >
                       <span className="truncate">{item.name}</span>
-                      <span className="font-mono text-orange-600 shrink-0">
+                      <span className="font-mono text-orange-700 shrink-0">
                         {item.stock}/{item.minStock}
                       </span>
                     </div>

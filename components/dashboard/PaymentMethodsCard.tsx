@@ -65,7 +65,7 @@ export function PaymentMethodsCard({
                       {percentage.toFixed(1)}%
                     </span>
                     <span
-                      className={`font-mono font-bold tabular-nums ${isNegative ? "text-red-600" : "text-foreground"}`}
+                      className={`font-mono font-bold tabular-nums ${isNegative ? "text-red-700" : "text-foreground"}`}
                     >
                       {formatARS(Math.abs(method.total))}
                     </span>
@@ -85,7 +85,7 @@ export function PaymentMethodsCard({
           <div className="flex items-center justify-between text-xs font-bold">
             <span className="text-muted-foreground">Neto</span>
             <span
-              className={`font-mono tabular-nums ${total < 0 ? "text-red-600" : "text-emerald-600"}`}
+              className={`font-mono tabular-nums ${total < 0 ? "text-red-700" : "text-emerald-700"}`}
             >
               {formatARS(total)}
             </span>

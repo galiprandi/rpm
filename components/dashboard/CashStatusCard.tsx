@@ -33,7 +33,7 @@ export function CashStatusCard({
               className={`w-1.5 h-1.5 rounded-full ${isOpen ? "bg-emerald-500 animate-pulse" : "bg-slate-400"}`}
             />
             <span
-              className={`text-[10px] font-bold ${isOpen ? "text-emerald-600" : "text-slate-500"}`}
+              className={`text-[10px] font-bold ${isOpen ? "text-emerald-700" : "text-slate-500"}`}
             >
               {isOpen ? "Abierta" : "Cerrada"}
             </span>
