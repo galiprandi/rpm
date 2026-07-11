@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { PublicLayout } from '@/components/public/layout/PublicLayout';
 import { Button } from '@/components/ui/button';
 import { Search, ArrowRight, X, Eye } from 'lucide-react';
@@ -11,9 +12,20 @@ import { ProductQuickView } from '@/components/public/ProductQuickView';
 const categories = ['Todos', 'Iluminación', 'Estética', 'Equipamiento', 'Seguridad', 'Interior'];
 
 export default function ProductsClient() {
+  const searchParams = useSearchParams();
   const [selectedCategory, setSelectedCategory] = useState('Todos');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<typeof featuredProducts[0] | null>(null);
+
+  useEffect(() => {
+    const productId = searchParams.get('product');
+    if (productId) {
+      const product = featuredProducts.find(p => p.id === productId);
+      if (product) {
+        setSelectedProduct(product);
+      }
+    }
+  }, [searchParams]);
 
   const filteredProducts = featuredProducts.filter(product => {
     const matchesCategory = selectedCategory === 'Todos' || product.category === selectedCategory;
