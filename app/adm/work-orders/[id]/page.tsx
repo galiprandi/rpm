@@ -49,6 +49,7 @@ import {
   Plus,
   History,
   AlertCircle,
+  Calendar,
   PlayCircle,
   Loader2,
   FileText,
@@ -823,6 +824,8 @@ export default function WorkOrderDetailPage() {
           year: workOrder.vehicle.year,
         })}
         titleClassName="font-mono tracking-tighter text-2xl"
+        showBackButton
+        onBack={() => router.push("/adm/work-orders")}
         primaryAction={
           nextAction
             ? {
@@ -859,6 +862,20 @@ export default function WorkOrderDetailPage() {
                 },
               ]
             : []),
+          {
+            label: "Presupuesto",
+            onClick: () => generateDocument("PRESUPUESTO"),
+            icon: FileText,
+            variant: "outline",
+            loading: generatingDocument === "PRESUPUESTO",
+          },
+          {
+            label: "Remito",
+            onClick: () => generateDocument("REMITO"),
+            icon: Printer,
+            variant: "outline",
+            loading: generatingDocument === "REMITO",
+          },
           {
             label: "Imprimir",
             onClick: () => window.print(),
@@ -953,8 +970,9 @@ export default function WorkOrderDetailPage() {
             ) : (
               <button
                 onClick={() => startEditingScheduledDate()}
-                className="text-sm font-mono text-left hover:text-primary transition-colors"
+                className="flex items-center gap-1.5 text-sm font-mono text-left hover:text-primary transition-colors group"
               >
+                <Calendar className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary" />
                 {workOrder.scheduledDate ? (
                   new Date(workOrder.scheduledDate).toLocaleString("es-AR", {
                     day: "2-digit",

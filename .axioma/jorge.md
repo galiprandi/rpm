@@ -6,10 +6,10 @@
 - [ ] Gestión de Fotos — Carga y eliminación masiva de fotos de órdenes de trabajo.
 - [ ] Impresión — Generación estandarizada de PDF para Remitos y Presupuestos.
 - [ ] Acciones de estado rápidas: agregue acciones principales que tengan en cuenta el contexto para transiciones de estado más rápidas en la vista de detalles.
-- [ ] Correcciones de UX en el encabezado de detalles: corrija la navegación y agregue una acción de impresión rápida al encabezado de detalles de la orden de trabajo.
 - [ ] Fecha programada en Kanban: muestre y resalte las fechas programadas en las tarjetas Kanban.
 
 ## ✅ COMPLETADO
+- [x] 2025-07-11 — Mejora de UX en el encabezado de detalles de OT (PR #jorge/work-orders/header-ux-improvement)
 - [x] 2025-07-08 — Servicio Centralizado de OT y Timeline Unificado (PR #jorge/work-orders/centralized-updates)
 
 ## 🧠 APRENDIZAJES
