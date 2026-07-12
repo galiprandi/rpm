@@ -28,6 +28,9 @@ import {
   X,
   Check,
   Calendar,
+  PlayCircle,
+  CheckCircle,
+  Package,
 } from "lucide-react";
 import { Header } from "@/components/adm/Header";
 import { CrudStats } from "@/components/adm/CrudStats";
@@ -69,6 +72,7 @@ import {
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import { getWhatsAppLink, getWorkOrderMessage } from "@/lib/utils/whatsapp";
+import { formatARS } from "@/lib/utils/format";
 
 interface WorkOrder {
   id: string;
@@ -111,6 +115,21 @@ const STATUSES = [
   { id: "DELIVERED", label: "Entregada", color: "bg-gray-50 border-gray-200" },
 ];
 
+const NEXT_STATUS_MAP: Record<
+  string,
+  { label: string; next: string; icon: LucideIcon }
+> = {
+  CONFIRMED: {
+    label: "Iniciar Trabajo",
+    next: "IN_PROGRESS",
+    icon: PlayCircle,
+  },
+  WAITING: { label: "Iniciar Trabajo", next: "IN_PROGRESS", icon: PlayCircle },
+  IN_PROGRESS: { label: "Finalizar Trabajo", next: "READY", icon: CheckCircle },
+  QC_CHECK: { label: "Finalizar Trabajo", next: "READY", icon: CheckCircle },
+  READY: { label: "Entregar Vehículo", next: "DELIVERED", icon: Package },
+};
+
 // --- Helper Functions ---
 
 const getCategoryIcon = (category: string) => {
@@ -135,11 +154,13 @@ function KanbanCard({
   isOverlay = false,
   technicians = [],
   onTechnicianUpdate,
+  onStatusUpdate,
 }: {
   wo: WorkOrder;
   isOverlay?: boolean;
   technicians?: Array<{ id: string; name: string }>;
   onTechnicianUpdate?: (woId: string, techId: string | null) => Promise<void>;
+  onStatusUpdate?: (woId: string, newStatus: string) => Promise<void>;
 }) {
   const {
     attributes,
@@ -166,6 +187,8 @@ function KanbanCard({
     wo.vehicle.category,
   );
 
+  const nextAction = NEXT_STATUS_MAP[wo.status];
+
   const content = (
     <Card
       className={cn(
@@ -181,6 +204,23 @@ function KanbanCard({
       {/* Floating action icons - top right corner on hover */}
       {!isOverlay && !isDragging && (
         <div className="absolute top-1.5 right-1.5 z-20 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+          {nextAction && (
+            <Button
+              variant="secondary"
+              size="sm"
+              className="h-6 w-6 p-0 shadow-sm border bg-primary text-primary-foreground hover:bg-primary/90"
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onStatusUpdate?.(wo.id, nextAction.next);
+              }}
+              title={nextAction.label}
+              aria-label={nextAction.label}
+            >
+              <nextAction.icon className="h-3.5 w-3.5" aria-hidden="true" />
+            </Button>
+          )}
           <Button
             variant="secondary"
             size="sm"
@@ -260,7 +300,7 @@ function KanbanCard({
                   : "text-muted-foreground",
             )}
           >
-            ${Number(wo.total).toLocaleString("es-AR")}
+            {formatARS(Number(wo.total))}
           </Badge>
         </div>
         {/* Line 3: Responsible dropdown + Date/Delayed status */}
@@ -371,11 +411,13 @@ function KanbanColumn({
   items,
   technicians,
   onTechnicianUpdate,
+  onStatusUpdate,
 }: {
   status: (typeof STATUSES)[0];
   items: WorkOrder[];
   technicians: Array<{ id: string; name: string }>;
   onTechnicianUpdate: (woId: string, techId: string | null) => Promise<void>;
+  onStatusUpdate: (woId: string, newStatus: string) => Promise<void>;
 }) {
   const columnTotal = items.reduce((sum, wo) => sum + Number(wo.total), 0);
   const { setNodeRef } = useSortable({
@@ -401,14 +443,7 @@ function KanbanColumn({
           </span>
         </div>
         <div className="mt-1 text-xs font-mono text-muted-foreground/80 flex items-center gap-1 min-h-[16px]">
-          {items.length > 0 && (
-            <>
-              <DollarSign className="h-3 w-3" />
-              {columnTotal.toLocaleString("es-AR", {
-                maximumFractionDigits: 0,
-              })}
-            </>
-          )}
+          {items.length > 0 && <>{formatARS(columnTotal)}</>}
         </div>
       </div>
       <div
@@ -426,6 +461,7 @@ function KanbanColumn({
                 wo={wo}
                 technicians={technicians}
                 onTechnicianUpdate={onTechnicianUpdate}
+                onStatusUpdate={onStatusUpdate}
               />
             ))}
           </div>
@@ -566,7 +602,7 @@ export default function WorkOrdersPage() {
       },
       {
         label: "Facturación Total",
-        value: `$${totalBilling.toLocaleString("es-AR")}`,
+        value: formatARS(totalBilling),
         icon: DollarSign,
         iconColor: "#047857", // emerald-700
       },
@@ -668,6 +704,29 @@ export default function WorkOrdersPage() {
       }
     }
     setDragOriginalStatus(null);
+  };
+
+  const handleStatusUpdate = async (woId: string, newStatus: string) => {
+    try {
+      const response = await fetch(`/api/work-orders/${woId}/status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (!response.ok) throw new Error("Error al actualizar el estado");
+
+      const updatedWO = await response.json();
+      setWorkOrders((prev) =>
+        prev.map((wo) => (wo.id === woId ? { ...wo, ...updatedWO } : wo)),
+      );
+
+      toast.success(
+        `OT ${updatedWO.vehicle.identifier} movida a ${STATUSES.find((s) => s.id === newStatus)?.label}`,
+      );
+    } catch (e) {
+      console.error("Error updating status:", e);
+      toast.error("No se pudo actualizar el estado");
+    }
   };
 
   const handleTechnicianUpdate = async (
@@ -872,6 +931,7 @@ export default function WorkOrdersPage() {
                     items={status.items}
                     technicians={technicians}
                     onTechnicianUpdate={handleTechnicianUpdate}
+                    onStatusUpdate={handleStatusUpdate}
                   />
                 ))}
               </div>
@@ -984,7 +1044,7 @@ export default function WorkOrdersPage() {
                                   : "text-muted-foreground",
                             )}
                           >
-                            ${Number(wo.total).toLocaleString("es-AR")}
+                            {formatARS(Number(wo.total))}
                           </Badge>
                           <div className="text-sm text-muted-foreground font-mono">
                             {new Date(wo.createdAt).toLocaleDateString("es-AR")}
