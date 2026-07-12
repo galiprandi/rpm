@@ -31,6 +31,7 @@ import {
   PlayCircle,
   CheckCircle,
   Package,
+  type LucideIcon,
 } from "lucide-react";
 import { Header } from "@/components/adm/Header";
 import { CrudStats } from "@/components/adm/CrudStats";

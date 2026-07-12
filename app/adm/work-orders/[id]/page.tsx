@@ -179,13 +179,6 @@ const NEXT_STATUS_MAP: Record<
   READY: { label: "Entregar Vehículo", next: "DELIVERED", icon: Package },
 };
 
-const PAYMENT_METHODS = [
-  { value: "CASH", label: "Efectivo" },
-  { value: "TRANSFER", label: "Transferencia" },
-  { value: "QR", label: "QR" },
-  { value: "CARD", label: "Tarjeta" },
-  { value: "OTHER", label: "Otro" },
-];
 
 interface WorkOrderDetail {
   id: string;
