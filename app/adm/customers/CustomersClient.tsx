@@ -14,7 +14,7 @@ import {
   MessageSquare,
 } from "lucide-react";
 import Link from "next/link";
-import { type ColumnDef } from "@tanstack/react-table";
+import { type ColumnDef, type FilterFn } from "@tanstack/react-table";
 import { formatARS } from "@/lib/utils/format";
 import { CustomerDialog } from "@/components/customers/CustomerDialog";
 import { type CustomerFormData } from "@/components/customers/CustomerForm";
@@ -94,6 +94,22 @@ export default function CustomersClient({
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  const customerFilterFn = useCallback<FilterFn<Customer>>((row, id, value) => {
+    if (!value) return true;
+    const search = value.toLowerCase();
+    const customer = row.original;
+    return !!(
+      (customer.name?.toLowerCase() ?? "").includes(search) ||
+      (customer.phone?.toLowerCase() ?? "").includes(search) ||
+      (customer.email?.toLowerCase() ?? "").includes(search) ||
+      customer.vehicles?.some((v) =>
+        (v.identifier?.toLowerCase() ?? "").includes(search),
+      ) ||
+      (isBillingData(customer.billingData) &&
+        (customer.billingData.cuit ?? "").includes(search))
+    );
   }, []);
 
   const columns = useMemo<ColumnDef<Customer>[]>(
@@ -228,21 +244,6 @@ export default function CustomersClient({
       {
         accessorKey: "balance",
         header: "Saldo",
-        filterFn: (row, id, value) => {
-          if (!value) return true;
-          const search = value.toLowerCase();
-          const customer = row.original;
-          return (
-            customer.name.toLowerCase().includes(search) ||
-            customer.phone?.toLowerCase().includes(search) ||
-            customer.email?.toLowerCase().includes(search) ||
-            customer.vehicles?.some((v) =>
-              v.identifier.toLowerCase().includes(search),
-            ) ||
-            (isBillingData(customer.billingData) &&
-              customer.billingData.cuit.includes(search))
-          );
-        },
         cell: ({ row }) => {
           const balance = row.original.balance;
           if (balance === 0) {
@@ -387,6 +388,7 @@ export default function CustomersClient({
         onCreate={handleCreate}
         hideCreateAction
         columns={columns}
+        filterFn={customerFilterFn}
         emptyIcon={
           <User className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
         }
