@@ -1,6 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Wrench, ArrowUp, Clock, CheckCircle2, Car, Timer } from "lucide-react";
 import { relativeTime } from "@/lib/utils/format";
+import Link from "next/link";
 
 interface WorkOrdersCardProps {
   total: number;
@@ -86,14 +87,15 @@ export function WorkOrdersCard({
           {statuses.map((status) => (
             <div
               key={status.label}
-              className={`flex items-center gap-2 px-2.5 py-2 rounded-lg border ${status.bgClass} ${status.borderClass}`}
+              className={`flex items-center gap-2 px-2.5 py-2 rounded-lg border ${status.bgClass} ${status.borderClass} hover:scale-[1.02] transition-all duration-200 cursor-default`}
             >
-              <span
-                className={`w-2 h-2 rounded-full shrink-0 ${status.dotClass}`}
+              <status.icon
+                className={`h-3.5 w-3.5 shrink-0 ${status.colorClass}`}
+                aria-hidden="true"
               />
               <div className="min-w-0">
                 <div
-                  className={`text-base font-bold tabular-nums leading-none ${status.colorClass}`}
+                  className={`text-base font-bold font-mono tabular-nums leading-none ${status.colorClass}`}
                 >
                   {status.value}
                 </div>
@@ -143,6 +145,13 @@ export function WorkOrdersCard({
             </div>
           </div>
         )}
+
+        <Link
+          href="/adm/work-orders"
+          className="text-[10px] text-primary hover:underline font-medium mt-3 pt-2 border-t border-border/40 inline-block w-full"
+        >
+          Ver todas las OTs →
+        </Link>
       </CardContent>
     </Card>
   );
