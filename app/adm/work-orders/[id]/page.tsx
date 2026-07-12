@@ -179,7 +179,6 @@ const NEXT_STATUS_MAP: Record<
   READY: { label: "Entregar Vehículo", next: "DELIVERED", icon: Package },
 };
 
-
 interface WorkOrderDetail {
   id: string;
   status: string;
@@ -826,10 +825,29 @@ export default function WorkOrderDetailPage() {
                 icon: nextAction.icon,
                 onClick: () => handleStatusChange(nextAction.next),
                 loading: updatingStatus,
+                title: nextAction.label,
               }
             : undefined
         }
         secondaryActions={[
+          {
+            label: "Imprimir",
+            onClick: () => window.print(),
+            icon: Printer,
+            variant: "ghost",
+            iconOnly: true,
+            title: "Imprimir orden de trabajo",
+            ariaLabel: "Imprimir orden de trabajo",
+          },
+          {
+            label: "Nota de crédito",
+            onClick: () => setIsCreditNoteDialogOpen(true),
+            variant: "ghost",
+            icon: Undo2,
+            iconOnly: true,
+            title: "Crear nota de crédito por devolución",
+            ariaLabel: "Crear nota de crédito por devolución",
+          },
           ...(workOrder.customer?.phone
             ? [
                 {
@@ -851,23 +869,11 @@ export default function WorkOrderDetailPage() {
                   icon: MessageSquare,
                   className:
                     "text-emerald-700 border-emerald-200 bg-emerald-50 hover:bg-emerald-100",
+                  title: "Notificar el cliente por WhatsApp",
                   ariaLabel: "Enviar notificación por WhatsApp",
                 },
               ]
             : []),
-          {
-            label: "Imprimir",
-            onClick: () => window.print(),
-            icon: Printer,
-            variant: "ghost",
-          },
-          {
-            label: "Devolver",
-            onClick: () => setIsCreditNoteDialogOpen(true),
-            variant: "ghost",
-            icon: Undo2,
-            ariaLabel: "Crear nota de crédito por devolución",
-          },
         ]}
       >
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-2">
