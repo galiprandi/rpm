@@ -5,6 +5,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { getSetting } from './settingsService';
+import { prisma } from '@/lib/prisma';
 
 export interface AFIPComprobanteInput {
   tipo: number; // 1: Factura A, 6: Factura B, etc.

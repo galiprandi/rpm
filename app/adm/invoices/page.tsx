@@ -17,6 +17,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 export default function InvoicesPage() {
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedRows, setSelectedRows] = useState<any[]>([]);
+  const [isProcessingBatch, setIsProcessingBatch] = useState(false);
   const [filters, setFilters] = useState({
     type: '',
     status: '',
