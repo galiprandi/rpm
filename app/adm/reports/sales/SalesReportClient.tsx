@@ -11,6 +11,9 @@ import {
   DollarSign,
   ShoppingCart,
   Clock,
+  Download,
+  Package,
+  Layers,
 } from "lucide-react";
 import { formatARS } from "@/lib/utils/format";
 import {
@@ -20,7 +23,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { SalesReportData, type GroupBy } from "@/lib/services/reportService";
+import { SalesReportData, type GroupBy } from "@/lib/services/salesReportService";
+import { Button } from "@/components/ui/button";
 
 type Period =
   | "today"
@@ -168,11 +172,57 @@ export default function SalesReportClient() {
     return `${change > 0 ? "+" : change < 0 ? "-" : ""}${value}% vs período anterior`;
   };
 
+  const exportToCSV = () => {
+    if (!data) return;
+
+    const headers = [
+      data.groupBy === "hour" ? "Hora" : data.groupBy === "month" ? "Mes" : "Fecha",
+      "Ventas",
+      "Cantidad",
+      "Promedio",
+    ];
+
+    const rows = data.evolution
+      .filter((e) => e.total > 0)
+      .slice()
+      .reverse()
+      .map((item) => [
+        item.label,
+        item.total.toFixed(2),
+        item.count.toString(),
+        (item.count > 0 ? item.total / item.count : 0).toFixed(2),
+      ]);
+
+    const csvContent =
+      "data:text/csv;charset=utf-8," +
+      [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute(
+      "download",
+      `reporte_ventas_${period}_${new Date().toISOString().split("T")[0]}.csv`,
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="space-y-6">
       <Header
         title="Reporte de Ventas"
         description="Métricas y evolución de ingresos por ventas y taller."
+        secondaryActions={[
+          {
+            label: "Exportar CSV",
+            onClick: exportToCSV,
+            disabled: !data || loading,
+            icon: Download,
+            variant: "outline",
+          },
+        ]}
         leftActions={
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
@@ -259,137 +309,219 @@ export default function SalesReportClient() {
               />
             </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg font-medium flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-primary" />
-                  {data.groupBy === "hour"
-                    ? "Evolución por Hora"
-                    : data.groupBy === "month"
-                      ? "Evolución Mensual"
-                      : "Evolución Diaria"}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <div className="relative h-[280px] w-full flex items-end justify-center gap-1 overflow-y-hidden">
-                    {data.evolution.filter((e) => e.total > 0).length === 0 ? (
-                      <div className="absolute inset-0 flex items-center justify-center text-muted-foreground italic">
-                        Sin datos para este período
-                      </div>
-                    ) : (
-                      <>
-                        {data.evolution
-                          .filter((e) => e.total > 0)
-                          .map((item, idx) => {
-                            const maxTotal = Math.max(
-                              ...data.evolution.map((e) => e.total),
-                              1,
-                            );
-                            const height = (item.total / maxTotal) * 100;
-                            return (
-                              <div
-                                key={idx}
-                                className="group relative flex-1 h-full min-w-[20px] max-w-[60px] flex flex-col items-center justify-end"
-                              >
+            <div className="grid gap-6 lg:grid-cols-3">
+              <Card className="lg:col-span-2">
+                <CardHeader>
+                  <CardTitle className="text-lg font-medium flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5 text-primary" />
+                    {data.groupBy === "hour"
+                      ? "Evolución por Hora"
+                      : data.groupBy === "month"
+                        ? "Evolución Mensual"
+                        : "Evolución Diaria"}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <div className="relative h-[280px] w-full flex items-end justify-center gap-1 overflow-y-hidden">
+                      {data.evolution.filter((e) => e.total > 0).length === 0 ? (
+                        <div className="absolute inset-0 flex items-center justify-center text-muted-foreground italic">
+                          Sin datos para este período
+                        </div>
+                      ) : (
+                        <>
+                          {data.evolution
+                            .filter((e) => e.total > 0)
+                            .map((item, idx) => {
+                              const maxTotal = Math.max(
+                                ...data.evolution.map((e) => e.total),
+                                1,
+                              );
+                              const height = (item.total / maxTotal) * 100;
+                              return (
                                 <div
-                                  className="w-full bg-primary/80 hover:bg-primary rounded-t-sm transition-all relative"
-                                  style={{ height: `${Math.max(height, 2)}%` }}
+                                  key={idx}
+                                  className="group relative flex-1 h-full min-w-[20px] max-w-[60px] flex flex-col items-center justify-end"
                                 >
-                                  <div className="opacity-0 group-hover:opacity-100 absolute -top-7 left-1/2 -translate-x-1/2 bg-popover text-popover-foreground text-[10px] px-2 py-1 rounded shadow-md whitespace-nowrap z-10 font-mono">
-                                    {formatARS(item.total)}
+                                  <div
+                                    className="w-full bg-primary/80 hover:bg-primary rounded-t-sm transition-all relative"
+                                    style={{ height: `${Math.max(height, 2)}%` }}
+                                  >
+                                    <div className="opacity-0 group-hover:opacity-100 absolute -top-7 left-1/2 -translate-x-1/2 bg-popover text-popover-foreground text-[10px] px-2 py-1 rounded shadow-md whitespace-nowrap z-10 font-mono">
+                                      {formatARS(item.total)}
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                            );
-                          })}
-                      </>
+                              );
+                            })}
+                        </>
+                      )}
+                    </div>
+                    {data.evolution.filter((e) => e.total > 0).length > 0 && (
+                      <div className="flex gap-1 mt-1 justify-center">
+                        {data.evolution
+                          .filter((e) => e.total > 0)
+                          .map((item, idx) => (
+                            <div
+                              key={idx}
+                              className="flex-1 min-w-[20px] max-w-[60px] text-[10px] text-muted-foreground text-center whitespace-nowrap"
+                            >
+                              {item.label}
+                            </div>
+                          ))}
+                      </div>
                     )}
                   </div>
-                  {data.evolution.filter((e) => e.total > 0).length > 0 && (
-                    <div className="flex gap-1 mt-1 justify-center">
-                      {data.evolution
-                        .filter((e) => e.total > 0)
-                        .map((item, idx) => (
-                          <div
-                            key={idx}
-                            className="flex-1 min-w-[20px] max-w-[60px] text-[10px] text-muted-foreground text-center whitespace-nowrap"
-                          >
-                            {item.label}
-                          </div>
-                        ))}
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg font-medium">
-                  {data.groupBy === "hour"
-                    ? "Detalle por Hora"
-                    : data.groupBy === "month"
-                      ? "Detalle Mensual"
-                      : "Detalle por Día"}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="rounded-md border overflow-hidden">
-                  <table className="w-full text-sm">
-                    <thead className="bg-muted/50 border-b">
-                      <tr>
-                        <th className="text-left p-3 font-medium">
-                          {data.groupBy === "hour"
-                            ? "Hora"
-                            : data.groupBy === "month"
-                              ? "Mes"
-                              : "Fecha"}
-                        </th>
-                        <th className="text-right p-3 font-medium">Ventas</th>
-                        <th className="text-right p-3 font-medium">Cantidad</th>
-                        <th className="text-right p-3 font-medium">Promedio</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {data.evolution.filter((e) => e.total > 0).length ===
-                      0 ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg font-medium flex items-center gap-2">
+                    <Layers className="h-5 w-5 text-primary" />
+                    Ventas por Categoría
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {data.categoryDistribution.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground italic text-sm">
+                        Sin datos de categorías
+                      </div>
+                    ) : (
+                      data.categoryDistribution.slice(0, 6).map((item) => (
+                        <div key={item.id} className="space-y-1.5">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="font-medium truncate mr-2">
+                              {item.name}
+                            </span>
+                            <span className="font-mono font-bold text-primary">
+                              {formatARS(item.total)}
+                            </span>
+                          </div>
+                          <div className="w-full bg-secondary rounded-full h-1.5 overflow-hidden">
+                            <div
+                              className="h-full bg-primary transition-all duration-500"
+                              style={{
+                                width: `${(item.total / (data.totalSales.current || 1)) * 100}%`,
+                                backgroundColor: item.color || undefined,
+                              }}
+                            />
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg font-medium flex items-center gap-2">
+                    <Package className="h-5 w-5 text-primary" />
+                    Top Productos / Servicios
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {data.topProducts.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground italic text-sm">
+                        Sin datos de productos
+                      </div>
+                    ) : (
+                      data.topProducts.map((product, idx) => (
+                        <div
+                          key={product.id}
+                          className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                              {idx + 1}
+                            </div>
+                            <div className="grid gap-0.5">
+                              <p className="text-sm font-medium leading-none">
+                                {product.name}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {product.quantity} unidades vendidas
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-mono font-bold">
+                              {formatARS(product.total)}
+                            </p>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg font-medium">
+                    {data.groupBy === "hour"
+                      ? "Detalle por Hora"
+                      : data.groupBy === "month"
+                        ? "Detalle Mensual"
+                        : "Detalle por Día"}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="rounded-md border overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead className="bg-muted/50 border-b">
                         <tr>
-                          <td
-                            colSpan={4}
-                            className="p-8 text-center text-muted-foreground italic"
-                          >
-                            Sin datos para este período
-                          </td>
+                          <th className="text-left p-3 font-medium">
+                            {data.groupBy === "hour"
+                              ? "Hora"
+                              : data.groupBy === "month"
+                                ? "Mes"
+                                : "Fecha"}
+                          </th>
+                          <th className="text-right p-3 font-medium">Ventas</th>
+                          <th className="text-right p-3 font-medium">Cantidad</th>
                         </tr>
-                      ) : (
-                        data.evolution
-                          .filter((e) => e.total > 0)
-                          .slice()
-                          .reverse()
-                          .map((item, idx) => (
-                            <tr
-                              key={idx}
-                              className="border-b hover:bg-muted/30 transition-colors"
+                      </thead>
+                      <tbody>
+                        {data.evolution.filter((e) => e.total > 0).length === 0 ? (
+                          <tr>
+                            <td
+                              colSpan={3}
+                              className="p-8 text-center text-muted-foreground italic"
                             >
-                              <td className="p-3 font-medium">{item.label}</td>
-                              <td className="p-3 text-right font-mono">
-                                {formatARS(item.total)}
-                              </td>
-                              <td className="p-3 text-right">{item.count}</td>
-                              <td className="p-3 text-right font-mono">
-                                {formatARS(
-                                  item.count > 0 ? item.total / item.count : 0,
-                                )}
-                              </td>
-                            </tr>
-                          ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
+                              Sin datos para este período
+                            </td>
+                          </tr>
+                        ) : (
+                          data.evolution
+                            .filter((e) => e.total > 0)
+                            .slice()
+                            .reverse()
+                            .slice(0, 5) // Limit to 5 for preview, more details in CSV
+                            .map((item, idx) => (
+                              <tr
+                                key={idx}
+                                className="border-b hover:bg-muted/30 transition-colors"
+                              >
+                                <td className="p-3 font-medium">{item.label}</td>
+                                <td className="p-3 text-right font-mono">
+                                  {formatARS(item.total)}
+                                </td>
+                                <td className="p-3 text-right">{item.count}</td>
+                              </tr>
+                            ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </>
         )
       )}

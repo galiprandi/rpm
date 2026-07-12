@@ -1,11 +1,11 @@
 # 📓 Journal — Diego 📊
 
 ## 📋 BACKLOG
-- [ ] Creación del Hub de Reportes (Index `/adm/reports`)
-- [ ] Mejora de Reporte de Ventas (KPIs, evolución, comparación de períodos)
-- [ ] Implementación de reporte de Compras (abastecimiento, proveedores)
+- [ ] Implementación de reportes adicionales (ej: Reporte de Servicios específicos)
+- [ ] Dashboards comparativos multi-periodo avanzados
 
 ## ✅ DONE
+- [x] 2025-07-11 — Mejora de Reporte de Ventas: Agregado de Top Productos, Distribución por Categoría y Exportación CSV. Refactor de servicio a `salesReportService.ts`. (PR #diego/reports/sales-report-enhancements)
 - [x] 2025-07-10 — Implementación de reporte de Compras (abastecimiento, proveedores y evolución de costos) (PR #diego/reports/purchase-report)
 - [x] 2025-07-05 — Implementación de reporte de Stock (valorización, alertas de reposición y distribución por categoría) (PR #diego/reports/stock-report)
 - [x] 2025-07-06 — Implementación de reporte de Taller & Operación (performance, estados y tiempos) (PR #diego/reports/workshop-report)
