@@ -4,6 +4,7 @@
  */
 
 import { getSetting } from './settingsService';
+import { prisma } from '@/lib/prisma';
 
 export interface AFIPComprobanteInput {
   tipo: number; // 1: Factura A, 6: Factura B, etc.
@@ -86,10 +87,23 @@ export async function requestCAE(comprobante: AFIPComprobanteInput): Promise<AFI
  */
 export async function getLastAuthorizedNumber(tipo: number, pv: number): Promise<number> {
   // In a real implementation, this would call AFIP's FECompUltimoAutorizado.
-  // For mock purposes, we could query our own DB for the last ISSUED invoice of this type,
-  // or just return a static number for now.
+  // For mock purposes, we query our own DB for the last ISSUED invoice of this type.
   console.log(`Querying last authorized number for type ${tipo} and PV ${pv}`);
-  return 125; // Static mock number
+
+  const pvStr = String(pv).padStart(4, '0');
+  const lastInvoice = await prisma.invoice.findFirst({
+    where: {
+      status: 'ISSUED',
+      number: { startsWith: pvStr },
+    },
+    orderBy: { number: 'desc' },
+    select: { number: true },
+  });
+
+  if (!lastInvoice) return 0;
+
+  const parts = lastInvoice.number.split('-');
+  return parseInt(parts[parts.length - 1]);
 }
 
 /**

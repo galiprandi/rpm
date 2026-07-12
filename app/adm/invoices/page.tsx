@@ -17,6 +17,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 export default function InvoicesPage() {
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedRows, setSelectedRows] = useState<any[]>([]);
+  const [isProcessingBatch, setIsProcessingBatch] = useState(false);
   const [filters, setFilters] = useState({
     type: '',
     status: '',
@@ -160,6 +162,56 @@ export default function InvoicesPage() {
     }
   };
 
+  const handleBatchOfficialize = async () => {
+    // Only officialize DRAFT pre-invoices
+    const eligibleRows = selectedRows.filter(
+      (row) =>
+        row.status === 'DRAFT' &&
+        (row.type.startsWith('X_') || row.type.startsWith('NOTA_CREDITO_X_'))
+    );
+
+    if (eligibleRows.length === 0) {
+      toast.error('No hay comprobantes válidos seleccionados para oficializar');
+      return;
+    }
+
+    if (!confirm(`¿Desea oficializar ${eligibleRows.length} comprobantes ante AFIP?`)) {
+      return;
+    }
+
+    setIsProcessingBatch(true);
+    const toastId = toast.loading(`Procesando ${eligibleRows.length} comprobantes...`);
+
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const row of eligibleRows) {
+      try {
+        const response = await fetch(`/api/invoices/${row.id}/officialize`, {
+          method: 'POST',
+        });
+        if (response.ok) {
+          successCount++;
+        } else {
+          failCount++;
+        }
+      } catch (error) {
+        console.error(`Error officializing invoice ${row.number}:`, error);
+        failCount++;
+      }
+    }
+
+    setIsProcessingBatch(false);
+
+    if (failCount === 0) {
+      toast.success(`Se oficializaron ${successCount} comprobantes correctamente.`, { id: toastId });
+    } else {
+      toast.error(`Proceso finalizado. Éxitos: ${successCount}, Errores: ${failCount}.`, { id: toastId });
+    }
+
+    fetchInvoices();
+  };
+
   const rowActions = (row: any) => (
     <div className="flex items-center gap-1">
       <Link href={`/adm/invoices/${row.id}`}>
@@ -196,6 +248,16 @@ export default function InvoicesPage() {
       <Header
         title="Comprobantes"
         description="Gestión de facturación, presupuestos y remitos"
+        primaryAction={
+          selectedRows.length > 0
+            ? {
+                label: `Oficializar (${selectedRows.filter(r => r.status === 'DRAFT' && (r.type.startsWith('X_') || r.type.startsWith('NOTA_CREDITO_X_'))).length})`,
+                icon: Send,
+                onClick: handleBatchOfficialize,
+                loading: isProcessingBatch,
+              }
+            : undefined
+        }
       />
 
       <div className="bg-background border rounded-xl shadow-sm overflow-hidden">
@@ -263,6 +325,8 @@ export default function InvoicesPage() {
               columns={columns}
               rowActions={rowActions}
               emptyMessage="No se encontraron comprobantes"
+              enableRowSelection
+              onRowSelectionChange={setSelectedRows}
             />
           )}
         </div>

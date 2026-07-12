@@ -26,6 +26,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface DataTableAction {
   label: string;
@@ -48,6 +49,8 @@ interface DataTableProps<TData> {
   title?: React.ReactNode;
   rowActions?: (row: TData) => React.ReactNode;
   filterFn?: FilterFn<TData>;
+  enableRowSelection?: boolean;
+  onRowSelectionChange?: (selectedRows: TData[]) => void;
 }
 export function DataTable<TData>({
   data,
@@ -63,12 +66,42 @@ export function DataTable<TData>({
   title,
   rowActions,
   filterFn,
+  enableRowSelection = false,
+  onRowSelectionChange,
 }: DataTableProps<TData>) {
-  // Build columns with optional actions column
+  // Build columns with optional selection and actions columns
   const allColumns = React.useMemo(() => {
-    if (!rowActions) return columns;
+    let baseColumns = [...columns];
+
+    if (enableRowSelection) {
+      baseColumns = [
+        {
+          id: 'select',
+          header: ({ table }) => (
+            <Checkbox
+              checked={table.getIsAllPageRowsSelected()}
+              onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+              aria-label="Seleccionar todo"
+            />
+          ),
+          cell: ({ row }) => (
+            <Checkbox
+              checked={row.getIsSelected()}
+              onCheckedChange={(value) => row.toggleSelected(!!value)}
+              aria-label="Seleccionar fila"
+            />
+          ),
+          enableSorting: false,
+          enableHiding: false,
+          size: 40,
+        } as ColumnDef<TData>,
+        ...baseColumns,
+      ];
+    }
+
+    if (!rowActions) return baseColumns;
     return [
-      ...columns,
+      ...baseColumns,
       {
         id: 'actions',
         header: '',
@@ -80,10 +113,12 @@ export function DataTable<TData>({
         ),
       } as ColumnDef<TData>,
     ];
-  }, [columns, rowActions]);
+  }, [columns, rowActions, enableRowSelection]);
+
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [internalGlobalFilter, setInternalGlobalFilter] = React.useState('');
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+  const [rowSelection, setRowSelection] = React.useState({});
   const [pagination, setPagination] = React.useState<PaginationState>({
     pageIndex: 0,
     pageSize: pageSize,
@@ -103,7 +138,10 @@ export function DataTable<TData>({
       globalFilter: enableGlobalFilter ? globalFilter : undefined,
       columnFilters,
       pagination,
+      rowSelection,
     },
+    enableRowSelection,
+    onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
     onGlobalFilterChange: setGlobalFilter,
     onColumnFiltersChange: setColumnFilters,
@@ -114,6 +152,14 @@ export function DataTable<TData>({
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
   });
+
+  // Notify parent of selection changes
+  React.useEffect(() => {
+    if (onRowSelectionChange) {
+      const selectedRows = table.getSelectedRowModel().flatRows.map((row) => row.original);
+      onRowSelectionChange(selectedRows);
+    }
+  }, [rowSelection, onRowSelectionChange, table]);
 
   return (
     <div className="space-y-4">
