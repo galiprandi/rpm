@@ -64,6 +64,7 @@ import { toast } from "sonner";
 import { CustomerCreditNoteDialog } from "@/components/credit-notes/CustomerCreditNoteDialog";
 import { getWhatsAppLink, getWorkOrderMessage } from "@/lib/utils/whatsapp";
 import { buildVehicleDescription } from "@/lib/constants/vehicle-categories";
+import { formatARS } from "@/lib/utils/format";
 
 // --- Helpers ---
 
@@ -178,13 +179,6 @@ const NEXT_STATUS_MAP: Record<
   READY: { label: "Entregar Vehículo", next: "DELIVERED", icon: Package },
 };
 
-const PAYMENT_METHODS = [
-  { value: "CASH", label: "Efectivo" },
-  { value: "TRANSFER", label: "Transferencia" },
-  { value: "QR", label: "QR" },
-  { value: "CARD", label: "Tarjeta" },
-  { value: "OTHER", label: "Otro" },
-];
 
 interface WorkOrderDetail {
   id: string;
@@ -822,6 +816,8 @@ export default function WorkOrderDetailPage() {
           color: workOrder.vehicle.color,
           year: workOrder.vehicle.year,
         })}
+        showBackButton
+        onBack={() => router.push("/adm/work-orders")}
         titleClassName="font-mono tracking-tighter text-2xl"
         primaryAction={
           nextAction
@@ -1183,16 +1179,10 @@ export default function WorkOrderDetailPage() {
                               {item.quantity}
                             </TableCell>
                             <TableCell className="text-right font-mono">
-                              {Number(item.unitPrice).toLocaleString("es-AR", {
-                                style: "currency",
-                                currency: "ARS",
-                              })}
+                              {formatARS(Number(item.unitPrice), 2)}
                             </TableCell>
                             <TableCell className="text-right font-medium font-mono">
-                              {Number(item.subtotal).toLocaleString("es-AR", {
-                                style: "currency",
-                                currency: "ARS",
-                              })}
+                              {formatARS(Number(item.subtotal), 2)}
                             </TableCell>
                           </TableRow>
                         ))
@@ -1206,28 +1196,19 @@ export default function WorkOrderDetailPage() {
                         <div className="text-sm text-muted-foreground">
                           Productos:{" "}
                           <span className="font-mono">
-                            {Number(workOrder.totalProducts).toLocaleString(
-                              "es-AR",
-                              { style: "currency", currency: "ARS" },
-                            )}
+                            {formatARS(Number(workOrder.totalProducts), 2)}
                           </span>
                         </div>
                         <div className="text-sm text-muted-foreground">
                           Servicios:{" "}
                           <span className="font-mono">
-                            {Number(workOrder.totalServices).toLocaleString(
-                              "es-AR",
-                              { style: "currency", currency: "ARS" },
-                            )}
+                            {formatARS(Number(workOrder.totalServices), 2)}
                           </span>
                         </div>
                         <div className="text-2xl font-bold pt-1">
                           Total:{" "}
                           <span className="font-mono tracking-tight text-emerald-700">
-                            {Number(workOrder.total).toLocaleString("es-AR", {
-                              style: "currency",
-                              currency: "ARS",
-                            })}
+                            {formatARS(Number(workOrder.total), 2)}
                           </span>
                         </div>
                       </div>
@@ -1255,19 +1236,13 @@ export default function WorkOrderDetailPage() {
                   <div>
                     <p className="text-xs text-muted-foreground">Total</p>
                     <p className="text-base font-semibold font-mono">
-                      {Number(workOrder.total).toLocaleString("es-AR", {
-                        style: "currency",
-                        currency: "ARS",
-                      })}
+                      {formatARS(Number(workOrder.total))}
                     </p>
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Pagado</p>
                     <p className="text-base font-semibold text-emerald-700 font-mono">
-                      {totalPaid.toLocaleString("es-AR", {
-                        style: "currency",
-                        currency: "ARS",
-                      })}
+                      {formatARS(totalPaid)}
                     </p>
                   </div>
                   <div>
@@ -1275,10 +1250,7 @@ export default function WorkOrderDetailPage() {
                     <p
                       className={`text-base font-semibold font-mono ${totalPaid >= workOrder.total ? "text-emerald-700" : "text-amber-700"}`}
                     >
-                      {balance.toLocaleString("es-AR", {
-                        style: "currency",
-                        currency: "ARS",
-                      })}
+                      {formatARS(balance)}
                     </p>
                   </div>
                 </div>
@@ -1316,10 +1288,7 @@ export default function WorkOrderDetailPage() {
                           </div>
                           <div>
                             <p className="font-bold font-mono text-emerald-700">
-                              {Number(payment.amount).toLocaleString("es-AR", {
-                                style: "currency",
-                                currency: "ARS",
-                              })}
+                              {formatARS(Number(payment.amount), 2)}
                             </p>
                             <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
                               {payment.paymentMethod.name}
