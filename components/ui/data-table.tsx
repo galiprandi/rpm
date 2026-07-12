@@ -20,6 +20,7 @@ import {
 } from '@tanstack/react-table';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { ArrowUpDown, ArrowUp, ArrowDown, Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, X } from 'lucide-react';
 import {
   Tooltip,
@@ -48,6 +49,10 @@ interface DataTableProps<TData> {
   title?: React.ReactNode;
   rowActions?: (row: TData) => React.ReactNode;
   filterFn?: FilterFn<TData>;
+  getRowId?: (row: TData) => string;
+  enableRowSelection?: boolean;
+  onRowSelectionChange?: (selection: Record<string, boolean>) => void;
+  rowSelection?: Record<string, boolean>;
 }
 export function DataTable<TData>({
   data,
@@ -63,24 +68,60 @@ export function DataTable<TData>({
   title,
   rowActions,
   filterFn,
+  getRowId,
+  enableRowSelection = false,
+  onRowSelectionChange,
+  rowSelection: externalRowSelection,
 }: DataTableProps<TData>) {
-  // Build columns with optional actions column
+  // Build columns with optional actions and selection columns
   const allColumns = React.useMemo(() => {
-    if (!rowActions) return columns;
-    return [
-      ...columns,
-      {
-        id: 'actions',
-        header: '',
-        size: 1,
-        cell: ({ row }) => (
-          <div className="flex justify-end">
-            {rowActions(row.original)}
-          </div>
-        ),
-      } as ColumnDef<TData>,
-    ];
-  }, [columns, rowActions]);
+    let result = [...columns];
+
+    if (enableRowSelection) {
+      result = [
+        {
+          id: 'selection',
+          header: ({ table }) => (
+            <div className="px-1">
+              <Checkbox
+                checked={table.getIsAllPageRowsSelected()}
+                onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                aria-label="Seleccionar todos"
+              />
+            </div>
+          ),
+          cell: ({ row }) => (
+            <div className="px-1">
+              <Checkbox
+                checked={row.getIsSelected()}
+                onCheckedChange={(value) => row.toggleSelected(!!value)}
+                aria-label="Seleccionar fila"
+              />
+            </div>
+          ),
+          size: 40,
+        } as ColumnDef<TData>,
+        ...result,
+      ];
+    }
+
+    if (rowActions) {
+      result = [
+        ...result,
+        {
+          id: 'actions',
+          header: '',
+          size: 1,
+          cell: ({ row }) => (
+            <div className="flex justify-end">{rowActions(row.original)}</div>
+          ),
+        } as ColumnDef<TData>,
+      ];
+    }
+
+    return result;
+  }, [columns, rowActions, enableRowSelection]);
+
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [internalGlobalFilter, setInternalGlobalFilter] = React.useState('');
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
@@ -88,6 +129,24 @@ export function DataTable<TData>({
     pageIndex: 0,
     pageSize: pageSize,
   });
+  const [internalRowSelection, setInternalRowSelection] = React.useState({});
+
+  const rowSelection = externalRowSelection ?? internalRowSelection;
+  const setRowSelection = React.useCallback(
+    (updaterOrValue: any) => {
+      const nextValue =
+        typeof updaterOrValue === 'function'
+          ? updaterOrValue(rowSelection)
+          : updaterOrValue;
+
+      if (onRowSelectionChange) {
+        onRowSelectionChange(nextValue);
+      } else {
+        setInternalRowSelection(nextValue);
+      }
+    },
+    [onRowSelectionChange, rowSelection]
+  );
 
   const isControlled = externalGlobalFilter !== undefined;
   const globalFilter = isControlled ? externalGlobalFilter : internalGlobalFilter;
@@ -103,11 +162,15 @@ export function DataTable<TData>({
       globalFilter: enableGlobalFilter ? globalFilter : undefined,
       columnFilters,
       pagination,
+      rowSelection,
     },
+    enableRowSelection,
+    getRowId,
     onSortingChange: setSorting,
     onGlobalFilterChange: setGlobalFilter,
     onColumnFiltersChange: setColumnFilters,
     onPaginationChange: setPagination,
+    onRowSelectionChange: setRowSelection,
     globalFilterFn: filterFn,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
