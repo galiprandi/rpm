@@ -48,7 +48,7 @@ export function CashMovementsCard({ cashMovements }: CashMovementsCardProps) {
       case "OPENING":
       case "CLOSING":
         Icon = DollarSign;
-        iconClass = "text-blue-600";
+        iconClass = "text-blue-700";
         containerClass = "bg-blue-500/10 border-blue-500/20";
         break;
     }
@@ -161,7 +161,7 @@ export function CashMovementsCard({ cashMovements }: CashMovementsCardProps) {
                     <span className="font-semibold tracking-tight text-xs">
                       {getMovementTypeLabel(movement.type)}
                     </span>
-                    <span className="text-[9px] font-bold tracking-wider text-muted-foreground/50">
+                    <span className="text-[9px] font-bold tracking-wider text-muted-foreground/80">
                       {getMethodNameLabel(movement.methodName)}
                     </span>
                   </div>
