@@ -113,6 +113,13 @@ export default function ReportsClient() {
       href: "/adm/reports/customers",
       icon: Users,
       isAvailable: true
+    },
+    {
+      title: "Servicios",
+      description: "Métricas de ingresos, demanda y performance de servicios realizados.",
+      href: "/adm/reports/services",
+      icon: Wrench,
+      isAvailable: true
     }
   ];
 
