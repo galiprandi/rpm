@@ -20,6 +20,7 @@ import {
 } from '@tanstack/react-table';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { ArrowUpDown, ArrowUp, ArrowDown, Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, X } from 'lucide-react';
 import {
   Tooltip,
@@ -49,8 +50,10 @@ interface DataTableProps<TData> {
   title?: React.ReactNode;
   rowActions?: (row: TData) => React.ReactNode;
   filterFn?: FilterFn<TData>;
+  getRowId?: (row: TData) => string;
   enableRowSelection?: boolean;
-  onRowSelectionChange?: (selectedRows: TData[]) => void;
+  onRowSelectionChange?: (selection: Record<string, boolean>) => void;
+  rowSelection?: Record<string, boolean>;
 }
 export function DataTable<TData>({
   data,
@@ -66,53 +69,58 @@ export function DataTable<TData>({
   title,
   rowActions,
   filterFn,
+  getRowId,
   enableRowSelection = false,
   onRowSelectionChange,
+  rowSelection: externalRowSelection,
 }: DataTableProps<TData>) {
-  // Build columns with optional selection and actions columns
+  // Build columns with optional actions and selection columns
   const allColumns = React.useMemo(() => {
-    let baseColumns = [...columns];
+    let result = [...columns];
 
     if (enableRowSelection) {
-      baseColumns = [
+      result = [
         {
-          id: 'select',
+          id: 'selection',
           header: ({ table }) => (
-            <Checkbox
-              checked={table.getIsAllPageRowsSelected()}
-              onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-              aria-label="Seleccionar todo"
-            />
+            <div className="px-1">
+              <Checkbox
+                checked={table.getIsAllPageRowsSelected()}
+                onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                aria-label="Seleccionar todos"
+              />
+            </div>
           ),
           cell: ({ row }) => (
-            <Checkbox
-              checked={row.getIsSelected()}
-              onCheckedChange={(value) => row.toggleSelected(!!value)}
-              aria-label="Seleccionar fila"
-            />
+            <div className="px-1">
+              <Checkbox
+                checked={row.getIsSelected()}
+                onCheckedChange={(value) => row.toggleSelected(!!value)}
+                aria-label="Seleccionar fila"
+              />
+            </div>
           ),
-          enableSorting: false,
-          enableHiding: false,
           size: 40,
         } as ColumnDef<TData>,
-        ...baseColumns,
+        ...result,
       ];
     }
 
-    if (!rowActions) return baseColumns;
-    return [
-      ...baseColumns,
-      {
-        id: 'actions',
-        header: '',
-        size: 1,
-        cell: ({ row }) => (
-          <div className="flex justify-end">
-            {rowActions(row.original)}
-          </div>
-        ),
-      } as ColumnDef<TData>,
-    ];
+    if (rowActions) {
+      result = [
+        ...result,
+        {
+          id: 'actions',
+          header: '',
+          size: 1,
+          cell: ({ row }) => (
+            <div className="flex justify-end">{rowActions(row.original)}</div>
+          ),
+        } as ColumnDef<TData>,
+      ];
+    }
+
+    return result;
   }, [columns, rowActions, enableRowSelection]);
 
   const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -123,6 +131,24 @@ export function DataTable<TData>({
     pageIndex: 0,
     pageSize: pageSize,
   });
+  const [internalRowSelection, setInternalRowSelection] = React.useState({});
+
+  const rowSelection = externalRowSelection ?? internalRowSelection;
+  const setRowSelection = React.useCallback(
+    (updaterOrValue: any) => {
+      const nextValue =
+        typeof updaterOrValue === 'function'
+          ? updaterOrValue(rowSelection)
+          : updaterOrValue;
+
+      if (onRowSelectionChange) {
+        onRowSelectionChange(nextValue);
+      } else {
+        setInternalRowSelection(nextValue);
+      }
+    },
+    [onRowSelectionChange, rowSelection]
+  );
 
   const isControlled = externalGlobalFilter !== undefined;
   const globalFilter = isControlled ? externalGlobalFilter : internalGlobalFilter;
@@ -141,11 +167,12 @@ export function DataTable<TData>({
       rowSelection,
     },
     enableRowSelection,
-    onRowSelectionChange: setRowSelection,
+    getRowId,
     onSortingChange: setSorting,
     onGlobalFilterChange: setGlobalFilter,
     onColumnFiltersChange: setColumnFilters,
     onPaginationChange: setPagination,
+    onRowSelectionChange: setRowSelection,
     globalFilterFn: filterFn,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),

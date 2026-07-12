@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Header } from '@/components/adm/Header';
 import { DataTable } from '@/components/ui/data-table';
-import { FileText, Search, RefreshCw, Send, Download, Eye } from 'lucide-react';
+import { FileText, Search, RefreshCw, Send, Download, Eye, XCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +24,7 @@ export default function InvoicesPage() {
     status: '',
     search: '',
   });
+  const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
 
   const fetchInvoices = async () => {
     setLoading(true);
@@ -142,73 +143,112 @@ export default function InvoicesPage() {
     },
   ];
 
-  const handleOfficialize = async (id: string) => {
-    const toastId = toast.loading('Oficializando comprobante ante AFIP...');
+  const handleOfficialize = async (id: string, silent = false) => {
+    const toastId = silent ? null : toast.loading('Oficializando comprobante ante AFIP...');
     try {
       const response = await fetch(`/api/invoices/${id}/officialize`, {
         method: 'POST',
       });
 
       if (response.ok) {
-        toast.success('Comprobante oficializado con éxito', { id: toastId });
-        fetchInvoices();
+        if (!silent) toast.success('Comprobante oficializado con éxito', { id: toastId! });
+        return { success: true };
       } else {
         const error = await response.json();
-        toast.error(error.error || 'Error al oficializar', { id: toastId });
+        if (!silent) toast.error(error.error || 'Error al oficializar', { id: toastId! });
+        return { success: false, error: error.error };
       }
     } catch (error) {
       console.error('Error officializing invoice:', error);
-      toast.error('Error de conexión', { id: toastId });
+      if (!silent) toast.error('Error de conexión', { id: toastId! });
+      return { success: false, error: 'Error de conexión' };
     }
   };
 
-  const handleBatchOfficialize = async () => {
-    // Only officialize DRAFT pre-invoices
-    const eligibleRows = selectedRows.filter(
-      (row) =>
-        row.status === 'DRAFT' &&
-        (row.type.startsWith('X_') || row.type.startsWith('NOTA_CREDITO_X_'))
+  const handleBatchCancel = async () => {
+    const selectedIds = Object.keys(rowSelection).filter(id => rowSelection[id]);
+    const eligibleInvoices = invoices.filter(inv =>
+      selectedIds.includes(inv.id) && inv.status === 'DRAFT'
     );
 
-    if (eligibleRows.length === 0) {
-      toast.error('No hay comprobantes válidos seleccionados para oficializar');
+    if (eligibleInvoices.length === 0) {
+      toast.error('No hay comprobantes seleccionados aptos para cancelar');
       return;
     }
 
-    if (!confirm(`¿Desea oficializar ${eligibleRows.length} comprobantes ante AFIP?`)) {
+    if (!confirm(`¿Está seguro de que desea cancelar ${eligibleInvoices.length} comprobantes? Esta acción no se puede deshacer.`)) {
       return;
     }
 
-    setIsProcessingBatch(true);
-    const toastId = toast.loading(`Procesando ${eligibleRows.length} comprobantes...`);
-
+    const toastId = toast.loading(`Cancelando ${eligibleInvoices.length} comprobantes...`);
     let successCount = 0;
     let failCount = 0;
 
-    for (const row of eligibleRows) {
+    for (const inv of eligibleInvoices) {
       try {
-        const response = await fetch(`/api/invoices/${row.id}/officialize`, {
-          method: 'POST',
+        const response = await fetch(`/api/invoices/${inv.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'CANCELLED' }),
         });
+
         if (response.ok) {
           successCount++;
         } else {
           failCount++;
         }
       } catch (error) {
-        console.error(`Error officializing invoice ${row.number}:`, error);
+        console.error('Error cancelling invoice:', error);
         failCount++;
       }
+      await new Promise(r => setTimeout(r, 100));
     }
-
-    setIsProcessingBatch(false);
 
     if (failCount === 0) {
-      toast.success(`Se oficializaron ${successCount} comprobantes correctamente.`, { id: toastId });
+      toast.success(`Se cancelaron ${successCount} comprobantes con éxito`, { id: toastId });
     } else {
-      toast.error(`Proceso finalizado. Éxitos: ${successCount}, Errores: ${failCount}.`, { id: toastId });
+      toast.error(`Proceso terminado: ${successCount} éxitos, ${failCount} errores`, { id: toastId });
     }
 
+    setRowSelection({});
+    fetchInvoices();
+  };
+
+  const handleBatchOfficialize = async () => {
+    const selectedIds = Object.keys(rowSelection).filter(id => rowSelection[id]);
+    const eligibleInvoices = invoices.filter(inv =>
+      selectedIds.includes(inv.id) &&
+      inv.status === 'DRAFT' &&
+      (inv.type.startsWith('X_') || inv.type.startsWith('NOTA_CREDITO_X_'))
+    );
+
+    if (eligibleInvoices.length === 0) {
+      toast.error('No hay comprobantes seleccionados aptos para oficializar');
+      return;
+    }
+
+    const toastId = toast.loading(`Procesando ${eligibleInvoices.length} comprobantes...`);
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const inv of eligibleInvoices) {
+      const result = await handleOfficialize(inv.id, true);
+      if (result.success) {
+        successCount++;
+      } else {
+        failCount++;
+      }
+      // Brief pause to allow UI update and avoid hitting AFIP too rapidly
+      await new Promise(r => setTimeout(r, 200));
+    }
+
+    if (failCount === 0) {
+      toast.success(`Se oficializaron ${successCount} comprobantes con éxito`, { id: toastId });
+    } else {
+      toast.error(`Proceso terminado: ${successCount} éxitos, ${failCount} errores`, { id: toastId });
+    }
+
+    setRowSelection({});
     fetchInvoices();
   };
 
@@ -243,21 +283,40 @@ export default function InvoicesPage() {
     </div>
   );
 
+  const eligibleSelectedCount = invoices.filter(inv =>
+    rowSelection[inv.id] &&
+    inv.status === 'DRAFT' &&
+    (inv.type.startsWith('X_') || inv.type.startsWith('NOTA_CREDITO_X_'))
+  ).length;
+
+  const cancellableSelectedCount = invoices.filter(inv =>
+    rowSelection[inv.id] && inv.status === 'DRAFT'
+  ).length;
+
+  const headerActions = [];
+  if (eligibleSelectedCount > 0) {
+    headerActions.push({
+      label: `Oficializar (${eligibleSelectedCount})`,
+      icon: Send,
+      onClick: handleBatchOfficialize
+    });
+  }
+  if (cancellableSelectedCount > 0) {
+    headerActions.push({
+      label: `Cancelar (${cancellableSelectedCount})`,
+      icon: XCircle,
+      onClick: handleBatchCancel,
+      variant: 'outline' as const
+    });
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <Header
         title="Comprobantes"
         description="Gestión de facturación, presupuestos y remitos"
-        primaryAction={
-          selectedRows.length > 0
-            ? {
-                label: `Oficializar (${selectedRows.filter(r => r.status === 'DRAFT' && (r.type.startsWith('X_') || r.type.startsWith('NOTA_CREDITO_X_'))).length})`,
-                icon: Send,
-                onClick: handleBatchOfficialize,
-                loading: isProcessingBatch,
-              }
-            : undefined
-        }
+        primaryAction={headerActions[0]}
+        secondaryActions={headerActions.slice(1)}
       />
 
       <div className="bg-background border rounded-xl shadow-sm overflow-hidden">
@@ -326,7 +385,9 @@ export default function InvoicesPage() {
               rowActions={rowActions}
               emptyMessage="No se encontraron comprobantes"
               enableRowSelection
-              onRowSelectionChange={setSelectedRows}
+              getRowId={(row) => row.id}
+              rowSelection={rowSelection}
+              onRowSelectionChange={setRowSelection}
             />
           )}
         </div>
