@@ -22,6 +22,7 @@ export interface HeaderAction {
   loading?: boolean;
   title?: string;
   ariaLabel?: string;
+  iconOnly?: boolean;
 }
 
 export interface HeaderProps {
@@ -152,8 +153,12 @@ export function Header({
               title={action.title}
               aria-label={action.ariaLabel}
             >
-              {Icon && <Icon className="h-4 w-4 mr-2" />}
-              {action.label}
+              {Icon && (
+                <Icon
+                  className={action.iconOnly ? "h-4 w-4" : "h-4 w-4 mr-2"}
+                />
+              )}
+              {!action.iconOnly && action.label}
             </Button>
           );
 
