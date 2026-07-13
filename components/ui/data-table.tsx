@@ -73,6 +73,7 @@ export function DataTable<TData>({
   enableRowSelection = false,
   onRowSelectionChange,
   rowSelection: externalRowSelection,
+  onRowSelectionStateChange,
 }: DataTableProps<TData>) {
   // Build columns with optional actions and selection columns
   const allColumns = React.useMemo(() => {
