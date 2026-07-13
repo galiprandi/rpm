@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionWithAuth } from "@/lib/api-middleware";
-import { getInvoiceById, markInvoiceAsOfficial, type InvoiceType } from "@/lib/services/invoiceService";
+import { getInvoiceById, markInvoiceAsOfficial, updateInvoiceStatus, type InvoiceType } from "@/lib/services/invoiceService";
 import { requestCAE, mapInternalToAFIPType } from "@/lib/services/afipService";
 import { getSetting } from "@/lib/services/settingsService";
 
@@ -59,6 +59,14 @@ export async function POST(
     });
 
     if (!response.success || response.resultado === 'R') {
+      // Persist the rejection in the database
+      await updateInvoiceStatus(id, 'REJECTED', undefined, {
+        success: response.success,
+        resultado: response.resultado,
+        error: response.error,
+        observaciones: response.observaciones
+      });
+
       return NextResponse.json({
         error: response.error || "AFIP rechazó la solicitud",
         observaciones: response.observaciones
