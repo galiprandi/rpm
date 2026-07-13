@@ -1,13 +1,14 @@
 'use client';
 
 import * as React from 'react';
+import { usePathname } from 'next/navigation';
 
-type Theme = 'light' | 'dark' | 'system';
+export type Theme = 'light' | 'dark' | 'system' | 'high-contrast';
 
 interface ThemeContextType {
   theme: Theme;
   setTheme: (theme: Theme) => void;
-  resolvedTheme: 'light' | 'dark';
+  resolvedTheme: 'light' | 'dark' | 'high-contrast';
 }
 
 const ThemeContext = React.createContext<ThemeContextType | undefined>(undefined);
@@ -20,8 +21,9 @@ export function ThemeProvider({
   defaultTheme?: Theme;
 }) {
   const [theme, setTheme] = React.useState<Theme>(defaultTheme);
-  const [resolvedTheme, setResolvedTheme] = React.useState<'light' | 'dark'>('light');
+  const [resolvedTheme, setResolvedTheme] = React.useState<'light' | 'dark' | 'high-contrast'>('light');
   const [mounted, setMounted] = React.useState(false);
+  const pathname = usePathname();
 
   React.useEffect(() => {
     setMounted(true);
@@ -38,10 +40,10 @@ export function ThemeProvider({
 
     const root = window.document.documentElement;
     
-    // Remove both classes first
-    root.classList.remove('light', 'dark');
+    // Remove all theme classes first
+    root.classList.remove('light', 'dark', 'high-contrast');
 
-    let resolved: 'light' | 'dark';
+    let resolved: 'light' | 'dark' | 'high-contrast';
     
     if (theme === 'system') {
       resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
@@ -49,12 +51,25 @@ export function ThemeProvider({
       resolved = theme;
     }
     
-    root.classList.add(resolved);
+    // Check if we are on the administration dashboard (/adm)
+    const isAdmin = pathname?.startsWith('/adm');
+
+    if (resolved === 'high-contrast') {
+      if (isAdmin) {
+        root.classList.add('dark', 'high-contrast');
+      } else {
+        // Fallback to standard dark mode for non-admin/public pages
+        root.classList.add('dark');
+      }
+    } else {
+      root.classList.add(resolved);
+    }
+
     setResolvedTheme(resolved);
     
     // Save to localStorage
     localStorage.setItem('theme', theme);
-  }, [theme, mounted]);
+  }, [theme, mounted, pathname]);
 
   // Listen for system theme changes
   React.useEffect(() => {
@@ -64,7 +79,7 @@ export function ThemeProvider({
     
     const handleChange = () => {
       const root = window.document.documentElement;
-      root.classList.remove('light', 'dark');
+      root.classList.remove('light', 'dark', 'high-contrast');
       const resolved = mediaQuery.matches ? 'dark' : 'light';
       root.classList.add(resolved);
       setResolvedTheme(resolved);
