@@ -5,10 +5,28 @@ import { useEffect } from 'react';
 export function ThemeScript() {
   useEffect(() => {
     const theme = localStorage.getItem('theme') || 'system';
+    const root = document.documentElement;
+
+    // Reset classes
+    root.classList.remove('light', 'dark', 'high-contrast');
+
+    let resolved = 'light';
     if (theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-      document.documentElement.classList.add('dark');
+      resolved = 'dark';
+    } else if (theme === 'high-contrast') {
+      resolved = 'high-contrast';
+    }
+
+    const isAdmin = window.location.pathname.startsWith('/adm');
+
+    if (resolved === 'high-contrast') {
+      if (isAdmin) {
+        root.classList.add('dark', 'high-contrast');
+      } else {
+        root.classList.add('dark');
+      }
     } else {
-      document.documentElement.classList.remove('dark');
+      root.classList.add(resolved);
     }
   }, []);
 
