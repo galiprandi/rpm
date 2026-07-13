@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { featuredProducts } from '@/lib/constants/featured-products';
 import { publicServices } from '@/lib/constants/services';
 import { useRouter } from 'next/navigation';
+import { formatARS } from '@/lib/utils/format';
 
 interface GlobalSearchProps {
   isOpen: boolean;
@@ -151,7 +152,7 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
                           <p className="text-zinc-500 text-xs truncate">{product.description}</p>
                         </div>
                         <div className="text-right ml-4 shrink-0">
-                          <p className="text-white font-bold text-sm">${product.price.toLocaleString()}</p>
+                          <p className="text-white font-mono font-semibold text-sm">{formatARS(product.price)}</p>
                           <p className="text-[10px] text-brand font-bold uppercase tracking-tighter opacity-0 group-hover:opacity-100 transition-opacity">Ver Detalle</p>
                         </div>
                       </button>

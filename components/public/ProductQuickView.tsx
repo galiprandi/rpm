@@ -3,6 +3,7 @@
 import { Check, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PUBLIC_SITE_CONFIG } from '@/lib/config/public-site';
+import { formatARS } from '@/lib/utils/format';
 import {
   Dialog,
   DialogContent,
@@ -39,8 +40,8 @@ export function ProductQuickView({ product, onClose }: ProductQuickViewProps) {
                 <DialogTitle className="text-3xl md:text-4xl font-bold text-white tracking-tighter leading-tight">
                   {product.name}
                 </DialogTitle>
-                <p className="text-2xl font-bold text-brand">
-                  ${product.price.toLocaleString()}
+                <p className="text-2xl font-mono font-semibold text-brand">
+                  {formatARS(product.price)}
                 </p>
               </DialogHeader>
 
