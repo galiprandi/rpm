@@ -73,7 +73,7 @@ import {
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import { getWhatsAppLink, getWorkOrderMessage } from "@/lib/utils/whatsapp";
-import { formatARS } from "@/lib/utils/format";
+import { formatARS, relativeTime } from "@/lib/utils/format";
 
 interface WorkOrder {
   id: string;
@@ -366,22 +366,32 @@ function KanbanCard({
               DEMORADA
             </span>
           ) : wo.scheduledDate ? (
-            <span className="text-primary font-bold text-[10px] flex items-center gap-0.5 shrink-0">
+            <span
+              className={cn(
+                "text-primary font-bold text-[10px] flex items-center gap-0.5 shrink-0",
+                new Date(wo.scheduledDate).toDateString() ===
+                  new Date().toDateString() &&
+                  "bg-primary/10 px-1.5 py-0.5 rounded-full ring-1 ring-primary/20",
+              )}
+            >
               <Calendar
                 className="h-2.5 w-2.5 pointer-events-none"
                 aria-hidden="true"
               />
-              {new Date(wo.scheduledDate).toLocaleDateString("es-AR", {
-                day: "2-digit",
-                month: "short",
-              })}
+              {new Date(wo.scheduledDate).toDateString() ===
+              new Date().toDateString()
+                ? "HOY"
+                : new Date(wo.scheduledDate).toLocaleDateString("es-AR", {
+                    day: "2-digit",
+                    month: "short",
+                  })}
             </span>
           ) : (
-            <span className="font-mono text-[10px] text-muted-foreground/70 shrink-0">
-              {new Date(wo.createdAt).toLocaleDateString("es-AR", {
-                day: "2-digit",
-                month: "short",
-              })}
+            <span
+              className="font-mono text-[10px] text-muted-foreground/70 shrink-0"
+              title={new Date(wo.createdAt).toLocaleString("es-AR")}
+            >
+              {relativeTime(wo.createdAt)}
             </span>
           )}
         </div>
@@ -488,6 +498,7 @@ export default function WorkOrdersPage() {
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"kanban" | "list">("kanban");
   const [paymentFilter, setPaymentFilter] = useState<"all" | "pending">("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [technicianFilter, setTechnicianFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [technicians, setTechnicians] = useState<
@@ -549,6 +560,7 @@ export default function WorkOrdersPage() {
   const filteredWorkOrders = useMemo(() => {
     return workOrders.filter((wo) => {
       const matchesPayment = paymentFilter === "all" || !wo.isFullyPaid;
+      const matchesStatus = statusFilter === "all" || wo.status === statusFilter;
       const matchesTechnician =
         technicianFilter === "all" || wo.technicianId === technicianFilter;
 
@@ -560,9 +572,11 @@ export default function WorkOrdersPage() {
         wo.vehicle.make?.name?.toLowerCase().includes(searchLower) ||
         wo.vehicle.model?.name?.toLowerCase().includes(searchLower);
 
-      return matchesPayment && matchesTechnician && matchesSearch;
+      return (
+        matchesPayment && matchesStatus && matchesTechnician && matchesSearch
+      );
     });
-  }, [workOrders, paymentFilter, technicianFilter, searchQuery]);
+  }, [workOrders, paymentFilter, statusFilter, technicianFilter, searchQuery]);
 
   const workOrdersByStatus = useMemo(
     () =>
@@ -891,8 +905,29 @@ export default function WorkOrdersPage() {
             </Select>
           </div>
 
+          <div className="relative">
+            <ClipboardList
+              className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none"
+              aria-hidden="true"
+            />
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="h-8 w-[140px] pl-9 text-xs">
+                <SelectValue placeholder="Estado" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos los estados</SelectItem>
+                {STATUSES.map((status) => (
+                  <SelectItem key={status.id} value={status.id}>
+                    {status.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           {(searchQuery ||
             paymentFilter !== "all" ||
+            statusFilter !== "all" ||
             technicianFilter !== "all") && (
             <Button
               variant="ghost"
@@ -900,6 +935,7 @@ export default function WorkOrdersPage() {
               onClick={() => {
                 setSearchQuery("");
                 setPaymentFilter("all");
+                setStatusFilter("all");
                 setTechnicianFilter("all");
               }}
               className="h-8 text-xs text-muted-foreground hover:text-foreground"
@@ -1047,8 +1083,13 @@ export default function WorkOrdersPage() {
                           >
                             {formatARS(Number(wo.total))}
                           </Badge>
-                          <div className="text-sm text-muted-foreground font-mono">
-                            {new Date(wo.createdAt).toLocaleDateString("es-AR")}
+                          <div
+                            className="text-sm text-muted-foreground font-mono"
+                            title={new Date(wo.createdAt).toLocaleString(
+                              "es-AR",
+                            )}
+                          >
+                            {relativeTime(wo.createdAt)}
                           </div>
                         </div>
                       </div>

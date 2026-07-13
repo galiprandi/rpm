@@ -27,7 +27,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { Checkbox } from '@/components/ui/checkbox';
 
 interface DataTableAction {
   label: string;
@@ -52,8 +51,9 @@ interface DataTableProps<TData> {
   filterFn?: FilterFn<TData>;
   getRowId?: (row: TData) => string;
   enableRowSelection?: boolean;
-  onRowSelectionChange?: (selection: Record<string, boolean>) => void;
+  onRowSelectionChange?: (selection: any[]) => void;
   rowSelection?: Record<string, boolean>;
+  onRowSelectionStateChange?: (selection: Record<string, boolean>) => void;
 }
 export function DataTable<TData>({
   data,
@@ -126,28 +126,27 @@ export function DataTable<TData>({
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [internalGlobalFilter, setInternalGlobalFilter] = React.useState('');
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-  const [rowSelection, setRowSelection] = React.useState({});
   const [pagination, setPagination] = React.useState<PaginationState>({
     pageIndex: 0,
     pageSize: pageSize,
   });
   const [internalRowSelection, setInternalRowSelection] = React.useState({});
 
-  const rowSelection = externalRowSelection ?? internalRowSelection;
-  const setRowSelection = React.useCallback(
+  const rowSelectionValue = externalRowSelection ?? internalRowSelection;
+  const setRowSelectionValue = React.useCallback(
     (updaterOrValue: any) => {
       const nextValue =
         typeof updaterOrValue === 'function'
-          ? updaterOrValue(rowSelection)
+          ? updaterOrValue(rowSelectionValue)
           : updaterOrValue;
 
-      if (onRowSelectionChange) {
-        onRowSelectionChange(nextValue);
+      if (onRowSelectionStateChange) {
+        onRowSelectionStateChange(nextValue);
       } else {
         setInternalRowSelection(nextValue);
       }
     },
-    [onRowSelectionChange, rowSelection]
+    [onRowSelectionStateChange, rowSelectionValue]
   );
 
   const isControlled = externalGlobalFilter !== undefined;
@@ -164,7 +163,7 @@ export function DataTable<TData>({
       globalFilter: enableGlobalFilter ? globalFilter : undefined,
       columnFilters,
       pagination,
-      rowSelection,
+      rowSelection: rowSelectionValue,
     },
     enableRowSelection,
     getRowId,
@@ -172,7 +171,7 @@ export function DataTable<TData>({
     onGlobalFilterChange: setGlobalFilter,
     onColumnFiltersChange: setColumnFilters,
     onPaginationChange: setPagination,
-    onRowSelectionChange: setRowSelection,
+    onRowSelectionChange: setRowSelectionValue,
     globalFilterFn: filterFn,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -180,13 +179,18 @@ export function DataTable<TData>({
     getPaginationRowModel: getPaginationRowModel(),
   });
 
-  // Notify parent of selection changes
+  // Notify parent of selection changes (TData[])
+  // We use a stable selection string to avoid re-triggering if content hasn't changed
+  const selectedRows = React.useMemo(() => {
+    if (!enableRowSelection) return [];
+    return table.getSelectedRowModel().flatRows.map((row) => row.original);
+  }, [rowSelectionValue, table, enableRowSelection]);
+
   React.useEffect(() => {
     if (onRowSelectionChange) {
-      const selectedRows = table.getSelectedRowModel().flatRows.map((row) => row.original);
       onRowSelectionChange(selectedRows);
     }
-  }, [rowSelection, onRowSelectionChange, table]);
+  }, [selectedRows, onRowSelectionChange]);
 
   return (
     <div className="space-y-4">
