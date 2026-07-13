@@ -566,10 +566,15 @@ export default function WorkOrdersPage() {
 
   const workOrdersByStatus = useMemo(
     () =>
-      STATUSES.map((status) => ({
-        ...status,
-        items: filteredWorkOrders.filter((wo) => wo.status === status.id),
-      })),
+      STATUSES.map((status) => {
+        const items = filteredWorkOrders.filter(
+          (wo) => wo.status === status.id,
+        );
+        return {
+          ...status,
+          items: status.id === "DELIVERED" ? items.slice(0, 10) : items,
+        };
+      }),
     [filteredWorkOrders],
   );
 
