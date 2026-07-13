@@ -27,7 +27,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { Checkbox } from '@/components/ui/checkbox';
 
 interface DataTableAction {
   label: string;
@@ -126,12 +125,11 @@ export function DataTable<TData>({
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [internalGlobalFilter, setInternalGlobalFilter] = React.useState('');
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-  const [rowSelection, setRowSelection] = React.useState({});
   const [pagination, setPagination] = React.useState<PaginationState>({
     pageIndex: 0,
     pageSize: pageSize,
   });
-  const [internalRowSelection, setInternalRowSelection] = React.useState({});
+  const [internalRowSelection, setInternalRowSelection] = React.useState<Record<string, boolean>>({});
 
   const rowSelection = externalRowSelection ?? internalRowSelection;
   const setRowSelection = React.useCallback(
@@ -180,13 +178,12 @@ export function DataTable<TData>({
     getPaginationRowModel: getPaginationRowModel(),
   });
 
-  // Notify parent of selection changes
+  // Notify parent of selection changes (sync state if needed)
   React.useEffect(() => {
-    if (onRowSelectionChange) {
-      const selectedRows = table.getSelectedRowModel().flatRows.map((row) => row.original);
-      onRowSelectionChange(selectedRows);
+    if (onRowSelectionChange && !externalRowSelection) {
+      onRowSelectionChange(internalRowSelection);
     }
-  }, [rowSelection, onRowSelectionChange, table]);
+  }, [internalRowSelection, onRowSelectionChange, externalRowSelection]);
 
   return (
     <div className="space-y-4">
