@@ -5,6 +5,7 @@
 - [ ] Optimizar imágenes de la galería "Nosotros" para mejorar el LCP.
 
 ## ✅ DONE
+- [x] 2026-07-13 — Estandarización de precios, mejoras de SEO y CTA de alto impacto (PR #sofia/public/polish-and-seo)
 - [x] 2026-07-12 — Vista Rápida de Servicios y Deep-Linking en Catálogo de Servicios (PR #sofia/public/service-quick-view)
 - [x] 2026-07-11 — Implementación de Buscador Global y Deep-Linking de productos (PR #sofia/public/global-search-and-deeplink)
 - [x] 2026-07-10 — Unificación de Vista Rápida de productos y mejora de UX en Home (PR #sofia/public/unified-product-quick-view)
@@ -16,6 +17,10 @@
 - [x] 2026-07-07 — Vista rápida de productos con modal y conversión contextual (PR #sofia/public/product-quick-view)
 
 ## 🧠 LEARNINGS
+
+## 2026-07-13 - SEO, Semántica HTML y Estandarización Visual
+**Learning:** Mejorar el SEO no solo implica meta-tags básicos, sino configurar correctamente `openGraph` y `twitter` en el layout raíz para asegurar previews atractivas en redes sociales. Al usar componentes UI complejos (como Shadcn Buttons) dentro de links, es imperativo usar la prop `asChild` para evitar anidamiento de botones dentro de anchors, lo cual es inválido en HTML y causa advertencias de hidratación en Next.js. La consistencia en la tipografía financiera (`font-mono`) ayuda a separar visualmente los datos técnicos de la narrativa de marketing.
+**Action:** Aplicar `asChild` sistemáticamente en botones que actúen como links y mantener `metadataBase` configurado para resolver rutas de imágenes sociales.
 
 ## 2026-07-12 - Deep-Linking de Servicios y Estabilidad de Componentes Shared
 **Learning:** Extender el patrón de "Deep-Linking" a los servicios permite una navegación mucho más fluida desde el buscador global y la Home. Al implementar esto, descubrimos que componentes críticos compartidos como `DataTable` tenían errores de redeclaración de variables que bloqueaban el build de producción. Es vital mantener la pureza de los componentes UI y evitar shadowing de variables de estado (como `rowSelection`) para asegurar la estabilidad del sistema completo, no solo del área pública.

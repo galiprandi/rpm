@@ -33,8 +33,9 @@ export default function AboutPage() {
                 de estética y rendimiento. Nuestra filosofía es simple: si no es perfecto, no está terminado.
               </p>
             </div>
-            <div className="aspect-square bg-zinc-900 rounded-[40px] flex items-center justify-center text-white/5 font-black text-9xl italic select-none animate-reveal opacity-0" style={{ animationDelay: '0.5s' }}>
-              2011
+            <div className="aspect-square bg-zinc-900 rounded-[40px] flex items-center justify-center text-white/5 font-black text-9xl italic select-none animate-reveal opacity-0 relative overflow-hidden group" style={{ animationDelay: '0.5s' }}>
+              <div className="absolute inset-0 bg-gradient-to-br from-brand/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+              <span className="relative z-10 group-hover:text-white/10 transition-colors duration-700">2011</span>
             </div>
           </div>
 

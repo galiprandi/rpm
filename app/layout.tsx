@@ -30,6 +30,28 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
+  openGraph: {
+    type: "website",
+    locale: "es_AR",
+    url: "https://rpmaccesorios.com.ar",
+    siteName: "RPM Accesorios",
+    title: "RPM Accesorios | Equipamiento Vehicular Premium",
+    description: "Expertos en iluminación LED, estética y equipamiento off-road en Tucumán.",
+    images: [
+      {
+        url: "/logo.png",
+        width: 1200,
+        height: 630,
+        alt: "RPM Accesorios",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "RPM Accesorios | Equipamiento Vehicular Premium",
+    description: "Expertos en iluminación LED, estética y equipamiento off-road en Tucumán.",
+    images: ["/logo.png"],
+  },
 };
 
 export default function RootLayout({
