@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -125,6 +125,7 @@ export default function CustomerDetailPage() {
   const customerId = params.id as string;
 
   const [customer, setCustomer] = useState<CustomerDetail | null>(null);
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -135,6 +136,13 @@ export default function CustomerDetailPage() {
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("CASH");
   const [paymentNotes, setPaymentNotes] = useState("");
+
+  const handleOpenPaymentForWO = (total: number, id: string) => {
+    setPaymentAmount(total.toString());
+    setPaymentNotes(`Pago OT #${id.slice(-6).toUpperCase()}`);
+    setIsPaymentModalOpen(true);
+  };
+
   const [vehicleFilter, setVehicleFilter] = useState("");
   const [workOrderFilter, setWorkOrderFilter] = useState("");
   const [selectedTransaction, setSelectedTransaction] =
@@ -452,6 +460,8 @@ export default function CustomerDetailPage() {
       <Header
         title={customer.name}
         description={`Cliente desde ${new Date(customer.createdAt).toLocaleDateString("es-AR")}${customer.billingData ? ` • Factura ${customer.billingData.invoiceType} (CUIT: ${customer.billingData.cuit})` : ""}`}
+        showBackButton
+        onBack={() => router.push('/adm/customers')}
         primaryAction={{
           label: "Editar",
           onClick: () => setIsEditModalOpen(true),
@@ -662,6 +672,14 @@ export default function CustomerDetailPage() {
                             {formatARS(Number(wo.total))}
                           </span>
                           {getStatusBadge(wo.status)}
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 px-2 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                            onClick={() => handleOpenPaymentForWO(Number(wo.total), wo.id)}
+                          >
+                            Pagar
+                          </Button>
                         </div>
                       </div>
                     ))}
@@ -824,7 +842,19 @@ export default function CustomerDetailPage() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div>
-              <Label>Monto a Abonar *</Label>
+              <div className="flex items-center justify-between mb-2">
+                <Label>Monto a Abonar *</Label>
+                {customer && customer.balance > 0 && (
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="h-auto p-0 text-xs"
+                    onClick={() => setPaymentAmount(customer.balance.toString())}
+                  >
+                    Saldar total
+                  </Button>
+                )}
+              </div>
               <Input
                 type="number"
                 step="0.01"
