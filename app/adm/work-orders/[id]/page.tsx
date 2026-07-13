@@ -30,6 +30,7 @@ import {
 import {
   LucideIcon,
   CheckCircle,
+  Calendar,
   Camera,
   Clock,
   DollarSign,
@@ -64,7 +65,7 @@ import { toast } from "sonner";
 import { CustomerCreditNoteDialog } from "@/components/credit-notes/CustomerCreditNoteDialog";
 import { getWhatsAppLink, getWorkOrderMessage } from "@/lib/utils/whatsapp";
 import { buildVehicleDescription } from "@/lib/constants/vehicle-categories";
-import { formatARS } from "@/lib/utils/format";
+import { formatARS, relativeTime } from "@/lib/utils/format";
 
 // --- Helpers ---
 
@@ -903,29 +904,28 @@ export default function WorkOrderDetailPage() {
 
           {/* Ingreso - días transcurridos */}
           <div className="flex flex-col">
-            <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground/60">
+            <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground/60 flex items-center gap-1">
+              <Clock className="h-2.5 w-2.5" />
               Ingreso
             </span>
-            <span className="text-sm font-mono text-muted-foreground">
+            <span
+              className="text-sm font-mono text-muted-foreground"
+              title={new Date(workOrder.createdAt).toLocaleString("es-AR")}
+            >
               {new Date(workOrder.createdAt).toLocaleDateString("es-AR", {
                 day: "2-digit",
                 month: "short",
               })}
               <span className="text-muted-foreground/50 ml-1">
-                (
-                {Math.floor(
-                  (new Date().getTime() -
-                    new Date(workOrder.createdAt).getTime()) /
-                    86400000,
-                )}
-                d)
+                ({relativeTime(workOrder.createdAt)})
               </span>
             </span>
           </div>
-
           {/* Fecha prometida */}
+
           <div className="flex flex-col">
-            <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground/60">
+            <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground/60 flex items-center gap-1">
+              <Calendar className="h-2.5 w-2.5" />
               Prometida
             </span>
             {editingScheduledDate ? (

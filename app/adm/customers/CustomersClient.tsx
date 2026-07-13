@@ -103,6 +103,7 @@ export default function CustomersClient({
     return !!(
       (customer.name?.toLowerCase() ?? "").includes(search) ||
       (customer.phone?.toLowerCase() ?? "").includes(search) ||
+      (customer.phoneAlt?.toLowerCase() ?? "").includes(search) ||
       (customer.email?.toLowerCase() ?? "").includes(search) ||
       customer.vehicles?.some((v) =>
         (v.identifier?.toLowerCase() ?? "").includes(search),
@@ -251,11 +252,8 @@ export default function CustomersClient({
           }
           if (balance > 0) {
             return (
-              <span className="font-mono font-medium text-red-700">
-                {new Intl.NumberFormat("es-AR", {
-                  style: "currency",
-                  currency: "ARS",
-                }).format(balance)}
+              <span className="font-mono font-semibold text-red-700">
+                {formatARS(balance, 2)}
               </span>
             );
           }
@@ -263,11 +261,8 @@ export default function CustomersClient({
           return (
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className="font-mono font-medium text-emerald-700 cursor-help">
-                  {new Intl.NumberFormat("es-AR", {
-                    style: "currency",
-                    currency: "ARS",
-                  }).format(balance)}
+                <span className="font-mono font-semibold text-emerald-700 cursor-help">
+                  {formatARS(balance, 2)}
                 </span>
               </TooltipTrigger>
               <TooltipContent side="top">
@@ -309,14 +304,12 @@ export default function CustomersClient({
       },
       {
         label: "Deuda Total",
-        value: new Intl.NumberFormat("es-AR", {
-          style: "currency",
-          currency: "ARS",
-        }).format(
+        value: formatARS(
           customers.reduce(
             (acc, c) => acc + (c.balance > 0 ? c.balance : 0),
             0,
           ),
+          2,
         ),
         icon: TrendingDown,
         iconColor: "#ef4444", // red-500

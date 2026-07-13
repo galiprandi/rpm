@@ -4,10 +4,12 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { PublicLayout } from '@/components/public/layout/PublicLayout';
 import { Button } from '@/components/ui/button';
-import { Search, ArrowRight, X, Eye } from 'lucide-react';
+import { Search, ArrowRight, X, Eye, MessageCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { featuredProducts } from '@/lib/constants/featured-products';
 import { ProductQuickView } from '@/components/public/ProductQuickView';
+import { formatARS } from '@/lib/utils/format';
+import { PUBLIC_SITE_CONFIG, DEFAULT_WHATSAPP_MESSAGE } from '@/lib/config/public-site';
 
 const categories = ['Todos', 'Iluminación', 'Estética', 'Equipamiento', 'Seguridad', 'Interior'];
 
@@ -115,7 +117,7 @@ export default function ProductsClient() {
                     <h3 className="text-xl font-bold text-white tracking-tight">{product.name}</h3>
                   </div>
                   <div className="flex items-center justify-between opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500">
-                    <span className="text-white font-bold">${product.price.toLocaleString()}</span>
+                    <span className="text-white font-mono font-semibold">{formatARS(product.price)}</span>
                     <button
                       onClick={() => setSelectedProduct(product)}
                       className="flex items-center text-xs font-bold text-brand hover:text-white transition-colors"
@@ -146,14 +148,28 @@ export default function ProductsClient() {
             </div>
           )}
 
-          <div className="mt-24 text-center animate-fade-up opacity-0" style={{ animationDelay: '0.5s' }}>
-            <p className="text-zinc-500 text-sm mb-8">
-              Mostrando {filteredProducts.length} de {featuredProducts.length} productos destacados
+        </div>
+      </section>
+
+      {/* High-Impact CTA */}
+      <section className="py-60 bg-zinc-950 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,75,0,0.1)_0,transparent_70%)]" />
+        <div className="container mx-auto px-6 relative z-10 text-center">
+          <div className="max-w-3xl mx-auto space-y-12">
+            <h2 className="text-4xl md:text-6xl font-bold text-white tracking-tighter">
+              ¿No encontrás lo que <br /> estás buscando?
+            </h2>
+            <p className="text-xl text-zinc-500 leading-relaxed">
+              Nuestro catálogo digital es una selección. Si necesitás un accesorio específico o una cotización a medida, contactanos.
             </p>
-            <Button variant="outline" className="border-white/10 text-white rounded-full px-12 h-14 hover:bg-white hover:text-black transition-all group">
-              Explorar Catálogo Completo
-              <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-            </Button>
+            <div className="flex justify-center">
+               <Button asChild className="bg-brand text-white hover:bg-brand/90 font-bold px-16 h-20 text-xl rounded-full transition-all hover:scale-105 active:scale-95 border-none shadow-[0_0_40px_rgba(255,75,0,0.3)] gap-3">
+                 <a href={PUBLIC_SITE_CONFIG.links.whatsapp(DEFAULT_WHATSAPP_MESSAGE)} target="_blank" rel="noopener noreferrer">
+                    <MessageCircle className="h-6 w-6 fill-current" />
+                    Consultar a Medida
+                 </a>
+               </Button>
+            </div>
           </div>
         </div>
       </section>

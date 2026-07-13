@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { featuredProducts, FeaturedProduct } from '@/lib/constants/featured-products';
 import { ProductQuickView } from '@/components/public/ProductQuickView';
+import { formatARS } from '@/lib/utils/format';
 
 export function FeaturedProducts() {
   const [selectedProduct, setSelectedProduct] = useState<FeaturedProduct | null>(null);
@@ -64,7 +65,7 @@ export function FeaturedProducts() {
                   <h3 className="text-xl font-bold text-white tracking-tight">{product.name}</h3>
                 </div>
                 <div className="flex items-center justify-between opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500">
-                  <span className="text-white font-bold">${product.price.toLocaleString()}</span>
+                  <span className="text-white font-mono font-semibold">{formatARS(product.price)}</span>
                   <button
                     onClick={() => setSelectedProduct(product)}
                     className="flex items-center text-xs font-bold text-brand hover:text-white transition-colors"

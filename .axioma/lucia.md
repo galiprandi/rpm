@@ -4,12 +4,12 @@
 - [ ] Mejorar la visualización de archivos adjuntos en la ficha del vehículo
 
 ## ✅ DONE
-- [x] 2025-07-24 — Estandarización de UI/UX, accesibilidad y precisión financiera (PR #pending)
-  - Actualización de `formatARS` para soportar decimales.
-  - Estandarización de tipografía monetaria (`font-mono font-semibold`).
-  - Mejora de accesibilidad en `CustomerForm` y `VehicleForm` (IDs, labels, ARIA).
-  - Implementación del "Branded Container Pattern" para vehículos en la ficha del cliente.
-  - Integración de `relativeTime` en el reporte de deudores.
+- [x] 2025-07-24 — Mejoras de UX y agilización de cobranzas
+  - Inclusión de `phoneAlt` en la búsqueda global de clientes.
+  - Estandarización de precisión financiera (`formatARS(x, 2)`) y tipografía (`font-semibold`) en listado de clientes.
+  - Implementación de botón "Saldar total" en el diálogo de pago del cliente.
+  - Adición de botones de "Pagar" rápido para cada Orden de Trabajo pendiente en la ficha del cliente.
+  - Mejora de navegación con botón de "Volver" en el detalle del cliente.
 
 ## 🧠 LEARNINGS
 ## 2025-07-24 - Estandarización de Datos Financieros
