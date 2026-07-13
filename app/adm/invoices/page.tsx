@@ -387,7 +387,7 @@ export default function InvoicesPage() {
               enableRowSelection
               getRowId={(row) => row.id}
               rowSelection={rowSelection}
-              onRowSelectionChange={setRowSelection}
+              onRowSelectionStateChange={setRowSelection}
             />
           )}
         </div>

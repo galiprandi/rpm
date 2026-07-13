@@ -51,8 +51,9 @@ interface DataTableProps<TData> {
   filterFn?: FilterFn<TData>;
   getRowId?: (row: TData) => string;
   enableRowSelection?: boolean;
-  onRowSelectionChange?: (selection: Record<string, boolean>) => void;
+  onRowSelectionChange?: (selection: any[]) => void;
   rowSelection?: Record<string, boolean>;
+  onRowSelectionStateChange?: (selection: Record<string, boolean>) => void;
 }
 export function DataTable<TData>({
   data,
@@ -139,13 +140,13 @@ export function DataTable<TData>({
           ? updaterOrValue(rowSelectionValue)
           : updaterOrValue;
 
-      if (onRowSelectionChange) {
-        onRowSelectionChange(nextValue);
+      if (onRowSelectionStateChange) {
+        onRowSelectionStateChange(nextValue);
       } else {
         setInternalRowSelection(nextValue);
       }
     },
-    [onRowSelectionChange, rowSelectionValue]
+    [onRowSelectionStateChange, rowSelectionValue]
   );
 
   const isControlled = externalGlobalFilter !== undefined;
@@ -178,12 +179,18 @@ export function DataTable<TData>({
     getPaginationRowModel: getPaginationRowModel(),
   });
 
-  // Notify parent of selection changes (sync state if needed)
+  // Notify parent of selection changes (TData[])
+  // We use a stable selection string to avoid re-triggering if content hasn't changed
+  const selectedRows = React.useMemo(() => {
+    if (!enableRowSelection) return [];
+    return table.getSelectedRowModel().flatRows.map((row) => row.original);
+  }, [rowSelectionValue, table, enableRowSelection]);
+
   React.useEffect(() => {
-    if (onRowSelectionChange && !externalRowSelection) {
-      onRowSelectionChange(internalRowSelection);
+    if (onRowSelectionChange) {
+      onRowSelectionChange(selectedRows);
     }
-  }, [internalRowSelection, onRowSelectionChange, externalRowSelection]);
+  }, [selectedRows, onRowSelectionChange]);
 
   return (
     <div className="space-y-4">
