@@ -24,6 +24,9 @@ import {
   AlertCircle,
   User,
   ArrowLeft,
+  Send,
+  XCircle,
+  CheckCircle2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -51,6 +54,7 @@ interface Invoice {
   iva105: number;
   total: number;
   status: string;
+  afipData?: any;
   createdAt: string;
   issuedAt?: string;
   createdBy: string;
@@ -209,12 +213,12 @@ export default function InvoiceDetailPage() {
               onClick: () => window.print(),
               icon: Download,
             },
-            ...(invoice.status === "DRAFT" && isPreInvoice
+            ...((invoice.status === "DRAFT" || invoice.status === "REJECTED") && isPreInvoice
               ? [
                   {
                     label: "Enviar a AFIP",
                     onClick: handleOfficialize,
-                    icon: AlertCircle,
+                    icon: Send,
                     variant: "default" as const,
                   },
                 ]
@@ -224,7 +228,7 @@ export default function InvoiceDetailPage() {
                   {
                     label: "Cancelar",
                     onClick: handleCancel,
-                    icon: AlertCircle,
+                    icon: XCircle,
                     variant: "destructive" as const,
                   },
                 ]
@@ -239,6 +243,27 @@ export default function InvoiceDetailPage() {
           <span className="font-bold uppercase tracking-tight text-center">
             No válido como comprobante fiscal
           </span>
+        </div>
+      )}
+
+      {invoice.status === "REJECTED" && (
+        <div className="bg-red-50 border border-red-200 p-4 rounded-lg flex flex-col gap-2 text-red-800 print:hidden">
+          <div className="flex items-center gap-3">
+            <XCircle className="h-5 w-5" />
+            <span className="font-bold uppercase tracking-tight">
+              Comprobante Rechazado por AFIP
+            </span>
+          </div>
+          {invoice.afipData?.error && (
+            <p className="text-sm font-medium ml-8">{invoice.afipData.error}</p>
+          )}
+          {invoice.afipData?.observaciones && invoice.afipData.observaciones.length > 0 && (
+            <ul className="text-sm list-disc ml-12">
+              {invoice.afipData.observaciones.map((obs: string, idx: number) => (
+                <li key={idx}>{obs}</li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
 
@@ -481,6 +506,36 @@ export default function InvoiceDetailPage() {
                         locale: es,
                       })}
                     </span>
+                  </div>
+                )}
+                {invoice.afipData?.cae && (
+                  <div className="flex justify-between items-center pt-2 border-t">
+                    <span className="text-sm">CAE:</span>
+                    <span className="text-sm font-mono font-bold">
+                      {invoice.afipData.cae}
+                    </span>
+                  </div>
+                )}
+                {invoice.afipData?.caeVencimiento && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Vto. CAE:</span>
+                    <span className="text-sm font-mono">
+                      {format(new Date(invoice.afipData.caeVencimiento), "dd/MM/yyyy", {
+                        locale: es,
+                      })}
+                    </span>
+                  </div>
+                )}
+                {invoice.afipData?.observaciones && invoice.afipData.observaciones.length > 0 && (
+                  <div className="pt-2 border-t">
+                    <span className="text-[10px] font-bold uppercase text-muted-foreground block mb-1">
+                      Observaciones AFIP:
+                    </span>
+                    <ul className="text-[10px] space-y-1 text-muted-foreground list-disc ml-4">
+                      {invoice.afipData.observaciones.map((obs: string, idx: number) => (
+                        <li key={idx}>{obs}</li>
+                      ))}
+                    </ul>
                   </div>
                 )}
               </div>
