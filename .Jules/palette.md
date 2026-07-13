@@ -77,3 +77,7 @@
 ## 2026-07-12 - Systematic Accessible Contrast Normalization
 **Learning:** Tailwind "600" weight semantic colors (emerald, blue, red, orange, amber) frequently fail WCAG AA contrast requirements (4.5:1) when used for text or icons on white or 50-weight backgrounds. Elevating these to "700" weight across all administrative modules (Customers, OTs, Invoices, Cash, Users) is a necessary step for baseline accessibility. Inconsistencies often arise where an icon uses 600 while adjacent text uses 700, or vice versa, creating visual disharmony.
 **Action:** Always default to 700-weight for semantic text colors on light backgrounds. Conduct systematic sweeps of new modules to ensure "600" weight contrast traps are not reintroduced.
+
+## 2026-07-18 - Refining Form UX Enhancement Pattern
+**Learning:** When applying the Form UX Enhancement Pattern (icons inside inputs), using the same icon for both the `SettingItem` title and the input field creates visual redundancy and clutter. Using distinct but semantically related icons (e.g., `MapPin` for the category and `Hash` for the specific ID input) improves scannability. Additionally, for inputs using monospaced typography, `pl-10` provides a safer visual buffer than `pl-9` to prevent character overlap with the absolute-positioned icon.
+**Action:** Always use distinct icons for setting rows vs. internal inputs and default to `pl-10` for enhanced inputs to ensure maximum readability and professional finish.

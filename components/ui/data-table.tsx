@@ -129,7 +129,7 @@ export function DataTable<TData>({
     pageIndex: 0,
     pageSize: pageSize,
   });
-  const [internalRowSelection, setInternalRowSelection] = React.useState({});
+  const [internalRowSelection, setInternalRowSelection] = React.useState<Record<string, boolean>>({});
 
   const rowSelectionValue = externalRowSelection ?? internalRowSelection;
   const setRowSelectionValue = React.useCallback(
@@ -178,6 +178,12 @@ export function DataTable<TData>({
     getPaginationRowModel: getPaginationRowModel(),
   });
 
+  // Notify parent of selection changes (sync state if needed)
+  React.useEffect(() => {
+    if (onRowSelectionChange && !externalRowSelection) {
+      onRowSelectionChange(internalRowSelection);
+    }
+  }, [internalRowSelection, onRowSelectionChange, externalRowSelection]);
 
   return (
     <div className="space-y-4">

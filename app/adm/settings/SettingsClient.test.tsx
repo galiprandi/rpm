@@ -44,6 +44,10 @@ vi.mock('lucide-react', () => ({
   Globe: () => <div data-testid="icon-globe" />,
   FileKey: () => <div data-testid="icon-filekey" />,
   Hash: () => <div data-testid="icon-hash" />,
+  Fingerprint: () => <div data-testid="icon-fingerprint" />,
+  MapPin: () => <div data-testid="icon-mappin" />,
+  UserCheck: () => <div data-testid="icon-usercheck" />,
+  FolderOpen: () => <div data-testid="icon-folderopen" />,
 }));
 
 // Mock Switch and Select
@@ -100,5 +104,26 @@ describe('SettingsClient', () => {
     const input = screen.getByRole('spinbutton');
     expect(input).toHaveClass('pl-9');
     expect(input).toHaveClass('font-mono');
+  });
+
+  it('renders AFIP inputs with proper padding and icons', () => {
+    render(
+      <SettingsClient
+        initialMinimumMargin={10}
+        initialAfipSettings={initialAfipSettings}
+      />
+    );
+
+    const cuitInput = screen.getByDisplayValue('30123456789');
+    expect(cuitInput).toHaveClass('pl-10');
+    expect(screen.getByTestId('icon-fingerprint')).toBeInTheDocument();
+
+    const pvInput = screen.getByDisplayValue('1');
+    expect(pvInput).toHaveClass('pl-10');
+    expect(screen.getByTestId('icon-hash')).toBeInTheDocument();
+
+    const certInput = screen.getByDisplayValue('/certs/afip.p12');
+    expect(certInput).toHaveClass('pl-10');
+    expect(screen.getByTestId('icon-filekey')).toBeInTheDocument();
   });
 });
