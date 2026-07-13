@@ -12,6 +12,9 @@ export interface StockReportData {
   totalProducts: number;
   lowStockCount: number;
   activeProducts: number;
+  deadStockCount: number;
+  deadStockValue: number;
+  inventoryTurnover: number;
   categoryDistribution: CategoryDistribution[];
   topValuedProducts: Array<{
     id: string;
@@ -25,6 +28,13 @@ export interface StockReportData {
     stock: number;
     minStock: number;
     category: string;
+  }>;
+  deadStockProducts: Array<{
+    id: string;
+    name: string;
+    stock: number;
+    value: number;
+    lastMovement: string | null;
   }>;
   generatedAt: string;
 }
@@ -57,10 +67,24 @@ export async function getInventoryReport(): Promise<StockReportData> {
     },
   });
 
+  const ninetyDaysAgo = new Date();
+  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
   let totalValue = 0;
   let totalProducts = 0;
   let lowStockCount = 0;
   const categoryMap: Record<string, CategoryDistribution> = {};
+
+  const deadStockList: Array<{
+    id: string;
+    name: string;
+    stock: number;
+    value: number;
+    lastMovement: string | null;
+  }> = [];
 
   products.forEach((product) => {
     const stock = product.stock;
@@ -83,7 +107,64 @@ export async function getInventoryReport(): Promise<StockReportData> {
     }
     categoryMap[product.categoryId].count += stock;
     categoryMap[product.categoryId].value += value;
+
+    // Dead stock logic: stock > 0 and no movement in 90 days
+    const lastMovement = product.lastMovementAt || product.createdAt;
+    if (stock > 0 && lastMovement < ninetyDaysAgo) {
+      deadStockList.push({
+        id: product.id,
+        name: product.name,
+        stock: product.stock,
+        value,
+        lastMovement: product.lastMovementAt ? product.lastMovementAt.toISOString() : null,
+      });
+    }
   });
+
+  const deadStockCount = deadStockList.length;
+  const deadStockValue = deadStockList.reduce((sum, p) => sum + p.value, 0);
+
+  // Inventory Turnover Calculation (COGS 30 days / Current Inventory)
+  const [woItems, dsItems] = await Promise.all([
+    prisma.work_order_item.findMany({
+      where: {
+        productId: { not: null },
+        work_order: {
+          status: { in: ["DELIVERED", "READY", "PAID"] },
+          completedAt: { gte: thirtyDaysAgo },
+        },
+      },
+      include: {
+        product: { select: { costPrice: true } },
+      },
+    }),
+    prisma.direct_sale_item.findMany({
+      where: {
+        productId: { not: null },
+        directSale: {
+          createdAt: { gte: thirtyDaysAgo },
+        },
+      },
+      include: {
+        product: { select: { costPrice: true } },
+      },
+    }),
+  ]);
+
+  let cogs30d = 0;
+  woItems.forEach((item) => {
+    if (item.product) {
+      cogs30d += item.quantity * decimalToNumber(item.product.costPrice);
+    }
+  });
+  dsItems.forEach((item) => {
+    if (item.product) {
+      cogs30d += item.quantity * decimalToNumber(item.product.costPrice);
+    }
+  });
+
+  // Annualized Inventory Turnover
+  const inventoryTurnover = totalValue > 0 ? (cogs30d * 12) / totalValue : 0;
 
   const topValuedProducts = products
     .map((p) => ({
@@ -111,9 +192,13 @@ export async function getInventoryReport(): Promise<StockReportData> {
     totalProducts,
     lowStockCount,
     activeProducts: products.length,
+    deadStockCount,
+    deadStockValue,
+    inventoryTurnover,
     categoryDistribution: Object.values(categoryMap).sort((a, b) => b.value - a.value),
     topValuedProducts,
     lowStockProducts,
+    deadStockProducts: deadStockList.sort((a, b) => b.value - a.value).slice(0, 10),
     generatedAt: new Date().toISOString(),
   };
 }
