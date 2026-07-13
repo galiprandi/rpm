@@ -131,12 +131,12 @@ export function DataTable<TData>({
   });
   const [internalRowSelection, setInternalRowSelection] = React.useState<Record<string, boolean>>({});
 
-  const rowSelection = externalRowSelection ?? internalRowSelection;
-  const setRowSelection = React.useCallback(
+  const rowSelectionValue = externalRowSelection ?? internalRowSelection;
+  const setRowSelectionValue = React.useCallback(
     (updaterOrValue: any) => {
       const nextValue =
         typeof updaterOrValue === 'function'
-          ? updaterOrValue(rowSelection)
+          ? updaterOrValue(rowSelectionValue)
           : updaterOrValue;
 
       if (onRowSelectionChange) {
@@ -145,7 +145,7 @@ export function DataTable<TData>({
         setInternalRowSelection(nextValue);
       }
     },
-    [onRowSelectionChange, rowSelection]
+    [onRowSelectionChange, rowSelectionValue]
   );
 
   const isControlled = externalGlobalFilter !== undefined;
@@ -162,7 +162,7 @@ export function DataTable<TData>({
       globalFilter: enableGlobalFilter ? globalFilter : undefined,
       columnFilters,
       pagination,
-      rowSelection,
+      rowSelection: rowSelectionValue,
     },
     enableRowSelection,
     getRowId,
@@ -170,7 +170,7 @@ export function DataTable<TData>({
     onGlobalFilterChange: setGlobalFilter,
     onColumnFiltersChange: setColumnFilters,
     onPaginationChange: setPagination,
-    onRowSelectionChange: setRowSelection,
+    onRowSelectionChange: setRowSelectionValue,
     globalFilterFn: filterFn,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),

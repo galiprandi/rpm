@@ -57,9 +57,9 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
     router.push(`/productos?product=${productId}`);
   };
 
-  const handleSelectService = (href: string) => {
+  const handleSelectService = (serviceId: string) => {
     onClose();
-    router.push(href);
+    router.push(`/servicios?service=${serviceId}`);
   };
 
   return (
@@ -112,7 +112,7 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
                     {results.services.map((service) => (
                       <button
                         key={service.id}
-                        onClick={() => handleSelectService(service.href)}
+                        onClick={() => handleSelectService(service.id)}
                         className="flex items-center p-3 rounded-2xl bg-white/0 hover:bg-white/5 border border-transparent hover:border-white/10 transition-all group text-left"
                       >
                         <div className="w-10 h-10 rounded-xl bg-brand/10 flex items-center justify-center text-brand mr-4 shrink-0 group-hover:scale-110 transition-transform">
