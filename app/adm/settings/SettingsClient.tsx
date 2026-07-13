@@ -20,6 +20,10 @@ import {
   Globe,
   FileKey,
   Hash,
+  Fingerprint,
+  MapPin,
+  UserCheck,
+  FolderOpen,
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import {
@@ -204,6 +208,10 @@ export default function SettingsClient({
                 htmlFor="afip-cuit"
               >
                 <div className="relative">
+                  <Fingerprint
+                    className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10 pointer-events-none"
+                    aria-hidden="true"
+                  />
                   <Input
                     id="afip-cuit"
                     type="text"
@@ -212,7 +220,7 @@ export default function SettingsClient({
                     onChange={(e) =>
                       setAfipSettings({ ...afipSettings, cuit: e.target.value })
                     }
-                    className="w-48 h-9 text-sm pl-9 font-mono"
+                    className="w-48 h-9 text-sm pl-10 font-mono"
                     placeholder="30123456789"
                   />
                 </div>
@@ -221,10 +229,14 @@ export default function SettingsClient({
               <SettingItem
                 title="Punto de Venta"
                 description="Número de punto de venta habilitado en AFIP"
-                icon={Hash}
+                icon={MapPin}
                 htmlFor="afip-pv"
               >
                 <div className="relative">
+                  <Hash
+                    className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10 pointer-events-none"
+                    aria-hidden="true"
+                  />
                   <Input
                     id="afip-pv"
                     type="text"
@@ -235,7 +247,7 @@ export default function SettingsClient({
                         puntoVenta: e.target.value,
                       })
                     }
-                    className="w-32 h-9 text-sm pl-9 font-mono"
+                    className="w-32 h-9 text-sm pl-10 font-mono"
                     placeholder="1"
                   />
                 </div>
@@ -244,24 +256,33 @@ export default function SettingsClient({
               <SettingItem
                 title="Tipo de Responsable"
                 description="Categoría impositiva ante AFIP"
-                icon={ShieldCheck}
+                icon={UserCheck}
                 htmlFor="afip-responsable"
               >
-                <Select
-                  value={afipSettings.responsable}
-                  onValueChange={(val) =>
-                    setAfipSettings({ ...afipSettings, responsable: val })
-                  }
-                >
-                  <SelectTrigger id="afip-responsable" className="w-48 h-9 text-sm relative">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="RI">Responsable Inscripto</SelectItem>
-                    <SelectItem value="MONOTRIBUTO">Monotributista</SelectItem>
-                    <SelectItem value="EXENTO">Exento</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="relative">
+                  <ShieldCheck
+                    className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10 pointer-events-none"
+                    aria-hidden="true"
+                  />
+                  <Select
+                    value={afipSettings.responsable}
+                    onValueChange={(val) =>
+                      setAfipSettings({ ...afipSettings, responsable: val })
+                    }
+                  >
+                    <SelectTrigger
+                      id="afip-responsable"
+                      className="w-48 h-9 text-sm pl-10"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="RI">Responsable Inscripto</SelectItem>
+                      <SelectItem value="MONOTRIBUTO">Monotributista</SelectItem>
+                      <SelectItem value="EXENTO">Exento</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </SettingItem>
 
               <SettingItem
@@ -282,10 +303,14 @@ export default function SettingsClient({
               <SettingItem
                 title="Ruta del Certificado"
                 description="Ruta local al archivo .p12 del certificado"
-                icon={FileKey}
+                icon={FolderOpen}
                 htmlFor="afip-cert"
               >
                 <div className="relative">
+                  <FileKey
+                    className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10 pointer-events-none"
+                    aria-hidden="true"
+                  />
                   <Input
                     id="afip-cert"
                     type="text"
@@ -296,7 +321,7 @@ export default function SettingsClient({
                         certPath: e.target.value,
                       })
                     }
-                    className="w-80 h-9 text-sm pl-9 font-mono"
+                    className="w-80 h-9 text-sm pl-10 font-mono"
                     placeholder="/path/to/cert.p12"
                   />
                 </div>

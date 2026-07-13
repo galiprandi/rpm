@@ -5,6 +5,7 @@
 - [ ] Optimizar imágenes de la galería "Nosotros" para mejorar el LCP.
 
 ## ✅ DONE
+- [x] 2026-07-12 — Vista Rápida de Servicios y Deep-Linking en Catálogo de Servicios (PR #sofia/public/service-quick-view)
 - [x] 2026-07-11 — Implementación de Buscador Global y Deep-Linking de productos (PR #sofia/public/global-search-and-deeplink)
 - [x] 2026-07-10 — Unificación de Vista Rápida de productos y mejora de UX en Home (PR #sofia/public/unified-product-quick-view)
 - [x] 2026-07-09 — Indicadores de navegación activa y mejora narrativa en Servicios (PR #sofia/public/header-active-and-services-depth)
@@ -15,6 +16,10 @@
 - [x] 2026-07-07 — Vista rápida de productos con modal y conversión contextual (PR #sofia/public/product-quick-view)
 
 ## 🧠 LEARNINGS
+
+## 2026-07-12 - Deep-Linking de Servicios y Estabilidad de Componentes Shared
+**Learning:** Extender el patrón de "Deep-Linking" a los servicios permite una navegación mucho más fluida desde el buscador global y la Home. Al implementar esto, descubrimos que componentes críticos compartidos como `DataTable` tenían errores de redeclaración de variables que bloqueaban el build de producción. Es vital mantener la pureza de los componentes UI y evitar shadowing de variables de estado (como `rowSelection`) para asegurar la estabilidad del sistema completo, no solo del área pública.
+**Action:** Aplicar siempre el patrón de sufijo (ej: `rowSelectionValue`) cuando se manejan estados controlados vs internos y verificar builds de producción (`pnpm build`) ante cualquier cambio en componentes `components/ui/*`.
 
 ## 2026-07-11 - Buscador Global y Deep-Linking en Next.js
 **Learning:** Implementar un buscador global que conecte diferentes tipos de entidades (Productos y Servicios) requiere una arquitectura de datos centralizada en `lib/constants`. El patrón de "deep-linking" mediante parámetros de búsqueda (URLSearchParams) permite que los resultados de búsqueda no solo naveguen a una página, sino que activen estados específicos de la UI (como abrir un modal de detalle) de forma declarativa. Es CRÍTICO envolver componentes que usan `useSearchParams` en un boundary de `<Suspense />` para evitar problemas de hidratación y des-optimización de rutas estáticas en Next.js.

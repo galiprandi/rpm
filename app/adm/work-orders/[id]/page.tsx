@@ -1889,7 +1889,7 @@ export default function WorkOrderDetailPage() {
                             className="h-8 w-8 p-0"
                             title="Descargar PDF"
                             onClick={() =>
-                              toast.info("Generación de PDF en desarrollo")
+                              window.open(`/adm/invoices/${inv.id}?print=true`, '_blank')
                             }
                           >
                             <FileDown className="h-4 w-4" />

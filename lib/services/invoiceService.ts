@@ -38,6 +38,8 @@ export interface InvoiceInput {
   createdBy: string;
 }
 
+const DEFAULT_IVA_RATE = 21;
+
 /**
  * Creates a new invoice and automatically assigns the next number.
  * If a transaction client is provided, it uses it. Otherwise, it creates a new transaction.
@@ -326,7 +328,7 @@ export function calculateInvoiceTaxes(
   // Regardless of type A or B, for the database and AFIP reporting:
   // total = net (subtotal) + tax
   // For pre-invoices, we assume a standard 21% IVA until we have per-item tax rates.
-  const subtotal = total / 1.21;
+  const subtotal = total / (1 + DEFAULT_IVA_RATE / 100);
   const tax = total - subtotal;
 
   return {

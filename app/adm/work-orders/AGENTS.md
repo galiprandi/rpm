@@ -29,7 +29,7 @@ Gestión de órdenes de trabajo (OT) que documentan instalaciones y servicios. F
 - **IN_PROGRESS** - En proceso de trabajo
 - **QC_CHECK** - Control de calidad
 - **READY** - Listo para retiro
-- **DELIVERED** - Entregada al cliente
+- **DELIVERED** - Entregada al cliente (columna limitada a las últimas 10 OTs)
 
 > **Nota**: El estado PAID ya no existe como columna Kanban. El estado de pago se muestra mediante código de colores en el importe de cada tarjeta.
 
@@ -59,6 +59,7 @@ Gestión de órdenes de trabajo (OT) que documentan instalaciones y servicios. F
 ## Development Notes
 
 - Vista Kanban principal para gestión visual por estados (6 columnas)
+- Columna DELIVERED muestra solo las últimas 10 OTs entregadas (ordenadas por createdAt desc)
 - Estado de pago visualizado mediante Badges calculados desde los pagos registrados
 - Integración con selector de listas de precios en creación
 - Tracking de vehículo y cliente asociados

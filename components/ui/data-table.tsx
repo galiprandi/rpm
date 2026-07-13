@@ -130,7 +130,7 @@ export function DataTable<TData>({
     pageIndex: 0,
     pageSize: pageSize,
   });
-  const [internalRowSelection, setInternalRowSelection] = React.useState({});
+  const [internalRowSelection, setInternalRowSelection] = React.useState<Record<string, boolean>>({});
 
   const rowSelectionValue = externalRowSelection ?? internalRowSelection;
   const setRowSelectionValue = React.useCallback(

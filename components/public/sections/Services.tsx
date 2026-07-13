@@ -1,7 +1,13 @@
+'use client';
+
+import { useState } from 'react';
 import { ArrowUpRight } from 'lucide-react';
-import { publicServices } from '@/lib/constants/services';
+import { publicServices, PublicService } from '@/lib/constants/services';
+import { ServiceQuickView } from '../ServiceQuickView';
 
 export function Services() {
+  const [selectedService, setSelectedService] = useState<PublicService | null>(null);
+
   return (
     <section className="py-32 bg-black">
       <div className="container mx-auto px-6">
@@ -21,7 +27,8 @@ export function Services() {
           {publicServices.map((service) => (
             <div
               key={service.title}
-              className={`group relative overflow-hidden rounded-3xl p-8 transition-all duration-700 hover:scale-[0.98] ${service.bg} border border-white/5 hover:border-brand/20 ${service.gridClassName}`}
+              onClick={() => setSelectedService(service)}
+              className={`group relative overflow-hidden rounded-3xl p-8 transition-all duration-700 hover:scale-[0.98] cursor-pointer ${service.bg} border border-white/5 hover:border-brand/20 ${service.gridClassName}`}
             >
               {/* Hover effect */}
               <div className="absolute inset-0 bg-gradient-to-br from-brand/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
@@ -44,6 +51,11 @@ export function Services() {
             </div>
           ))}
         </div>
+
+        <ServiceQuickView
+          service={selectedService}
+          onClose={() => setSelectedService(null)}
+        />
       </div>
     </section>
   );
