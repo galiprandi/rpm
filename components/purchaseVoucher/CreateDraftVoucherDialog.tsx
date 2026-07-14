@@ -339,7 +339,7 @@ export function CreateDraftVoucherDialog({
                 placeholder="0001-00000234"
                 value={number}
                 onChange={(e) => setNumber(e.target.value)}
-                className="pl-9 font-mono"
+                className="pl-9 font-mono font-semibold tracking-tight"
                 required
                 aria-required="true"
               />
@@ -376,7 +376,7 @@ export function CreateDraftVoucherDialog({
                 placeholder="0.00"
                 value={totalAmount}
                 onChange={(e) => setTotalAmount(e.target.value)}
-                className="pl-9 font-mono"
+                className="pl-9 font-mono font-semibold tracking-tight"
                 required
                 aria-required="true"
               />

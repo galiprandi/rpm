@@ -6,6 +6,7 @@ import { AddVoucherItemDialog } from "@/components/purchaseVoucher/AddVoucherIte
 import { VoucherPreviewDialog } from "@/components/purchaseVoucher/VoucherPreviewDialog";
 import { type PurchaseVoucher } from "@/types/purchaseVoucher";
 import { Header, CrudStats, CrudAdmin } from "@/components/adm";
+import { formatARS } from "@/lib/utils/format";
 import { Button } from "@/components/ui/button";
 import {
   Receipt,
@@ -69,9 +70,10 @@ export default function PurchaseVouchersClient({
   const finalizedCount = vouchers.filter(
     (v) => v.status === "FINALIZED",
   ).length;
-  const totalAmountSum = vouchers
-    .reduce((acc, v) => acc + parseFloat(v.totalAmount || "0"), 0)
-    .toLocaleString("es-AR", { style: "currency", currency: "ARS" });
+  const totalAmountSum = formatARS(
+    vouchers.reduce((acc, v) => acc + parseFloat(v.totalAmount || "0"), 0),
+    0,
+  );
 
   const handleVoucherCreated = async () => {
     try {
@@ -183,7 +185,7 @@ export default function PurchaseVouchersClient({
         accessorKey: "number",
         header: "Comprobante",
         cell: ({ row }) => (
-          <span className="font-medium font-mono">
+          <span className="font-semibold tracking-tight font-mono">
             {row.original.letter} - {row.original.number}
           </span>
         ),
@@ -231,12 +233,8 @@ export default function PurchaseVouchersClient({
         cell: ({ row }) => {
           const amount = parseFloat(row.original.totalAmount);
           return (
-            <div className="text-right font-medium font-mono">
-              $
-              {amount.toLocaleString("es-AR", {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}
+            <div className="text-right font-semibold tracking-tight font-mono">
+              {formatARS(amount, 2)}
             </div>
           );
         },
