@@ -28,6 +28,7 @@ import {
   X,
   Check,
   Calendar,
+  Clock,
   PlayCircle,
   CheckCircle,
   Package,
@@ -193,9 +194,9 @@ function KanbanCard({
   const content = (
     <Card
       className={cn(
-        "group relative cursor-pointer hover:shadow-md transition-all border-l-4",
+        "group relative cursor-pointer hover:shadow-md transition-all border-l-4 bg-background shadow-sm",
         isDelayed(wo)
-          ? "border-l-orange-500 bg-orange-50/30"
+          ? "border-l-orange-500 bg-orange-50/40"
           : "border-l-transparent",
         isDragging && !isOverlay && "opacity-30",
         isOverlay &&
@@ -266,8 +267,8 @@ function KanbanCard({
           )}
         </div>
       )}
-      <CardContent className="p-2.5 space-y-1">
-        {/* Line 1: Category icon + Plate/SN (full width, no competition) */}
+      <CardContent className="p-2.5 space-y-1.5">
+        {/* Line 1: Category icon + Plate/SN */}
         <div className="flex items-center gap-1.5">
           <TooltipProvider>
             <Tooltip>
@@ -285,116 +286,120 @@ function KanbanCard({
             {wo.vehicle.identifier}
           </span>
         </div>
-        {/* Line 2: Customer name + Amount (always visible) */}
-        <div className="flex items-center justify-between gap-1.5">
-          <span className="text-xs font-medium truncate">
-            {wo.customer.name}
-          </span>
+        {/* Line 2: Customer name (full width) */}
+        <p className="text-xs font-medium truncate leading-tight">
+          {wo.customer.name}
+        </p>
+        {/* Line 3: Amount badge (full width row) */}
+        <div>
           <Badge
             variant="outline"
             className={cn(
-              "text-[10px] px-1.5 py-0 h-5 font-mono shrink-0",
+              "text-[10px] px-1.5 py-0 h-5 font-mono",
               wo.isFullyPaid
                 ? "border-emerald-200 bg-emerald-50 text-emerald-700"
                 : wo.totalPaid && wo.totalPaid > 0
                   ? "border-amber-200 bg-amber-50 text-amber-700"
-                  : "text-muted-foreground",
+                  : "border-slate-200 bg-slate-50 text-slate-600",
             )}
           >
             {formatARS(Number(wo.total))}
           </Badge>
         </div>
-        {/* Line 3: Responsible dropdown + Date/Delayed status */}
-        <div className="flex items-center justify-between gap-1.5 pt-0.5">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <div
-                className={cn(
-                  "flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border shrink-0 max-w-[110px] transition-colors cursor-pointer",
-                  wo.technician
-                    ? "bg-purple-50 text-purple-700 border-purple-100 hover:bg-purple-100"
-                    : "bg-muted text-muted-foreground border-transparent hover:bg-muted/80",
-                )}
-                onMouseDown={(e) => e.stopPropagation()}
-              >
-                <UserCog className="h-2.5 w-2.5 shrink-0" />
-                <span className="truncate">
-                  {wo.technician?.name || "Sin asignar"}
-                </span>
-              </div>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="start"
-              className="w-48"
+        {/* Line 4: Technician (full width) */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <div
+              className={cn(
+                "flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border w-full transition-colors cursor-pointer",
+                wo.technician
+                  ? "bg-purple-50 text-purple-700 border-purple-100 hover:bg-purple-100"
+                  : "bg-muted/60 text-slate-600 border-slate-200/50 hover:bg-muted",
+              )}
               onMouseDown={(e) => e.stopPropagation()}
             >
-              <DropdownMenuLabel className="text-xs font-semibold">
-                Asignar Responsable
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
+              <UserCog className="h-2.5 w-2.5 shrink-0" />
+              <span className="truncate">
+                {wo.technician?.name || "Sin asignar"}
+              </span>
+            </div>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="start"
+            className="w-48"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <DropdownMenuLabel className="text-xs font-semibold">
+              Asignar Responsable
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="text-xs"
+              onClick={() => onTechnicianUpdate?.(wo.id, null)}
+            >
+              <X className="h-3.5 w-3.5 mr-2" />
+              Sin asignar
+              {!wo.technician && (
+                <Check className="h-3.5 w-3.5 ml-auto text-primary" />
+              )}
+            </DropdownMenuItem>
+            {technicians.map((tech) => (
               <DropdownMenuItem
+                key={tech.id}
                 className="text-xs"
-                onClick={() => onTechnicianUpdate?.(wo.id, null)}
+                onClick={() => onTechnicianUpdate?.(wo.id, tech.id)}
               >
-                <X className="h-3.5 w-3.5 mr-2" />
-                Sin asignar
-                {!wo.technician && (
+                <UserCog className="h-3.5 w-3.5 mr-2" />
+                {tech.name}
+                {wo.technician?.id === tech.id && (
                   <Check className="h-3.5 w-3.5 ml-auto text-primary" />
                 )}
               </DropdownMenuItem>
-              {technicians.map((tech) => (
-                <DropdownMenuItem
-                  key={tech.id}
-                  className="text-xs"
-                  onClick={() => onTechnicianUpdate?.(wo.id, tech.id)}
-                >
-                  <UserCog className="h-3.5 w-3.5 mr-2" />
-                  {tech.name}
-                  {wo.technician?.id === tech.id && (
-                    <Check className="h-3.5 w-3.5 ml-auto text-primary" />
-                  )}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          {isDelayed(wo) ? (
-            <span className="text-white bg-orange-500 font-bold text-[9px] flex items-center gap-0.5 shrink-0 px-1.5 py-0.5 rounded-full shadow-sm">
-              <AlertCircle
-                className="h-2.5 w-2.5 pointer-events-none"
-                aria-hidden="true"
-              />
-              DEMORADA
-            </span>
-          ) : wo.scheduledDate ? (
-            <span
-              className={cn(
-                "text-primary font-bold text-[10px] flex items-center gap-0.5 shrink-0",
-                new Date(wo.scheduledDate).toDateString() ===
-                  new Date().toDateString() &&
-                  "bg-primary/10 px-1.5 py-0.5 rounded-full ring-1 ring-primary/20",
-              )}
-            >
-              <Calendar
-                className="h-2.5 w-2.5 pointer-events-none"
-                aria-hidden="true"
-              />
-              {new Date(wo.scheduledDate).toDateString() ===
-              new Date().toDateString()
-                ? "HOY"
-                : new Date(wo.scheduledDate).toLocaleDateString("es-AR", {
-                    day: "2-digit",
-                    month: "short",
-                  })}
-            </span>
-          ) : (
-            <span
-              className="font-mono text-[10px] text-muted-foreground/70 shrink-0"
-              title={new Date(wo.createdAt).toLocaleString("es-AR")}
-            >
-              {relativeTime(wo.createdAt)}
-            </span>
-          )}
-        </div>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+        {/* Line 5: Date/Delayed status (full width) */}
+        {isDelayed(wo) ? (
+          <span className="text-white bg-orange-500 font-bold text-[9px] flex items-center justify-center gap-0.5 w-full px-1.5 py-0.5 rounded-full shadow-sm">
+            <AlertCircle
+              className="h-2.5 w-2.5 pointer-events-none"
+              aria-hidden="true"
+            />
+            DEMORADA
+          </span>
+        ) : wo.scheduledDate ? (
+          <span
+            className={cn(
+              "text-primary font-bold text-[10px] flex items-center gap-0.5",
+              new Date(wo.scheduledDate).toDateString() ===
+                new Date().toDateString() &&
+                "bg-primary/10 px-1.5 py-0.5 rounded-full ring-1 ring-primary/20 justify-center w-full",
+            )}
+          >
+            <Calendar
+              className="h-2.5 w-2.5 pointer-events-none"
+              aria-hidden="true"
+            />
+            {new Date(wo.scheduledDate).toDateString() ===
+            new Date(wo.scheduledDate).toDateString()
+              ? "HOY"
+              : new Date(wo.scheduledDate).toLocaleDateString("es-AR", {
+                  day: "2-digit",
+                  month: "short",
+                })}
+          </span>
+        ) : (
+          <span
+            className="font-mono text-[10px] text-muted-foreground/70 flex items-center gap-0.5"
+            title={new Date(wo.createdAt).toLocaleString("es-AR")}
+          >
+            <Clock
+              className="h-2.5 w-2.5 pointer-events-none"
+              aria-hidden="true"
+            />
+            {relativeTime(wo.createdAt)}
+          </span>
+        )}
       </CardContent>
     </Card>
   );
@@ -449,17 +454,17 @@ function KanbanColumn({
       >
         <div className="flex justify-between items-center">
           <span className="font-semibold text-sm">{status.label}</span>
-          <span className="text-muted-foreground text-[10px] font-mono bg-white/50 px-1.5 py-0.5 rounded-full border border-black/5">
+          <span className="text-slate-700 text-[10px] font-mono bg-white/80 px-1.5 py-0.5 rounded-full border border-black/10 shadow-sm">
             {items.length}
           </span>
         </div>
-        <div className="mt-1 text-xs font-mono text-muted-foreground/80 flex items-center gap-1 min-h-[16px]">
+        <div className="mt-1 text-xs font-mono text-slate-600 flex items-center gap-1 min-h-[16px]">
           {items.length > 0 && <>{formatARS(columnTotal)}</>}
         </div>
       </div>
       <div
         ref={setNodeRef}
-        className="bg-muted/30 hover:bg-muted/40 transition-colors rounded-b-lg p-2 flex-1 overflow-y-auto border border-t-0 min-h-[150px]"
+        className="bg-muted/50 hover:bg-muted/60 transition-colors rounded-b-lg p-2 flex-1 overflow-y-auto border border-t-0 min-h-[150px]"
       >
         <SortableContext
           items={items.map((i) => i.id)}
@@ -560,7 +565,8 @@ export default function WorkOrdersPage() {
   const filteredWorkOrders = useMemo(() => {
     return workOrders.filter((wo) => {
       const matchesPayment = paymentFilter === "all" || !wo.isFullyPaid;
-      const matchesStatus = statusFilter === "all" || wo.status === statusFilter;
+      const matchesStatus =
+        statusFilter === "all" || wo.status === statusFilter;
       const matchesTechnician =
         technicianFilter === "all" || wo.technicianId === technicianFilter;
 
