@@ -53,6 +53,7 @@ import {
   PlayCircle,
   Loader2,
   FileText,
+  Send,
 } from "lucide-react";
 import {
   ProductServiceSelector,
@@ -302,6 +303,7 @@ export default function WorkOrderDetailPage() {
   const [generatingDocument, setGeneratingDocument] = useState<string | null>(
     null,
   );
+  const [isOfficiallyzing, setIsOfficiallyzing] = useState(false);
 
   // Items editing state
   const [isEditingItems, setIsEditingItems] = useState(false);
@@ -656,6 +658,31 @@ export default function WorkOrderDetailPage() {
     setEditingNotes(true);
   };
 
+  const handleOfficializeInvoice = async (invoiceId: string) => {
+    setIsOfficiallyzing(true);
+    const toastId = toast.loading("Oficializando comprobante ante AFIP...");
+    try {
+      const response = await fetch(`/api/invoices/${invoiceId}/officialize`, {
+        method: "POST",
+      });
+
+      if (response.ok) {
+        toast.success("Comprobante oficializado con éxito", { id: toastId });
+        fetchInvoices();
+        fetchWorkOrder();
+        fetchAuditLogs();
+      } else {
+        const error = await response.json();
+        toast.error(error.error || "Error al oficializar", { id: toastId });
+      }
+    } catch (error) {
+      console.error("Error officializing invoice:", error);
+      toast.error("Error de conexión", { id: toastId });
+    } finally {
+      setIsOfficiallyzing(false);
+    }
+  };
+
   const generateDocument = async (type: string) => {
     setGeneratingDocument(type);
     try {
@@ -694,6 +721,68 @@ export default function WorkOrderDetailPage() {
       setGeneratingDocument(null);
     }
   };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "DRAFT":
+        return (
+          <Badge
+            variant="outline"
+            className="bg-yellow-50 text-amber-700 border-amber-200 text-[10px]"
+          >
+            Pendiente
+          </Badge>
+        );
+      case "PENDING":
+        return (
+          <Badge
+            variant="outline"
+            className="bg-blue-50 text-blue-700 border-blue-200 text-[10px]"
+          >
+            Enviando...
+          </Badge>
+        );
+      case "ISSUED":
+        return (
+          <Badge
+            variant="outline"
+            className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px]"
+          >
+            Oficial
+          </Badge>
+        );
+      case "REJECTED":
+        return (
+          <Badge
+            variant="outline"
+            className="bg-red-50 text-red-700 border-red-200 text-[10px]"
+          >
+            Rechazado
+          </Badge>
+        );
+      case "CANCELLED":
+        return (
+          <Badge
+            variant="outline"
+            className="bg-gray-50 text-gray-700 border-gray-200 text-[10px]"
+          >
+            Cancelado
+          </Badge>
+        );
+      default:
+        return (
+          <Badge variant="outline" className="text-[10px]">
+            {status}
+          </Badge>
+        );
+    }
+  };
+
+  const officializableInvoice = invoices.find(
+    (inv) =>
+      (inv.status === "DRAFT" || inv.status === "REJECTED") &&
+      (inv.type.startsWith("X_") || inv.type.startsWith("NOTA_CREDITO_X_")),
+  );
 
   // Merge milestones and audit logs for unified timeline
   const unifiedTimelineItems = useMemo(() => {
@@ -1864,9 +1953,12 @@ export default function WorkOrderDetailPage() {
                             <FileText className="h-4 w-4 text-primary" />
                           </div>
                           <div>
-                            <p className="text-sm font-bold font-mono">
-                              {inv.number}
-                            </p>
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-bold font-mono">
+                                {inv.number}
+                              </p>
+                              {getStatusBadge(inv.status)}
+                            </div>
                             <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
                               {inv.type.replace("_", " ")}
                             </p>
@@ -1917,6 +2009,19 @@ export default function WorkOrderDetailPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
+                {officializableInvoice && (
+                  <Button
+                    variant="default"
+                    className="w-full justify-start bg-emerald-600 hover:bg-emerald-700"
+                    onClick={() =>
+                      handleOfficializeInvoice(officializableInvoice.id)
+                    }
+                    loading={isOfficiallyzing}
+                  >
+                    <Send className="h-4 w-4 mr-2" />
+                    Oficializar {officializableInvoice.type.replace("_", " ")}
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   className="w-full justify-start"

@@ -27,6 +27,7 @@ import {
   Send,
   XCircle,
   CheckCircle2,
+  Undo2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -126,6 +127,9 @@ export default function InvoiceDetailPage() {
     invoice.type === "PRESUPUESTO" ||
     invoice.type === "REMITO";
 
+  const isIssued = invoice.status === "ISSUED";
+  const isTypeB = invoice.type.endsWith("_B") || invoice.type.endsWith("_X_B");
+
   const getDocLetter = (type: string) => {
     if (type.startsWith("X_") || type.startsWith("NOTA_CREDITO_X_")) return "X";
     if (type.endsWith("_A")) return "A";
@@ -213,7 +217,7 @@ export default function InvoiceDetailPage() {
               onClick: () => window.print(),
               icon: Download,
             },
-            ...((invoice.status === "DRAFT" || invoice.status === "REJECTED") && isPreInvoice
+            ...((invoice.status === "DRAFT" || invoice.status === "REJECTED") && (invoice.type.startsWith("X_") || invoice.type.startsWith("NOTA_CREDITO_X_"))
               ? [
                   {
                     label: "Enviar a AFIP",
@@ -223,13 +227,25 @@ export default function InvoiceDetailPage() {
                   },
                 ]
               : []),
-            ...(invoice.status === "DRAFT"
+            ...(invoice.status === "DRAFT" || invoice.status === "REJECTED"
               ? [
                   {
                     label: "Cancelar",
                     onClick: handleCancel,
                     icon: XCircle,
                     variant: "destructive" as const,
+                  },
+                ]
+              : []),
+            ...(isIssued
+              ? [
+                  {
+                    label: "Anular (NC)",
+                    onClick: () => {
+                      toast.info("Para anular un comprobante oficializado, genere una Nota de Crédito desde la venta u OT original.");
+                    },
+                    icon: Undo2,
+                    variant: "outline" as const,
                   },
                 ]
               : []),
@@ -313,7 +329,9 @@ export default function InvoiceDetailPage() {
               <h3 className="text-xs font-bold uppercase text-muted-foreground mb-2">
                 Detalles
               </h3>
-              <p className="text-sm">Condición: Responsable Inscripto</p>
+              <p className="text-sm">
+                Condición: {isTypeB ? "Consumidor Final" : "Responsable Inscripto"}
+              </p>
               <p className="text-sm">
                 Referencia: {invoice.referenceType} #
                 {invoice.referenceId.substring(0, 8)}
@@ -378,40 +396,58 @@ export default function InvoiceDetailPage() {
 
               <div className="mt-8 flex justify-end">
                 <div className="w-full md:w-1/2 space-y-2 border-t pt-4">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground print:text-black">
-                      Subtotal Gravado
-                    </span>
-                    <span className="font-mono">
-                      {formatARS(invoice.subtotal)}
-                    </span>
-                  </div>
-                  {invoice.iva21 > 0 && (
+                  {!isTypeB ? (
+                    <>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground print:text-black">
+                          Subtotal Gravado
+                        </span>
+                        <span className="font-mono">
+                          {formatARS(invoice.subtotal)}
+                        </span>
+                      </div>
+                      {Number(invoice.iva21) > 0 && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground print:text-black">
+                            IVA (21%)
+                          </span>
+                          <span className="font-mono">
+                            {formatARS(invoice.iva21)}
+                          </span>
+                        </div>
+                      )}
+                      {Number(invoice.iva105) > 0 && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground print:text-black">
+                            IVA (10.5%)
+                          </span>
+                          <span className="font-mono">
+                            {formatARS(invoice.iva105)}
+                          </span>
+                        </div>
+                      )}
+                    </>
+                  ) : (
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground print:text-black">
-                        IVA (21%)
+                        Subtotal
                       </span>
                       <span className="font-mono">
-                        {formatARS(invoice.iva21)}
-                      </span>
-                    </div>
-                  )}
-                  {invoice.iva105 > 0 && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground print:text-black">
-                        IVA (10.5%)
-                      </span>
-                      <span className="font-mono">
-                        {formatARS(invoice.iva105)}
+                        {formatARS(invoice.total)}
                       </span>
                     </div>
                   )}
                   <div className="flex justify-between border-t-2 border-black pt-2 text-xl font-black">
                     <span>TOTAL</span>
-                    <span className="font-mono">
+                    <span className="font-mono text-emerald-700">
                       {formatARS(invoice.total)}
                     </span>
                   </div>
+                  {isTypeB && (
+                    <p className="text-[10px] text-right text-muted-foreground uppercase tracking-widest mt-1">
+                      IVA Incluido
+                    </p>
+                  )}
                 </div>
               </div>
             </CardContent>
