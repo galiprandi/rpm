@@ -1,8 +1,10 @@
-import { customerTools } from "@/lib/services/customer";
-import { productTools } from "@/lib/services/product";
+import {
+  createCustomerTool,
+  searchCustomersTool,
+} from "@/lib/services/customer";
+import { createProductTool } from "@/lib/services/product";
 import { workOrderTools } from "./work-orders/tools";
 import { financeTools } from "./finance/tools";
-import { sharedTools } from "./shared";
 import {
   registerCustomerWithVehicle,
   closeCashRegister,
@@ -10,19 +12,17 @@ import {
 import { searchProductsWithPricesTool } from "./tools/search-products-with-prices";
 
 export const unifiedTools = {
-  // Customer
-  ...customerTools,
-  // Product
-  ...productTools,
+  // Search
+  searchProducts: searchProductsWithPricesTool,
+  searchCustomers: searchCustomersTool,
+  // Create
+  createCustomer: createCustomerTool,
+  createProduct: createProductTool,
+  registerCustomerWithVehicle,
   // Work Orders
   ...workOrderTools,
   // Finance
   ...financeTools,
-  // Shared (search)
-  ...sharedTools,
-  // Composite
-  registerCustomerWithVehicle,
+  // Operations
   closeCashRegister,
-  // Override searchProducts with enhanced version (must be after all spreads)
-  searchProducts: searchProductsWithPricesTool,
 };
