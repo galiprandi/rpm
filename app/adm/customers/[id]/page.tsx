@@ -30,6 +30,7 @@ import {
   ArrowDownLeft,
   Receipt,
   MessageSquare,
+  Tag,
 } from "lucide-react";
 import Link from "next/link";
 import { Header } from "@/components/adm/Header";
@@ -277,7 +278,7 @@ export default function CustomerDetailPage() {
         header: "Total",
         cell: ({ row }) => (
           <span className="font-mono font-semibold">
-            {formatARS(Number(row.original.total))}
+            {formatARS(Number(row.original.total), 2)}
           </span>
         ),
       },
@@ -338,21 +339,37 @@ export default function CustomerDetailPage() {
           const type = row.original.type;
           const typeConfig: Record<
             TransactionType,
-            { label: string; color: string }
+            { label: string; color: string; icon: React.ElementType }
           > = {
-            DIRECT_SALE: { label: "Venta", color: "bg-blue-100 text-blue-800" },
+            DIRECT_SALE: {
+              label: "Venta",
+              color: "bg-blue-100 text-blue-800",
+              icon: Tag,
+            },
             CREDIT_NOTE: {
               label: "NC",
               color: "bg-orange-100 text-orange-800",
+              icon: Receipt,
             },
-            INVOICE: { label: "Factura", color: "bg-green-100 text-green-800" },
+            INVOICE: {
+              label: "Factura",
+              color: "bg-green-100 text-green-800",
+              icon: FileText,
+            },
             PAYMENT: {
               label: "Pago",
               color: "bg-emerald-100 text-emerald-800",
+              icon: ArrowDownLeft,
             },
           };
           const config = typeConfig[type];
-          return <Badge className={config.color}>{config.label}</Badge>;
+          const Icon = config.icon;
+          return (
+            <Badge className={cn("gap-1 px-2", config.color)}>
+              <Icon className="h-3 w-3" aria-hidden="true" />
+              {config.label}
+            </Badge>
+          );
         },
       },
       {
@@ -415,15 +432,17 @@ export default function CustomerDetailPage() {
         cell: ({ row }) => {
           const total = Number(row.original.total);
           const isCreditNote = row.original.type === "CREDIT_NOTE";
+          const isPayment = row.original.type === "PAYMENT";
           return (
             <span
               className={cn(
                 "font-mono font-semibold",
                 isCreditNote ? "text-orange-700" : "",
+                isPayment ? "text-emerald-700" : "",
               )}
             >
               {isCreditNote ? "-" : ""}
-              {formatARS(total)}
+              {formatARS(total, 2)}
             </span>
           );
         },
@@ -613,7 +632,7 @@ export default function CustomerDetailPage() {
                     customer.balance > 0 ? "text-red-700" : "text-emerald-700",
                   )}
                 >
-                  {formatARS(customer.balance)}
+                  {formatARS(customer.balance, 2)}
                 </div>
                 <div className="text-xs text-muted-foreground mt-1">
                   {customer.balance > 0
@@ -669,7 +688,7 @@ export default function CustomerDetailPage() {
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-semibold font-mono">
-                            {formatARS(Number(wo.total))}
+                            {formatARS(Number(wo.total), 2)}
                           </span>
                           {getStatusBadge(wo.status)}
                           <Button
@@ -837,7 +856,7 @@ export default function CustomerDetailPage() {
             <DialogDescription>
               Cliente: {customer?.name}
               <br />
-            Saldo actual: {customer && formatARS(customer.balance)}
+            Saldo actual: {customer && formatARS(customer.balance, 2)}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -867,7 +886,7 @@ export default function CustomerDetailPage() {
               />
               {customer && customer.balance > 0 && (
                 <p className="text-xs text-muted-foreground mt-1">
-                  Máximo: {formatARS(customer.balance)}
+                  Máximo: {formatARS(customer.balance, 2)}
                 </p>
               )}
             </div>
@@ -1090,10 +1109,13 @@ export default function CustomerDetailPage() {
                     selectedTransaction.type === "CREDIT_NOTE"
                       ? "text-orange-700"
                       : "",
+                    selectedTransaction.type === "PAYMENT"
+                      ? "text-emerald-700"
+                      : "",
                   )}
                 >
                   {selectedTransaction.type === "CREDIT_NOTE" ? "-" : ""}
-                  {formatARS(Number(selectedTransaction.total))}
+                  {formatARS(Number(selectedTransaction.total), 2)}
                 </span>
               </div>
               {selectedTransaction.status && (
