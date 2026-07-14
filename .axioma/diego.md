@@ -1,17 +1,17 @@
 # 📓 Journal — Diego 📊
 
 ## 📋 BACKLOG
-- [ ] Creación del Hub de Reportes (Index `/adm/reports`)
-- [ ] Mejora de Reporte de Ventas (KPIs, evolución, comparación de períodos)
-- [ ] Implementación de reporte de Stock (valorización, rotación)
-- [ ] Implementación de reporte de Taller (performance por técnico, tiempos)
-- [ ] Implementación de reporte de Clientes (recurrencia, saldo promedio)
-- [ ] Implementación de reporte de Finanzas (cash flow avanzado)
+- [ ] Dashboards comparativos multi-periodo avanzados
 
 ## ✅ DONE
+- [x] 2026-07-13 — Mejora de Reporte de Stock: Implementación de métricas de Rotación de Stock e Inventario Inmovilizado (Dead Stock). (PR #diego/reports/stock-rotation-metrics)
+- [x] 2026-07-12 — Implementación de Reporte de Servicios: Métricas de ingresos por servicio, distribución por categoría de vehículo y performance de técnicos. (PR #diego/reports/services-report)
+- [x] 2025-07-11 — Mejora de Reporte de Ventas: Agregado de Top Productos, Distribución por Categoría y Exportación CSV. Refactor de servicio a `salesReportService.ts`. (PR #diego/reports/sales-report-enhancements)
+- [x] 2025-07-10 — Implementación de reporte de Compras (abastecimiento, proveedores y evolución de costos) (PR #diego/reports/purchase-report)
 - [x] 2025-07-05 — Implementación de reporte de Stock (valorización, alertas de reposición y distribución por categoría) (PR #diego/reports/stock-report)
 - [x] 2025-07-06 — Implementación de reporte de Taller & Operación (performance, estados y tiempos) (PR #diego/reports/workshop-report)
 - [x] 2025-07-08 — Implementación de reporte de Finanzas & Flujo (ingresos, egresos y medios de pago) (PR #diego/reports/finance-report)
+- [x] 2025-07-09 — Implementación de reporte de Clientes (adquisición, recurrencia y ranking) (PR #diego/reports/customer-report)
 
 ## 🧠 LEARNINGS
 ## 2025-07-05 - Reporte de Stock y Valorización
@@ -21,4 +21,11 @@
 ## 2025-07-05 - Performance en Reportes
 **Learning:** El cálculo de valorización de inventario puede ser pesado si el catálogo es extenso. La implementación de caching en el API Route (`revalidate` y `Cache-Control`) es fundamental para mantener la respuesta rápida del sistema.
 **Action:** Mantener el patrón de caching en futuros reportes (Ventas, Taller, etc).
-- [x] 2025-07-08 — Implementación de reporte de Finanzas & Flujo (ingresos, egresos, flujo neto y distribución por medio de pago) (PR #diego/reports/finance-report)
+
+## 2026-07-12 - Consistencia en Reportes
+**Learning:** Al implementar el Reporte de Servicios, se identificó que la agregación debe contemplar tanto `work_order_item` como `direct_sale_item`. Sin embargo, la distribución por categoría de vehículo solo es aplicable a servicios en OTs, mientras que las ventas directas deben agruparse en una categoría sintética ("Venta Directa") para no perder visibilidad del ingreso total.
+**Action:** Asegurar que todos los reportes de ingresos sumen ambas fuentes (OTs y Ventas Directas) para ser fidedignos.
+
+## 2026-07-13 - Métricas de Rotación y Dead Stock
+**Learning:** El cálculo de la rotación de stock (Turnover) requiere el Costo de Mercadería Vendida (COGS). Dado que el sistema no persiste el costo histórico al momento de la venta en los items, se utiliza el `costPrice` actual del producto como una aproximación válida para el dashboard analítico.
+**Action:** Para reportes contables exactos a futuro, se debería considerar registrar el costo de adquisición en cada transacción.

@@ -1,6 +1,6 @@
 'use client';
 
-import { useTheme } from '@/components/ui/ThemeProvider';
+import { useTheme, type Theme } from '@/components/ui/ThemeProvider';
 import {
   Select,
   SelectContent,
@@ -8,14 +8,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Sun, Moon, Monitor, Palette } from 'lucide-react';
-
-type Theme = 'light' | 'dark' | 'system';
+import { Sun, Moon, Monitor, Palette, Eye } from 'lucide-react';
 
 const themes: { value: Theme; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { value: 'light', label: 'Claro', icon: Sun },
   { value: 'dark', label: 'Oscuro', icon: Moon },
   { value: 'system', label: 'Sistema', icon: Monitor },
+  { value: 'high-contrast', label: 'Alto Contraste', icon: Eye },
 ];
 
 export function ThemeSelector({ id }: { id?: string }) {
@@ -33,7 +32,7 @@ export function ThemeSelector({ id }: { id?: string }) {
       >
         <SelectTrigger
           id={id}
-          className="w-40 pl-9"
+          className="w-44 pl-9"
           aria-label="Seleccionar tema"
         >
           <SelectValue placeholder="Seleccionar tema" />

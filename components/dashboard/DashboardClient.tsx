@@ -1,15 +1,19 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { Header } from '@/components/adm/Header';
-import { QuickSaleModal } from '@/components/dashboard/QuickSaleModal';
-import { ShoppingCart } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Header } from "@/components/adm/Header";
+import { QuickSaleModal } from "@/components/dashboard/QuickSaleModal";
+import { ShoppingCart, Wrench } from "lucide-react";
 
 // Poll every 30 seconds instead of on every mount to reduce auth queries
 const CASH_STATUS_POLL_INTERVAL = 30000;
 
-export function DashboardClient({ onQuickSaleSuccess }: { onQuickSaleSuccess?: () => void }) {
+export function DashboardClient({
+  onQuickSaleSuccess,
+}: {
+  onQuickSaleSuccess?: () => void;
+}) {
   const router = useRouter();
   const [quickSaleModalOpen, setQuickSaleModalOpen] = useState(false);
   const [isCashOpen, setIsCashOpen] = useState<boolean | null>(null);
@@ -17,13 +21,13 @@ export function DashboardClient({ onQuickSaleSuccess }: { onQuickSaleSuccess?: (
   useEffect(() => {
     const checkCashStatus = async () => {
       try {
-        const res = await fetch('/api/cash/status');
+        const res = await fetch("/api/cash/status");
         if (res.ok) {
           const data = await res.json();
-          setIsCashOpen(data.status === 'OPEN');
+          setIsCashOpen(data.status === "OPEN");
         }
       } catch (error) {
-        console.error('Error checking cash status:', error);
+        console.error("Error checking cash status:", error);
       }
     };
 
@@ -47,13 +51,26 @@ export function DashboardClient({ onQuickSaleSuccess }: { onQuickSaleSuccess?: (
     <>
       <Header
         title="Dashboard"
+        shortTitle="Dash"
+        iconOnlyOnMobile
         description="Vista general del sistema"
+        secondaryActions={[
+          {
+            label: "Nueva OT",
+            onClick: () => router.push("/adm/work-orders/new"),
+            icon: Wrench,
+            variant: "outline",
+          },
+        ]}
         primaryAction={{
-          label: 'Venta Rápida',
+          label: "Venta Rápida",
           onClick: () => setQuickSaleModalOpen(true),
           icon: ShoppingCart,
           disabled: isCashOpen === false,
-          title: isCashOpen === false ? 'Debe abrir la caja para realizar ventas' : undefined,
+          title:
+            isCashOpen === false
+              ? "Debe abrir la caja para realizar ventas"
+              : undefined,
         }}
       />
       <QuickSaleModal

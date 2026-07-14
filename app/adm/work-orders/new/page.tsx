@@ -16,7 +16,27 @@ import { useUI } from "@/components/ui/UIProvider";
 import { ProductServiceSelector } from "@/components/ui/ProductServiceSelector";
 import { VehicleDialog } from "@/components/vehicles/VehicleDialog";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { Save, Plus, Search, Car, User, CheckCircle, Edit, RotateCcw, ArrowUpDown, Clock, UserCog } from "lucide-react";
+import {
+  Save,
+  Plus,
+  Search,
+  Car,
+  User,
+  Phone,
+  CheckCircle,
+  Edit,
+  RotateCcw,
+  ArrowUpDown,
+  Clock,
+  UserCog,
+  AlertCircle,
+} from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  getVehicleCategoryLabel,
+  getVehicleCategoryIcon,
+  buildVehicleDescription,
+} from "@/lib/constants/vehicle-categories";
 import {
   Select,
   SelectContent,
@@ -27,16 +47,6 @@ import {
 
 // Storage key for wizard persistence
 const WIZARD_STORAGE_KEY = "work-order-wizard-state";
-
-// Validate Argentine license plate format (old: AAA000, new: AA000AA)
-function isValidPlate(plate: string): boolean {
-  const clean = plate.trim().toUpperCase();
-  // Old format: 3 letters + 3 digits
-  const oldFormat = /^[A-Z]{3}\d{3}$/;
-  // New format: 2 letters + 3 digits + 2 letters
-  const newFormat = /^[A-Z]{2}\d{3}[A-Z]{2}$/;
-  return oldFormat.test(clean) || newFormat.test(clean);
-}
 
 // Normalize plate to uppercase and trim
 function normalizePlate(plate: string): string {
@@ -53,8 +63,8 @@ interface VehicleWithCustomer {
   id: string;
   identifier: string;
   category: string;
-  make?: { name: string };
-  model?: { name: string };
+  vehicle_make?: { name: string };
+  vehicle_model?: { name: string };
   year?: number;
   color?: string;
   equipmentName?: string;
@@ -78,16 +88,20 @@ interface Product {
   id: string;
   name: string;
   replacementCost: number;
-  costPrice?: number;  // Fallback when replacementCost is 0
+  costPrice?: number; // Fallback when replacementCost is 0
 }
 
 // Client-side helper to calculate effective product base cost
 // Uses replacementCost if > 0, otherwise falls back to costPrice
 function getProductBaseCost(
   replacementCost: number | null | undefined,
-  costPrice: number | null | undefined
+  costPrice: number | null | undefined,
 ): number {
-  if (replacementCost !== null && replacementCost !== undefined && replacementCost > 0) {
+  if (
+    replacementCost !== null &&
+    replacementCost !== undefined &&
+    replacementCost > 0
+  ) {
     return replacementCost;
   }
   if (costPrice !== null && costPrice !== undefined) {
@@ -103,10 +117,10 @@ interface WorkOrderItem {
   name: string;
   quantity: number;
   unitPrice: number;
-  priceListId?: string;      // Lista usada como base
-  isManualPrice?: boolean;   // true = precio editado manualmente
-  originalPrice?: number;    // Precio calculado original (para comparar)
-  replacementCost?: number;  // Costo de reposición (para calcular margen)
+  priceListId?: string; // Lista usada como base
+  isManualPrice?: boolean; // true = precio editado manualmente
+  originalPrice?: number; // Precio calculado original (para comparar)
+  replacementCost?: number; // Costo de reposición (para calcular margen)
 }
 
 export default function NewWorkOrderPage() {
@@ -119,13 +133,17 @@ export default function NewWorkOrderPage() {
   const [step, setStep] = useState(1);
   const [plateError, setPlateError] = useState<string | null>(null);
 
-  // Step 1: Search by license plate
+  // Step 1: Search by license plate or serial number
   const [plateSearch, setPlateSearch] = useState("");
   const [searching, setSearching] = useState(false);
-  const [foundVehicle, setFoundVehicle] = useState<VehicleWithCustomer | null>(null);
+  const [foundVehicle, setFoundVehicle] = useState<VehicleWithCustomer | null>(
+    null,
+  );
+  const [searchResults, setSearchResults] = useState<VehicleWithCustomer[]>([]);
   const [showCreateVehicle, setShowCreateVehicle] = useState(false);
   const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
-  const [selectedCustomerForNewVehicle, setSelectedCustomerForNewVehicle] = useState<string | null>(null);
+  const [selectedCustomerForNewVehicle, setSelectedCustomerForNewVehicle] =
+    useState<string | null>(null);
 
   // Step 1b: Create new vehicle (if not found)
   const [newVehicleData, setNewVehicleData] = useState({
@@ -139,7 +157,9 @@ export default function NewWorkOrderPage() {
     equipmentType: "",
     description: "",
   });
-  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(
+    null,
+  );
   const [newCustomerData] = useState({
     name: "",
     phone: "",
@@ -149,7 +169,9 @@ export default function NewWorkOrderPage() {
   // Step 2: Items
   const [items, setItems] = useState<WorkOrderItem[]>([]);
   const [selectedPriceList, setSelectedPriceList] = useState<string>("");
-  const [priceLists, setPriceLists] = useState<Array<{ id: string; name: string; baseMarginPercentage: number }>>([]);
+  const [priceLists, setPriceLists] = useState<
+    Array<{ id: string; name: string; baseMarginPercentage: number }>
+  >([]);
   const [, setMinimumMargin] = useState<number>(15); // Default 15%
   const [showQuickServiceDialog, setShowQuickServiceDialog] = useState(false);
 
@@ -159,8 +181,11 @@ export default function NewWorkOrderPage() {
   const [fuelLevel, setFuelLevel] = useState<number>(50);
   const [notes, setNotes] = useState("");
   const [scheduledDate, setScheduledDate] = useState("");
-  const [technicians, setTechnicians] = useState<Array<{ id: string; name: string }>>([]);
-  const [selectedTechnicianId, setSelectedTechnicianId] = useState<string>("unassigned");
+  const [technicians, setTechnicians] = useState<
+    Array<{ id: string; name: string }>
+  >([]);
+  const [selectedTechnicianId, setSelectedTechnicianId] =
+    useState<string>("unassigned");
 
   // Load wizard state from localStorage on mount
   useEffect(() => {
@@ -169,7 +194,6 @@ export default function NewWorkOrderPage() {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed.step) setStep(parsed.step);
-        if (parsed.plateSearch) setPlateSearch(parsed.plateSearch);
         if (parsed.checklist) setChecklist(parsed.checklist);
         if (parsed.odometerValue) setOdometerValue(parsed.odometerValue);
         if (parsed.fuelLevel !== undefined) setFuelLevel(parsed.fuelLevel);
@@ -183,9 +207,17 @@ export default function NewWorkOrderPage() {
 
   // Save wizard state to localStorage on changes
   useEffect(() => {
-    const state = { step, plateSearch, checklist, odometerValue, fuelLevel, notes, scheduledDate, items };
+    const state = {
+      step,
+      checklist,
+      odometerValue,
+      fuelLevel,
+      notes,
+      scheduledDate,
+      items,
+    };
     localStorage.setItem(WIZARD_STORAGE_KEY, JSON.stringify(state));
-  }, [step, plateSearch, checklist, odometerValue, fuelLevel, notes, scheduledDate, items]);
+  }, [step, checklist, odometerValue, fuelLevel, notes, scheduledDate, items]);
 
   // Warn before leaving if wizard has data
   useEffect(() => {
@@ -205,21 +237,25 @@ export default function NewWorkOrderPage() {
       const [priceListsRes, settingsRes, techniciansRes] = await Promise.all([
         fetch("/api/price-lists"),
         fetch("/api/settings"),
-        fetch("/api/users?role=TECHNICIAN"),
+        fetch("/api/users?active=true"),
       ]);
       if (priceListsRes.ok) {
         const data = await priceListsRes.json();
         const lists = data.priceLists || [];
         setPriceLists(lists);
         // Auto-select first active price list if available
-        const firstActive = lists.find((pl: { isActive: boolean }) => pl.isActive);
+        const firstActive = lists.find(
+          (pl: { isActive: boolean }) => pl.isActive,
+        );
         if (firstActive) {
           setSelectedPriceList(firstActive.id);
         }
       }
       if (settingsRes.ok) {
         const data = await settingsRes.json();
-        const minMargin = data.settings?.find((s: { key: string }) => s.key === "MINIMUM_MARGIN_PERCENTAGE")?.value;
+        const minMargin = data.settings?.find(
+          (s: { key: string }) => s.key === "MINIMUM_MARGIN_PERCENTAGE",
+        )?.value;
         if (minMargin) {
           setMinimumMargin(parseFloat(minMargin));
         }
@@ -255,29 +291,31 @@ export default function NewWorkOrderPage() {
     fetchVehicleById();
   }, [vehicleIdFromUrl]);
 
-  // Search vehicle by identifier
+  // Search vehicle by identifier (patent or serial number)
   const searchVehicle = async () => {
     const normalized = normalizePlate(plateSearch);
     if (!normalized) return;
 
-    // Validate plate format
-    if (!isValidPlate(normalized)) {
-      setPlateError("Formato inválido. Use AAA000 o AA000AA");
-      return;
-    }
     setPlateError(null);
     setSearching(true);
+    setSearchResults([]);
     try {
-      const res = await fetch(`/api/vehicles/by-identifier/${encodeURIComponent(normalized)}`);
+      const res = await fetch(
+        `/api/vehicles/by-identifier/${encodeURIComponent(normalized)}`,
+      );
       if (res.ok) {
         const data = await res.json();
         if (data.vehicles && data.vehicles.length > 0) {
-          setFoundVehicle(data.vehicles[0]);
-          setShowCreateVehicle(false);
+          if (data.vehicles.length === 1) {
+            setFoundVehicle(data.vehicles[0]);
+            setShowCreateVehicle(false);
+          } else {
+            setSearchResults(data.vehicles);
+          }
         } else {
           setFoundVehicle(null);
           setShowCreateVehicle(true);
-          setNewVehicleData(prev => ({ ...prev, identifier: normalized }));
+          setNewVehicleData((prev) => ({ ...prev, identifier: normalized }));
           // Pre-select customer if we already have one from previous search
           if (selectedCustomerId) {
             setSelectedCustomerForNewVehicle(selectedCustomerId);
@@ -291,8 +329,10 @@ export default function NewWorkOrderPage() {
     }
   };
 
-
-  const addItem = async (type: "PRODUCT" | "SERVICE", item: Service | Product) => {
+  const addItem = async (
+    type: "PRODUCT" | "SERVICE",
+    item: Service | Product,
+  ) => {
     let unitPrice: number;
     let priceListId: string | undefined;
 
@@ -303,22 +343,33 @@ export default function NewWorkOrderPage() {
       const product = item as Product;
       if (selectedPriceList) {
         try {
-          const res = await fetch(`/api/price-lists/${selectedPriceList}/calculate-price?productId=${product.id}`);
+          const res = await fetch(
+            `/api/price-lists/${selectedPriceList}/calculate-price?productId=${product.id}`,
+          );
           if (res.ok) {
             const data = await res.json();
             unitPrice = data.finalPrice;
             priceListId = selectedPriceList;
           } else {
             // Fallback to base cost with default margin if calculation fails
-            const baseCost = getProductBaseCost(product.replacementCost, product.costPrice);
+            const baseCost = getProductBaseCost(
+              product.replacementCost,
+              product.costPrice,
+            );
             unitPrice = baseCost * 1.4; // 40% default margin
           }
         } catch {
-          const baseCost = getProductBaseCost(product.replacementCost, product.costPrice);
+          const baseCost = getProductBaseCost(
+            product.replacementCost,
+            product.costPrice,
+          );
           unitPrice = baseCost * 1.4; // 40% default margin
         }
       } else {
-        const baseCost = getProductBaseCost(product.replacementCost, product.costPrice);
+        const baseCost = getProductBaseCost(
+          product.replacementCost,
+          product.costPrice,
+        );
         unitPrice = baseCost * 1.4; // 40% default margin
       }
     }
@@ -334,9 +385,13 @@ export default function NewWorkOrderPage() {
         priceListId,
         isManualPrice: false,
         originalPrice: Number(unitPrice),
-        replacementCost: type === "PRODUCT" 
-          ? getProductBaseCost((item as Product).replacementCost, (item as Product).costPrice) 
-          : undefined,
+        replacementCost:
+          type === "PRODUCT"
+            ? getProductBaseCost(
+                (item as Product).replacementCost,
+                (item as Product).costPrice,
+              )
+            : undefined,
       },
     ]);
   };
@@ -378,7 +433,10 @@ export default function NewWorkOrderPage() {
         fuelLevel: fuelLevel > 0 ? fuelLevel : undefined,
         notes,
         scheduledDate: scheduledDate || undefined,
-        technicianId: selectedTechnicianId !== "unassigned" ? selectedTechnicianId : undefined,
+        technicianId:
+          selectedTechnicianId !== "unassigned"
+            ? selectedTechnicianId
+            : undefined,
         source: "IN_PERSON",
       };
 
@@ -402,13 +460,15 @@ export default function NewWorkOrderPage() {
       if (!response.ok) throw new Error("Failed to create work order");
 
       const workOrder = await response.json();
+      localStorage.removeItem(WIZARD_STORAGE_KEY);
       router.push(`/adm/work-orders/${workOrder.id}`);
     } catch (error) {
       console.error("Error creating work order:", error);
       await alert({
-        title: 'Error',
-        description: 'Error al crear orden de trabajo. Por favor intente nuevamente.',
-        variant: 'error',
+        title: "Error",
+        description:
+          "Error al crear orden de trabajo. Por favor intente nuevamente.",
+        variant: "error",
       });
     } finally {
       setLoading(false);
@@ -417,6 +477,7 @@ export default function NewWorkOrderPage() {
 
   const resetSearch = () => {
     setFoundVehicle(null);
+    setSearchResults([]);
     setShowCreateVehicle(false);
     setPlateSearch("");
     setPlateError(null);
@@ -435,127 +496,315 @@ export default function NewWorkOrderPage() {
 
   return (
     <TooltipProvider>
-    <div className="container mx-auto py-6 max-w-4xl space-y-6">
-      <Header
-        title="Nueva Orden de Trabajo"
-        description="Crear una nueva orden de trabajo para un vehículo"
-        showBackButton
-        onBack={() => router.push("/adm/work-orders")}
-      />
+      <div className="container mx-auto py-6 max-w-4xl space-y-6">
+        <Header
+          title="Nueva Orden de Trabajo"
+          description="Crear una nueva orden de trabajo para un vehículo"
+          showBackButton
+          onBack={() => router.push("/adm/work-orders")}
+        />
 
-      <WorkOrderStepper currentStep={step} className="mb-8" onStepClick={handleStepClick} />
+        <WorkOrderStepper
+          currentStep={step}
+          className="mb-8"
+          onStepClick={handleStepClick}
+        />
 
-      <div className="space-y-6">
+        <div className="space-y-6">
           {/* Step 1: Search Vehicle by License Plate */}
           {step === 1 && (
             <div className="space-y-6">
-              {!foundVehicle && !showCreateVehicle && (
-                <>
-                  <div className="text-center space-y-2">
-                    <Car className="h-12 w-12 mx-auto text-muted-foreground" />
-                    <h3 className="text-lg font-medium">Buscar vehículo por patente</h3>
+              {!foundVehicle &&
+                !showCreateVehicle &&
+                searchResults.length === 0 && (
+                  <Card className="max-w-lg mx-auto">
+                    <CardContent className="pt-6">
+                      <div className="text-center space-y-3 mb-6">
+                        <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-primary/10">
+                          <Search
+                            className="h-7 w-7 text-primary"
+                            aria-hidden="true"
+                          />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold">
+                            Buscar vehículo
+                          </h3>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Ingrese patente o número de serie para buscar el
+                            vehículo y su dueño
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div className="relative">
+                          <Search
+                            className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none"
+                            aria-hidden="true"
+                          />
+                          <Input
+                            autoFocus
+                            placeholder="Ej: ABC123, AB123CD o N° de serie"
+                            value={plateSearch}
+                            onChange={(e) => {
+                              setPlateSearch(e.target.value.toUpperCase());
+                              if (plateError) setPlateError(null);
+                            }}
+                            onKeyDown={(e) =>
+                              e.key === "Enter" && searchVehicle()
+                            }
+                            className="text-lg uppercase pl-10 font-mono tracking-widest h-12"
+                          />
+                        </div>
+                        <Button
+                          onClick={searchVehicle}
+                          disabled={searching || !plateSearch.trim()}
+                          className="w-full h-11"
+                        >
+                          {searching ? (
+                            <>
+                              <RotateCcw
+                                className="h-4 w-4 mr-2 animate-spin"
+                                aria-hidden="true"
+                              />
+                              Buscando...
+                            </>
+                          ) : (
+                            <>
+                              <Search
+                                className="h-4 w-4 mr-2"
+                                aria-hidden="true"
+                              />
+                              Buscar vehículo
+                            </>
+                          )}
+                        </Button>
+                        {plateError && (
+                          <p className="text-sm text-destructive text-center flex items-center justify-center gap-1.5">
+                            <AlertCircle
+                              className="h-4 w-4"
+                              aria-hidden="true"
+                            />
+                            {plateError}
+                          </p>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+              {/* Search Results List */}
+              {searchResults.length > 0 && !foundVehicle && (
+                <div className="max-w-2xl mx-auto space-y-4">
+                  <div className="text-center space-y-1">
+                    <h3 className="text-lg font-semibold">
+                      {searchResults.length} resultado
+                      {searchResults.length > 1 ? "s" : ""}
+                    </h3>
                     <p className="text-sm text-muted-foreground">
-                      Ingrese la patente para buscar el vehículo y su dueño
+                      Seleccione el vehículo correcto para continuar
                     </p>
                   </div>
-
-                  <div className="flex flex-col gap-2 max-w-md mx-auto">
-                    <div className="flex gap-2">
-                      <div className="relative flex-1">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
-                        <Input
-                          autoFocus
-                          placeholder="Ej: ABC123 o AB123CD"
-                          value={plateSearch}
-                          onChange={(e) => {
-                            setPlateSearch(e.target.value.toUpperCase());
-                            if (plateError) setPlateError(null);
-                          }}
-                          onKeyDown={(e) => e.key === "Enter" && searchVehicle()}
-                          className="flex-1 text-center text-lg uppercase pl-9 font-mono tracking-widest"
+                  <div className="space-y-2">
+                    {searchResults.map((vehicle) => (
+                      <button
+                        key={vehicle.id}
+                        onClick={() => {
+                          setFoundVehicle(vehicle);
+                          setSearchResults([]);
+                          setShowCreateVehicle(false);
+                        }}
+                        className="w-full text-left border rounded-xl p-4 hover:bg-primary/5 hover:border-primary/30 transition-all flex items-center gap-3 group"
+                      >
+                        <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 shrink-0 flex items-center justify-center text-lg">
+                          {getVehicleCategoryIcon(vehicle.category)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono font-bold text-base tracking-tight">
+                              {vehicle.identifier}
+                            </span>
+                            <Badge variant="secondary" className="text-xs">
+                              {getVehicleCategoryLabel(vehicle.category)}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground truncate mt-0.5">
+                            {buildVehicleDescription({
+                              category: vehicle.category,
+                              make: vehicle.vehicle_make?.name,
+                              model: vehicle.vehicle_model?.name,
+                              year: vehicle.year,
+                            })
+                              .split(" · ")
+                              .slice(1)
+                              .join(" · ") || "Sin detalles"}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+                            <User className="h-3 w-3" aria-hidden="true" />
+                            {vehicle.customer.name}
+                          </p>
+                        </div>
+                        <CheckCircle
+                          className="h-5 w-5 text-muted-foreground/30 group-hover:text-primary transition-colors shrink-0"
+                          aria-hidden="true"
                         />
-                      </div>
-                      <Button onClick={searchVehicle} disabled={searching || !plateSearch.trim()}>
-                        {searching ? "Buscando..." : "Buscar"}
-                      </Button>
-                    </div>
-                    {plateError && (
-                      <p className="text-sm text-destructive text-center">{plateError}</p>
-                    )}
+                      </button>
+                    ))}
                   </div>
-                </>
+                  <Button
+                    variant="ghost"
+                    onClick={resetSearch}
+                    className="w-full"
+                  >
+                    <RotateCcw className="h-4 w-4 mr-2" aria-hidden="true" />
+                    Nueva búsqueda
+                  </Button>
+                </div>
               )}
 
               {/* Vehicle Found Card */}
               {foundVehicle && (
-                <div className="space-y-4">
-                  <div className="border rounded-lg p-6 bg-emerald-50/50">
-                    <div className="flex items-start gap-4">
-                      <div className="bg-primary/10 p-3 rounded-full">
-                        <Car className="h-6 w-6 text-primary" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-xl font-bold">{foundVehicle.identifier}</h3>
-                          <Badge variant="outline">{foundVehicle.category}</Badge>
+                <div className="max-w-lg mx-auto space-y-4">
+                  <Card className="overflow-hidden">
+                    <div className="bg-emerald-500/5 border-b border-emerald-500/10 px-6 py-4 flex items-center gap-2">
+                      <CheckCircle
+                        className="h-5 w-5 text-emerald-600"
+                        aria-hidden="true"
+                      />
+                      <span className="text-sm font-semibold text-emerald-700">
+                        Vehículo encontrado
+                      </span>
+                    </div>
+                    <CardContent className="pt-6 space-y-4">
+                      {/* Vehicle identity */}
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-xl bg-primary/10 border border-primary/20 shrink-0 flex items-center justify-center text-2xl">
+                          {getVehicleCategoryIcon(foundVehicle.category)}
                         </div>
-                        <p className="text-muted-foreground">
-                          {foundVehicle.make?.name} {foundVehicle.model?.name} {foundVehicle.year && `(${foundVehicle.year})`}
-                        </p>
-                        
-                        <div className="mt-4 p-3 bg-white rounded border">
-                          <div className="flex items-center gap-2 text-sm font-medium">
-                            <User className="h-4 w-4" />
-                            Dueño: {foundVehicle.customer.name}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-xl font-bold font-mono tracking-tight">
+                              {foundVehicle.identifier}
+                            </h3>
+                            <Badge variant="secondary">
+                              {getVehicleCategoryLabel(foundVehicle.category)}
+                            </Badge>
                           </div>
-                          <div className="text-sm text-muted-foreground ml-6">
+                          <p className="text-sm text-muted-foreground mt-0.5">
+                            {buildVehicleDescription({
+                              category: foundVehicle.category,
+                              make: foundVehicle.vehicle_make?.name,
+                              model: foundVehicle.vehicle_model?.name,
+                              color: foundVehicle.color,
+                              year: foundVehicle.year,
+                            })
+                              .split(" · ")
+                              .slice(1)
+                              .join(" · ") || "Sin detalles"}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Owner info */}
+                      <div className="rounded-lg bg-muted/40 border p-3 space-y-1.5">
+                        <div className="flex items-center gap-2 text-sm font-medium">
+                          <User
+                            className="h-4 w-4 text-muted-foreground"
+                            aria-hidden="true"
+                          />
+                          {foundVehicle.customer.name}
+                        </div>
+                        {foundVehicle.customer.phone && (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground font-mono ml-6">
+                            <Phone className="h-3.5 w-3.5" aria-hidden="true" />
                             {foundVehicle.customer.phone}
                           </div>
-                        </div>
+                        )}
                       </div>
-                    </div>
 
-                    <div className="flex gap-2 mt-4">
-                      <Button onClick={() => setStep(2)} className="flex-1">
-                        <CheckCircle className="h-4 w-4 mr-2" />
-                        Confirmar y Continuar
-                      </Button>
-                      <Button variant="outline" onClick={resetSearch}>
-                        <Edit className="h-4 w-4 mr-2" />
-                        Buscar Otro
-                      </Button>
-                    </div>
-                  </div>
+                      {/* Actions */}
+                      <div className="flex gap-2 pt-2">
+                        <Button
+                          onClick={() => setStep(2)}
+                          className="flex-1 h-11"
+                        >
+                          <CheckCircle
+                            className="h-4 w-4 mr-2"
+                            aria-hidden="true"
+                          />
+                          Confirmar y Continuar
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={resetSearch}
+                          className="h-11"
+                        >
+                          <RotateCcw
+                            className="h-4 w-4 mr-2"
+                            aria-hidden="true"
+                          />
+                          Buscar otro
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
               )}
 
               {/* Create New Vehicle - Use Modal */}
               {showCreateVehicle && (
-                <div className="space-y-4">
-                  <div className="text-center">
-                    <p className="text-muted-foreground">
-                      No se encontró vehículo con patente <strong>{plateSearch}</strong>
-                    </p>
-                    <p className="text-sm">Haga clic para crear el vehículo y la orden</p>
-                  </div>
+                <div className="max-w-lg mx-auto">
+                  <Card>
+                    <CardContent className="pt-6 space-y-4">
+                      <div className="text-center space-y-2">
+                        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-amber-500/10">
+                          <AlertCircle
+                            className="h-6 w-6 text-amber-600"
+                            aria-hidden="true"
+                          />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold">
+                            Vehículo no encontrado
+                          </h3>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            No se encontró vehículo con identificador{" "}
+                            <span className="font-mono font-semibold text-foreground">
+                              {plateSearch}
+                            </span>
+                          </p>
+                        </div>
+                      </div>
 
-                  <div className="flex gap-2">
-                    <Button variant="outline" onClick={resetSearch} className="flex-1">
-                      <RotateCcw className="h-4 w-4 mr-2" />
-                      Volver a buscar
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        // Pre-fill the identifier and open modal
-                        setNewVehicleData(prev => ({ ...prev, identifier: plateSearch.toUpperCase() }));
-                        setIsVehicleModalOpen(true);
-                      }}
-                      className="flex-1"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Crear Vehículo
-                    </Button>
-                  </div>
+                      <div className="flex gap-2 pt-2">
+                        <Button
+                          variant="outline"
+                          onClick={resetSearch}
+                          className="flex-1 h-11"
+                        >
+                          <RotateCcw
+                            className="h-4 w-4 mr-2"
+                            aria-hidden="true"
+                          />
+                          Volver a buscar
+                        </Button>
+                        <Button
+                          onClick={() => {
+                            setNewVehicleData((prev) => ({
+                              ...prev,
+                              identifier: plateSearch.toUpperCase(),
+                            }));
+                            setIsVehicleModalOpen(true);
+                          }}
+                          className="flex-1 h-11"
+                        >
+                          <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
+                          Crear vehículo
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
               )}
             </div>
@@ -588,9 +837,9 @@ export default function NewWorkOrderPage() {
                 categories={[]}
                 priceLists={priceLists}
                 defaultPriceListId={selectedPriceList}
-                initialItems={items.map(item => ({
-                  id: item.productId || item.serviceId || '',
-                  type: item.type === 'PRODUCT' ? 'product' : 'service',
+                initialItems={items.map((item) => ({
+                  id: item.productId || item.serviceId || "",
+                  type: item.type === "PRODUCT" ? "product" : "service",
                   name: item.name,
                   quantity: item.quantity,
                   unitPrice: item.unitPrice,
@@ -600,20 +849,24 @@ export default function NewWorkOrderPage() {
                 }))}
                 onSelectionChange={(selectedItems) => {
                   // Convert component items to WorkOrderItem format
-                  const workOrderItems: WorkOrderItem[] = selectedItems.map(item => ({
-                    type: item.type === 'product' ? 'PRODUCT' : 'SERVICE',
-                    ...(item.type === 'product'
-                      ? { productId: item.id }
-                      : { serviceId: item.id }
-                    ),
-                    name: item.name,
-                    quantity: item.quantity,
-                    unitPrice: item.unitPrice,
-                    priceListId: item.priceListId,
-                    isManualPrice: item.isManualPrice,
-                    originalPrice: item.originalPrice,
-                    replacementCost: item.type === 'product' ? item.originalPrice : undefined,
-                  }));
+                  const workOrderItems: WorkOrderItem[] = selectedItems.map(
+                    (item) => ({
+                      type: item.type === "product" ? "PRODUCT" : "SERVICE",
+                      ...(item.type === "product"
+                        ? { productId: item.id }
+                        : { serviceId: item.id }),
+                      name: item.name,
+                      quantity: item.quantity,
+                      unitPrice: item.unitPrice,
+                      priceListId: item.priceListId,
+                      isManualPrice: item.isManualPrice,
+                      originalPrice: item.originalPrice,
+                      replacementCost:
+                        item.type === "product"
+                          ? item.originalPrice
+                          : undefined,
+                    }),
+                  );
                   setItems(workOrderItems);
                 }}
                 onQuickCreate={() => setShowQuickServiceDialog(true)}
@@ -623,7 +876,9 @@ export default function NewWorkOrderPage() {
               {items.length > 0 && (
                 <div className="sticky bottom-0 z-10 bg-background border rounded-lg shadow-lg p-4">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">{items.length} ítem{items.length !== 1 ? 's' : ''}</span>
+                    <span className="text-sm text-muted-foreground">
+                      {items.length} ítem{items.length !== 1 ? "s" : ""}
+                    </span>
                     <span className="text-xl font-bold">
                       Total: ${calculateTotal().toLocaleString("es-AR")}
                     </span>
@@ -635,7 +890,10 @@ export default function NewWorkOrderPage() {
                 <Button variant="outline" onClick={() => setStep(1)}>
                   Anterior
                 </Button>
-                <Button onClick={() => setStep(3)} disabled={items.length === 0}>
+                <Button
+                  onClick={() => setStep(3)}
+                  disabled={items.length === 0}
+                >
                   Siguiente
                 </Button>
               </div>
@@ -661,7 +919,8 @@ export default function NewWorkOrderPage() {
                     {foundVehicle?.identifier || newVehicleData.identifier}
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    {foundVehicle?.customer.name || newCustomerData.name} • {items.length} items
+                    {foundVehicle?.customer.name || newCustomerData.name} •{" "}
+                    {items.length} items
                   </div>
                 </div>
                 <Button variant="ghost" size="sm" onClick={() => setStep(1)}>
@@ -678,7 +937,10 @@ export default function NewWorkOrderPage() {
                       id={`checklist-${item.id}`}
                       checked={checklist[item.id] || false}
                       onCheckedChange={(checked: boolean) =>
-                        setChecklist((prev) => ({ ...prev, [item.id]: checked }))
+                        setChecklist((prev) => ({
+                          ...prev,
+                          [item.id]: checked,
+                        }))
                       }
                       label={item.label}
                       labelClassName={item.required ? "font-medium" : ""}
@@ -692,7 +954,10 @@ export default function NewWorkOrderPage() {
                 <div className="space-y-2">
                   <Label htmlFor="odometer">Odómetro (km)</Label>
                   <div className="relative">
-                    <ArrowUpDown className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+                    <ArrowUpDown
+                      className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none"
+                      aria-hidden="true"
+                    />
                     <Input
                       id="odometer"
                       type="number"
@@ -715,14 +980,17 @@ export default function NewWorkOrderPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="technician">Técnico Asignado</Label>
+                  <Label htmlFor="technician">Responsable Asignado</Label>
                   <Select
                     value={selectedTechnicianId}
                     onValueChange={setSelectedTechnicianId}
                   >
                     <SelectTrigger id="technician" className="relative pl-9">
-                      <UserCog className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
-                      <SelectValue placeholder="Seleccionar técnico" />
+                      <UserCog
+                        className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none"
+                        aria-hidden="true"
+                      />
+                      <SelectValue placeholder="Seleccionar responsable" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="unassigned">Sin asignar</SelectItem>
@@ -735,9 +1003,14 @@ export default function NewWorkOrderPage() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="scheduled-date">Fecha estimada de entrega (opcional)</Label>
+                  <Label htmlFor="scheduled-date">
+                    Fecha estimada de entrega (opcional)
+                  </Label>
                   <div className="relative">
-                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+                    <Clock
+                      className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none"
+                      aria-hidden="true"
+                    />
                     <Input
                       id="scheduled-date"
                       type="datetime-local"
@@ -752,7 +1025,10 @@ export default function NewWorkOrderPage() {
               <div className="space-y-2">
                 <Label htmlFor="notes">Notas / Observaciones</Label>
                 <div className="relative">
-                  <Edit className="absolute left-3 top-3 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+                  <Edit
+                    className="absolute left-3 top-3 h-4 w-4 text-muted-foreground pointer-events-none"
+                    aria-hidden="true"
+                  />
                   <Textarea
                     id="notes"
                     value={notes}
@@ -779,7 +1055,12 @@ export default function NewWorkOrderPage() {
                 </Button>
                 <Button
                   onClick={handleSubmit}
-                  disabled={loading || !ENTRY_CHECKLIST.every(item => !item.required || checklist[item.id])}
+                  disabled={
+                    loading ||
+                    !ENTRY_CHECKLIST.every(
+                      (item) => !item.required || checklist[item.id],
+                    )
+                  }
                 >
                   <Save className="h-4 w-4 mr-2" />
                   {loading ? "Creando..." : "Crear Orden de Trabajo"}

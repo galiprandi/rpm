@@ -1,14 +1,20 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { toast } from 'sonner';
-import { Header } from '@/components/adm/Header';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ThemeSelector } from '@/components/ui/ThemeSelector';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { SettingItem } from '@/components/settings/SettingItem';
+import { useState } from "react";
+import Link from "next/link";
+import { toast } from "sonner";
+import { Header } from "@/components/adm/Header";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { ThemeSelector } from "@/components/ui/ThemeSelector";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { SettingItem } from "@/components/settings/SettingItem";
 import {
   CreditCard,
   ChevronRight,
@@ -20,15 +26,19 @@ import {
   Globe,
   FileKey,
   Hash,
-} from 'lucide-react';
-import { Switch } from '@/components/ui/switch';
+  Fingerprint,
+  MapPin,
+  UserCheck,
+  FolderOpen,
+} from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 
 interface SettingsClientProps {
   initialMinimumMargin: number;
@@ -46,7 +56,7 @@ export default function SettingsClient({
   initialAfipSettings,
 }: SettingsClientProps) {
   const [minimumMargin, setMinimumMargin] = useState<string>(
-    initialMinimumMargin.toString()
+    initialMinimumMargin.toString(),
   );
   const [afipSettings, setAfipSettings] = useState(initialAfipSettings);
   const [saving, setSaving] = useState(false);
@@ -57,23 +67,23 @@ export default function SettingsClient({
     try {
       const value = parseFloat(minimumMargin);
       if (isNaN(value) || value < 0 || value > 100) {
-        toast.error('El margen debe estar entre 0 y 100');
+        toast.error("El margen debe estar entre 0 y 100");
         return;
       }
 
-      const response = await fetch('/api/settings', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ minimumMarginPercentage: value }),
       });
 
       if (response.ok) {
-        toast.success('Configuración actualizada correctamente');
+        toast.success("Configuración actualizada correctamente");
       } else {
-        throw new Error('Error al guardar');
+        throw new Error("Error al guardar");
       }
     } catch {
-      toast.error('No se pudo guardar la configuración');
+      toast.error("No se pudo guardar la configuración");
     } finally {
       setSaving(false);
     }
@@ -82,9 +92,9 @@ export default function SettingsClient({
   const handleSaveAfip = async () => {
     setSavingAfip(true);
     try {
-      const response = await fetch('/api/settings', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           afipCuit: afipSettings.cuit,
           afipPuntoVenta: afipSettings.puntoVenta,
@@ -95,12 +105,12 @@ export default function SettingsClient({
       });
 
       if (response.ok) {
-        toast.success('Configuración fiscal actualizada');
+        toast.success("Configuración fiscal actualizada");
       } else {
-        throw new Error('Error al guardar');
+        throw new Error("Error al guardar");
       }
     } catch {
-      toast.error('No se pudo guardar la configuración fiscal');
+      toast.error("No se pudo guardar la configuración fiscal");
     } finally {
       setSavingAfip(false);
     }
@@ -115,8 +125,8 @@ export default function SettingsClient({
 
       <div className="space-y-6">
         {/* Apariencia */}
-        <Card className="overflow-hidden border-muted/60 shadow-sm">
-          <CardHeader className="pb-4 bg-muted/20">
+        <Card className="overflow-hidden shadow-sm">
+          <CardHeader className="pb-4 -mt-4 pt-4 bg-muted/40 border-b">
             <CardTitle className="text-lg">Apariencia</CardTitle>
             <CardDescription>
               Personaliza el tema visual de la aplicación.
@@ -137,8 +147,8 @@ export default function SettingsClient({
         </Card>
 
         {/* Configuración de Precios */}
-        <Card className="overflow-hidden border-muted/60 shadow-sm">
-          <CardHeader className="pb-4 bg-muted/20">
+        <Card className="overflow-hidden shadow-sm">
+          <CardHeader className="pb-4 -mt-4 pt-4 bg-muted/40 border-b">
             <CardTitle className="text-lg">Listas de Precios</CardTitle>
             <CardDescription>
               Configuración global para el cálculo y alertas de precios.
@@ -188,9 +198,11 @@ export default function SettingsClient({
         </Card>
 
         {/* Configuración Fiscal */}
-        <Card className="overflow-hidden border-muted/60 shadow-sm">
-          <CardHeader className="pb-4 bg-muted/20">
-            <CardTitle className="text-lg">Configuración Fiscal (AFIP)</CardTitle>
+        <Card className="overflow-hidden shadow-sm">
+          <CardHeader className="pb-4 -mt-4 pt-4 bg-muted/40 border-b">
+            <CardTitle className="text-lg">
+              Configuración Fiscal (AFIP)
+            </CardTitle>
             <CardDescription>
               Datos del emisor y credenciales para facturación electrónica.
             </CardDescription>
@@ -204,6 +216,10 @@ export default function SettingsClient({
                 htmlFor="afip-cuit"
               >
                 <div className="relative">
+                  <Fingerprint
+                    className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10 pointer-events-none"
+                    aria-hidden="true"
+                  />
                   <Input
                     id="afip-cuit"
                     type="text"
@@ -212,7 +228,7 @@ export default function SettingsClient({
                     onChange={(e) =>
                       setAfipSettings({ ...afipSettings, cuit: e.target.value })
                     }
-                    className="w-48 h-9 text-sm pl-9 font-mono"
+                    className="w-48 h-9 text-sm pl-10 font-mono"
                     placeholder="30123456789"
                   />
                 </div>
@@ -221,10 +237,14 @@ export default function SettingsClient({
               <SettingItem
                 title="Punto de Venta"
                 description="Número de punto de venta habilitado en AFIP"
-                icon={Hash}
+                icon={MapPin}
                 htmlFor="afip-pv"
               >
                 <div className="relative">
+                  <Hash
+                    className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10 pointer-events-none"
+                    aria-hidden="true"
+                  />
                   <Input
                     id="afip-pv"
                     type="text"
@@ -235,7 +255,7 @@ export default function SettingsClient({
                         puntoVenta: e.target.value,
                       })
                     }
-                    className="w-32 h-9 text-sm pl-9 font-mono"
+                    className="w-32 h-9 text-sm pl-10 font-mono"
                     placeholder="1"
                   />
                 </div>
@@ -244,24 +264,35 @@ export default function SettingsClient({
               <SettingItem
                 title="Tipo de Responsable"
                 description="Categoría impositiva ante AFIP"
-                icon={ShieldCheck}
+                icon={UserCheck}
                 htmlFor="afip-responsable"
               >
-                <Select
-                  value={afipSettings.responsable}
-                  onValueChange={(val) =>
-                    setAfipSettings({ ...afipSettings, responsable: val })
-                  }
-                >
-                  <SelectTrigger id="afip-responsable" className="w-48 h-9 text-sm relative">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="RI">Responsable Inscripto</SelectItem>
-                    <SelectItem value="MONOTRIBUTO">Monotributista</SelectItem>
-                    <SelectItem value="EXENTO">Exento</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="relative">
+                  <ShieldCheck
+                    className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10 pointer-events-none"
+                    aria-hidden="true"
+                  />
+                  <Select
+                    value={afipSettings.responsable}
+                    onValueChange={(val) =>
+                      setAfipSettings({ ...afipSettings, responsable: val })
+                    }
+                  >
+                    <SelectTrigger
+                      id="afip-responsable"
+                      className="w-48 h-9 text-sm pl-10"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="RI">Responsable Inscripto</SelectItem>
+                      <SelectItem value="MONOTRIBUTO">
+                        Monotributista
+                      </SelectItem>
+                      <SelectItem value="EXENTO">Exento</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </SettingItem>
 
               <SettingItem
@@ -282,10 +313,14 @@ export default function SettingsClient({
               <SettingItem
                 title="Ruta del Certificado"
                 description="Ruta local al archivo .p12 del certificado"
-                icon={FileKey}
+                icon={FolderOpen}
                 htmlFor="afip-cert"
               >
                 <div className="relative">
+                  <FileKey
+                    className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10 pointer-events-none"
+                    aria-hidden="true"
+                  />
                   <Input
                     id="afip-cert"
                     type="text"
@@ -296,7 +331,7 @@ export default function SettingsClient({
                         certPath: e.target.value,
                       })
                     }
-                    className="w-80 h-9 text-sm pl-9 font-mono"
+                    className="w-80 h-9 text-sm pl-10 font-mono"
                     placeholder="/path/to/cert.p12"
                   />
                 </div>
@@ -317,8 +352,8 @@ export default function SettingsClient({
         </Card>
 
         {/* Finanzas */}
-        <Card className="overflow-hidden border-muted/60 shadow-sm">
-          <CardHeader className="pb-4 bg-muted/20">
+        <Card className="overflow-hidden shadow-sm">
+          <CardHeader className="pb-4 -mt-4 pt-4 bg-muted/40 border-b">
             <CardTitle className="text-lg">Finanzas</CardTitle>
             <CardDescription>
               Configuración de métodos de pago y opciones de cobro.

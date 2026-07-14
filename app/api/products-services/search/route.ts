@@ -4,14 +4,18 @@
  * Query params: q, categoryId, priceListId, limit
  * Spec: /specs/components/product-service-selector.md
  */
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { calculateFinalPrice, calculateMarginPercentage, type RoundingRule } from '@/lib/utils/rounding';
-import { getProductBaseCost } from '@/lib/services/priceListService';
-import { getMinimumMargin } from '@/lib/services/settingsService';
-import { parseSearchQuery } from '@/lib/utils/searchQueryParser';
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import {
+  calculateFinalPrice,
+  calculateMarginPercentage,
+  type RoundingRule,
+} from "@/lib/utils/rounding";
+import { getProductBaseCost } from "@/lib/services/priceListService";
+import { getMinimumMargin } from "@/lib/services/settingsService";
+import { parseSearchQuery } from "@/lib/utils/searchQueryParser";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 interface PriceInfo {
   finalPrice: number;
@@ -23,7 +27,7 @@ interface PriceInfo {
 
 interface SearchResult {
   id: string;
-  type: 'product' | 'service';
+  type: "product" | "service";
   name: string;
   basePrice: number;
   // Productos
@@ -45,21 +49,29 @@ interface SearchResult {
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = request.nextUrl;
-    
-    const q = searchParams.get('q')?.trim();
-    const categoryId = searchParams.get('categoryId');
-    const priceListId = searchParams.get('priceListId');
-    const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 50);
+
+    const q = searchParams.get("q")?.trim();
+    const categoryId = searchParams.get("categoryId");
+    const priceListId = searchParams.get("priceListId");
+    const limit = Math.min(parseInt(searchParams.get("limit") || "20"), 50);
 
     // Obtener lista de precios seleccionada y todas las listas activas (siempre cacheamos todos los precios)
-    let priceList: { id: string; baseMarginPercentage: number; roundingRule: RoundingRule } | null = null;
-    const allActivePriceLists: Array<{ id: string; baseMarginPercentage: number; roundingRule: RoundingRule }> = [];
-    
+    let priceList: {
+      id: string;
+      baseMarginPercentage: number;
+      roundingRule: RoundingRule;
+    } | null = null;
+    const allActivePriceLists: Array<{
+      id: string;
+      baseMarginPercentage: number;
+      roundingRule: RoundingRule;
+    }> = [];
+
     const lists = await prisma.price_list.findMany({
       where: { isActive: true },
-      orderBy: { name: 'asc' },
+      orderBy: { name: "asc" },
     });
-    
+
     for (const pl of lists) {
       const listData = {
         id: pl.id,
@@ -73,32 +85,39 @@ export async function GET(request: NextRequest) {
     }
 
     // Build search conditions for a field
-    function buildFieldConditions(terms: ReturnType<typeof parseSearchQuery>, field: string) {
+    function buildFieldConditions(
+      terms: ReturnType<typeof parseSearchQuery>,
+      field: string,
+    ) {
       const conditions: unknown[] = [];
 
       // Phrases must be present as exact substrings
       for (const phrase of terms.phrases) {
-        conditions.push({ [field]: { contains: phrase, mode: 'insensitive' } });
+        conditions.push({ [field]: { contains: phrase, mode: "insensitive" } });
       }
 
       // Required terms must be present
       for (const term of terms.required) {
-        conditions.push({ [field]: { contains: term, mode: 'insensitive' } });
+        conditions.push({ [field]: { contains: term, mode: "insensitive" } });
       }
 
       // If we have optional terms, at least one must match (but only if no required/phrases)
-      if (terms.optional.length > 0 && terms.required.length === 0 && terms.phrases.length === 0) {
+      if (
+        terms.optional.length > 0 &&
+        terms.required.length === 0 &&
+        terms.phrases.length === 0
+      ) {
         conditions.push({
-          OR: terms.optional.map(term => ({
-            [field]: { contains: term, mode: 'insensitive' },
+          OR: terms.optional.map((term) => ({
+            [field]: { contains: term, mode: "insensitive" },
           })),
         });
       } else if (terms.optional.length > 0) {
         // Optional terms when we have required/phrases - they just expand the match
         // but aren't mandatory
         conditions.push({
-          OR: terms.optional.map(term => ({
-            [field]: { contains: term, mode: 'insensitive' },
+          OR: terms.optional.map((term) => ({
+            [field]: { contains: term, mode: "insensitive" },
           })),
         });
       }
@@ -112,9 +131,9 @@ export async function GET(request: NextRequest) {
     const productWhere: Record<string, unknown> = { isActive: true };
 
     if (searchTerms) {
-      const nameConditions = buildFieldConditions(searchTerms, 'name');
-      const skuConditions = buildFieldConditions(searchTerms, 'sku');
-      const barcodeConditions = buildFieldConditions(searchTerms, 'barcode');
+      const nameConditions = buildFieldConditions(searchTerms, "name");
+      const skuConditions = buildFieldConditions(searchTerms, "sku");
+      const barcodeConditions = buildFieldConditions(searchTerms, "barcode");
 
       // Combine with OR across fields, but each field must satisfy all its conditions
       const allFieldConditions = [
@@ -128,18 +147,18 @@ export async function GET(request: NextRequest) {
         if (searchTerms.required.length > 0 || searchTerms.phrases.length > 0) {
           // Group required conditions - all must match
           const requiredAndPhrases = [
-            ...searchTerms.phrases.map(phrase => ({
+            ...searchTerms.phrases.map((phrase) => ({
               OR: [
-                { name: { contains: phrase, mode: 'insensitive' } },
-                { sku: { contains: phrase, mode: 'insensitive' } },
-                { barcode: { contains: phrase, mode: 'insensitive' } },
+                { name: { contains: phrase, mode: "insensitive" } },
+                { sku: { contains: phrase, mode: "insensitive" } },
+                { barcode: { contains: phrase, mode: "insensitive" } },
               ],
             })),
-            ...searchTerms.required.map(term => ({
+            ...searchTerms.required.map((term) => ({
               OR: [
-                { name: { contains: term, mode: 'insensitive' } },
-                { sku: { contains: term, mode: 'insensitive' } },
-                { barcode: { contains: term, mode: 'insensitive' } },
+                { name: { contains: term, mode: "insensitive" } },
+                { sku: { contains: term, mode: "insensitive" } },
+                { barcode: { contains: term, mode: "insensitive" } },
               ],
             })),
           ];
@@ -149,22 +168,37 @@ export async function GET(request: NextRequest) {
           // Optional terms can match in any field (for relevance boost)
           if (searchTerms.optional.length > 0) {
             productWhere.OR = [
-              { name: { contains: searchTerms.optional.join(' '), mode: 'insensitive' } },
-              { sku: { contains: searchTerms.optional.join(' '), mode: 'insensitive' } },
-              { barcode: { contains: searchTerms.optional.join(' '), mode: 'insensitive' } },
+              {
+                name: {
+                  contains: searchTerms.optional.join(" "),
+                  mode: "insensitive",
+                },
+              },
+              {
+                sku: {
+                  contains: searchTerms.optional.join(" "),
+                  mode: "insensitive",
+                },
+              },
+              {
+                barcode: {
+                  contains: searchTerms.optional.join(" "),
+                  mode: "insensitive",
+                },
+              },
             ];
           }
         } else {
           // Only optional terms - OR logic
           productWhere.OR = [
-            { name: { contains: q, mode: 'insensitive' } },
-            { sku: { contains: q, mode: 'insensitive' } },
-            { barcode: { contains: q, mode: 'insensitive' } },
+            { name: { contains: q, mode: "insensitive" } },
+            { sku: { contains: q, mode: "insensitive" } },
+            { barcode: { contains: q, mode: "insensitive" } },
           ];
         }
       }
     }
-    
+
     if (categoryId) {
       productWhere.categoryId = categoryId;
     }
@@ -172,7 +206,7 @@ export async function GET(request: NextRequest) {
     const products = await prisma.product.findMany({
       where: productWhere,
       take: limit,
-      orderBy: { name: 'asc' },
+      orderBy: { name: "asc" },
       include: { category: true },
     });
 
@@ -191,16 +225,16 @@ export async function GET(request: NextRequest) {
         if (searchTerms.required.length > 0 || searchTerms.phrases.length > 0) {
           // Required/phrases must match in name OR description
           const requiredConditions = [
-            ...searchTerms.phrases.map(phrase => ({
+            ...searchTerms.phrases.map((phrase) => ({
               OR: [
-                { name: { contains: phrase, mode: 'insensitive' } },
-                { description: { contains: phrase, mode: 'insensitive' } },
+                { name: { contains: phrase, mode: "insensitive" } },
+                { description: { contains: phrase, mode: "insensitive" } },
               ],
             })),
-            ...searchTerms.required.map(term => ({
+            ...searchTerms.required.map((term) => ({
               OR: [
-                { name: { contains: term, mode: 'insensitive' } },
-                { description: { contains: term, mode: 'insensitive' } },
+                { name: { contains: term, mode: "insensitive" } },
+                { description: { contains: term, mode: "insensitive" } },
               ],
             })),
           ];
@@ -209,8 +243,8 @@ export async function GET(request: NextRequest) {
         } else if (searchTerms.optional.length > 0) {
           // Only optional terms - match in name OR description
           serviceWhere.OR = [
-            { name: { contains: q, mode: 'insensitive' } },
-            { description: { contains: q, mode: 'insensitive' } },
+            { name: { contains: q, mode: "insensitive" } },
+            { description: { contains: q, mode: "insensitive" } },
           ];
         }
       }
@@ -218,9 +252,9 @@ export async function GET(request: NextRequest) {
       const rawServices = await prisma.service.findMany({
         where: serviceWhere,
         take: limit,
-        orderBy: { name: 'asc' },
+        orderBy: { name: "asc" },
       });
-      
+
       services = rawServices.map((s: any) => ({
         id: s.id,
         name: s.name,
@@ -230,8 +264,11 @@ export async function GET(request: NextRequest) {
     }
 
     // Obtener excepciones de lista de precios para los productos encontrados
-    const priceExceptions: Map<string, { fixedPrice: number | null; overrideMarginPercentage: number | null }> = new Map();
-    
+    const priceExceptions: Map<
+      string,
+      { fixedPrice: number | null; overrideMarginPercentage: number | null }
+    > = new Map();
+
     if (priceListId && products.length > 0) {
       const productIds = products.map((p: any) => p.id);
       const exceptions = await prisma.price_list_item.findMany({
@@ -240,31 +277,40 @@ export async function GET(request: NextRequest) {
           productId: { in: productIds },
         },
       });
-      
+
       for (const ex of exceptions) {
         if (ex.productId) {
           priceExceptions.set(ex.productId, {
             fixedPrice: ex.fixedPrice !== null ? Number(ex.fixedPrice) : null,
-            overrideMarginPercentage: ex.overrideMarginPercentage !== null ? Number(ex.overrideMarginPercentage) : null,
+            overrideMarginPercentage:
+              ex.overrideMarginPercentage !== null
+                ? Number(ex.overrideMarginPercentage)
+                : null,
           });
         }
       }
     }
 
     // Obtener excepciones para TODAS las listas
-    const allExceptions: Map<string, Map<string, { fixedPrice: number | null; overrideMarginPercentage: number | null }>> = new Map();
-    
+    const allExceptions: Map<
+      string,
+      Map<
+        string,
+        { fixedPrice: number | null; overrideMarginPercentage: number | null }
+      >
+    > = new Map();
+
     if (products.length > 0 && allActivePriceLists.length > 0) {
       const productIds = products.map((p: any) => p.id);
-      const allListIds = allActivePriceLists.map(pl => pl.id);
-      
+      const allListIds = allActivePriceLists.map((pl) => pl.id);
+
       const exceptions = await prisma.price_list_item.findMany({
         where: {
           priceListId: { in: allListIds },
           productId: { in: productIds },
         },
       });
-      
+
       for (const ex of exceptions) {
         if (ex.productId) {
           if (!allExceptions.has(ex.priceListId)) {
@@ -272,7 +318,10 @@ export async function GET(request: NextRequest) {
           }
           allExceptions.get(ex.priceListId)!.set(ex.productId, {
             fixedPrice: ex.fixedPrice !== null ? Number(ex.fixedPrice) : null,
-            overrideMarginPercentage: ex.overrideMarginPercentage !== null ? Number(ex.overrideMarginPercentage) : null,
+            overrideMarginPercentage:
+              ex.overrideMarginPercentage !== null
+                ? Number(ex.overrideMarginPercentage)
+                : null,
           });
         }
       }
@@ -283,20 +332,33 @@ export async function GET(request: NextRequest) {
 
     // Función helper para calcular precio de un producto para una lista específica
     const calculateProductPriceForList = (
-      product: typeof products[0],
+      product: (typeof products)[0],
       baseCost: number,
-      list: { id: string; baseMarginPercentage: number; roundingRule: RoundingRule },
-      exception?: { fixedPrice: number | null; overrideMarginPercentage: number | null }
+      list: {
+        id: string;
+        baseMarginPercentage: number;
+        roundingRule: RoundingRule;
+      },
+      exception?: {
+        fixedPrice: number | null;
+        overrideMarginPercentage: number | null;
+      },
     ): PriceInfo => {
       let finalPrice: number;
       let isFixed = false;
       let overrideMargin: number | null = null;
 
-      if (exception?.fixedPrice !== null && exception?.fixedPrice !== undefined) {
+      if (
+        exception?.fixedPrice !== null &&
+        exception?.fixedPrice !== undefined
+      ) {
         finalPrice = exception.fixedPrice;
         isFixed = true;
       } else {
-        if (exception?.overrideMarginPercentage !== null && exception?.overrideMarginPercentage !== undefined) {
+        if (
+          exception?.overrideMarginPercentage !== null &&
+          exception?.overrideMarginPercentage !== undefined
+        ) {
           overrideMargin = exception.overrideMarginPercentage;
         }
         finalPrice = calculateFinalPrice(
@@ -305,33 +367,47 @@ export async function GET(request: NextRequest) {
           list.roundingRule,
           overrideMargin !== null
             ? { overrideMarginPercentage: overrideMargin }
-            : undefined
+            : undefined,
         );
       }
 
       const actualMargin = calculateMarginPercentage(baseCost, finalPrice);
       const isBelowMinimum = actualMargin < minimumMargin;
 
-      return { finalPrice, isBelowMinimum, isFixed, overrideMargin, roundingRule: list.roundingRule };
+      return {
+        finalPrice,
+        isBelowMinimum,
+        isFixed,
+        overrideMargin,
+        roundingRule: list.roundingRule,
+      };
     };
 
     // Transformar productos
     const productResults: SearchResult[] = products.map((product: any) => {
-      const baseCost = getProductBaseCost(product.replacementCost, product.costPrice);
-      
+      const baseCost = getProductBaseCost(
+        product.replacementCost,
+        product.costPrice,
+      );
+
       // Calcular minimumPrice (precio con margen mínimo)
       const minimumPrice = calculateFinalPrice(
         baseCost,
         minimumMargin,
-        'EXACT' // Sin redondeo especial para precio mínimo
+        "EXACT", // Sin redondeo especial para precio mínimo
       );
-      
+
       let finalPrice: number;
       let isBelowMinimum = false;
-      
+
       if (priceList) {
         const exception = priceExceptions.get(product.id);
-        const priceInfo = calculateProductPriceForList(product, baseCost, priceList, exception);
+        const priceInfo = calculateProductPriceForList(
+          product,
+          baseCost,
+          priceList,
+          exception,
+        );
         finalPrice = priceInfo.finalPrice;
         isBelowMinimum = priceInfo.isBelowMinimum;
       } else {
@@ -347,13 +423,18 @@ export async function GET(request: NextRequest) {
         for (const list of allActivePriceLists) {
           const listExceptions = allExceptions.get(list.id);
           const exception = listExceptions?.get(product.id);
-          allPrices[list.id] = calculateProductPriceForList(product, baseCost, list, exception);
+          allPrices[list.id] = calculateProductPriceForList(
+            product,
+            baseCost,
+            list,
+            exception,
+          );
         }
       }
 
       return {
         id: product.id,
-        type: 'product',
+        type: "product",
         name: product.name,
         basePrice: finalPrice,
         minimumPrice,
@@ -370,9 +451,9 @@ export async function GET(request: NextRequest) {
     });
 
     // Transformar servicios (precio fijo, no depende de listas)
-    const serviceResults: SearchResult[] = services.map(service => ({
+    const serviceResults: SearchResult[] = services.map((service) => ({
       id: service.id,
-      type: 'service',
+      type: "service",
       name: service.name,
       basePrice: service.baseCost as number,
       description: service.description || undefined,
@@ -381,16 +462,18 @@ export async function GET(request: NextRequest) {
 
     // Combinar y ordenar resultados (si hay búsqueda, ordenar por relevancia)
     const results: SearchResult[] = [...productResults, ...serviceResults];
-    
+
     // Ordenar alfabéticamente por nombre
-    results.sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }));
+    results.sort((a, b) =>
+      a.name.localeCompare(b.name, "es", { sensitivity: "base" }),
+    );
 
     return NextResponse.json({ results });
   } catch (error) {
-    console.error('Error in products-services search:', error);
+    console.error("Error in products-services search:", error);
     return NextResponse.json(
-      { error: 'Error al buscar productos y servicios' },
-      { status: 500 }
+      { error: "Error al buscar productos y servicios" },
+      { status: 500 },
     );
   }
 }

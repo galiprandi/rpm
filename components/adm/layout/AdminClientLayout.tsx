@@ -1,18 +1,17 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { authClient } from '@/lib/auth-client';
-import { AppSidebar } from './AppSidebar';
-import { CommandPalette } from '@/components/adm/CommandPalette';
-import { ChatFloating } from '@/components/bot/ChatFloating';
-import { WebMCPTools } from '@/components/webmcp/WebMCPTools';
-import { WebMCPNavTools } from '@/components/webmcp/WebMCPNavTools';
-import { useUI } from '@/components/ui/UIProvider';
+import { useState, useEffect } from "react";
+import { authClient } from "@/lib/auth-client";
+import { AppSidebar } from "./AppSidebar";
+import { CommandPalette } from "@/components/adm/CommandPalette";
+import { ChatFloating } from "@/components/bot/ChatFloating";
+import { WebMCPTools } from "@/components/webmcp/WebMCPTools";
+import { WebMCPNavTools } from "@/components/webmcp/WebMCPNavTools";
 import {
   SidebarProvider,
   SidebarInset,
   SidebarTrigger,
-} from '@/components/ui/sidebar';
+} from "@/components/ui/sidebar";
 
 interface AdminClientLayoutProps {
   children: React.ReactNode;
@@ -26,14 +25,13 @@ interface AdminClientLayoutProps {
 }
 
 export function AdminClientLayout({ children, user }: AdminClientLayoutProps) {
-  const { confirm } = useUI();
   const [mounted, setMounted] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [defaultOpen] = useState<boolean>(() => {
-    if (typeof document === 'undefined') return true;
+    if (typeof document === "undefined") return true;
     const match = document.cookie.match(/sidebar_state=([^;]+)/);
-    return match ? match[1] === 'true' : true;
+    return match ? match[1] === "true" : true;
   });
 
   useEffect(() => {
@@ -45,28 +43,18 @@ export function AdminClientLayout({ children, user }: AdminClientLayoutProps) {
   // Global Cmd+K shortcut
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
         setPaletteOpen((prev) => !prev);
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
   const handleSignOut = async () => {
-    const confirmed = await confirm({
-      title: 'Cerrar sesión',
-      description: `¿Está seguro de cerrar la sesión del usuario "${user.name}"?`,
-      confirmText: 'Cerrar sesión',
-      cancelText: 'Cancelar',
-      variant: 'destructive',
-    });
-
-    if (confirmed) {
-      await authClient.signOut();
-      window.location.href = '/login';
-    }
+    await authClient.signOut();
+    window.location.href = "/login";
   };
 
   return (
@@ -80,7 +68,11 @@ export function AdminClientLayout({ children, user }: AdminClientLayoutProps) {
         </div>
       ) : (
         <>
-          <AppSidebar user={user} onSignOut={handleSignOut} onOpenPalette={() => setPaletteOpen(true)} />
+          <AppSidebar
+            user={user}
+            onSignOut={handleSignOut}
+            onOpenPalette={() => setPaletteOpen(true)}
+          />
           <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
           <SidebarInset>
             <main className="flex-1 p-6">

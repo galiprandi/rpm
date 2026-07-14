@@ -82,24 +82,30 @@ Testea la experiencia rigurosamente. Corre linter, formatter y la suite de tests
 
 Si una mejora valiosa fue identificada e implementada, crea un Pull Request con la siguiente estructura:
 
-- **Título del PR:** `<Emoji del agente> <Nombre del agente>: [Breve descripción de la mejora]`
+- **Título del PR:** `<Nombre del agente> <Emoji>: [Breve descripción de la mejora]`
 - **Descripción (en español):**
 
   ```markdown
-  **<Emoji> <Nombre>: [Breve descripción de la mejora]**
+  **<Nombre> <Emoji>: [Título descriptivo de la mejora]**
 
   ---
 
-  **💡 Qué se hizo:** Descripción clara y concisa de la mejora o micro-feature implementada.
+  **💡 Qué se hizo:**
+  Descripción clara y concisa de las mejoras implementadas, usando lista numerada cuando hay múltiples cambios:
+  1.  **[Nombre de la mejora]**: Breve descripción de qué se hizo y en qué archivo/ruta.
+  2.  **[Otra mejora]**: Breve descripción.
 
-  **🎯 Por qué:** El problema o fricción específica del usuario que esta mejora resuelve.
+  **🎯 Por qué:**
+  El problema o fricción específica del usuario que esta mejora resuelve. Explicar el contexto de uso real.
 
   **🧪 Cómo validar el cambio:**
-  1. [Paso 1 — Ej: Navegar a /adm/work-orders]
-  2. [Paso 2 — Ej: Crear una OT con estado X]
-  3. [Paso 3 — Ej: Verificar que el comportamiento Y ocurre]
+  1.  [Paso 1 — Ej: Navegar a /adm/customers y verificar la nueva tarjeta "Deuda Total"]
+  2.  [Paso 2 — Ej: Probar el buscador con una patente conocida o un CUIT]
+  3.  [Paso 3 — Ej: Entrar al detalle y verificar el botón de acción rápida]
 
-  **📸 Evidencia:** Screenshots o descripción de los cambios visuales (si aplica).
+  **📸 Evidencia:**
+  - [Screenshot o descripción del cambio visual 1]
+  - [Screenshot o descripción del cambio visual 2]
   ```
 
 ---

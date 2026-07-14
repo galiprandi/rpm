@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { validatePlate, getPlateFormatHint } from "@/lib/utils/plate-validation";
+import {
+  validatePlate,
+  getPlateFormatHint,
+} from "@/lib/utils/plate-validation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,31 +30,11 @@ import {
   FileText,
   Eye,
 } from "lucide-react";
+import { VEHICLE_CATEGORIES } from "@/lib/constants/vehicle-categories";
+import type { VehicleFormData } from "@/lib/types/vehicle";
 
-export const VEHICLE_CATEGORIES = [
-  { value: "CAR", label: "Auto/Camioneta", icon: "🚗" },
-  { value: "SUV", label: "SUV/4x4", icon: "🚙" },
-  { value: "PICKUP", label: "Pickup", icon: "🛻" },
-  { value: "TRUCK", label: "Camión", icon: "🚚" },
-  { value: "MOTORCYCLE", label: "Moto", icon: "🏍️" },
-  { value: "TRAILER", label: "Trailer/Acoplado", icon: "🚛" },
-  { value: "AUDIO_EQUIPMENT", label: "Equipo de Audio", icon: "🔊" },
-  { value: "ELECTRIC_SCOOTER", label: "Monopatín Eléctrico", icon: "🛴" },
-  { value: "OTHER", label: "Otro Equipo", icon: "📦" },
-];
-
-export interface VehicleFormData {
-  identifier: string;
-  category: string;
-  makeName?: string;
-  modelName?: string;
-  year?: string | number;
-  color?: string;
-  equipmentName?: string;
-  equipmentType?: string;
-  description?: string;
-  notes?: string;
-}
+export { VEHICLE_CATEGORIES };
+export type { VehicleFormData };
 
 interface VehicleFormProps {
   initialData?: Partial<VehicleFormData>;
@@ -106,7 +89,7 @@ export function VehicleForm({
       const isValid = validatePlate(formData.identifier);
       if (!isValid) {
         setPlateError(
-          `Formato de patente inválido para Argentina. ${getPlateFormatHint(formData.category)}`
+          `Formato de patente inválido para Argentina. ${getPlateFormatHint(formData.category)}`,
         );
         return;
       }
@@ -121,7 +104,7 @@ export function VehicleForm({
       {/* Categoría */}
       <div className="space-y-2">
         <Label
-          htmlFor="category-select"
+          htmlFor="vehicle-category-select"
           required
           className="flex items-center gap-2"
         >
@@ -136,7 +119,7 @@ export function VehicleForm({
             value={formData.category}
             onValueChange={(value) => handleChange("category", value)}
           >
-            <SelectTrigger id="category-select" className="pl-9">
+            <SelectTrigger id="vehicle-category-select" className="pl-9" aria-label="Categoría de vehículo o equipo">
               <SelectValue placeholder="Seleccione categoría" />
             </SelectTrigger>
             <SelectContent>
@@ -153,7 +136,7 @@ export function VehicleForm({
 
       {/* Identificador */}
       <div className="space-y-2">
-        <Label htmlFor="identifier" required>
+        <Label htmlFor="vehicle-identifier" required>
           {isVehicle ? "Patente" : "Número de Serie/Identificador"}
         </Label>
         <div className="relative">
@@ -162,7 +145,7 @@ export function VehicleForm({
             aria-hidden="true"
           />
           <Input
-            id="identifier"
+            id="vehicle-identifier"
             value={formData.identifier}
             onChange={(e) =>
               handleChange("identifier", e.target.value.toUpperCase())
@@ -170,9 +153,12 @@ export function VehicleForm({
             placeholder={isVehicle ? "Ej: AB123CD" : "Ej: SN123456"}
             required
             className={`pl-9 font-mono uppercase tracking-wider ${
-              plateError ? "border-destructive focus-visible:ring-destructive" : ""
+              plateError
+                ? "border-destructive focus-visible:ring-destructive"
+                : ""
             }`}
             aria-required="true"
+            aria-label={isVehicle ? "Patente del vehículo" : "Número de serie o identificador del equipo"}
           />
         </div>
         {plateError && (
@@ -361,19 +347,20 @@ export function VehicleForm({
 
       {/* Notas */}
       <div className="space-y-2">
-        <Label htmlFor="notes">Notas</Label>
+        <Label htmlFor="vehicle-notes">Notas</Label>
         <div className="relative">
           <FileText
             className="absolute left-3 top-3 h-4 w-4 text-muted-foreground pointer-events-none"
             aria-hidden="true"
           />
           <Textarea
-            id="notes"
+            id="vehicle-notes"
             value={formData.notes}
             onChange={(e) => handleChange("notes", e.target.value)}
             placeholder="Notas internas sobre el vehículo/equipo..."
             rows={2}
             className="pl-9 min-h-[80px]"
+            aria-label="Notas internas adicionales"
           />
         </div>
       </div>
@@ -399,7 +386,10 @@ export function VehicleForm({
             "Guardando..."
           ) : (
             <>
-              <Save className="h-4 w-4 pointer-events-none" aria-hidden="true" />
+              <Save
+                className="h-4 w-4 pointer-events-none"
+                aria-hidden="true"
+              />
               {submitLabel}
             </>
           )}

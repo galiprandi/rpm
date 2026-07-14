@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { capitalizeText } from "@/lib/utils/format";
+import { resolveMakeModel } from "@/lib/utils/vehicle-helpers";
 
 // GET /api/vehicles/[id] - Get vehicle by ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -23,10 +24,7 @@ export async function GET(
     });
 
     if (!vehicle) {
-      return NextResponse.json(
-        { error: "Vehicle not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Vehicle not found" }, { status: 404 });
     }
 
     // Transform Prisma field names to match frontend interface
@@ -45,7 +43,7 @@ export async function GET(
     console.error("Error fetching vehicle:", error);
     return NextResponse.json(
       { error: "Failed to fetch vehicle" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -53,7 +51,7 @@ export async function GET(
 // PUT /api/vehicles/[id] - Update vehicle
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -61,8 +59,10 @@ export async function PUT(
     const {
       identifier,
       category,
-      makeId,
-      modelId,
+      makeName,
+      modelName,
+      makeId: rawMakeId,
+      modelId: rawModelId,
       year,
       color,
       equipmentName,
@@ -70,6 +70,11 @@ export async function PUT(
       description,
       notes,
     } = body;
+
+    // Resolve make/model from names (upsert) or use raw IDs if provided
+    const { makeId, modelId } = makeName
+      ? await resolveMakeModel(makeName, modelName)
+      : { makeId: rawMakeId, modelId: rawModelId };
 
     const vehicle = await prisma.vehicle.update({
       where: { id },
@@ -97,7 +102,7 @@ export async function PUT(
     console.error("Error updating vehicle:", error);
     return NextResponse.json(
       { error: "Failed to update vehicle" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -105,7 +110,7 @@ export async function PUT(
 // DELETE /api/vehicles/[id] - Delete vehicle
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -118,7 +123,7 @@ export async function DELETE(
     console.error("Error deleting vehicle:", error);
     return NextResponse.json(
       { error: "Failed to delete vehicle" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

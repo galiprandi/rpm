@@ -1,44 +1,13 @@
-import { Lightbulb, Scissors, Sparkles, Droplets, Car, Compass, ArrowUpRight } from 'lucide-react';
+'use client';
 
-const services = [
-  {
-    title: 'Iluminación',
-    description: 'Tecnología LED de alta intensidad para una visibilidad sin compromisos.',
-    icon: Lightbulb,
-    className: 'md:col-span-2 md:row-span-2',
-    bg: 'bg-zinc-900',
-  },
-  {
-    title: 'Estética',
-    description: 'Protección PPF y polarizados de grado profesional.',
-    icon: Scissors,
-    className: 'md:col-span-1 md:row-span-1',
-    bg: 'bg-zinc-950',
-  },
-  {
-    title: 'Detailing',
-    description: 'Tratamientos que devuelven el alma a tu vehículo.',
-    icon: Droplets,
-    className: 'md:col-span-1 md:row-span-1',
-    bg: 'bg-zinc-950',
-  },
-  {
-    title: 'Cerámicos',
-    description: 'Protección molecular con acabado espejo.',
-    icon: Sparkles,
-    className: 'md:col-span-1 md:row-span-2',
-    bg: 'bg-zinc-900',
-  },
-  {
-    title: 'Off-Road',
-    description: 'Equipamiento extremo para los terrenos más exigentes.',
-    icon: Compass,
-    className: 'md:col-span-2 md:row-span-1',
-    bg: 'bg-zinc-950',
-  },
-];
+import { useState } from 'react';
+import { ArrowUpRight } from 'lucide-react';
+import { publicServices, PublicService } from '@/lib/constants/services';
+import { ServiceQuickView } from '../ServiceQuickView';
 
 export function Services() {
+  const [selectedService, setSelectedService] = useState<PublicService | null>(null);
+
   return (
     <section className="py-32 bg-black">
       <div className="container mx-auto px-6">
@@ -55,10 +24,11 @@ export function Services() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {services.map((service, index) => (
+          {publicServices.map((service) => (
             <div
               key={service.title}
-              className={`group relative overflow-hidden rounded-3xl p-8 transition-all duration-700 hover:scale-[0.98] ${service.bg} border border-white/5 hover:border-brand/20 ${service.className}`}
+              onClick={() => setSelectedService(service)}
+              className={`group relative overflow-hidden rounded-3xl p-8 transition-all duration-700 hover:scale-[0.98] cursor-pointer ${service.bg} border border-white/5 hover:border-brand/20 ${service.gridClassName}`}
             >
               {/* Hover effect */}
               <div className="absolute inset-0 bg-gradient-to-br from-brand/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
@@ -74,13 +44,18 @@ export function Services() {
                 <div>
                   <h4 className="text-2xl font-bold text-white mb-3 tracking-tight">{service.title}</h4>
                   <p className="text-gray-400 text-sm leading-relaxed group-hover:text-gray-300 transition-colors">
-                    {service.description}
+                    {service.shortDescription}
                   </p>
                 </div>
               </div>
             </div>
           ))}
         </div>
+
+        <ServiceQuickView
+          service={selectedService}
+          onClose={() => setSelectedService(null)}
+        />
       </div>
     </section>
   );

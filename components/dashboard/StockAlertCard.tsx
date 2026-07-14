@@ -1,7 +1,11 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Package, ArrowRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
+import { Card, CardContent } from "@/components/ui/card";
+import Link from "next/link";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface StockAlertCardProps {
   lowStockCount: number;
@@ -20,44 +24,68 @@ export function StockAlertCard({
   const hasAlerts = lowStockCount > 0;
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
-          Alertas Stock
-        </CardTitle>
-        <Package
-          className="h-4 w-4 text-muted-foreground pointer-events-none"
-          aria-hidden="true"
-        />
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">
-          {hasAlerts ? (
-            <span className="text-orange-700">{lowStockCount} productos</span>
-          ) : (
-            <span className="text-emerald-700">OK</span>
+    <Card
+      className={`relative overflow-hidden border-l-2 ${hasAlerts ? "border-l-orange-500/60" : "border-l-emerald-500/60"}`}
+    >
+      <CardContent className="p-3.5">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+            Stock Bajo
+          </span>
+          {hasAlerts && (
+            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-700">
+              {lowStockCount} prod.
+            </span>
           )}
         </div>
-        {hasAlerts ? (
-          <>
-            <p className="text-xs text-muted-foreground mt-1">
-              {lowStockItems.slice(0, 3).map((item) => item.name).join(', ')}
-              {lowStockItems.length > 3 && '...'}
-            </p>
-            <Link href="/adm/products?lowStock=true">
-              <Button variant="link" className="p-0 h-auto text-xs mt-2">
-                Ver lista
-                <ArrowRight
-                  className="h-3 w-3 ml-1 pointer-events-none"
-                  aria-hidden="true"
-                />
-              </Button>
-            </Link>
-          </>
-        ) : (
-          <p className="text-xs text-muted-foreground mt-1">
-            Stock en niveles normales
-          </p>
+        <div
+          className={`text-xl font-bold tracking-tight tabular-nums ${hasAlerts ? "text-orange-700" : "text-emerald-700"}`}
+        >
+          {hasAlerts ? lowStockCount : "OK"}
+        </div>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <p className="text-[11px] text-muted-foreground mt-1.5 truncate cursor-default">
+                {hasAlerts
+                  ? `${lowStockItems
+                      .slice(0, 2)
+                      .map((item) => item.name)
+                      .join(", ")}${lowStockCount > 2 ? "..." : ""}`
+                  : "Niveles normales"}
+              </p>
+            </TooltipTrigger>
+            {hasAlerts && lowStockCount > 0 && (
+              <TooltipContent side="bottom" className="max-w-[200px]">
+                <div className="space-y-0.5">
+                  {lowStockItems.slice(0, 5).map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex justify-between gap-2 text-xs"
+                    >
+                      <span className="truncate">{item.name}</span>
+                      <span className="font-mono text-orange-700 shrink-0">
+                        {item.stock}/{item.minStock}
+                      </span>
+                    </div>
+                  ))}
+                  {lowStockCount > 5 && (
+                    <div className="text-xs text-muted-foreground pt-0.5">
+                      +{lowStockCount - 5} más...
+                    </div>
+                  )}
+                </div>
+              </TooltipContent>
+            )}
+          </Tooltip>
+        </TooltipProvider>
+        {hasAlerts && (
+          <Link
+            href="/adm/products?lowStock=true"
+            className="text-[10px] text-primary hover:underline mt-1.5 inline-block font-medium"
+          >
+            Ver lista →
+          </Link>
         )}
       </CardContent>
     </Card>

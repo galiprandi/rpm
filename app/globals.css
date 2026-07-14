@@ -98,6 +98,51 @@
     --sidebar-accent-foreground: 210 40% 98%;
     --sidebar-ring: 217 91% 60%;
   }
+
+  /* High contrast theme: based on light theme with enhanced contrast for LCD monitors */
+  .high-contrast {
+    /* Same as light theme — white background, dark text */
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    /* Same primary as light theme — dark navy */
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+
+    /* Slightly darker secondary for better separation */
+    --secondary: 210 40% 92%;
+    --secondary-foreground: 222.2 84% 4.9%;
+
+    /* Darker muted background and much darker muted text for readability */
+    --muted: 210 40% 92%;
+    --muted-foreground: 215.4 16.3% 28%;
+
+    --accent: 210 40% 88%;
+    --accent-foreground: 222.2 84% 4.9%;
+
+    /* Same destructive and CTA as light theme */
+    --destructive: 0 84.2% 50%;
+    --destructive-foreground: 210 40% 98%;
+    --cta: 38 92% 50%;
+    --cta-foreground: 0 0% 100%;
+
+    /* Much darker borders for clear element separation on LCD */
+    --border: 214.3 31.8% 72%;
+    --input: 214.3 31.8% 72%;
+    --ring: 222.2 84% 4.9%;
+
+    /* Sidebar: same light theme with darker borders */
+    --sidebar: 220 14% 94%;
+    --sidebar-foreground: 222.2 84% 4.9%;
+    --sidebar-border: 214.3 31.8% 72%;
+    --sidebar-accent: 210 40% 86%;
+    --sidebar-accent-foreground: 222.2 84% 4.9%;
+    --sidebar-ring: 222.2 84% 4.9%;
+  }
 }
 
 @layer base {
@@ -115,6 +160,56 @@
 [data-slot="dialog-content"] textarea:focus-visible,
 [data-slot="dialog-content"] select:focus-visible {
   outline-offset: -2px;
+}
+
+/* High contrast enhancements for LCD monitors and Chrome 107 compatibility */
+.high-contrast {
+  /* Chrome 107: disable backdrop-filter (unreliable on old Chrome + Win7) */
+  * {
+    backdrop-filter: none !important;
+  }
+
+  /* Disable smooth animations that may render poorly on old hardware */
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  /* Stronger focus ring for keyboard navigation visibility */
+  *:focus-visible {
+    outline: 2px solid hsl(var(--ring)) !important;
+    outline-offset: 2px !important;
+  }
+
+  /* Ensure borders are always visible — override Tailwind opacity utilities */
+  .border, .border-border, .border-input {
+    border-color: hsl(var(--border)) !important;
+  }
+
+  /* Table borders: ensure visible separation */
+  table, th, td {
+    border-color: hsl(var(--border)) !important;
+    border-collapse: collapse !important;
+  }
+
+  th {
+    font-weight: 700 !important;
+  }
+
+  /* Inputs: ensure visible border and text */
+  input, select, textarea {
+    border-color: hsl(var(--input)) !important;
+  }
+
+  /* Muted text: ensure minimum contrast ratio */
+  .text-muted-foreground {
+    color: hsl(var(--muted-foreground)) !important;
+  }
+
+  /* Sidebar: ensure border is visible */
+  aside, [data-sidebar="sidebar"] {
+    border-right-color: hsl(var(--sidebar-border)) !important;
+  }
 }
 
 /* Public site theme extensions (isolated classes — admin does not use them) */

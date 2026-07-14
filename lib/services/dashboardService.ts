@@ -1,16 +1,24 @@
-import { prisma } from '@/lib/prisma';
-import { getArgentinaStartOfDay, getArgentinaEndOfDay, getArgentinaStartOfYesterday } from '@/lib/utils/date';
+import { prisma } from "@/lib/prisma";
+import {
+  getArgentinaStartOfDay,
+  getArgentinaEndOfDay,
+  getArgentinaStartOfYesterday,
+} from "@/lib/utils/date";
 
 // Helper para formatear Decimal a number
 function decimalToNumber(decimal: unknown): number {
   if (decimal === null || decimal === undefined) return 0;
-  if (typeof decimal === 'number') return decimal;
+  if (typeof decimal === "number") return decimal;
   // Prisma Decimal type
-  if (typeof decimal === 'object' && 'toNumber' in decimal && typeof (decimal as any).toNumber === 'function') {
+  if (
+    typeof decimal === "object" &&
+    "toNumber" in decimal &&
+    typeof (decimal as any).toNumber === "function"
+  ) {
     return (decimal as { toNumber: () => number }).toNumber();
   }
   // Handle string values (often returned from raw queries or certain DB adapters)
-  if (typeof decimal === 'string') {
+  if (typeof decimal === "string") {
     return Number(decimal) || 0;
   }
   return 0;
@@ -34,6 +42,12 @@ export interface DashboardData {
         ready: number;
       };
       newToday: number;
+      oldestPending: Array<{
+        workOrderId: string;
+        vehicleIdentifier: string;
+        customerName: string;
+        createdAt: string;
+      }>;
     };
   };
   stock: {
@@ -48,7 +62,7 @@ export interface DashboardData {
   readyForDelivery: Array<{
     workOrderId: string;
     vehicle: {
-      type: 'COMPACT' | 'SEDAN' | 'SUV' | 'PICKUP' | 'TRUCK';
+      type: "COMPACT" | "SEDAN" | "SUV" | "PICKUP" | "TRUCK";
       description: string;
       identifier: string;
     };
@@ -59,16 +73,26 @@ export interface DashboardData {
     total: number;
     totalPaid: number;
     completedAt: string;
-    invoiceStatus: 'ISSUED' | 'PENDING';
+    invoiceStatus: "ISSUED" | "PENDING";
   }>;
-  recentMovements: Array<{
-    type: 'IN' | 'OUT' | 'ADJUSTMENT';
-    productName: string;
+  topProducts: Array<{
+    name: string;
     quantity: number;
-    reason: string;
-    timestamp: string;
-    userName: string;
+    revenue: number;
   }>;
+  debtors: {
+    totalDebt: number;
+    count: number;
+    topDebtors: Array<{
+      name: string;
+      balance: number;
+    }>;
+  };
+  cashStatus: {
+    isOpen: boolean;
+    openedAt: string | null;
+    balance: number;
+  };
   paymentsByMethod?: Array<{
     code: string;
     name: string;
@@ -76,7 +100,7 @@ export interface DashboardData {
   }>;
   cashMovements?: Array<{
     id: string;
-    type: 'INCOME' | 'EXPENSE' | 'OPENING' | 'CLOSING';
+    type: "INCOME" | "EXPENSE" | "OPENING" | "CLOSING";
     amount: number;
     method: string;
     methodName: string;
@@ -106,7 +130,13 @@ export interface DailyOperationsData {
   };
   movements: Array<{
     id: string;
-    type: 'INCOME' | 'EXPENSE' | 'OPENING' | 'CLOSING' | 'ADJUSTMENT' | 'PURCHASE_VOUCHER';
+    type:
+      | "INCOME"
+      | "EXPENSE"
+      | "OPENING"
+      | "CLOSING"
+      | "ADJUSTMENT"
+      | "PURCHASE_VOUCHER";
     amount: number;
     method: string;
     methodName: string;
@@ -121,18 +151,18 @@ export interface DailyOperationsData {
       name: string;
     };
     relatedId?: string; // ID de la OT o Venta Directa
-    relatedType?: 'work_order' | 'direct_sale';
+    relatedType?: "work_order" | "direct_sale";
   }>;
 }
 
 /**
  * Obtiene datos del dashboard para administradores
- * 
+ *
  * Esta función puede ser usada por:
  * - Server Components (app/adm/page.tsx)
  * - API Routes (app/api/dashboard/summary/route.ts)
  * - AI Agents como tool
- * 
+ *
  * @returns Datos del dashboard con métricas de ventas, OTs, stock, etc.
  */
 export async function getDashboardData(): Promise<DashboardData> {
@@ -146,12 +176,13 @@ export async function getDashboardData(): Promise<DashboardData> {
     todaySalesAgg,
     yesterdaySalesAgg,
     activeWorkOrdersAgg,
-    todayDirectSalesAgg
+    todayDirectSalesAgg,
+    yesterdayDirectSalesAgg,
   ] = await Promise.all([
     // 1. Ventas del día (aggregate)
     prisma.work_order.aggregate({
       where: {
-        status: { in: ['DELIVERED', 'READY', 'PAID'] },
+        status: { in: ["DELIVERED", "READY", "PAID"] },
         completedAt: { gte: today },
       },
       _sum: { total: true },
@@ -160,16 +191,18 @@ export async function getDashboardData(): Promise<DashboardData> {
     // 2. Ventas de ayer (aggregate)
     prisma.work_order.aggregate({
       where: {
-        status: { in: ['DELIVERED', 'READY', 'PAID'] },
+        status: { in: ["DELIVERED", "READY", "PAID"] },
         completedAt: { gte: yesterday, lt: today },
       },
       _sum: { total: true },
     }),
     // 3. OTs Activas - solo conteos por status
     prisma.work_order.groupBy({
-      by: ['status'],
+      by: ["status"],
       where: {
-        status: { in: ['CONFIRMED', 'WAITING', 'IN_PROGRESS', 'CONTROL_QC', 'READY'] },
+        status: {
+          in: ["CONFIRMED", "WAITING", "IN_PROGRESS", "CONTROL_QC", "READY"],
+        },
       },
       _count: { id: true },
     }),
@@ -178,6 +211,11 @@ export async function getDashboardData(): Promise<DashboardData> {
       where: { createdAt: { gte: today } },
       _sum: { total: true },
       _count: { id: true },
+    }),
+    // 5. Ventas directas de ayer (aggregate) — fix vsYesterday comparison
+    prisma.direct_sale.aggregate({
+      where: { createdAt: { gte: yesterday, lt: today } },
+      _sum: { total: true },
     }),
   ]);
 
@@ -194,12 +232,12 @@ export async function getDashboardData(): Promise<DashboardData> {
       minStock: true,
     },
     take: 5,
-    orderBy: { stock: 'asc' },
+    orderBy: { stock: "asc" },
   });
 
   const readyWorkOrders = await prisma.work_order.findMany({
     where: {
-      status: 'READY',
+      status: "READY",
     },
     include: {
       customer: {
@@ -213,26 +251,117 @@ export async function getDashboardData(): Promise<DashboardData> {
       },
     },
     take: 5,
-    orderBy: { completedAt: 'desc' },
+    orderBy: { completedAt: "desc" },
   });
 
-  const recentMovements = await prisma.stock_movement.findMany({
-    include: {
-      product: {
-        select: { name: true },
-      },
+  // Oldest pending work orders (CONFIRMED / WAITING) for prioritization
+  const oldestPendingWorkOrders = await prisma.work_order.findMany({
+    where: {
+      status: { in: ["CONFIRMED", "WAITING"] },
     },
-    take: 5,
-    orderBy: { createdAt: 'desc' },
+    include: {
+      customer: { select: { name: true } },
+      vehicle: { select: { identifier: true } },
+    },
+    take: 2,
+    orderBy: { createdAt: "asc" },
   });
+
+  // Top products sold today (from direct_sale_item + work_order_item)
+  const [todayDirectSaleItems, todayWorkOrderItems] = await Promise.all([
+    prisma.direct_sale_item.findMany({
+      where: {
+        directSale: { createdAt: { gte: today } },
+        productId: { not: null },
+      },
+      select: {
+        name: true,
+        quantity: true,
+        totalPrice: true,
+        productId: true,
+      },
+    }),
+    prisma.work_order_item.findMany({
+      where: {
+        work_order: {
+          completedAt: { gte: today },
+          status: { in: ["DELIVERED", "READY", "PAID"] },
+        },
+        productId: { not: null },
+      },
+      select: {
+        quantity: true,
+        subtotal: true,
+        product: { select: { name: true } },
+      },
+    }),
+  ]);
+
+  // Aggregate top products by name
+  const productMap = new Map<string, { quantity: number; revenue: number }>();
+  for (const item of todayDirectSaleItems) {
+    const key = item.name;
+    const existing = productMap.get(key) || { quantity: 0, revenue: 0 };
+    existing.quantity += item.quantity;
+    existing.revenue += decimalToNumber(item.totalPrice);
+    productMap.set(key, existing);
+  }
+  for (const item of todayWorkOrderItems) {
+    const key = item.product?.name || "Producto";
+    const existing = productMap.get(key) || { quantity: 0, revenue: 0 };
+    existing.quantity += item.quantity;
+    existing.revenue += decimalToNumber(item.subtotal);
+    productMap.set(key, existing);
+  }
+  const topProducts = Array.from(productMap.entries())
+    .map(([name, data]) => ({
+      name,
+      quantity: data.quantity,
+      revenue: data.revenue,
+    }))
+    .sort((a, b) => b.revenue - a.revenue)
+    .slice(0, 5);
+
+  // Deudores summary
+  const debtorsAgg = await prisma.customer.aggregate({
+    where: { balance: { gt: 0 } },
+    _sum: { balance: true },
+    _count: { id: true },
+  });
+  const topDebtors = await prisma.customer.findMany({
+    where: { balance: { gt: 0 } },
+    select: { name: true, balance: true },
+    orderBy: { balance: "desc" },
+    take: 3,
+  });
+
+  // Cash register status
+  const lastCashMovement = await prisma.cash_movement.findFirst({
+    where: { type: { in: ["OPENING", "CLOSING"] } },
+    orderBy: { createdAt: "desc" },
+  });
+  const isCashOpen = lastCashMovement?.type === "OPENING";
+  let cashBalance = 0;
+  if (isCashOpen && lastCashMovement) {
+    const movementsSinceOpening = await prisma.cash_movement.findMany({
+      where: { createdAt: { gte: lastCashMovement.createdAt } },
+    });
+    cashBalance = movementsSinceOpening.reduce((sum, m) => {
+      const amount = decimalToNumber(m.amount);
+      if (m.type === "OPENING" || m.type === "INCOME") return sum + amount;
+      if (m.type === "EXPENSE" || m.type === "PURCHASE_VOUCHER")
+        return sum - amount;
+      return sum;
+    }, 0);
+  }
 
   const todayCashMovements = await prisma.cash_movement.findMany({
     where: {
       createdAt: { gte: today },
-      type: { in: ['INCOME', 'EXPENSE'] },
+      type: { in: ["INCOME", "EXPENSE"] },
     },
     orderBy: {
-      createdAt: 'desc',
+      createdAt: "desc",
     },
   });
 
@@ -248,7 +377,7 @@ export async function getDashboardData(): Promise<DashboardData> {
       createdAt: { gte: today },
     },
     orderBy: {
-      createdAt: 'desc',
+      createdAt: "desc",
     },
     take: 20,
   });
@@ -263,21 +392,29 @@ export async function getDashboardData(): Promise<DashboardData> {
   const todayCount = todayWorkOrderCount + todayDirectCount;
   const ticketAverage = todayCount > 0 ? todayTotal / todayCount : 0;
 
-  // Ventas de ayer para comparación
-  const yesterdayWorkOrderTotal = decimalToNumber(yesterdaySalesAgg._sum.total) || 0;
-  const yesterdayTotal = yesterdayWorkOrderTotal; // Direct sales ayer no crítico para comparación
-  const vsYesterday = yesterdayTotal > 0
-    ? ((todayTotal - yesterdayTotal) / yesterdayTotal) * 100
-    : 0;
+  // Ventas de ayer para comparación (incluye OTs + ventas directas)
+  const yesterdayWorkOrderTotal =
+    decimalToNumber(yesterdaySalesAgg._sum.total) || 0;
+  const yesterdayDirectTotal =
+    decimalToNumber(yesterdayDirectSalesAgg._sum.total) || 0;
+  const yesterdayTotal = yesterdayWorkOrderTotal + yesterdayDirectTotal;
+  const vsYesterday =
+    yesterdayTotal > 0
+      ? ((todayTotal - yesterdayTotal) / yesterdayTotal) * 100
+      : 0;
 
   // Calcular conteos por status desde groupBy
   const statusCounts = new Map<string, number>(
-    activeWorkOrdersAgg.map((g: { status: string; _count: { id: number } }) => [g.status, g._count.id])
+    activeWorkOrdersAgg.map((g: { status: string; _count: { id: number } }) => [
+      g.status,
+      g._count.id,
+    ]),
   );
   const byStatus = {
-    pending: (statusCounts.get('CONFIRMED') || 0) + (statusCounts.get('WAITING') || 0),
-    inProgress: statusCounts.get('IN_PROGRESS') || 0,
-    ready: statusCounts.get('READY') || 0,
+    pending:
+      (statusCounts.get("CONFIRMED") || 0) + (statusCounts.get("WAITING") || 0),
+    inProgress: statusCounts.get("IN_PROGRESS") || 0,
+    ready: statusCounts.get("READY") || 0,
   };
 
   // Contar OTs creadas hoy (necesita query adicional optimizada)
@@ -286,59 +423,67 @@ export async function getDashboardData(): Promise<DashboardData> {
   });
 
   const readyForDelivery = readyWorkOrders.map((wo: any) => {
-    const totalPaid = wo.payments.reduce((sum: number, p: any) => sum + decimalToNumber(p.amount), 0);
+    const totalPaid = wo.payments.reduce(
+      (sum: number, p: any) => sum + decimalToNumber(p.amount),
+      0,
+    );
     return {
       workOrderId: wo.id,
       vehicle: {
-        type: wo.vehicle.category as 'COMPACT' | 'SEDAN' | 'SUV' | 'PICKUP' | 'TRUCK',
+        type: wo.vehicle.category as
+          | "COMPACT"
+          | "SEDAN"
+          | "SUV"
+          | "PICKUP"
+          | "TRUCK",
         description: wo.vehicle.description || `${wo.vehicle.category}`,
         identifier: wo.vehicle.identifier,
       },
       customer: {
         name: wo.customer.name,
-        phone: wo.customer.phone || '',
+        phone: wo.customer.phone || "",
       },
       total: decimalToNumber(wo.total),
       totalPaid,
       completedAt: wo.completedAt?.toISOString() || wo.createdAt.toISOString(),
-      invoiceStatus: wo.invoiceId ? 'ISSUED' as const : 'PENDING' as const,
+      invoiceStatus: wo.invoiceId ? ("ISSUED" as const) : ("PENDING" as const),
     };
   });
 
-  const recentMovementsFormatted = recentMovements.map((m: any) => ({
-    type: m.type as 'IN' | 'OUT' | 'ADJUSTMENT',
-    productName: m.product.name,
-    quantity: Math.abs(m.quantity),
-    reason: m.reason,
-    timestamp: m.createdAt.toISOString(),
-    userName: m.userName || 'Sistema',
-  }));
-
-  const methodCodeToName = paymentMethods.reduce((acc, pm) => {
-    acc[pm.code] = pm.name;
-    return acc;
-  }, {} as Record<string, string>);
+  const methodCodeToName = paymentMethods.reduce(
+    (acc, pm) => {
+      acc[pm.code] = pm.name;
+      return acc;
+    },
+    {} as Record<string, string>,
+  );
 
   // Agrupar por método
-  const paymentsByMethodGrouped = todayCashMovements.reduce((acc: Record<string, { name: string; total: number }>, movement: { method: string; type: string; amount: unknown }) => {
-    const method = movement.method;
-    const amount = decimalToNumber(movement.amount);
+  const paymentsByMethodGrouped = todayCashMovements.reduce(
+    (
+      acc: Record<string, { name: string; total: number }>,
+      movement: { method: string; type: string; amount: unknown },
+    ) => {
+      const method = movement.method;
+      const amount = decimalToNumber(movement.amount);
 
-    if (!acc[method]) {
-      acc[method] = {
-        name: methodCodeToName[method] || method,
-        total: 0,
-      };
-    }
+      if (!acc[method]) {
+        acc[method] = {
+          name: methodCodeToName[method] || method,
+          total: 0,
+        };
+      }
 
-    if (movement.type === 'EXPENSE') {
-      acc[method].total -= amount;
-    } else {
-      acc[method].total += amount;
-    }
+      if (movement.type === "EXPENSE") {
+        acc[method].total -= amount;
+      } else {
+        acc[method].total += amount;
+      }
 
-    return acc;
-  }, {} as Record<string, { name: string; total: number }>);
+      return acc;
+    },
+    {} as Record<string, { name: string; total: number }>,
+  );
 
   const paymentsByMethodArray = Object.entries(paymentsByMethodGrouped)
     .filter(([, data]) => data.total !== 0)
@@ -351,7 +496,7 @@ export async function getDashboardData(): Promise<DashboardData> {
 
   const cashMovementsFormatted = allCashMovements.map((m: any) => ({
     id: m.id,
-    type: m.type as 'INCOME' | 'EXPENSE' | 'OPENING' | 'CLOSING',
+    type: m.type as "INCOME" | "EXPENSE" | "OPENING" | "CLOSING",
     amount: decimalToNumber(m.amount),
     method: m.method,
     methodName: methodCodeToName[m.method] || m.method,
@@ -363,7 +508,10 @@ export async function getDashboardData(): Promise<DashboardData> {
   }));
 
   // Calcular total activo desde el groupBy
-  const activeTotal = activeWorkOrdersAgg.reduce((sum, g) => sum + g._count.id, 0);
+  const activeTotal = activeWorkOrdersAgg.reduce(
+    (sum, g) => sum + g._count.id,
+    0,
+  );
 
   return {
     sales: {
@@ -379,6 +527,12 @@ export async function getDashboardData(): Promise<DashboardData> {
         total: activeTotal,
         byStatus,
         newToday,
+        oldestPending: oldestPendingWorkOrders.map((wo) => ({
+          workOrderId: wo.id,
+          vehicleIdentifier: wo.vehicle?.identifier || "N/A",
+          customerName: wo.customer?.name || "Sin cliente",
+          createdAt: wo.createdAt.toISOString(),
+        })),
       },
     },
     stock: {
@@ -391,7 +545,20 @@ export async function getDashboardData(): Promise<DashboardData> {
       })),
     },
     readyForDelivery,
-    recentMovements: recentMovementsFormatted,
+    topProducts,
+    debtors: {
+      totalDebt: decimalToNumber(debtorsAgg._sum.balance) || 0,
+      count: debtorsAgg._count.id,
+      topDebtors: topDebtors.map((d) => ({
+        name: d.name,
+        balance: decimalToNumber(d.balance),
+      })),
+    },
+    cashStatus: {
+      isOpen: isCashOpen,
+      openedAt: lastCashMovement?.createdAt?.toISOString() || null,
+      balance: cashBalance,
+    },
     paymentsByMethod: paymentsByMethodArray,
     cashMovements: cashMovementsFormatted,
     generatedAt: new Date().toISOString(),
@@ -401,7 +568,9 @@ export async function getDashboardData(): Promise<DashboardData> {
 /**
  * Obtiene todas las operaciones detalladas de un día específico
  */
-export async function getDailyOperations(date: Date): Promise<DailyOperationsData> {
+export async function getDailyOperations(
+  date: Date,
+): Promise<DailyOperationsData> {
   const startOfDay = getArgentinaStartOfDay(date);
   const endOfDay = getArgentinaEndOfDay(date);
 
@@ -414,7 +583,7 @@ export async function getDailyOperations(date: Date): Promise<DailyOperationsDat
         },
       },
       orderBy: {
-        createdAt: 'desc',
+        createdAt: "desc",
       },
     }),
     prisma.payment_method.findMany({
@@ -422,18 +591,20 @@ export async function getDailyOperations(date: Date): Promise<DailyOperationsDat
     }),
   ]);
 
-  const methodMap = Object.fromEntries(paymentMethods.map(m => [m.code, m.name]));
-  methodMap['PURCHASE'] = 'Compra';
+  const methodMap = Object.fromEntries(
+    paymentMethods.map((m) => [m.code, m.name]),
+  );
+  methodMap["PURCHASE"] = "Compra";
 
   // Enriquecer movimientos con información de cliente y referencias
   const enrichedMovements = await Promise.all(
     movements.map(async (m) => {
       let customer = undefined;
       let relatedId = undefined;
-      let relatedType: 'work_order' | 'direct_sale' | undefined = undefined;
+      let relatedType: "work_order" | "direct_sale" | undefined = undefined;
 
       try {
-        if (m.referenceType === 'work_order_payment' && m.referenceId) {
+        if (m.referenceType === "work_order_payment" && m.referenceId) {
           const payment = await prisma.payment.findUnique({
             where: { id: m.referenceId },
             include: {
@@ -445,9 +616,9 @@ export async function getDailyOperations(date: Date): Promise<DailyOperationsDat
           if (payment?.workOrder) {
             customer = payment.workOrder.customer;
             relatedId = payment.workOrder.id;
-            relatedType = 'work_order';
+            relatedType = "work_order";
           }
-        } else if (m.referenceType === 'direct_sale_payment' && m.referenceId) {
+        } else if (m.referenceType === "direct_sale_payment" && m.referenceId) {
           const dsPayment = await prisma.direct_sale_payment.findUnique({
             where: { id: m.referenceId },
             include: {
@@ -460,12 +631,12 @@ export async function getDailyOperations(date: Date): Promise<DailyOperationsDat
             if (dsPayment.directSale.customer) {
               customer = dsPayment.directSale.customer;
             } else {
-              customer = { id: '', name: dsPayment.directSale.customerName };
+              customer = { id: "", name: dsPayment.directSale.customerName };
             }
             relatedId = dsPayment.directSale.id;
-            relatedType = 'direct_sale';
+            relatedType = "direct_sale";
           }
-        } else if (m.referenceType === 'customer_payment' && m.referenceId) {
+        } else if (m.referenceType === "customer_payment" && m.referenceId) {
           const cust = await prisma.customer.findUnique({
             where: { id: m.referenceId },
             select: { id: true, name: true },
@@ -494,24 +665,30 @@ export async function getDailyOperations(date: Date): Promise<DailyOperationsDat
         relatedId,
         relatedType,
       };
-    })
+    }),
   );
 
   // Calcular resumen
   const summary = enrichedMovements.reduce(
     (acc, m) => {
       const amount = m.amount;
-      if (m.type === 'INCOME') {
+      if (m.type === "INCOME") {
         acc.totalIncome += amount;
         acc.netAmount += amount;
-      } else if (m.type === 'EXPENSE' || m.type === 'PURCHASE_VOUCHER') {
+      } else if (m.type === "EXPENSE" || m.type === "PURCHASE_VOUCHER") {
         acc.totalExpense += amount;
         acc.netAmount -= amount;
       }
 
-      if (m.type === 'INCOME' || m.type === 'EXPENSE' || m.type === 'PURCHASE_VOUCHER') {
-        const existingMethod = acc.byMethod.find((bm) => bm.method === m.method);
-        const signedAmount = m.type === 'INCOME' ? amount : -amount;
+      if (
+        m.type === "INCOME" ||
+        m.type === "EXPENSE" ||
+        m.type === "PURCHASE_VOUCHER"
+      ) {
+        const existingMethod = acc.byMethod.find(
+          (bm) => bm.method === m.method,
+        );
+        const signedAmount = m.type === "INCOME" ? amount : -amount;
         if (existingMethod) {
           existingMethod.amount += signedAmount;
         } else {
@@ -529,8 +706,8 @@ export async function getDailyOperations(date: Date): Promise<DailyOperationsDat
       totalIncome: 0,
       totalExpense: 0,
       netAmount: 0,
-      byMethod: [] as DailyOperationsData['summary']['byMethod'],
-    }
+      byMethod: [] as DailyOperationsData["summary"]["byMethod"],
+    },
   );
 
   return {

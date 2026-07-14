@@ -20,6 +20,7 @@ import { TrendingDown, Users, Receipt, DollarSign, Phone, Eye, Clock, User, Mess
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { getWhatsAppLink, getDebtReminderMessage } from '@/lib/utils/whatsapp';
+import { formatARS, relativeTime } from '@/lib/utils/format';
 
 interface Debtor {
   customerId: string;
@@ -85,13 +86,6 @@ export default function DebtorsClient() {
     fetchDebtors();
   }, [fetchDebtors]);
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('es-AR', {
-      style: 'currency',
-      currency: 'ARS',
-    }).format(value);
-  };
-
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '-';
     return new Date(dateString).toLocaleDateString('es-AR');
@@ -109,7 +103,7 @@ export default function DebtorsClient() {
   const stats = summary ? [
     {
       label: 'Deuda Total',
-      value: formatCurrency(summary.totalDebt),
+      value: formatARS(summary.totalDebt),
       icon: TrendingDown,
       iconColor: '#ef4444', // red-500
     },
@@ -127,7 +121,7 @@ export default function DebtorsClient() {
     },
     {
       label: 'Deuda Promedio',
-      value: formatCurrency(summary.averageDebt),
+      value: formatARS(summary.averageDebt),
       icon: DollarSign,
       iconColor: '#9333ea', // purple-600
     },
@@ -192,8 +186,8 @@ export default function DebtorsClient() {
       accessorKey: 'balance',
       header: 'Deuda Total',
       cell: ({ row }) => (
-        <div className="font-mono font-bold text-red-600">
-          {formatCurrency(row.original.balance)}
+        <div className="font-mono font-semibold text-red-600">
+          {formatARS(row.original.balance)}
         </div>
       ),
     },
@@ -207,14 +201,14 @@ export default function DebtorsClient() {
           <div className="space-y-1">
             <div className="text-sm flex items-center gap-1.5 font-mono">
               <Clock className="h-3.5 w-3.5 text-muted-foreground pointer-events-none" aria-hidden="true" />
-              {formatDate(date)}
+              {date ? relativeTime(date) : '-'}
             </div>
             {daysSince && (
               <div className={cn(
                 "text-xs font-medium",
                 daysSince > 30 ? "text-red-600" : "text-muted-foreground"
               )}>
-                {daysSince} días
+                {formatDate(date)} ({daysSince} días)
               </div>
             )}
           </div>

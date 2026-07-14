@@ -1,11 +1,13 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { PUBLIC_SITE_CONFIG, DEFAULT_WHATSAPP_MESSAGE } from '@/lib/config/public-site';
+import { GlobalSearch } from '../GlobalSearch';
 
 const navItems = [
   { name: 'Productos', href: '/productos' },
@@ -15,8 +17,10 @@ const navItems = [
 ];
 
 export function PublicHeader() {
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -42,19 +46,36 @@ export function PublicHeader() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-12">
-            {navItems.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className="text-[13px] font-medium text-gray-400 hover:text-white transition-all duration-300 uppercase tracking-widest"
-              >
-                {item.name}
-              </Link>
-            ))}
+            {navItems.map((item) => {
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={cn(
+                    "text-[13px] font-medium transition-all duration-300 uppercase tracking-widest relative group/link",
+                    isActive ? "text-white" : "text-gray-400 hover:text-white"
+                  )}
+                >
+                  {item.name}
+                  <span className={cn(
+                    "absolute -bottom-2 left-0 h-px bg-brand transition-all duration-300",
+                    isActive ? "w-full" : "w-0 group-hover/link:w-full"
+                  )} />
+                </Link>
+              );
+            })}
           </nav>
 
           {/* Actions */}
           <div className="hidden md:flex items-center space-x-6">
+            <button
+              onClick={() => setIsSearchOpen(true)}
+              className="p-2 text-gray-400 hover:text-brand transition-colors duration-300"
+              aria-label="Buscar"
+            >
+              <Search className="h-5 w-5" />
+            </button>
             <Link href="/login" className="text-[13px] font-medium text-gray-400 hover:text-white transition-all duration-300 uppercase tracking-widest">
               Ingresar
             </Link>
@@ -71,7 +92,14 @@ export function PublicHeader() {
           </div>
 
           {/* Mobile Toggle */}
-          <div className="md:hidden">
+          <div className="md:hidden flex items-center space-x-2">
+            <button
+              onClick={() => setIsSearchOpen(true)}
+              className="p-2 text-white hover:text-brand transition-colors"
+              aria-label="Buscar"
+            >
+              <Search className="h-5 w-5" />
+            </button>
             <Button variant="ghost" size="icon" className="text-white" onClick={() => setIsOpen(!isOpen)}>
               {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
@@ -86,16 +114,30 @@ export function PublicHeader() {
           isOpen ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-full pointer-events-none"
         )}
       >
-        {navItems.map((item) => (
-          <Link
-            key={item.name}
-            href={item.href}
-            className="text-4xl font-bold text-white hover:text-brand transition-colors"
-            onClick={() => setIsOpen(false)}
-          >
-            {item.name}
-          </Link>
-        ))}
+        <button
+          onClick={() => { setIsOpen(false); setIsSearchOpen(true); }}
+          className="flex items-center space-x-3 text-white/60 hover:text-brand transition-colors mb-4"
+        >
+          <Search className="h-6 w-6" />
+          <span className="text-xl font-bold uppercase tracking-widest">Buscar</span>
+        </button>
+
+        {navItems.map((item) => {
+          const isActive = pathname === item.href;
+          return (
+            <Link
+              key={item.name}
+              href={item.href}
+              className={cn(
+                "text-4xl font-bold transition-colors",
+                isActive ? "text-brand" : "text-white hover:text-brand"
+              )}
+              onClick={() => setIsOpen(false)}
+            >
+              {item.name}
+            </Link>
+          );
+        })}
         <Link
           href="/login"
           className="text-2xl font-bold text-gray-400 hover:text-white transition-colors"
@@ -109,6 +151,8 @@ export function PublicHeader() {
           </Button>
         </a>
       </div>
+
+      <GlobalSearch isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
     </header>
   );
 }

@@ -74,16 +74,20 @@ export const GET = withStaff(async (request: NextRequest) => {
         let totalIncome = 0;
         let totalExpense = 0;
         let totalAdjustments = 0;
+        let cashIncome = 0;
+        let cashExpense = 0;
 
         movements.forEach((movement: any) => {
           const amount = decimalToNumber(movement.amount);
           switch (movement.type) {
             case 'INCOME':
               totalIncome += amount;
+              if (movement.method === 'CASH') cashIncome += amount;
               break;
             case 'EXPENSE':
             case 'PURCHASE_VOUCHER':
               totalExpense += amount;
+              if (movement.method === 'CASH') cashExpense += amount;
               break;
             case 'ADJUSTMENT':
               totalAdjustments += amount;
@@ -96,7 +100,9 @@ export const GET = withStaff(async (request: NextRequest) => {
         let differenceReason = null;
 
         if (closing) {
-          const expectedAmount = decimalToNumber(opening.amount) + totalIncome - totalExpense;
+          // Only CASH movements affect the cash drawer expected amount.
+          // Non-cash methods (credit card, transfer, QR) go directly to bank.
+          const expectedAmount = decimalToNumber(opening.amount) + cashIncome - cashExpense;
           const closingAmount = decimalToNumber(closing.amount);
           difference = closingAmount - expectedAmount;
           
@@ -148,7 +154,7 @@ export const GET = withStaff(async (request: NextRequest) => {
           totalExpense,
           totalAdjustments,
           closingAmount: closing ? decimalToNumber(closing.amount) : null,
-          expectedAmount: decimalToNumber(opening.amount) + totalIncome - totalExpense,
+          expectedAmount: decimalToNumber(opening.amount) + cashIncome - cashExpense,
           difference,
           differenceReason,
           status: closing ? (Math.abs(difference) < 0.01 ? 'BALANCED' : difference > 0 ? 'SURPLUS' : 'SHORTAGE') : 'OPEN',

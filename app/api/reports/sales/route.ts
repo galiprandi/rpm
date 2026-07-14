@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth-server";
 import { UserRole } from "@/lib/auth/roles";
-import { getSalesReport, type GroupBy } from "@/lib/services/reportService";
+import { getSalesReport, type GroupBy } from "@/lib/services/salesReportService";
 import { getArgentinaStartOfDay, getArgentinaEndOfDay } from "@/lib/utils/date";
 
 export const revalidate = 600; // 10 minutes

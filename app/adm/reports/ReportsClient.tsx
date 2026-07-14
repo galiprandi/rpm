@@ -9,6 +9,8 @@ import {
   Package,
   Wrench,
   Wallet,
+  ShoppingCart,
+  Users,
   ArrowRight,
   LucideIcon
 } from 'lucide-react';
@@ -96,6 +98,27 @@ export default function ReportsClient() {
       description: "Ingresos vs egresos, rentabilidad neta y análisis de medios de pago.",
       href: "/adm/reports/finance",
       icon: Wallet,
+      isAvailable: true
+    },
+    {
+      title: "Compras",
+      description: "Análisis de abastecimiento, evolución de costos y compras por proveedor.",
+      href: "/adm/reports/purchases",
+      icon: ShoppingCart,
+      isAvailable: true
+    },
+    {
+      title: "Clientes",
+      description: "Análisis de adquisición, recurrencia y ranking de clientes por facturación.",
+      href: "/adm/reports/customers",
+      icon: Users,
+      isAvailable: true
+    },
+    {
+      title: "Servicios",
+      description: "Métricas de ingresos, demanda y performance de servicios realizados.",
+      href: "/adm/reports/services",
+      icon: Wrench,
       isAvailable: true
     }
   ];

@@ -24,11 +24,27 @@ export interface SalesEvolutionItem {
   count: number;
 }
 
+export interface TopProductItem {
+  id: string;
+  name: string;
+  total: number;
+  quantity: number;
+}
+
+export interface CategoryDistributionItem {
+  id: string;
+  name: string;
+  total: number;
+  color?: string;
+}
+
 export interface SalesReportData {
   totalSales: SalesMetric;
   orderCount: SalesMetric;
   ticketAverage: SalesMetric;
   evolution: SalesEvolutionItem[];
+  topProducts: TopProductItem[];
+  categoryDistribution: CategoryDistributionItem[];
   groupBy: GroupBy;
   generatedAt: string;
 }
@@ -302,7 +318,123 @@ export async function getSalesReport(
     }))
     .sort((a, b) => a.date.localeCompare(b.date));
 
-  // 4. Format results
+  // 4. Calculate Top Products and Category Distribution
+  const [woItems, dsItems] = await Promise.all([
+    prisma.work_order_item.findMany({
+      where: {
+        work_order: {
+          status: { in: ["DELIVERED", "READY", "PAID"] },
+          completedAt: { gte: startDate, lte: endDate },
+        },
+      },
+      include: {
+        product: { include: { category: true } },
+        service: true,
+      },
+    }),
+    prisma.direct_sale_item.findMany({
+      where: {
+        directSale: {
+          createdAt: { gte: startDate, lte: endDate },
+        },
+      },
+      include: {
+        product: { include: { category: true } },
+        service: true,
+      },
+    }),
+  ]);
+
+  const productMap: Record<string, TopProductItem> = {};
+  const categoryMap: Record<string, CategoryDistributionItem> = {};
+
+  const processItem = (
+    name: string,
+    id: string,
+    total: number,
+    quantity: number,
+    categoryName: string,
+    categoryId: string,
+    categoryColor?: string | null,
+  ) => {
+    // Product aggregation
+    if (!productMap[id]) {
+      productMap[id] = { id, name, total: 0, quantity: 0 };
+    }
+    productMap[id].total += total;
+    productMap[id].quantity += quantity;
+
+    // Category aggregation
+    if (!categoryMap[categoryId]) {
+      categoryMap[categoryId] = {
+        id: categoryId,
+        name: categoryName,
+        total: 0,
+        color: categoryColor || undefined,
+      };
+    }
+    categoryMap[categoryId].total += total;
+  };
+
+  woItems.forEach((item) => {
+    const total = decimalToNumber(item.subtotal);
+    if (item.productId && item.product) {
+      processItem(
+        item.product.name,
+        item.productId,
+        total,
+        item.quantity,
+        item.product.category.name,
+        item.product.categoryId,
+        item.product.category.color,
+      );
+    } else if (item.serviceId && item.service) {
+      processItem(
+        item.service.name,
+        item.serviceId,
+        total,
+        item.quantity,
+        "Servicios",
+        "services-cat",
+        "#6366f1",
+      );
+    }
+  });
+
+  dsItems.forEach((item) => {
+    const total = decimalToNumber(item.totalPrice);
+    if (item.productId && item.product) {
+      processItem(
+        item.product.name,
+        item.productId,
+        total,
+        item.quantity,
+        item.product.category.name,
+        item.product.categoryId,
+        item.product.category.color,
+      );
+    } else if (item.serviceId && item.service) {
+      processItem(
+        item.service.name,
+        item.serviceId,
+        total,
+        item.quantity,
+        "Servicios",
+        "services-cat",
+        "#6366f1",
+      );
+    }
+  });
+
+  const topProducts = Object.values(productMap)
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 5);
+
+  const categoryDistribution = Object.values(categoryMap).sort(
+    (a, b) => b.total - a.total,
+  );
+
+  // 5. Format results
   const calculateChange = (curr: number, prev: number) => {
     if (prev === 0) return curr > 0 ? 100 : 0;
     return ((curr - prev) / prev) * 100;
@@ -325,6 +457,8 @@ export async function getSalesReport(
       change: calculateChange(current.average, previous.average),
     },
     evolution,
+    topProducts,
+    categoryDistribution,
     groupBy,
     generatedAt: new Date().toISOString(),
   };

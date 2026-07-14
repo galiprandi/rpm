@@ -1,25 +1,33 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { PublicLayout } from '@/components/public/layout/PublicLayout';
 import { Button } from '@/components/ui/button';
-import { Search, ArrowRight, X, Check, MessageCircle, Eye } from 'lucide-react';
-import { PUBLIC_SITE_CONFIG } from '@/lib/config/public-site';
+import { Search, ArrowRight, X, Eye, MessageCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { featuredProducts } from '@/lib/constants/featured-products';
+import { ProductQuickView } from '@/components/public/ProductQuickView';
+import { formatARS } from '@/lib/utils/format';
+import { PUBLIC_SITE_CONFIG, DEFAULT_WHATSAPP_MESSAGE } from '@/lib/config/public-site';
 
 const categories = ['Todos', 'Iluminación', 'Estética', 'Equipamiento', 'Seguridad', 'Interior'];
 
 export default function ProductsClient() {
+  const searchParams = useSearchParams();
   const [selectedCategory, setSelectedCategory] = useState('Todos');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<typeof featuredProducts[0] | null>(null);
+
+  useEffect(() => {
+    const productId = searchParams.get('product');
+    if (productId) {
+      const product = featuredProducts.find(p => p.id === productId);
+      if (product) {
+        setSelectedProduct(product);
+      }
+    }
+  }, [searchParams]);
 
   const filteredProducts = featuredProducts.filter(product => {
     const matchesCategory = selectedCategory === 'Todos' || product.category === selectedCategory;
@@ -109,7 +117,7 @@ export default function ProductsClient() {
                     <h3 className="text-xl font-bold text-white tracking-tight">{product.name}</h3>
                   </div>
                   <div className="flex items-center justify-between opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500">
-                    <span className="text-white font-bold">${product.price.toLocaleString()}</span>
+                    <span className="text-white font-mono font-semibold">{formatARS(product.price)}</span>
                     <button
                       onClick={() => setSelectedProduct(product)}
                       className="flex items-center text-xs font-bold text-brand hover:text-white transition-colors"
@@ -140,73 +148,36 @@ export default function ProductsClient() {
             </div>
           )}
 
-          <div className="mt-24 text-center animate-fade-up opacity-0" style={{ animationDelay: '0.5s' }}>
-            <p className="text-zinc-500 text-sm mb-8">
-              Mostrando {filteredProducts.length} de {featuredProducts.length} productos destacados
+        </div>
+      </section>
+
+      {/* High-Impact CTA */}
+      <section className="py-60 bg-zinc-950 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,75,0,0.1)_0,transparent_70%)]" />
+        <div className="container mx-auto px-6 relative z-10 text-center">
+          <div className="max-w-3xl mx-auto space-y-12">
+            <h2 className="text-4xl md:text-6xl font-bold text-white tracking-tighter">
+              ¿No encontrás lo que <br /> estás buscando?
+            </h2>
+            <p className="text-xl text-zinc-500 leading-relaxed">
+              Nuestro catálogo digital es una selección. Si necesitás un accesorio específico o una cotización a medida, contactanos.
             </p>
-            <Button variant="outline" className="border-white/10 text-white rounded-full px-12 h-14 hover:bg-white hover:text-black transition-all group">
-              Explorar Catálogo Completo
-              <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-            </Button>
+            <div className="flex justify-center">
+               <Button asChild className="bg-brand text-white hover:bg-brand/90 font-bold px-16 h-20 text-xl rounded-full transition-all hover:scale-105 active:scale-95 border-none shadow-[0_0_40px_rgba(255,75,0,0.3)] gap-3">
+                 <a href={PUBLIC_SITE_CONFIG.links.whatsapp(DEFAULT_WHATSAPP_MESSAGE)} target="_blank" rel="noopener noreferrer">
+                    <MessageCircle className="h-6 w-6 fill-current" />
+                    Consultar a Medida
+                 </a>
+               </Button>
+            </div>
           </div>
         </div>
       </section>
 
-      <Dialog open={!!selectedProduct} onOpenChange={(open) => !open && setSelectedProduct(null)}>
-        <DialogContent className="max-w-3xl bg-zinc-950 border-white/10 p-0 overflow-hidden">
-          {selectedProduct && (
-            <div className="flex flex-col md:flex-row h-full">
-              <div className="md:w-1/2 aspect-square md:aspect-auto bg-zinc-900 flex items-center justify-center relative overflow-hidden">
-                <div className="absolute inset-0 bg-brand/5" />
-                <span className="text-[140px] font-black text-white/5 italic select-none">
-                  {selectedProduct.image}
-                </span>
-                <div className="absolute top-6 left-6">
-                  <span className="px-3 py-1 bg-brand text-white text-[10px] font-bold uppercase tracking-widest rounded-full">
-                    {selectedProduct.category}
-                  </span>
-                </div>
-              </div>
-
-              <div className="md:w-1/2 p-8 md:p-12 flex flex-col justify-center space-y-8">
-                <DialogHeader className="space-y-4">
-                  <DialogTitle className="text-3xl md:text-4xl font-bold text-white tracking-tighter leading-tight">
-                    {selectedProduct.name}
-                  </DialogTitle>
-                  <p className="text-2xl font-bold text-brand">
-                    ${selectedProduct.price.toLocaleString()}
-                  </p>
-                </DialogHeader>
-
-                <div className="space-y-6">
-                  <p className="text-zinc-400 leading-relaxed">
-                    {selectedProduct.description}
-                  </p>
-
-                  <ul className="grid grid-cols-1 gap-3">
-                    {selectedProduct.features.map((feature, i) => (
-                      <li key={i} className="flex items-center text-sm text-zinc-300">
-                        <Check className="h-4 w-4 text-brand mr-3 flex-shrink-0" />
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div className="pt-4">
-                  <Button
-                    className="w-full bg-white text-black hover:bg-brand hover:text-white font-bold h-14 rounded-2xl transition-all duration-300 gap-3 group"
-                    onClick={() => window.open(PUBLIC_SITE_CONFIG.links.whatsapp(`Hola RPM! Me interesa el producto: ${selectedProduct.name}. ¿Tienen stock disponible?`), '_blank')}
-                  >
-                    <MessageCircle className="h-5 w-5 fill-current transition-transform group-hover:scale-110" />
-                    CONSULTAR POR WHATSAPP
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <ProductQuickView
+        product={selectedProduct}
+        onClose={() => setSelectedProduct(null)}
+      />
     </PublicLayout>
   );
 }

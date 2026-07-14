@@ -1,14 +1,30 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
+import { useEffect } from "react";
 
 export function ThemeScript() {
   useEffect(() => {
-    const theme = localStorage.getItem('theme') || 'system';
-    if (theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-      document.documentElement.classList.add('dark');
+    const theme = localStorage.getItem("theme") || "system";
+    const root = document.documentElement;
+
+    // Reset classes
+    root.classList.remove("light", "dark", "high-contrast");
+
+    let resolved = "light";
+    if (
+      theme === "dark" ||
+      (theme === "system" &&
+        window.matchMedia("(prefers-color-scheme: dark)").matches)
+    ) {
+      resolved = "dark";
+    } else if (theme === "high-contrast") {
+      resolved = "high-contrast";
+    }
+
+    if (resolved === "high-contrast") {
+      root.classList.add("high-contrast");
     } else {
-      document.documentElement.classList.remove('dark');
+      root.classList.add(resolved);
     }
   }, []);
 

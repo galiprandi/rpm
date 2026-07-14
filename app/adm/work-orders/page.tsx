@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,11 +13,32 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Plus, LayoutGrid, List, Car, Truck, Wrench, Headphones, Package, ClipboardList, Wallet, DollarSign, MessageSquare, AlertCircle, UserCog, Eye, Search, X, Check } from "lucide-react";
+import {
+  Plus,
+  LayoutGrid,
+  List,
+  ClipboardList,
+  Wallet,
+  DollarSign,
+  MessageSquare,
+  AlertCircle,
+  UserCog,
+  Eye,
+  Search,
+  X,
+  Check,
+  Calendar,
+  Clock,
+  PlayCircle,
+  CheckCircle,
+  Package,
+  type LucideIcon,
+} from "lucide-react";
 import { Header } from "@/components/adm/Header";
 import { CrudStats } from "@/components/adm/CrudStats";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { getVehicleCategory } from "@/lib/constants/vehicle-categories";
 import {
   DndContext,
   DragOverlay,
@@ -52,12 +74,19 @@ import {
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import { getWhatsAppLink, getWorkOrderMessage } from "@/lib/utils/whatsapp";
+import { formatARS, relativeTime } from "@/lib/utils/format";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface WorkOrder {
   id: string;
   status: string;
   customer: { name: string; phone: string };
-  vehicle: { identifier: string; category: string; make?: { name: string }; model?: { name: string } };
+  vehicle: {
+    identifier: string;
+    category: string;
+    make?: { name: string };
+    model?: { name: string };
+  };
   total: number;
   technicianId?: string;
   scheduledDate?: string;
@@ -70,51 +99,71 @@ interface WorkOrder {
 
 const STATUSES = [
   { id: "CONFIRMED", label: "Confirmada", color: "bg-blue-50 border-blue-200" },
-  { id: "WAITING", label: "En Espera", color: "bg-yellow-50 border-yellow-200" },
-  { id: "IN_PROGRESS", label: "En Proceso", color: "bg-orange-50 border-orange-200" },
-  { id: "QC_CHECK", label: "Control QC", color: "bg-purple-50 border-purple-200" },
+  {
+    id: "WAITING",
+    label: "En Espera",
+    color: "bg-yellow-50 border-yellow-200",
+  },
+  {
+    id: "IN_PROGRESS",
+    label: "En Proceso",
+    color: "bg-orange-50 border-orange-200",
+  },
+  {
+    id: "QC_CHECK",
+    label: "Control QC",
+    color: "bg-purple-50 border-purple-200",
+  },
   { id: "READY", label: "Listo", color: "bg-emerald-50 border-emerald-200" },
   { id: "DELIVERED", label: "Entregada", color: "bg-gray-50 border-gray-200" },
 ];
 
+const NEXT_STATUS_MAP: Record<
+  string,
+  { label: string; next: string; icon: LucideIcon }
+> = {
+  CONFIRMED: {
+    label: "Iniciar Trabajo",
+    next: "IN_PROGRESS",
+    icon: PlayCircle,
+  },
+  WAITING: { label: "Iniciar Trabajo", next: "IN_PROGRESS", icon: PlayCircle },
+  IN_PROGRESS: { label: "Finalizar Trabajo", next: "READY", icon: CheckCircle },
+  QC_CHECK: { label: "Finalizar Trabajo", next: "READY", icon: CheckCircle },
+  READY: { label: "Entregar Vehículo", next: "DELIVERED", icon: Package },
+};
+
 // --- Helper Functions ---
 
 const getCategoryIcon = (category: string) => {
-  const normalizedCategory = category?.toUpperCase() || '';
-  switch (normalizedCategory) {
-    case 'CAR':
-    case 'SUV':
-    case 'PICKUP':
-      return { icon: <Car className="h-4 w-4 pointer-events-none" aria-hidden="true" />, label: "Automóvil" };
-    case 'TRUCK':
-      return { icon: <Truck className="h-4 w-4 pointer-events-none" aria-hidden="true" />, label: "Camión / Pesado" };
-    case 'MOTORCYCLE':
-      return { icon: <Wrench className="h-4 w-4 pointer-events-none" aria-hidden="true" />, label: "Moto / Mecánica" };
-    case 'AUDIO_EQUIPMENT':
-      return { icon: <Headphones className="h-4 w-4 pointer-events-none" aria-hidden="true" />, label: "Audio / Electrónica" };
-    case 'TRAILER':
-      return { icon: <Package className="h-4 w-4 pointer-events-none" aria-hidden="true" />, label: "Trailer / Remolque" };
-    case 'OTHER_EQUIPMENT':
-    default:
-      return { icon: <Package className="h-4 w-4 pointer-events-none" aria-hidden="true" />, label: "Otro / Equipamiento" };
-  }
+  const cat = getVehicleCategory(category);
+  return { icon: cat.icon, label: cat.label };
 };
 
 const isDelayed = (wo: WorkOrder) => {
-  const referenceDate = wo.startedAt ? new Date(wo.startedAt) : new Date(wo.createdAt);
+  const referenceDate = wo.startedAt
+    ? new Date(wo.startedAt)
+    : new Date(wo.createdAt);
   const daysInStatus = Math.floor(
-    (Date.now() - referenceDate.getTime()) / (1000 * 60 * 60 * 24)
+    (Date.now() - referenceDate.getTime()) / (1000 * 60 * 60 * 24),
   );
   return daysInStatus > 3 && ["WAITING", "IN_PROGRESS"].includes(wo.status);
 };
 
 // --- Components ---
 
-function KanbanCard({ wo, isOverlay = false, technicians = [], onTechnicianUpdate }: {
+function KanbanCard({
+  wo,
+  isOverlay = false,
+  technicians = [],
+  onTechnicianUpdate,
+  onStatusUpdate,
+}: {
   wo: WorkOrder;
   isOverlay?: boolean;
   technicians?: Array<{ id: string; name: string }>;
   onTechnicianUpdate?: (woId: string, techId: string | null) => Promise<void>;
+  onStatusUpdate?: (woId: string, newStatus: string) => Promise<void>;
 }) {
   const {
     attributes,
@@ -128,7 +177,7 @@ function KanbanCard({ wo, isOverlay = false, technicians = [], onTechnicianUpdat
     data: {
       type: "WorkOrder",
       wo,
-    }
+    },
   });
 
   const style = {
@@ -136,34 +185,65 @@ function KanbanCard({ wo, isOverlay = false, technicians = [], onTechnicianUpdat
     transition,
   };
 
-  const { icon: categoryIcon, label: categoryLabel } = getCategoryIcon(wo.vehicle.category);
+  const router = useRouter();
+  const { icon: categoryIcon, label: categoryLabel } = getCategoryIcon(
+    wo.vehicle.category,
+  );
+
+  const nextAction = NEXT_STATUS_MAP[wo.status];
 
   const content = (
-    <Card className={cn(
-      "group relative cursor-pointer hover:shadow-md transition-all border-l-4",
-      isDelayed(wo) ? "border-l-orange-500 bg-orange-50/30" : "border-l-transparent",
-      isDragging && !isOverlay && "opacity-30",
-      isOverlay && "shadow-xl border-primary ring-2 ring-primary ring-opacity-50 scale-105"
-    )}>
-      {/* Quick Actions Overlay */}
+    <Card
+      className={cn(
+        "group relative cursor-pointer hover:shadow-md transition-all border-l-4 bg-background shadow-sm",
+        isDelayed(wo)
+          ? "border-l-orange-500 bg-orange-50/40"
+          : "border-l-transparent",
+        isDragging && !isOverlay && "opacity-30",
+        isOverlay &&
+          "shadow-xl border-primary ring-2 ring-primary ring-opacity-50 scale-105",
+      )}
+    >
+      {/* Floating action icons - top right corner on hover */}
       {!isOverlay && !isDragging && (
-        <div className="absolute inset-0 z-10 bg-white/60 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-2 rounded-lg">
-          <Link href={`/adm/work-orders/${wo.id}`} className="contents">
+        <div className="absolute top-1.5 right-1.5 z-20 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+          {nextAction && (
             <Button
-              size="sm"
               variant="secondary"
-              className="h-8 shadow-sm border"
+              size="sm"
+              className="h-6 w-6 p-0 shadow-sm border bg-primary text-primary-foreground hover:bg-primary/90"
               onMouseDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onStatusUpdate?.(wo.id, nextAction.next);
+              }}
+              title={nextAction.label}
+              aria-label={nextAction.label}
             >
-              <Eye className="h-4 w-4 mr-1" />
-              Detalle
+              <nextAction.icon className="h-3.5 w-3.5" aria-hidden="true" />
             </Button>
-          </Link>
+          )}
+          <Button
+            variant="secondary"
+            size="sm"
+            className="h-6 w-6 p-0 shadow-sm border bg-white/90 hover:bg-white"
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              router.push(`/adm/work-orders/${wo.id}`);
+            }}
+            title="Ver detalle"
+            aria-label="Ver detalle"
+          >
+            <Eye className="h-3.5 w-3.5" aria-hidden="true" />
+          </Button>
           {wo.customer.phone && (
             <Button
-              size="sm"
               variant="secondary"
-              className="h-8 shadow-sm border text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50"
+              size="sm"
+              className="h-6 w-6 p-0 shadow-sm border bg-white/90 text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50"
               onMouseDown={(e) => e.stopPropagation()}
               onClick={(e) => {
                 e.preventDefault();
@@ -175,130 +255,152 @@ function KanbanCard({ wo, isOverlay = false, technicians = [], onTechnicianUpdat
                   total: Number(wo.total),
                   totalPaid: wo.totalPaid || 0,
                 });
-                window.open(getWhatsAppLink(wo.customer.phone, msg), '_blank');
+                window.open(getWhatsAppLink(wo.customer.phone, msg), "_blank");
+                toast.success("Abriendo WhatsApp...", {
+                  description: `Mensaje preparado para ${wo.customer.name}`,
+                });
               }}
+              title="Enviar WhatsApp"
+              aria-label="Enviar WhatsApp"
             >
-              <MessageSquare className="h-4 w-4 mr-1" />
-              WA
+              <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />
             </Button>
           )}
         </div>
       )}
-      <CardContent className="p-3 space-y-1.5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 font-semibold text-sm">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="text-muted-foreground group-hover:text-primary transition-colors">
-                    {categoryIcon}
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{categoryLabel}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <span className="font-mono tracking-tighter">{wo.vehicle.identifier}</span>
-          </div>
+      <CardContent className="p-2.5 space-y-1.5">
+        {/* Line 1: Category icon + Plate/SN */}
+        <div className="flex items-center gap-1.5">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="text-muted-foreground shrink-0">
+                  {categoryIcon}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{categoryLabel}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <span className="font-mono text-sm font-semibold tracking-tighter truncate">
+            {wo.vehicle.identifier}
+          </span>
+        </div>
+        {/* Line 2: Customer name (full width) */}
+        <p className="text-xs font-medium truncate leading-tight">
+          {wo.customer.name}
+        </p>
+        {/* Line 3: Amount badge (full width row) */}
+        <div>
           <Badge
-            variant={wo.isFullyPaid ? "outline" : (wo.totalPaid && wo.totalPaid > 0 ? "secondary" : "outline")}
+            variant="outline"
             className={cn(
               "text-[10px] px-1.5 py-0 h-5 font-mono",
-              wo.isFullyPaid ? "border-emerald-200 bg-emerald-50 text-emerald-700" :
-              (wo.totalPaid && wo.totalPaid > 0 ? "border-amber-200 bg-amber-50 text-amber-700" : "text-muted-foreground")
+              wo.isFullyPaid
+                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                : wo.totalPaid && wo.totalPaid > 0
+                  ? "border-amber-200 bg-amber-50 text-amber-700"
+                  : "border-slate-200 bg-slate-50 text-slate-600",
             )}
           >
-            ${Number(wo.total).toLocaleString("es-AR")}
+            {formatARS(Number(wo.total))}
           </Badge>
         </div>
-        <div className="flex justify-between items-center gap-2">
-          <div className="text-xs text-muted-foreground truncate">
-            {wo.vehicle.make?.name} {wo.vehicle.model?.name}
-          </div>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <div
-                className={cn(
-                  "flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border shrink-0 max-w-[100px] transition-colors cursor-pointer z-20",
-                  wo.technician
-                    ? "bg-purple-50 text-purple-700 border-purple-100 hover:bg-purple-100"
-                    : "bg-muted text-muted-foreground border-transparent hover:bg-muted/80"
-                )}
-                onMouseDown={(e) => e.stopPropagation()}
-              >
-                <UserCog className="h-2.5 w-2.5 shrink-0" />
-                <span className="truncate">{wo.technician?.name || "Sin técnico"}</span>
-              </div>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48" onMouseDown={(e) => e.stopPropagation()}>
-              <DropdownMenuLabel className="text-xs font-semibold">Asignar Técnico</DropdownMenuLabel>
-              <DropdownMenuSeparator />
+        {/* Line 4: Technician (full width) */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <div
+              className={cn(
+                "flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border w-full transition-colors cursor-pointer",
+                wo.technician
+                  ? "bg-purple-50 text-purple-700 border-purple-100 hover:bg-purple-100"
+                  : "bg-muted/60 text-slate-600 border-slate-200/50 hover:bg-muted",
+              )}
+              onMouseDown={(e) => e.stopPropagation()}
+            >
+              <UserCog className="h-2.5 w-2.5 shrink-0" />
+              <span className="truncate">
+                {wo.technician?.name || "Sin asignar"}
+              </span>
+            </div>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="start"
+            className="w-48"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <DropdownMenuLabel className="text-xs font-semibold">
+              Asignar Responsable
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="text-xs"
+              onClick={() => onTechnicianUpdate?.(wo.id, null)}
+            >
+              <X className="h-3.5 w-3.5 mr-2" />
+              Sin asignar
+              {!wo.technician && (
+                <Check className="h-3.5 w-3.5 ml-auto text-primary" />
+              )}
+            </DropdownMenuItem>
+            {technicians.map((tech) => (
               <DropdownMenuItem
+                key={tech.id}
                 className="text-xs"
-                onClick={() => onTechnicianUpdate?.(wo.id, null)}
+                onClick={() => onTechnicianUpdate?.(wo.id, tech.id)}
               >
-                <X className="h-3.5 w-3.5 mr-2" />
-                Sin asignar
-                {!wo.technician && <Check className="h-3.5 w-3.5 ml-auto text-primary" />}
+                <UserCog className="h-3.5 w-3.5 mr-2" />
+                {tech.name}
+                {wo.technician?.id === tech.id && (
+                  <Check className="h-3.5 w-3.5 ml-auto text-primary" />
+                )}
               </DropdownMenuItem>
-              {technicians.map((tech) => (
-                <DropdownMenuItem
-                  key={tech.id}
-                  className="text-xs"
-                  onClick={() => onTechnicianUpdate?.(wo.id, tech.id)}
-                >
-                  <UserCog className="h-3.5 w-3.5 mr-2" />
-                  {tech.name}
-                  {wo.technician?.id === tech.id && <Check className="h-3.5 w-3.5 ml-auto text-primary" />}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-
-        <div className="flex justify-between items-center text-[10px] text-muted-foreground pt-1.5 border-t mt-1">
-          <div className="flex items-center gap-1.5 overflow-hidden">
-            <span className="font-medium truncate">{wo.customer.name}</span>
-            {wo.status === 'READY' && wo.customer.phone && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  const msg = getWorkOrderMessage({
-                    customerName: wo.customer.name,
-                    vehicleIdentifier: wo.vehicle.identifier,
-                    status: wo.status,
-                    total: Number(wo.total),
-                    totalPaid: wo.totalPaid || 0,
-                  });
-                  window.open(getWhatsAppLink(wo.customer.phone, msg), '_blank');
-                }}
-                className="h-5 w-5 p-0 text-emerald-700 hover:text-emerald-700 hover:bg-emerald-50 shrink-0"
-                title="Notificar por WhatsApp"
-                aria-label="Notificar por WhatsApp"
-              >
-                <MessageSquare className="h-3 w-3 pointer-events-none" aria-hidden="true" />
-              </Button>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+        {/* Line 5: Date/Delayed status (full width) */}
+        {isDelayed(wo) ? (
+          <span className="text-white bg-orange-500 font-bold text-[9px] flex items-center justify-center gap-0.5 w-full px-1.5 py-0.5 rounded-full shadow-sm">
+            <AlertCircle
+              className="h-2.5 w-2.5 pointer-events-none"
+              aria-hidden="true"
+            />
+            DEMORADA
+          </span>
+        ) : wo.scheduledDate ? (
+          <span
+            className={cn(
+              "text-primary font-bold text-[10px] flex items-center gap-0.5",
+              new Date(wo.scheduledDate).toDateString() ===
+                new Date().toDateString() &&
+                "bg-primary/10 px-1.5 py-0.5 rounded-full ring-1 ring-primary/20 justify-center w-full",
             )}
-          </div>
-          {isDelayed(wo) ? (
-            <span className="text-orange-700 font-bold flex items-center gap-0.5">
-              <AlertCircle className="h-2.5 w-2.5 pointer-events-none" aria-hidden="true" />
-              DEMORADA
-            </span>
-          ) : (
-            <span className="font-mono">
-              {new Date(wo.createdAt).toLocaleDateString("es-AR", {
-                day: "2-digit",
-                month: "short"
-              })}
-            </span>
-          )}
-        </div>
+          >
+            <Calendar
+              className="h-2.5 w-2.5 pointer-events-none"
+              aria-hidden="true"
+            />
+            {new Date(wo.scheduledDate).toDateString() ===
+            new Date(wo.scheduledDate).toDateString()
+              ? "HOY"
+              : new Date(wo.scheduledDate).toLocaleDateString("es-AR", {
+                  day: "2-digit",
+                  month: "short",
+                })}
+          </span>
+        ) : (
+          <span
+            className="font-mono text-[10px] text-muted-foreground/70 flex items-center gap-0.5"
+            title={new Date(wo.createdAt).toLocaleString("es-AR")}
+          >
+            <Clock
+              className="h-2.5 w-2.5 pointer-events-none"
+              aria-hidden="true"
+            />
+            {relativeTime(wo.createdAt)}
+          </span>
+        )}
       </CardContent>
     </Card>
   );
@@ -307,10 +409,14 @@ function KanbanCard({ wo, isOverlay = false, technicians = [], onTechnicianUpdat
 
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <Link href={`/adm/work-orders/${wo.id}`} onClick={(e) => {
-        // Prevent navigation if we just finished dragging
-        if (isDragging) e.preventDefault();
-      }} className="block">
+      <Link
+        href={`/adm/work-orders/${wo.id}`}
+        onClick={(e) => {
+          // Prevent navigation if we just finished dragging
+          if (isDragging) e.preventDefault();
+        }}
+        className="block"
+      >
         {content}
       </Link>
     </div>
@@ -321,12 +427,14 @@ function KanbanColumn({
   status,
   items,
   technicians,
-  onTechnicianUpdate
+  onTechnicianUpdate,
+  onStatusUpdate,
 }: {
-  status: typeof STATUSES[0];
+  status: (typeof STATUSES)[0];
   items: WorkOrder[];
   technicians: Array<{ id: string; name: string }>;
   onTechnicianUpdate: (woId: string, techId: string | null) => Promise<void>;
+  onStatusUpdate: (woId: string, newStatus: string) => Promise<void>;
 }) {
   const columnTotal = items.reduce((sum, wo) => sum + Number(wo.total), 0);
   const { setNodeRef } = useSortable({
@@ -334,35 +442,35 @@ function KanbanColumn({
     data: {
       type: "Column",
       statusId: status.id,
-    }
+    },
   });
 
   return (
-    <div className="flex flex-col flex-1 min-w-[200px] h-full">
+    <div className="flex flex-col w-[190px] shrink-0 h-full">
       <div
         className={cn(
           "p-3 rounded-t-lg border sticky top-0 z-10",
-          status.color
+          status.color,
         )}
       >
         <div className="flex justify-between items-center">
           <span className="font-semibold text-sm">{status.label}</span>
-          <span className="text-muted-foreground text-[10px] font-mono bg-white/50 px-1.5 py-0.5 rounded-full border border-black/5">
+          <span className="text-slate-700 text-[10px] font-mono bg-white/80 px-1.5 py-0.5 rounded-full border border-black/10 shadow-sm">
             {items.length}
           </span>
         </div>
-        {items.length > 0 && (
-          <div className="mt-1 text-xs font-mono text-muted-foreground/80 flex items-center gap-1">
-            <DollarSign className="h-3 w-3" />
-            {columnTotal.toLocaleString("es-AR", { maximumFractionDigits: 0 })}
-          </div>
-        )}
+        <div className="mt-1 text-xs font-mono text-slate-600 flex items-center gap-1 min-h-[16px]">
+          {items.length > 0 && <>{formatARS(columnTotal)}</>}
+        </div>
       </div>
       <div
         ref={setNodeRef}
-        className="bg-muted/30 hover:bg-muted/40 transition-colors rounded-b-lg p-2 flex-1 overflow-y-auto border border-t-0 min-h-[150px]"
+        className="bg-muted/50 hover:bg-muted/60 transition-colors rounded-b-lg p-2 flex-1 overflow-y-auto border border-t-0 min-h-[150px]"
       >
-        <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
+        <SortableContext
+          items={items.map((i) => i.id)}
+          strategy={verticalListSortingStrategy}
+        >
           <div className="space-y-3">
             {items.map((wo) => (
               <KanbanCard
@@ -370,12 +478,17 @@ function KanbanColumn({
                 wo={wo}
                 technicians={technicians}
                 onTechnicianUpdate={onTechnicianUpdate}
+                onStatusUpdate={onStatusUpdate}
               />
             ))}
           </div>
           {items.length === 0 && (
-            <div className="h-full min-h-[100px] flex items-center justify-center text-muted-foreground/50 text-xs text-center px-4 italic">
-              Sin órdenes
+            <div className="h-full min-h-[100px] flex flex-col items-center justify-center text-muted-foreground/40 text-xs text-center px-4 gap-1.5">
+              <ClipboardList
+                className="h-6 w-6 pointer-events-none opacity-40"
+                aria-hidden="true"
+              />
+              <span className="italic">Sin órdenes</span>
             </div>
           )}
         </SortableContext>
@@ -389,12 +502,19 @@ function KanbanColumn({
 export default function WorkOrdersPage() {
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
   const [loading, setLoading] = useState(true);
+  const isMobile = useIsMobile();
   const [viewMode, setViewMode] = useState<"kanban" | "list">("kanban");
   const [paymentFilter, setPaymentFilter] = useState<"all" | "pending">("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [technicianFilter, setTechnicianFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [technicians, setTechnicians] = useState<Array<{ id: string; name: string }>>([]);
+  const [technicians, setTechnicians] = useState<
+    Array<{ id: string; name: string }>
+  >([]);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [dragOriginalStatus, setDragOriginalStatus] = useState<string | null>(
+    null,
+  );
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -402,14 +522,14 @@ export default function WorkOrdersPage() {
         distance: 8,
       },
     }),
-    useSensor(KeyboardSensor)
+    useSensor(KeyboardSensor),
   );
 
   const fetchWorkOrders = useCallback(async () => {
     try {
       const [woRes, techRes] = await Promise.all([
         fetch("/api/work-orders"),
-        fetch("/api/users?role=TECHNICIAN"),
+        fetch("/api/users?active=true"),
       ]);
 
       if (!woRes.ok) throw new Error("Failed to fetch work orders");
@@ -432,15 +552,17 @@ export default function WorkOrdersPage() {
     void fetchWorkOrders();
   }, [fetchWorkOrders]);
 
+  // Default to list view on mobile
+  useEffect(() => {
+    if (isMobile) setViewMode("list");
+  }, [isMobile]);
+
   const getStatusBadge = (status: string) => {
     const statusConfig = STATUSES.find((s) => s.id === status);
     return (
       <Badge
         variant="outline"
-        className={cn(
-          "text-xs px-2 py-0.5",
-          statusConfig?.color
-        )}
+        className={cn("text-xs px-2 py-0.5", statusConfig?.color)}
       >
         {statusConfig?.label || status}
       </Badge>
@@ -450,32 +572,53 @@ export default function WorkOrdersPage() {
   const filteredWorkOrders = useMemo(() => {
     return workOrders.filter((wo) => {
       const matchesPayment = paymentFilter === "all" || !wo.isFullyPaid;
-      const matchesTechnician = technicianFilter === "all" || wo.technicianId === technicianFilter;
+      const matchesStatus =
+        statusFilter === "all" || wo.status === statusFilter;
+      const matchesTechnician =
+        technicianFilter === "all" || wo.technicianId === technicianFilter;
 
       const searchLower = searchQuery.toLowerCase();
-      const matchesSearch = !searchQuery ||
+      const matchesSearch =
+        !searchQuery ||
         wo.vehicle.identifier.toLowerCase().includes(searchLower) ||
         wo.customer.name.toLowerCase().includes(searchLower) ||
         wo.vehicle.make?.name?.toLowerCase().includes(searchLower) ||
         wo.vehicle.model?.name?.toLowerCase().includes(searchLower);
 
-      return matchesPayment && matchesTechnician && matchesSearch;
+      return (
+        matchesPayment && matchesStatus && matchesTechnician && matchesSearch
+      );
     });
-  }, [workOrders, paymentFilter, technicianFilter, searchQuery]);
+  }, [workOrders, paymentFilter, statusFilter, technicianFilter, searchQuery]);
 
-  const workOrdersByStatus = useMemo(() => STATUSES.map((status) => ({
-    ...status,
-    items: filteredWorkOrders.filter((wo) => wo.status === status.id),
-  })), [filteredWorkOrders]);
+  const workOrdersByStatus = useMemo(
+    () =>
+      STATUSES.map((status) => {
+        const items = filteredWorkOrders.filter(
+          (wo) => wo.status === status.id,
+        );
+        return {
+          ...status,
+          items: status.id === "DELIVERED" ? items.slice(0, 10) : items,
+        };
+      }),
+    [filteredWorkOrders],
+  );
 
-  const activeWorkOrder = useMemo(() =>
-    activeId ? workOrders.find(wo => wo.id === activeId) : null
-  , [activeId, workOrders]);
+  const activeWorkOrder = useMemo(
+    () => (activeId ? workOrders.find((wo) => wo.id === activeId) : null),
+    [activeId, workOrders],
+  );
 
   const stats = useMemo(() => {
-    const openOrders = workOrders.filter(wo => wo.status !== 'DELIVERED').length;
-    const pendingPayment = workOrders.filter(wo => !wo.isFullyPaid).length;
-    const totalBilling = workOrders.reduce((sum, wo) => sum + Number(wo.total), 0);
+    const openOrders = workOrders.filter(
+      (wo) => wo.status !== "DELIVERED",
+    ).length;
+    const pendingPayment = workOrders.filter((wo) => !wo.isFullyPaid).length;
+    const totalBilling = workOrders.reduce(
+      (sum, wo) => sum + Number(wo.total),
+      0,
+    );
 
     return [
       {
@@ -492,15 +635,17 @@ export default function WorkOrdersPage() {
       },
       {
         label: "Facturación Total",
-        value: `$${totalBilling.toLocaleString("es-AR")}`,
+        value: formatARS(totalBilling),
         icon: DollarSign,
         iconColor: "#047857", // emerald-700
-      }
+      },
     ];
   }, [workOrders]);
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string);
+    const wo = event.active.data.current?.wo as WorkOrder | undefined;
+    setDragOriginalStatus(wo?.status ?? null);
   };
 
   const handleDragOver = (event: DragOverEvent) => {
@@ -523,8 +668,8 @@ export default function WorkOrdersPage() {
       const overWO = over.data.current.wo;
 
       if (activeWO.status !== overWO.status) {
-        setWorkOrders(prev => {
-          return prev.map(wo => {
+        setWorkOrders((prev) => {
+          return prev.map((wo) => {
             if (wo.id === activeId) {
               return { ...wo, status: overWO.status };
             }
@@ -539,8 +684,8 @@ export default function WorkOrdersPage() {
       const overStatusId = over.data.current.statusId;
 
       if (activeWO.status !== overStatusId) {
-        setWorkOrders(prev => {
-          return prev.map(wo => {
+        setWorkOrders((prev) => {
+          return prev.map((wo) => {
             if (wo.id === activeId) {
               return { ...wo, status: overStatusId };
             }
@@ -569,10 +714,12 @@ export default function WorkOrdersPage() {
     }
 
     // Find the current status in state (it might have been updated by handleDragOver)
-    const currentWOInState = workOrders.find(wo => wo.id === activeWO.id);
+    const currentWOInState = workOrders.find((wo) => wo.id === activeWO.id);
     const finalStatus = currentWOInState?.status || newStatus;
 
-    if (finalStatus !== activeWO.status) {
+    // Compare against the original status captured at drag start,
+    // not activeWO.status which may have been mutated by the optimistic update in handleDragOver
+    if (finalStatus !== dragOriginalStatus) {
       try {
         const response = await fetch(`/api/work-orders/${activeWO.id}`, {
           method: "PUT",
@@ -580,35 +727,70 @@ export default function WorkOrdersPage() {
           body: JSON.stringify({ status: finalStatus }),
         });
         if (!response.ok) throw new Error("Error al actualizar el estado");
-        toast.success(`OT ${activeWO.vehicle.identifier} movida a ${STATUSES.find(s => s.id === finalStatus)?.label}`);
+        toast.success(
+          `OT ${activeWO.vehicle.identifier} movida a ${STATUSES.find((s) => s.id === finalStatus)?.label}`,
+        );
       } catch (e) {
         console.error("Error updating status:", e);
         toast.error("No se pudo actualizar el estado en el servidor");
         fetchWorkOrders(); // Revert on error
       }
     }
+    setDragOriginalStatus(null);
   };
 
-  const handleTechnicianUpdate = async (woId: string, techId: string | null) => {
+  const handleStatusUpdate = async (woId: string, newStatus: string) => {
+    try {
+      const response = await fetch(`/api/work-orders/${woId}/status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (!response.ok) throw new Error("Error al actualizar el estado");
+
+      const updatedWO = await response.json();
+      setWorkOrders((prev) =>
+        prev.map((wo) => (wo.id === woId ? { ...wo, ...updatedWO } : wo)),
+      );
+
+      toast.success(
+        `OT ${updatedWO.vehicle.identifier} movida a ${STATUSES.find((s) => s.id === newStatus)?.label}`,
+      );
+    } catch (e) {
+      console.error("Error updating status:", e);
+      toast.error("No se pudo actualizar el estado");
+    }
+  };
+
+  const handleTechnicianUpdate = async (
+    woId: string,
+    techId: string | null,
+  ) => {
     try {
       const response = await fetch(`/api/work-orders/${woId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ technicianId: techId }),
       });
-      if (!response.ok) throw new Error("Error al actualizar el técnico");
+      if (!response.ok) throw new Error("Error al actualizar el responsable");
 
       const updatedWO = await response.json();
-      setWorkOrders(prev => prev.map(wo => wo.id === woId ? {
-        ...wo,
-        technicianId: updatedWO.technicianId,
-        technician: updatedWO.technician
-      } : wo));
+      setWorkOrders((prev) =>
+        prev.map((wo) =>
+          wo.id === woId
+            ? {
+                ...wo,
+                technicianId: updatedWO.technicianId,
+                technician: updatedWO.technician,
+              }
+            : wo,
+        ),
+      );
 
-      toast.success("Técnico actualizado correctamente");
+      toast.success("Responsable actualizado correctamente");
     } catch (e) {
       console.error("Error updating technician:", e);
-      toast.error("No se pudo actualizar el técnico");
+      toast.error("No se pudo actualizar el responsable");
     }
   };
 
@@ -641,6 +823,7 @@ export default function WorkOrdersPage() {
     <div className="container mx-auto py-6 space-y-4 h-[calc(100vh-6rem)] flex flex-col">
       <Header
         title="Órdenes de Trabajo"
+        shortTitle="OTs"
         description="Gestiona el flujo de trabajo del taller"
         primaryAction={{
           label: "Nueva OT",
@@ -656,7 +839,10 @@ export default function WorkOrdersPage() {
               onClick={() => setViewMode("kanban")}
               className="h-8 px-3"
             >
-              <LayoutGrid className="h-4 w-4 mr-2 pointer-events-none" aria-hidden="true" />
+              <LayoutGrid
+                className="h-4 w-4 mr-2 pointer-events-none"
+                aria-hidden="true"
+              />
               Kanban
             </Button>
             <Button
@@ -665,7 +851,10 @@ export default function WorkOrdersPage() {
               onClick={() => setViewMode("list")}
               className="h-8 px-3"
             >
-              <List className="h-4 w-4 mr-2 pointer-events-none" aria-hidden="true" />
+              <List
+                className="h-4 w-4 mr-2 pointer-events-none"
+                aria-hidden="true"
+              />
               Lista
             </Button>
           </div>
@@ -673,24 +862,35 @@ export default function WorkOrdersPage() {
           <div className="w-px h-6 bg-border mx-1 hidden sm:block" />
 
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+            <Search
+              className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none"
+              aria-hidden="true"
+            />
             <Input
               placeholder="Buscar por patente, cliente..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="h-8 w-[200px] pl-9 text-xs"
             />
+            {searchQuery && (
+              <span className="text-[10px] text-muted-foreground font-mono whitespace-nowrap">
+                {filteredWorkOrders.length} resultado
+                {filteredWorkOrders.length !== 1 ? "s" : ""}
+              </span>
+            )}
           </div>
 
           <Button
-            variant={paymentFilter === "pending" ? "outline" : "outline"}
+            variant={paymentFilter === "pending" ? "default" : "outline"}
             size="sm"
-            onClick={() => setPaymentFilter(paymentFilter === "pending" ? "all" : "pending")}
+            onClick={() =>
+              setPaymentFilter(paymentFilter === "pending" ? "all" : "pending")
+            }
             className={cn(
               "h-8 text-xs",
               paymentFilter === "pending"
-                ? "text-amber-700 border-amber-200 bg-amber-50 hover:bg-amber-100 hover:text-amber-800"
-                : ""
+                ? "bg-amber-500 text-white border-amber-500 hover:bg-amber-600 hover:border-amber-600"
+                : "",
             )}
           >
             Pendientes de Pago
@@ -702,16 +902,19 @@ export default function WorkOrdersPage() {
           </Button>
 
           <div className="relative">
-            <UserCog className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+            <UserCog
+              className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none"
+              aria-hidden="true"
+            />
             <Select
               value={technicianFilter}
               onValueChange={setTechnicianFilter}
             >
               <SelectTrigger className="h-8 w-[150px] pl-9 text-xs">
-                <SelectValue placeholder="Técnico" />
+                <SelectValue placeholder="Responsable" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todos los técnicos</SelectItem>
+                <SelectItem value="all">Todos los responsables</SelectItem>
                 {technicians.map((tech) => (
                   <SelectItem key={tech.id} value={tech.id}>
                     {tech.name}
@@ -721,13 +924,37 @@ export default function WorkOrdersPage() {
             </Select>
           </div>
 
-          {(searchQuery || paymentFilter !== "all" || technicianFilter !== "all") && (
+          <div className="relative">
+            <ClipboardList
+              className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none"
+              aria-hidden="true"
+            />
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="h-8 w-[140px] pl-9 text-xs">
+                <SelectValue placeholder="Estado" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos los estados</SelectItem>
+                {STATUSES.map((status) => (
+                  <SelectItem key={status.id} value={status.id}>
+                    {status.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {(searchQuery ||
+            paymentFilter !== "all" ||
+            statusFilter !== "all" ||
+            technicianFilter !== "all") && (
             <Button
               variant="ghost"
               size="sm"
               onClick={() => {
                 setSearchQuery("");
                 setPaymentFilter("all");
+                setStatusFilter("all");
                 setTechnicianFilter("all");
               }}
               className="h-8 text-xs text-muted-foreground hover:text-foreground"
@@ -752,7 +979,7 @@ export default function WorkOrdersPage() {
               onDragOver={handleDragOver}
               onDragEnd={handleDragEnd}
             >
-              <div className="flex gap-2 h-full pb-2 px-1">
+              <div className="flex gap-1.5 h-full pb-2 px-1">
                 {workOrdersByStatus.map((status) => (
                   <KanbanColumn
                     key={status.id}
@@ -760,6 +987,7 @@ export default function WorkOrdersPage() {
                     items={status.items}
                     technicians={technicians}
                     onTechnicianUpdate={handleTechnicianUpdate}
+                    onStatusUpdate={handleStatusUpdate}
                   />
                 ))}
               </div>
@@ -783,7 +1011,8 @@ export default function WorkOrdersPage() {
             </div>
           ) : (
             workOrders.map((wo) => {
-              const { icon: categoryIcon, label: categoryLabel } = getCategoryIcon(wo.vehicle.category);
+              const { icon: categoryIcon, label: categoryLabel } =
+                getCategoryIcon(wo.vehicle.category);
               return (
                 <Link key={wo.id} href={`/adm/work-orders/${wo.id}`}>
                   <Card className="cursor-pointer hover:bg-muted/50 transition-colors">
@@ -810,7 +1039,8 @@ export default function WorkOrdersPage() {
                               {wo.vehicle.identifier}
                             </div>
                             <div className="text-sm text-muted-foreground">
-                              {wo.customer.name} • {wo.vehicle.make?.name} {wo.vehicle.model?.name}
+                              {wo.customer.name} • {wo.vehicle.make?.name}{" "}
+                              {wo.vehicle.model?.name}
                             </div>
                           </div>
                         </div>
@@ -821,7 +1051,7 @@ export default function WorkOrdersPage() {
                               {wo.technician.name}
                             </div>
                           )}
-                          {wo.status === 'READY' && wo.customer.phone && (
+                          {wo.status === "READY" && wo.customer.phone && (
                             <Button
                               variant="ghost"
                               size="sm"
@@ -836,29 +1066,49 @@ export default function WorkOrdersPage() {
                                   total: Number(wo.total),
                                   totalPaid: wo.totalPaid || 0,
                                 });
-                                window.open(getWhatsAppLink(wo.customer.phone, msg), '_blank');
+                                window.open(
+                                  getWhatsAppLink(wo.customer.phone, msg),
+                                  "_blank",
+                                );
+                                toast.success("Abriendo WhatsApp...", {
+                                  description: `Mensaje preparado para ${wo.customer.name}`,
+                                });
                               }}
                               aria-label="Notificar por WhatsApp"
                             >
-                              <MessageSquare className="h-4 w-4 pointer-events-none" aria-hidden="true" />
+                              <MessageSquare
+                                className="h-4 w-4 pointer-events-none"
+                                aria-hidden="true"
+                              />
                             </Button>
                           )}
                           {getStatusBadge(wo.status)}
                           <Badge
-                            variant={wo.isFullyPaid ? "outline" : (wo.totalPaid && wo.totalPaid > 0 ? "secondary" : "outline")}
+                            variant={
+                              wo.isFullyPaid
+                                ? "outline"
+                                : wo.totalPaid && wo.totalPaid > 0
+                                  ? "secondary"
+                                  : "outline"
+                            }
                             className={cn(
                               "px-2.5 py-0.5 font-mono",
                               wo.isFullyPaid
                                 ? "border-emerald-200 bg-emerald-50 text-emerald-700"
                                 : wo.totalPaid && wo.totalPaid > 0
                                   ? "border-amber-200 bg-amber-50 text-amber-700"
-                                  : "text-muted-foreground"
+                                  : "text-muted-foreground",
                             )}
                           >
-                            ${Number(wo.total).toLocaleString("es-AR")}
+                            {formatARS(Number(wo.total))}
                           </Badge>
-                          <div className="text-sm text-muted-foreground font-mono">
-                            {new Date(wo.createdAt).toLocaleDateString("es-AR")}
+                          <div
+                            className="text-sm text-muted-foreground font-mono"
+                            title={new Date(wo.createdAt).toLocaleString(
+                              "es-AR",
+                            )}
+                          >
+                            {relativeTime(wo.createdAt)}
                           </div>
                         </div>
                       </div>

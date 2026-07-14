@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { Header } from '@/components/adm/Header';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { useState, useEffect } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { Header } from "@/components/adm/Header";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -13,20 +13,60 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
-import { formatARS } from '@/lib/utils/format';
-import { FileText, Download, Printer, AlertCircle, User, ArrowLeft } from 'lucide-react';
-import { toast } from 'sonner';
-import { Skeleton } from '@/components/ui/skeleton';
+} from "@/components/ui/table";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import { formatARS } from "@/lib/utils/format";
+import {
+  FileText,
+  Download,
+  Printer,
+  AlertCircle,
+  User,
+  ArrowLeft,
+  Send,
+  XCircle,
+  CheckCircle2,
+} from "lucide-react";
+import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
+
+interface InvoiceItem {
+  name: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+}
+
+interface Invoice {
+  id: string;
+  number: string;
+  type: string;
+  referenceId: string;
+  referenceType: string;
+  customerId?: string;
+  customerName: string;
+  customerDoc?: string;
+  customerDocType?: string;
+  subtotal: number;
+  tax: number;
+  iva21: number;
+  iva105: number;
+  total: number;
+  status: string;
+  afipData?: any;
+  createdAt: string;
+  issuedAt?: string;
+  createdBy: string;
+  items: InvoiceItem[];
+}
 
 export default function InvoiceDetailPage() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
   const id = params.id as string;
-  const [invoice, setInvoice] = useState<any>(null);
+  const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -38,15 +78,15 @@ export default function InvoiceDetailPage() {
           setInvoice(data);
 
           // Auto-print if search param is present
-          if (searchParams.get('print') === 'true') {
+          if (searchParams.get("print") === "true") {
             setTimeout(() => window.print(), 1000);
           }
         } else {
-          toast.error('No se pudo encontrar el comprobante');
+          toast.error("No se pudo encontrar el comprobante");
         }
       } catch (error) {
-        console.error('Error fetching invoice:', error);
-        toast.error('Error de conexión');
+        console.error("Error fetching invoice:", error);
+        toast.error("Error de conexión");
       } finally {
         setLoading(false);
       }
@@ -80,22 +120,40 @@ export default function InvoiceDetailPage() {
     );
   }
 
-  const isPreInvoice = invoice.type.startsWith('X_') || invoice.type.startsWith('NOTA_CREDITO_X_');
+  const isPreInvoice =
+    invoice.type.startsWith("X_") ||
+    invoice.type.startsWith("NOTA_CREDITO_X_") ||
+    invoice.type === "PRESUPUESTO" ||
+    invoice.type === "REMITO";
+
+  const getDocLetter = (type: string) => {
+    if (type.startsWith("X_") || type.startsWith("NOTA_CREDITO_X_")) return "X";
+    if (type.endsWith("_A")) return "A";
+    if (type.endsWith("_B")) return "B";
+    if (type.endsWith("_C")) return "C";
+    if (type === "REMITO") return "R";
+    if (type === "PRESUPUESTO") return "P";
+    return type.charAt(0);
+  };
 
   const handleCancel = async () => {
-    if (!confirm('¿Está seguro de que desea cancelar este comprobante? Esta acción no se puede deshacer.')) {
+    if (
+      !confirm(
+        "¿Está seguro de que desea cancelar este comprobante? Esta acción no se puede deshacer.",
+      )
+    ) {
       return;
     }
 
     try {
       const response = await fetch(`/api/invoices/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'CANCELLED' }),
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "CANCELLED" }),
       });
 
       if (response.ok) {
-        toast.success('Comprobante cancelado correctamente');
+        toast.success("Comprobante cancelado correctamente");
         router.refresh();
         // Re-fetch to update UI state
         const updatedResponse = await fetch(`/api/invoices/${id}`);
@@ -104,23 +162,23 @@ export default function InvoiceDetailPage() {
         }
       } else {
         const error = await response.json();
-        toast.error(error.error || 'Error al cancelar el comprobante');
+        toast.error(error.error || "Error al cancelar el comprobante");
       }
     } catch (error) {
-      console.error('Error cancelling invoice:', error);
-      toast.error('Error de conexión');
+      console.error("Error cancelling invoice:", error);
+      toast.error("Error de conexión");
     }
   };
 
   const handleOfficialize = async () => {
-    const toastId = toast.loading('Oficializando comprobante ante AFIP...');
+    const toastId = toast.loading("Oficializando comprobante ante AFIP...");
     try {
       const response = await fetch(`/api/invoices/${id}/officialize`, {
-        method: 'POST',
+        method: "POST",
       });
 
       if (response.ok) {
-        toast.success('Comprobante oficializado con éxito', { id: toastId });
+        toast.success("Comprobante oficializado con éxito", { id: toastId });
         // Re-fetch to update UI state
         const updatedResponse = await fetch(`/api/invoices/${id}`);
         if (updatedResponse.ok) {
@@ -128,11 +186,11 @@ export default function InvoiceDetailPage() {
         }
       } else {
         const error = await response.json();
-        toast.error(error.error || 'Error al oficializar', { id: toastId });
+        toast.error(error.error || "Error al oficializar", { id: toastId });
       }
     } catch (error) {
-      console.error('Error officializing invoice:', error);
-      toast.error('Error de conexión', { id: toastId });
+      console.error("Error officializing invoice:", error);
+      toast.error("Error de conexión", { id: toastId });
     }
   };
 
@@ -140,33 +198,41 @@ export default function InvoiceDetailPage() {
     <div className="container mx-auto py-6 space-y-6 print:py-0 print:space-y-0 max-w-5xl">
       <div className="print:hidden">
         <Header
-          title={`${invoice.type.replace('_', ' ')} ${invoice.number}`}
+          title={`${invoice.type.replace(/_/g, " ")} ${invoice.number}`}
           description="Detalle del comprobante emitido"
           showBackButton
           secondaryActions={[
             {
-              label: 'Imprimir',
+              label: "Imprimir",
               onClick: () => window.print(),
               icon: Printer,
-              variant: 'outline',
+              variant: "outline",
             },
             {
-              label: 'Descargar PDF',
+              label: "Descargar PDF",
               onClick: () => window.print(),
               icon: Download,
             },
-            ...(invoice.status === 'DRAFT' && isPreInvoice ? [{
-              label: 'Enviar a AFIP',
-              onClick: handleOfficialize,
-              icon: AlertCircle,
-              variant: 'default' as const,
-            }] : []),
-            ...(invoice.status === 'DRAFT' ? [{
-              label: 'Cancelar',
-              onClick: handleCancel,
-              icon: AlertCircle,
-              variant: 'destructive' as const,
-            }] : []),
+            ...((invoice.status === "DRAFT" || invoice.status === "REJECTED") && isPreInvoice
+              ? [
+                  {
+                    label: "Enviar a AFIP",
+                    onClick: handleOfficialize,
+                    icon: Send,
+                    variant: "default" as const,
+                  },
+                ]
+              : []),
+            ...(invoice.status === "DRAFT"
+              ? [
+                  {
+                    label: "Cancelar",
+                    onClick: handleCancel,
+                    icon: XCircle,
+                    variant: "destructive" as const,
+                  },
+                ]
+              : []),
           ]}
         />
       </div>
@@ -174,25 +240,57 @@ export default function InvoiceDetailPage() {
       {isPreInvoice && (
         <div className="bg-orange-50 border border-orange-200 p-4 rounded-lg flex items-center gap-3 text-orange-800 print:bg-white print:border-2 print:border-black print:text-black print:my-4 print:justify-center">
           <AlertCircle className="h-5 w-5 print:hidden" />
-          <span className="font-bold uppercase tracking-tight text-center">No válido como comprobante fiscal</span>
+          <span className="font-bold uppercase tracking-tight text-center">
+            No válido como comprobante fiscal
+          </span>
+        </div>
+      )}
+
+      {invoice.status === "REJECTED" && (
+        <div className="bg-red-50 border border-red-200 p-4 rounded-lg flex flex-col gap-2 text-red-800 print:hidden">
+          <div className="flex items-center gap-3">
+            <XCircle className="h-5 w-5" />
+            <span className="font-bold uppercase tracking-tight">
+              Comprobante Rechazado por AFIP
+            </span>
+          </div>
+          {invoice.afipData?.error && (
+            <p className="text-sm font-medium ml-8">{invoice.afipData.error}</p>
+          )}
+          {invoice.afipData?.observaciones && invoice.afipData.observaciones.length > 0 && (
+            <ul className="text-sm list-disc ml-12">
+              {invoice.afipData.observaciones.map((obs: string, idx: number) => (
+                <li key={idx}>{obs}</li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
 
       {/* Professional Invoice Header (Print Only) */}
       <div className="hidden print:flex justify-between border-b-2 border-black pb-6 mb-6">
         <div className="space-y-1">
-          <h1 className="text-4xl font-black tracking-tighter">RPM ACCESORIOS</h1>
+          <h1 className="text-4xl font-black tracking-tighter">
+            RPM ACCESORIOS
+          </h1>
           <p className="text-sm">Ruta 22 y 15, Cipolletti, Río Negro</p>
           <p className="text-sm">Tel: +54 299 123-4567</p>
           <p className="text-sm">Email: info@rpmaccesorios.com.ar</p>
         </div>
         <div className="text-right space-y-1">
           <div className="inline-block border-2 border-black px-4 py-2 mb-2">
-            <span className="text-4xl font-bold">{invoice.type.split('_').pop()}</span>
+            <span className="text-4xl font-bold">
+              {getDocLetter(invoice.type)}
+            </span>
           </div>
-          <h2 className="text-xl font-bold uppercase">{invoice.type.replace('_', ' ')}</h2>
+          <h2 className="text-xl font-bold uppercase">
+            {invoice.type.replace(/_/g, " ")}
+          </h2>
           <p className="text-lg font-mono font-bold">{invoice.number}</p>
-          <p className="text-sm">Fecha: {format(new Date(invoice.createdAt), 'dd/MM/yyyy', { locale: es })}</p>
+          <p className="text-sm">
+            Fecha:{" "}
+            {format(new Date(invoice.createdAt), "dd/MM/yyyy", { locale: es })}
+          </p>
         </div>
       </div>
 
@@ -201,7 +299,9 @@ export default function InvoiceDetailPage() {
           {/* Customer & Info Info for Print */}
           <div className="hidden print:grid grid-cols-2 gap-8 mb-8">
             <div className="border p-4 rounded-lg">
-              <h3 className="text-xs font-bold uppercase text-muted-foreground mb-2">Cliente</h3>
+              <h3 className="text-xs font-bold uppercase text-muted-foreground mb-2">
+                Cliente
+              </h3>
               <p className="text-lg font-bold">{invoice.customerName}</p>
               {invoice.customerDoc && (
                 <p className="text-sm font-mono uppercase">
@@ -210,9 +310,14 @@ export default function InvoiceDetailPage() {
               )}
             </div>
             <div className="border p-4 rounded-lg">
-              <h3 className="text-xs font-bold uppercase text-muted-foreground mb-2">Detalles</h3>
+              <h3 className="text-xs font-bold uppercase text-muted-foreground mb-2">
+                Detalles
+              </h3>
               <p className="text-sm">Condición: Responsable Inscripto</p>
-              <p className="text-sm">Referencia: {invoice.referenceType} #{invoice.referenceId.substring(0, 8)}</p>
+              <p className="text-sm">
+                Referencia: {invoice.referenceType} #
+                {invoice.referenceId.substring(0, 8)}
+              </p>
             </div>
           </div>
 
@@ -226,25 +331,44 @@ export default function InvoiceDetailPage() {
               <Table className="print:border">
                 <TableHeader className="print:bg-gray-100">
                   <TableRow>
-                    <TableHead className="print:text-black print:font-bold">Descripción</TableHead>
-                    <TableHead className="text-right print:text-black print:font-bold">Cant.</TableHead>
-                    <TableHead className="text-right print:text-black print:font-bold">P. Unit</TableHead>
-                    <TableHead className="text-right print:text-black print:font-bold">Subtotal</TableHead>
+                    <TableHead className="print:text-black print:font-bold">
+                      Descripción
+                    </TableHead>
+                    <TableHead className="text-right print:text-black print:font-bold">
+                      Cant.
+                    </TableHead>
+                    <TableHead className="text-right print:text-black print:font-bold">
+                      P. Unit
+                    </TableHead>
+                    <TableHead className="text-right print:text-black print:font-bold">
+                      Subtotal
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {invoice.items && invoice.items.length > 0 ? (
-                    invoice.items.map((item: any, idx: number) => (
+                    invoice.items.map((item: InvoiceItem, idx: number) => (
                       <TableRow key={idx}>
-                        <TableCell className="font-medium">{item.name}</TableCell>
-                        <TableCell className="text-right font-mono">{item.quantity}</TableCell>
-                        <TableCell className="text-right font-mono">{formatARS(item.unitPrice)}</TableCell>
-                        <TableCell className="text-right font-mono">{formatARS(item.totalPrice)}</TableCell>
+                        <TableCell className="font-medium">
+                          {item.name}
+                        </TableCell>
+                        <TableCell className="text-right font-mono">
+                          {item.quantity}
+                        </TableCell>
+                        <TableCell className="text-right font-mono">
+                          {formatARS(item.unitPrice)}
+                        </TableCell>
+                        <TableCell className="text-right font-mono">
+                          {formatARS(item.totalPrice)}
+                        </TableCell>
                       </TableRow>
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center py-4 text-muted-foreground italic">
+                      <TableCell
+                        colSpan={4}
+                        className="text-center py-4 text-muted-foreground italic"
+                      >
                         Detalle no disponible - Ver totales abajo
                       </TableCell>
                     </TableRow>
@@ -255,24 +379,38 @@ export default function InvoiceDetailPage() {
               <div className="mt-8 flex justify-end">
                 <div className="w-full md:w-1/2 space-y-2 border-t pt-4">
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground print:text-black">Subtotal Gravado</span>
-                    <span className="font-mono">{formatARS(invoice.subtotal)}</span>
+                    <span className="text-muted-foreground print:text-black">
+                      Subtotal Gravado
+                    </span>
+                    <span className="font-mono">
+                      {formatARS(invoice.subtotal)}
+                    </span>
                   </div>
                   {invoice.iva21 > 0 && (
                     <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground print:text-black">IVA (21%)</span>
-                      <span className="font-mono">{formatARS(invoice.iva21)}</span>
+                      <span className="text-muted-foreground print:text-black">
+                        IVA (21%)
+                      </span>
+                      <span className="font-mono">
+                        {formatARS(invoice.iva21)}
+                      </span>
                     </div>
                   )}
                   {invoice.iva105 > 0 && (
                     <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground print:text-black">IVA (10.5%)</span>
-                      <span className="font-mono">{formatARS(invoice.iva105)}</span>
+                      <span className="text-muted-foreground print:text-black">
+                        IVA (10.5%)
+                      </span>
+                      <span className="font-mono">
+                        {formatARS(invoice.iva105)}
+                      </span>
                     </div>
                   )}
                   <div className="flex justify-between border-t-2 border-black pt-2 text-xl font-black">
                     <span>TOTAL</span>
-                    <span className="font-mono">{formatARS(invoice.total)}</span>
+                    <span className="font-mono">
+                      {formatARS(invoice.total)}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -291,7 +429,8 @@ export default function InvoiceDetailPage() {
                   <div>
                     <p className="text-muted-foreground mb-1">Referencia</p>
                     <p className="font-medium uppercase tracking-tight">
-                      {invoice.referenceType.replace('_', ' ')} #{invoice.referenceId.substring(0, 8)}
+                      {invoice.referenceType.replace(/_/g, " ")} #
+                      {invoice.referenceId.substring(0, 8)}
                     </p>
                   </div>
                   <div>
@@ -338,24 +477,65 @@ export default function InvoiceDetailPage() {
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-sm">Estado actual:</span>
-                  <Badge variant={invoice.status === 'ISSUED' ? 'default' : 'outline'} className={
-                    invoice.status === 'ISSUED' ? 'bg-emerald-500 hover:bg-emerald-600' : ''
-                  }>
+                  <Badge
+                    variant={
+                      invoice.status === "ISSUED" ? "default" : "outline"
+                    }
+                    className={
+                      invoice.status === "ISSUED"
+                        ? "bg-emerald-500 hover:bg-emerald-600"
+                        : ""
+                    }
+                  >
                     {invoice.status}
                   </Badge>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm">Fecha emisión:</span>
                   <span className="text-sm font-mono">
-                    {format(new Date(invoice.createdAt), 'dd/MM/yyyy HH:mm', { locale: es })}
+                    {format(new Date(invoice.createdAt), "dd/MM/yyyy HH:mm", {
+                      locale: es,
+                    })}
                   </span>
                 </div>
                 {invoice.issuedAt && (
                   <div className="flex justify-between items-center">
                     <span className="text-sm">Fecha oficial:</span>
                     <span className="text-sm font-mono">
-                      {format(new Date(invoice.issuedAt), 'dd/MM/yyyy HH:mm', { locale: es })}
+                      {format(new Date(invoice.issuedAt), "dd/MM/yyyy HH:mm", {
+                        locale: es,
+                      })}
                     </span>
+                  </div>
+                )}
+                {invoice.afipData?.cae && (
+                  <div className="flex justify-between items-center pt-2 border-t">
+                    <span className="text-sm">CAE:</span>
+                    <span className="text-sm font-mono font-bold">
+                      {invoice.afipData.cae}
+                    </span>
+                  </div>
+                )}
+                {invoice.afipData?.caeVencimiento && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Vto. CAE:</span>
+                    <span className="text-sm font-mono">
+                      {format(new Date(invoice.afipData.caeVencimiento), "dd/MM/yyyy", {
+                        locale: es,
+                      })}
+                    </span>
+                  </div>
+                )}
+                {invoice.afipData?.observaciones && invoice.afipData.observaciones.length > 0 && (
+                  <div className="pt-2 border-t">
+                    <span className="text-[10px] font-bold uppercase text-muted-foreground block mb-1">
+                      Observaciones AFIP:
+                    </span>
+                    <ul className="text-[10px] space-y-1 text-muted-foreground list-disc ml-4">
+                      {invoice.afipData.observaciones.map((obs: string, idx: number) => (
+                        <li key={idx}>{obs}</li>
+                      ))}
+                    </ul>
                   </div>
                 )}
               </div>
@@ -363,6 +543,21 @@ export default function InvoiceDetailPage() {
           </Card>
         </div>
       </div>
+
+      {/* Signature section for Remitos */}
+      {invoice.type === "REMITO" && (
+        <div className="hidden print:grid grid-cols-2 gap-20 mt-20">
+          <div className="border-t border-black pt-2 text-center">
+            <p className="text-xs font-bold uppercase">Entregado por</p>
+          </div>
+          <div className="border-t border-black pt-2 text-center">
+            <p className="text-xs font-bold uppercase">Recibido conforme</p>
+            <p className="text-[10px] text-muted-foreground mt-1">
+              Nombre, DNI y Firma
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Footer for Print */}
       <div className="hidden print:block mt-20 text-center border-t pt-8">

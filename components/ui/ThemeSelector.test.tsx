@@ -42,9 +42,10 @@ describe('ThemeSelector', () => {
   it('contains theme options', () => {
     render(<ThemeSelector />);
 
-    // Check if theme items are present (light, dark, system)
+    // Check if theme items are present (light, dark, system, high-contrast)
     expect(screen.getByTestId('item-light')).toBeInTheDocument();
     expect(screen.getByTestId('item-dark')).toBeInTheDocument();
     expect(screen.getByTestId('item-system')).toBeInTheDocument();
+    expect(screen.getByTestId('item-high-contrast')).toBeInTheDocument();
   });
 });

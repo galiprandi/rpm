@@ -1,13 +1,14 @@
-'use client';
+"use client";
 
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { AlertTriangle, Info } from 'lucide-react';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { AlertTriangle, Info, Trash2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export interface ConfirmDialogProps {
   isOpen: boolean;
@@ -15,7 +16,7 @@ export interface ConfirmDialogProps {
   description: string;
   confirmText?: string;
   cancelText?: string;
-  variant?: 'default' | 'destructive' | 'warning';
+  variant?: "default" | "destructive" | "warning";
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -24,60 +25,54 @@ export function ConfirmDialog({
   isOpen,
   title,
   description,
-  confirmText = 'Confirmar',
-  cancelText = 'Cancelar',
-  variant = 'default',
+  confirmText = "Confirmar",
+  cancelText = "Cancelar",
+  variant = "default",
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
-  const getIcon = () => {
-    switch (variant) {
-      case 'destructive':
-        return <AlertTriangle className="h-6 w-6 text-destructive" />;
-      case 'warning':
-        return <AlertTriangle className="h-6 w-6 text-orange-500" />;
-      default:
-        return <Info className="h-6 w-6 text-primary" />;
-    }
-  };
+  const iconMap = {
+    destructive: {
+      icon: Trash2,
+      color: "text-destructive",
+      bg: "bg-destructive/10",
+    },
+    warning: {
+      icon: AlertTriangle,
+      color: "text-orange-500",
+      bg: "bg-orange-500/10",
+    },
+    default: { icon: Info, color: "text-primary", bg: "bg-primary/10" },
+  } as const;
 
-  const getIconBg = () => {
-    switch (variant) {
-      case 'destructive':
-        return 'bg-destructive/10';
-      case 'warning':
-        return 'bg-orange-500/10';
-      default:
-        return 'bg-primary/10';
-    }
-  };
+  const { icon: Icon, color, bg } = iconMap[variant];
 
   return (
     <Dialog open={isOpen} onOpenChange={onCancel}>
       <DialogContent className="max-w-md p-0" showCloseButton={false}>
         <DialogTitle className="sr-only">{title}</DialogTitle>
-        <div className="flex items-start gap-4 p-6">
-          <div className={`flex-shrink-0 rounded-full p-3 ${getIconBg()}`}>
-            {getIcon()}
+        <div className="flex items-start gap-3.5 p-5">
+          <div className={cn("flex-shrink-0 rounded-lg p-2.5", bg)}>
+            <Icon className={cn("h-5 w-5", color)} aria-hidden="true" />
           </div>
-          <div className="flex-1 space-y-2">
-            <h3 className="text-lg font-semibold">{title}</h3>
-            <p className="text-sm text-muted-foreground leading-relaxed">{description}</p>
+          <div className="flex-1 space-y-1 pt-0.5">
+            <h3 className="text-base font-semibold leading-tight">{title}</h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              {description}
+            </p>
           </div>
         </div>
-        <DialogFooter className="border-t px-6 py-5">
-          <div className="flex items-center justify-end gap-4 w-full">
-            <Button variant="outline" onClick={onCancel} className="px-5 py-2.5">
-              {cancelText}
-            </Button>
-            <Button
-              onClick={onConfirm}
-              variant={variant === 'destructive' ? 'destructive' : 'default'}
-              className="px-5 py-2.5"
-            >
-              {confirmText}
-            </Button>
-          </div>
+        <DialogFooter className="mx-0 mb-0 px-5 py-4">
+          <Button variant="outline" onClick={onCancel} size="sm">
+            {cancelText}
+          </Button>
+          <Button
+            onClick={onConfirm}
+            variant={variant === "destructive" ? "destructive" : "default"}
+            size="sm"
+          >
+            {confirmText}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

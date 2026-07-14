@@ -3,6 +3,7 @@
  * This is an initial implementation that prepares the structure for real integration.
  */
 
+import { prisma } from '@/lib/prisma';
 import { getSetting } from './settingsService';
 
 export interface AFIPComprobanteInput {
@@ -83,13 +84,38 @@ export async function requestCAE(comprobante: AFIPComprobanteInput): Promise<AFI
 
 /**
  * Gets the last authorized number for a given voucher type and point of sale.
+ * Filters the database for the last ISSUED invoice by both Point of Sale
+ * (matching the number prefix) and the specific internal type keys.
  */
 export async function getLastAuthorizedNumber(tipo: number, pv: number): Promise<number> {
-  // In a real implementation, this would call AFIP's FECompUltimoAutorizado.
-  // For mock purposes, we could query our own DB for the last ISSUED invoice of this type,
-  // or just return a static number for now.
-  console.log(`Querying last authorized number for type ${tipo} and PV ${pv}`);
-  return 125; // Static mock number
+  const pvPrefix = `${String(pv).padStart(4, '0')}-`;
+
+  // Map AFIP tipo back to our internal type(s)
+  const internalTypes: string[] = [];
+  if (tipo === AFIP_CBTE_TIPOS.FACTURA_A) internalTypes.push('FACTURA_A');
+  else if (tipo === AFIP_CBTE_TIPOS.FACTURA_B) internalTypes.push('FACTURA_B');
+  else if (tipo === AFIP_CBTE_TIPOS.FACTURA_C) internalTypes.push('FACTURA_C');
+  else if (tipo === AFIP_CBTE_TIPOS.NOTA_CREDITO_A) internalTypes.push('NOTA_CREDITO_A');
+  else if (tipo === AFIP_CBTE_TIPOS.NOTA_CREDITO_B) internalTypes.push('NOTA_CREDITO_B');
+  else if (tipo === AFIP_CBTE_TIPOS.NOTA_CREDITO_C) internalTypes.push('NOTA_CREDITO_C');
+
+  const lastInvoice = await prisma.invoice.findFirst({
+    where: {
+      status: 'ISSUED',
+      type: { in: internalTypes },
+      number: { startsWith: pvPrefix },
+    },
+    orderBy: { number: 'desc' },
+    select: { number: true },
+  });
+
+  if (!lastInvoice) {
+    return 0;
+  }
+
+  const parts = lastInvoice.number.split('-');
+  const lastNumStr = parts[parts.length - 1];
+  return parseInt(lastNumStr, 10);
 }
 
 /**

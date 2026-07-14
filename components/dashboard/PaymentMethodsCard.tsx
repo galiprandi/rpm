@@ -1,6 +1,6 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CreditCard } from 'lucide-react';
-import { formatARS } from '@/lib/utils/format';
+import { Card, CardContent } from "@/components/ui/card";
+import { CreditCard } from "lucide-react";
+import { formatARS, toTitleCase } from "@/lib/utils/format";
 
 interface PaymentMethodsCardProps {
   paymentsByMethod?: Array<{
@@ -17,19 +17,20 @@ export function PaymentMethodsCard({
 
   if (methods.length === 0) {
     return (
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">
-            Arqueo de Caja por Método
-          </CardTitle>
-          <CreditCard className="h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-4">
-            <p className="text-sm text-muted-foreground">
-              Sin movimientos hoy
-            </p>
+      <Card className="relative overflow-hidden border-l-2 border-l-indigo-500/40">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+              Medios de Pago
+            </span>
+            <CreditCard
+              className="h-3.5 w-3.5 text-muted-foreground/40 pointer-events-none"
+              aria-hidden="true"
+            />
           </div>
+          <p className="text-xs text-muted-foreground/60 py-3 text-center">
+            Sin movimientos hoy
+          </p>
         </CardContent>
       </Card>
     );
@@ -38,34 +39,41 @@ export function PaymentMethodsCard({
   const total = methods.reduce((sum, item) => sum + item.total, 0);
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
-          Arqueo de Caja por Método
-        </CardTitle>
-        <CreditCard className="h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-3 mt-2">
+    <Card className="relative overflow-hidden border-l-2 border-l-indigo-500/40">
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+            Medios de Pago
+          </span>
+          <CreditCard
+            className="h-3.5 w-3.5 text-muted-foreground/40 pointer-events-none"
+            aria-hidden="true"
+          />
+        </div>
+        <div className="space-y-2">
           {methods.map((method) => {
             const percentage = total !== 0 ? (method.total / total) * 100 : 0;
             const isNegative = method.total < 0;
             return (
-              <div key={method.code} className="space-y-1 group">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="font-semibold tracking-tight">{method.name}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-mono font-bold text-muted-foreground/60 bg-muted px-1 rounded">
+              <div key={method.code} className="space-y-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-semibold tracking-tight">
+                    {toTitleCase(method.name)}
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[9px] font-mono font-bold text-muted-foreground/50 bg-muted/60 px-1 rounded tabular-nums">
                       {percentage.toFixed(1)}%
                     </span>
-                    <span className={`font-mono font-bold ${isNegative ? 'text-red-700' : 'text-foreground'}`}>
+                    <span
+                      className={`font-mono font-bold tabular-nums ${isNegative ? "text-red-700" : "text-foreground"}`}
+                    >
                       {formatARS(Math.abs(method.total))}
                     </span>
                   </div>
                 </div>
-                <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden border border-slate-200/50">
+                <div className="w-full bg-muted/40 rounded-full h-1 overflow-hidden">
                   <div
-                    className={`h-full rounded-full transition-all duration-500 ease-out ${isNegative ? 'bg-red-700' : 'bg-blue-600'}`}
+                    className={`h-full rounded-full transition-all duration-500 ease-out ${isNegative ? "bg-red-500/60" : "bg-indigo-500/60"}`}
                     style={{ width: `${Math.abs(percentage)}%` }}
                   />
                 </div>
@@ -73,10 +81,12 @@ export function PaymentMethodsCard({
             );
           })}
         </div>
-        <div className="mt-5 pt-3 border-t border-slate-100">
-          <div className="flex items-center justify-between text-sm font-bold">
-            <span className="text-muted-foreground">Neto Diario</span>
-            <span className={`font-mono ${total < 0 ? 'text-red-700' : 'text-emerald-700'}`}>
+        <div className="mt-3 pt-2 border-t border-border/40">
+          <div className="flex items-center justify-between text-xs font-bold">
+            <span className="text-muted-foreground">Neto</span>
+            <span
+              className={`font-mono tabular-nums ${total < 0 ? "text-red-700" : "text-emerald-700"}`}
+            >
               {formatARS(total)}
             </span>
           </div>

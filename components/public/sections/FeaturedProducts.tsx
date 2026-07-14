@@ -1,11 +1,16 @@
 'use client';
 
+import { useState } from 'react';
 import { ArrowRight, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { featuredProducts } from '@/lib/constants/featured-products';
+import { featuredProducts, FeaturedProduct } from '@/lib/constants/featured-products';
+import { ProductQuickView } from '@/components/public/ProductQuickView';
+import { formatARS } from '@/lib/utils/format';
 
 export function FeaturedProducts() {
+  const [selectedProduct, setSelectedProduct] = useState<FeaturedProduct | null>(null);
+
   // We only show the first 4 products as "featured" on the home page
   const displayedProducts = featuredProducts.slice(0, 4);
 
@@ -42,14 +47,15 @@ export function FeaturedProducts() {
                 {product.image}
               </div>
 
-              {/* Quick View Link to Detail Page/Catalog */}
-              <Link href="/productos">
-                <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-x-4 group-hover:translate-x-0">
-                  <div className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white cursor-pointer hover:bg-brand hover:border-brand transition-colors">
-                    <Eye className="h-4 w-4" />
-                  </div>
+              {/* Quick View Icon Overlay */}
+              <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-x-4 group-hover:translate-x-0">
+                <div
+                  className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white cursor-pointer hover:bg-brand hover:border-brand transition-colors"
+                  onClick={() => setSelectedProduct(product)}
+                >
+                  <Eye className="h-4 w-4" />
                 </div>
-              </Link>
+              </div>
 
               <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />
 
@@ -59,16 +65,24 @@ export function FeaturedProducts() {
                   <h3 className="text-xl font-bold text-white tracking-tight">{product.name}</h3>
                 </div>
                 <div className="flex items-center justify-between opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500">
-                  <span className="text-white font-bold">${product.price.toLocaleString()}</span>
-                  <Link href="/productos" className="flex items-center text-xs font-bold text-brand hover:text-white transition-colors">
+                  <span className="text-white font-mono font-semibold">{formatARS(product.price)}</span>
+                  <button
+                    onClick={() => setSelectedProduct(product)}
+                    className="flex items-center text-xs font-bold text-brand hover:text-white transition-colors"
+                  >
                     DETALLES <ArrowRight className="ml-2 h-3 w-3" />
-                  </Link>
+                  </button>
                 </div>
               </div>
             </div>
           ))}
         </div>
       </div>
+
+      <ProductQuickView
+        product={selectedProduct}
+        onClose={() => setSelectedProduct(null)}
+      />
     </section>
   );
 }

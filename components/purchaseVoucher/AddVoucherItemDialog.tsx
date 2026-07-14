@@ -7,9 +7,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useUI } from "@/components/ui/UIProvider";
-import { ProductServiceSelector, type SelectedItem } from "@/components/ui/ProductServiceSelector";
+import {
+  ProductServiceSelector,
+  type SelectedItem,
+} from "@/components/ui/ProductServiceSelector";
 import { calculateFinalPrice, type RoundingRule } from "@/lib/utils/rounding";
-import { Plus, CheckCircle, Package, AlertTriangle, TrendingDown, Trash2, Loader2, DollarSign, Hash } from "lucide-react";
+import {
+  Plus,
+  CheckCircle,
+  Package,
+  AlertTriangle,
+  TrendingDown,
+  Trash2,
+  Loader2,
+  DollarSign,
+  Hash,
+} from "lucide-react";
 import { QuickProductDialog } from "./QuickProductDialog";
 import {
   Table,
@@ -82,7 +95,16 @@ export function AddVoucherItemDialog({
     id: string;
     name: string;
     sku?: string;
-    allPrices?: Record<string, { finalPrice: number; isBelowMinimum: boolean; isFixed: boolean; overrideMargin: number | null; roundingRule: string }>;
+    allPrices?: Record<
+      string,
+      {
+        finalPrice: number;
+        isBelowMinimum: boolean;
+        isFixed: boolean;
+        overrideMargin: number | null;
+        roundingRule: string;
+      }
+    >;
     replacementCost?: number;
     costPrice?: number;
   } | null>(null);
@@ -112,15 +134,24 @@ export function AddVoucherItemDialog({
             quantity: it.quantity as number,
             unitCost: Number(it.unitCost),
             subtotal: Number(it.subtotal),
-            priceListPrices: it.priceListData ? Object.entries(it.priceListData as Record<string, unknown>).map(([k, v]: [string, unknown]) => ({
-              priceListId: k,
-              priceListName: plToUse.find(p => p.id === k)?.name || k,
-              baseMargin: plToUse.find(p => p.id === k)?.baseMarginPercentage || 0,
-              calculatedPrice: (v as { price?: number }).price || 0,
-              fixedPrice: (v as { isFixed?: boolean; price?: number }).isFixed ? (v as { price?: number }).price : null,
-              isFixed: (v as { isFixed?: boolean }).isFixed || false,
-              isBelowMinimum: false,
-            })) : [],
+            priceListPrices: it.priceListData
+              ? Object.entries(it.priceListData as Record<string, unknown>).map(
+                  ([k, v]: [string, unknown]) => ({
+                    priceListId: k,
+                    priceListName: plToUse.find((p) => p.id === k)?.name || k,
+                    baseMargin:
+                      plToUse.find((p) => p.id === k)?.baseMarginPercentage ||
+                      0,
+                    calculatedPrice: (v as { price?: number }).price || 0,
+                    fixedPrice: (v as { isFixed?: boolean; price?: number })
+                      .isFixed
+                      ? (v as { price?: number }).price
+                      : null,
+                    isFixed: (v as { isFixed?: boolean }).isFixed || false,
+                    isBelowMinimum: false,
+                  }),
+                )
+              : [],
             currentStock: (it.product as { stock?: number })?.stock,
           }));
           setItems(loaded);
@@ -132,9 +163,12 @@ export function AddVoucherItemDialog({
   };
 
   // Calculate projected stock for a product (current stock + quantities from all items in this voucher)
-  const getProjectedStock = (productId: string, currentStock?: number): number => {
+  const getProjectedStock = (
+    productId: string,
+    currentStock?: number,
+  ): number => {
     const totalQuantityInVoucher = items
-      .filter(item => item.productId === productId)
+      .filter((item) => item.productId === productId)
       .reduce((sum, item) => sum + item.quantity, 0);
     return (currentStock || 0) + totalQuantityInVoucher;
   };
@@ -145,9 +179,7 @@ export function AddVoucherItemDialog({
 
     const loadAll = async () => {
       try {
-        const [plRes] = await Promise.allSettled([
-          fetch("/api/price-lists"),
-        ]);
+        const [plRes] = await Promise.allSettled([fetch("/api/price-lists")]);
         let fetchedPriceLists: PriceList[] = [];
         if (plRes.status === "fulfilled" && plRes.value.ok) {
           const plData = await plRes.value.json();
@@ -156,7 +188,7 @@ export function AddVoucherItemDialog({
         }
 
         // Fetch minimum margin from settings
-        const settingsRes = await fetch('/api/settings');
+        const settingsRes = await fetch("/api/settings");
         if (settingsRes.ok) {
           const settingsData = await settingsRes.json();
           setMinimumMargin(settingsData.minimumMarginPercentage || 15);
@@ -170,15 +202,35 @@ export function AddVoucherItemDialog({
     };
 
     loadAll();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, voucherId]);
 
-  const recalculatePrices = (cost: number, productAllPrices?: Record<string, { finalPrice: number; isBelowMinimum: boolean; isFixed: boolean; overrideMargin: number | null; roundingRule: string }> | undefined) => {
+  const recalculatePrices = (
+    cost: number,
+    productAllPrices?:
+      | Record<
+          string,
+          {
+            finalPrice: number;
+            isBelowMinimum: boolean;
+            isFixed: boolean;
+            overrideMargin: number | null;
+            roundingRule: string;
+          }
+        >
+      | undefined,
+  ) => {
     if (cost <= 0 || priceLists.length === 0) return;
 
     // Preserve user's manual isFixed state from current priceListPrices
-    const currentFixedStates = new Map(priceListPrices.map(p => [p.priceListId, p.isFixed]));
-    const currentFixedPrices = new Map(priceListPrices.filter(p => p.isFixed).map(p => [p.priceListId, p.fixedPrice]));
+    const currentFixedStates = new Map(
+      priceListPrices.map((p) => [p.priceListId, p.isFixed]),
+    );
+    const currentFixedPrices = new Map(
+      priceListPrices
+        .filter((p) => p.isFixed)
+        .map((p) => [p.priceListId, p.fixedPrice]),
+    );
 
     const prices: PriceListPrice[] = priceLists.map((pl) => {
       const productPriceInfo = productAllPrices?.[pl.id];
@@ -186,7 +238,8 @@ export function AddVoucherItemDialog({
 
       if (userManuallyFixed) {
         // User manually set this to fixed - preserve it with recalculated value
-        const margin = productPriceInfo?.overrideMargin ?? pl.baseMarginPercentage;
+        const margin =
+          productPriceInfo?.overrideMargin ?? pl.baseMarginPercentage;
         const calculated = calculateFinalPrice(cost, margin, pl.roundingRule);
         const isBelowMinimum = productPriceInfo?.isBelowMinimum ?? false;
         return {
@@ -201,7 +254,8 @@ export function AddVoucherItemDialog({
       }
 
       // Calculate with real hierarchy: override margin > base margin
-      const margin = productPriceInfo?.overrideMargin ?? pl.baseMarginPercentage;
+      const margin =
+        productPriceInfo?.overrideMargin ?? pl.baseMarginPercentage;
       const calculated = calculateFinalPrice(cost, margin, pl.roundingRule);
       const isBelowMinimum = productPriceInfo?.isBelowMinimum ?? false;
 
@@ -222,10 +276,8 @@ export function AddVoucherItemDialog({
   const handleFixPrice = (priceListId: string, fixedPrice: number) => {
     setPriceListPrices((prev) =>
       prev.map((p) =>
-        p.priceListId === priceListId
-          ? { ...p, fixedPrice, isFixed: true }
-          : p
-      )
+        p.priceListId === priceListId ? { ...p, fixedPrice, isFixed: true } : p,
+      ),
     );
   };
 
@@ -236,14 +288,16 @@ export function AddVoucherItemDialog({
         const productPriceInfo = selectedProduct?.allPrices?.[priceListId];
         const pl = priceLists.find((l) => l.id === priceListId);
         const margin = productPriceInfo?.overrideMargin ?? p.baseMargin;
-        const calculated = pl ? calculateFinalPrice(unitCost, margin, pl.roundingRule) : p.calculatedPrice;
+        const calculated = pl
+          ? calculateFinalPrice(unitCost, margin, pl.roundingRule)
+          : p.calculatedPrice;
         return {
           ...p,
           calculatedPrice: calculated,
           fixedPrice: null,
           isFixed: false,
         };
-      })
+      }),
     );
   };
 
@@ -258,7 +312,8 @@ export function AddVoucherItemDialog({
     if (!selectedProduct || quantity <= 0 || unitCost <= 0) {
       await alert({
         title: "Datos incompletos",
-        description: "Seleccione un producto y complete cantidad y costo unitario.",
+        description:
+          "Seleccione un producto y complete cantidad y costo unitario.",
         variant: "error",
       });
       return;
@@ -267,10 +322,13 @@ export function AddVoucherItemDialog({
     setLoading(true);
     try {
       // Build priceListData payload
-      const priceListData: Record<string, { price: number; isFixed: boolean }> = {};
+      const priceListData: Record<string, { price: number; isFixed: boolean }> =
+        {};
       priceListPrices.forEach((pl) => {
         priceListData[pl.priceListId] = {
-          price: pl.isFixed ? (pl.fixedPrice ?? pl.calculatedPrice) : pl.calculatedPrice,
+          price: pl.isFixed
+            ? (pl.fixedPrice ?? pl.calculatedPrice)
+            : pl.calculatedPrice,
           isFixed: pl.isFixed,
         };
       });
@@ -278,7 +336,9 @@ export function AddVoucherItemDialog({
       const isUpdate = !!editingItemId;
 
       const res = await fetch(
-        isUpdate ? `/api/purchase-vouchers/${voucherId}/items/${editingItemId}` : `/api/purchase-vouchers/${voucherId}/items`,
+        isUpdate
+          ? `/api/purchase-vouchers/${voucherId}/items/${editingItemId}`
+          : `/api/purchase-vouchers/${voucherId}/items`,
         {
           method: isUpdate ? "PATCH" : "POST",
           headers: { "Content-Type": "application/json" },
@@ -288,12 +348,17 @@ export function AddVoucherItemDialog({
             unitCost,
             priceListData,
           }),
-        }
+        },
       );
 
       if (!res.ok) {
         const errData = await res.json();
-        throw new Error(errData.error || (isUpdate ? "No se pudo actualizar el ítem" : "No se pudo agregar el ítem"));
+        throw new Error(
+          errData.error ||
+            (isUpdate
+              ? "No se pudo actualizar el ítem"
+              : "No se pudo agregar el ítem"),
+        );
       }
 
       const subtotal = quantity * unitCost;
@@ -310,8 +375,8 @@ export function AddVoucherItemDialog({
                   subtotal,
                   priceListPrices: [...priceListPrices],
                 }
-              : it
-          )
+              : it,
+          ),
         );
       } else {
         // Add new item to local list
@@ -339,7 +404,8 @@ export function AddVoucherItemDialog({
 
       onItemAdded?.();
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Error al agregar ítem.";
+      const message =
+        err instanceof Error ? err.message : "Error al agregar ítem.";
       await alert({
         title: "Error",
         description: message,
@@ -391,7 +457,8 @@ export function AddVoucherItemDialog({
       onFinish?.();
       onClose();
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Error al finalizar.";
+      const message =
+        err instanceof Error ? err.message : "Error al finalizar.";
       await alert({
         title: "Error",
         description: message,
@@ -413,9 +480,12 @@ export function AddVoucherItemDialog({
 
     setLoading(true);
     try {
-      const res = await fetch(`/api/purchase-vouchers/${voucherId}/items/${itemId}`, {
-        method: "DELETE",
-      });
+      const res = await fetch(
+        `/api/purchase-vouchers/${voucherId}/items/${itemId}`,
+        {
+          method: "DELETE",
+        },
+      );
 
       if (!res.ok) {
         const errData = await res.json();
@@ -425,13 +495,16 @@ export function AddVoucherItemDialog({
       setItems((prev) => prev.filter((it) => it.id !== itemId));
 
       // Clear form if the removed item was selected
-      if (selectedProduct && items.find((it) => it.id === itemId)?.productId === selectedProduct.id) {
+      if (
+        selectedProduct &&
+        items.find((it) => it.id === itemId)?.productId === selectedProduct.id
+      ) {
         setSelectedProduct(null);
         setQuantity(1);
         setUnitCost(0);
         setPriceListPrices([]);
       }
-      
+
       // Always clear editingItemId if the removed item was being edited
       if (editingItemId === itemId) {
         setEditingItemId(null);
@@ -439,7 +512,8 @@ export function AddVoucherItemDialog({
 
       onItemAdded?.();
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Error al eliminar ítem.";
+      const message =
+        err instanceof Error ? err.message : "Error al eliminar ítem.";
       await alert({
         title: "Error",
         description: message,
@@ -451,13 +525,19 @@ export function AddVoucherItemDialog({
   };
 
   const handleDeleteVoucher = async () => {
-    if (!window.confirm('¿Estás seguro de eliminar este comprobante? Esta acción no se puede deshacer.')) {
-      return;
-    }
-    
+    const confirmed = await confirm({
+      title: "Eliminar comprobante",
+      description:
+        "¿Estás seguro de eliminar este comprobante? Esta acción no se puede deshacer.",
+      confirmText: "Eliminar",
+      cancelText: "Cancelar",
+      variant: "destructive",
+    });
+    if (!confirmed) return;
+
     try {
       const res = await fetch(`/api/purchase-vouchers/${voucherId}`, {
-        method: 'DELETE',
+        method: "DELETE",
       });
       if (res.ok) {
         onClose();
@@ -465,16 +545,16 @@ export function AddVoucherItemDialog({
       } else {
         const error = await res.json();
         await alert({
-          title: 'Error',
-          description: error.error || 'Error al eliminar el comprobante',
-          variant: 'error',
+          title: "Error",
+          description: error.error || "Error al eliminar el comprobante",
+          variant: "error",
         });
       }
     } catch {
       await alert({
-        title: 'Error',
-        description: 'Error al eliminar el comprobante',
-        variant: 'error',
+        title: "Error",
+        description: "Error al eliminar el comprobante",
+        variant: "error",
       });
     }
   };
@@ -483,9 +563,10 @@ export function AddVoucherItemDialog({
   const variance = voucherTotal - totalItems;
   const hasLowMargin = priceListPrices.some((p) => p.isBelowMinimum);
 
-  const modalSubtitle = supplierName && letter && number 
-    ? `${supplierName} | ${letter}-${number} | Productos: ${items.length} | Total: $${totalItems.toFixed(2)}${voucherTotal > 0 ? (Math.abs(variance) > 0.01 ? ` (Dif: $${variance.toFixed(2)})` : ' (Cuadrado)') : ''}`
-    : undefined;
+  const modalSubtitle =
+    supplierName && letter && number
+      ? `${supplierName} | ${letter}-${number} | Productos: ${items.length} | Total: $${totalItems.toFixed(2)}${voucherTotal > 0 ? (Math.abs(variance) > 0.01 ? ` (Dif: $${variance.toFixed(2)})` : " (Cuadrado)") : ""}`
+      : undefined;
 
   return (
     <ModalBase
@@ -496,15 +577,15 @@ export function AddVoucherItemDialog({
       maxWidth="5xl"
       footer={
         <div className="flex justify-between gap-2 w-full">
-          <Button
-            variant="outline"
-            onClick={onBackToHeader}
-            disabled={loading}
-          >
+          <Button variant="outline" onClick={onBackToHeader} disabled={loading}>
             Volver a datos
           </Button>
           <div className="flex gap-2">
-            <Button variant="destructive" onClick={handleDeleteVoucher} disabled={loading}>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteVoucher}
+              disabled={loading}
+            >
               <Trash2 className="h-4 w-4 mr-2" />
               Eliminar comprobante
             </Button>
@@ -521,192 +602,250 @@ export function AddVoucherItemDialog({
     >
       <div className="h-[550px] grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-6">
         {/* Left panel — Form */}
-        <div className="flex flex-col overflow-hidden" onKeyDown={handleKeyDown}>
+        <div
+          className="flex flex-col overflow-hidden"
+          onKeyDown={handleKeyDown}
+        >
           <div className="flex-1 overflow-y-auto space-y-6">
-          {/* Product Search via ProductServiceSelector */}
-          {!selectedProduct ? (
-            <div className="space-y-2">
-              <Label>Buscar Producto</Label>
-              <ProductServiceSelector
-                key={selectorKey}
-                showPriceListSelector={false}
-                showCategoryFilter={false}
-                showSelectedTable={false}
-                showPrice={false}
-                showQuickCreate
-                onQuickCreate={() => setIsQuickProductOpen(true)}
-                onSelectionChange={(selItems: SelectedItem[]) => {
-                  if (selItems.length > 0) {
-                    const lastItem = selItems[selItems.length - 1];
-                    setSelectedProduct({
-                      id: lastItem.id,
-                      name: lastItem.name,
-                      sku: lastItem.sku,
-                      allPrices: lastItem.allPrices,
-                      replacementCost: lastItem.replacementCost,
-                      costPrice: lastItem.costPrice,
-                    });
-                    // Set default quantity to 1 and unitCost to replacementCost (or costPrice)
-                    setQuantity(1);
-                    const baseCost = lastItem.replacementCost && lastItem.replacementCost > 0
-                      ? lastItem.replacementCost
-                      : (lastItem.costPrice || 0);
-                    setUnitCost(baseCost);
-                  }
-                }}
-              />
-            </div>
-          ) : (
-            <div className="flex items-center gap-3 p-3 border rounded-md bg-muted/30">
-              <Package className="h-5 w-5 text-muted-foreground" />
-              <div className="flex-1">
-                <div className="font-medium">{selectedProduct.name}</div>
-                {selectedProduct.sku && (
-                  <div className="text-xs text-muted-foreground">SKU: {selectedProduct.sku}</div>
-                )}
+            {/* Product Search via ProductServiceSelector */}
+            {!selectedProduct ? (
+              <div className="space-y-2">
+                <Label>Buscar Producto</Label>
+                <ProductServiceSelector
+                  key={selectorKey}
+                  showPriceListSelector={false}
+                  showCategoryFilter={false}
+                  showSelectedTable={false}
+                  showPrice={false}
+                  showQuickCreate
+                  onQuickCreate={() => setIsQuickProductOpen(true)}
+                  onSelectionChange={(selItems: SelectedItem[]) => {
+                    if (selItems.length > 0) {
+                      const lastItem = selItems[selItems.length - 1];
+                      setSelectedProduct({
+                        id: lastItem.id,
+                        name: lastItem.name,
+                        sku: lastItem.sku,
+                        allPrices: lastItem.allPrices,
+                        replacementCost: lastItem.replacementCost,
+                        costPrice: lastItem.costPrice,
+                      });
+                      // Set default quantity to 1 and unitCost to replacementCost (or costPrice)
+                      setQuantity(1);
+                      const baseCost =
+                        lastItem.replacementCost && lastItem.replacementCost > 0
+                          ? lastItem.replacementCost
+                          : lastItem.costPrice || 0;
+                      setUnitCost(baseCost);
+                    }
+                  }}
+                />
               </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setSelectedProduct(null);
-                  setPriceListPrices([]);
-                  setSelectorKey((k) => k + 1);
-                  setEditingItemId(null);
-                }}
-              >
-                Cambiar
-              </Button>
-            </div>
-          )}
+            ) : (
+              <div className="flex items-center gap-3 p-3 border rounded-md bg-muted/30">
+                <Package className="h-5 w-5 text-muted-foreground" />
+                <div className="flex-1">
+                  <div className="font-medium">{selectedProduct.name}</div>
+                  {selectedProduct.sku && (
+                    <div className="text-xs text-muted-foreground">
+                      SKU: {selectedProduct.sku}
+                    </div>
+                  )}
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setSelectedProduct(null);
+                    setPriceListPrices([]);
+                    setSelectorKey((k) => k + 1);
+                    setEditingItemId(null);
+                  }}
+                >
+                  Cambiar
+                </Button>
+              </div>
+            )}
 
-          {selectedProduct && (
-            <div className="flex gap-4">
-              <div className="flex-1 space-y-2">
-                <Label htmlFor="quantity" required>Cantidad</Label>
-                <div className="relative">
-                  <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
-                  <Input
-                    id="quantity"
-                    type="number"
-                    min={1}
-                    required
-                    aria-required="true"
-                    value={quantity}
-                    onChange={(e) => setQuantity(parseInt(e.target.value) || 0)}
-                    className={`pl-9 font-mono ${quantity <= 0 ? "border-red-300 focus-visible:ring-red-200" : ""}`}
-                  />
+            {selectedProduct && (
+              <div className="flex gap-4">
+                <div className="flex-1 space-y-2">
+                  <Label htmlFor="quantity" required>
+                    Cantidad
+                  </Label>
+                  <div className="relative">
+                    <Hash
+                      className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none"
+                      aria-hidden="true"
+                    />
+                    <Input
+                      id="quantity"
+                      type="number"
+                      min={1}
+                      required
+                      aria-required="true"
+                      value={quantity}
+                      onChange={(e) =>
+                        setQuantity(parseInt(e.target.value) || 0)
+                      }
+                      className={`pl-9 font-mono ${quantity <= 0 ? "border-red-300 focus-visible:ring-red-200" : ""}`}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex-1 space-y-2">
+                  <Label htmlFor="unitCost" required>
+                    Precio ($)
+                  </Label>
+                  <div className="relative">
+                    <DollarSign
+                      className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none"
+                      aria-hidden="true"
+                    />
+                    <Input
+                      id="unitCost"
+                      type="number"
+                      step="1"
+                      min={0}
+                      required
+                      aria-required="true"
+                      value={unitCost || ""}
+                      onChange={(e) => {
+                        const value = parseFloat(e.target.value) || 0;
+                        setUnitCost(value);
+                        recalculatePrices(value, selectedProduct.allPrices);
+                      }}
+                      className={`pl-9 font-mono ${unitCost <= 0 ? "border-red-300 focus-visible:ring-red-200" : ""}`}
+                    />
+                  </div>
                 </div>
               </div>
+            )}
 
-              <div className="flex-1 space-y-2">
-                <Label htmlFor="unitCost" required>Precio ($)</Label>
-                <div className="relative">
-                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
-                  <Input
-                    id="unitCost"
-                    type="number"
-                    step="1"
-                    min={0}
-                    required
-                    aria-required="true"
-                    value={unitCost || ""}
-                    onChange={(e) => {
-                      const value = parseFloat(e.target.value) || 0;
-                      setUnitCost(value);
-                      recalculatePrices(value, selectedProduct.allPrices);
-                    }}
-                    className={`pl-9 font-mono ${unitCost <= 0 ? "border-red-300 focus-visible:ring-red-200" : ""}`}
-                  />
+            {/* Low Margin Alert */}
+            {hasLowMargin && (
+              <div className="flex items-center gap-2 p-3 border border-red-300 bg-red-50 rounded-md text-red-700 text-sm">
+                <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+                <span>
+                  Algunas listas quedan por debajo del margen mínimo con este
+                  costo.
+                </span>
+              </div>
+            )}
+
+            {/* Price Lists */}
+            {unitCost > 0 && priceListPrices.length > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <h4 className="font-semibold text-sm text-muted-foreground">
+                    Precios de venta
+                  </h4>
+                  {hasLowMargin && (
+                    <TrendingDown className="h-4 w-4 text-red-500" />
+                  )}
                 </div>
-              </div>
-            </div>
-          )}
-
-          {/* Low Margin Alert */}
-          {hasLowMargin && (
-            <div className="flex items-center gap-2 p-3 border border-red-300 bg-red-50 rounded-md text-red-700 text-sm">
-              <AlertTriangle className="h-4 w-4 flex-shrink-0" />
-              <span>Algunas listas quedan por debajo del margen mínimo con este costo.</span>
-            </div>
-          )}
-
-          {/* Price Lists */}
-          {unitCost > 0 && priceListPrices.length > 0 && (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <h4 className="font-semibold text-sm text-muted-foreground">
-                  Precios de venta
-                </h4>
-                {hasLowMargin && <TrendingDown className="h-4 w-4 text-red-500" />}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Puede definir los precios de venta en este paso o luego desde la sección productos
-              </p>
-              <div className="border rounded-md overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-muted/50 hover:bg-muted/50 h-8">
-                      <TableHead className="h-8 p-2 font-medium">Lista</TableHead>
-                      <TableHead className="h-8 p-2 font-medium">Margen</TableHead>
-                      <TableHead className="h-8 p-2 font-medium">Tipo</TableHead>
-                      <TableHead className="h-8 p-2 font-medium text-right w-32">Precio</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {priceListPrices.map((pl) => {
-                      const isFixedBelowMinimum = pl.isFixed && pl.fixedPrice && unitCost > 0 && ((pl.fixedPrice - unitCost) / unitCost) * 100 < minimumMargin;
-                      return (
-                      <TableRow
-                        key={pl.priceListId}
-                        className={`${pl.isBelowMinimum || isFixedBelowMinimum ? "bg-red-50/50" : ""} hover:bg-transparent`}
-                      >
-                        <TableCell className="p-2">{pl.priceListName}</TableCell>
-                        <TableCell className={`p-2 ${
-                          pl.isFixed 
-                            ? ((pl.fixedPrice && unitCost > 0 ? ((pl.fixedPrice - unitCost) / unitCost) * 100 : 0) < minimumMargin ? "text-red-600 font-medium" : "text-muted-foreground")
-                            : (pl.isBelowMinimum ? "text-red-600 font-medium" : "text-muted-foreground")
-                        }`}>
-                          {pl.isFixed 
-                            ? (pl.fixedPrice && unitCost > 0 
-                                ? `${(((pl.fixedPrice - unitCost) / unitCost) * 100).toFixed(1)}%` 
-                                : "-")
-                            : (pl.isBelowMinimum ? "Bajo mínimo" : `${pl.baseMargin}%`)}
-                        </TableCell>
-                        <TableCell className="p-2">
-                          <Badge 
-                            variant={pl.isFixed ? "default" : "secondary"} 
-                            className="text-[10px] h-4 px-1.5 cursor-pointer hover:opacity-80"
-                            onClick={() => pl.isFixed && handleUnfixPrice(pl.priceListId)}
-                          >
-                            {pl.isFixed ? "fijo" : "auto"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="p-2">
-                          <div className="flex items-center gap-1.5 justify-end">$
-                            <Input
-                              type="number"
-                              step="1000"
-                              value={pl.isFixed ? pl.fixedPrice ?? "" : pl.calculatedPrice}
-                              onChange={(e) => {
-                                const value = parseFloat(e.target.value);
-                                if (!isNaN(value)) {
-                                  handleFixPrice(pl.priceListId, value);
-                                }
-                              }}
-                              className={`h-7 w-20 text-xs text-right font-mono ${pl.isBelowMinimum && !pl.isFixed ? "border-red-300" : ""}`}
-                            />
-                          </div>
-                        </TableCell>
+                <p className="text-xs text-muted-foreground">
+                  Puede definir los precios de venta en este paso o luego desde
+                  la sección productos
+                </p>
+                <div className="border rounded-md overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/50 hover:bg-muted/50 h-8">
+                        <TableHead className="h-8 p-2 font-medium">
+                          Lista
+                        </TableHead>
+                        <TableHead className="h-8 p-2 font-medium">
+                          Margen
+                        </TableHead>
+                        <TableHead className="h-8 p-2 font-medium">
+                          Tipo
+                        </TableHead>
+                        <TableHead className="h-8 p-2 font-medium text-right w-32">
+                          Precio
+                        </TableHead>
                       </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {priceListPrices.map((pl) => {
+                        const isFixedBelowMinimum =
+                          pl.isFixed &&
+                          pl.fixedPrice &&
+                          unitCost > 0 &&
+                          ((pl.fixedPrice - unitCost) / unitCost) * 100 <
+                            minimumMargin;
+                        return (
+                          <TableRow
+                            key={pl.priceListId}
+                            className={`${pl.isBelowMinimum || isFixedBelowMinimum ? "bg-red-50/50" : ""} hover:bg-transparent`}
+                          >
+                            <TableCell className="p-2">
+                              {pl.priceListName}
+                            </TableCell>
+                            <TableCell
+                              className={`p-2 ${
+                                pl.isFixed
+                                  ? (pl.fixedPrice && unitCost > 0
+                                      ? ((pl.fixedPrice - unitCost) /
+                                          unitCost) *
+                                        100
+                                      : 0) < minimumMargin
+                                    ? "text-red-600 font-medium"
+                                    : "text-muted-foreground"
+                                  : pl.isBelowMinimum
+                                    ? "text-red-600 font-medium"
+                                    : "text-muted-foreground"
+                              }`}
+                            >
+                              {pl.isFixed
+                                ? pl.fixedPrice && unitCost > 0
+                                  ? `${(((pl.fixedPrice - unitCost) / unitCost) * 100).toFixed(1)}%`
+                                  : "-"
+                                : pl.isBelowMinimum
+                                  ? "Bajo mínimo"
+                                  : `${pl.baseMargin}%`}
+                            </TableCell>
+                            <TableCell className="p-2">
+                              <Badge
+                                variant={pl.isFixed ? "default" : "secondary"}
+                                className="text-[10px] h-4 px-1.5 cursor-pointer hover:opacity-80"
+                                onClick={() =>
+                                  pl.isFixed && handleUnfixPrice(pl.priceListId)
+                                }
+                              >
+                                {pl.isFixed ? "fijo" : "auto"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="p-2">
+                              <div className="flex items-center gap-1.5 justify-end">
+                                $
+                                <Input
+                                  type="number"
+                                  step="1000"
+                                  value={
+                                    pl.isFixed
+                                      ? (pl.fixedPrice ?? "")
+                                      : pl.calculatedPrice
+                                  }
+                                  onChange={(e) => {
+                                    const value = parseFloat(e.target.value);
+                                    if (!isNaN(value)) {
+                                      handleFixPrice(pl.priceListId, value);
+                                    }
+                                  }}
+                                  className={`h-7 w-20 text-xs text-right font-mono ${pl.isBelowMinimum && !pl.isFixed ? "border-red-300" : ""}`}
+                                />
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
               </div>
-            </div>
-          )}
+            )}
           </div>
           {selectedProduct && (
             <div className="flex justify-end gap-2 pt-4 border-t">
@@ -746,15 +885,25 @@ export function AddVoucherItemDialog({
             {items.length === 0 ? (
               <div className="p-6 text-center text-muted-foreground text-sm">
                 <Package className="h-8 w-8 mx-auto mb-2 opacity-40" />
-                <p>{supplierName ? `Agregue productos al comprobante de ${supplierName}` : "Agregue productos al comprobante"}</p>
+                <p>
+                  {supplierName
+                    ? `Agregue productos al comprobante de ${supplierName}`
+                    : "Agregue productos al comprobante"}
+                </p>
               </div>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/50 hover:bg-muted/50 h-8">
-                    <TableHead className="h-8 p-2 font-medium">Producto</TableHead>
-                    <TableHead className="h-8 p-2 font-medium text-right w-20">Cant.</TableHead>
-                    <TableHead className="h-8 p-2 font-medium text-right w-20 text-muted-foreground">Stock</TableHead>
+                    <TableHead className="h-8 p-2 font-medium">
+                      Producto
+                    </TableHead>
+                    <TableHead className="h-8 p-2 font-medium text-right w-20">
+                      Cant.
+                    </TableHead>
+                    <TableHead className="h-8 p-2 font-medium text-right w-20 text-muted-foreground">
+                      Stock
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -762,7 +911,9 @@ export function AddVoucherItemDialog({
                     <TableRow
                       key={item.id}
                       className={`hover:bg-muted/40 transition-colors cursor-pointer h-10 ${
-                        selectedProduct?.id === item.productId ? "bg-primary/5" : ""
+                        selectedProduct?.id === item.productId
+                          ? "bg-primary/5"
+                          : ""
                       }`}
                       onClick={() => {
                         setSelectedProduct({
@@ -773,14 +924,19 @@ export function AddVoucherItemDialog({
                         });
                         setQuantity(item.quantity);
                         setUnitCost(item.unitCost);
-                        setPriceListPrices(item.priceListPrices.map((p) => ({ ...p })));
+                        setPriceListPrices(
+                          item.priceListPrices.map((p) => ({ ...p })),
+                        );
                         setEditingItemId(item.id);
                       }}
                     >
                       <TableCell className="p-2">
                         <div className="flex items-center gap-2">
                           <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center flex-shrink-0">
-                            <Package className="h-4 w-4 text-primary" aria-hidden="true" />
+                            <Package
+                              className="h-4 w-4 text-primary"
+                              aria-hidden="true"
+                            />
                           </div>
                           <span
                             className="truncate block text-xs font-semibold tracking-tight"

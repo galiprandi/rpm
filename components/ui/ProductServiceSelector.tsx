@@ -1,16 +1,16 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useRef } from 'react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
+import { useState, useEffect, useRef } from "react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Loader2,
   Plus,
@@ -23,17 +23,21 @@ import {
   X,
   Check,
   Tags,
-  BadgeDollarSign
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { formatARS } from '@/lib/utils/format';
-import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+  BadgeDollarSign,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { formatARS } from "@/lib/utils/format";
+import { Badge } from "@/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 // Helper para truncar texto a 80 caracteres
 const truncateText = (text: string, maxLength: number = 80): string => {
   if (text.length <= maxLength) return text;
-  return text.slice(0, maxLength) + '...';
+  return text.slice(0, maxLength) + "...";
 };
 
 /**
@@ -75,7 +79,7 @@ const truncateText = (text: string, maxLength: number = 80): string => {
 // Types
 export interface SelectedItem {
   id: string;
-  type: 'product' | 'service';
+  type: "product" | "service";
   name: string;
   quantity: number;
   unitPrice: number;
@@ -87,7 +91,16 @@ export interface SelectedItem {
   stock?: number;
   categoryId?: string;
   categoryName?: string;
-  allPrices?: Record<string, { finalPrice: number; isBelowMinimum: boolean; isFixed: boolean; overrideMargin: number | null; roundingRule: string }>;
+  allPrices?: Record<
+    string,
+    {
+      finalPrice: number;
+      isBelowMinimum: boolean;
+      isFixed: boolean;
+      overrideMargin: number | null;
+      roundingRule: string;
+    }
+  >;
   replacementCost?: number;
   costPrice?: number;
 }
@@ -102,7 +115,7 @@ interface PriceInfo {
 
 interface SearchResult {
   id: string;
-  type: 'product' | 'service';
+  type: "product" | "service";
   name: string;
   basePrice: number;
   minimumPrice?: number;
@@ -145,7 +158,7 @@ interface ProductServiceSelectorProps {
 
 export function ProductServiceSelector({
   showPriceListSelector = false,
-  defaultPriceListId = '',
+  defaultPriceListId = "",
   showCategoryFilter = false,
   showQuickCreate = false,
   showSelectedTable = true,
@@ -153,12 +166,12 @@ export function ProductServiceSelector({
   initialItems = [],
   onSelectionChange,
   onQuickCreate,
-  searchEndpoint = '/api/products-services/search',
+  searchEndpoint = "/api/products-services/search",
   categories = [],
   priceLists = [],
 }: ProductServiceSelectorProps) {
   // Search state
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
@@ -167,11 +180,12 @@ export function ProductServiceSelector({
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Filters
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('none');
-  
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>("none");
+
   // Default price list: prop > first in list > empty
-  const defaultPriceList = defaultPriceListId || priceLists[0]?.id || '';
-  const [selectedPriceListId, setSelectedPriceListId] = useState<string>(defaultPriceList);
+  const defaultPriceList = defaultPriceListId || priceLists[0]?.id || "";
+  const [selectedPriceListId, setSelectedPriceListId] =
+    useState<string>(defaultPriceList);
 
   // Cart state - efímero, solo vive en memoria durante la sesión
   const [cartItems, setCartItems] = useState<SelectedItem[]>(initialItems);
@@ -181,25 +195,28 @@ export function ProductServiceSelector({
   // Close dropdown when clicking outside or pressing Escape
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
         setShowResults(false);
       }
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
+      if (event.key === "Escape") {
         setShowResults(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
     };
   }, []);
-  
+
   // Helper simple para actualizar carrito y notificar al parent
   const updateCartAndNotify = (newItems: SelectedItem[]) => {
     setCartItems(newItems);
@@ -207,7 +224,9 @@ export function ProductServiceSelector({
   };
 
   // Cache for all prices by product ID
-  const priceCacheRef = useRef<Map<string, Record<string, PriceInfo>>>(new Map());
+  const priceCacheRef = useRef<Map<string, Record<string, PriceInfo>>>(
+    new Map(),
+  );
 
   // Debounced search - search function defined inside effect to avoid dependency issues
   useEffect(() => {
@@ -216,36 +235,36 @@ export function ProductServiceSelector({
       setSearchLoading(false);
       return;
     }
-    
+
     setSearchLoading(true);
-    
+
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    
+
     debounceRef.current = setTimeout(async () => {
       const params = new URLSearchParams();
-      params.set('q', searchTerm);
-      if (selectedCategoryId && selectedCategoryId !== 'none') {
-        params.set('categoryId', selectedCategoryId);
+      params.set("q", searchTerm);
+      if (selectedCategoryId && selectedCategoryId !== "none") {
+        params.set("categoryId", selectedCategoryId);
       }
-      if (selectedPriceListId && selectedPriceListId !== 'none') {
-        params.set('priceListId', selectedPriceListId);
+      if (selectedPriceListId && selectedPriceListId !== "none") {
+        params.set("priceListId", selectedPriceListId);
       }
-      params.set('limit', '20');
+      params.set("limit", "20");
 
       try {
         const response = await fetch(`${searchEndpoint}?${params.toString()}`);
         const data = await response.json();
-        
+
         // Cache all prices for each product
         for (const result of data.results || []) {
           if (result.allPrices) {
             priceCacheRef.current.set(result.id, result.allPrices);
           }
         }
-        
+
         setSearchResults(data.results || []);
       } catch (err) {
-        console.error('Search error:', err);
+        console.error("Search error:", err);
         setSearchResults([]);
       } finally {
         setSearchLoading(false);
@@ -260,12 +279,15 @@ export function ProductServiceSelector({
   // Update prices when price list changes (use cache if available)
   useEffect(() => {
     if (searchTerm.length < 2 || searchResults.length === 0) return;
-    
+
     // Update displayed prices from cache
-    const updatedResults = searchResults.map(result => {
-      if (result.type === 'product' && priceCacheRef.current.has(result.id)) {
+    const updatedResults = searchResults.map((result) => {
+      if (result.type === "product" && priceCacheRef.current.has(result.id)) {
         const cachedPrices = priceCacheRef.current.get(result.id);
-        if (selectedPriceListId !== 'none' && cachedPrices?.[selectedPriceListId]) {
+        if (
+          selectedPriceListId !== "none" &&
+          cachedPrices?.[selectedPriceListId]
+        ) {
           const priceInfo = cachedPrices[selectedPriceListId];
           return {
             ...result,
@@ -276,20 +298,26 @@ export function ProductServiceSelector({
       }
       return result;
     });
-    
+
     setSearchResults(updatedResults);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPriceListId]);
 
-  const addToCart = (result: SearchResult, overridePrice?: number, overridePriceListId?: string) => {
+  const addToCart = (
+    result: SearchResult,
+    overridePrice?: number,
+    overridePriceListId?: string,
+  ) => {
     const priceToUse = overridePrice ?? result.basePrice;
-    const priceListIdToUse = overridePriceListId ?? (selectedPriceListId !== 'none' ? selectedPriceListId : undefined);
+    const priceListIdToUse =
+      overridePriceListId ??
+      (selectedPriceListId !== "none" ? selectedPriceListId : undefined);
 
     // Si ya existe en el carrito con el MISMO precio, incrementamos cantidad
-    const existingIndex = cartItems.findIndex(item =>
-      item.id === result.id && item.unitPrice === priceToUse
+    const existingIndex = cartItems.findIndex(
+      (item) => item.id === result.id && item.unitPrice === priceToUse,
     );
-    
+
     if (existingIndex >= 0) {
       // Incrementar cantidad
       const updated = [...cartItems];
@@ -323,7 +351,7 @@ export function ProductServiceSelector({
     setAddedItemName(result.name);
     addedTimeoutRef.current = setTimeout(() => setAddedItemName(null), 1500);
 
-    setSearchTerm('');
+    setSearchTerm("");
     setSearchResults([]);
     setShowResults(false);
 
@@ -339,10 +367,10 @@ export function ProductServiceSelector({
 
   const updateQuantity = (index: number, delta: number) => {
     if (index < 0 || index >= cartItems.length) return;
-    
+
     const item = cartItems[index];
     const newQuantity = item.quantity + delta;
-    
+
     if (newQuantity <= 0) {
       updateCartAndNotify(cartItems.filter((_, i) => i !== index));
       return;
@@ -357,7 +385,11 @@ export function ProductServiceSelector({
     if (index < 0 || index >= cartItems.length) return;
     const item = cartItems[index];
     const updated = [...cartItems];
-    updated[index] = { ...item, unitPrice: Math.max(0, newPrice), isManualPrice: true };
+    updated[index] = {
+      ...item,
+      unitPrice: Math.max(0, newPrice),
+      isManualPrice: true,
+    };
     updateCartAndNotify(updated);
   };
 
@@ -366,7 +398,10 @@ export function ProductServiceSelector({
     onQuickCreate?.();
   };
 
-  const total = cartItems.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
+  const total = cartItems.reduce(
+    (sum, item) => sum + item.unitPrice * item.quantity,
+    0,
+  );
 
   return (
     <div ref={containerRef} className="space-y-4 w-full">
@@ -379,18 +414,26 @@ export function ProductServiceSelector({
               <div className="w-[70%] min-w-[200px] space-y-1.5">
                 <Label htmlFor="selector-category">Categoría</Label>
                 <div className="relative">
-                  <Tags className="absolute left-3 top-2 h-4 w-4 text-muted-foreground z-10 pointer-events-none" aria-hidden="true" />
-                  <Select value={selectedCategoryId} onValueChange={setSelectedCategoryId}>
+                  <Tags
+                    className="absolute left-3 top-2 h-4 w-4 text-muted-foreground z-10 pointer-events-none"
+                    aria-hidden="true"
+                  />
+                  <Select
+                    value={selectedCategoryId}
+                    onValueChange={setSelectedCategoryId}
+                  >
                     <SelectTrigger id="selector-category" className="pl-9">
                       <SelectValue placeholder="Todas las categorías" />
                     </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Todas las categorías</SelectItem>
-                    {categories.map(cat => (
-                      <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                    <SelectContent>
+                      <SelectItem value="none">Todas las categorías</SelectItem>
+                      {categories.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             )}
@@ -399,19 +442,25 @@ export function ProductServiceSelector({
               <div className="w-[30%] min-w-[140px] space-y-1.5">
                 <Label htmlFor="selector-price-list">Lista de Precios</Label>
                 <div className="relative">
-                  <BadgeDollarSign className="absolute left-3 top-2 h-4 w-4 text-muted-foreground z-10 pointer-events-none" aria-hidden="true" />
-                  <Select value={selectedPriceListId} onValueChange={setSelectedPriceListId}>
+                  <BadgeDollarSign
+                    className="absolute left-3 top-2 h-4 w-4 text-muted-foreground z-10 pointer-events-none"
+                    aria-hidden="true"
+                  />
+                  <Select
+                    value={selectedPriceListId}
+                    onValueChange={setSelectedPriceListId}
+                  >
                     <SelectTrigger id="selector-price-list" className="pl-9">
                       <SelectValue placeholder="Seleccionar lista" />
                     </SelectTrigger>
-                  <SelectContent>
-                    {priceLists.map(pl => (
-                      <SelectItem key={pl.id} value={pl.id}>
-                        {pl.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                    <SelectContent>
+                      {priceLists.map((pl) => (
+                        <SelectItem key={pl.id} value={pl.id}>
+                          {pl.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             )}
@@ -420,7 +469,10 @@ export function ProductServiceSelector({
 
         {/* Search input */}
         <div className="relative w-full">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10 pointer-events-none" aria-hidden="true" />
+          <Search
+            className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10 pointer-events-none"
+            aria-hidden="true"
+          />
           <Input
             ref={inputRef}
             placeholder="Buscar: led+cronos (ambas) o filtro aire (cualquiera)"
@@ -436,7 +488,7 @@ export function ProductServiceSelector({
             <button
               type="button"
               onClick={() => {
-                setSearchTerm('');
+                setSearchTerm("");
                 setShowResults(false);
                 inputRef.current?.focus();
               }}
@@ -454,12 +506,18 @@ export function ProductServiceSelector({
             {!showResults ? (
               <div className="h-full flex flex-col items-center justify-center text-sm text-muted-foreground px-4 text-center">
                 <span>Escribe para buscar productos o servicios</span>
-                <span className="text-xs mt-1 opacity-70">led+cronos (ambas) · &quot;LED-123&quot; (exacto) · filtro aire (cualquiera)</span>
+                <span className="text-xs mt-1 opacity-70">
+                  led+cronos (ambas) · &quot;LED-123&quot; (exacto) · filtro
+                  aire (cualquiera)
+                </span>
               </div>
             ) : searchTerm.length < 2 ? (
               <div className="h-full flex flex-col items-center justify-center text-sm text-muted-foreground px-4 text-center">
                 <span>Escribe al menos 2 caracteres</span>
-                <span className="text-xs mt-1 opacity-70">led+cronos (ambas) · fiat cronos (cualquiera) · &quot;ABC-123&quot; (exacto)</span>
+                <span className="text-xs mt-1 opacity-70">
+                  led+cronos (ambas) · fiat cronos (cualquiera) ·
+                  &quot;ABC-123&quot; (exacto)
+                </span>
               </div>
             ) : searchLoading ? (
               <div className="h-full flex flex-col items-center justify-center gap-2 text-muted-foreground">
@@ -473,11 +531,21 @@ export function ProductServiceSelector({
             ) : (
               <>
                 {searchResults.map((result) => {
-                  const contadoList = priceLists.find(pl => pl.name.toLowerCase() === 'contado');
-                  const tarjetaList = priceLists.find(pl => pl.name.toLowerCase().includes('tarjeta'));
+                  const contadoList = priceLists.find(
+                    (pl) => pl.name.toLowerCase() === "contado",
+                  );
+                  const tarjetaList = priceLists.find((pl) =>
+                    pl.name.toLowerCase().includes("tarjeta"),
+                  );
 
-                  const contadoPrice = (contadoList && result.allPrices) ? result.allPrices[contadoList.id]?.finalPrice : null;
-                  const tarjetaPrice = (tarjetaList && result.allPrices) ? result.allPrices[tarjetaList.id]?.finalPrice : null;
+                  const contadoPrice =
+                    contadoList && result.allPrices
+                      ? result.allPrices[contadoList.id]?.finalPrice
+                      : null;
+                  const tarjetaPrice =
+                    tarjetaList && result.allPrices
+                      ? result.allPrices[tarjetaList.id]?.finalPrice
+                      : null;
 
                   return (
                     <div
@@ -487,10 +555,16 @@ export function ProductServiceSelector({
                       <div className="min-w-0 overflow-hidden flex-1 mr-4 flex items-center gap-3">
                         {/* Standardized List Row Entity Pattern */}
                         <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0">
-                          {result.type === 'product' ? (
-                            <Package className="h-4 w-4 text-primary" aria-hidden="true" />
+                          {result.type === "product" ? (
+                            <Package
+                              className="h-4 w-4 text-primary"
+                              aria-hidden="true"
+                            />
                           ) : (
-                            <Wrench className="h-4 w-4 text-primary" aria-hidden="true" />
+                            <Wrench
+                              className="h-4 w-4 text-primary"
+                              aria-hidden="true"
+                            />
                           )}
                         </div>
                         <div className="min-w-0 flex-1">
@@ -499,19 +573,28 @@ export function ProductServiceSelector({
                           </div>
                         </div>
                         <div className="flex items-center gap-2 min-w-0">
-                          <Badge variant="outline" className="text-xs flex-shrink-0 h-5 px-1.5">
-                            {result.type === 'product' ? 'Producto' : 'Servicio'}
+                          <Badge
+                            variant="outline"
+                            className="text-xs flex-shrink-0 h-5 px-1.5"
+                          >
+                            {result.type === "product"
+                              ? "Producto"
+                              : "Servicio"}
                           </Badge>
-                          {result.type === 'product' ? (
+                          {result.type === "product" ? (
                             <span className="text-xs text-muted-foreground truncate min-w-0 font-mono">
                               {result.sku && <span>SKU: {result.sku}</span>}
                               {result.stock !== undefined && (
-                                <span className="ml-1.5">Stock: {result.stock}</span>
+                                <span className="ml-1.5">
+                                  Stock: {result.stock}
+                                </span>
                               )}
                             </span>
                           ) : (
                             result.description && (
-                              <span className="text-xs text-muted-foreground truncate min-w-0 flex-1">{result.description}</span>
+                              <span className="text-xs text-muted-foreground truncate min-w-0 flex-1">
+                                {result.description}
+                              </span>
                             )
                           )}
                         </div>
@@ -519,27 +602,47 @@ export function ProductServiceSelector({
 
                       <div className="flex items-center gap-2 flex-shrink-0">
                         {showPrice ? (
-                          result.type === 'product' && (contadoPrice || tarjetaPrice) ? (
+                          result.type === "product" &&
+                          (contadoPrice || tarjetaPrice) ? (
                             <div className="flex gap-2">
                               {contadoPrice && (
                                 <Button
                                   size="sm"
                                   className="h-8 px-3 bg-emerald-600 hover:bg-emerald-700 flex flex-col items-center gap-0"
-                                  onClick={() => addToCart(result, contadoPrice, contadoList?.id)}
+                                  onClick={() =>
+                                    addToCart(
+                                      result,
+                                      contadoPrice,
+                                      contadoList?.id,
+                                    )
+                                  }
                                 >
-                                  <span className="text-[10px] uppercase opacity-80 leading-none">Contado</span>
-                                  <span className="font-bold leading-none">{formatARS(contadoPrice)}</span>
+                                  <span className="text-[10px] uppercase opacity-80 leading-none">
+                                    Contado
+                                  </span>
+                                  <span className="font-bold leading-none">
+                                    {formatARS(contadoPrice)}
+                                  </span>
                                 </Button>
                               )}
                               {tarjetaPrice && (
                                 <Button
                                   size="sm"
-                                  variant="outline"
-                                  className="h-8 px-3 border-blue-600 text-blue-700 hover:bg-blue-50 flex flex-col items-center gap-0"
-                                  onClick={() => addToCart(result, tarjetaPrice, tarjetaList?.id)}
+                                  className="h-8 px-3 bg-blue-600 hover:bg-blue-700 flex flex-col items-center gap-0"
+                                  onClick={() =>
+                                    addToCart(
+                                      result,
+                                      tarjetaPrice,
+                                      tarjetaList?.id,
+                                    )
+                                  }
                                 >
-                                  <span className="text-[10px] uppercase opacity-80 leading-none">Tarjeta</span>
-                                  <span className="font-bold leading-none">{formatARS(tarjetaPrice)}</span>
+                                  <span className="text-[10px] uppercase opacity-80 leading-none">
+                                    Tarjeta
+                                  </span>
+                                  <span className="font-bold leading-none">
+                                    {formatARS(tarjetaPrice)}
+                                  </span>
                                 </Button>
                               )}
                             </div>
@@ -549,7 +652,9 @@ export function ProductServiceSelector({
                               className="h-8 flex items-center gap-2"
                               onClick={() => addToCart(result)}
                             >
-                              <span className="font-bold">{formatARS(result.basePrice)}</span>
+                              <span className="font-bold">
+                                {formatARS(result.basePrice)}
+                              </span>
                               <PlusIcon className="h-4 w-4" />
                             </Button>
                           )
@@ -569,28 +674,30 @@ export function ProductServiceSelector({
               </>
             )}
           </div>
-            
-            {showQuickCreate && (
-              <div className="p-2 border-t">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full justify-start"
-                  onClick={handleQuickCreate}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Crear nuevo
-                </Button>
-              </div>
-            )}
-          </div>
+
+          {showQuickCreate && (
+            <div className="p-2 border-t">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start"
+                onClick={handleQuickCreate}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Crear nuevo
+              </Button>
+            </div>
+          )}
         </div>
+      </div>
 
       {/* Feedback toast */}
       {addedItemName && (
         <div className="bg-emerald-50 border border-emerald-200 rounded-md px-4 py-2 text-sm text-emerald-700 flex items-center gap-2 animate-in fade-in slide-in-from-top-2 duration-300">
           <Check className="h-4 w-4" />
-          <span><strong>{addedItemName}</strong> agregado al carrito</span>
+          <span>
+            <strong>{addedItemName}</strong> agregado al carrito
+          </span>
         </div>
       )}
 
@@ -598,33 +705,49 @@ export function ProductServiceSelector({
       {showSelectedTable && cartItems.length > 0 && (
         <div className="border rounded-md overflow-x-hidden w-full">
           <div className="px-4 py-1.5 bg-muted border-b">
-            <span className="font-medium text-sm">Seleccionados ({cartItems.length})</span>
+            <span className="font-medium text-sm">
+              Seleccionados ({cartItems.length})
+            </span>
           </div>
-          
+
           <div className="divide-y overflow-x-hidden min-w-0">
             {cartItems.map((item, index) => (
-              <div key={`${item.id}-${index}`} className="p-2 flex items-center gap-3 min-w-0">
+              <div
+                key={`${item.id}-${index}`}
+                className="p-2 flex items-center gap-3 min-w-0"
+              >
                 {/* Standardized List Row Entity Pattern */}
                 <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0">
-                  {item.type === 'product' ? (
-                    <Package className="h-4 w-4 text-primary" aria-hidden="true" />
+                  {item.type === "product" ? (
+                    <Package
+                      className="h-4 w-4 text-primary"
+                      aria-hidden="true"
+                    />
                   ) : (
-                    <Wrench className="h-4 w-4 text-primary" aria-hidden="true" />
+                    <Wrench
+                      className="h-4 w-4 text-primary"
+                      aria-hidden="true"
+                    />
                   )}
                 </div>
 
                 {/* Info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium text-sm truncate">{truncateText(item.name)}</span>
+                    <span className="font-medium text-sm truncate">
+                      {truncateText(item.name)}
+                    </span>
                     {item.isManualPrice && (
-                      <Badge variant="outline" className="text-xs bg-yellow-50 text-yellow-700 border-yellow-200 flex-shrink-0 h-5 px-1.5">
+                      <Badge
+                        variant="outline"
+                        className="text-xs bg-yellow-50 text-yellow-700 border-yellow-200 flex-shrink-0 h-5 px-1.5"
+                      >
                         Manual
                       </Badge>
                     )}
                   </div>
                   <div className="text-xs text-muted-foreground mt-0.5 font-mono">
-                    {item.type === 'product' && item.stock !== undefined && (
+                    {item.type === "product" && item.stock !== undefined && (
                       <span>Stock: {item.stock}</span>
                     )}
                   </div>
@@ -647,7 +770,9 @@ export function ProductServiceSelector({
                     <TooltipContent>Disminuir cantidad</TooltipContent>
                   </Tooltip>
 
-                  <span className="w-8 text-center text-sm">{item.quantity}</span>
+                  <span className="w-8 text-center text-sm">
+                    {item.quantity}
+                  </span>
 
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -672,11 +797,15 @@ export function ProductServiceSelector({
                     min={0}
                     step="1"
                     value={Math.round(item.unitPrice)}
-                    onChange={(e) => updatePrice(index, parseFloat(e.target.value) || 0)}
+                    onChange={(e) =>
+                      updatePrice(index, parseFloat(e.target.value) || 0)
+                    }
                     className={cn(
-                      'h-8 text-right',
-                      item.isManualPrice && 'border-yellow-400 bg-yellow-50/30',
-                      item.minimumPrice && item.unitPrice < item.minimumPrice && 'border-red-500 focus-visible:ring-red-500 bg-red-50'
+                      "h-8 text-right",
+                      item.isManualPrice && "border-yellow-400 bg-yellow-50/30",
+                      item.minimumPrice &&
+                        item.unitPrice < item.minimumPrice &&
+                        "border-red-500 focus-visible:ring-red-500 bg-red-50",
                     )}
                   />
                   {item.minimumPrice && item.unitPrice < item.minimumPrice && (
