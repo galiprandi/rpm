@@ -75,6 +75,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { getWhatsAppLink, getWorkOrderMessage } from "@/lib/utils/whatsapp";
 import { formatARS, relativeTime } from "@/lib/utils/format";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface WorkOrder {
   id: string;
@@ -501,6 +502,7 @@ function KanbanColumn({
 export default function WorkOrdersPage() {
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
   const [loading, setLoading] = useState(true);
+  const isMobile = useIsMobile();
   const [viewMode, setViewMode] = useState<"kanban" | "list">("kanban");
   const [paymentFilter, setPaymentFilter] = useState<"all" | "pending">("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -549,6 +551,11 @@ export default function WorkOrdersPage() {
   useEffect(() => {
     void fetchWorkOrders();
   }, [fetchWorkOrders]);
+
+  // Default to list view on mobile
+  useEffect(() => {
+    if (isMobile) setViewMode("list");
+  }, [isMobile]);
 
   const getStatusBadge = (status: string) => {
     const statusConfig = STATUSES.find((s) => s.id === status);
@@ -816,6 +823,7 @@ export default function WorkOrdersPage() {
     <div className="container mx-auto py-6 space-y-4 h-[calc(100vh-6rem)] flex flex-col">
       <Header
         title="Órdenes de Trabajo"
+        shortTitle="OTs"
         description="Gestiona el flujo de trabajo del taller"
         primaryAction={{
           label: "Nueva OT",

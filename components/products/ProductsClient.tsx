@@ -543,6 +543,8 @@ export function ProductsClient({
       <div className="space-y-6">
         <Header
           title="Productos"
+          shortTitle="Prod"
+          iconOnlyOnMobile
           description="Gestiona el inventario de productos y servicios"
           primaryAction={{
             label: "Nuevo Producto",

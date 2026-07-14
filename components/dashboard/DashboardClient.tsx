@@ -51,6 +51,8 @@ export function DashboardClient({
     <>
       <Header
         title="Dashboard"
+        shortTitle="Dash"
+        iconOnlyOnMobile
         description="Vista general del sistema"
         secondaryActions={[
           {
