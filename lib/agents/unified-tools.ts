@@ -10,6 +10,7 @@ import {
   closeCashRegister,
 } from "./orchestrator/composite";
 import { searchProductsWithPricesTool } from "./tools/search-products-with-prices";
+import { composeWhatsAppMessageTool } from "./tools/compose-message";
 
 export const unifiedTools = {
   // Search
@@ -23,6 +24,8 @@ export const unifiedTools = {
   ...workOrderTools,
   // Finance
   ...financeTools,
+  // Communication
+  composeWhatsAppMessage: composeWhatsAppMessageTool,
   // Operations
   closeCashRegister,
 };
