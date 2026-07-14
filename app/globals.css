@@ -99,45 +99,49 @@
     --sidebar-ring: 217 91% 60%;
   }
 
-  /* High contrast theme for degraded/low-resolution LCD screens */
+  /* High contrast theme: based on light theme with enhanced contrast for LCD monitors */
   .high-contrast {
-    --background: 0 0% 0%; /* Pure black */
-    --foreground: 0 0% 100%; /* Pure white */
-    --card: 0 0% 0%; /* Pure black */
-    --card-foreground: 0 0% 100%; /* Pure white */
-    --popover: 0 0% 0%; /* Pure black */
-    --popover-foreground: 0 0% 100%; /* Pure white */
+    /* Same as light theme — white background, dark text */
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
 
-    /* Vibrant yellow primary for maximum readability on old/degraded LCD screens */
-    --primary: 60 100% 50%; /* Vibrant yellow */
-    --primary-foreground: 0 0% 0%; /* Pure black text on primary yellow buttons */
+    /* Same primary as light theme — dark navy */
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
 
-    --secondary: 0 0% 15%; /* Lighter gray for visible buttons */
-    --secondary-foreground: 0 0% 100%; /* Pure white text on secondary buttons */
+    /* Slightly darker secondary for better separation */
+    --secondary: 210 40% 92%;
+    --secondary-foreground: 222.2 84% 4.9%;
 
-    --muted: 0 0% 15%;
-    --muted-foreground: 0 0% 100%; /* Ensure text is completely readable */
+    /* Darker muted background and much darker muted text for readability */
+    --muted: 210 40% 92%;
+    --muted-foreground: 215.4 16.3% 28%;
 
-    --accent: 0 0% 20%;
-    --accent-foreground: 60 100% 50%; /* Vibrant yellow text on active items */
+    --accent: 210 40% 88%;
+    --accent-foreground: 222.2 84% 4.9%;
 
-    --destructive: 0 100% 50%; /* Pure red */
-    --destructive-foreground: 0 0% 100%; /* Pure white */
+    /* Same destructive and CTA as light theme */
+    --destructive: 0 84.2% 50%;
+    --destructive-foreground: 210 40% 98%;
+    --cta: 38 92% 50%;
+    --cta-foreground: 0 0% 100%;
 
-    --cta: 60 100% 50%;
-    --cta-foreground: 0 0% 0%;
+    /* Much darker borders for clear element separation on LCD */
+    --border: 214.3 31.8% 72%;
+    --input: 214.3 31.8% 72%;
+    --ring: 222.2 84% 4.9%;
 
-    --border: 0 0% 100%; /* Pure white border so elements are always visibly separated */
-    --input: 0 0% 0%;
-    --ring: 60 100% 50%; /* Vibrant yellow ring */
-
-    /* Sidebar */
-    --sidebar: 0 0% 0%;
-    --sidebar-foreground: 0 0% 100%;
-    --sidebar-border: 0 0% 100%;
-    --sidebar-accent: 0 0% 20%;
-    --sidebar-accent-foreground: 60 100% 50%;
-    --sidebar-ring: 60 100% 50%;
+    /* Sidebar: same light theme with darker borders */
+    --sidebar: 220 14% 94%;
+    --sidebar-foreground: 222.2 84% 4.9%;
+    --sidebar-border: 214.3 31.8% 72%;
+    --sidebar-accent: 210 40% 86%;
+    --sidebar-accent-foreground: 222.2 84% 4.9%;
+    --sidebar-ring: 222.2 84% 4.9%;
   }
 }
 
@@ -158,85 +162,53 @@
   outline-offset: -2px;
 }
 
-/* Enforce high-contrast styles on elements for older/degraded monitors */
+/* High contrast enhancements for LCD monitors and Chrome 107 compatibility */
 .high-contrast {
-  /* Disable subtle text-shadows, box-shadows, and blur transitions globally in this theme */
+  /* Chrome 107: disable backdrop-filter (unreliable on old Chrome + Win7) */
   * {
-    text-shadow: none !important;
-    box-shadow: none !important;
     backdrop-filter: none !important;
-    background-image: none !important;
   }
 
-  /* Target specific block elements, form fields, and wrappers to ensure solid white borders */
-  input, select, textarea, button,
-  .border, .border-border, .border-input, .border-muted,
-  .card, table, th, td, hr,
-  [role="combobox"], [role="listbox"], [role="option"], [role="dialog"] {
-    border: 1.5px solid #ffffff !important;
-    border-radius: 0px !important; /* Sharp corners are much easier to see on low-res screens */
+  /* Disable smooth animations that may render poorly on old hardware */
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
   }
 
-  /* SVGs/icons should not have a solid border box around them */
-  svg, svg * {
-    border: none !important;
+  /* Stronger focus ring for keyboard navigation visibility */
+  *:focus-visible {
+    outline: 2px solid hsl(var(--ring)) !important;
+    outline-offset: 2px !important;
   }
 
-  /* Ensure inputs and interactive elements are extremely well-defined */
-  input, select, textarea {
-    background-color: #000000 !important;
-    color: #ffffff !important;
-    opacity: 1 !important;
+  /* Ensure borders are always visible — override Tailwind opacity utilities */
+  .border, .border-border, .border-input {
+    border-color: hsl(var(--border)) !important;
   }
 
-  /* Buttons in primary should keep the bright yellow background */
-  .bg-primary, [data-state="active"], [data-active="true"] {
-    background-color: hsl(var(--primary)) !important;
-    color: #000000 !important;
-  }
-
-  /* Secondary buttons or outline buttons */
-  .border-primary, .border-input {
-    border-color: #ffffff !important;
-  }
-
-  /* Text readability improvements */
-  p, span, td, th, div, label, h1, h2, h3, h4, h5, h6 {
-    color: #ffffff !important;
-    font-weight: 500 !important; /* Slightly bolder for clarity */
-  }
-
-  /* Ensure text highlights/yellow elements stand out */
-  .text-primary, .text-amber-600, .text-emerald-700, .text-blue-700, .text-red-600 {
-    color: hsl(var(--primary)) !important;
-  }
-
-  /* Make focused elements extremely visible */
-  input:focus, select:focus, textarea:focus, button:focus, *:focus-visible {
-    outline: 3px solid hsl(var(--ring)) !important;
-    outline-offset: 1px !important;
-  }
-
-  /* Table readability */
+  /* Table borders: ensure visible separation */
   table, th, td {
-    border-color: #ffffff !important;
+    border-color: hsl(var(--border)) !important;
     border-collapse: collapse !important;
   }
 
   th {
-    background-color: #1a1a1a !important;
     font-weight: 700 !important;
   }
 
-  /* Remove subtle overlays */
-  .bg-muted, .bg-muted\/20, .bg-muted\/30, .bg-sidebar-foreground\/5, .bg-sidebar-foreground\/\[0\.035\] {
-    background-color: #111111 !important;
+  /* Inputs: ensure visible border and text */
+  input, select, textarea {
+    border-color: hsl(var(--input)) !important;
   }
 
-  /* Sidebar tweaks */
+  /* Muted text: ensure minimum contrast ratio */
+  .text-muted-foreground {
+    color: hsl(var(--muted-foreground)) !important;
+  }
+
+  /* Sidebar: ensure border is visible */
   aside, [data-sidebar="sidebar"] {
-    background-color: #000000 !important;
-    border-right: 2px solid #ffffff !important;
+    border-right-color: hsl(var(--sidebar-border)) !important;
   }
 }
 

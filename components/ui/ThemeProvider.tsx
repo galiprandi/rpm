@@ -1,35 +1,37 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { usePathname } from 'next/navigation';
+import * as React from "react";
 
-export type Theme = 'light' | 'dark' | 'system' | 'high-contrast';
+export type Theme = "light" | "dark" | "system" | "high-contrast";
 
 interface ThemeContextType {
   theme: Theme;
   setTheme: (theme: Theme) => void;
-  resolvedTheme: 'light' | 'dark' | 'high-contrast';
+  resolvedTheme: "light" | "dark" | "high-contrast";
 }
 
-const ThemeContext = React.createContext<ThemeContextType | undefined>(undefined);
+const ThemeContext = React.createContext<ThemeContextType | undefined>(
+  undefined,
+);
 
 export function ThemeProvider({
   children,
-  defaultTheme = 'system',
+  defaultTheme = "system",
 }: {
   children: React.ReactNode;
   defaultTheme?: Theme;
 }) {
   const [theme, setTheme] = React.useState<Theme>(defaultTheme);
-  const [resolvedTheme, setResolvedTheme] = React.useState<'light' | 'dark' | 'high-contrast'>('light');
+  const [resolvedTheme, setResolvedTheme] = React.useState<
+    "light" | "dark" | "high-contrast"
+  >("light");
   const [mounted, setMounted] = React.useState(false);
-  const pathname = usePathname();
 
   React.useEffect(() => {
     setMounted(true);
-    
+
     // Check localStorage for saved theme
-    const savedTheme = localStorage.getItem('theme') as Theme | null;
+    const savedTheme = localStorage.getItem("theme") as Theme | null;
     if (savedTheme) {
       setTheme(savedTheme);
     }
@@ -39,54 +41,48 @@ export function ThemeProvider({
     if (!mounted) return;
 
     const root = window.document.documentElement;
-    
-    // Remove all theme classes first
-    root.classList.remove('light', 'dark', 'high-contrast');
 
-    let resolved: 'light' | 'dark' | 'high-contrast';
-    
-    if (theme === 'system') {
-      resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    // Remove all theme classes first
+    root.classList.remove("light", "dark", "high-contrast");
+
+    let resolved: "light" | "dark" | "high-contrast";
+
+    if (theme === "system") {
+      resolved = window.matchMedia("(prefers-color-scheme: dark)").matches
+        ? "dark"
+        : "light";
     } else {
       resolved = theme;
     }
-    
-    // Check if we are on the administration dashboard (/adm)
-    const isAdmin = pathname?.startsWith('/adm');
 
-    if (resolved === 'high-contrast') {
-      if (isAdmin) {
-        root.classList.add('dark', 'high-contrast');
-      } else {
-        // Fallback to standard dark mode for non-admin/public pages
-        root.classList.add('dark');
-      }
+    if (resolved === "high-contrast") {
+      root.classList.add("high-contrast");
     } else {
       root.classList.add(resolved);
     }
 
     setResolvedTheme(resolved);
-    
+
     // Save to localStorage
-    localStorage.setItem('theme', theme);
-  }, [theme, mounted, pathname]);
+    localStorage.setItem("theme", theme);
+  }, [theme, mounted]);
 
   // Listen for system theme changes
   React.useEffect(() => {
-    if (!mounted || theme !== 'system') return;
+    if (!mounted || theme !== "system") return;
 
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+
     const handleChange = () => {
       const root = window.document.documentElement;
-      root.classList.remove('light', 'dark', 'high-contrast');
-      const resolved = mediaQuery.matches ? 'dark' : 'light';
+      root.classList.remove("light", "dark", "high-contrast");
+      const resolved = mediaQuery.matches ? "dark" : "light";
       root.classList.add(resolved);
       setResolvedTheme(resolved);
     };
 
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
   }, [theme, mounted]);
 
   // Always provide the context, but handle resolved theme internally
@@ -102,9 +98,9 @@ export function useTheme() {
   if (context === undefined) {
     // For SSR or when context is not available, provide default values
     return {
-      theme: 'system' as const,
+      theme: "system" as const,
       setTheme: () => {},
-      resolvedTheme: 'light' as const,
+      resolvedTheme: "light" as const,
     };
   }
   return context;

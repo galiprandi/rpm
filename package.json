@@ -93,5 +93,11 @@
     "typescript": "^5",
     "vitest": "^4.1.1"
   },
-  "packageManager": "pnpm@10.4.1"
+  "packageManager": "pnpm@10.4.1",
+  "browserslist": [
+    "Chrome >= 107",
+    "Firefox >= 107",
+    "Safari >= 15.4",
+    "Edge >= 107"
+  ]
 }
