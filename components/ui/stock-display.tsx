@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
+} from "@/components/ui/tooltip";
 
 /**
  * Stock Display Component
@@ -33,16 +33,10 @@ export function StockDisplay({ stock, minStock }: StockDisplayProps) {
             {stock}
           </span>
         </TooltipTrigger>
-        <TooltipContent>
-          Stock bajo el mínimo ({minStock})
-        </TooltipContent>
+        <TooltipContent>Stock bajo el mínimo ({minStock})</TooltipContent>
       </Tooltip>
     );
   }
 
-  return (
-    <span aria-label={`Stock: ${stock}`}>
-      {stock}
-    </span>
-  );
+  return <span aria-label={`Stock: ${stock}`}>{stock}</span>;
 }

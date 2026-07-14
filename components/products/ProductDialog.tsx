@@ -1,10 +1,15 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { ModalBase, ModalBaseFooter } from '@/components/ui/ModalBase';
-import { ProductForm } from './ProductForm';
+import * as React from "react";
+import { ModalBase, ModalBaseFooter } from "@/components/ui/ModalBase";
+import { ProductForm } from "./ProductForm";
 
-import { type Product, type Category, type Supplier, type ProductFormData } from './types';
+import {
+  type Product,
+  type Category,
+  type Supplier,
+  type ProductFormData,
+} from "./types";
 
 interface ProductDialogProps {
   isOpen: boolean;
@@ -49,16 +54,19 @@ export function ProductDialog({
     <ModalBase
       isOpen={isOpen}
       onClose={onClose}
-      title={editingProduct ? 'Editar Producto' : 'Nuevo Producto'}
-      description={editingProduct 
-        ? 'Modifica los datos del producto existente.' 
-        : 'Completa los datos para crear un nuevo producto.'}
-      maxWidth="lg"
+      title={editingProduct ? "Editar Producto" : "Nuevo Producto"}
+      description={
+        editingProduct
+          ? "Modifica los datos del producto existente."
+          : "Completa los datos para crear un nuevo producto."
+      }
+      maxWidth="2xl"
+      maxHeight="max-h-[85vh]"
       footer={
         <ModalBaseFooter
           onCancel={onClose}
           onSave={onSubmit}
-          saveText={editingProduct ? 'Guardar Cambios' : 'Crear Producto'}
+          saveText={editingProduct ? "Guardar Cambios" : "Crear Producto"}
           isLoading={isUploadingImage || isSubmitting}
           disabled={!isValid || isDeletingImage || isSubmitting}
         />

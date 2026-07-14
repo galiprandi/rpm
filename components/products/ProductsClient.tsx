@@ -45,8 +45,6 @@ interface ProductsClientProps {
   products: Product[];
   categories: Category[];
   suppliers: Supplier[];
-  lowStockCount: number;
-  totalInventoryValue: number;
 }
 
 const productSearchFilter: FilterFn<Product> = (
@@ -67,14 +65,19 @@ const productSearchFilter: FilterFn<Product> = (
 };
 
 export function ProductsClient({
-  products,
+  products: initialProducts,
   categories,
   suppliers,
-  lowStockCount,
-  totalInventoryValue,
 }: ProductsClientProps) {
   const { alert } = useUI();
   const router = useRouter();
+
+  const [products, setProducts] = useState<Product[]>(initialProducts);
+  const lowStockCount = products.filter((p) => p.isLowStock).length;
+  const totalInventoryValue = products.reduce(
+    (acc, p) => acc + p.costPrice * (p.stock || 0),
+    0,
+  );
 
   // Modal states
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -152,7 +155,13 @@ export function ProductsClient({
         throw new Error(error.error || "Error al eliminar imagen");
       }
 
-      router.refresh();
+      setProducts((prev) =>
+        prev.map((p) =>
+          p.id === productId
+            ? { ...p, imageUrl: null, imageCommit: null, imageBranch: null }
+            : p,
+        ),
+      );
     } catch (error) {
       console.error("Error deleting image:", error);
       await alert({
@@ -329,7 +338,17 @@ export function ProductsClient({
 
       setIsDialogOpen(false);
       resetForm();
-      router.refresh();
+
+      const updatedProduct = result.product as Product;
+      if (editingProduct) {
+        setProducts((prev) =>
+          prev.map((p) =>
+            p.id === editingProduct.id ? { ...p, ...updatedProduct } : p,
+          ),
+        );
+      } else if (updatedProduct) {
+        setProducts((prev) => [updatedProduct, ...prev]);
+      }
     } catch (error) {
       console.error("Error saving product:", error);
       await alert({
@@ -364,7 +383,11 @@ export function ProductsClient({
         });
 
         if (response.ok) {
-          router.refresh();
+          setProducts((prev) =>
+            prev.map((p) =>
+              p.id === product.id ? { ...p, isActive: false } : p,
+            ),
+          );
           toast.success(`Producto "${product.name}" desactivado`, {
             action: {
               label: "Deshacer",
@@ -375,7 +398,11 @@ export function ProductsClient({
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ isActive: true }),
                   });
-                  router.refresh();
+                  setProducts((prev) =>
+                    prev.map((p) =>
+                      p.id === product.id ? { ...p, isActive: true } : p,
+                    ),
+                  );
                   toast.success("Producto reactivado");
                 } catch {
                   toast.error("Error al reactivar producto");
@@ -400,7 +427,7 @@ export function ProductsClient({
         });
       }
     },
-    [alert, router],
+    [alert],
   );
 
   const stats: StatItem[] = [
@@ -444,7 +471,7 @@ export function ProductsClient({
               />
             )}
           </div>
-          <div className="flex flex-col min-w-0">
+          <div className="flex flex-col min-w-0 max-w-[280px] sm:max-w-[350px] md:max-w-[450px] lg:max-w-[500px]">
             <span className="font-semibold tracking-tight truncate">
               {row.original.name}
             </span>
@@ -460,6 +487,7 @@ export function ProductsClient({
     {
       accessorKey: "category.name",
       header: "Categoría",
+      size: 120,
       cell: ({ row }) =>
         row.original.category ? (
           <Badge
@@ -477,16 +505,20 @@ export function ProductsClient({
     {
       accessorKey: "stock",
       header: "Stock",
+      size: 30,
       cell: ({ row }) => (
-        <StockDisplay
-          stock={row.original.stock}
-          minStock={row.original.minStock}
-        />
+        <div className="text-center">
+          <StockDisplay
+            stock={row.original.stock}
+            minStock={row.original.minStock}
+          />
+        </div>
       ),
     },
     {
       accessorKey: "isActive",
       header: "Estado",
+      size: 90,
       cell: ({ row }) =>
         row.original.isActive ? (
           <Badge
