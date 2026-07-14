@@ -120,8 +120,6 @@ describe('ProductsClient', () => {
           products={mockProducts}
           categories={mockCategories}
           suppliers={mockSuppliers}
-          lowStockCount={0}
-          totalInventoryValue={1000}
         />
       </TooltipProvider>
     );
@@ -137,8 +135,6 @@ describe('ProductsClient', () => {
           products={mockProducts}
           categories={mockCategories}
           suppliers={mockSuppliers}
-          lowStockCount={1}
-          totalInventoryValue={1000}
         />
       </TooltipProvider>
     );
@@ -156,8 +152,6 @@ describe('ProductsClient', () => {
           products={[]}
           categories={mockCategories}
           suppliers={mockSuppliers}
-          lowStockCount={0}
-          totalInventoryValue={0}
         />
       </TooltipProvider>
     );
@@ -172,8 +166,6 @@ describe('ProductsClient', () => {
           products={mockProducts}
           categories={mockCategories}
           suppliers={mockSuppliers}
-          lowStockCount={0}
-          totalInventoryValue={1000}
         />
       </TooltipProvider>
     );
@@ -191,8 +183,6 @@ describe('ProductsClient', () => {
           products={mockProducts}
           categories={mockCategories}
           suppliers={mockSuppliers}
-          lowStockCount={0}
-          totalInventoryValue={1000}
         />
       </TooltipProvider>
     );
