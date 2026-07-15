@@ -6,6 +6,11 @@ import { useState, useEffect } from 'react';
 import { Menu, X, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { PUBLIC_SITE_CONFIG, DEFAULT_WHATSAPP_MESSAGE } from '@/lib/config/public-site';
 import { GlobalSearch } from '../GlobalSearch';
 
@@ -69,13 +74,20 @@ export function PublicHeader() {
 
           {/* Actions */}
           <div className="hidden md:flex items-center space-x-6">
-            <button
-              onClick={() => setIsSearchOpen(true)}
-              className="p-2 text-gray-400 hover:text-brand transition-colors duration-300"
-              aria-label="Buscar"
-            >
-              <Search className="h-5 w-5" />
-            </button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => setIsSearchOpen(true)}
+                  className="p-2 text-gray-400 hover:text-brand transition-colors duration-300"
+                  aria-label="Buscar"
+                >
+                  <Search className="h-5 w-5" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent className="bg-zinc-900 border-white/10 text-white text-xs font-bold uppercase tracking-widest">
+                Buscar
+              </TooltipContent>
+            </Tooltip>
             <Link href="/login" className="text-[13px] font-medium text-gray-400 hover:text-white transition-all duration-300 uppercase tracking-widest">
               Ingresar
             </Link>

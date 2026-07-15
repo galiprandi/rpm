@@ -7,6 +7,34 @@ import Link from 'next/link';
 import { featuredProducts, FeaturedProduct } from '@/lib/constants/featured-products';
 import { ProductQuickView } from '@/components/public/ProductQuickView';
 import { formatARS } from '@/lib/utils/format';
+import { motion } from 'framer-motion';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
+};
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.8,
+      ease: [0.21, 0.47, 0.32, 0.98] as const,
+    }
+  },
+};
 
 export function FeaturedProducts() {
   const [selectedProduct, setSelectedProduct] = useState<FeaturedProduct | null>(null);
@@ -37,10 +65,21 @@ export function FeaturedProducts() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-100px" }}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+        >
           {displayedProducts.map((product) => (
-            <div
+            <motion.div
               key={product.id}
+              variants={cardVariants}
+              whileHover={{
+                scale: 0.98,
+                transition: { duration: 0.4 }
+              }}
               className="group relative aspect-[3/4] bg-zinc-900 overflow-hidden rounded-3xl border border-white/5 hover:border-brand/20 transition-all duration-700"
             >
               <div className="absolute inset-0 flex items-center justify-center text-[180px] font-black text-white/5 select-none transition-transform duration-700 group-hover:scale-110">
@@ -48,13 +87,24 @@ export function FeaturedProducts() {
               </div>
 
               {/* Quick View Icon Overlay */}
-              <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-x-4 group-hover:translate-x-0">
-                <div
-                  className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white cursor-pointer hover:bg-brand hover:border-brand transition-colors"
-                  onClick={() => setSelectedProduct(product)}
-                >
-                  <Eye className="h-4 w-4" />
-                </div>
+              <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-x-4 group-hover:translate-x-0 z-20">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white cursor-pointer hover:bg-brand hover:border-brand transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedProduct(product);
+                      }}
+                      aria-label={`Vista rápida de ${product.name}`}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left" className="bg-zinc-900 border-white/10 text-white text-xs font-bold uppercase tracking-widest">
+                    Vista Rápida
+                  </TooltipContent>
+                </Tooltip>
               </div>
 
               <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />
@@ -74,9 +124,9 @@ export function FeaturedProducts() {
                   </button>
                 </div>
               </div>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
 
       <ProductQuickView

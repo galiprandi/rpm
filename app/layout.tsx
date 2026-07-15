@@ -16,6 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://rpmaccesorios.com.ar"),
   title: {
     default: "RPM Accesorios | Equipamiento Vehicular Premium",
     template: "%s | RPM Accesorios"
