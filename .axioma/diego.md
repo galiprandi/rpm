@@ -4,6 +4,7 @@
 - [ ] Dashboards comparativos multi-periodo avanzados
 
 ## ✅ DONE
+- [x] 2026-07-14 — Implementación de Dashboard Analítico de Resumen (Overview): Agregado de KPIs de ingresos, rentabilidad estimada, OTs completadas y nuevos clientes con selector de periodo en la página principal de reportes. (PR #diego/reports/overview-dashboard)
 - [x] 2026-07-13 — Mejora de Reporte de Stock: Implementación de métricas de Rotación de Stock e Inventario Inmovilizado (Dead Stock). (PR #diego/reports/stock-rotation-metrics)
 - [x] 2026-07-12 — Implementación de Reporte de Servicios: Métricas de ingresos por servicio, distribución por categoría de vehículo y performance de técnicos. (PR #diego/reports/services-report)
 - [x] 2025-07-11 — Mejora de Reporte de Ventas: Agregado de Top Productos, Distribución por Categoría y Exportación CSV. Refactor de servicio a `salesReportService.ts`. (PR #diego/reports/sales-report-enhancements)
@@ -26,6 +27,6 @@
 **Learning:** Al implementar el Reporte de Servicios, se identificó que la agregación debe contemplar tanto `work_order_item` como `direct_sale_item`. Sin embargo, la distribución por categoría de vehículo solo es aplicable a servicios en OTs, mientras que las ventas directas deben agruparse en una categoría sintética ("Venta Directa") para no perder visibilidad del ingreso total.
 **Action:** Asegurar que todos los reportes de ingresos sumen ambas fuentes (OTs y Ventas Directas) para ser fidedignos.
 
-## 2026-07-13 - Métricas de Rotación y Dead Stock
-**Learning:** El cálculo de la rotación de stock (Turnover) requiere el Costo de Mercadería Vendida (COGS). Dado que el sistema no persiste el costo histórico al momento de la venta en los items, se utiliza el `costPrice` actual del producto como una aproximación válida para el dashboard analítico.
-**Action:** Para reportes contables exactos a futuro, se debería considerar registrar el costo de adquisición en cada transacción.
+## 2026-07-14 - Dashboard Overview Agregado
+**Learning:** Para proporcionar una visión holística del negocio, el dashboard de Overview debe centralizar métricas de múltiples módulos (Ventas, Taller, Stock, Clientes). Esto requiere una orquestación eficiente de queries para no penalizar el tiempo de carga de la página principal de reportes.
+**Action:** Utilizar `Promise.all` para paralelizar queries y mantener el patrón de caching de 10 minutos en el API route.
