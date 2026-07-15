@@ -7,7 +7,6 @@ import { workOrderTools } from "./work-orders/tools";
 import { financeTools } from "./finance/tools";
 import {
   registerCustomerWithVehicle,
-  closeCashRegister,
 } from "./orchestrator/composite";
 import { searchProductsWithPricesTool } from "./tools/search-products-with-prices";
 import { composeWhatsAppMessageTool } from "./tools/compose-message";
@@ -27,8 +26,6 @@ export const unifiedTools = {
   ...financeTools,
   // Communication
   composeWhatsAppMessage: composeWhatsAppMessageTool,
-  // Operations
-  closeCashRegister,
   // Purchase Vouchers
   processPurchaseInvoice: processPurchaseInvoiceTool,
 };

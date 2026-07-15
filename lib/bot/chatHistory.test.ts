@@ -216,10 +216,10 @@ describe('chatHistory', () => {
     });
   });
 
-  describe('message limit (10 messages)', () => {
-    it('should handle up to 10 messages', async () => {
+  describe('message limit (20 messages)', () => {
+    it('should handle up to 20 messages', async () => {
       const messages: ChatMessage[] = [];
-      for (let i = 1; i <= 10; i++) {
+      for (let i = 1; i <= 20; i++) {
         messages.push({
           role: 'user',
           parts: [{ type: 'text', text: `message ${i}` }],
@@ -230,14 +230,14 @@ describe('chatHistory', () => {
         messages,
       });
       const loaded = await loadChat('test-chat');
-      expect(loaded).toHaveLength(10);
+      expect(loaded).toHaveLength(20);
       expect(loaded[0]).toBe('User: message 1');
-      expect(loaded[9]).toBe('User: message 10');
+      expect(loaded[19]).toBe('User: message 20');
     });
 
-    it('should limit to 10 messages when more than 10 are saved', async () => {
+    it('should limit to 20 messages when more than 20 are saved', async () => {
       const messages: ChatMessage[] = [];
-      for (let i = 1; i <= 15; i++) {
+      for (let i = 1; i <= 25; i++) {
         messages.push({
           role: 'user',
           parts: [{ type: 'text', text: `message ${i}` }],
@@ -248,10 +248,10 @@ describe('chatHistory', () => {
         messages,
       });
       const loaded = await loadChat('test-chat');
-      expect(loaded).toHaveLength(10);
-      // Should keep the last 10 messages (6-15)
+      expect(loaded).toHaveLength(20);
+      // Should keep the last 20 messages (6-25)
       expect(loaded[0]).toBe('User: message 6');
-      expect(loaded[9]).toBe('User: message 15');
+      expect(loaded[19]).toBe('User: message 25');
     });
   });
 });
