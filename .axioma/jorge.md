@@ -8,10 +8,18 @@
 - [ ] Fecha programada en Kanban: muestre y resalte las fechas programadas en las tarjetas Kanban.
 
 ## ✅ COMPLETADO
+- [x] 2025-07-15 — Paridad Kanban-Lista y Mejora de Priorización HOY (PR #jorge/work-orders/list-view-parity)
 - [x] 2025-07-08 — Servicio Centralizado de OT y Timeline Unificado (PR #jorge/work-orders/centralized-updates)
 - [x] 2025-07-12 — Refinamiento de UX en Taller: Acciones Rápidas y Navegación (PR #jorge/work-orders/ux-refinement)
 
 ## 🧠 APRENDIZAJES
+## 2025-07-15 - Paridad UI y Propagación en Listas
+**Aprendizaje:** Al agregar elementos interactivos (botones, dropdowns) dentro de filas de lista que son enlaces (`Link`), es imperativo usar `e.stopPropagation()` y `e.preventDefault()` en los eventos de clic para evitar que la acción del botón dispare accidentalmente la navegación de la fila.
+**Acción:** Implementar este patrón de "aislamiento de interactividad" en todas las vistas de lista que utilicen el patrón de fila-enlace.
+
+## 2025-07-15 - Robustez en Comparación de Fechas "Hoy"
+**Aprendizaje:** El uso de `toDateString()` es el método más fiable para comparar si una fecha cae en el día actual del servidor/cliente, evitando errores por componentes de tiempo (horas/minutos) o desfases menores de milisegundos.
+**Acción:** Estandarizar el uso de `scheduledDate.toDateString() === new Date().toDateString()` para badges de prioridad temporal.
 ## 2025-07-08 - UX Kanban y Propagación de Eventos
 **Aprendizaje:** Los elementos interactivos anidados en tarjetas Kanban (como dropdowns de técnicos) requieren stop-propagation tanto en onMouseDown como en onClick para evitar la navegación del Link y conflictos con el inicio del arrastre.
 **Acción:** Usar el "Patrón Guardián de Navegación Kanban" para todas las futuras interfaces tipo tablero.
