@@ -23,6 +23,7 @@
 - [x] 2025-07-10 — Implementación de generación manual de documentos (Presupuestos, Remitos, Pre-Facturas) desde Ventas Directas.
 - [x] 2025-07-12 — Oficialización por lote de comprobantes con selección múltiple y robustez en numeración.
 - [x] 2025-07-13 — Gestión de rechazos de AFIP, visualización de metadatos CAE y mejoras en la UI de detalle.
+- [x] 2025-07-14 — Integración del flujo de oficialización en ventas/OTs y refinamiento de visualización para Factura B.
 
 ## 🧠 LEARNINGS
 - **Desglose impositivo:** Para comprobantes tipo B (consumidor final), aunque el total sea lo que ve el cliente, el sistema debe registrar el neto y el IVA por separado para futuros reportes fiscales (Libro IVA Digital). Se implementó un cálculo automático del 21% para pre-facturas.
@@ -34,6 +35,8 @@
 - **Sincronización de Selección en DataTable:** Para evitar bucles de renderizado infinitos al sincronizar la selección de filas con un componente padre, es vital omitir la instancia `table` de las dependencias del `useEffect` en `DataTable`, ya que `useReactTable` la recrea en cada render.
 - **Numeración AFIP por Tipo:** La numeración oficial debe ser única por Punto de Venta y por Tipo de Comprobante. Se ajustó el servicio para filtrar correctamente por el tipo de comprobante AFIP al buscar el último número autorizado en la base de datos local.
 - **Persistencia de Errores Fiscales:** Al integrar con AFIP, no basta con mostrar el error en el momento. Persistir el estado `REJECTED` con sus observaciones permite un flujo de trabajo asíncrono y robusto, donde el usuario puede corregir datos y reintentar sin perder el rastro del error original.
+- **Workflow Integrado:** Permitir la oficialización directamente desde la entidad de origen (Venta/OT) reduce drásticamente la fricción, evitando que el usuario tenga que saltar entre módulos para finalizar el proceso fiscal.
+- **Diferenciación de Visualización Fiscal:** Los comprobantes tipo B (Consumidor Final) requieren una presentación simplificada donde el IVA no se desglosa visualmente pero se mantiene el total con la leyenda "IVA Incluido", a diferencia del tipo A donde el desglose es obligatorio.
 
 ---
 

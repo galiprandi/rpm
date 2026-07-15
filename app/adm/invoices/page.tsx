@@ -168,7 +168,7 @@ export default function InvoicesPage() {
   const handleBatchCancel = async () => {
     const selectedIds = Object.keys(rowSelection).filter(id => rowSelection[id]);
     const eligibleInvoices = invoices.filter(inv =>
-      selectedIds.includes(inv.id) && inv.status === 'DRAFT'
+      selectedIds.includes(inv.id) && (inv.status === 'DRAFT' || inv.status === 'REJECTED')
     );
 
     if (eligibleInvoices.length === 0) {
@@ -218,7 +218,7 @@ export default function InvoicesPage() {
     const selectedIds = Object.keys(rowSelection).filter(id => rowSelection[id]);
     const eligibleInvoices = invoices.filter(inv =>
       selectedIds.includes(inv.id) &&
-      inv.status === 'DRAFT' &&
+      (inv.status === 'DRAFT' || inv.status === 'REJECTED') &&
       (inv.type.startsWith('X_') || inv.type.startsWith('NOTA_CREDITO_X_'))
     );
 
@@ -271,7 +271,7 @@ export default function InvoicesPage() {
       >
         <Download className="h-4 w-4" />
       </button>
-      {row.status === 'DRAFT' && (row.type.startsWith('X_') || row.type.startsWith('NOTA_CREDITO_X_')) && (
+      {(row.status === 'DRAFT' || row.status === 'REJECTED') && (row.type.startsWith('X_') || row.type.startsWith('NOTA_CREDITO_X_')) && (
         <button
           className="p-2 hover:bg-primary/10 rounded-md transition-colors text-primary"
           title="Enviar a AFIP"
@@ -285,12 +285,12 @@ export default function InvoicesPage() {
 
   const eligibleSelectedCount = invoices.filter(inv =>
     rowSelection[inv.id] &&
-    inv.status === 'DRAFT' &&
+    (inv.status === 'DRAFT' || inv.status === 'REJECTED') &&
     (inv.type.startsWith('X_') || inv.type.startsWith('NOTA_CREDITO_X_'))
   ).length;
 
   const cancellableSelectedCount = invoices.filter(inv =>
-    rowSelection[inv.id] && inv.status === 'DRAFT'
+    rowSelection[inv.id] && (inv.status === 'DRAFT' || inv.status === 'REJECTED')
   ).length;
 
   const headerActions = [];
@@ -353,6 +353,10 @@ export default function InvoicesPage() {
               <option value="X_B">Pre-Factura B</option>
               <option value="FACTURA_A">Factura A</option>
               <option value="FACTURA_B">Factura B</option>
+              <option value="NOTA_CREDITO_X_A">NC Preliminar A</option>
+              <option value="NOTA_CREDITO_X_B">NC Preliminar B</option>
+              <option value="NOTA_CREDITO_A">Nota de Crédito A</option>
+              <option value="NOTA_CREDITO_B">Nota de Crédito B</option>
               <option value="PRESUPUESTO">Presupuesto</option>
               <option value="REMITO">Remito</option>
             </select>
