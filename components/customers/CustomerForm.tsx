@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { validateCUIT, formatCUIT } from "@/lib/utils/cuit-validation";
@@ -22,6 +22,7 @@ import {
   Hash,
   FileText,
   MessageSquare,
+  Receipt,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -205,7 +206,10 @@ export function CustomerForm({
           aria-controls="billing-section"
           className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
         >
-          <span className="font-medium">Datos de Facturación (opcional)</span>
+          <div className="flex items-center gap-2">
+            <Receipt className="h-4 w-4 text-muted-foreground" />
+            <span className="font-medium">Datos de Facturación (opcional)</span>
+          </div>
           <ChevronDown
             className={cn(
               "h-4 w-4 transition-transform",

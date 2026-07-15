@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { DataTable } from "@/components/ui/data-table";
 import { ColumnDef } from "@tanstack/react-table";
 import { Header } from "@/components/adm/Header";
+import { formatARS } from "@/lib/utils/format";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Tooltip,
@@ -223,11 +224,8 @@ export default function VehicleDetailPage() {
         accessorKey: "total",
         header: "Total",
         cell: ({ row }) => (
-          <span className="font-mono">
-            {Number(row.original.total).toLocaleString("es-AR", {
-              style: "currency",
-              currency: "ARS",
-            })}
+          <span className="font-mono font-semibold">
+            {formatARS(Number(row.original.total), 2)}
           </span>
         ),
       },
