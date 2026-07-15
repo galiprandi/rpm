@@ -69,7 +69,7 @@ export async function saveChat({
       );
       for (const toolOutput of toolOutputs || []) {
         if (toolOutput.output) {
-          newTextMessages.push(`Tool: ${toolOutput.output}`);
+          newTextMessages.push(`Assistant: ${toolOutput.output}`);
         }
       }
     }

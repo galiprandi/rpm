@@ -50,17 +50,6 @@ export const registerCustomerWithVehicle = tool({
   },
 });
 
-export const closeCashRegister = tool({
-  description: 'CIERRA la caja del día. Solo debe llamarse cuando el usuario pide explícitamente cerrar la caja.',
-  inputSchema: z.object({
-    notes: z.string().optional().describe('Notas opcionales para el cierre'),
-  }),
-  execute: async () => {
-    return 'Función de cierre de caja próximamente. Por ahora, cerrala manualmente desde el panel de Caja.';
-  },
-});
-
 export const compositeTools = {
   registerCustomerWithVehicle,
-  closeCashRegister,
 };
