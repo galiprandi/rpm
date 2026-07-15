@@ -31,7 +31,7 @@ export async function PUT(
       );
     }
 
-    const currentChecklist = (type === "ENTRY" ? workOrder.entryChecklist : workOrder.exitChecklist) as Record<string, any> || {};
+    const currentChecklist = (type === "ENTRY" ? workOrder.entryChecklist : workOrder.exitChecklist) as Record<string, unknown> || {};
 
     const updatedChecklist = {
       ...currentChecklist,

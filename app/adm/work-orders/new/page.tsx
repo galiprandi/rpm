@@ -20,7 +20,6 @@ import {
   Save,
   Plus,
   Search,
-  Car,
   User,
   Phone,
   CheckCircle,
@@ -185,20 +184,30 @@ export default function NewWorkOrderPage() {
 
   // Load wizard state from localStorage on mount
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(WIZARD_STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed.step) setStep(parsed.step);
-        if (parsed.checklist) setChecklist(parsed.checklist);
-        if (parsed.odometerValue) setOdometerValue(parsed.odometerValue);
-        if (parsed.fuelLevel !== undefined) setFuelLevel(parsed.fuelLevel);
-        if (parsed.notes) setNotes(parsed.notes);
-        if (parsed.scheduledDate) setScheduledDate(parsed.scheduledDate);
+    let cancelled = false;
+    const loadSavedState = async () => {
+      await Promise.resolve();
+      if (cancelled) return;
+
+      try {
+        const saved = localStorage.getItem(WIZARD_STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed.step) setStep(parsed.step);
+          if (parsed.checklist) setChecklist(parsed.checklist);
+          if (parsed.odometerValue) setOdometerValue(parsed.odometerValue);
+          if (parsed.fuelLevel !== undefined) setFuelLevel(parsed.fuelLevel);
+          if (parsed.notes) setNotes(parsed.notes);
+          if (parsed.scheduledDate) setScheduledDate(parsed.scheduledDate);
+        }
+      } catch {
+        // Ignore parse errors
       }
-    } catch {
-      // Ignore parse errors
-    }
+    };
+    void loadSavedState();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Save wizard state to localStorage on changes

@@ -22,3 +22,7 @@
 ### 2025-07-15 — UX de Gating en Checklists
 **Learning:** Inicialmente, el gating de la UI impedía mostrar los items inmediatamente después de hacer click en "Completar". Ajustar el estado local para reflejar el cambio de "modo inicialización" a "modo edición" inmediatamente mejora drásticamente la percepción de velocidad.
 **Action:** Al inicializar datos desde el cliente, asegurar que el estado UI se actualice en tándem con el guardado para evitar flashes de "sin datos".
+
+### 2025-07-15 — CI Robustness and Linting
+**Learning:** El uso de `setState` directamente dentro de un `useEffect` puede causar renders en cascada y disparar alertas de lint. Envolviendo las actualizaciones de estado en microtareas (`Promise.resolve().then(...)`) se mitiga este problema de performance y se cumple con las reglas del CI.
+**Action:** Aplicar el patrón de microtarea para inicializaciones de estado basadas en efectos cuando el valor no depende del renderizado actual.

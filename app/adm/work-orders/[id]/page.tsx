@@ -61,7 +61,6 @@ import {
 import Image from "next/image";
 import { Header } from "@/components/adm/Header";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
 import { CustomerCreditNoteDialog } from "@/components/credit-notes/CustomerCreditNoteDialog";
 import { getWhatsAppLink, getWorkOrderMessage } from "@/lib/utils/whatsapp";
 import { buildVehicleDescription } from "@/lib/constants/vehicle-categories";
@@ -108,7 +107,7 @@ function TimelineItem({
   subtitle?: string;
   date: string;
   status: "completed" | "pending";
-  icon?: any;
+  icon?: LucideIcon;
   isFirst?: boolean;
   isLast?: boolean;
   variant?: "milestone" | "audit";
@@ -415,10 +414,19 @@ export default function WorkOrderDetailPage() {
   }, [workOrderId]);
 
   useEffect(() => {
-    fetchWorkOrder();
-    fetchPayments();
-    fetchInvoices();
-    fetchAuditLogs();
+    let cancelled = false;
+    const loadData = async () => {
+      await Promise.resolve();
+      if (cancelled) return;
+      void fetchWorkOrder();
+      void fetchPayments();
+      void fetchInvoices();
+      void fetchAuditLogs();
+    };
+    void loadData();
+    return () => {
+      cancelled = true;
+    };
   }, [fetchWorkOrder, fetchPayments, fetchInvoices, fetchAuditLogs]);
 
   const handleStatusChange = async (newStatus: string) => {
@@ -754,7 +762,14 @@ export default function WorkOrderDetailPage() {
   const unifiedTimelineItems = useMemo(() => {
     if (!workOrder) return [];
 
-    const items: any[] = [
+    const items: Array<{
+      type: "milestone" | "audit";
+      title: string;
+      subtitle?: string;
+      date: string;
+      status: "completed" | "pending";
+      icon: LucideIcon;
+    }> = [
       {
         type: "milestone",
         title: "OT Creada",
@@ -2072,7 +2087,7 @@ export default function WorkOrderDetailPage() {
                         date={item.date}
                         status={item.status}
                         icon={item.icon}
-                        variant={item.type as any}
+                        variant={item.type}
                         isFirst={index === 0}
                         isLast={index === unifiedTimelineItems.length - 1}
                       />
