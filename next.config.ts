@@ -1,12 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  experimental: {
-    useLightningcss: true,
-    lightningCssFeatures: {
-      include: ["oklab-colors"],
-    },
-  },
+  experimental: {},
   images: {
     remotePatterns: [
       {
