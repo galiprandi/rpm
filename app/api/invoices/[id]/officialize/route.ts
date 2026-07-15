@@ -23,8 +23,8 @@ export async function POST(
       return NextResponse.json({ error: "Comprobante no encontrado" }, { status: 404 });
     }
 
-    if (invoice.status !== 'DRAFT') {
-      return NextResponse.json({ error: "Solo se pueden oficializar comprobantes en estado DRAFT" }, { status: 400 });
+    if (invoice.status !== 'DRAFT' && invoice.status !== 'REJECTED') {
+      return NextResponse.json({ error: "Solo se pueden oficializar comprobantes en estado DRAFT o REJECTED" }, { status: 400 });
     }
 
     if (!invoice.type.startsWith('X_') && !invoice.type.startsWith('NOTA_CREDITO_X_')) {

@@ -1,0 +1,33 @@
+
+ RUN  v4.1.6 /app
+
+stdout | lib/bot/chatHistory.test.ts
+◇ injected env (0) from .env.local // tip: ⌁ auth for agents [www.vestauth.com]
+
+ ❯ lib/bot/chatHistory.test.ts (0 test)
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  lib/bot/chatHistory.test.ts [ lib/bot/chatHistory.test.ts ]
+Error: Failed to resolve import "pino" from "lib/agents/utils/logger.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /app/lib/agents/utils/logger.ts:1:17
+  1  |  import pino from "pino";
+     |                    ^
+  2  |  const isDevelopment = process.env.NODE_ENV === "development";
+  3  |  const isDebug = process.env.DEBUG === "true" || process.env.DEBUG_AGENTS === "true";
+ ❯ TransformPluginContext._formatLog node_modules/.pnpm/vite@8.0.16_@types+node@25.8.0_esbuild@0.28.1_jiti@2.7.0_tsx@4.22.1/node_modules/vite/dist/node/chunks/node.js:30602:39
+ ❯ TransformPluginContext.error node_modules/.pnpm/vite@8.0.16_@types+node@25.8.0_esbuild@0.28.1_jiti@2.7.0_tsx@4.22.1/node_modules/vite/dist/node/chunks/node.js:30599:14
+ ❯ normalizeUrl node_modules/.pnpm/vite@8.0.16_@types+node@25.8.0_esbuild@0.28.1_jiti@2.7.0_tsx@4.22.1/node_modules/vite/dist/node/chunks/node.js:27842:18
+ ❯ node_modules/.pnpm/vite@8.0.16_@types+node@25.8.0_esbuild@0.28.1_jiti@2.7.0_tsx@4.22.1/node_modules/vite/dist/node/chunks/node.js:27905:30
+ ❯ TransformPluginContext.transform node_modules/.pnpm/vite@8.0.16_@types+node@25.8.0_esbuild@0.28.1_jiti@2.7.0_tsx@4.22.1/node_modules/vite/dist/node/chunks/node.js:27873:4
+ ❯ EnvironmentPluginContainer.transform node_modules/.pnpm/vite@8.0.16_@types+node@25.8.0_esbuild@0.28.1_jiti@2.7.0_tsx@4.22.1/node_modules/vite/dist/node/chunks/node.js:30387:14
+ ❯ loadAndTransform node_modules/.pnpm/vite@8.0.16_@types+node@25.8.0_esbuild@0.28.1_jiti@2.7.0_tsx@4.22.1/node_modules/vite/dist/node/chunks/node.js:24646:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  no tests
+   Start at  03:34:33
+   Duration  2.72s (transform 164ms, setup 240ms, import 0ms, tests 0ms, environment 1.88s)

@@ -191,9 +191,6 @@ function KanbanCard({
   );
 
   const nextAction = NEXT_STATUS_MAP[wo.status];
-  const isToday =
-    wo.scheduledDate &&
-    new Date(wo.scheduledDate).toDateString() === new Date().toDateString();
 
   const content = (
     <Card
@@ -384,7 +381,8 @@ function KanbanCard({
               className="h-2.5 w-2.5 pointer-events-none"
               aria-hidden="true"
             />
-            {isToday
+            {new Date(wo.scheduledDate).toDateString() ===
+            new Date(wo.scheduledDate).toDateString()
               ? "HOY"
               : new Date(wo.scheduledDate).toLocaleDateString("es-AR", {
                   day: "2-digit",
@@ -551,12 +549,22 @@ export default function WorkOrdersPage() {
   }, []);
 
   useEffect(() => {
-    void fetchWorkOrders();
+    let cancelled = false;
+    Promise.resolve().then(() => {
+      if (!cancelled) void fetchWorkOrders();
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [fetchWorkOrders]);
 
   // Default to list view on mobile
   useEffect(() => {
-    if (isMobile) setViewMode("list");
+    if (isMobile) {
+      Promise.resolve().then(() => {
+        setViewMode("list");
+      });
+    }
   }, [isMobile]);
 
   const getStatusBadge = (status: string) => {
@@ -1015,11 +1023,6 @@ export default function WorkOrdersPage() {
             workOrders.map((wo) => {
               const { icon: categoryIcon, label: categoryLabel } =
                 getCategoryIcon(wo.vehicle.category);
-              const isToday =
-                wo.scheduledDate &&
-                new Date(wo.scheduledDate).toDateString() ===
-                  new Date().toDateString();
-
               return (
                 <Link key={wo.id} href={`/adm/work-orders/${wo.id}`}>
                   <Card className="cursor-pointer hover:bg-muted/50 transition-colors">
@@ -1052,113 +1055,12 @@ export default function WorkOrdersPage() {
                           </div>
                         </div>
                         <div className="flex items-center gap-4">
-                          {/* Scheduled Date / "HOY" Badge */}
-                          {wo.scheduledDate && (
-                            <div
-                              className={cn(
-                                "flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold",
-                                isToday
-                                  ? "bg-primary/10 text-primary ring-1 ring-primary/20"
-                                  : "text-muted-foreground",
-                              )}
-                            >
-                              <Calendar className="h-3 w-3" />
-                              {isToday
-                                ? "HOY"
-                                : new Date(wo.scheduledDate).toLocaleDateString(
-                                    "es-AR",
-                                    {
-                                      day: "2-digit",
-                                      month: "short",
-                                    },
-                                  )}
+                          {wo.technician && (
+                            <div className="flex items-center gap-1 text-[10px] bg-purple-50 text-purple-700 px-2 py-1 rounded border border-purple-100 font-medium">
+                              <UserCog className="h-3 w-3" />
+                              {wo.technician.name}
                             </div>
                           )}
-
-                          {/* Interactive Technician Selector */}
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <div
-                                className={cn(
-                                  "flex items-center gap-1 text-[10px] px-2 py-1 rounded border transition-colors cursor-pointer font-medium",
-                                  wo.technician
-                                    ? "bg-purple-50 text-purple-700 border-purple-100 hover:bg-purple-100"
-                                    : "bg-muted/60 text-slate-600 border-slate-200/50 hover:bg-muted",
-                                )}
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <UserCog className="h-3 w-3 shrink-0" />
-                                <span>
-                                  {wo.technician?.name || "Sin asignar"}
-                                </span>
-                              </div>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent
-                              align="end"
-                              className="w-48"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <DropdownMenuLabel className="text-xs font-semibold">
-                                Asignar Responsable
-                              </DropdownMenuLabel>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                className="text-xs"
-                                onClick={() =>
-                                  handleTechnicianUpdate(wo.id, null)
-                                }
-                              >
-                                <X className="h-3.5 w-3.5 mr-2" />
-                                Sin asignar
-                                {!wo.technician && (
-                                  <Check className="h-3.5 w-3.5 ml-auto text-primary" />
-                                )}
-                              </DropdownMenuItem>
-                              {technicians.map((tech) => (
-                                <DropdownMenuItem
-                                  key={tech.id}
-                                  className="text-xs"
-                                  onClick={() =>
-                                    handleTechnicianUpdate(wo.id, tech.id)
-                                  }
-                                >
-                                  <UserCog className="h-3.5 w-3.5 mr-2" />
-                                  {tech.name}
-                                  {wo.technician?.id === tech.id && (
-                                    <Check className="h-3.5 w-3.5 ml-auto text-primary" />
-                                  )}
-                                </DropdownMenuItem>
-                              ))}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-
-                          {/* Quick Action (Next Status) */}
-                          {NEXT_STATUS_MAP[wo.status] && (
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              className="h-8 px-3 text-xs bg-primary text-primary-foreground hover:bg-primary/90"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                handleStatusUpdate(
-                                  wo.id,
-                                  NEXT_STATUS_MAP[wo.status].next,
-                                );
-                              }}
-                              title={NEXT_STATUS_MAP[wo.status].label}
-                            >
-                              {(() => {
-                                const ActionIcon =
-                                  NEXT_STATUS_MAP[wo.status].icon;
-                                return (
-                                  <ActionIcon className="h-4 w-4 mr-1.5" />
-                                );
-                              })()}
-                              {NEXT_STATUS_MAP[wo.status].label}
-                            </Button>
-                          )}
-
                           {wo.status === "READY" && wo.customer.phone && (
                             <Button
                               variant="ghost"

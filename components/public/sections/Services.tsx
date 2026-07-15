@@ -4,6 +4,29 @@ import { useState } from 'react';
 import { ArrowUpRight } from 'lucide-react';
 import { publicServices, PublicService } from '@/lib/constants/services';
 import { ServiceQuickView } from '../ServiceQuickView';
+import { motion } from 'framer-motion';
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
+};
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.8,
+      ease: [0.21, 0.47, 0.32, 0.98] as const,
+    }
+  },
+};
 
 export function Services() {
   const [selectedService, setSelectedService] = useState<PublicService | null>(null);
@@ -23,12 +46,24 @@ export function Services() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-100px" }}
+          className="grid grid-cols-1 md:grid-cols-3 gap-4"
+        >
           {publicServices.map((service) => (
-            <div
+            <motion.div
               key={service.title}
+              variants={cardVariants}
+              whileHover={{
+                scale: 0.98,
+                transition: { duration: 0.4 }
+              }}
+              whileTap={{ scale: 0.96 }}
               onClick={() => setSelectedService(service)}
-              className={`group relative overflow-hidden rounded-3xl p-8 transition-all duration-700 hover:scale-[0.98] cursor-pointer ${service.bg} border border-white/5 hover:border-brand/20 ${service.gridClassName}`}
+              className={`group relative overflow-hidden rounded-3xl p-8 cursor-pointer ${service.bg} border border-white/5 hover:border-brand/20 ${service.gridClassName}`}
             >
               {/* Hover effect */}
               <div className="absolute inset-0 bg-gradient-to-br from-brand/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
@@ -48,9 +83,9 @@ export function Services() {
                   </p>
                 </div>
               </div>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
 
         <ServiceQuickView
           service={selectedService}

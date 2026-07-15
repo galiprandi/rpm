@@ -13,6 +13,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Package, ArrowRight, Receipt, AlertTriangle } from 'lucide-react';
+import { formatARS } from '@/lib/utils/format';
 
 interface VoucherItem {
   id: string;
@@ -113,17 +114,27 @@ export function VoucherPreviewDialog({ isOpen, onClose, voucherId, onContinue }:
             </div>
             <div>
               <span className="text-muted-foreground">Monto Declarado</span>
-              <p className="font-medium">${totalAmount.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</p>
+              <p className="font-semibold tracking-tight font-mono">
+                {formatARS(totalAmount, 2)}
+              </p>
             </div>
           </div>
 
           {/* Variance warning */}
           {isDiscrepant && (
-            <div className="flex items-start gap-2 p-3 rounded-md text-amber-600 border border-amber-200 bg-amber-50 text-sm">
-              <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+            <div className="flex items-start gap-2 p-3 rounded-md text-amber-700 border border-amber-200 bg-amber-50 text-sm">
+              <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" aria-hidden="true" />
               <div>
                 <span className="font-medium">Diferencia detectada:</span>{' '}
-                El total cargado (${itemsSubtotal.toFixed(2)}) difiere del monto declarado (${totalAmount.toFixed(2)}).
+                El total cargado (
+                <span className="font-mono font-semibold">
+                  {formatARS(itemsSubtotal, 2)}
+                </span>
+                ) difiere del monto declarado (
+                <span className="font-mono font-semibold">
+                  {formatARS(totalAmount, 2)}
+                </span>
+                ).
               </div>
             </div>
           )}
@@ -151,11 +162,11 @@ export function VoucherPreviewDialog({ isOpen, onClose, voucherId, onContinue }:
                       <TableRow key={item.id}>
                         <TableCell>{item.productName}</TableCell>
                         <TableCell className="text-right">{item.quantity}</TableCell>
-                        <TableCell className="text-right">
-                          ${Number(item.unitCost).toFixed(2)}
+                        <TableCell className="text-right font-mono text-xs">
+                          {formatARS(Number(item.unitCost), 2)}
                         </TableCell>
-                        <TableCell className="text-right font-medium">
-                          ${Number(item.subtotal).toFixed(2)}
+                        <TableCell className="text-right font-semibold tracking-tight font-mono">
+                          {formatARS(Number(item.subtotal), 2)}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -166,8 +177,8 @@ export function VoucherPreviewDialog({ isOpen, onClose, voucherId, onContinue }:
                         <Receipt className="inline h-3.5 w-3.5 mr-1 text-muted-foreground" />
                         Total cargado:
                       </TableCell>
-                      <TableCell className="text-right font-bold">
-                        ${itemsSubtotal.toFixed(2)}
+                      <TableCell className="text-right font-bold font-mono tracking-tight text-base">
+                        {formatARS(itemsSubtotal, 2)}
                       </TableCell>
                     </TableRow>
                   </TableFooter>

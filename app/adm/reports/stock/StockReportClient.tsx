@@ -19,6 +19,20 @@ import { StockReportData } from "@/lib/services/stockReportService";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export default function StockReportClient() {
   const [data, setData] = useState<StockReportData | null>(null);
@@ -66,11 +80,12 @@ export default function StockReportClient() {
   if (!data) return null;
 
   return (
-    <div className="space-y-6">
-      <Header
-        title="Stock & Inventario"
-        description="Valorización de stock, rotación y alertas de reposición."
-      />
+    <TooltipProvider>
+      <div className="space-y-6">
+        <Header
+          title="Stock & Inventario"
+          description="Valorización de stock, rotación y alertas de reposición."
+        />
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <MetricCard
@@ -155,7 +170,9 @@ export default function StockReportClient() {
                 <div key={cat.id} className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
                     <span className="font-medium">{cat.name}</span>
-                    <span className="font-mono">{formatARS(cat.value)}</span>
+                    <span className="font-mono font-semibold">
+                      {formatARS(cat.value)}
+                    </span>
                   </div>
                   <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
                     <div
@@ -176,8 +193,12 @@ export default function StockReportClient() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
-              <CardTitle className="text-lg font-medium">Alertas de Reposición</CardTitle>
-              <CardDescription>Productos con stock igual o inferior al mínimo</CardDescription>
+              <CardTitle className="text-lg font-medium">
+                Alertas de Reposición
+              </CardTitle>
+              <CardDescription>
+                Productos con stock igual o inferior al mínimo
+              </CardDescription>
             </div>
             <Badge variant={data.lowStockCount > 0 ? "destructive" : "outline"}>
               {data.lowStockCount} alertas
@@ -185,45 +206,63 @@ export default function StockReportClient() {
           </CardHeader>
           <CardContent>
             <div className="rounded-md border overflow-hidden">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/50 border-b">
-                  <tr>
-                    <th className="text-left p-3 font-medium">Producto</th>
-                    <th className="text-right p-3 font-medium">Stock</th>
-                    <th className="text-right p-3 font-medium">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Producto</TableHead>
+                    <TableHead className="text-right">Stock</TableHead>
+                    <TableHead className="text-right">Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {data.lowStockProducts.length === 0 ? (
-                    <tr>
-                      <td colSpan={3} className="p-8 text-center text-muted-foreground italic">
+                    <TableRow>
+                      <TableCell
+                        colSpan={3}
+                        className="p-8 text-center text-muted-foreground italic"
+                      >
                         Sin alertas.
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ) : (
                     data.lowStockProducts.slice(0, 5).map((product) => (
-                      <tr key={product.id} className="border-b hover:bg-muted/30 transition-colors">
-                        <td className="p-3 font-medium truncate max-w-[150px]">{product.name}</td>
-                        <td className="p-3 text-right">
-                          <span className="font-mono font-bold text-red-600">
+                      <TableRow key={product.id}>
+                        <TableCell className="font-medium truncate max-w-[150px]">
+                          {product.name}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <span className="font-mono font-bold text-red-700">
                             {product.stock}
                           </span>
                           <span className="text-[10px] text-muted-foreground ml-1">
                             / {product.minStock}
                           </span>
-                        </td>
-                        <td className="p-3 text-right">
-                          <Button asChild variant="ghost" size="icon" className="h-8 w-8">
-                            <Link href={`/adm/products?search=${product.name}`}>
-                              <ExternalLink className="h-4 w-4" />
-                            </Link>
-                          </Button>
-                        </td>
-                      </tr>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                asChild
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                aria-label={`Ver producto ${product.name}`}
+                              >
+                                <Link
+                                  href={`/adm/products?search=${product.name}`}
+                                >
+                                  <ExternalLink className="h-4 w-4" />
+                                </Link>
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Ver producto</TooltipContent>
+                          </Tooltip>
+                        </TableCell>
+                      </TableRow>
                     ))
                   )}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           </CardContent>
         </Card>
@@ -231,53 +270,83 @@ export default function StockReportClient() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
-              <CardTitle className="text-lg font-medium">Productos Inmovilizados</CardTitle>
-              <CardDescription>Sin movimientos en los últimos 90 días</CardDescription>
+              <CardTitle className="text-lg font-medium">
+                Productos Inmovilizados
+              </CardTitle>
+              <CardDescription>
+                Sin movimientos en los últimos 90 días
+              </CardDescription>
             </div>
-            <Badge variant={data.deadStockCount > 0 ? "secondary" : "outline"} className={data.deadStockCount > 0 ? "bg-amber-100 text-amber-800 border-amber-200" : ""}>
+            <Badge
+              variant={data.deadStockCount > 0 ? "secondary" : "outline"}
+              className={
+                data.deadStockCount > 0
+                  ? "bg-amber-100 text-amber-800 border-amber-200"
+                  : ""
+              }
+            >
               {data.deadStockCount} inactivos
             </Badge>
           </CardHeader>
           <CardContent>
             <div className="rounded-md border overflow-hidden">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/50 border-b">
-                  <tr>
-                    <th className="text-left p-3 font-medium">Producto</th>
-                    <th className="text-right p-3 font-medium">Valor</th>
-                    <th className="text-right p-3 font-medium">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Producto</TableHead>
+                    <TableHead className="text-right">Valor</TableHead>
+                    <TableHead className="text-right">Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {data.deadStockProducts.length === 0 ? (
-                    <tr>
-                      <td colSpan={3} className="p-8 text-center text-muted-foreground italic">
+                    <TableRow>
+                      <TableCell
+                        colSpan={3}
+                        className="p-8 text-center text-muted-foreground italic"
+                      >
                         Sin productos inmovilizados.
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ) : (
                     data.deadStockProducts.slice(0, 5).map((product) => (
-                      <tr key={product.id} className="border-b hover:bg-muted/30 transition-colors">
-                        <td className="p-3 font-medium truncate max-w-[150px]">{product.name}</td>
-                        <td className="p-3 text-right font-mono font-semibold">
+                      <TableRow key={product.id}>
+                        <TableCell className="font-medium truncate max-w-[150px]">
+                          {product.name}
+                        </TableCell>
+                        <TableCell className="text-right font-mono font-semibold">
                           {formatARS(product.value)}
-                        </td>
-                        <td className="p-3 text-right">
-                          <Button asChild variant="ghost" size="icon" className="h-8 w-8">
-                            <Link href={`/adm/products?search=${product.name}`}>
-                              <ExternalLink className="h-4 w-4" />
-                            </Link>
-                          </Button>
-                        </td>
-                      </tr>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                asChild
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                aria-label={`Ver producto ${product.name}`}
+                              >
+                                <Link
+                                  href={`/adm/products?search=${product.name}`}
+                                >
+                                  <ExternalLink className="h-4 w-4" />
+                                </Link>
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Ver producto</TooltipContent>
+                          </Tooltip>
+                        </TableCell>
+                      </TableRow>
                     ))
                   )}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           </CardContent>
         </Card>
       </div>
     </div>
+    </TooltipProvider>
   );
 }
