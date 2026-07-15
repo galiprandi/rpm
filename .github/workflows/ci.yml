@@ -87,20 +87,15 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Install pnpm
-      uses: pnpm/action-setup@v4
-      with:
-        run_install: false
-        
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '24.x'
-        cache: 'pnpm'
       
-    - name: Install dependencies
-      run: pnpm install --frozen-lockfile
+    - name: Generate temporary package-lock
+      run: |
+        npm install --package-lock-only --legacy-peer-deps
       
     - name: Run security audit
       run: |
-        npx audit-ci --high
+        npx audit-ci --high --package-manager npm
