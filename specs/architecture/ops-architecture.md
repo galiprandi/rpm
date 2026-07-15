@@ -18,4 +18,4 @@
 
 ## 4. Estándares de Formateo
 - **Código**: Prettier y ESLint estrictos en CI/CD (o localmente con Husky) antes del commit.
-- **Bot Ger**: El bot de IA tiene reglas específicas de formato (Markdown con tablas y alertas cortas) definidas en su prompt de sistema para que la información que presenta al técnico en pantallas móviles sea rápidamente escaneable.
+- **Bot Nitro**: El bot de IA tiene reglas específicas de formato (Markdown con tablas y alertas cortas) definidas en su prompt de sistema para que la información que presenta al técnico en pantallas móviles sea rápidamente escaneable.

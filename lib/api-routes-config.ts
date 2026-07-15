@@ -15,7 +15,7 @@
  * or use it for documentation/reference purposes.
  */
 
-import { UserRole } from '@/lib/auth/roles';
+import { UserRole } from '@/lib/auth/roles-client';
 
 export type RouteRole = 'PUBLIC' | 'USER' | 'STAFF' | 'ADMIN';
 

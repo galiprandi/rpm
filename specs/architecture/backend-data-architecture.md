@@ -4,7 +4,7 @@
 El backend de RPM tiene como meta una arquitectura basada en **Servicios como funciones puras** (Service Pattern) en `lib/services/*`. 
 - **Rutas API (`app/api/*`)**: Exponen los endpoints RESTful. **Meta**: No deben contener lógica de negocio, solo orquestar parámetros y llamar a servicios. **Estado Actual**: Algunos módulos (Work Orders, Customers) aún tienen lógica embebida en las rutas que requiere refactorización.
 - **Servicios (`lib/services/*`)**: Funciones puras reutilizables, tipadas e independientes de HTTP.
-- **Tools (`lib/agent-tools/*`)**: Wrappers de los servicios adaptados para el Vercel AI SDK (Ger Bot).
+- **Tools (`lib/agent-tools/*`)**: Wrappers de los servicios adaptados para el Vercel AI SDK (Nitro Bot).
 
 ## 2. Base de Datos y ORM
 - **Motor**: PostgreSQL.

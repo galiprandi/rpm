@@ -10,7 +10,7 @@ Se han identificado discrepancias significativas entre lo documentado originalme
 - **Documentado**: Sistema 100% integrado con `afip.js`.
 - **Realidad**: La infraestructura de datos está lista (`afipData` en `invoice`), pero la librería `afip.js` no está instalada y el servicio de integración (`afipService.ts`) no existe. Se ajustó la spec a `🟡 Parcialmente implementado`.
 
-### 🤖 Bot GER (IA)
+### 🤖 Bot NITRO (IA)
 - **Documentado**: Sistema multi-agente con Vercel AI SDK funcionando.
 - **Realidad**: No se encontró la dependencia `ai` en `package.json`. Las rutas en `app/api/bot` son mayormente placeholders. Se ajustó la spec a `🔴 No iniciado`.
 

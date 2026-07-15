@@ -1,8 +1,8 @@
 /**
  * Role management system for RPM Accesorios
  * 
- * Fetches roles from database. Falls back to domain-based assignment for new users.
- * Note: ADMIN_EMAILS env variable is handled in auth-server.ts for server-side override
+ * SERVER-ONLY: This file uses Prisma and can only be used in server components or API routes.
+ * For client-side role logic, use roles-client.ts instead.
  */
 
 import { prisma } from '../prisma';
@@ -58,31 +58,6 @@ export const getUserRole = async (email: string): Promise<UserRole> => {
   // Default: regular user
   console.log('[getUserRole] Default USER role for:', email);
   return UserRole.USER;
-};
-
-/**
- * Synchronous version for use in contexts where DB can't be accessed
- * Uses only domain-based logic (no DB lookup)
- * 
- * @param email - User email address
- * @returns UserRole assigned to the user
- */
-export const getUserRoleSync = (email: string): UserRole => {
-  if (STAFF_DOMAINS.some(domain => email.endsWith(`@${domain}`))) {
-    return UserRole.STAFF;
-  }
-  return UserRole.USER;
-};
-
-/**
- * Validates if an email has proper format for role assignment
- * 
- * @param email - Email to validate
- * @returns boolean indicating if email is valid
- */
-export const isValidEmailForRole = (email: string): boolean => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
 };
 
 /**

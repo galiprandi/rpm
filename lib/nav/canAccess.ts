@@ -1,4 +1,4 @@
-import { UserRole } from '@/lib/auth/roles';
+import { UserRole } from '@/lib/auth/roles-client';
 
 /**
  * Check if a given role is allowed to access an item that requires any of the listed roles.

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { authClient } from "@/lib/auth-client";
 import { AppSidebar } from "./AppSidebar";
 import { CommandPalette } from "@/components/adm/CommandPalette";
+import { ChatFloating } from "@/components/bot/ChatFloating";
 import { WebMCPTools } from "@/components/webmcp/WebMCPTools";
 import { WebMCPNavTools } from "@/components/webmcp/WebMCPNavTools";
 import {
@@ -26,6 +27,7 @@ interface AdminClientLayoutProps {
 export function AdminClientLayout({ children, user }: AdminClientLayoutProps) {
   const [mounted, setMounted] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
   const [defaultOpen] = useState<boolean>(() => {
     if (typeof document === "undefined") return true;
     const match = document.cookie.match(/sidebar_state=([^;]+)/);
@@ -80,6 +82,7 @@ export function AdminClientLayout({ children, user }: AdminClientLayoutProps) {
               {children}
             </main>
           </SidebarInset>
+          <ChatFloating isOpen={chatOpen} onOpenChange={setChatOpen} />
           <WebMCPTools />
           <WebMCPNavTools />
         </>
