@@ -26,6 +26,7 @@ interface Debtor {
   customerId: string;
   customerName: string;
   phone: string | null;
+  phoneAlt: string | null;
   email: string | null;
   balance: number;
   workOrderCount: number;
@@ -133,6 +134,7 @@ export default function DebtorsClient() {
       header: 'Cliente',
       cell: ({ row }) => {
         const debtor = row.original;
+        const contactPhone = debtor.phone || debtor.phoneAlt;
         return (
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center">
@@ -140,10 +142,11 @@ export default function DebtorsClient() {
             </div>
             <div>
               <div className="font-semibold tracking-tight">{debtor.customerName}</div>
-              {debtor.phone && (
+              {contactPhone && (
                 <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5 font-mono">
                   <Phone className="h-3 w-3 pointer-events-none" aria-hidden="true" />
-                  {debtor.phone}
+                  {contactPhone}
+                  {debtor.phoneAlt && !debtor.phone && <span className="text-[10px] ml-1 opacity-70">(alt)</span>}
                 </div>
               )}
             </div>
@@ -185,11 +188,20 @@ export default function DebtorsClient() {
     {
       accessorKey: 'balance',
       header: 'Deuda Total',
-      cell: ({ row }) => (
-        <div className="font-mono font-semibold text-red-600">
-          {formatARS(row.original.balance)}
-        </div>
-      ),
+      cell: ({ row }) => {
+        const date = row.original.oldestDebtDate;
+        const daysSince = getDaysSince(date);
+        const isVeryOld = daysSince !== null && daysSince > 30;
+
+        return (
+          <div className={cn(
+            "font-mono font-semibold px-2 py-1 rounded-md inline-block",
+            isVeryOld ? "text-red-700 bg-red-50 border border-red-100" : "text-red-600"
+          )}>
+            {formatARS(row.original.balance)}
+          </div>
+        );
+      },
     },
     {
       accessorKey: 'oldestDebtDate',
@@ -220,9 +232,10 @@ export default function DebtorsClient() {
       header: '',
       cell: ({ row }) => {
         const debtor = row.original;
+        const whatsappPhone = debtor.phone || debtor.phoneAlt;
         return (
           <div className="flex items-center justify-end gap-1">
-            {debtor.phone && (
+            {whatsappPhone && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -232,7 +245,7 @@ export default function DebtorsClient() {
                     className="h-8 w-8 text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50"
                   >
                     <a
-                      href={getWhatsAppLink(debtor.phone, getDebtReminderMessage(debtor.customerName, debtor.balance))}
+                      href={getWhatsAppLink(whatsappPhone, getDebtReminderMessage(debtor.customerName, debtor.balance))}
                       target="_blank"
                       rel="noopener noreferrer"
                       aria-label="Notificar deuda por WhatsApp"
