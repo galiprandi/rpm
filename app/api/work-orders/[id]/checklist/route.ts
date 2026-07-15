@@ -9,7 +9,7 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { type, odometerValue, fuelLevel } = body;
+    const { type, odometerValue, fuelLevel, items, notes } = body;
 
     if (!type || !["ENTRY", "EXIT"].includes(type)) {
       return NextResponse.json(
@@ -31,11 +31,16 @@ export async function PUT(
       );
     }
 
-    const currentChecklist = type === "ENTRY" ? workOrder.entryChecklist : workOrder.exitChecklist;
+    const currentChecklist = (type === "ENTRY" ? workOrder.entryChecklist : workOrder.exitChecklist) as Record<string, any> || {};
+
     const updatedChecklist = {
-      ...((currentChecklist || {}) as Record<string, unknown>),
-      odometerValue,
-      fuelLevel,
+      ...currentChecklist,
+      ...(odometerValue !== undefined && { odometerValue }),
+      ...(fuelLevel !== undefined && { fuelLevel }),
+      ...(items !== undefined && { items }),
+      ...(notes !== undefined && { notes }),
+      // Update completedAt if items are being updated and it wasn't set before
+      ...(items !== undefined && !currentChecklist.completedAt && { completedAt: new Date() }),
     };
 
     const updateData =

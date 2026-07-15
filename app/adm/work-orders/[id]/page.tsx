@@ -66,6 +66,10 @@ import { CustomerCreditNoteDialog } from "@/components/credit-notes/CustomerCred
 import { getWhatsAppLink, getWorkOrderMessage } from "@/lib/utils/whatsapp";
 import { buildVehicleDescription } from "@/lib/constants/vehicle-categories";
 import { formatARS, relativeTime } from "@/lib/utils/format";
+import {
+  DEFAULT_ENTRY_CHECKLIST,
+  DEFAULT_EXIT_CHECKLIST
+} from "@/lib/constants/work-order";
 
 // --- Helpers ---
 
@@ -281,6 +285,10 @@ export default function WorkOrderDetailPage() {
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [loadingAudit, setLoadingAudit] = useState(false);
 
+  const [editingItemsState, setEditingItemsState] = useState<
+    Array<{ id: string; label: string; checked: boolean }>
+  >([]);
+
   const [editingChecklist, setEditingChecklist] = useState<
     "entry" | "exit" | null
   >(null);
@@ -487,9 +495,10 @@ export default function WorkOrderDetailPage() {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            type: editingChecklist,
+            type: editingChecklist.toUpperCase(),
             odometerValue: editingOdometer,
             fuelLevel: editingFuelLevel,
+            items: editingItemsState,
           }),
         },
       );
@@ -526,6 +535,52 @@ export default function WorkOrderDetailPage() {
     setEditingChecklist(type);
     setEditingOdometer(checklist?.odometerValue ?? workOrder?.odometerValue);
     setEditingFuelLevel(checklist?.fuelLevel ?? workOrder?.fuelLevel);
+    setEditingItemsState(checklist?.items || []);
+  };
+
+  const handleToggleChecklistItem = (id: string) => {
+    setEditingItemsState((prev) =>
+      prev.map((item) =>
+        item.id === id ? { ...item, checked: !item.checked } : item,
+      ),
+    );
+  };
+
+  const handleInitializeChecklist = async (type: "ENTRY" | "EXIT") => {
+    const defaultItems =
+      type === "ENTRY" ? DEFAULT_ENTRY_CHECKLIST : DEFAULT_EXIT_CHECKLIST;
+
+    setUpdatingStatus(true);
+    try {
+      const response = await fetch(
+        `/api/work-orders/${workOrderId}/checklist`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type,
+            items: defaultItems.map((i) => ({ ...i, checked: false })),
+            odometerValue: workOrder?.odometerValue,
+            fuelLevel: workOrder?.fuelLevel,
+          }),
+        },
+      );
+
+      if (!response.ok) throw new Error("Failed to initialize checklist");
+
+      const updated = await response.json();
+      setWorkOrder((prev) => (prev ? { ...prev, ...updated } : null));
+
+      await alert({
+        title: "Éxito",
+        description: "Checklist inicializado",
+        variant: "success",
+      });
+    } catch (error) {
+      console.error("Error initializing checklist:", error);
+    } finally {
+      setUpdatingStatus(false);
+    }
   };
 
   // Items editing handlers
@@ -1549,15 +1604,23 @@ export default function WorkOrderDetailPage() {
 
                     {/* Checklist Items */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
-                      {workOrder.entryChecklist.items.map((item, index) => (
+                      {(editingChecklist === "entry"
+                        ? editingItemsState
+                        : workOrder.entryChecklist.items
+                      ).map((item, index) => (
                         <div
-                          key={index}
+                          key={item.id || index}
                           className={cn(
                             "flex items-start gap-3 p-2 rounded-md transition-colors",
                             item.checked
                               ? "bg-blue-50/50"
                               : "hover:bg-muted/30",
+                            editingChecklist === "entry" && "cursor-pointer",
                           )}
+                          onClick={() =>
+                            editingChecklist === "entry" &&
+                            handleToggleChecklistItem(item.id)
+                          }
                         >
                           <div
                             className={cn(
@@ -1596,8 +1659,19 @@ export default function WorkOrderDetailPage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="text-muted-foreground py-4">
-                    Sin checklist de ingreso registrado
+                  <div className="flex flex-col items-center gap-3 py-6 border-2 border-dashed rounded-lg">
+                    <p className="text-sm text-muted-foreground">
+                      Sin checklist de ingreso registrado
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleInitializeChecklist("ENTRY")}
+                      disabled={updatingStatus}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Completar Checklist
+                    </Button>
                   </div>
                 )}
               </CardContent>
@@ -1707,15 +1781,23 @@ export default function WorkOrderDetailPage() {
 
                     {/* Checklist Items */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
-                      {workOrder.exitChecklist.items.map((item, index) => (
+                      {(editingChecklist === "exit"
+                        ? editingItemsState
+                        : workOrder.exitChecklist.items
+                      ).map((item, index) => (
                         <div
-                          key={index}
+                          key={item.id || index}
                           className={cn(
                             "flex items-start gap-3 p-2 rounded-md transition-colors",
                             item.checked
                               ? "bg-emerald-50/50"
                               : "hover:bg-muted/30",
+                            editingChecklist === "exit" && "cursor-pointer",
                           )}
+                          onClick={() =>
+                            editingChecklist === "exit" &&
+                            handleToggleChecklistItem(item.id)
+                          }
                         >
                           <div
                             className={cn(
@@ -1754,8 +1836,19 @@ export default function WorkOrderDetailPage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="text-muted-foreground py-4">
-                    Sin checklist de calidad registrado
+                  <div className="flex flex-col items-center gap-3 py-6 border-2 border-dashed rounded-lg">
+                    <p className="text-sm text-muted-foreground">
+                      Sin checklist de calidad registrado
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleInitializeChecklist("EXIT")}
+                      disabled={updatingStatus}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Completar Checklist
+                    </Button>
                   </div>
                 )}
               </CardContent>

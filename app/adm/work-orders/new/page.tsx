@@ -37,6 +37,7 @@ import {
   getVehicleCategoryIcon,
   buildVehicleDescription,
 } from "@/lib/constants/vehicle-categories";
+import { DEFAULT_ENTRY_CHECKLIST } from "@/lib/constants/work-order";
 import {
   Select,
   SelectContent,
@@ -53,11 +54,6 @@ function normalizePlate(plate: string): string {
   return plate.trim().toUpperCase();
 }
 
-const ENTRY_CHECKLIST = [
-  { id: "keys", label: "Llaves/Control recibido", required: true },
-  { id: "visual", label: "Estado visual general documentado", required: true },
-  { id: "accessories", label: "Accesorios guardados", required: false },
-];
 
 interface VehicleWithCustomer {
   id: string;
@@ -425,7 +421,7 @@ export default function NewWorkOrderPage() {
           items: Object.entries(checklist).map(([id, checked]) => ({
             id,
             checked,
-            label: ENTRY_CHECKLIST.find((i) => i.id === id)?.label || id,
+            label: DEFAULT_ENTRY_CHECKLIST.find((i) => i.id === id)?.label || id,
           })),
           completedAt: new Date().toISOString(),
         },
@@ -930,8 +926,8 @@ export default function NewWorkOrderPage() {
 
               <div className="space-y-3">
                 <Label>Checklist de Ingreso</Label>
-                <div className="space-y-3 border rounded-md p-4">
-                  {ENTRY_CHECKLIST.map((item) => (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 border rounded-md p-4">
+                  {DEFAULT_ENTRY_CHECKLIST.map((item) => (
                     <Checkbox
                       key={item.id}
                       id={`checklist-${item.id}`}
@@ -943,8 +939,6 @@ export default function NewWorkOrderPage() {
                         }))
                       }
                       label={item.label}
-                      labelClassName={item.required ? "font-medium" : ""}
-                      required={item.required}
                     />
                   ))}
                 </div>
@@ -1055,12 +1049,7 @@ export default function NewWorkOrderPage() {
                 </Button>
                 <Button
                   onClick={handleSubmit}
-                  disabled={
-                    loading ||
-                    !ENTRY_CHECKLIST.every(
-                      (item) => !item.required || checklist[item.id],
-                    )
-                  }
+                  disabled={loading}
                 >
                   <Save className="h-4 w-4 mr-2" />
                   {loading ? "Creando..." : "Crear Orden de Trabajo"}
