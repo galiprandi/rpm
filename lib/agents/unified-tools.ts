@@ -11,6 +11,7 @@ import {
 } from "./orchestrator/composite";
 import { searchProductsWithPricesTool } from "./tools/search-products-with-prices";
 import { composeWhatsAppMessageTool } from "./tools/compose-message";
+import { processPurchaseInvoiceTool } from "./tools/process-purchase-invoice";
 
 export const unifiedTools = {
   // Search
@@ -28,4 +29,6 @@ export const unifiedTools = {
   composeWhatsAppMessage: composeWhatsAppMessageTool,
   // Operations
   closeCashRegister,
+  // Purchase Vouchers
+  processPurchaseInvoice: processPurchaseInvoiceTool,
 };

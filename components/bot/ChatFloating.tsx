@@ -1,6 +1,9 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport, type FileUIPart } from "ai";
 import { Streamdown } from "streamdown";
 import {
   MessageSquare,
@@ -12,6 +15,7 @@ import {
   Maximize2,
   Minimize2,
   Loader2,
+  Wrench,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +26,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { authClient } from "@/lib/auth-client";
 
 export function ChatFloating({
   isOpen: controlledIsOpen,
@@ -43,96 +48,76 @@ export function ChatFloating({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [localInput, setLocalInput] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [chatMessages, setChatMessages] = useState<any[]>([]);
-  const [error, setError] = useState<Error | null>(null);
 
-  // Manual API call since useChat hook doesn't provide handleSubmit due to v6/v7 incompatibility
+  const pathname = usePathname();
+  const router = useRouter();
+  const { data: session } = authClient.useSession();
+  const userId = session?.user?.id || "anon";
+  const userRole =
+    (session?.user as { role?: string } | undefined)?.role || "ADMIN";
+  const chatId = useMemo(() => `nitro-chat-${userId}`, [userId]);
+
+  const transport = useMemo(
+    () =>
+      new DefaultChatTransport({
+        api: "/api/bot/chat",
+        prepareSendMessagesRequest: ({ messages, body }) => ({
+          body: {
+            messages,
+            context: {
+              ...(body as Record<string, unknown>),
+              role: userRole,
+              userId,
+              pathname,
+            },
+          },
+        }),
+      }),
+    [userId, pathname, userRole],
+  );
+
+  const onFinish = useCallback(() => {
+    router.refresh();
+  }, [router]);
+
+  const { messages, sendMessage, status, error, stop } = useChat({
+    id: chatId,
+    transport,
+    onFinish,
+  });
+
+  const isSubmitting = status === "submitted" || status === "streaming";
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const messageText = localInput?.trim();
-
     if (!messageText && !attachedFile) return;
+    setLocalInput("");
 
-    setIsSubmitting(true);
-    setError(null);
-
-    // Add user message to chat
-    const userMessage = {
-      role: "user",
-      content: messageText,
-      id: Date.now().toString(),
-    };
-    setChatMessages((prev) => [...prev, userMessage]);
-
-    try {
-      const response = await fetch("/api/bot/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: userMessage,
-          context: { role: "ADMIN", url: { path: "/", search: "", hash: "" } },
-        }),
+    if (attachedFile) {
+      const arrayBuffer = await attachedFile.arrayBuffer();
+      const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+      const dataUrl = `data:${attachedFile.type || "application/octet-stream"};base64,${base64}`;
+      const filePart: FileUIPart = {
+        type: "file",
+        mediaType: attachedFile.type || "application/octet-stream",
+        url: dataUrl,
+      };
+      await sendMessage({
+        text: messageText,
+        files: [filePart],
       });
-
-      if (!response.ok) throw new Error("Failed to send message");
-
-      const reader = response.body?.getReader();
-      if (!reader) throw new Error("No response body");
-
-      let assistantMessage = "";
-      const decoder = new TextDecoder();
-
-      // Add empty assistant message placeholder
-      setChatMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: "",
-          id: (Date.now() + 1).toString(),
-        },
-      ]);
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value);
-        assistantMessage += chunk;
-
-        // Update assistant message in real-time
-        setChatMessages((prev) => {
-          const updated = [...prev];
-          const lastMessage = updated[updated.length - 1];
-          if (lastMessage?.role === "assistant") {
-            lastMessage.content = assistantMessage;
-          }
-          return updated;
-        });
-      }
-    } catch (err) {
-      console.error("Error sending message:", err);
-      setError(err as Error);
-      setChatMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: "Error al enviar mensaje. Por favor intenta nuevamente.",
-          id: Date.now().toString(),
-        },
-      ]);
-    } finally {
-      setIsSubmitting(false);
-      setLocalInput("");
-      setAttachedFile(null);
-      if (fileInputRef.current) fileInputRef.current.value = "";
+    } else {
+      await sendMessage({ text: messageText });
     }
+    setAttachedFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   // Auto scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chatMessages]);
+  }, [messages]);
 
   // Auto-focus input when chat opens
   useEffect(() => {
@@ -244,39 +229,124 @@ export function ChatFloating({
           {/* Messages */}
           <div className="flex-1 p-4 overflow-y-auto">
             <div className="space-y-4">
-              {chatMessages.length === 0 && (
+              {messages.length === 0 && (
                 <div className="text-center text-muted-foreground py-8">
                   <MessageSquare className="h-12 w-12 mx-auto mb-2 opacity-50" />
                   <p>¡Hola! Soy Nitro, tu asistente virtual.</p>
                   <p className="text-sm mt-2">¿En qué puedo ayudarte hoy?</p>
                 </div>
               )}
-              {chatMessages.map((message: any) => (
-                <div
-                  key={message.id}
-                  className={`flex ${
-                    message.role === "user" ? "justify-end" : "justify-start"
-                  }`}
-                >
+              {messages.map((message) => {
+                const hasContent =
+                  message.role === "user" ||
+                  message.parts.some(
+                    (p) =>
+                      (p.type === "text" && p.text.trim()) ||
+                      p.type.startsWith("tool-"),
+                  );
+                if (!hasContent) return null;
+                return (
                   <div
-                    className={`max-w-[80%] rounded-lg p-3 ${
-                      message.role === "user"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted"
+                    key={message.id}
+                    className={`flex ${
+                      message.role === "user" ? "justify-end" : "justify-start"
                     }`}
                   >
-                    {message.role === "assistant" ? (
-                      <div className="text-sm">
-                        <Streamdown>{message.content}</Streamdown>
-                      </div>
-                    ) : (
-                      <p className="text-sm whitespace-pre-wrap">
-                        {message.content}
-                      </p>
-                    )}
+                    <div
+                      className={`max-w-[80%] rounded-lg p-3 ${
+                        message.role === "user"
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted"
+                      }`}
+                    >
+                      {message.role === "assistant" ? (
+                        <div className="text-sm space-y-2">
+                          {message.parts.map((part, i) => {
+                            if (part.type === "text") {
+                              return (
+                                <Streamdown key={i}>{part.text}</Streamdown>
+                              );
+                            }
+                            if (part.type.startsWith("tool-")) {
+                              const toolName = part.type.replace("tool-", "");
+                              const toolLabels: Record<string, string> = {
+                                searchProducts: "Buscando productos...",
+                                searchCustomers: "Buscando clientes...",
+                                searchWorkOrders:
+                                  "Buscando órdenes de trabajo...",
+                                createDirectSale: "Registrando venta...",
+                                createCustomer: "Creando cliente...",
+                                createProduct: "Creando producto...",
+                                createWorkOrder: "Creando orden de trabajo...",
+                                getCashStatus: "Consultando caja...",
+                                getTodaySummary: "Generando resumen...",
+                                getWorkOrderDetail: "Obteniendo detalle...",
+                                updateWorkOrderStatus: "Actualizando estado...",
+                                composeWhatsAppMessage: "Redactando mensaje...",
+                                closeCashRegister: "Cerrando caja...",
+                                registerCustomerWithVehicle:
+                                  "Registrando cliente y vehículo...",
+                                processPurchaseInvoice:
+                                  "Procesando factura de compra...",
+                              };
+                              const label =
+                                toolLabels[toolName] ||
+                                `Ejecutando ${toolName}...`;
+                              const partState = (part as { state?: string })
+                                .state;
+                              const isRunning =
+                                partState === "input-streaming" ||
+                                partState === "input-available";
+                              if (partState === "output-available") return null;
+                              return (
+                                <div
+                                  key={i}
+                                  className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded-md px-2 py-1"
+                                >
+                                  <Wrench
+                                    className="h-3 w-3"
+                                    aria-hidden="true"
+                                  />
+                                  {isRunning && (
+                                    <Loader2
+                                      className="h-3 w-3 animate-spin"
+                                      aria-hidden="true"
+                                    />
+                                  )}
+                                  <span>{label}</span>
+                                </div>
+                              );
+                            }
+                            return null;
+                          })}
+                        </div>
+                      ) : (
+                        <div className="text-sm space-y-2">
+                          {message.parts.map((part, i) => {
+                            if (part.type === "text") {
+                              return <span key={i}>{part.text}</span>;
+                            }
+                            if (
+                              part.type === "file" &&
+                              part.mediaType?.startsWith("image/")
+                            ) {
+                              return (
+                                <img
+                                  key={i}
+                                  src={part.url}
+                                  alt="Attached"
+                                  className="rounded-md max-h-32 object-cover"
+                                />
+                              );
+                            }
+                            return null;
+                          })}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
               {/* Loading indicator */}
               {isSubmitting && (
                 <div className="flex justify-start">
@@ -295,13 +365,7 @@ export function ChatFloating({
                   <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 flex items-center gap-2">
                     <X className="h-4 w-4 text-destructive" />
                     <span className="text-sm text-destructive">
-                      {error.message?.includes("Failed to parse stream")
-                        ? "Hubo un problema al procesar la respuesta. Por favor intenta nuevamente con un mensaje más simple."
-                        : error.message?.includes("quota") ||
-                            error.message?.includes("limit")
-                          ? "La quota diaria de la API de Gemini está excedida (20 req/día). Por favor intenta más tarde."
-                          : error.message ||
-                            "Ocurrió un error al procesar tu mensaje. Por favor intenta nuevamente."}
+                      {error.message || "Ocurrió un error. Intenta nuevamente."}
                     </span>
                   </div>
                 </div>
@@ -377,7 +441,7 @@ export function ChatFloating({
                   type="button"
                   variant="ghost"
                   size="icon"
-                  onClick={() => setIsSubmitting(false)}
+                  onClick={() => stop()}
                 >
                   <X className="h-4 w-4" />
                 </Button>

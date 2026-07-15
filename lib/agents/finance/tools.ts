@@ -87,7 +87,11 @@ export const createDirectSaleTool = tool({
     customerName: z
       .string()
       .describe('Nombre del cliente (o "Mostrador" para venta sin cliente)'),
-    customerId: z.string().optional().describe("ID del cliente (opcional)"),
+    customerId: z
+      .string()
+      .nullable()
+      .optional()
+      .describe("ID del cliente (opcional, null para consumidor final)"),
     notes: z.string().optional().describe("Notas de la venta"),
   }),
   execute: async (input) => {
