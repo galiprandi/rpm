@@ -98,6 +98,7 @@ export async function GET(request: NextRequest) {
         customerId: customer.id,
         customerName: customer.name,
         phone: customer.phone,
+        phoneAlt: customer.phoneAlt,
         email: customer.email,
         balance,
         workOrderCount,
