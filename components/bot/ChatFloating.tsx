@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type FileUIPart } from "ai";
-import { Streamdown } from "streamdown";
+import { BotMessageContent } from "./BotMessageContent";
 import {
   MessageSquare,
   X,
@@ -154,6 +154,11 @@ export function ChatFloating({
     if (isSubmitting) return;
     setLocalInput("");
     await sendMessage({ text });
+  };
+
+  const handleActionClick = async (action: string) => {
+    if (isSubmitting) return;
+    await sendMessage({ text: action });
   };
 
   const onSubmit = async (e: React.FormEvent) => {
@@ -408,7 +413,12 @@ export function ChatFloating({
                           {message.parts.map((part, i) => {
                             if (part.type === "text") {
                               return (
-                                <Streamdown key={i}>{part.text}</Streamdown>
+                                <BotMessageContent
+                                  key={i}
+                                  text={part.text}
+                                  onAction={handleActionClick}
+                                  disabled={isSubmitting}
+                                />
                               );
                             }
                             if (part.type.startsWith("tool-")) {

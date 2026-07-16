@@ -113,7 +113,16 @@ export async function POST(req: Request) {
         }
       },
       onError({ error }) {
-        console.error("❌ Stream error:", error);
+        const err = error as Record<string, unknown>;
+        const statusCode = err?.statusCode;
+        const errorMsg = (error as Error)?.message || "";
+        console.error("❌ Stream error:", {
+          statusCode,
+          message: errorMsg,
+          name: (error as Error)?.name,
+          keys: Object.keys(err || {}),
+          responseHeaders: err?.responseHeaders,
+        });
       },
     });
 
@@ -124,42 +133,90 @@ export async function POST(req: Request) {
           const err = error as Record<string, unknown>;
           const statusCode = err?.statusCode;
           const errorMsg = (error as Error)?.message || "";
+          const errorName = (error as Error)?.name || "";
+          const responseHeaders = err?.responseHeaders as
+            | Record<string, string>
+            | undefined;
+          const responseBody = err?.responseBody as string | undefined;
+          const errData = err?.data as
+            | Record<string, { message?: string; code?: string }>
+            | undefined;
+
+          // Build a combined error string for pattern matching (case-insensitive)
+          const combinedError = [
+            errorMsg,
+            responseBody || "",
+            errData?.error?.message || "",
+            errData?.error?.code || "",
+          ]
+            .join(" ")
+            .toLowerCase();
+
+          // Log full error details for debugging
+          console.error("❌ UI Stream error:", {
+            statusCode,
+            message: errorMsg,
+            name: errorName,
+            keys: Object.keys(err || {}),
+            responseHeaders,
+            responseBody: responseBody?.substring(0, 200),
+          });
+
           const isRateLimit =
             statusCode === 429 ||
             statusCode === 413 ||
-            errorMsg.includes("rate_limit_exceeded") ||
-            errorMsg.includes("Request too large");
+            combinedError.includes("rate_limit_exceeded") ||
+            combinedError.includes("rate limit") ||
+            combinedError.includes("request too large");
 
           if (isRateLimit) {
             const isTooLarge =
-              statusCode === 413 || errorMsg.includes("Request too large");
+              statusCode === 413 || combinedError.includes("request too large");
 
             if (isTooLarge) {
-              return "⚠️ El request es demasiado grande para el modelo. Intentá iniciar una conversación nueva.";
+              return "El request es demasiado grande para el modelo. Intentá iniciar una conversación nueva.";
             }
 
-            const retryMatch = errorMsg.match(/try again in ([\d.]+)/);
-            const retryAfter = (
-              err?.responseHeaders as Record<string, string>
-            )?.["retry-after"];
-            let waitTime = "";
+            // Extract wait time: prioritize retry-after header, then message patterns
+            // Convert to a clock time (HH:MM) so the user knows exactly when to retry
+            const retryAfter = responseHeaders?.["retry-after"];
+            const retryMatch = errorMsg.match(/try again in ([\d.]+)s/i);
+            const groqTimeMatch = errorMsg.match(
+              /try again in (\d+)m([\d.]+)s/i,
+            );
+            let waitSeconds = 0;
 
-            if (retryMatch) {
-              const seconds = parseFloat(retryMatch[1]);
-              const hours = Math.floor(seconds / 3600);
-              const minutes = Math.floor((seconds % 3600) / 60);
-              waitTime = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
-            } else if (retryAfter) {
-              const seconds = parseInt(retryAfter);
-              const hours = Math.floor(seconds / 3600);
-              const minutes = Math.floor((seconds % 3600) / 60);
-              waitTime = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+            if (retryAfter) {
+              waitSeconds = parseInt(retryAfter);
+            } else if (groqTimeMatch) {
+              waitSeconds =
+                parseInt(groqTimeMatch[1]) * 60 +
+                Math.floor(parseFloat(groqTimeMatch[2]));
+            } else if (retryMatch) {
+              waitSeconds = parseFloat(retryMatch[1]);
             }
 
-            return `⏳ Se alcanzó el límite de uso del modelo. El servicio se restablecerá en ${waitTime || "aproximadamente 2 horas"}. Por favor, intentá nuevamente más tarde.`;
+            let retryTime = "";
+            if (waitSeconds > 0) {
+              const retryDate = new Date(Date.now() + waitSeconds * 1000);
+              retryTime = retryDate.toLocaleTimeString("es-AR", {
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: false,
+                timeZone: "America/Argentina/Buenos_Aires",
+              });
+            }
+
+            return `Se alcanzó el límite de uso del modelo. Por favor, intentá nuevamente${retryTime ? ` después de las ${retryTime}hs` : " más tarde"}.`;
           }
 
-          return "❌ Ocurrió un error. Intentá nuevamente.";
+          // Log non-rate-limit errors with full detail for debugging
+          console.error(
+            "❌ Non-rate-limit error:",
+            JSON.stringify(error, Object.getOwnPropertyNames(error), 2),
+          );
+
+          return `Ocurrió un error procesando tu mensaje. Intentá nuevamente en unos segundos.`;
         },
       }),
     });
