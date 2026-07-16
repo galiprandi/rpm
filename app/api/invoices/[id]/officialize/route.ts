@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionWithAuth } from "@/lib/api-middleware";
 import { getInvoiceById, markInvoiceAsOfficial, updateInvoiceStatus, type InvoiceType } from "@/lib/services/invoiceService";
-import { requestCAE, mapInternalToAFIPType } from "@/lib/services/afipService";
+import { requestCAE, mapInternalToAFIPType, validateCUIT } from "@/lib/services/afipService";
 import { getSetting } from "@/lib/services/settingsService";
 
 export const dynamic = 'force-dynamic';
@@ -35,23 +35,36 @@ export async function POST(
     const puntoVenta = await getSetting('AFIP_PUNTO_VENTA');
 
     // Map internal type to official AFIP type
-    let officialType: InvoiceType;
-    if (invoice.type === 'X_A') officialType = 'FACTURA_A';
-    else if (invoice.type === 'X_B') officialType = 'FACTURA_B';
-    else if (invoice.type === 'X_C') officialType = 'FACTURA_C';
-    else if (invoice.type === 'NOTA_CREDITO_X_A') officialType = 'NOTA_CREDITO_A';
-    else if (invoice.type === 'NOTA_CREDITO_X_B') officialType = 'NOTA_CREDITO_B';
+    let mappedType: InvoiceType;
+    if (invoice.type === 'X_A') mappedType = 'FACTURA_A';
+    else if (invoice.type === 'X_B') mappedType = 'FACTURA_B';
+    else if (invoice.type === 'X_C') mappedType = 'FACTURA_C';
+    else if (invoice.type === 'NOTA_CREDITO_X_A') mappedType = 'NOTA_CREDITO_A';
+    else if (invoice.type === 'NOTA_CREDITO_X_B') mappedType = 'NOTA_CREDITO_B';
     else {
         return NextResponse.json({ error: "Mapeo de tipo oficial no definido" }, { status: 400 });
     }
 
     const afipType = mapInternalToAFIPType(invoice.type);
 
+    // Document Validation
+    const customerDoc = invoice.customerDoc || '';
+    const customerDocType = (invoice.customerDocType as 'CUIT' | 'DNI' | 'SIN_DOC') || 'SIN_DOC';
+
+    if (mappedType === 'FACTURA_A' || mappedType === 'NOTA_CREDITO_A') {
+      if (!customerDoc || customerDocType !== 'CUIT') {
+        return NextResponse.json({ error: "Para comprobantes tipo A se requiere el CUIT del cliente" }, { status: 400 });
+      }
+      if (!validateCUIT(customerDoc)) {
+        return NextResponse.json({ error: "El CUIT del cliente no es válido" }, { status: 400 });
+      }
+    }
+
     const response = await requestCAE({
       tipo: afipType,
       puntoVenta: Number(puntoVenta),
-      customerDoc: invoice.customerDoc || '',
-      customerDocType: invoice.customerDocType as 'CUIT' | 'DNI' | 'SIN_DOC' || 'SIN_DOC',
+      customerDoc,
+      customerDocType,
       total: Number(invoice.total),
       neto: Number(invoice.subtotal),
       iva21: Number(invoice.iva21 || 0),
@@ -76,7 +89,7 @@ export async function POST(
     // Success! Update invoice in DB
     const updatedInvoice = await markInvoiceAsOfficial(id, {
       number: response.numeroOficial!,
-      type: officialType,
+      type: mappedType,
       cae: response.cae!,
       caeVencimiento: response.caeVencimiento!,
       afipData: {

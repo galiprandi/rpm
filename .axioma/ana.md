@@ -24,6 +24,7 @@
 - [x] 2025-07-12 — Oficialización por lote de comprobantes con selección múltiple y robustez en numeración.
 - [x] 2025-07-13 — Gestión de rechazos de AFIP, visualización de metadatos CAE y mejoras en la UI de detalle.
 - [x] 2025-07-14 — Integración del flujo de oficialización en ventas/OTs y refinamiento de visualización para Factura B.
+- [x] 2025-07-15 — Validación robusta de CUIT (algoritmo de dígito verificador) y test de conectividad AFIP en configuración.
 
 ## 🧠 LEARNINGS
 - **Desglose impositivo:** Para comprobantes tipo B (consumidor final), aunque el total sea lo que ve el cliente, el sistema debe registrar el neto y el IVA por separado para futuros reportes fiscales (Libro IVA Digital). Se implementó un cálculo automático del 21% para pre-facturas.
@@ -37,6 +38,8 @@
 - **Persistencia de Errores Fiscales:** Al integrar con AFIP, no basta con mostrar el error en el momento. Persistir el estado `REJECTED` con sus observaciones permite un flujo de trabajo asíncrono y robusto, donde el usuario puede corregir datos y reintentar sin perder el rastro del error original.
 - **Workflow Integrado:** Permitir la oficialización directamente desde la entidad de origen (Venta/OT) reduce drásticamente la fricción, evitando que el usuario tenga que saltar entre módulos para finalizar el proceso fiscal.
 - **Diferenciación de Visualización Fiscal:** Los comprobantes tipo B (Consumidor Final) requieren una presentación simplificada donde el IVA no se desglosa visualmente pero se mantiene el total con la leyenda "IVA Incluido", a diferencia del tipo A donde el desglose es obligatorio.
+- **Validación Preventiva de Datos Fiscales:** Implementar la validación de CUIT (módulo 11) tanto en el frontend como en la API de oficialización previene errores costosos de rechazo de AFIP y mejora la calidad de los datos del sistema.
+- **Micro-UX en Configuración:** Agregar un botón de "Probar Conexión" en la sección fiscal permite al usuario verificar sus credenciales y el estado del servicio sin necesidad de intentar emitir un comprobante real, reduciendo la ansiedad y la fricción en la puesta en marcha.
 
 ---
 

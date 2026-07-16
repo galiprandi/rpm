@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { Header } from "@/components/adm/Header";
+import { cn } from "@/lib/utils";
 import {
   Card,
   CardContent,
@@ -30,6 +31,7 @@ import {
   MapPin,
   UserCheck,
   FolderOpen,
+  Wifi,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -61,6 +63,7 @@ export default function SettingsClient({
   const [afipSettings, setAfipSettings] = useState(initialAfipSettings);
   const [saving, setSaving] = useState(false);
   const [savingAfip, setSavingAfip] = useState(false);
+  const [testingConnection, setTestingConnection] = useState(false);
 
   const handleSave = async () => {
     setSaving(true);
@@ -86,6 +89,26 @@ export default function SettingsClient({
       toast.error("No se pudo guardar la configuración");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleTestConnection = async () => {
+    setTestingConnection(true);
+    try {
+      const response = await fetch("/api/afip/test-connection", {
+        method: "POST",
+      });
+
+      if (response.ok) {
+        toast.success("Conexión con AFIP establecida correctamente");
+      } else {
+        const error = await response.json();
+        toast.error(error.error || "No se pudo conectar con AFIP");
+      }
+    } catch {
+      toast.error("Error de red al intentar conectar con AFIP");
+    } finally {
+      setTestingConnection(false);
     }
   };
 
@@ -225,10 +248,16 @@ export default function SettingsClient({
                     type="text"
                     maxLength={11}
                     value={afipSettings.cuit}
-                    onChange={(e) =>
-                      setAfipSettings({ ...afipSettings, cuit: e.target.value })
-                    }
-                    className="w-48 h-9 text-sm pl-10 font-mono"
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[^\d]/g, "");
+                      setAfipSettings({ ...afipSettings, cuit: val });
+                    }}
+                    className={cn(
+                      "w-48 h-9 text-sm pl-10 font-mono",
+                      afipSettings.cuit.length > 0 &&
+                        afipSettings.cuit.length !== 11 &&
+                        "border-red-500 focus-visible:ring-red-500",
+                    )}
                     placeholder="30123456789"
                   />
                 </div>
@@ -337,11 +366,23 @@ export default function SettingsClient({
                 </div>
               </SettingItem>
 
-              <div className="flex justify-end py-4">
+              <div className="flex justify-end gap-3 py-4 border-t mt-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleTestConnection}
+                  loading={testingConnection}
+                  disabled={savingAfip}
+                  aria-label="Probar conexión con AFIP"
+                >
+                  <Wifi className="h-4 w-4 mr-2" />
+                  Probar Conexión
+                </Button>
                 <Button
                   size="sm"
                   onClick={handleSaveAfip}
                   loading={savingAfip}
+                  disabled={testingConnection}
                   aria-label="Guardar configuración fiscal"
                 >
                   Guardar Configuración Fiscal

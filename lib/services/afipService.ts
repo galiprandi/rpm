@@ -12,10 +12,12 @@ export interface AFIPComprobanteInput {
   customerDoc: string;
   customerDocType: 'CUIT' | 'DNI' | 'SIN_DOC';
   total: number;
-  neto: number;
-  iva21: number;
-  iva105: number;
+  neto: number; // Importe neto gravado
+  iva21: number; // Importe IVA 21%
+  iva105: number; // Importe IVA 10.5%
+  impOpEx?: number; // Importe operaciones exentas
   concept?: number; // 1: Productos, 2: Servicios, 3: Productos y Servicios
+  fecha?: Date; // Fecha del comprobante
 }
 
 export interface AFIPResponse {
@@ -26,6 +28,7 @@ export interface AFIPResponse {
   resultado: 'A' | 'R'; // A: Aprobado, R: Rechazado
   observaciones?: string[];
   error?: string;
+  code?: string; // AFIP error code
 }
 
 // AFIP Codes Mapping
@@ -119,11 +122,46 @@ export async function getLastAuthorizedNumber(tipo: number, pv: number): Promise
 }
 
 /**
+ * Validates a CUIT using the check digit algorithm.
+ */
+export function validateCUIT(cuit: string): boolean {
+  const cleanCuit = cuit.replace(/[^\d]/g, '');
+  if (cleanCuit.length !== 11) return false;
+
+  const multipliers = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
+  let sum = 0;
+  for (let i = 0; i < 10; i++) {
+    sum += parseInt(cleanCuit[i]) * multipliers[i];
+  }
+
+  const checkDigit = parseInt(cleanCuit[10]);
+  const result = 11 - (sum % 11);
+
+  if (result === 11) return checkDigit === 0;
+  if (result === 10) return false;
+  return checkDigit === result;
+}
+
+/**
  * Checks connectivity with AFIP Web Services.
  */
-export async function checkConnection(): Promise<boolean> {
-  // Simulate connection check
-  return true;
+export async function checkConnection(): Promise<{ success: boolean; error?: string }> {
+  const cuit = await getSetting('AFIP_CUIT');
+  const pv = await getSetting('AFIP_PUNTO_VENTA');
+
+  if (!cuit || !pv) {
+    return { success: false, error: 'Configuración fiscal incompleta: CUIT o Punto de Venta faltante.' };
+  }
+
+  if (!validateCUIT(cuit)) {
+    return { success: false, error: 'El CUIT configurado no es válido.' };
+  }
+
+  // Simulate connection delay
+  await new Promise((resolve) => setTimeout(resolve, 800));
+
+  // In a real implementation, this would call FEDummy or similar.
+  return { success: true };
 }
 
 /**
