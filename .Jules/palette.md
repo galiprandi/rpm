@@ -85,3 +85,7 @@
 ## 2026-07-21 - Standardizing Monetary Typography in Purchase Vouchers
 **Learning:** In administrative modules dealing with supplier documentation (like Purchase Vouchers), consistency in monetary presentation is vital for professional feel. Replacing native `toLocaleString` and `toFixed` with the centralized `formatARS` utility ensures uniformity. Combining `font-mono` with `font-semibold tracking-tight` for these values, along with technical identifiers like voucher numbers, creates a high-fidelity technical look. Furthermore, elevating discrepancy warnings from `text-amber-600` to `700` variants on light backgrounds ensures WCAG AA compliance across all feedback states.
 **Action:** Always use `formatARS(amount, 2)` for financial totals and pair it with monospaced bold typography for technical scannability. Verify contrast for all semantic feedback blocks.
+
+## 2026-07-16 - Interactive Tooltip Trigger Accessibility
+**Learning:** When wrapping non-native interactive elements (like `<p>` or `<span>`) in a `TooltipTrigger`, they must have `tabIndex={0}` and a visible focus state to be keyboard-accessible. Additionally, since the project provides a global `TooltipProvider` in the root layout, individual components should avoid redundant nesting to maintain a clean DOM and consistent delay behavior.
+**Action:** Always add `tabIndex={0}` and `focus-visible` styles to non-button tooltip triggers. Do not include `TooltipProvider` in local components.
