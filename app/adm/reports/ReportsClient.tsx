@@ -384,11 +384,130 @@ export default function ReportsClient() {
           </CardContent>
         </Card>
 
-        <div className="lg:col-span-2">
-           <div className="grid gap-6 md:grid-cols-2">
-             {/* This space could be used for a mini-chart if needed in the future */}
-           </div>
-        </div>
+        <Card className="lg:col-span-2">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-lg font-medium flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-primary" />
+                  Comparativo de Rendimiento
+                </CardTitle>
+                <CardDescription>
+                  Indicadores clave de negocio comparados con el período anterior.
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="space-y-4 py-2 animate-pulse">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="space-y-2">
+                    <div className="h-4 bg-muted rounded w-1/3" />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="h-8 bg-muted rounded" />
+                      <div className="h-8 bg-muted rounded" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : data && (
+              <div className="space-y-4">
+                {[
+                  {
+                    label: "Ingresos Totales",
+                    current: data.revenue.current,
+                    previous: data.revenue.previous,
+                    change: data.revenue.change,
+                    formatValue: (val: number) => formatARS(val),
+                  },
+                  {
+                    label: "Rentabilidad Est.",
+                    current: data.estimatedProfit.current,
+                    previous: data.estimatedProfit.previous,
+                    change: data.estimatedProfit.change,
+                    formatValue: (val: number) => formatARS(val),
+                  },
+                  {
+                    label: "OTs Completadas",
+                    current: data.completedOrders.current,
+                    previous: data.completedOrders.previous,
+                    change: data.completedOrders.change,
+                    formatValue: (val: number) => `${val}`,
+                  },
+                  {
+                    label: "Clientes Nuevos",
+                    current: data.newCustomers.current,
+                    previous: data.newCustomers.previous,
+                    change: data.newCustomers.change,
+                    formatValue: (val: number) => `${val}`,
+                  },
+                ].map((kpi, idx) => {
+                  const maxValue = Math.max(kpi.current, kpi.previous, 1);
+                  const currentPct = (kpi.current / maxValue) * 100;
+                  const previousPct = (kpi.previous / maxValue) * 100;
+
+                  return (
+                    <div key={idx} className="space-y-2 group p-2 rounded-lg hover:bg-muted/50 transition-colors">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-semibold tracking-tight">{kpi.label}</span>
+                        <div className="flex items-center gap-2">
+                          <span className={cn(
+                            "text-xs px-2 py-0.5 rounded-full font-medium font-mono",
+                            kpi.change > 0 ? "bg-emerald-100 text-emerald-800" :
+                            kpi.change < 0 ? "bg-red-100 text-red-800" :
+                            "bg-slate-100 text-slate-800"
+                          )}>
+                            {kpi.change > 0 ? "+" : ""}{kpi.change.toFixed(1)}%
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between text-[11px] text-muted-foreground font-mono">
+                            <span>Período Actual</span>
+                            <span className="font-bold text-foreground">{kpi.formatValue(kpi.current)}</span>
+                          </div>
+                          <div className="w-full bg-secondary rounded-full h-1.5 overflow-hidden">
+                            <div
+                              className="h-full bg-primary rounded-full transition-all duration-500"
+                              style={{ width: `${currentPct}%` }}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between text-[11px] text-muted-foreground font-mono">
+                            <span>Período Anterior</span>
+                            <span className="font-bold text-foreground">{kpi.formatValue(kpi.previous)}</span>
+                          </div>
+                          <div className="w-full bg-secondary rounded-full h-1.5 overflow-hidden">
+                            <div
+                              className="h-full bg-muted-foreground/30 rounded-full transition-all duration-500"
+                              style={{ width: `${previousPct}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                <div className="flex items-center justify-center gap-6 pt-3 border-t text-xs text-muted-foreground">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 bg-primary rounded-sm" />
+                    <span>Período Actual</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 bg-muted-foreground/30 rounded-sm" />
+                    <span>Período Anterior</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       <div className="pt-4 border-t">
