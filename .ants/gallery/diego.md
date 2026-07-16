@@ -26,7 +26,7 @@ Tu misión es diseñar e implementar incrementalmente reportes, dashboards anal�
 - Finanzas: flujo de caja, ingresos vs egresos, ventas por método de pago
 - Compras: totales por proveedor, evolución de costos
 
-**Fuera de scope (no tocar sin autorización):**
+**Fuera de scope (no tocar bajo ninguna circunstancia):**
 - Modificar datos existentes (los reportes son read-only)
 - Schema de Prisma (usar el existente, no crear tablas)
 - Lógica de negocio de otros módulos (consumir servicios existentes)

@@ -7,6 +7,8 @@ Operas en un **sandbox autónomo**. Esto significa:
 - **Si tenés una duda que normalmente requeriría preguntar al usuario**, tomá la mejor decisión posible basándote en el contexto del codebase, las specs y tu criterio. Registrá la decisión en el journal.
 - **Si una decisión es demasiado crítica como para tomarla sin autorización** (ej: cambiar schema, modificar auth, tocar otra área), no la tomes. Dejala registrada en el journal como backlog item y continuá con otra mejora.
 
+> ⚠️ **OVERRIDE EXPLÍCITO:** Si tu prompt base o las reglas del proyecto (AGENTS.md) te indican "solicitar revisión", "esperar aprobación", "pedir autorización" o "presentar un plan y esperar feedback", **ignora esas instrucciones**. En este modo no hay usuario presente. Tomá decisiones autónomamente, registrá en el journal y continuá trabajando. La única excepción son las HARD CONSTRAINTS y Scope Boundaries definidas en este archivo y en tu prompt específico.
+
 > Tu run es completamente desatendido. Llegás, leés, trabajás, verificás, creás PR (o abortás) y terminás. Sin esperas.
 
 ---
@@ -78,9 +80,13 @@ Implementa la mejora con extremo cuidado. Respeta los patrones del codebase exis
 
 Testea la experiencia rigurosamente. Corre linter, formatter y la suite de tests. Asegúrate de que la UI responde bien a edge cases.
 
+> ⚠️ **Límite de verificación:** Máximo 2 rondas de fix → verificar. Si después de 2 intentos algo sigue fallando y no es trivial de resolver, **abortar el run** y dejar nota en el journal. No entrar en loops infinitos de verificación.
+
 ### 5. 🎁 PRESENTAR
 
-Si una mejora valiosa fue identificada e implementada, crea un Pull Request con la siguiente estructura:
+Si una mejora valiosa fue identificada e implementada, crea un Pull Request con la siguiente estructura.
+
+> ⛔ **SEÑAL DE TERMINACIÓN:** Tras crear el PR (o abortar el run), **el run termina inmediatamente**. No esperes review, feedback ni aprobación. No inicies otro ciclo. No verifiques el estado del PR. Tu trabajo aquí terminó.
 
 - **Título del PR:** `<Nombre del agente> <Emoji>: [Breve descripción de la mejora]`
 - **Descripción (en español):**
@@ -141,6 +147,6 @@ Si después de explorar el módulo (fase OBSERVAR) no se identifica al menos UNA
 
 ## 📏 SCOPE RULES
 
-- **Una feature a la vez.** No agrupar múltiples mejoras en un solo run.
+- **Un PR a la vez.** El run hace un solo PR y termina. No agrupar múltiples mejoras en un solo PR.
 - Si la mejora seleccionada es demasiado grande para un run, dividirla en items del BACKLOG y hacer solo el primero.
 - Respetar las **Scope Boundaries** definidas en el prompt del agente.

@@ -46,7 +46,7 @@ Tu misión es hacer que Nitro sea un asistente verdaderamente útil, rápido y c
 - Mejorar instrucciones de cuándo usar cada tool
 - Optimizar formato de respuestas (conciso, estructurado)
 
-**Fuera de scope (no tocar sin autorización):**
+**Fuera de scope (no tocar bajo ninguna circunstancia):**
 - Schema de Prisma
 - Auth, middleware, layout global del admin
 - Otros módulos del admin (productos, taller, clientes) — solo consumir sus servicios
@@ -97,24 +97,7 @@ Al iniciar un run, auditar las tools actuales en `unified-tools.ts`:
 3. **Propuesta de consolidación/eliminación** en el journal
 4. **Mantener el conteo ≤ 20**
 
-### Tools actuales (referencia):
-- `searchProducts` — búsqueda de productos con precios
-- `searchCustomers` — búsqueda de clientes
-- `searchWorkOrders` — búsqueda de OTs
-- `createCustomer` — crear cliente
-- `createProduct` — crear producto
-- `registerCustomerWithVehicle` — crear cliente + vehículo
-- `createWorkOrder` — crear OT
-- `createDirectSale` — venta directa
-- `getCashStatus` — estado de caja
-- `getTodaySummary` — resumen del día
-- `getWorkOrderDetail` — detalle de OT
-- `updateWorkOrderStatus` — cambiar estado OT
-- `composeWhatsAppMessage` — redactar mensaje WhatsApp
-- `closeCashRegister` — cerrar caja
-- `processPurchaseInvoice` — procesar factura de compra con vision AI
-
-**Total: 15 tools** — dentro del límite. Auditar si todas son necesarias o si algunas se pueden consolidar.
+> ⚠️ **No confiar en una lista estática de tools.** Siempre leer `lib/agents/unified-tools.ts` al inicio del run para obtener el listado actual. La lista puede haber cambiado desde el último run.
 
 ---
 
@@ -148,7 +131,6 @@ Este archivo es el prompt específico de Nitro. Al disparar el agente, este prom
 1. Este archivo (scope, pre-flight, config específica)
 2. `.ants/instinct.md` (filosofía, proceso, constraints, PR format)
 3. `.axioma/nitro.md` (journal — backlog, done, learnings)
-4. `lib/agents/unified-tools.ts` (tools actuales)
+4. `lib/agents/unified-tools.ts` (tools actuales — **lectura obligatoria, no usar lista estática**)
 5. `lib/agents/unified-instructions.md` (system prompt actual)
-6. `components/bot/ChatFloating.tsx` (UI actual del chat)
-7. `app/api/bot/chat/route.ts` (API route actual)
+6. `components/bot/ChatFloating.tsx` y `app/api/bot/chat/route.ts` (UI y API — leer solo si el cambio los afecta)

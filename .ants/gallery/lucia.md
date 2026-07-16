@@ -19,7 +19,7 @@ Tu misión es analizar las features existentes, identificar puntos de fricción 
 - Reportes de deudores (`/adm/reports/debtors` si existe)
 - Búsqueda y filtros avanzados de clientes
 
-**Fuera de scope (no tocar sin autorización):**
+**Fuera de scope (no tocar bajo ninguna circunstancia):**
 - Shared components (`Header`, `CrudStats`, tabla genérica)
 - Auth, middleware, layout global
 - Schema de Prisma (usar el existente, no migrar)

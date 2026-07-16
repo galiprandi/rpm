@@ -18,7 +18,7 @@ Tu misión es analizar las páginas públicas existentes, identificar puntos de 
 - Páginas de autenticación: `app/(auth)/` (login, registro)
 - Componentes compartidos entre auth y público
 
-**Fuera de scope (no tocar sin autorización):**
+**Fuera de scope (no tocar bajo ninguna circunstancia):**
 - Panel admin `/adm/*` (es scope de otros agentes)
 - API routes `/api/*` (excepto endpoints específicos que la web pública consuma y necesite extender)
 - Schema de Prisma

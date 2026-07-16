@@ -6,395 +6,114 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ---
 
-# 🌐 Política de Idioma
+# Política de Idioma
 
-**Este proyecto permite español en:**
-- `AGENTS.md` - Reglas para agentes
-- `specs/*.md` - Especificaciones del sistema
-
-**Código fuente en INGLÉS:**
-- Variables, funciones, comentarios, JSDoc
-- Tests, commits, docs técnicas
-
-**Excepción:** Mensajes de error de negocio pueden estar en español.
+- **Español:** `AGENTS.md`, `specs/*.md`, títulos/descripción de PRs
+- **Inglés:** Código fuente, variables, funciones, comentarios, tests, commits
+- **Excepción:** Mensajes de error de negocio pueden estar en español
 
 ---
 
-# ⚠️ Prisma v6 (NO v7)
+# Prisma v6 (NO v7)
 
-## 🚫 Prohibido hacer reset de la base de datos!
-
-**Este proyecto usa Prisma v6.19.3** - NO actualizar a v7 (incompatible con Next.js 16 por módulos nativos).
-
-**Configuración:**
-```typescript
-import { PrismaClient } from '@prisma/client';
-export const prisma = new PrismaClient({
-  log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-});
-```
-
-**Sharp:** Importación dinámica con fallback (módulo nativo no bundlable por Next.js).
+- **Versión:** Prisma v6.19.3 — NO actualizar a v7 (incompatible con Next.js 16)
+- **Prohibido reset de la base de datos**
+- **Sharp:** Importación dinámica `await import('sharp')` con fallback (módulo nativo no bundlable)
 
 ---
 
-# ⚠️ REGLA CRÍTICA: Validar Cambios - Prohibido Asumir
+# Validar Cambios — Prohibido Asumir
 
-**NUNCA asumir que un cambio funciona sin validarlo explícitamente.**
+NUNCA asumir que un cambio funciona. Validar con herramientas concretas antes de responder.
 
-**Herramientas de validación:**
-- **API Backend**: `curl`
-- **UI/Frontend**: Playwright MCP / Puppeteer MCP
-- **Base de Datos**: `psql` o queries directas
-- **Auth/Session**: Verificar cookies/tokens
-
-**Flujo:** Hacer cambio → VALIDAR → Confirmar → Responder
-
-**❌ PROHIBIDO:** "Debería funcionar", "Probablemente funcione", asumir sin verificar
-
-**✅ OBLIGATORIO:** Validar con herramientas concretas antes de responder
+- **API:** `curl` · **UI:** Playwright/Puppeteer MCP · **DB:** `psql` o queries · **Auth:** cookies/tokens
+- **Flujo:** Cambio → Validar → Confirmar → Responder
 
 ---
 
-# Flujo de Trabajo Basado en Especificaciones
-*(solo aplica si existe el directorio /specs)*
+# Specs y Tests
 
-**Antes de CUALQUIER tarea:**
-1. Leer especificaciones relacionadas en `/specs`
-2. Revisar `/specs/SYSTEM_SPEC.md`
+*(aplica si existe `/specs/`)*
 
-**Para cambios de lógica:**
-1. Solicitar autorización del usuario (explicar cambios, riesgos, regresiones)
-2. Ejecutar tests relacionados antes de implementar
-3. Actualizar especificaciones
-4. Actualizar tests para nuevos requisitos (TDD: 🔴 → 🟢)
-5. Implementar cambio
-6. Validación proactiva durante implementación
-7. Validación post-implementación (suite completa, cobertura)
-
-**Orden estricto**: Implementación nunca ocurre antes de autorización, actualización de specs y validación.
-
-**Estándares de tests:**
-- Ubicación: Misma carpeta del servicio
-- Nomenclatura: `xx.test.ts`
-- JSDoc obligatorio al inicio con specs relacionadas, alcance y métricas
-
-**Herramientas**: Vitest (frontend/backend)
+1. Leer specs relacionadas antes de programar
+2. Actualizar specs y tests antes de implementar (TDD: 🔴 → 🟢)
+3. Implementación nunca ocurre antes de actualización de specs y validación
+4. Tests: misma carpeta del servicio, nomenclatura `xx.test.ts`, JSDoc inicial
+5. Herramienta: Vitest
+6. Cada spec debe tener semáforo en línea 1: 🟢 / 🟡 / 🔴
 
 ---
 
-# ⚠️ REGLA CRÍTICA: Cache y Revalidation Selectiva en Next.js
+# Cache y Revalidation Selectiva
 
-**NUNCA remover completamente el cache de páginas que hacen queries complejas a la base de datos.**
-
-**Estrategia correcta:** Cache con `revalidate: 60` + invalidación selectiva con `revalidatePath('/adm')` cuando ocurren cambios relevantes.
-
-**Lugares donde agregar revalidation:**
-- `creditNoteService.ts` - Después de createCreditNote/cancelCreditNote
-- `directSaleService.ts` - Después de createDirectSale
-- `app/api/cash-movements/route.ts` - Después de POST
-- `workOrderService.ts` - Después de crear OT
-- `productService.ts` - Si afecta dashboard
-
-**❌ PROHIBIDO:** Remover cache completamente o usar cache muy largo sin revalidation
-
-**✅ OBLIGATORIO:** Mantener cache + revalidation selectiva
+- **Nunca** remover completamente el cache de páginas con queries complejas a BD
+- Usar `revalidate: 60` + `revalidatePath('/adm')` tras mutaciones relevantes
+- Agregar revalidation en servicios que mutan datos (ventas, OTs, stock, notas de crédito, movimientos de caja)
 
 ---
 
-# Tips para Validación E2E con Playwright MCP
+# Arquitectura
 
-**Debugging de stock movements:**
-- Crear endpoints de debug temporales
-- Validar con curl antes/después
-- Logs estratégicos en servicios
-- Validar UI con snapshots
+## Servicios
 
-**Errores comunes:**
-- Stock no se actualiza: Verificar productId en items
-- Dashboard no muestra cambios: Verificar cache y revalidation
+- Lógica de negocio como **funciones puras** en `lib/services/`
+- **Prohibido** lógica de negocio en API routes — solo orquestar params y llamar servicios
+- Stateless, tipadas, JSDoc, sin duplicación
+- Reutilizadas por API routes (`app/api/`) y agent tools (`lib/agents/tools/`)
 
----
+## Componentes
 
-# Mantenimiento Activo de Documentación
-
-- Revisar y mantener documentación existente
-- Sincronizar código con documentación
-- Reflejar cambios en specs y MCP
-
----
-
-# Boy Scout Rule - Leave It Better
-
-Cada modificación debe dejar el archivo en mejor estado:
-- Mejorar legibilidad sin cambiar funcionalidad
-- Actualizar comentarios obsoletos
-- Mejorar nombres de variables
-- Validar con MCP tools
-
-**Restricciones:** Sin bugs, consentimiento del usuario, alcance razonable
-
-## UI/UX Specific Rules (Croma/Carol)
-- **Primary CTA**: El botón principal de creación debe estar en el `Header` de la página, no duplicado en el componente de tabla si ya existe en el header.
-- **Header Stats**: Las estadísticas de alto nivel en una vista de listado deben colocarse entre el `Header` y la tabla usando el componente `CrudStats`. En vistas de detalle, integrarlas en el `Header` como pills o metadata.
-- **Semantic Colors**: Usar colores de Tailwind (ej: `text-orange-500`) en lugar de hexadecimales hardcodeados para iconos de estado. Para el componente `CrudStats`, usar strings hex que correspondan a la paleta de Tailwind (ej: `#10b981` para emerald-500).
-- **Interaction Feedback**: Los contenedores interactivos (drag & drop, upload) deben tener estados de `hover` visibles (`bg-primary/5`) y transiciones suaves.
-- **Financial Status Colors**: Usar `emerald-600` para saldos positivos/cuadrados y `red-600` para deudas/egresos/faltantes para mantener consistencia financiera.
-- **Settings Layout**: Las páginas de configuración deben usar un `max-w-3xl mx-auto` para el contenedor principal y tarjetas con `overflow-hidden` y `CardHeader` con `bg-muted/20`.
-- **Standardized List Row Entity Pattern**: Las celdas de tabla para entidades principales (Proveedores, Listas de Precios, Categorías, Métodos de Pago, Productos en Auditoría) deben usar un contenedor `w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20` con un icono Lucide de `h-4 w-4`, emparejado con tipografía `font-semibold tracking-tight`.
-- **Form UX Enhancement**: Todo formulario administrativo debe usar iconos contextuales absolutos con `pl-9` en sus inputs y `font-mono` para campos técnicos.
-- **Empty State UI**: Los iconos decorativos en estados vacíos deben usar `text-muted-foreground/20` para evitar ruido visual.
-- **Dashboard Card Accessibility**: Los iconos decorativos de Lucide en las tarjetas del dashboard (SalesCard, WorkOrdersCard, StockAlertCard, WorkshopKanbanCard, RecentMovementsCard, CashMovementsCard, PaymentMethodsCard, MetricCard) deben marcarse con `aria-hidden="true"` y `pointer-events-none` para eliminar el ruido del lector de pantalla y evitar interacciones no deseadas.
-- **High-Fidelity Skeletons**: Los archivos `loading.tsx` deben usar esqueletos que imiten las proporciones reales de las columnas para mitigar el layout shift.
-- **Financial Detail View Refinement**: Las vistas de detalle financiero (como Venta Directa) deben usar el patrón de "Detail Headers" con metadata pills para montos (`font-mono`, `emerald-600`), fechas y conteos de items, y estandarizar las filas de items/pagos con el contenedor de iconos `8x8`.
-- **Operational Log Refinement**: Los listados de operaciones diarias y reportes de deuda deben asegurar el uso estricto de `font-mono` para horas, métodos, patentes y montos, además de aplicar `font-semibold tracking-tight` para nombres de entidades principales.
-- **Product Module Refinement**: La vista de productos implementa el `Standardized List Row Entity Pattern` y el `Form UX Enhancement Pattern` con `font-mono` para campos técnicos y SKU integrado en la columna principal.
-- **Inventory Counts Refinement**: La vista de operativos de inventario utiliza el `Standardized List Row Entity Pattern` (icono `ClipboardCheck`) y asegura que todos los campos técnicos (SKU, Stock, Location, Folios) usen `font-mono`.
-- **Purchase Voucher Refinement**: Los comprobantes de compra implementan el `Standardized List Row Entity Pattern` en tablas de borrador y detalle, y el `Form UX Enhancement Pattern` en diálogos de carga con `font-mono` para montos y cantidades.
-- **Customer Module Refinement**: La vista de clientes implementa el `Standardized List Row Entity Pattern` y el `Form UX Enhancement Pattern` con `font-mono` para campos técnicos (Email, Teléfonos, CUIT) y financieros (Saldos).
-- **Adm Refactor (Daily Ops, Debtors, Direct Sale Detail)**: Implementación de `Standardized List Row Entity Pattern` y `font-mono` para campos técnicos y financieros, integrando los componentes `Header` y `CrudStats` para una consistencia visual total.
-- **Users & Settings Refinement**: Refinamiento de la tabla de usuarios con tooltips para notas y aplicación del `Form UX Enhancement Pattern` en el formulario de usuarios y la configuración de margen mínimo global.
-- **Adm Refinement v3 (Price Lists, Credit Notes, Inventory)**: Aplicación del `Standardized List Row Entity Pattern` en excepciones de precios y notas de crédito; implementación del patrón `Detail Headers` en auditorías de inventario y refinamiento de badges de estado con contraste WCAG AA.
-
----
-
-# Definición de Roles
-
-- **Agente (Carol/Croma)**: Diseñador/Ingeniero UI/UX enfocado en consistencia, accesibilidad y refinamiento estético.
-- **Usuario**: Aprobador y validador final
-- **Sistema**: Validación automática mediante tests
-
----
-
-# Flujo de Definición de Nuevas Especificaciones
-
-**Activación:** Usuario solicita nueva feature o cambio significativo
-
-**Proceso:**
-1. Análisis de regresión (revisar specs)
-2. Interrogatorio estructurado con opciones recomendadas
-3. Presentar borrador completo para revisión
-4. Esperar aprobación explícita del usuario
-5. Transicionar a flujo de implementación
-6. Documentar proceso y trazabilidad
-
-**Áreas de interrogatorio:** Alcance funcional, casos límite, integración, performance, seguridad, UI/UX, datos, testing
-
----
-
-# Manejo Seguro de Variables de Entorno
-
-**Principios de seguridad:**
-- NUNCA hardcodear credenciales
-- SIEMPRE usar variables de entorno
-- NUNCA commitear .env con datos reales
-- SIEMPRE validar .gitignore
-
-**Fuentes seguras:** Vercel Dashboard, variable temporal, gestor de secretos
-
-**Validación obligatoria:** Verificar no hay credenciales hardcodeadas, verificar variables, health checks
-
-**Flujo de emergencia:** Revocar credenciales, eliminar archivos, limpiar historial, forzar push
-
----
-
-# 📋 Specification File Rules - Semáforo de Implementación
-
-**OBLIGATORIO**: Cada archivo en `/specs/` debe incluir un semáforo en la primera línea.
-
-**🚦 Convención:**
-- 🟢 = Completamente implementado (100%)
-- 🟡 = Parcialmente implementado (en progreso)
-- 🔴 = No iniciado (0%)
-
-**Ubicación:** Primera línea del archivo, antes del título
-
-**Consecuencias:** Specs sin semáforo serán rechazadas en PR review.
-
----
-
-# 🚀 Metodología de Ejecución del Roadmap
-
-**Trigger:** Usuario dice *"continuemos con la implementacion del roadmap"*
-
-**Fase 1: Análisis + División Inteligente**
-- Git check: Verificar branch, si !main → checkout main + pull
-- Scope analysis: Identificar siguiente [ ] pendiente, analizar complejidad (objetivo ≤5 archivos, 10-30 min)
-- Si scope amplio → División automática en pasos de ≤5 archivos, presentar división al usuario
-
-**Fase 2: Propuesta Técnica**
-- Formato conciso: Paso, Archivos, Riesgos, Cambios clave, Tiempo estimado
-- Esperar aprobación explícita: "ok" | "procede" | "adelante"
-
-**Fase 3: Implementación**
-- Crear feature branch
-- Implementar cambios con commits atómicos
-- Tests con cobertura ≥80%
-- Verificar: npm test, npx tsc --noEmit
-- Merge a main y push
-
-**Fase 4: Modo QA**
-- Tests: npm test (≥80% cobertura)
-- Type check: npx tsc --noEmit
-- DB: Queries antes/después con evidencia
-- UI/E2E: Screenshots, flujo completo, responsive, consola 0 errores
-- Evidencia mínima: 3-5 screenshots, 2 queries DB, cobertura tests, consola limpia
-
-**Principios:** Autonomía, velocidad, contención ≤5 archivos, evidencia meticulosa, división inteligente
-
----
-
-# 🏗️ Arquitectura de Servicios
-
-**REGLA FUNDAMENTAL:** Servicios como funciones puras reutilizables en `lib/services/`, diseñadas para API y Agent Tools.
-
-**❌ PROHIBIDO:** Lógica de negocio directamente en API routes o controllers
-
-**✅ OBLIGATORIO:**
-- Funciones puras con params y output tipados
-- Servicios en `lib/services/`
-- Sin acoplamiento a HTTP (Request/Response)
-- Sin estado (stateless)
-- Documentación JSDoc
-- Sin duplicación de lógica
-
-**Estructura:**
-```
-lib/
-├── services/        # Funciones puras reutilizables
-├── agent-tools/     # Tools para LLM que reutilizan servicios
-└── api/controllers/ # Usan los mismos servicios
-```
-
----
-
-# 📚 Especificaciones del Sistema
-
-**Flujo obligatorio antes de CUALQUIER modificación:**
-1. Identificar tipo de cambio
-2. Consultar tabla para encontrar spec relevante
-3. LEER spec completa ANTES de escribir código
-4. Seguir reglas documentadas
-5. Actualizar spec si introduces nuevos patrones
-
-**🚨 PROHIBIDO implementar sin leer specs**
-
-**✅ OBLIGATORIO:** Identificar → Consultar tabla → Leer spec → Implementar → Actualizar spec
-
----
-
-# 🧩 Arquitectura de Componentes
-
-**Principio:** Separación para testabilidad
-
-**❌ PROHIBIDO:** Componentes inline en páginas (no testeable unitariamente)
-
-**✅ OBLIGATORIO:** Componentes separados en `components/[feature]/`
-
-**Reglas de organización:**
-- UI Components: `components/ui/*.tsx` → Unit tests
-- Feature Components: `components/[feature]/*.tsx` → Unit + Integration
-- Page Components: `app/**/page.tsx` → Integration/E2E
-- Layout Components: `components/layout/*.tsx` → Visual regression
-
-**Criterios para extraer:** Testabilidad, >20 líneas JSX, reutilización, responsabilidad única
-
-**Límites de complejidad:**
-- Page: ≤150 líneas, ≤5 props, ≤3 hooks
-- Feature: ≤300 líneas, ≤15 props, ≤8 hooks
-
-**Documentación:** Decisiones de diseño UI en specs correspondientes (adm.md, public.md, ui-architecture.md)
+- **Prohibido** componentes inline en páginas — separar en `components/[feature]/`
+- UI: `components/ui/*.tsx` · Feature: `components/[feature]/*.tsx` · Page: `app/**/page.tsx`
+- Límites: Page ≤150 líneas / ≤5 props / ≤3 hooks · Feature ≤300 líneas / ≤15 props / ≤8 hooks
+- Extraer si: >20 líneas JSX, reutilizable, responsabilidad única
 
 ---
 
 # Development Auth Bypass
 
-**Permite desarrollo local sin autenticación OAuth.**
-
-**Diseño:** Env-var based. **NO** cookies, **NO** endpoints, **NO** tokens. Impossible de explotar desde fuera del servidor.
-
-**Variables de entorno:**
-
-```bash
-# Requerida para activar
-RPM_DEV_BYPASS_AUTH=true
-
-# Opcionales (con defaults)
-RPM_DEV_BYPASS_ROLE=ADMIN        # USER | STAFF | ADMIN
-RPM_DEV_BYPASS_USER_ID=dev-user  # ID del usuario
-RPM_DEV_BYPASS_NAME=Developer    # Nombre visible
-RPM_DEV_BYPASS_EMAIL=dev@localhost
-```
-
-**Activación:**
-```bash
-RPM_DEV_BYPASS_AUTH=true pnpm dev
-```
-
-**Cómo funciona:**
+- Env-var based: `RPM_DEV_BYPASS_AUTH=true pnpm dev` — sin cookies, sin endpoints, sin tokens
 - `lib/dev-auth.ts` exporta `isDevBypassEnabled()` y `createDevSession()`
-- `lib/auth-server.ts` y `lib/api-middleware.ts` usan estas funciones
-- Bypass solo activa cuando `NODE_ENV === 'development' && RPM_DEV_BYPASS_AUTH === 'true'`
+- Solo activa cuando `NODE_ENV === 'development' && RPM_DEV_BYPASS_AUTH === 'true'`
 - En producción el bypass **literalmente no existe** en el código ejecutable
 
-**⚠️ Seguridad:**
-- ❌ No hay endpoint `/api/auth/debug` (eliminado)
-- ❌ No hay cookie `rpm_debug_auth` (eliminada)
-- ❌ No hay parsing de headers o IPs (eliminado)
-- ✅ Solo env vars del servidor controlan el bypass
+---
 
-**Flujo QA:**
-1. `RPM_DEV_BYPASS_AUTH=true pnpm dev`
-2. Abrir `http://localhost:3000` — auto-logueado como ADMIN
-3. Validar con Puppeteer MCP
-4. Desactivar: `unset RPM_DEV_BYPASS_AUTH`
+# Protección Contra Doble-Click en Formularios
+
+Todo formulario de creación/edición debe implementar estado `isSubmitting`:
+
+- `if (isSubmitting) return` al inicio del handler
+- `setIsSubmitting(true)` antes del API call
+- `setIsSubmitting(false)` en `finally`
+- Pasar `isLoading={isSubmitting}` al Dialog/Footer
 
 ---
 
-# ⚠️ REGLA CRÍTICA: Protección Contra Doble-Click en Formularios
+# Variables de Entorno
 
-**PROBLEMA:** Los usuarios pueden hacer doble-click rápido en botones de submit, enviando múltiples requests simultáneos. El primero crea el registro, el segundo falla con error de duplicación.
-
-**SOLUCIÓN:** Implementar estado `isSubmitting` en todos los formularios de creación/edición.
-
-**Patrón obligatorio:**
-
-```typescript
-// 1. Agregar estado
-const [isSubmitting, setIsSubmitting] = useState(false);
-
-// 2. Prevenir en handler
-const handleSubmit = async (e?: React.FormEvent) => {
-  e?.preventDefault();
-  if (isSubmitting) return; // ← CRÍTICO
-  
-  setIsSubmitting(true);
-  try {
-    // API call
-  } catch (error) {
-    // error handling
-  } finally {
-    setIsSubmitting(false); // ← CRÍTICO: siempre reset
-  }
-};
-
-// 3. Pasar al Dialog/Footer
-<Dialog
-  onSubmit={handleSubmit}
-  isLoading={isSubmitting} // o isSubmitting según el componente
-/>
-```
-
-**Componentes con protección implementada:**
-- ✅ ProductsClient
-- ✅ CustomerCreditNoteDialog
-- ✅ SuppliersClient
-- ✅ ServicesClient
-- ✅ CategoriesClient (usa `saving` state)
-- ✅ CustomerForm (recibe `isSubmitting` prop)
-
-**❌ PROHIBIDO:** Formularios sin protección contra doble-click
-
-**✅ OBLIGATORIO:** Todo nuevo formulario debe incluir este patrón
+- NUNCA hardcodear credenciales — SIEMPRE usar env vars
+- NUNCA commitear `.env` con datos reales — validar `.gitignore`
 
 ---
+
+# UI/UX Rules
+
+- **Primary CTA:** En el `Header`, no duplicado en tablas
+- **Header Stats:** Entre `Header` y tabla usando `CrudStats`
+- **Semantic Colors:** Tailwind (`text-emerald-700`, `text-red-700`) — peso 700 para contraste WCAG AA
+- **Financial Colors:** `emerald-600` positivos/cuadrados · `red-600` deudas/egresos
+- **Standardized List Row:** Contenedor `w-8 h-8 rounded-lg bg-primary/10 border border-primary/20` + icono Lucide `h-4 w-4` + `font-semibold tracking-tight`
+- **Form UX:** Iconos contextuales absolutos con `pl-9` · `font-mono` para campos técnicos
+- **Monedas:** `formatARS(amount, decimals)` con `font-mono font-semibold`
+- **Empty States:** Iconos decorativos con `text-muted-foreground/20`
+- **Dashboard Cards:** Iconos Lucide con `aria-hidden="true"` y `pointer-events-none`
+- **Skeletons:** `loading.tsx` debe imitar proporciones reales de columnas
+- **Settings Layout:** `max-w-3xl mx-auto` · tarjetas `overflow-hidden` · `CardHeader` con `bg-muted/20`
+- **Interaction Feedback:** Estados `hover` visibles (`bg-primary/5`) con transiciones suaves
+
+---
+
+# Boy Scout Rule
+
+Cada modificación deja el archivo en mejor estado: legibilidad, comentarios, nombres. Sin bugs, alcance razonable.

@@ -14,7 +14,7 @@ Tu misión es analizar las features existentes, identificar puntos de fricción 
 - Componentes específicos del módulo taller
 - Estados, transiciones y validaciones de OTs
 
-**Fuera de scope (no tocar sin autorización):**
+**Fuera de scope (no tocar bajo ninguna circunstancia):**
 - Shared components (`Header`, `CrudStats`, tabla genérica)
 - Auth, middleware, layout global
 - Schema de Prisma (usar el existente, no migrar)
