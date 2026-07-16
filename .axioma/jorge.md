@@ -1,8 +1,6 @@
 ## 📋 BACKLOG
-- [ ] Checklist Customization — Allow editing the labels of the entry/exit checklists.
 - [ ] Photo Management — Bulk upload and deletion of work order photos.
 - [ ] Printing — Standardized PDF generation for Remitos and Budgets.
-- [ ] Personalización de Checklist — Permitir editar las etiquetas de los checklists de entrada/salida.
 - [ ] Gestión de Fotos — Carga y eliminación masiva de fotos de órdenes de trabajo.
 - [ ] Impresión — Generación estandarizada de PDF para Remitos y Presupuestos.
 - [x] Fecha programada en Kanban: muestre y resalte las fechas programadas en las tarjetas Kanban.
@@ -11,6 +9,7 @@
 - [x] 2025-07-08 — Servicio Centralizado de OT y Timeline Unificado (PR #jorge/work-orders/centralized-updates)
 - [x] 2025-07-12 — Refinamiento de UX en Taller: Acciones Rápidas y Navegación (PR #jorge/work-orders/ux-refinement)
 - [x] 2026-07-16 — Paridad de Vista de Lista y Corrección de Prioridad HOY (PR #jorge/work-orders/list-view-parity)
+- [x] 2026-07-16 — Checklist Estándar e Interactivo en Taller (PR #jorge/work-orders/checklists-refactor)
 
 ## 🧠 APRENDIZAJES
 ## 2025-07-08 - UX Kanban y Propagación de Eventos
@@ -24,3 +23,7 @@
 ## 2025-07-12 - Acciones Rápidas en Kanban
 **Aprendizaje:** Las acciones rápidas en tarjetas Kanban (hover buttons) reducen drásticamente la fricción para flujos lineales de trabajo, evitando la necesidad de drag-and-drop para transiciones comunes.
 **Acción:** Implementar el patrón `NEXT_STATUS_MAP` para guiar al usuario hacia la siguiente acción lógica en el flujo de negocio.
+
+## 2026-07-16 - Checklists Interactivos y Resilientes
+**Aprendizaje:** Almacenar checklists como datos serializados es flexible, pero requiere que las operaciones de actualización (PUT/POST) realicen merges seguros (preservando marcas de tiempo como `completedAt`) para evitar regresiones de datos. La inicialización con plantillas unificadas directamente en la interfaz de detalle elimina la necesidad de re-crear OTs completas para agregar protocolos faltantes.
+**Acción:** Siempre fusionar campos de forma granular en APIs que operen sobre documentos JSON embebidos.

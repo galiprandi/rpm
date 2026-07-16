@@ -299,6 +299,8 @@ export default function WorkOrderDetailPage() {
   const [editingFuelLevel, setEditingFuelLevel] = useState<number | undefined>(
     undefined,
   );
+  const [editingChecklistItems, setEditingChecklistItems] = useState<any[]>([]);
+  const [checklistNotes, setChecklistNotes] = useState<string>("");
   const [savingChecklist, setSavingChecklist] = useState(false);
   const [editingScheduledDate, setEditingScheduledDate] = useState(false);
   const [editingNotes, setEditingNotes] = useState(false);
