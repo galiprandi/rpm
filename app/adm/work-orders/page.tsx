@@ -549,7 +549,16 @@ export default function WorkOrdersPage() {
   }, []);
 
   useEffect(() => {
-    void fetchWorkOrders();
+    let cancelled = false;
+    const loadData = async () => {
+      await Promise.resolve();
+      if (cancelled) return;
+      void fetchWorkOrders();
+    };
+    void loadData();
+    return () => {
+      cancelled = true;
+    };
   }, [fetchWorkOrders]);
 
   // Default to list view on mobile

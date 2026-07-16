@@ -53,3 +53,23 @@ export const WORK_ORDER_STATUSES = [
 ] as const;
 
 export type WorkOrderStatus = (typeof WORK_ORDER_STATUSES)[number]["id"];
+
+export const DEFAULT_ENTRY_CHECKLIST = [
+  { id: "exterior_clean", label: "Limpieza exterior", checked: false },
+  { id: "interior_clean", label: "Limpieza interior", checked: false },
+  { id: "fluids", label: "Niveles de fluidos", checked: false },
+  { id: "tires", label: "Estado de neumáticos", checked: false },
+  { id: "lights", label: "Funcionamiento de luces", checked: false },
+  { id: "battery", label: "Estado de batería", checked: false },
+  { id: "tools", label: "Herramientas y auxilio", checked: false },
+  { id: "documents", label: "Documentación", checked: false },
+];
+
+export const DEFAULT_EXIT_CHECKLIST = [
+  { id: "service_complete", label: "Servicio completado", checked: false },
+  { id: "quality_check", label: "Control de calidad", checked: false },
+  { id: "test_drive", label: "Prueba de manejo", checked: false },
+  { id: "cleaning", label: "Limpieza final", checked: false },
+  { id: "parts_returned", label: "Repuestos devueltos", checked: false },
+  { id: "tags_removed", label: "Etiquetas removidas", checked: false },
+];

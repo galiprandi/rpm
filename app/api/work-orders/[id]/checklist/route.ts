@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-// PUT /api/work-orders/[id]/checklist - Update checklist data (odometer, fuel level)
+// PUT /api/work-orders/[id]/checklist - Update checklist data (items, notes, odometer, fuel level)
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -9,7 +9,7 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { type, odometerValue, fuelLevel } = body;
+    const { type, items, notes, odometerValue, fuelLevel } = body;
 
     if (!type || !["ENTRY", "EXIT"].includes(type)) {
       return NextResponse.json(
@@ -18,7 +18,7 @@ export async function PUT(
       );
     }
 
-    // Update the checklist JSON with odometer and fuel level
+    // Get current checklist to merge
     const workOrder = await prisma.work_order.findUnique({
       where: { id },
       select: { entryChecklist: true, exitChecklist: true },
@@ -31,17 +31,22 @@ export async function PUT(
       );
     }
 
-    const currentChecklist = type === "ENTRY" ? workOrder.entryChecklist : workOrder.exitChecklist;
+    const currentChecklist = (type === "ENTRY" ? workOrder.entryChecklist : workOrder.exitChecklist) || {};
+
+    // Merge updates
     const updatedChecklist = {
-      ...((currentChecklist || {}) as Record<string, unknown>),
-      odometerValue,
-      fuelLevel,
+      ...(currentChecklist as Record<string, unknown>),
     };
+
+    if (items !== undefined) updatedChecklist.items = items;
+    if (notes !== undefined) updatedChecklist.notes = notes;
+    if (odometerValue !== undefined) updatedChecklist.odometerValue = odometerValue;
+    if (fuelLevel !== undefined) updatedChecklist.fuelLevel = fuelLevel;
 
     const updateData =
       type === "ENTRY"
-        ? { entryChecklist: updatedChecklist }
-        : { exitChecklist: updatedChecklist };
+        ? { entryChecklist: updatedChecklist as any }
+        : { exitChecklist: updatedChecklist as any };
 
     const updatedWorkOrder = await prisma.work_order.update({
       where: { id },
@@ -74,7 +79,7 @@ export async function PUT(
   }
 }
 
-// POST /api/work-orders/[id]/checklist - Update checklist
+// POST /api/work-orders/[id]/checklist - Initialize/Complete checklist
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -108,8 +113,8 @@ export async function POST(
 
     const updateData =
       type === "ENTRY"
-        ? { entryChecklist: checklistData }
-        : { exitChecklist: checklistData };
+        ? { entryChecklist: checklistData as any }
+        : { exitChecklist: checklistData as any };
 
     const workOrder = await prisma.work_order.update({
       where: { id },
