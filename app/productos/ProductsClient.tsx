@@ -9,6 +9,11 @@ import { cn } from '@/lib/utils';
 import { featuredProducts } from '@/lib/constants/featured-products';
 import { ProductQuickView } from '@/components/public/ProductQuickView';
 import { formatARS } from '@/lib/utils/format';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { PUBLIC_SITE_CONFIG, DEFAULT_WHATSAPP_MESSAGE } from '@/lib/config/public-site';
 
 const categories = ['Todos', 'Iluminación', 'Estética', 'Equipamiento', 'Seguridad', 'Interior'];
@@ -20,13 +25,21 @@ export default function ProductsClient() {
   const [selectedProduct, setSelectedProduct] = useState<typeof featuredProducts[0] | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
     const productId = searchParams.get('product');
     if (productId) {
       const product = featuredProducts.find(p => p.id === productId);
       if (product) {
-        setSelectedProduct(product);
+        Promise.resolve().then(() => {
+          if (!cancelled) {
+            setSelectedProduct(product);
+          }
+        });
       }
     }
+    return () => {
+      cancelled = true;
+    };
   }, [searchParams]);
 
   const filteredProducts = featuredProducts.filter(product => {
@@ -59,12 +72,20 @@ export default function ProductsClient() {
                   className="h-14 w-full lg:w-80 bg-zinc-900 border border-white/5 rounded-2xl pl-12 pr-12 text-sm text-white focus:outline-none focus:border-brand/50 transition-all"
                 />
                 {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery('')}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 flex items-center justify-center rounded-full bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={() => setSearchQuery('')}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 flex items-center justify-center rounded-full bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
+                        aria-label="Limpiar búsqueda"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent className="bg-zinc-900 border-white/10 text-white text-xs font-bold uppercase tracking-widest">
+                      Limpiar
+                    </TooltipContent>
+                  </Tooltip>
                 )}
               </div>
 
@@ -100,13 +121,24 @@ export default function ProductsClient() {
                 </div>
 
                 {/* Quick View Icon Overlay */}
-                <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-x-4 group-hover:translate-x-0">
-                  <div
-                    className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white cursor-pointer hover:bg-brand hover:border-brand transition-colors"
-                    onClick={() => setSelectedProduct(product)}
-                  >
-                    <Eye className="h-4 w-4" />
-                  </div>
+                <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-x-4 group-hover:translate-x-0 z-20">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white cursor-pointer hover:bg-brand hover:border-brand transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedProduct(product);
+                        }}
+                        aria-label={`Vista rápida de ${product.name}`}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="left" className="bg-zinc-900 border-white/10 text-white text-xs font-bold uppercase tracking-widest">
+                      Vista Rápida
+                    </TooltipContent>
+                  </Tooltip>
                 </div>
 
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />

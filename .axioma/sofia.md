@@ -4,6 +4,7 @@
 - [ ] Optimizar imágenes de la galería "Nosotros" para mejorar el LCP.
 
 ## ✅ DONE
+- [x] 2026-07-15 — Refinado de animaciones, accesibilidad y estabilidad de SEO (PR #sofia/public/polish-and-accessibility)
 - [x] 2026-07-14 — Micro-interacciones con Framer Motion y correcciones semánticas (PR #sofia/public/tactile-feedback)
 - [x] 2026-07-13 — Estandarización de precios, mejoras de SEO y CTA de alto impacto (PR #sofia/public/polish-and-seo)
 - [x] 2026-07-12 — Vista Rápida de Servicios y Deep-Linking en Catálogo de Servicios (PR #sofia/public/service-quick-view)
@@ -17,6 +18,10 @@
 - [x] 2026-07-07 — Vista rápida de productos con modal y conversión contextual (PR #sofia/public/product-quick-view)
 
 ## 🧠 LEARNINGS
+
+## 2026-07-15 - Accesibilidad Proactiva y Estabilidad de Builds
+**Learning:** Mantener la accesibilidad (A11y) no es solo agregar labels, sino asegurar que elementos interactivos que no tienen texto (icon-only buttons) sean identificables por lectores de pantalla y proporcionen feedback visual claro mediante tooltips. Descubrimos que el build de Next.js genera advertencias si no se define `metadataBase` en el layout raíz cuando se usan imágenes sociales, lo cual es crítico para la resolución de URLs absolutas. Además, para evitar advertencias de renderizado en React (setState en el cuerpo de un effect), el patrón de usar un flag `cancelled` y envolver el update en una microtarea (`Promise.resolve()`) asegura una hidratación limpia de estados derivados de la URL.
+**Action:** Implementar sistemáticamente tooltips en icon-buttons y asegurar que `metadataBase` esté siempre configurado en el layout principal.
 
 ## 2026-07-14 - Micro-interacciones y Tactilidad con Framer Motion
 **Learning:** Incorporar `framer-motion` permite elevar la percepción de calidad del sitio mediante micro-interacciones que responden al toque (`whileTap`) y al cursor (`whileHover`). Las animaciones de entrada escalonadas (`staggerChildren`) guían el ojo del usuario y hacen que la carga de contenido se sienta deliberada y fluida. Es importante usar `as const` en configuraciones de `ease` personalizadas (como curvas de Bezier) para que TypeScript las reconozca correctamente dentro de las variantes de Motion. Además, reforzamos la importancia del patrón `asChild` para mantener la validez semántica del HTML al anidar elementos interactivos.
