@@ -94,7 +94,7 @@ jobs:
       
     - name: Generate temporary package-lock
       run: |
-        npm install --package-lock-only --legacy-peer-deps
+        npm install --package-lock-only --legacy-peer-deps --ignore-scripts
       
     - name: Run security audit
       run: |
