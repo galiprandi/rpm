@@ -38,6 +38,9 @@ import {
   buildVehicleDescription,
 } from "@/lib/constants/vehicle-categories";
 import {
+  DEFAULT_ENTRY_CHECKLIST,
+} from "@/lib/constants/work-order";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -52,12 +55,6 @@ const WIZARD_STORAGE_KEY = "work-order-wizard-state";
 function normalizePlate(plate: string): string {
   return plate.trim().toUpperCase();
 }
-
-const ENTRY_CHECKLIST = [
-  { id: "keys", label: "Llaves/Control recibido", required: true },
-  { id: "visual", label: "Estado visual general documentado", required: true },
-  { id: "accessories", label: "Accesorios guardados", required: false },
-];
 
 interface VehicleWithCustomer {
   id: string;
@@ -189,20 +186,30 @@ export default function NewWorkOrderPage() {
 
   // Load wizard state from localStorage on mount
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(WIZARD_STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed.step) setStep(parsed.step);
-        if (parsed.checklist) setChecklist(parsed.checklist);
-        if (parsed.odometerValue) setOdometerValue(parsed.odometerValue);
-        if (parsed.fuelLevel !== undefined) setFuelLevel(parsed.fuelLevel);
-        if (parsed.notes) setNotes(parsed.notes);
-        if (parsed.scheduledDate) setScheduledDate(parsed.scheduledDate);
+    let cancelled = false;
+    const loadSavedState = async () => {
+      await Promise.resolve();
+      if (cancelled) return;
+
+      try {
+        const saved = localStorage.getItem(WIZARD_STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed.step) setStep(parsed.step);
+          if (parsed.checklist) setChecklist(parsed.checklist);
+          if (parsed.odometerValue) setOdometerValue(parsed.odometerValue);
+          if (parsed.fuelLevel !== undefined) setFuelLevel(parsed.fuelLevel);
+          if (parsed.notes) setNotes(parsed.notes);
+          if (parsed.scheduledDate) setScheduledDate(parsed.scheduledDate);
+        }
+      } catch {
+        // Ignore parse errors
       }
-    } catch {
-      // Ignore parse errors
-    }
+    };
+    void loadSavedState();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Save wizard state to localStorage on changes
@@ -422,10 +429,9 @@ export default function NewWorkOrderPage() {
           unitPrice: item.unitPrice,
         })),
         entryChecklist: {
-          items: Object.entries(checklist).map(([id, checked]) => ({
-            id,
-            checked,
-            label: ENTRY_CHECKLIST.find((i) => i.id === id)?.label || id,
+          items: DEFAULT_ENTRY_CHECKLIST.map((item) => ({
+            ...item,
+            checked: checklist[item.id] || false,
           })),
           completedAt: new Date().toISOString(),
         },
@@ -931,7 +937,7 @@ export default function NewWorkOrderPage() {
               <div className="space-y-3">
                 <Label>Checklist de Ingreso</Label>
                 <div className="space-y-3 border rounded-md p-4">
-                  {ENTRY_CHECKLIST.map((item) => (
+                  {DEFAULT_ENTRY_CHECKLIST.map((item) => (
                     <Checkbox
                       key={item.id}
                       id={`checklist-${item.id}`}
@@ -943,8 +949,6 @@ export default function NewWorkOrderPage() {
                         }))
                       }
                       label={item.label}
-                      labelClassName={item.required ? "font-medium" : ""}
-                      required={item.required}
                     />
                   ))}
                 </div>
@@ -1055,12 +1059,7 @@ export default function NewWorkOrderPage() {
                 </Button>
                 <Button
                   onClick={handleSubmit}
-                  disabled={
-                    loading ||
-                    !ENTRY_CHECKLIST.every(
-                      (item) => !item.required || checklist[item.id],
-                    )
-                  }
+                  disabled={loading}
                 >
                   <Save className="h-4 w-4 mr-2" />
                   {loading ? "Creando..." : "Crear Orden de Trabajo"}
