@@ -1,7 +1,11 @@
-import { UserRole } from '@/lib/auth/roles';
-import { delegateCustomer, delegateInventory, delegateWorkOrders, delegateFinance } from './orchestrator/delegation';
-import { compositeTools } from './orchestrator/composite';
-import type { UserRole as PromptUserRole } from './utils/promptComposer';
+import { UserRole } from "@/lib/auth/roles";
+import {
+  delegateCustomer,
+  delegateInventory,
+  delegateWorkOrders,
+  delegateFinance,
+} from "./orchestrator/delegation";
+import { compositeTools } from "./orchestrator/composite";
 
 const delegationTools = {
   delegateCustomer,
@@ -40,10 +44,3 @@ export function getAllTools(): Record<string, unknown> {
 export function getToolByName(name: string): unknown {
   return orchestratorTools[name as keyof typeof orchestratorTools];
 }
-
-export const roleMap: Record<PromptUserRole, UserRole> = {
-  ADMIN: UserRole.ADMIN,
-  STAFF: UserRole.STAFF,
-  TECHNICIAN: UserRole.ADMIN,
-  SELLER: UserRole.ADMIN,
-};

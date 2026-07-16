@@ -1,19 +1,6 @@
-import type { UserRole } from './promptComposer';
+import type { BotContext, UserRole } from "./promptComposer";
 
-/**
- * Bot context injected automatically by the backend
- * Contains user role, current URL context, user ID, and email
- */
-export interface BotContext {
-  role: UserRole;
-  currentUrl: {
-    path: string;
-    search: string;
-    hash: string;
-  };
-  userId?: string;
-  email?: string;
-}
+export type { BotContext, UserRole };
 
 /**
  * Base input type for all bot tools

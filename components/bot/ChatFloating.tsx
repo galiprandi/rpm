@@ -37,7 +37,12 @@ import {
 export function ChatFloating({
   isOpen: controlledIsOpen,
   onOpenChange,
-}: { isOpen?: boolean; onOpenChange?: (open: boolean) => void } = {}) {
+  serverUser,
+}: {
+  isOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  serverUser?: { id: string; name: string; email: string; role?: string };
+} = {}) {
   const isMobile = useIsMobile();
   const isMac =
     typeof navigator !== "undefined" &&
@@ -59,9 +64,12 @@ export function ChatFloating({
   const pathname = usePathname();
   const router = useRouter();
   const { data: session } = authClient.useSession();
-  const userId = session?.user?.id || "anon";
+  const userId = serverUser?.id || session?.user?.id || "anon";
+  const userName = serverUser?.name || session?.user?.name || undefined;
   const userRole =
-    (session?.user as { role?: string } | undefined)?.role || "ADMIN";
+    serverUser?.role ||
+    (session?.user as { role?: string } | undefined)?.role ||
+    "ADMIN";
   const chatId = useMemo(() => `nitro-chat-${userId}`, [userId]);
 
   const transport = useMemo(
@@ -75,12 +83,13 @@ export function ChatFloating({
               ...(body as Record<string, unknown>),
               role: userRole,
               userId,
+              userName,
               pathname,
             },
           },
         }),
       }),
-    [userId, pathname, userRole],
+    [userId, userName, pathname, userRole],
   );
 
   const onFinish = useCallback(() => {
@@ -99,7 +108,10 @@ export function ChatFloating({
     { label: "📦 Consultar Stock", text: "¿Hay stock de luces LED?" },
     { label: "🔧 Ver OTs de hoy", text: "Ver órdenes de trabajo de hoy" },
     { label: "💰 Ver Caja de hoy", text: "Ver estado de caja de hoy" },
-    { label: "📝 Registrar Venta", text: "Quiero registrar una venta directa de mostrador" },
+    {
+      label: "📝 Registrar Venta",
+      text: "Quiero registrar una venta directa de mostrador",
+    },
   ];
 
   const handleSuggestionClick = async (text: string) => {
@@ -142,7 +154,8 @@ export function ChatFloating({
     const { scrollTop, scrollHeight, clientHeight } = container;
     // Check if the scroll position is within 150px of the bottom
     const isNearBottom = scrollHeight - scrollTop - clientHeight < 150;
-    const isLastMessageFromUser = messages[messages.length - 1]?.role === "user";
+    const isLastMessageFromUser =
+      messages[messages.length - 1]?.role === "user";
 
     if (isNearBottom || isLastMessageFromUser) {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -205,7 +218,9 @@ export function ChatFloating({
               onClick={() => setIsOpen(!isOpen)}
               className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50 hover:scale-105 active:scale-95 transition-transform duration-200"
               size="icon"
-              aria-label={isOpen ? "Cerrar asistente virtual" : "Abrir asistente virtual"}
+              aria-label={
+                isOpen ? "Cerrar asistente virtual" : "Abrir asistente virtual"
+              }
             >
               {isOpen ? (
                 <X className="h-6 w-6" />
@@ -214,7 +229,10 @@ export function ChatFloating({
               )}
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="left" className="bg-slate-900 text-white border-slate-800">
+          <TooltipContent
+            side="left"
+            className="bg-slate-900 text-white border-slate-800"
+          >
             {isOpen ? "Cerrar chat (Esc)" : `Abrir chat (${shortcutLabel})`}
           </TooltipContent>
         </Tooltip>
@@ -247,7 +265,11 @@ export function ChatFloating({
                       variant="ghost"
                       size="icon"
                       onClick={() => setIsExpanded(!isExpanded)}
-                      aria-label={isExpanded ? "Reducir tamaño del chat" : "Expandir tamaño del chat"}
+                      aria-label={
+                        isExpanded
+                          ? "Reducir tamaño del chat"
+                          : "Expandir tamaño del chat"
+                      }
                     >
                       {isExpanded ? (
                         <Minimize2 className="h-4 w-4" />
@@ -256,7 +278,10 @@ export function ChatFloating({
                       )}
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="bottom" className="bg-slate-900 text-white border-slate-800">
+                  <TooltipContent
+                    side="bottom"
+                    className="bg-slate-900 text-white border-slate-800"
+                  >
                     {isExpanded ? "Reducir" : "Expandir"}
                   </TooltipContent>
                 </Tooltip>
@@ -272,7 +297,10 @@ export function ChatFloating({
                     <X className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="bottom" className="bg-slate-900 text-white border-slate-800">
+                <TooltipContent
+                  side="bottom"
+                  className="bg-slate-900 text-white border-slate-800"
+                >
                   Cerrar chat
                 </TooltipContent>
               </Tooltip>
@@ -280,13 +308,23 @@ export function ChatFloating({
           </div>
 
           {/* Messages */}
-          <div ref={messagesContainerRef} className="flex-1 p-4 overflow-y-auto">
+          <div
+            ref={messagesContainerRef}
+            className="flex-1 p-4 overflow-y-auto"
+          >
             <div className="space-y-4">
               {messages.length === 0 && (
                 <div className="text-center text-muted-foreground py-6 px-2">
-                  <MessageSquare className="h-12 w-12 mx-auto mb-2 opacity-30 text-primary" aria-hidden="true" />
-                  <p className="font-semibold text-foreground text-base">¡Hola! Soy Nitro, tu asistente virtual.</p>
-                  <p className="text-xs text-muted-foreground mt-1 mb-6">Seleccioná un atajo o escribí tu consulta abajo:</p>
+                  <MessageSquare
+                    className="h-12 w-12 mx-auto mb-2 opacity-30 text-primary"
+                    aria-hidden="true"
+                  />
+                  <p className="font-semibold text-foreground text-base">
+                    ¡Hola! Soy Nitro, tu asistente virtual.
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1 mb-6">
+                    Seleccioná un atajo o escribí tu consulta abajo:
+                  </p>
                   <div className="grid grid-cols-2 gap-2 max-w-sm mx-auto">
                     {quickSuggestions.map((s, idx) => (
                       <button
@@ -295,8 +333,12 @@ export function ChatFloating({
                         onClick={() => handleSuggestionClick(s.text)}
                         className="text-left text-xs bg-muted/50 hover:bg-primary/5 hover:text-primary border hover:border-primary/20 rounded-lg p-3 transition-all duration-200 cursor-pointer active:scale-95 flex flex-col justify-between h-20 shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                       >
-                        <span className="font-semibold text-foreground/90">{s.label}</span>
-                        <span className="text-[10px] text-muted-foreground line-clamp-2 mt-1 leading-snug">{s.text}</span>
+                        <span className="font-semibold text-foreground/90">
+                          {s.label}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground line-clamp-2 mt-1 leading-snug">
+                          {s.text}
+                        </span>
                       </button>
                     ))}
                   </div>
@@ -355,30 +397,44 @@ export function ChatFloating({
                                   "Procesando factura de compra...",
                               };
                               const completedLabels: Record<string, string> = {
-                                searchProducts: "Búsqueda de productos completada",
-                                searchCustomers: "Búsqueda de clientes completada",
-                                searchWorkOrders: "Búsqueda de órdenes completada",
-                                createDirectSale: "Venta registrada exitosamente",
+                                searchProducts:
+                                  "Búsqueda de productos completada",
+                                searchCustomers:
+                                  "Búsqueda de clientes completada",
+                                searchWorkOrders:
+                                  "Búsqueda de órdenes completada",
+                                createDirectSale:
+                                  "Venta registrada exitosamente",
                                 createCustomer: "Cliente creado exitosamente",
                                 createProduct: "Producto creado exitosamente",
-                                createWorkOrder: "Orden de trabajo creada exitosamente",
+                                createWorkOrder:
+                                  "Orden de trabajo creada exitosamente",
                                 getCashStatus: "Consulta de caja completada",
-                                getTodaySummary: "Resumen generado exitosamente",
-                                getWorkOrderDetail: "Detalle de orden de trabajo obtenido",
-                                updateWorkOrderStatus: "Estado de orden de trabajo actualizado",
-                                composeWhatsAppMessage: "Mensaje de WhatsApp redactado",
-                                registerCustomerWithVehicle: "Cliente y vehículo registrados exitosamente",
-                                processPurchaseInvoice: "Factura de compra procesada exitosamente",
+                                getTodaySummary:
+                                  "Resumen generado exitosamente",
+                                getWorkOrderDetail:
+                                  "Detalle de orden de trabajo obtenido",
+                                updateWorkOrderStatus:
+                                  "Estado de orden de trabajo actualizado",
+                                composeWhatsAppMessage:
+                                  "Mensaje de WhatsApp redactado",
+                                registerCustomerWithVehicle:
+                                  "Cliente y vehículo registrados exitosamente",
+                                processPurchaseInvoice:
+                                  "Factura de compra procesada exitosamente",
                               };
                               const partState = (part as { state?: string })
                                 .state;
                               const isRunning =
                                 partState === "input-streaming" ||
                                 partState === "input-available";
-                              const isCompleted = partState === "output-available";
+                              const isCompleted =
+                                partState === "output-available";
                               const label = isCompleted
-                                ? (completedLabels[toolName] || `Ejecución de ${toolName} completada`)
-                                : (toolLabels[toolName] || `Ejecutando ${toolName}...`);
+                                ? completedLabels[toolName] ||
+                                  `Ejecución de ${toolName} completada`
+                                : toolLabels[toolName] ||
+                                  `Ejecutando ${toolName}...`;
 
                               return (
                                 <div
@@ -482,7 +538,10 @@ export function ChatFloating({
                       <X className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="top" className="bg-slate-900 text-white border-slate-800">
+                  <TooltipContent
+                    side="top"
+                    className="bg-slate-900 text-white border-slate-800"
+                  >
                     Quitar archivo adjunto
                   </TooltipContent>
                 </Tooltip>
@@ -508,7 +567,12 @@ export function ChatFloating({
                 <DropdownMenu>
                   <TooltipTrigger asChild>
                     <DropdownMenuTrigger asChild>
-                      <Button type="button" variant="ghost" size="icon" aria-label="Adjuntar archivos">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        aria-label="Adjuntar archivos"
+                      >
                         <Plus className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
@@ -528,7 +592,10 @@ export function ChatFloating({
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-                <TooltipContent side="top" className="bg-slate-900 text-white border-slate-800">
+                <TooltipContent
+                  side="top"
+                  className="bg-slate-900 text-white border-slate-800"
+                >
                   Adjuntar archivos
                 </TooltipContent>
               </Tooltip>
@@ -553,7 +620,10 @@ export function ChatFloating({
                       <X className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="top" className="bg-slate-900 text-white border-slate-800">
+                  <TooltipContent
+                    side="top"
+                    className="bg-slate-900 text-white border-slate-800"
+                  >
                     Detener respuesta
                   </TooltipContent>
                 </Tooltip>
@@ -569,7 +639,10 @@ export function ChatFloating({
                       <Send className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="top" className="bg-slate-900 text-white border-slate-800">
+                  <TooltipContent
+                    side="top"
+                    className="bg-slate-900 text-white border-slate-800"
+                  >
                     Enviar mensaje
                   </TooltipContent>
                 </Tooltip>
