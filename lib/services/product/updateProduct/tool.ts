@@ -6,6 +6,7 @@ import {
   getPendingAction,
   clearPendingAction,
   savePendingAction,
+  getAllPendingChatIds,
 } from "@/lib/agents/utils/pendingActions";
 import logger from "@/lib/agents/utils/logger";
 
@@ -19,7 +20,12 @@ export const draftUpdateProductTool = tool({
   description:
     "Guarda un borrador de actualización de producto para confirmación. Solo permite cambiar name, categoryId, location, description, sku y barcode (EAN). NO permite cambiar stock, costos ni estado. Debe llamarse antes de ejecutar la actualización.",
   inputSchema: updateProductSchema.extend({
-    chatId: z.string().describe("ID del chat para persistir el draft"),
+    chatId: z
+      .string()
+      .optional()
+      .describe(
+        "ID del chat para persistir el draft (se inyecta automáticamente)",
+      ),
   }),
   execute: async (input) => {
     const {
@@ -32,7 +38,7 @@ export const draftUpdateProductTool = tool({
       sku,
       barcode,
     } = input as {
-      chatId: string;
+      chatId?: string;
       productId: string;
       name?: string;
       categoryId?: string;
@@ -68,13 +74,15 @@ export const draftUpdateProductTool = tool({
 
     const summary = `Producto ID: ${productId}\nCambios:\n${changes.map((c) => `  - ${c}`).join("\n")}`;
 
-    savePendingAction(chatId, {
+    const effectiveChatId = chatId || `draft-${productId}-${Date.now()}`;
+
+    savePendingAction(effectiveChatId, {
       type: "update_product",
       payload,
       summary,
     });
 
-    return `Borrador guardado. Resumen:\n${summary}\n\n¿Confirmas actualizar este producto?`;
+    return `Borrador guardado (ref: ${effectiveChatId}). Resumen:\n${summary}\n\n¿Confirmas actualizar este producto?`;
   },
 });
 
@@ -87,14 +95,32 @@ export const updateProductTool = tool({
   description:
     "Ejecuta la actualización de un producto desde el borrador guardado. Solo debe llamarse después de que el usuario confirma explícitamente.",
   inputSchema: z.object({
-    chatId: z.string().describe("ID del chat para recuperar el draft"),
+    chatId: z
+      .string()
+      .optional()
+      .describe(
+        "ID del chat para recuperar el draft (se inyecta automáticamente)",
+      ),
   }),
   execute: async (input) => {
-    const { chatId } = input as { chatId: string };
+    const { chatId } = input as { chatId?: string };
 
     logger.debug({ chatId }, "Updating product from draft");
 
-    const pending = getPendingAction(chatId);
+    // If no chatId provided, try to find any pending update_product action
+    let pending = chatId ? getPendingAction(chatId) : undefined;
+    if (!pending && !chatId) {
+      // Search all pending actions for an update_product type
+      const allChatIds = getAllPendingChatIds();
+      for (const id of allChatIds) {
+        const action = getPendingAction(id);
+        if (action && action.type === "update_product") {
+          pending = action;
+          clearPendingAction(id);
+          break;
+        }
+      }
+    }
 
     if (!pending || pending.type !== "update_product") {
       throw new Error(
@@ -103,7 +129,7 @@ export const updateProductTool = tool({
     }
 
     const product = await updateProductService(pending.payload as any);
-    clearPendingAction(chatId);
+    if (chatId) clearPendingAction(chatId);
 
     return `✅ Producto actualizado exitosamente:\n- ID: ${(product as any).id}\n- Nombre: ${(product as any).name}\n- Categoría: ${(product as any).category?.name || "N/A"}\n- SKU: ${(product as any).sku || "N/A"}\n- EAN: ${(product as any).barcode || "N/A"}`;
   },
