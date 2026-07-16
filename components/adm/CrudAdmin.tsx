@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Download, Plus, Package } from 'lucide-react';
-import { ReactNode } from 'react';
-import { CrudStats, StatItem } from './CrudStats';
-import { DataTable } from '@/components/ui/data-table';
-import { type ColumnDef, type FilterFn } from '@tanstack/react-table';
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Download, Plus, Package } from "lucide-react";
+import { ReactNode } from "react";
+import { CrudStats, StatItem } from "./CrudStats";
+import { DataTable } from "@/components/ui/data-table";
+import { type ColumnDef, type FilterFn } from "@tanstack/react-table";
 
 interface CrudAdminProps<T extends { id: string }> {
   title?: string;
@@ -18,6 +18,7 @@ interface CrudAdminProps<T extends { id: string }> {
   columns: ColumnDef<T>[];
   stats?: StatItem[];
   filterFn?: FilterFn<T>;
+  headerFilter?: ReactNode;
   emptyIcon?: ReactNode;
   emptyMessage: string;
   emptyActionText?: string;
@@ -32,7 +33,7 @@ interface CrudAdminProps<T extends { id: string }> {
   secondaryActions?: Array<{
     label: string;
     onClick: () => void;
-    variant?: 'outline' | 'ghost' | 'secondary';
+    variant?: "outline" | "ghost" | "secondary";
     icon?: React.ComponentType<{ className?: string }>;
   }>;
 }
@@ -47,64 +48,69 @@ export function CrudAdmin<T extends { id: string }>({
   columns,
   stats,
   filterFn,
+  headerFilter,
   emptyIcon,
   emptyMessage,
-  emptyActionText = 'Crear primero',
+  emptyActionText = "Crear primero",
   createButtonText,
-  tableTitle = 'Listado',
+  tableTitle = "Listado",
   enableSearch = true,
-  searchPlaceholder = 'Buscar...',
+  searchPlaceholder = "Buscar...",
   enableExport = true,
   getExportData,
-  exportFilename = 'export.csv',
+  exportFilename = "export.csv",
   rowActions,
   secondaryActions,
 }: CrudAdminProps<T>) {
   const handleExport = () => {
     if (!items.length) return;
-    
-    const data = getExportData 
+
+    const data = getExportData
       ? getExportData(items)
-      : items.map(item => {
+      : items.map((item) => {
           const flattened: Record<string, string> = {};
           Object.entries(item).forEach(([key, value]) => {
-            if (value !== null && typeof value !== 'object') {
+            if (value !== null && typeof value !== "object") {
               flattened[key] = String(value);
             }
           });
           return flattened;
         });
-    
+
     if (!data.length) return;
-    
+
     const headers = Object.keys(data[0]);
     const csvContent = [
-      headers.join(','),
-      ...data.map(row => headers.map(h => `"${String(row[h] || '').replace(/"/g, '""')}"`).join(','))
-    ].join('\n');
-    
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
+      headers.join(","),
+      ...data.map((row) =>
+        headers
+          .map((h) => `"${String(row[h] || "").replace(/"/g, '""')}"`)
+          .join(","),
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
     link.download = exportFilename;
     link.click();
   };
 
-  const headerActions = [
-    ...(secondaryActions || []),
-  ];
+  const headerActions = [...(secondaryActions || [])];
 
-  const createAction = onCreate ? {
-    label: createButtonText,
-    onClick: onCreate,
-    variant: 'default' as const,
-    icon: Plus,
-  } : null;
+  const createAction = onCreate
+    ? {
+        label: createButtonText,
+        onClick: onCreate,
+        variant: "default" as const,
+        icon: Plus,
+      }
+    : null;
 
   const exportAction = {
-    label: 'Exportar',
+    label: "Exportar",
     onClick: handleExport,
-    variant: 'outline' as const,
+    variant: "outline" as const,
     icon: Download,
   };
 
@@ -138,7 +144,10 @@ export function CrudAdmin<T extends { id: string }>({
               </div>
             </div>
             {[1, 2, 3, 4, 5].map((row) => (
-              <div key={row} className="p-4 border-b last:border-0 flex gap-4 items-center">
+              <div
+                key={row}
+                className="p-4 border-b last:border-0 flex gap-4 items-center"
+              >
                 {[1, 2, 3, 4].map((col) => (
                   <Skeleton key={col} className="h-10 flex-1" />
                 ))}
@@ -158,8 +167,12 @@ export function CrudAdmin<T extends { id: string }>({
       {hasHeader && (
         <div className="flex justify-between items-start">
           <div>
-            {title && <h1 className="text-3xl font-bold text-foreground">{title}</h1>}
-            {description && <p className="text-muted-foreground">{description}</p>}
+            {title && (
+              <h1 className="text-3xl font-bold text-foreground">{title}</h1>
+            )}
+            {description && (
+              <p className="text-muted-foreground">{description}</p>
+            )}
             {stats && (
               <div className="mt-2">
                 <CrudStats stats={stats} />
@@ -171,10 +184,10 @@ export function CrudAdmin<T extends { id: string }>({
               <Button
                 key={index}
                 onClick={action.onClick}
-                variant={action.variant || 'default'}
+                variant={action.variant || "default"}
                 className={
-                  (action.variant || 'default') === 'default'
-                    ? 'bg-slate-900 text-white hover:bg-slate-800 border border-slate-900 shadow-lg hover:shadow-xl transition-all font-semibold'
+                  (action.variant || "default") === "default"
+                    ? "bg-slate-900 text-white hover:bg-slate-800 border border-slate-900 shadow-lg hover:shadow-xl transition-all font-semibold"
                     : undefined
                 }
               >
@@ -187,7 +200,7 @@ export function CrudAdmin<T extends { id: string }>({
       )}
 
       {/* Items Table */}
-      <div className={hasHeader ? 'mt-10' : ''}>
+      <div className={hasHeader ? "mt-10" : ""}>
         {items.length > 0 ? (
           <div className="overflow-x-auto -mx-6 px-6">
             <DataTable
@@ -198,32 +211,35 @@ export function CrudAdmin<T extends { id: string }>({
               globalFilterPlaceholder={searchPlaceholder}
               emptyMessage={emptyMessage}
               filterFn={filterFn}
+              headerFilter={headerFilter}
               headerActions={[
                 ...(enableExport && items.length > 0 ? [exportAction] : []),
-                ...(createAction && !hideCreateAction ? [createAction] : [])
+                ...(createAction && !hideCreateAction ? [createAction] : []),
               ]}
               rowActions={rowActions}
             />
           </div>
         ) : (
-            <div className="p-12 text-center">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
-                {emptyIcon || <Package className="h-8 w-8 text-muted-foreground" />}
-              </div>
-              <p className="text-muted-foreground mb-4">{emptyMessage}</p>
-              {onCreate && (
-                <Button
-                  onClick={onCreate}
-                  variant="default"
-                  className="bg-slate-900 text-white hover:bg-slate-800 border border-slate-900 shadow-lg hover:shadow-xl transition-all font-semibold"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  {emptyActionText}
-                </Button>
+          <div className="p-12 text-center">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
+              {emptyIcon || (
+                <Package className="h-8 w-8 text-muted-foreground" />
               )}
             </div>
-          )}
-        </div>
+            <p className="text-muted-foreground mb-4">{emptyMessage}</p>
+            {onCreate && (
+              <Button
+                onClick={onCreate}
+                variant="default"
+                className="bg-slate-900 text-white hover:bg-slate-800 border border-slate-900 shadow-lg hover:shadow-xl transition-all font-semibold"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                {emptyActionText}
+              </Button>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

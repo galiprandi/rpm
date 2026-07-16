@@ -65,6 +65,7 @@ interface DataTableProps<TData> {
   title?: React.ReactNode;
   rowActions?: (row: TData) => React.ReactNode;
   filterFn?: FilterFn<TData>;
+  headerFilter?: React.ReactNode;
   getRowId?: (row: TData) => string;
   enableRowSelection?: boolean;
   onRowSelectionChange?: (selection: any[]) => void;
@@ -85,6 +86,7 @@ export function DataTable<TData>({
   title,
   rowActions,
   filterFn,
+  headerFilter,
   getRowId,
   enableRowSelection = false,
   onRowSelectionChange,
@@ -245,6 +247,7 @@ export function DataTable<TData>({
                 </button>
               )}
             </div>
+            {headerFilter}
             {headerActions && headerActions.length > 0 && (
               <div className="flex items-center gap-2">
                 {headerActions.map((action, index) => {

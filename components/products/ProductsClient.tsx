@@ -23,6 +23,7 @@ import {
   Plus,
   RefreshCcw,
   Package,
+  Tags,
 } from "lucide-react";
 import { PriceDisplay } from "@/components/ui/price-display";
 import { StockDisplay } from "@/components/ui/stock-display";
@@ -31,6 +32,13 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { type ColumnDef, type FilterFn } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
 
@@ -73,8 +81,13 @@ export function ProductsClient({
   const router = useRouter();
 
   const [products, setProducts] = useState<Product[]>(initialProducts);
-  const lowStockCount = products.filter((p) => p.isLowStock).length;
-  const totalInventoryValue = products.reduce(
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const filteredProducts =
+    selectedCategory === "all"
+      ? products
+      : products.filter((p) => p.categoryId === selectedCategory);
+  const lowStockCount = filteredProducts.filter((p) => p.isLowStock).length;
+  const totalInventoryValue = filteredProducts.reduce(
     (acc, p) => acc + p.costPrice * (p.stock || 0),
     0,
   );
@@ -433,7 +446,7 @@ export function ProductsClient({
   const stats: StatItem[] = [
     {
       label: "Total",
-      value: products.length,
+      value: filteredProducts.length,
       icon: Boxes,
     },
     {
@@ -587,12 +600,31 @@ export function ProductsClient({
         </div>
 
         <CrudAdmin
-          items={products}
+          items={filteredProducts}
           loading={false}
           onCreate={openCreateDialog}
           hideCreateAction
           columns={columns}
           filterFn={productSearchFilter}
+          headerFilter={
+            <Select
+              value={selectedCategory}
+              onValueChange={setSelectedCategory}
+            >
+              <SelectTrigger className="w-[180px] h-9">
+                <Tags className="h-4 w-4 mr-2 text-muted-foreground" />
+                <SelectValue placeholder="Categoría" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas las categorías</SelectItem>
+                {categories.map((cat) => (
+                  <SelectItem key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          }
           emptyIcon={
             <Boxes className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
           }
