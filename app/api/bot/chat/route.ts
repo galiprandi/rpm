@@ -27,6 +27,8 @@ export async function POST(req: Request) {
         userId?: string;
         userName?: string;
         pathname?: string;
+        pageContent?: string;
+        modalContent?: string;
       };
     };
 
@@ -68,6 +70,8 @@ export async function POST(req: Request) {
       userId: context?.userId,
       userName: context?.userName,
       chatId,
+      pageContent: context?.pageContent,
+      modalContent: context?.modalContent,
       fileAttachments: fileAttachments.length > 0 ? fileAttachments : undefined,
     };
     const systemPrompt = composeSystemPrompt(botContext);

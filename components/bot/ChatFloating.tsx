@@ -76,18 +76,54 @@ export function ChatFloating({
     () =>
       new DefaultChatTransport({
         api: "/api/bot/chat",
-        prepareSendMessagesRequest: ({ messages, body }) => ({
-          body: {
-            messages,
-            context: {
-              ...(body as Record<string, unknown>),
-              role: userRole,
-              userId,
-              userName,
-              pathname,
+        prepareSendMessagesRequest: ({ messages, body }) => {
+          const main = document.querySelector("main");
+          const rawContent =
+            main?.innerText
+              ?.replace(/\t+/g, " ")
+              .replace(/[ \t]+/g, " ")
+              .replace(/\n{3,}/g, "\n\n")
+              .trim() || "";
+          const MAX_CONTENT = 1200;
+          const pageContent =
+            rawContent.length > 50
+              ? rawContent.length > MAX_CONTENT
+                ? rawContent.slice(0, MAX_CONTENT) + "\n...(contenido truncado)"
+                : rawContent
+              : undefined;
+
+          const modal = document.querySelector<HTMLElement>(
+            '[role="dialog"]:not([hidden])',
+          );
+          const rawModal =
+            modal?.innerText
+              ?.replace(/\t+/g, " ")
+              .replace(/[ \t]+/g, " ")
+              .replace(/\n{3,}/g, "\n\n")
+              .trim() || "";
+          const MAX_MODAL = 500;
+          const modalContent =
+            rawModal.length > 20
+              ? rawModal.length > MAX_MODAL
+                ? rawModal.slice(0, MAX_MODAL) + "\n...(truncado)"
+                : rawModal
+              : undefined;
+
+          return {
+            body: {
+              messages,
+              context: {
+                ...(body as Record<string, unknown>),
+                role: userRole,
+                userId,
+                userName,
+                pathname,
+                pageContent,
+                modalContent,
+              },
             },
-          },
-        }),
+          };
+        },
       }),
     [userId, userName, pathname, userRole],
   );

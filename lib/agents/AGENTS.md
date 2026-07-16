@@ -55,7 +55,8 @@ El system prompt se compone en `promptComposer.ts` mediante `composeSystemPrompt
 │ (/adm/products, /adm/work-orders, etc.)          │
 ├─────────────────────────────────────────────────┤
 │ Layer 4: RUNTIME                                 │
-│ chatId, current page, file attachments           │
+│ chatId, userName, current page, page content,    │
+│ modal content, file attachments                  │
 │ (dinámico, por request)                          │
 └─────────────────────────────────────────────────┘
 ```
@@ -69,9 +70,21 @@ interface BotContext {
   userId?: string;          // ID del usuario autenticado
   userName?: string;        // Nombre del usuario (para personalizar respuestas)
   chatId: string;           // ID único del chat
+  pageContent?: string;     // Texto extraído del <main> (lo que el usuario ve en pantalla)
+  modalContent?: string;    // Texto extraído de un [role="dialog"] abierto
   fileAttachments?: { url: string; mediaType: string }[];  // Archivos adjuntos
 }
 ```
+
+### Page Content (visión del bot)
+
+El bot recibe `pageContent` y `modalContent` extraídos del DOM client-side en `ChatFloating.tsx`:
+
+- **`pageContent`**: `document.querySelector('main').innerText` limpiado y truncado a 1200 chars
+- **`modalContent`**: `document.querySelector('[role="dialog"]:not([hidden])').innerText` truncado a 500 chars
+- Se extraen al enviar cada mensaje (no en cada render) para garantizar frescura
+- Si el contenido es menor a 50 chars, no se envía (evita ruido)
+- El bot sabe que es una representación textual, no datos definitivos — debe usar tools para datos precisos
 
 ### Entry Points
 
@@ -82,23 +95,39 @@ Hay dos entry points que usan la misma arquitectura:
 
 Ambos llaman a `composeSystemPrompt(context)` para obtener el prompt completo.
 
-## Cómo Extender
+## Mantenimiento Obligatorio
 
-### Agregar contexto de ruta nueva
+### routeContexts — Debe mantenerse actualizado
 
-En `promptComposer.ts`, agregar entrada al diccionario `routeContexts`:
+El diccionario `routeContexts` en `promptComposer.ts` **debe** mantenerse sincronizado con las rutas reales de `app/adm/`. 
+
+**Reglas:**
+
+- **Cada nueva ruta bajo `/adm/`** debe tener su entrada en `routeContexts`
+- **Rutas eliminadas** deben removerse de `routeContexts`
+- **Cambios de nombre de ruta** deben reflejarse en `routeContexts`
+- El matching es exacto primero, luego prefix (longest first) — las rutas más largas tienen prioridad
+- No requiere changes en otros archivos
+
+**Cómo agregar una ruta nueva:**
 
 ```typescript
 const routeContexts: Record<string, string> = {
   // ...
-  '/adm/new-page': `## Contexto de Ruta: New Page
-El usuario está en la página de X. Probablemente quiere:
-- Acción 1
-- Acción 2`,
+  '/adm/new-page': `## Contexto de Ruta
+El usuario se encuentra en la sección **New Page** y posiblemente te haga consultas relacionadas con X, Y y Z.`,
 };
 ```
 
-El matching es exacto primero, luego prefix (longest first). No requiere changes en otros archivos.
+**Verificación:** Al agregar o mover una ruta en `app/adm/`, verificar que `routeContexts` tenga cobertura. Una ruta sin entrada cae en fallback (sin contexto de ruta), lo que degrada la calidad de las respuestas del bot.
+
+### getRolePrompt — Mantener sincronizado con roles.ts
+
+Si se agrega un nuevo `UserRole` en `lib/auth/roles.ts`, agregar su entrada en `getRolePrompt()` dentro de `promptComposer.ts`.
+
+### getIdentityPrompt — Mantener sincronizado con Page Content
+
+Si se agregan nuevos campos dinámicos al runtime (además de `pageContent`, `modalContent`), documentarlos en la sección "Conocimiento del Usuario" de `getIdentityPrompt()` para que el bot sepa cómo usarlos.
 
 ### Agregar tools
 

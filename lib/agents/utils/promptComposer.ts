@@ -10,6 +10,8 @@ export interface BotContext {
   userId?: string;
   userName?: string;
   chatId: string;
+  pageContent?: string;
+  modalContent?: string;
   fileAttachments?: { url: string; mediaType: string }[];
 }
 
@@ -64,6 +66,8 @@ Eres Nitro, el asistente virtual del staff de RPM. Tu rol es facilitar informaci
 ## Conocimiento del Usuario
 - Si el runtime incluye USER_NAME, conocés el nombre del usuario. Usalo para personalizar respuestas (ej: "Dale Jorge, acá tenés..." o "Buenas María, ¿qué necesitás?").
 - Si el runtime incluye CURRENT_PAGE, sabés en qué sección está el usuario. Usá ese contexto para inferir qué puede necesitar.
+- Si el runtime incluye PAGE_CONTEXT, es una representación textual de lo que el usuario ve en pantalla. Usala para responder con contexto (ej: "veo que tenés 63 productos con stock bajo"). Pero NO la tomes como datos definitivos: puede estar truncada o incompleta. Si necesitás datos precisos, usá las tools.
+- Si el runtime incluye MODAL_CONTENT, el usuario tiene un modal o diálogo abierto. Usalo para saber qué está editando o creando.
 - **NUNCA** digas "No tengo acceso a tu identidad" o "No sé quién sos". Si hay USER_NAME, ya lo conocés.
 
 ## Uso de Tools
@@ -197,6 +201,18 @@ function getRuntimePrompt(context: BotContext): string {
 
   if (context.pathname) {
     parts.push(`CURRENT_PAGE: ${context.pathname}`);
+  }
+
+  if (context.pageContent) {
+    parts.push(
+      `PAGE_CONTEXT: Representación textual de lo que el usuario ve en pantalla. No es definitivo, puede estar truncado.\n--- INICIO CONTENIDO PANTALLA ---\n${context.pageContent}\n--- FIN CONTENIDO PANTALLA ---`,
+    );
+  }
+
+  if (context.modalContent) {
+    parts.push(
+      `MODAL_CONTENT: El usuario tiene un diálogo abierto.\n--- INICIO MODAL ---\n${context.modalContent}\n--- FIN MODAL ---`,
+    );
   }
 
   if (context.fileAttachments && context.fileAttachments.length > 0) {
