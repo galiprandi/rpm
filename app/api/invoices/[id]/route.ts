@@ -5,7 +5,9 @@ export const dynamic = 'force-dynamic';
 import {
   getInvoiceById,
   updateInvoiceStatus,
+  updateInvoiceBillingData,
 } from "@/lib/services/invoiceService";
+import { validateCUIT } from "@/lib/services/afipService";
 
 // GET /api/invoices/[id] - Get invoice by ID
 export async function GET(
@@ -36,7 +38,7 @@ export async function GET(
   }
 }
 
-// PATCH /api/invoices/[id] - Update invoice status
+// PATCH /api/invoices/[id] - Update invoice status or billing data
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -49,19 +51,58 @@ export async function PATCH(
 
     const { id } = await params;
     const body = await request.json();
-    const { status, issuedAt } = body;
+    const { status, issuedAt, customerName, customerDoc, customerDocType } = body;
 
-    if (!status || !["DRAFT", "ISSUED", "CANCELLED", "REJECTED"].includes(status)) {
-      return NextResponse.json({ error: "Invalid status" }, { status: 400 });
+    // Case 1: Status update (legacy compatibility)
+    if (status !== undefined) {
+      if (!["DRAFT", "ISSUED", "CANCELLED", "REJECTED"].includes(status)) {
+        return NextResponse.json({ error: "Invalid status" }, { status: 400 });
+      }
+
+      const invoice = await updateInvoiceStatus(id, status, issuedAt);
+      return NextResponse.json({ invoice });
     }
 
-    const invoice = await updateInvoiceStatus(id, status, issuedAt);
+    // Case 2: Billing data update
+    if (customerName !== undefined || customerDoc !== undefined || customerDocType !== undefined) {
+      // Basic validations
+      if (customerName !== undefined && !customerName.trim()) {
+        return NextResponse.json({ error: "El nombre o razón social no puede estar vacío" }, { status: 400 });
+      }
 
-    return NextResponse.json({ invoice });
-  } catch (error) {
+      if (customerDocType !== undefined && !['DNI', 'CUIT', 'SIN_DOC'].includes(customerDocType)) {
+        return NextResponse.json({ error: "Tipo de documento no válido" }, { status: 400 });
+      }
+
+      // Check validation of CUIT if provided or existing
+      const currentInvoice = await getInvoiceById(id);
+      if (!currentInvoice) {
+        return NextResponse.json({ error: "Comprobante no encontrado" }, { status: 404 });
+      }
+
+      const finalDocType = customerDocType !== undefined ? customerDocType : currentInvoice.customerDocType;
+      const finalDoc = customerDoc !== undefined ? customerDoc : currentInvoice.customerDoc;
+
+      if (finalDocType === 'CUIT' && finalDoc) {
+        if (!validateCUIT(finalDoc)) {
+          return NextResponse.json({ error: "El CUIT no tiene un formato válido (Módulo 11)" }, { status: 400 });
+        }
+      }
+
+      const invoice = await updateInvoiceBillingData(id, {
+        customerName,
+        customerDoc,
+        customerDocType,
+      });
+
+      return NextResponse.json({ invoice });
+    }
+
+    return NextResponse.json({ error: "No se proporcionaron datos para actualizar" }, { status: 400 });
+  } catch (error: any) {
     console.error("Error updating invoice:", error);
     return NextResponse.json(
-      { error: "Failed to update invoice" },
+      { error: error.message || "Failed to update invoice" },
       { status: 500 },
     );
   }

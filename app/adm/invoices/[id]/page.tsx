@@ -28,9 +28,19 @@ import {
   XCircle,
   CheckCircle2,
   Undo2,
+  Pencil,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
 interface InvoiceItem {
   name: string;
@@ -69,6 +79,52 @@ export default function InvoiceDetailPage() {
   const id = params.id as string;
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editForm, setEditForm] = useState({
+    customerName: "",
+    customerDocType: "SIN_DOC",
+    customerDoc: "",
+  });
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSaveBillingData = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isSaving) return; // Critical form protection rule
+
+    setIsSaving(true);
+    const toastId = toast.loading("Guardando datos de facturación...");
+
+    try {
+      const response = await fetch(`/api/invoices/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customerName: editForm.customerName.trim(),
+          customerDoc: editForm.customerDocType === "SIN_DOC" ? "" : editForm.customerDoc.trim(),
+          customerDocType: editForm.customerDocType,
+        }),
+      });
+
+      if (response.ok) {
+        toast.success("Datos actualizados correctamente", { id: toastId });
+        setIsEditDialogOpen(false);
+        // Re-fetch to update UI state
+        const updatedResponse = await fetch(`/api/invoices/${id}`);
+        if (updatedResponse.ok) {
+          setInvoice(await updatedResponse.json());
+        }
+      } else {
+        const error = await response.json();
+        toast.error(error.error || "Error al actualizar los datos", { id: toastId });
+      }
+    } catch (error) {
+      console.error("Error updating billing data:", error);
+      toast.error("Error de conexión", { id: toastId });
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   useEffect(() => {
     const fetchInvoice = async () => {
@@ -481,12 +537,30 @@ export default function InvoiceDetailPage() {
 
         <div className="space-y-6 print:hidden">
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
                 Cliente
               </CardTitle>
+              {(invoice.status === "DRAFT" || invoice.status === "REJECTED") && (
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  title="Editar datos de facturación"
+                  onClick={() => {
+                    setEditForm({
+                      customerName: invoice.customerName || "",
+                      customerDocType: invoice.customerDocType || "SIN_DOC",
+                      customerDoc: invoice.customerDoc || "",
+                    });
+                    setIsEditDialogOpen(true);
+                  }}
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+              )}
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 pt-2">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                   <User className="h-5 w-5 text-primary" />
@@ -601,6 +675,86 @@ export default function InvoiceDetailPage() {
           Gracias por confiar en RPM Accesorios
         </p>
       </div>
+
+      {/* Dialog para Editar Datos de Facturación */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Pencil className="h-5 w-5 text-primary" />
+              Editar Datos de Facturación
+            </DialogTitle>
+            <DialogDescription>
+              Modifique los datos fiscales del cliente para este comprobante. El cambio de tipo de documento podría modificar el tipo de comprobante (A ↔ B) y su número.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleSaveBillingData} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="customerName" required>Nombre o Razón Social</Label>
+              <Input
+                id="customerName"
+                value={editForm.customerName}
+                onChange={(e) => setEditForm({ ...editForm, customerName: e.target.value })}
+                required
+                placeholder="Ej. Juan Pérez o RPM S.A."
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="customerDocType">Tipo de Doc.</Label>
+                <select
+                  id="customerDocType"
+                  value={editForm.customerDocType}
+                  onChange={(e) => {
+                    const docType = e.target.value;
+                    setEditForm({
+                      ...editForm,
+                      customerDocType: docType,
+                      customerDoc: docType === 'SIN_DOC' ? '' : editForm.customerDoc
+                    });
+                  }}
+                  className="h-8 w-full rounded-lg border border-input bg-background px-2.5 py-1 text-sm text-foreground transition-colors outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                >
+                  <option value="SIN_DOC">Sin Documento</option>
+                  <option value="DNI">DNI</option>
+                  <option value="CUIT">CUIT</option>
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="customerDoc">Nro. de Documento</Label>
+                <Input
+                  id="customerDoc"
+                  value={editForm.customerDoc}
+                  onChange={(e) => setEditForm({ ...editForm, customerDoc: e.target.value })}
+                  disabled={editForm.customerDocType === 'SIN_DOC'}
+                  required={editForm.customerDocType !== 'SIN_DOC'}
+                  placeholder={editForm.customerDocType === 'CUIT' ? "20-12345678-9" : "Nro. de documento"}
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 border-t pt-4 mt-6">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsEditDialogOpen(false)}
+                disabled={isSaving}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                disabled={isSaving || !editForm.customerName.trim()}
+              >
+                {isSaving ? "Guardando..." : "Guardar Cambios"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
