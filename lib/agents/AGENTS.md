@@ -99,7 +99,7 @@ Ambos llaman a `composeSystemPrompt(context)` para obtener el prompt completo.
 
 ### routeContexts — Debe mantenerse actualizado
 
-El diccionario `routeContexts` en `promptComposer.ts` **debe** mantenerse sincronizado con las rutas reales de `app/adm/`.
+El diccionario `routeContexts` en `promptComposer.ts` **debe** mantenerse sincronizado con las rutas reales de `app/adm/`. 
 
 **Reglas:**
 
