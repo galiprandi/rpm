@@ -20,6 +20,7 @@ import {
   Save,
   Plus,
   Search,
+  Car,
   User,
   Phone,
   CheckCircle,
@@ -36,7 +37,9 @@ import {
   getVehicleCategoryIcon,
   buildVehicleDescription,
 } from "@/lib/constants/vehicle-categories";
-import { DEFAULT_ENTRY_CHECKLIST } from "@/lib/constants/work-order";
+import {
+  DEFAULT_ENTRY_CHECKLIST,
+} from "@/lib/constants/work-order";
 import {
   Select,
   SelectContent,
@@ -52,7 +55,6 @@ const WIZARD_STORAGE_KEY = "work-order-wizard-state";
 function normalizePlate(plate: string): string {
   return plate.trim().toUpperCase();
 }
-
 
 interface VehicleWithCustomer {
   id: string;
@@ -427,10 +429,9 @@ export default function NewWorkOrderPage() {
           unitPrice: item.unitPrice,
         })),
         entryChecklist: {
-          items: Object.entries(checklist).map(([id, checked]) => ({
-            id,
-            checked,
-            label: DEFAULT_ENTRY_CHECKLIST.find((i) => i.id === id)?.label || id,
+          items: DEFAULT_ENTRY_CHECKLIST.map((item) => ({
+            ...item,
+            checked: checklist[item.id] || false,
           })),
           completedAt: new Date().toISOString(),
         },
@@ -935,7 +936,7 @@ export default function NewWorkOrderPage() {
 
               <div className="space-y-3">
                 <Label>Checklist de Ingreso</Label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 border rounded-md p-4">
+                <div className="space-y-3 border rounded-md p-4">
                   {DEFAULT_ENTRY_CHECKLIST.map((item) => (
                     <Checkbox
                       key={item.id}

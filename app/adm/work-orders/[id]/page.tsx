@@ -61,14 +61,15 @@ import {
 import Image from "next/image";
 import { Header } from "@/components/adm/Header";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import { CustomerCreditNoteDialog } from "@/components/credit-notes/CustomerCreditNoteDialog";
 import { getWhatsAppLink, getWorkOrderMessage } from "@/lib/utils/whatsapp";
 import { buildVehicleDescription } from "@/lib/constants/vehicle-categories";
-import { formatARS, relativeTime } from "@/lib/utils/format";
 import {
   DEFAULT_ENTRY_CHECKLIST,
-  DEFAULT_EXIT_CHECKLIST
+  DEFAULT_EXIT_CHECKLIST,
 } from "@/lib/constants/work-order";
+import { formatARS, relativeTime } from "@/lib/utils/format";
 
 // --- Helpers ---
 
@@ -107,7 +108,7 @@ function TimelineItem({
   subtitle?: string;
   date: string;
   status: "completed" | "pending";
-  icon?: LucideIcon;
+  icon?: any;
   isFirst?: boolean;
   isLast?: boolean;
   variant?: "milestone" | "audit";
@@ -284,13 +285,13 @@ export default function WorkOrderDetailPage() {
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [loadingAudit, setLoadingAudit] = useState(false);
 
-  const [editingItemsState, setEditingItemsState] = useState<
-    Array<{ id: string; label: string; checked: boolean }>
-  >([]);
-
   const [editingChecklist, setEditingChecklist] = useState<
     "entry" | "exit" | null
   >(null);
+  const [editingChecklistItems, setEditingChecklistItems] = useState<
+    Array<{ id: string; label: string; checked: boolean }>
+  >([]);
+  const [checklistNotes, setChecklistNotes] = useState<string>("");
   const [editingOdometer, setEditingOdometer] = useState<number | undefined>(
     undefined,
   );
@@ -506,7 +507,8 @@ export default function WorkOrderDetailPage() {
             type: editingChecklist.toUpperCase(),
             odometerValue: editingOdometer,
             fuelLevel: editingFuelLevel,
-            items: editingItemsState,
+            items: editingChecklistItems,
+            notes: checklistNotes,
           }),
         },
       );
@@ -518,11 +520,13 @@ export default function WorkOrderDetailPage() {
       setEditingChecklist(null);
       setEditingOdometer(undefined);
       setEditingFuelLevel(undefined);
+      setEditingChecklistItems([]);
+      setChecklistNotes("");
       fetchAuditLogs();
 
       await alert({
         title: "Éxito",
-        description: "Datos actualizados correctamente",
+        description: "Checklist actualizado correctamente",
         variant: "success",
       });
     } catch (error) {
@@ -543,31 +547,31 @@ export default function WorkOrderDetailPage() {
     setEditingChecklist(type);
     setEditingOdometer(checklist?.odometerValue ?? workOrder?.odometerValue);
     setEditingFuelLevel(checklist?.fuelLevel ?? workOrder?.fuelLevel);
-    setEditingItemsState(checklist?.items || []);
+    setEditingChecklistItems(checklist?.items || []);
+    setChecklistNotes((checklist as any)?.notes || "");
   };
 
-  const handleToggleChecklistItem = (id: string) => {
-    setEditingItemsState((prev) =>
+  const handleToggleChecklistItem = (itemId: string) => {
+    setEditingChecklistItems((prev) =>
       prev.map((item) =>
-        item.id === id ? { ...item, checked: !item.checked } : item,
+        item.id === itemId ? { ...item, checked: !item.checked } : item,
       ),
     );
   };
 
-  const handleInitializeChecklist = async (type: "ENTRY" | "EXIT") => {
-    const defaultItems =
-      type === "ENTRY" ? DEFAULT_ENTRY_CHECKLIST : DEFAULT_EXIT_CHECKLIST;
-
-    setUpdatingStatus(true);
+  const handleCompleteChecklist = async (type: "ENTRY" | "EXIT") => {
     try {
+      const defaultItems =
+        type === "ENTRY" ? DEFAULT_ENTRY_CHECKLIST : DEFAULT_EXIT_CHECKLIST;
+
       const response = await fetch(
         `/api/work-orders/${workOrderId}/checklist`,
         {
-          method: "PUT",
+          method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             type,
-            items: defaultItems.map((i) => ({ ...i, checked: false })),
+            items: defaultItems,
             odometerValue: workOrder?.odometerValue,
             fuelLevel: workOrder?.fuelLevel,
           }),
@@ -578,16 +582,15 @@ export default function WorkOrderDetailPage() {
 
       const updated = await response.json();
       setWorkOrder((prev) => (prev ? { ...prev, ...updated } : null));
+      fetchAuditLogs();
 
-      await alert({
-        title: "Éxito",
-        description: "Checklist inicializado",
-        variant: "success",
-      });
+      // Auto-start editing after initialization
+      startEditingChecklist(type.toLowerCase() as "entry" | "exit");
+
+      toast.success("Checklist inicializado");
     } catch (error) {
-      console.error("Error initializing checklist:", error);
-    } finally {
-      setUpdatingStatus(false);
+      console.error("Error completing checklist:", error);
+      toast.error("Error al inicializar checklist");
     }
   };
 
@@ -762,14 +765,7 @@ export default function WorkOrderDetailPage() {
   const unifiedTimelineItems = useMemo(() => {
     if (!workOrder) return [];
 
-    const items: Array<{
-      type: "milestone" | "audit";
-      title: string;
-      subtitle?: string;
-      date: string;
-      status: "completed" | "pending";
-      icon: LucideIcon;
-    }> = [
+    const items: any[] = [
       {
         type: "milestone",
         title: "OT Creada",
@@ -1572,6 +1568,20 @@ export default function WorkOrderDetailPage() {
                             value={editingFuelLevel ?? 0}
                             onChange={setEditingFuelLevel}
                           />
+                          <div className="pt-2">
+                            <label className="text-xs font-medium mb-1 block">
+                              Notas del Checklist:
+                            </label>
+                            <Textarea
+                              value={checklistNotes}
+                              onChange={(e) =>
+                                setChecklistNotes(e.target.value)
+                              }
+                              placeholder="Ej: Rayón en puerta derecha..."
+                              rows={2}
+                              className="text-xs"
+                            />
+                          </div>
                           <div className="flex gap-2 mt-2">
                             <Button
                               size="sm"
@@ -1613,6 +1623,11 @@ export default function WorkOrderDetailPage() {
                               </span>
                             </div>
                           )}
+                          {(workOrder.entryChecklist as any).notes && (
+                            <div className="text-xs italic text-muted-foreground mt-1 border-t pt-1">
+                              &ldquo;{(workOrder.entryChecklist as any).notes}&rdquo;
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -1620,11 +1635,11 @@ export default function WorkOrderDetailPage() {
                     {/* Checklist Items */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
                       {(editingChecklist === "entry"
-                        ? editingItemsState
+                        ? editingChecklistItems
                         : workOrder.entryChecklist.items
                       ).map((item, index) => (
                         <div
-                          key={item.id || index}
+                          key={index}
                           className={cn(
                             "flex items-start gap-3 p-2 rounded-md transition-colors",
                             item.checked
@@ -1674,15 +1689,13 @@ export default function WorkOrderDetailPage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center gap-3 py-6 border-2 border-dashed rounded-lg">
-                    <p className="text-sm text-muted-foreground">
+                  <div className="text-muted-foreground py-6 text-center border-2 border-dashed rounded-lg">
+                    <p className="text-sm mb-4">
                       Sin checklist de ingreso registrado
                     </p>
                     <Button
-                      variant="outline"
                       size="sm"
-                      onClick={() => handleInitializeChecklist("ENTRY")}
-                      disabled={updatingStatus}
+                      onClick={() => handleCompleteChecklist("ENTRY")}
                     >
                       <Plus className="h-4 w-4 mr-2" />
                       Completar Checklist
@@ -1749,6 +1762,20 @@ export default function WorkOrderDetailPage() {
                             value={editingFuelLevel ?? 0}
                             onChange={setEditingFuelLevel}
                           />
+                          <div className="pt-2">
+                            <label className="text-xs font-medium mb-1 block">
+                              Notas del Checklist:
+                            </label>
+                            <Textarea
+                              value={checklistNotes}
+                              onChange={(e) =>
+                                setChecklistNotes(e.target.value)
+                              }
+                              placeholder="Ej: Lavado completado..."
+                              rows={2}
+                              className="text-xs"
+                            />
+                          </div>
                           <div className="flex gap-2 mt-2">
                             <Button
                               size="sm"
@@ -1790,6 +1817,11 @@ export default function WorkOrderDetailPage() {
                               </span>
                             </div>
                           )}
+                          {(workOrder.exitChecklist as any).notes && (
+                            <div className="text-xs italic text-muted-foreground mt-1 border-t pt-1">
+                              &ldquo;{(workOrder.exitChecklist as any).notes}&rdquo;
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -1797,11 +1829,11 @@ export default function WorkOrderDetailPage() {
                     {/* Checklist Items */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
                       {(editingChecklist === "exit"
-                        ? editingItemsState
+                        ? editingChecklistItems
                         : workOrder.exitChecklist.items
                       ).map((item, index) => (
                         <div
-                          key={item.id || index}
+                          key={index}
                           className={cn(
                             "flex items-start gap-3 p-2 rounded-md transition-colors",
                             item.checked
@@ -1851,15 +1883,13 @@ export default function WorkOrderDetailPage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center gap-3 py-6 border-2 border-dashed rounded-lg">
-                    <p className="text-sm text-muted-foreground">
+                  <div className="text-muted-foreground py-6 text-center border-2 border-dashed rounded-lg">
+                    <p className="text-sm mb-4">
                       Sin checklist de calidad registrado
                     </p>
                     <Button
-                      variant="outline"
                       size="sm"
-                      onClick={() => handleInitializeChecklist("EXIT")}
-                      disabled={updatingStatus}
+                      onClick={() => handleCompleteChecklist("EXIT")}
                     >
                       <Plus className="h-4 w-4 mr-2" />
                       Completar Checklist
@@ -2087,7 +2117,7 @@ export default function WorkOrderDetailPage() {
                         date={item.date}
                         status={item.status}
                         icon={item.icon}
-                        variant={item.type}
+                        variant={item.type as any}
                         isFirst={index === 0}
                         isLast={index === unifiedTimelineItems.length - 1}
                       />

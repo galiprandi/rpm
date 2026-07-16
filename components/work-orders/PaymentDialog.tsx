@@ -104,9 +104,7 @@ export function PaymentDialog({
   useEffect(() => {
     const remaining = Math.max(0, workOrderTotal - totalPaid);
     if (remaining > 0 && isOpen) {
-      void Promise.resolve().then(() => {
-        setAmount(remaining.toString());
-      });
+      setAmount(remaining.toString());
     }
   }, [totalPaid, workOrderTotal, isOpen]);
 

@@ -55,21 +55,21 @@ export const WORK_ORDER_STATUSES = [
 export type WorkOrderStatus = (typeof WORK_ORDER_STATUSES)[number]["id"];
 
 export const DEFAULT_ENTRY_CHECKLIST = [
-  { id: "exterior_clean", label: "Limpieza exterior", status: "PENDING" },
-  { id: "interior_clean", label: "Limpieza interior", status: "PENDING" },
-  { id: "fluids", label: "Niveles de fluidos", status: "PENDING" },
-  { id: "tires", label: "Estado de neumáticos", status: "PENDING" },
-  { id: "lights", label: "Funcionamiento de luces", status: "PENDING" },
-  { id: "battery", label: "Estado de batería", status: "PENDING" },
-  { id: "tools", label: "Herramientas y auxilio", status: "PENDING" },
-  { id: "documents", label: "Documentación", status: "PENDING" },
+  { id: "exterior_clean", label: "Limpieza exterior", checked: false },
+  { id: "interior_clean", label: "Limpieza interior", checked: false },
+  { id: "fluids", label: "Niveles de fluidos", checked: false },
+  { id: "tires", label: "Estado de neumáticos", checked: false },
+  { id: "lights", label: "Funcionamiento de luces", checked: false },
+  { id: "battery", label: "Estado de batería", checked: false },
+  { id: "tools", label: "Herramientas y auxilio", checked: false },
+  { id: "documents", label: "Documentación", checked: false },
 ];
 
 export const DEFAULT_EXIT_CHECKLIST = [
-  { id: "service_complete", label: "Servicio completado", status: "PENDING" },
-  { id: "quality_check", label: "Control de calidad", status: "PENDING" },
-  { id: "test_drive", label: "Prueba de manejo", status: "PENDING" },
-  { id: "cleaning", label: "Limpieza final", status: "PENDING" },
-  { id: "parts_returned", label: "Repuestos devueltos", status: "PENDING" },
-  { id: "tags_removed", label: "Etiquetas removidas", status: "PENDING" },
+  { id: "service_complete", label: "Servicio completado", checked: false },
+  { id: "quality_check", label: "Control de calidad", checked: false },
+  { id: "test_drive", label: "Prueba de manejo", checked: false },
+  { id: "cleaning", label: "Limpieza final", checked: false },
+  { id: "parts_returned", label: "Repuestos devueltos", checked: false },
+  { id: "tags_removed", label: "Etiquetas removidas", checked: false },
 ];
