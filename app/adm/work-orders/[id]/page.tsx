@@ -1714,7 +1714,8 @@ export default function WorkOrderDetailPage() {
                           )}
                           {(workOrder.entryChecklist as any).notes && (
                             <div className="text-xs italic text-muted-foreground mt-1 border-t pt-1">
-                              &ldquo;{(workOrder.entryChecklist as any).notes}&rdquo;
+                              &ldquo;{(workOrder.entryChecklist as any).notes}
+                              &rdquo;
                             </div>
                           )}
                         </div>
@@ -1908,7 +1909,8 @@ export default function WorkOrderDetailPage() {
                           )}
                           {(workOrder.exitChecklist as any).notes && (
                             <div className="text-xs italic text-muted-foreground mt-1 border-t pt-1">
-                              &ldquo;{(workOrder.exitChecklist as any).notes}&rdquo;
+                              &ldquo;{(workOrder.exitChecklist as any).notes}
+                              &rdquo;
                             </div>
                           )}
                         </div>
@@ -2119,7 +2121,10 @@ export default function WorkOrderDetailPage() {
                             className="h-8 w-8 p-0"
                             title="Descargar PDF"
                             onClick={() =>
-                              window.open(`/adm/invoices/${inv.id}?print=true`, '_blank')
+                              window.open(
+                                `/adm/invoices/${inv.id}?print=true`,
+                                "_blank",
+                              )
                             }
                           >
                             <FileDown className="h-4 w-4" />

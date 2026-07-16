@@ -82,7 +82,11 @@ export function AdminClientLayout({ children, user }: AdminClientLayoutProps) {
               {children}
             </main>
           </SidebarInset>
-          <ChatFloating isOpen={chatOpen} onOpenChange={setChatOpen} />
+          <ChatFloating
+            isOpen={chatOpen}
+            onOpenChange={setChatOpen}
+            serverUser={user}
+          />
           <WebMCPTools />
           <WebMCPNavTools />
         </>

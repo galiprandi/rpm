@@ -8,8 +8,11 @@ import {
 } from "ai";
 import { createGroq } from "@ai-sdk/groq";
 import { unifiedTools } from "@/lib/agents/unified-tools";
-import { readFileSync } from "fs";
-import { join } from "path";
+import {
+  composeSystemPrompt,
+  type BotContext,
+} from "@/lib/agents/utils/promptComposer";
+import { UserRole } from "@/lib/auth/roles";
 
 const groq = createGroq({
   apiKey: process.env.GROQ_API_KEY,
@@ -19,7 +22,14 @@ export async function POST(req: Request) {
   try {
     const { messages, context } = (await req.json()) as {
       messages: UIMessage[];
-      context?: { role?: string; userId?: string; pathname?: string };
+      context?: {
+        role?: string;
+        userId?: string;
+        userName?: string;
+        pathname?: string;
+        pageContent?: string;
+        modalContent?: string;
+      };
     };
 
     const chatId = `user-${context?.userId || "anon"}`;
@@ -52,24 +62,19 @@ export async function POST(req: Request) {
       return msg;
     });
 
-    // Build context with file URLs for the tool to use
-    let fileContext = "";
-    if (fileAttachments.length > 0) {
-      fileContext = `\n\nADJUNCT_FILES: ${JSON.stringify(fileAttachments.map((f) => ({ url: f.url, mediaType: f.mediaType })))}`;
-    }
-
-    const instructionsPath = join(
-      process.cwd(),
-      "lib/agents/unified-instructions.md",
-    );
-    const contextSection = context?.pathname
-      ? `\n\nCURRENT_PAGE: ${context.pathname}`
-      : "";
-    const systemPrompt =
-      readFileSync(instructionsPath, "utf-8") +
-      `\n\nCHAT_ID: ${chatId}` +
-      contextSection +
-      fileContext;
+    // Compose system prompt using the unified prompt architecture
+    const role = (context?.role as UserRole) || UserRole.USER;
+    const botContext: BotContext = {
+      role,
+      pathname: context?.pathname,
+      userId: context?.userId,
+      userName: context?.userName,
+      chatId,
+      pageContent: context?.pageContent,
+      modalContent: context?.modalContent,
+      fileAttachments: fileAttachments.length > 0 ? fileAttachments : undefined,
+    };
+    const systemPrompt = composeSystemPrompt(botContext);
 
     const modelName = process.env.GROQ_MODEL;
     if (!modelName) throw new Error("GROQ_MODEL env var is required");
