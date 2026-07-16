@@ -24,6 +24,9 @@ import {
   RefreshCcw,
   Package,
   Tags,
+  Power,
+  ArrowLeft,
+  EyeOff,
 } from "lucide-react";
 import { PriceDisplay } from "@/components/ui/price-display";
 import { StockDisplay } from "@/components/ui/stock-display";
@@ -53,6 +56,7 @@ interface ProductsClientProps {
   products: Product[];
   categories: Category[];
   suppliers: Supplier[];
+  inactiveMode?: boolean;
 }
 
 const productSearchFilter: FilterFn<Product> = (
@@ -76,6 +80,7 @@ export function ProductsClient({
   products: initialProducts,
   categories,
   suppliers,
+  inactiveMode = false,
 }: ProductsClientProps) {
   const { alert } = useUI();
   const router = useRouter();
@@ -443,24 +448,69 @@ export function ProductsClient({
     [alert],
   );
 
-  const stats: StatItem[] = [
-    {
-      label: "Total",
-      value: filteredProducts.length,
-      icon: Boxes,
+  const handleReactivate = useCallback(
+    async (product: Product) => {
+      try {
+        const response = await fetch(`/api/products/${product.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ isActive: true }),
+        });
+
+        if (response.ok) {
+          setProducts((prev) => prev.filter((p) => p.id !== product.id));
+          toast.success(`Producto "${product.name}" reactivado`);
+        } else {
+          const error = await response.json();
+          await alert({
+            title: "Error",
+            description: error.error || "Error al reactivar producto",
+            variant: "error",
+          });
+        }
+      } catch (error) {
+        console.error("Error reactivating product:", error);
+        await alert({
+          title: "Error",
+          description: "Error al reactivar producto",
+          variant: "error",
+        });
+      }
     },
-    {
-      label: "Stock bajo",
-      value: lowStockCount,
-      icon: AlertTriangle,
-      iconColor: lowStockCount > 0 ? "#c2410c" : undefined, // orange-700
-    },
-    {
-      label: "Valor inventario",
-      value: <PriceDisplay value={totalInventoryValue} />,
-      icon: DollarSign,
-    },
-  ];
+    [alert],
+  );
+
+  const stats: StatItem[] = inactiveMode
+    ? [
+        {
+          label: "Inactivos",
+          value: filteredProducts.length,
+          icon: EyeOff,
+        },
+        {
+          label: "Valor inventario",
+          value: <PriceDisplay value={totalInventoryValue} />,
+          icon: DollarSign,
+        },
+      ]
+    : [
+        {
+          label: "Total",
+          value: filteredProducts.length,
+          icon: Boxes,
+        },
+        {
+          label: "Stock bajo",
+          value: lowStockCount,
+          icon: AlertTriangle,
+          iconColor: lowStockCount > 0 ? "#c2410c" : undefined, // orange-700
+        },
+        {
+          label: "Valor inventario",
+          value: <PriceDisplay value={totalInventoryValue} />,
+          icon: DollarSign,
+        },
+      ];
 
   const columns: ColumnDef<Product>[] = [
     {
@@ -528,71 +578,79 @@ export function ProductsClient({
         </div>
       ),
     },
-    {
-      accessorKey: "isActive",
-      header: "Estado",
-      size: 90,
-      cell: ({ row }) =>
-        row.original.isActive ? (
-          <Badge
-            variant="outline"
-            className="text-emerald-700 border-emerald-200 bg-emerald-50"
-          >
-            Activo
-          </Badge>
-        ) : (
-          <Badge
-            variant="outline"
-            className="text-red-700 border-red-200 bg-red-50"
-          >
-            Inactivo
-          </Badge>
-        ),
-    },
   ];
 
   return (
     <>
       <div className="space-y-6">
         <Header
-          title="Productos"
-          shortTitle="Prod"
+          title={inactiveMode ? "Productos Inactivos" : "Productos"}
+          shortTitle={inactiveMode ? "Inactivos" : "Prod"}
           iconOnlyOnMobile
-          description="Gestiona el inventario de productos y servicios"
-          primaryAction={{
-            label: "Nuevo Producto",
-            onClick: openCreateDialog,
-            icon: Plus,
-            ariaLabel: "Crear nuevo producto",
-          }}
-          secondaryActions={[
-            {
-              label: "Inventario",
-              href: "/adm/inventory-counts",
-              variant: "outline" as const,
-              icon: RefreshCcw,
-              ariaLabel: "Ir a operativos de conteo de inventario",
-            },
-            {
-              label: "Importar",
-              onClick: goToImporter,
-              variant: "outline" as const,
-              icon: FileUp,
-              ariaLabel: "Importar productos desde archivo Excel o CSV",
-            },
-            {
-              label: "Venta Rápida",
-              onClick: () => setQuickSaleModalOpen(true),
-              variant: "default" as const,
-              icon: ShoppingCart,
-              disabled: isCashOpen === false,
-              title:
-                isCashOpen === false
-                  ? "Debe abrir la caja para realizar ventas"
-                  : undefined,
-              ariaLabel: "Realizar una venta rápida por mostrador",
-            },
-          ]}
+          description={
+            inactiveMode
+              ? "Productos desactivados del catálogo"
+              : "Gestiona el inventario de productos y servicios"
+          }
+          primaryAction={
+            inactiveMode
+              ? undefined
+              : {
+                  label: "Nuevo Producto",
+                  onClick: openCreateDialog,
+                  icon: Plus,
+                  ariaLabel: "Crear nuevo producto",
+                }
+          }
+          secondaryActions={
+            inactiveMode
+              ? [
+                  {
+                    label: "Volver a productos",
+                    href: "/adm/products",
+                    variant: "outline" as const,
+                    icon: ArrowLeft,
+                    ariaLabel: "Volver al listado de productos",
+                  },
+                ]
+              : [
+                  {
+                    label: "Inventario",
+                    href: "/adm/inventory-counts",
+                    variant: "outline" as const,
+                    icon: RefreshCcw,
+                    ariaLabel: "Ir a operativos de conteo de inventario",
+                  },
+                  {
+                    label: "Importar",
+                    onClick: goToImporter,
+                    variant: "outline" as const,
+                    icon: FileUp,
+                    ariaLabel: "Importar productos desde archivo Excel o CSV",
+                  },
+                  {
+                    label: "Ver inactivos",
+                    href: "/adm/products/inactive",
+                    variant: "ghost" as const,
+                    icon: EyeOff,
+                    iconOnly: true,
+                    title: "Ver productos inactivos",
+                    ariaLabel: "Ver productos inactivos",
+                  },
+                  {
+                    label: "Venta Rápida",
+                    onClick: () => setQuickSaleModalOpen(true),
+                    variant: "default" as const,
+                    icon: ShoppingCart,
+                    disabled: isCashOpen === false,
+                    title:
+                      isCashOpen === false
+                        ? "Debe abrir la caja para realizar ventas"
+                        : undefined,
+                    ariaLabel: "Realizar una venta rápida por mostrador",
+                  },
+                ]
+          }
         />
 
         <div className="mt-4">
@@ -628,9 +686,15 @@ export function ProductsClient({
           emptyIcon={
             <Boxes className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
           }
-          emptyMessage="No hay productos creados. Haz clic en 'Nuevo Producto' para crear el primero."
+          emptyMessage={
+            inactiveMode
+              ? "No hay productos inactivos."
+              : "No hay productos creados. Haz clic en 'Nuevo Producto' para crear el primero."
+          }
           createButtonText="Producto"
-          tableTitle="Listado de Productos"
+          tableTitle={
+            inactiveMode ? "Productos Inactivos" : "Listado de Productos"
+          }
           searchPlaceholder="Buscar por SKU, nombre, EAN..."
           rowActions={(product: Product) => (
             <div className="flex gap-1">
@@ -676,39 +740,58 @@ export function ProductsClient({
                 <TooltipContent>Editar producto</TooltipContent>
               </Tooltip>
 
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-red-700 hover:text-red-800 hover:bg-red-50"
-                    onClick={() => handleDelete(product)}
-                    aria-label={`Desactivar producto ${product.name}`}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Desactivar producto</TooltipContent>
-              </Tooltip>
+              {product.isActive ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-red-700 hover:text-red-800 hover:bg-red-50"
+                      onClick={() => handleDelete(product)}
+                      aria-label={`Desactivar producto ${product.name}`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Desactivar producto</TooltipContent>
+                </Tooltip>
+              ) : (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50"
+                      onClick={() => handleReactivate(product)}
+                      aria-label={`Reactivar producto ${product.name}`}
+                    >
+                      <Power className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Reactivar producto</TooltipContent>
+                </Tooltip>
+              )}
             </div>
           )}
         />
       </div>
 
-      <ProductDialog
-        isOpen={isDialogOpen}
-        onClose={() => setIsDialogOpen(false)}
-        editingProduct={editingProduct}
-        formData={formData}
-        setFormData={setFormData}
-        onSubmit={handleSubmit}
-        categories={categories}
-        suppliers={suppliers}
-        isValid={formValid}
-        isUploadingImage={isUploadingImage}
-        isSubmitting={isSubmitting}
-        onDeleteImage={handleDeleteImage}
-      />
+      {!inactiveMode && (
+        <ProductDialog
+          isOpen={isDialogOpen}
+          onClose={() => setIsDialogOpen(false)}
+          editingProduct={editingProduct}
+          formData={formData}
+          setFormData={setFormData}
+          onSubmit={handleSubmit}
+          categories={categories}
+          suppliers={suppliers}
+          isValid={formValid}
+          isUploadingImage={isUploadingImage}
+          isSubmitting={isSubmitting}
+          onDeleteImage={handleDeleteImage}
+        />
+      )}
 
       <ProductPricesModal
         isOpen={pricesModalOpen}
@@ -724,11 +807,13 @@ export function ProductsClient({
         loading={movementsLoading}
       />
 
-      <QuickSaleModal
-        open={quickSaleModalOpen}
-        onOpenChange={setQuickSaleModalOpen}
-        onSuccess={handleQuickSaleSuccess}
-      />
+      {!inactiveMode && (
+        <QuickSaleModal
+          open={quickSaleModalOpen}
+          onOpenChange={setQuickSaleModalOpen}
+          onSuccess={handleQuickSaleSuccess}
+        />
+      )}
     </>
   );
 }

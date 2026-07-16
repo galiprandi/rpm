@@ -1,4 +1,4 @@
-import CategoriesClient from "./CategoriesClient";
+import CategoriesClient from "../CategoriesClient";
 import { getCategories } from "@/lib/services/categoryService";
 import { requireAuth } from "@/lib/auth-server";
 import { UserRole } from "@/lib/auth/roles";
@@ -6,7 +6,7 @@ import { UserRole } from "@/lib/auth/roles";
 export const dynamic = "force-dynamic";
 export const revalidate = 60;
 
-export default async function CategoriesPage() {
+export default async function InactiveCategoriesPage() {
   const session = await requireAuth();
   const userRole =
     ((session.user as { role?: string }).role as UserRole) || UserRole.USER;
@@ -15,8 +15,8 @@ export default async function CategoriesPage() {
     throw new Error("Acceso denegado");
   }
 
-  const data = await getCategories(false);
-  const categories = data.categories;
+  const data = await getCategories(true);
+  const inactiveCategories = data.categories.filter((c) => !c.isActive);
 
-  return <CategoriesClient initialCategories={categories} />;
+  return <CategoriesClient initialCategories={inactiveCategories} inactiveMode />;
 }

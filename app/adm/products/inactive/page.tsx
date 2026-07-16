@@ -9,7 +9,7 @@ import { UserRole } from "@/lib/auth/roles";
 export const dynamic = "force-dynamic";
 export const revalidate = 60;
 
-export default async function ProductsPage() {
+export default async function InactiveProductsPage() {
   const session = await requireAuth();
   const userRole =
     ((session.user as { role?: string }).role as UserRole) || UserRole.USER;
@@ -18,9 +18,8 @@ export default async function ProductsPage() {
     throw new Error("Acceso denegado");
   }
 
-  // Fetch data from services in parallel
   const [productsData, categoriesData, suppliersData] = await Promise.all([
-    getProducts({ isActive: true }),
+    getProducts({ isActive: false }),
     getCategories(),
     getSuppliers(),
   ]);
@@ -34,6 +33,7 @@ export default async function ProductsPage() {
       products={products}
       categories={categories}
       suppliers={suppliers}
+      inactiveMode
     />
   );
 }
