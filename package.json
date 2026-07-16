@@ -19,7 +19,7 @@
     "db:seed": "npx prisma db seed",
     "db:studio": "npx prisma studio",
     "deploy": "vercel --prod",
-    "prepare": "husky"
+    "prepare": "husky || true"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
