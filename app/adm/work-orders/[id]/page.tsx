@@ -211,7 +211,8 @@ interface WorkOrderDetail {
   work_order_item: Array<{
     id: string;
     type: string;
-    name: string;
+    name: string | null;
+    isManualName: boolean;
     quantity: number;
     unitPrice: number;
     subtotal: number;
@@ -604,7 +605,8 @@ export default function WorkOrderDetailPage() {
     const mappedItems = workOrder.work_order_item.map((item) => ({
       id: item.type === "PRODUCT" ? item.productId! : item.serviceId!,
       type: item.type.toLowerCase() as "product" | "service",
-      name: item.product?.name || item.service?.name || item.name,
+      name: item.name || item.product?.name || item.service?.name || "Item",
+      isManualName: item.isManualName,
       quantity: item.quantity,
       unitPrice: Number(item.unitPrice),
       originalPrice: Number(item.unitPrice),
@@ -1312,9 +1314,10 @@ export default function WorkOrderDetailPage() {
                                   )}
                                 </div>
                                 <span className="font-semibold tracking-tight">
-                                  {item.product?.name ||
+                                  {item.name ||
+                                    item.product?.name ||
                                     item.service?.name ||
-                                    item.name}
+                                    "Item"}
                                 </span>
                               </div>
                             </TableCell>

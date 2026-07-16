@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 // PUT /api/work-orders/[id]/items - Update work order items
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -20,14 +20,14 @@ export async function PUT(
     if (!workOrder) {
       return NextResponse.json(
         { error: "Work order not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
-    if (workOrder.status === 'DELIVERED') {
+    if (workOrder.status === "DELIVERED") {
       return NextResponse.json(
         { error: "Cannot modify items of a delivered work order" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -42,16 +42,18 @@ export async function PUT(
     let total = 0;
 
     for (const item of items) {
-      const isProduct = item.type === 'product';
+      const isProduct = item.type === "product";
       const subtotal = item.quantity * item.unitPrice;
 
       await prisma.work_order_item.create({
         data: {
           id: crypto.randomUUID(),
           workOrderId: id,
-          type: isProduct ? 'PRODUCT' : 'SERVICE',
+          type: isProduct ? "PRODUCT" : "SERVICE",
           productId: isProduct ? item.id : null,
           serviceId: !isProduct ? item.id : null,
+          name: item.isManualName ? item.name : null,
+          isManualName: item.isManualName || false,
           quantity: item.quantity,
           unitPrice: item.unitPrice,
           subtotal: subtotal,
@@ -78,7 +80,7 @@ export async function PUT(
       },
     });
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
       totalProducts,
       totalServices,
@@ -88,7 +90,7 @@ export async function PUT(
     console.error("Error updating work order items:", error);
     return NextResponse.json(
       { error: "Failed to update work order items" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

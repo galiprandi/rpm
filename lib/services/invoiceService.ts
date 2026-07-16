@@ -1,26 +1,32 @@
-import { prisma } from '@/lib/prisma';
-import { Prisma } from '@prisma/client';
+import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 
 export type InvoiceType =
-  | 'X_A'
-  | 'X_B'
-  | 'X_C'
-  | 'FACTURA_A'
-  | 'FACTURA_B'
-  | 'FACTURA_C'
-  | 'NOTA_CREDITO_X_A'
-  | 'NOTA_CREDITO_X_B'
-  | 'NOTA_CREDITO_A'
-  | 'NOTA_CREDITO_B'
-  | 'PRESUPUESTO'
-  | 'REMITO';
+  | "X_A"
+  | "X_B"
+  | "X_C"
+  | "FACTURA_A"
+  | "FACTURA_B"
+  | "FACTURA_C"
+  | "NOTA_CREDITO_X_A"
+  | "NOTA_CREDITO_X_B"
+  | "NOTA_CREDITO_A"
+  | "NOTA_CREDITO_B"
+  | "PRESUPUESTO"
+  | "REMITO";
 
-export type InvoiceStatus = 'DRAFT' | 'PENDING' | 'ISSUED' | 'REJECTED' | 'CANCELLED' | 'ANNULLED';
+export type InvoiceStatus =
+  | "DRAFT"
+  | "PENDING"
+  | "ISSUED"
+  | "REJECTED"
+  | "CANCELLED"
+  | "ANNULLED";
 
 export interface InvoiceInput {
   type: InvoiceType;
   referenceId: string;
-  referenceType: 'work_order' | 'direct_sale' | 'credit_note';
+  referenceType: "work_order" | "direct_sale" | "credit_note";
   customerId?: string;
   customerName: string;
   customerDoc?: string;
@@ -44,7 +50,10 @@ const DEFAULT_IVA_RATE = 21;
  * Creates a new invoice and automatically assigns the next number.
  * If a transaction client is provided, it uses it. Otherwise, it creates a new transaction.
  */
-export async function createInvoice(data: InvoiceInput, tx?: Prisma.TransactionClient) {
+export async function createInvoice(
+  data: InvoiceInput,
+  tx?: Prisma.TransactionClient,
+) {
   const execute = async (transaction: Prisma.TransactionClient) => {
     const number = await getNextInvoiceNumber(data.type, transaction);
 
@@ -114,8 +123,8 @@ export async function getInvoices(filters: {
 
   if (filters.search) {
     where.OR = [
-      { number: { contains: filters.search, mode: 'insensitive' } },
-      { customerName: { contains: filters.search, mode: 'insensitive' } },
+      { number: { contains: filters.search, mode: "insensitive" } },
+      { customerName: { contains: filters.search, mode: "insensitive" } },
     ];
   }
 
@@ -126,7 +135,7 @@ export async function getInvoices(filters: {
         select: { name: true, phone: true },
       },
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { createdAt: "desc" },
   });
 }
 
@@ -149,7 +158,7 @@ export async function getInvoiceById(id: string) {
   }> = [];
 
   try {
-    if (invoice.referenceType === 'work_order') {
+    if (invoice.referenceType === "work_order") {
       const woItems = await prisma.work_order_item.findMany({
         where: { workOrderId: invoice.referenceId },
         include: {
@@ -158,12 +167,16 @@ export async function getInvoiceById(id: string) {
         },
       });
       items = woItems.map((item) => ({
-        name: item.product?.name || item.service?.name || 'Item sin nombre',
+        name:
+          item.name ||
+          item.product?.name ||
+          item.service?.name ||
+          "Item sin nombre",
         quantity: item.quantity,
         unitPrice: Number(item.unitPrice),
         totalPrice: Number(item.subtotal),
       }));
-    } else if (invoice.referenceType === 'direct_sale') {
+    } else if (invoice.referenceType === "direct_sale") {
       const saleItems = await prisma.direct_sale_item.findMany({
         where: { directSaleId: invoice.referenceId },
       });
@@ -173,7 +186,7 @@ export async function getInvoiceById(id: string) {
         unitPrice: Number(item.unitPrice),
         totalPrice: Number(item.totalPrice),
       }));
-    } else if (invoice.referenceType === 'credit_note') {
+    } else if (invoice.referenceType === "credit_note") {
       const cnItems = await prisma.credit_note_item.findMany({
         where: { creditNoteId: invoice.referenceId },
       });
@@ -185,7 +198,7 @@ export async function getInvoiceById(id: string) {
       }));
     }
   } catch (error) {
-    console.error('Error fetching items for invoice:', error);
+    console.error("Error fetching items for invoice:", error);
     // Continue without items if fetch fails
   }
 
@@ -199,13 +212,13 @@ export async function updateInvoiceStatus(
   id: string,
   status: InvoiceStatus,
   issuedAt?: Date,
-  afipData?: Prisma.InputJsonValue
+  afipData?: Prisma.InputJsonValue,
 ) {
   return prisma.invoice.update({
     where: { id },
     data: {
       status,
-      issuedAt: issuedAt || (status === 'ISSUED' ? new Date() : undefined),
+      issuedAt: issuedAt || (status === "ISSUED" ? new Date() : undefined),
       afipData: afipData || undefined,
     },
   });
@@ -222,14 +235,14 @@ export async function markInvoiceAsOfficial(
     cae: string;
     caeVencimiento: Date;
     afipData: Prisma.InputJsonValue;
-  }
+  },
 ) {
   return prisma.invoice.update({
     where: { id },
     data: {
       number: data.number,
       type: data.type,
-      status: 'ISSUED',
+      status: "ISSUED",
       issuedAt: new Date(),
       afipData: data.afipData,
     },
@@ -242,16 +255,16 @@ export async function markInvoiceAsOfficial(
  */
 export async function getNextInvoiceNumber(
   type: string,
-  tx: Prisma.TransactionClient = prisma
+  tx: Prisma.TransactionClient = prisma,
 ): Promise<string> {
   // Determine prefix based on type
-  let prefix = '0001';
-  if (type.startsWith('X_') || type.startsWith('NOTA_CREDITO_X_')) {
-    prefix = 'X-0001';
-  } else if (type === 'PRESUPUESTO') {
-    prefix = 'PRES';
-  } else if (type === 'REMITO') {
-    prefix = 'REM';
+  let prefix = "0001";
+  if (type.startsWith("X_") || type.startsWith("NOTA_CREDITO_X_")) {
+    prefix = "X-0001";
+  } else if (type === "PRESUPUESTO") {
+    prefix = "PRES";
+  } else if (type === "REMITO") {
+    prefix = "REM";
   }
 
   const lastInvoice = await tx.invoice.findFirst({
@@ -259,27 +272,27 @@ export async function getNextInvoiceNumber(
       type,
       number: { startsWith: prefix },
     },
-    orderBy: { number: 'desc' },
+    orderBy: { number: "desc" },
     select: { number: true },
   });
 
   if (!lastInvoice) {
-    if (prefix.includes('-')) {
+    if (prefix.includes("-")) {
       return `${prefix}-00000001`;
     }
     return `${prefix}-00000001`; // Standard format PV-NUM
   }
 
-  const parts = lastInvoice.number.split('-');
+  const parts = lastInvoice.number.split("-");
   const lastNumStr = parts[parts.length - 1];
   const nextNumber = parseInt(lastNumStr) + 1;
 
   // Rebuild the number with the same prefix structure
-  const nextNumStr = String(nextNumber).padStart(8, '0');
+  const nextNumStr = String(nextNumber).padStart(8, "0");
   const otherParts = parts.slice(0, -1);
 
   if (otherParts.length > 0) {
-    return `${otherParts.join('-')}-${nextNumStr}`;
+    return `${otherParts.join("-")}-${nextNumStr}`;
   }
   return `${prefix}-${nextNumStr}`;
 }
@@ -289,13 +302,13 @@ export async function getNextInvoiceNumber(
  */
 export function determineInvoiceType(
   customerBillingData: unknown,
-  baseType: 'FACTURA' | 'NOTA_CREDITO' = 'FACTURA',
-  isPreInvoice: boolean = true
+  baseType: "FACTURA" | "NOTA_CREDITO" = "FACTURA",
+  isPreInvoice: boolean = true,
 ): InvoiceType {
   const billingData = customerBillingData as { invoiceType?: string } | null;
-  const invoiceTypeLetter = billingData?.invoiceType === 'A' ? 'A' : 'B';
+  const invoiceTypeLetter = billingData?.invoiceType === "A" ? "A" : "B";
 
-  if (baseType === 'FACTURA') {
+  if (baseType === "FACTURA") {
     if (isPreInvoice) {
       return `X_${invoiceTypeLetter}` as InvoiceType;
     }
@@ -315,7 +328,7 @@ export function determineInvoiceType(
  */
 export function calculateInvoiceTaxes(
   total: number,
-  invoiceType: InvoiceType
+  invoiceType: InvoiceType,
 ): {
   subtotal: number;
   tax: number;
@@ -323,7 +336,7 @@ export function calculateInvoiceTaxes(
   iva105: number;
 } {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const isTypeA = invoiceType.endsWith('_A');
+  const isTypeA = invoiceType.endsWith("_A");
 
   // Regardless of type A or B, for the database and AFIP reporting:
   // total = net (subtotal) + tax

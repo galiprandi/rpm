@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
     const workOrdersWithPaymentStatus = workOrders.map((wo) => {
       const totalPaid = wo.payments.reduce(
         (sum, p) => sum + Number(p.amount),
-        0
+        0,
       );
       return {
         ...wo,
@@ -90,12 +90,17 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    return NextResponse.json({ workOrders: workOrdersWithPaymentStatus, total, limit, offset });
+    return NextResponse.json({
+      workOrders: workOrdersWithPaymentStatus,
+      total,
+      limit,
+      offset,
+    });
   } catch (error) {
     console.error("Error fetching work orders:", error);
     return NextResponse.json(
       { error: "Failed to fetch work orders" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -120,8 +125,11 @@ export async function POST(request: NextRequest) {
 
     if (!customerId || (!vehicleId && !vehicleData)) {
       return NextResponse.json(
-        { error: "Missing required fields: customerId, vehicleId or vehicleData" },
-        { status: 400 }
+        {
+          error:
+            "Missing required fields: customerId, vehicleId or vehicleData",
+        },
+        { status: 400 },
       );
     }
 
@@ -136,7 +144,7 @@ export async function POST(request: NextRequest) {
       if (!vehicle) {
         return NextResponse.json(
           { error: "Vehicle not found" },
-          { status: 404 }
+          { status: 404 },
         );
       }
 
@@ -144,18 +152,35 @@ export async function POST(request: NextRequest) {
       if (vehicle.customerId !== customerId) {
         return NextResponse.json(
           { error: "Vehicle does not belong to customer" },
-          { status: 400 }
+          { status: 400 },
         );
       }
     } else if (vehicleData) {
       // Create or find vehicle from vehicleData
-      const { identifier, category, makeName, modelName, year, color, equipmentName, equipmentType, description } = vehicleData;
+      const {
+        identifier,
+        category,
+        makeName,
+        modelName,
+        year,
+        color,
+        equipmentName,
+        equipmentType,
+        description,
+      } = vehicleData;
 
       // 1. Find or create VehicleMake (only for vehicles, not equipment)
       let makeId = null;
       let modelId = null;
 
-      const isVehicle = ["CAR", "TRUCK", "SUV", "PICKUP", "MOTORCYCLE", "TRAILER"].includes(category);
+      const isVehicle = [
+        "CAR",
+        "TRUCK",
+        "SUV",
+        "PICKUP",
+        "MOTORCYCLE",
+        "TRAILER",
+      ].includes(category);
 
       if (isVehicle && makeName) {
         const normalizedMakeName = normalizeText(makeName);
@@ -237,7 +262,7 @@ export async function POST(request: NextRequest) {
     if (!vehicle) {
       return NextResponse.json(
         { error: "Failed to resolve vehicle" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -245,22 +270,37 @@ export async function POST(request: NextRequest) {
     let totalProducts = 0;
     let totalServices = 0;
 
-    const workOrderItems = items?.map((item: { type: string; productId?: string; serviceId?: string; quantity: number; unitPrice: number; priceListId?: string; isManualPrice?: boolean }) => {
-      const subtotal = item.quantity * item.unitPrice;
-      if (item.type === "PRODUCT") {
-        totalProducts += subtotal;
-      } else {
-        totalServices += subtotal;
-      }
-      return {
-        type: item.type,
-        productId: item.productId,
-        serviceId: item.serviceId,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        subtotal,
-      };
-    }) || [];
+    const workOrderItems =
+      items?.map(
+        (item: {
+          type: string;
+          productId?: string;
+          serviceId?: string;
+          name?: string;
+          isManualName?: boolean;
+          quantity: number;
+          unitPrice: number;
+          priceListId?: string;
+          isManualPrice?: boolean;
+        }) => {
+          const subtotal = item.quantity * item.unitPrice;
+          if (item.type === "PRODUCT") {
+            totalProducts += subtotal;
+          } else {
+            totalServices += subtotal;
+          }
+          return {
+            type: item.type,
+            productId: item.productId,
+            serviceId: item.serviceId,
+            name: item.name || null,
+            isManualName: item.isManualName || false,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            subtotal,
+          };
+        },
+      ) || [];
 
     const total = totalProducts + totalServices;
 
@@ -322,19 +362,32 @@ export async function POST(request: NextRequest) {
     if (workOrderItems.length > 0) {
       console.log("Creating WorkOrderItems:", workOrderItems);
       console.log("WorkOrder ID:", workOrder.id);
-      
+
       try {
         await prisma.work_order_item.createMany({
-          data: workOrderItems.map((item: { type: string; productId?: string; serviceId?: string; quantity: number; unitPrice: number; subtotal: number }) => ({
-            id: crypto.randomUUID(),
-            type: item.type,
-            productId: item.productId || null,
-            serviceId: item.serviceId || null,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-            subtotal: item.subtotal,
-            workOrderId: workOrder.id,
-          })),
+          data: workOrderItems.map(
+            (item: {
+              type: string;
+              productId?: string;
+              serviceId?: string;
+              name?: string | null;
+              isManualName?: boolean;
+              quantity: number;
+              unitPrice: number;
+              subtotal: number;
+            }) => ({
+              id: crypto.randomUUID(),
+              type: item.type,
+              productId: item.productId || null,
+              serviceId: item.serviceId || null,
+              name: item.name || null,
+              isManualName: item.isManualName || false,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              subtotal: item.subtotal,
+              workOrderId: workOrder.id,
+            }),
+          ),
         });
         console.log("WorkOrderItems created successfully");
       } catch (itemError) {
@@ -349,17 +402,22 @@ export async function POST(request: NextRequest) {
         where: { id: customerId },
         select: { balance: true },
       });
-      
+
       if (customer) {
         const currentBalance = Number(customer.balance) || 0;
         const newBalance = currentBalance + total;
-        
+
         await prisma.customer.update({
           where: { id: customerId },
           data: { balance: newBalance },
         });
-        
-        console.log("Customer balance updated:", { customerId, oldBalance: currentBalance, newBalance, added: total });
+
+        console.log("Customer balance updated:", {
+          customerId,
+          oldBalance: currentBalance,
+          newBalance,
+          added: total,
+        });
       }
     } catch (balanceError) {
       console.error("Error updating customer balance:", balanceError);
@@ -371,7 +429,7 @@ export async function POST(request: NextRequest) {
     console.error("Error creating work order:", error);
     return NextResponse.json(
       { error: "Failed to create work order" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

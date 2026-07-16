@@ -24,6 +24,7 @@ import {
   Check,
   Tags,
   BadgeDollarSign,
+  Pencil,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatARS } from "@/lib/utils/format";
@@ -103,6 +104,7 @@ export interface SelectedItem {
   >;
   replacementCost?: number;
   costPrice?: number;
+  isManualName?: boolean;
 }
 
 interface PriceInfo {
@@ -392,6 +394,20 @@ export function ProductServiceSelector({
     };
     updateCartAndNotify(updated);
   };
+
+  const updateName = (index: number, newName: string) => {
+    if (index < 0 || index >= cartItems.length) return;
+    const item = cartItems[index];
+    const updated = [...cartItems];
+    updated[index] = {
+      ...item,
+      name: newName,
+      isManualName: true,
+    };
+    updateCartAndNotify(updated);
+  };
+
+  const [editingNameIndex, setEditingNameIndex] = useState<number | null>(null);
 
   const handleQuickCreate = () => {
     setShowResults(false);
@@ -733,19 +749,66 @@ export function ProductServiceSelector({
 
                 {/* Info */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-sm truncate">
-                      {truncateText(item.name)}
-                    </span>
-                    {item.isManualPrice && (
-                      <Badge
-                        variant="outline"
-                        className="text-xs bg-yellow-50 text-yellow-700 border-yellow-200 flex-shrink-0 h-5 px-1.5"
+                  {editingNameIndex === index && item.type === "service" ? (
+                    <Input
+                      autoFocus
+                      value={item.name}
+                      onChange={(e) => updateName(index, e.target.value)}
+                      onBlur={() => setEditingNameIndex(null)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") setEditingNameIndex(null);
+                        if (e.key === "Escape") setEditingNameIndex(null);
+                      }}
+                      className="h-7 text-sm"
+                      placeholder="Descripción del servicio..."
+                    />
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={cn(
+                          "font-medium text-sm truncate",
+                          item.type === "service" &&
+                            "cursor-pointer hover:text-primary",
+                        )}
+                        onClick={() =>
+                          item.type === "service" && setEditingNameIndex(index)
+                        }
                       >
-                        Manual
-                      </Badge>
-                    )}
-                  </div>
+                        {truncateText(item.name)}
+                      </span>
+                      {item.type === "service" && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              type="button"
+                              onClick={() => setEditingNameIndex(index)}
+                              className="text-muted-foreground hover:text-primary transition-colors flex-shrink-0"
+                              aria-label="Editar descripción"
+                            >
+                              <Pencil className="h-3 w-3" />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent>Editar descripción</TooltipContent>
+                        </Tooltip>
+                      )}
+                      {item.isManualName && (
+                        <Badge
+                          variant="outline"
+                          className="text-xs bg-blue-50 text-blue-700 border-blue-200 flex-shrink-0 h-5 px-1.5"
+                        >
+                          Desc. editada
+                        </Badge>
+                      )}
+                      {item.isManualPrice && (
+                        <Badge
+                          variant="outline"
+                          className="text-xs bg-yellow-50 text-yellow-700 border-yellow-200 flex-shrink-0 h-5 px-1.5"
+                        >
+                          Manual
+                        </Badge>
+                      )}
+                    </div>
+                  )}
                   <div className="text-xs text-muted-foreground mt-0.5 font-mono">
                     {item.type === "product" && item.stock !== undefined && (
                       <span>Stock: {item.stock}</span>

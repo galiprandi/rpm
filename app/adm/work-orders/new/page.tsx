@@ -37,9 +37,7 @@ import {
   getVehicleCategoryIcon,
   buildVehicleDescription,
 } from "@/lib/constants/vehicle-categories";
-import {
-  DEFAULT_ENTRY_CHECKLIST,
-} from "@/lib/constants/work-order";
+import { DEFAULT_ENTRY_CHECKLIST } from "@/lib/constants/work-order";
 import {
   Select,
   SelectContent,
@@ -112,6 +110,8 @@ interface WorkOrderItem {
   productId?: string;
   serviceId?: string;
   name: string;
+  customName?: string;
+  isManualName?: boolean;
   quantity: number;
   unitPrice: number;
   priceListId?: string; // Lista usada como base
@@ -425,6 +425,8 @@ export default function NewWorkOrderPage() {
           type: item.type,
           productId: item.productId,
           serviceId: item.serviceId,
+          name: item.isManualName ? item.name : undefined,
+          isManualName: item.isManualName || false,
           quantity: item.quantity,
           unitPrice: item.unitPrice,
         })),
@@ -847,6 +849,7 @@ export default function NewWorkOrderPage() {
                   id: item.productId || item.serviceId || "",
                   type: item.type === "PRODUCT" ? "product" : "service",
                   name: item.name,
+                  isManualName: item.isManualName || false,
                   quantity: item.quantity,
                   unitPrice: item.unitPrice,
                   originalPrice: item.originalPrice || item.unitPrice,
@@ -862,6 +865,7 @@ export default function NewWorkOrderPage() {
                         ? { productId: item.id }
                         : { serviceId: item.id }),
                       name: item.name,
+                      isManualName: item.isManualName || false,
                       quantity: item.quantity,
                       unitPrice: item.unitPrice,
                       priceListId: item.priceListId,
@@ -1057,10 +1061,7 @@ export default function NewWorkOrderPage() {
                 <Button variant="outline" onClick={() => setStep(2)}>
                   Anterior
                 </Button>
-                <Button
-                  onClick={handleSubmit}
-                  disabled={loading}
-                >
+                <Button onClick={handleSubmit} disabled={loading}>
                   <Save className="h-4 w-4 mr-2" />
                   {loading ? "Creando..." : "Crear Orden de Trabajo"}
                 </Button>

@@ -395,10 +395,12 @@ model work_order_item {
   type          String
   productId     String?
   serviceId     String?
+  name          String?
   quantity      Int
   unitPrice     Decimal    @db.Decimal(10, 2)
   subtotal      Decimal    @db.Decimal(10, 2)
   isManualPrice Boolean    @default(false)
+  isManualName  Boolean    @default(false)
   priceListId   String?
   product       product?   @relation(fields: [productId], references: [id])
   service       service?   @relation(fields: [serviceId], references: [id])
