@@ -28,6 +28,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { authClient } from "@/lib/auth-client";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export function ChatFloating({
   isOpen: controlledIsOpen,
@@ -142,7 +147,7 @@ export function ChatFloating({
     if (isNearBottom || isLastMessageFromUser) {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messages]);
+  }, [messages, status]);
 
   // Auto-focus input when chat opens
   useEffect(() => {
@@ -194,18 +199,25 @@ export function ChatFloating({
     <>
       {/* Toggle Button */}
       {!isMobile && (
-        <Button
-          onClick={() => setIsOpen(!isOpen)}
-          className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50"
-          size="icon"
-          aria-label={isOpen ? "Cerrar asistente virtual" : "Abrir asistente virtual"}
-        >
-          {isOpen ? (
-            <X className="h-6 w-6" />
-          ) : (
-            <MessageSquare className="h-6 w-6" />
-          )}
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              onClick={() => setIsOpen(!isOpen)}
+              className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50 hover:scale-105 active:scale-95 transition-transform duration-200"
+              size="icon"
+              aria-label={isOpen ? "Cerrar asistente virtual" : "Abrir asistente virtual"}
+            >
+              {isOpen ? (
+                <X className="h-6 w-6" />
+              ) : (
+                <MessageSquare className="h-6 w-6" />
+              )}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="left" className="bg-slate-900 text-white border-slate-800">
+            {isOpen ? "Cerrar chat (Esc)" : `Abrir chat (${shortcutLabel})`}
+          </TooltipContent>
+        </Tooltip>
       )}
 
       {/* Chat Window */}
@@ -229,28 +241,41 @@ export function ChatFloating({
             </div>
             <div className="flex items-center gap-1">
               {!isMobile && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setIsExpanded(!isExpanded)}
-                  title={isExpanded ? "Reducir" : "Expandir"}
-                  aria-label={isExpanded ? "Reducir tamaño del chat" : "Expandir tamaño del chat"}
-                >
-                  {isExpanded ? (
-                    <Minimize2 className="h-4 w-4" />
-                  ) : (
-                    <Maximize2 className="h-4 w-4" />
-                  )}
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setIsExpanded(!isExpanded)}
+                      aria-label={isExpanded ? "Reducir tamaño del chat" : "Expandir tamaño del chat"}
+                    >
+                      {isExpanded ? (
+                        <Minimize2 className="h-4 w-4" />
+                      ) : (
+                        <Maximize2 className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="bg-slate-900 text-white border-slate-800">
+                    {isExpanded ? "Reducir" : "Expandir"}
+                  </TooltipContent>
+                </Tooltip>
               )}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsOpen(false)}
-                aria-label="Cerrar chat"
-              >
-                <X className="h-4 w-4" />
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setIsOpen(false)}
+                    aria-label="Cerrar chat"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="bg-slate-900 text-white border-slate-800">
+                  Cerrar chat
+                </TooltipContent>
+              </Tooltip>
             </div>
           </div>
 
@@ -268,7 +293,7 @@ export function ChatFloating({
                         key={idx}
                         type="button"
                         onClick={() => handleSuggestionClick(s.text)}
-                        className="text-left text-xs bg-muted/50 hover:bg-primary/5 hover:text-primary border hover:border-primary/20 rounded-lg p-3 transition-all duration-200 cursor-pointer active:scale-95 flex flex-col justify-between h-20 shadow-xs"
+                        className="text-left text-xs bg-muted/50 hover:bg-primary/5 hover:text-primary border hover:border-primary/20 rounded-lg p-3 transition-all duration-200 cursor-pointer active:scale-95 flex flex-col justify-between h-20 shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                       >
                         <span className="font-semibold text-foreground/90">{s.label}</span>
                         <span className="text-[10px] text-muted-foreground line-clamp-2 mt-1 leading-snug">{s.text}</span>
@@ -362,7 +387,7 @@ export function ChatFloating({
                                 >
                                   {isCompleted ? (
                                     <Check
-                                      className="h-3 w-3 text-emerald-600"
+                                      className="h-3 w-3 text-emerald-700"
                                       aria-hidden="true"
                                     />
                                   ) : (
@@ -426,9 +451,9 @@ export function ChatFloating({
               {/* Error message */}
               {error && (
                 <div className="flex justify-start">
-                  <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 flex items-center gap-2">
-                    <X className="h-4 w-4 text-destructive" />
-                    <span className="text-sm text-destructive">
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center gap-2">
+                    <X className="h-4 w-4 text-red-700" aria-hidden="true" />
+                    <span className="text-sm text-red-700 font-medium">
                       {error.message || "Ocurrió un error. Intenta nuevamente."}
                     </span>
                   </div>
@@ -445,15 +470,22 @@ export function ChatFloating({
                 <span className="text-sm truncate flex-1">
                   {attachedFile.name}
                 </span>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={handleRemoveFile}
-                  aria-label="Quitar archivo adjunto"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="h-7 w-7 p-0"
+                      onClick={handleRemoveFile}
+                      aria-label="Quitar archivo adjunto"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="bg-slate-900 text-white border-slate-800">
+                    Quitar archivo adjunto
+                  </TooltipContent>
+                </Tooltip>
               </div>
             )}
             <div className="flex gap-2">
@@ -472,27 +504,34 @@ export function ChatFloating({
                 capture="environment"
                 onChange={handleFileChange}
               />
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button type="button" variant="ghost" size="icon" aria-label="Adjuntar archivos">
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" side="top">
-                  <DropdownMenuItem
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    <FileImage className="h-4 w-4 mr-2" />
-                    Adjuntar archivo
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => cameraInputRef.current?.click()}
-                  >
-                    <CameraIcon className="h-4 w-4 mr-2" />
-                    Tomar foto
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <Tooltip>
+                <DropdownMenu>
+                  <TooltipTrigger asChild>
+                    <DropdownMenuTrigger asChild>
+                      <Button type="button" variant="ghost" size="icon" aria-label="Adjuntar archivos">
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                  </TooltipTrigger>
+                  <DropdownMenuContent align="start" side="top">
+                    <DropdownMenuItem
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <FileImage className="h-4 w-4 mr-2" />
+                      Adjuntar archivo
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => cameraInputRef.current?.click()}
+                    >
+                      <CameraIcon className="h-4 w-4 mr-2" />
+                      Tomar foto
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <TooltipContent side="top" className="bg-slate-900 text-white border-slate-800">
+                  Adjuntar archivos
+                </TooltipContent>
+              </Tooltip>
               <Input
                 ref={inputRef}
                 value={localInput}
@@ -502,24 +541,38 @@ export function ChatFloating({
                 disabled={isSubmitting}
               />
               {isSubmitting ? (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => stop()}
-                  aria-label="Detener respuesta de Nitro"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => stop()}
+                      aria-label="Detener respuesta de Nitro"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="bg-slate-900 text-white border-slate-800">
+                    Detener respuesta
+                  </TooltipContent>
+                </Tooltip>
               ) : (
-                <Button
-                  type="submit"
-                  size="icon"
-                  disabled={!localInput?.trim() && !attachedFile}
-                  aria-label="Enviar mensaje"
-                >
-                  <Send className="h-4 w-4" />
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="submit"
+                      size="icon"
+                      disabled={!localInput?.trim() && !attachedFile}
+                      aria-label="Enviar mensaje"
+                    >
+                      <Send className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="bg-slate-900 text-white border-slate-800">
+                    Enviar mensaje
+                  </TooltipContent>
+                </Tooltip>
               )}
             </div>
           </form>
