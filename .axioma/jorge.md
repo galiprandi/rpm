@@ -5,11 +5,12 @@
 - [ ] Personalización de Checklist — Permitir editar las etiquetas de los checklists de entrada/salida.
 - [ ] Gestión de Fotos — Carga y eliminación masiva de fotos de órdenes de trabajo.
 - [ ] Impresión — Generación estandarizada de PDF para Remitos y Presupuestos.
-- [ ] Fecha programada en Kanban: muestre y resalte las fechas programadas en las tarjetas Kanban.
+- [x] Fecha programada en Kanban: muestre y resalte las fechas programadas en las tarjetas Kanban.
 
 ## ✅ COMPLETADO
 - [x] 2025-07-08 — Servicio Centralizado de OT y Timeline Unificado (PR #jorge/work-orders/centralized-updates)
 - [x] 2025-07-12 — Refinamiento de UX en Taller: Acciones Rápidas y Navegación (PR #jorge/work-orders/ux-refinement)
+- [x] 2026-07-16 — Paridad de Vista de Lista y Corrección de Prioridad HOY (PR #jorge/work-orders/list-view-parity)
 
 ## 🧠 APRENDIZAJES
 ## 2025-07-08 - UX Kanban y Propagación de Eventos

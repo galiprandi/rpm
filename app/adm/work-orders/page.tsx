@@ -382,7 +382,7 @@ function KanbanCard({
               aria-hidden="true"
             />
             {new Date(wo.scheduledDate).toDateString() ===
-            new Date(wo.scheduledDate).toDateString()
+            new Date().toDateString()
               ? "HOY"
               : new Date(wo.scheduledDate).toLocaleDateString("es-AR", {
                   day: "2-digit",
@@ -1083,6 +1083,29 @@ export default function WorkOrdersPage() {
                             </Button>
                           )}
                           {getStatusBadge(wo.status)}
+                          {wo.scheduledDate && (
+                            <div
+                              className={cn(
+                                "flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full",
+                                new Date(wo.scheduledDate).toDateString() ===
+                                  new Date().toDateString()
+                                  ? "bg-primary/10 text-primary ring-1 ring-primary/20"
+                                  : "bg-muted text-muted-foreground",
+                              )}
+                            >
+                              <Calendar className="h-3 w-3" />
+                              {new Date(wo.scheduledDate).toDateString() ===
+                              new Date().toDateString()
+                                ? "HOY"
+                                : new Date(wo.scheduledDate).toLocaleDateString(
+                                    "es-AR",
+                                    {
+                                      day: "2-digit",
+                                      month: "short",
+                                    },
+                                  )}
+                            </div>
+                          )}
                           <Badge
                             variant={
                               wo.isFullyPaid
