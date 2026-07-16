@@ -4,6 +4,7 @@
 - [ ] Dashboards comparativos multi-periodo avanzados
 
 ## ✅ DONE
+- [x] 2026-07-15 — Implementación de Reporte de Rentabilidad: Nuevo módulo detallado con métricas de ganancia bruta, margen por categoría y ranking de productos más rentables. (PR #diego/reports/profitability-report)
 - [x] 2026-07-14 — Implementación de Dashboard Analítico de Resumen (Overview): Agregado de KPIs de ingresos, rentabilidad estimada, OTs completadas y nuevos clientes con selector de periodo en la página principal de reportes. (PR #diego/reports/overview-dashboard)
 - [x] 2026-07-13 — Mejora de Reporte de Stock: Implementación de métricas de Rotación de Stock e Inventario Inmovilizado (Dead Stock). (PR #diego/reports/stock-rotation-metrics)
 - [x] 2026-07-12 — Implementación de Reporte de Servicios: Métricas de ingresos por servicio, distribución por categoría de vehículo y performance de técnicos. (PR #diego/reports/services-report)
@@ -30,3 +31,7 @@
 ## 2026-07-14 - Dashboard Overview Agregado
 **Learning:** Para proporcionar una visión holística del negocio, el dashboard de Overview debe centralizar métricas de múltiples módulos (Ventas, Taller, Stock, Clientes). Esto requiere una orquestación eficiente de queries para no penalizar el tiempo de carga de la página principal de reportes.
 **Action:** Utilizar `Promise.all` para paralelizar queries y mantener el patrón de caching de 10 minutos en el API route.
+
+## 2026-07-15 - Estimación de Costos (COGS)
+**Learning:** Al no contar con un histórico de costos por ítem en el momento de la venta, la rentabilidad se estima utilizando el `costPrice` actual de los productos y el `baseCost` de los servicios. Aunque no es exacto retrospectivamente ante cambios de precios, ofrece una aproximación valiosa de la performance económica actual.
+**Action:** Clarificar en la UI que los costos son "estimados" basados en valores vigentes.

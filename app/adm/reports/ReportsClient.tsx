@@ -228,8 +228,15 @@ export default function ReportsClient() {
       isAvailable: true
     },
     {
+      title: "Rentabilidad",
+      description: "Análisis de margen bruto, productos más rentables y performance económica.",
+      href: "/adm/reports/profitability",
+      icon: TrendingUp,
+      isAvailable: true
+    },
+    {
       title: "Finanzas & Flujo",
-      description: "Ingresos vs egresos, rentabilidad neta y análisis de medios de pago.",
+      description: "Seguimiento de caja, ingresos vs egresos y análisis de medios de pago.",
       href: "/adm/reports/finance",
       icon: Wallet,
       isAvailable: true
