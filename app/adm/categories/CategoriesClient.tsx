@@ -135,7 +135,11 @@ export default function CategoriesClient({
       });
 
       if (response.ok) {
-        fetchCategories();
+        setCategories((prev) =>
+          prev.map((c) =>
+            c.id === category.id ? { ...c, isActive: false } : c,
+          ),
+        );
         toast.success(`Categoría "${category.name}" desactivada`, {
           action: {
             label: "Deshacer",
@@ -146,7 +150,11 @@ export default function CategoriesClient({
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({ isActive: true }),
                 });
-                fetchCategories();
+                setCategories((prev) =>
+                  prev.map((c) =>
+                    c.id === category.id ? { ...c, isActive: true } : c,
+                  ),
+                );
                 toast.success("Categoría reactivada");
               } catch {
                 toast.error("Error al reactivar categoría");

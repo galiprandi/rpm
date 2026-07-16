@@ -458,7 +458,11 @@ export function ProductsClient({
         });
 
         if (response.ok) {
-          setProducts((prev) => prev.filter((p) => p.id !== product.id));
+          setProducts((prev) =>
+            prev.map((p) =>
+              p.id === product.id ? { ...p, isActive: true } : p,
+            ),
+          );
           toast.success(`Producto "${product.name}" reactivado`);
         } else {
           const error = await response.json();
