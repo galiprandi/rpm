@@ -4,6 +4,7 @@
 - [ ] Optimizar imágenes de la galería "Nosotros" para mejorar el LCP.
 
 ## ✅ DONE
+- [x] 2026-07-16 — Galería de Excelencia interactiva con soporte para Deep-Linking y Lightbox (PR #sofia/public/nosotros-gallery-improvement)
 - [x] 2026-07-15 — Refinado de animaciones, accesibilidad y estabilidad de SEO (PR #sofia/public/polish-and-accessibility)
 - [x] 2026-07-14 — Micro-interacciones con Framer Motion y correcciones semánticas (PR #sofia/public/tactile-feedback)
 - [x] 2026-07-13 — Estandarización de precios, mejoras de SEO y CTA de alto impacto (PR #sofia/public/polish-and-seo)
@@ -19,6 +20,10 @@
 
 ## 🧠 LEARNINGS
 
+## 2026-07-16 - Next.js Public Page Architecture Standard
+**Learning:** En Next.js, utilizar `useSearchParams` en páginas estáticas de forma desprotegida provoca de-optimización en el build e hidrataciones fallidas en producción. El estándar robusto de arquitectura de páginas públicas consiste en definir un archivo de página de servidor (como `app/nosotros/page.tsx`) que define los metadatos estáticos estables para motores de búsqueda (SEO) y renderiza el cliente interactivo real (como `AboutClient.tsx`) envuelto en un boundary de `<Suspense>`. Esto permite un excelente rendimiento de LCP y total compatibilidad con deep-linking (ej: `?project=iluminacion-2012`).
+**Action:** Seguir sistemáticamente la estructura de página de servidor + `<Suspense>` + Client Component para todas las rutas con interacciones dinámicas.
+
 ## 2026-07-15 - Accesibilidad Proactiva y Estabilidad de Builds
 **Learning:** Mantener la accesibilidad (A11y) no es solo agregar labels, sino asegurar que elementos interactivos que no tienen texto (icon-only buttons) sean identificables por lectores de pantalla y proporcionen feedback visual claro mediante tooltips. Descubrimos que el build de Next.js genera advertencias si no se define `metadataBase` en el layout raíz cuando se usan imágenes sociales, lo cual es crítico para la resolución de URLs absolutas. Además, para evitar advertencias de renderizado en React (setState en el cuerpo de un effect), el patrón de usar un flag `cancelled` y envolver el update en una microtarea (`Promise.resolve()`) asegura una hidratación limpia de estados derivados de la URL.
 **Action:** Implementar sistemáticamente tooltips en icon-buttons y asegurar que `metadataBase` esté siempre configurado en el layout principal.
@@ -33,32 +38,4 @@
 
 ## 2026-07-12 - Deep-Linking de Servicios y Estabilidad de Componentes Shared
 **Learning:** Extender el patrón de "Deep-Linking" a los servicios permite una navegación mucho más fluida desde el buscador global y la Home. Al implementar esto, descubrimos que componentes críticos compartidos como `DataTable` tenían errores de redeclaración de variables que bloqueaban el build de producción. Es vital mantener la pureza de los componentes UI y evitar shadowing de variables de estado (como `rowSelection`) para asegurar la estabilidad del sistema completo, no solo del área pública.
-**Action:** Aplicar siempre el patrón de sufijo (ej: `rowSelectionValue`) cuando se manejan estados controlados vs internos y verificar builds de producción (`pnpm build`) ante cualquier cambio en componentes `components/ui/*`.
-
-## 2026-07-11 - Buscador Global y Deep-Linking en Next.js
-**Learning:** Implementar un buscador global que conecte diferentes tipos de entidades (Productos y Servicios) requiere una arquitectura de datos centralizada en `lib/constants`. El patrón de "deep-linking" mediante parámetros de búsqueda (URLSearchParams) permite que los resultados de búsqueda no solo naveguen a una página, sino que activen estados específicos de la UI (como abrir un modal de detalle) de forma declarativa. Es CRÍTICO envolver componentes que usan `useSearchParams` en un boundary de `<Suspense />` para evitar problemas de hidratación y des-optimización de rutas estáticas en Next.js.
-**Action:** Usar siempre `Suspense` para páginas con filtros o modales activados por URL y mantener las constantes de marketing como única fuente de verdad para el buscador.
-
-## 2026-07-09 - Navegación Contextual y Narrativa de Servicios
-**Learning:** Los usuarios necesitan feedback visual constante sobre su ubicación en el sitio; resaltar el link activo en el header mejora la orientación espacial y la facilidad de navegación. En páginas de servicios, pasar de una simple lista a una "metodología de trabajo" (Proceso de Excelencia) transforma la percepción del usuario de "qué venden" a "cómo trabajan", elevando la confianza percibida. Una página de servicios sin un CTA final claro es una oportunidad de conversión perdida; el cierre debe ser tan fuerte como el inicio.
-**Action:** Asegurar que todas las páginas de aterrizaje principales terminen con una sección de conversión de alto impacto y que la navegación global sea siempre reactiva al contexto del usuario.
-
-## 2026-07-08 - Centralización de Datos de Marketing
-**Learning:** Centralizar los datos de productos destacados en `lib/constants/featured-products.ts` permite mantener la consistencia entre la Home y el Catálogo sin duplicar código. Esto facilita actualizaciones rápidas de stock o precios que se reflejan instantáneamente en toda la web pública. La sección de "Productos Destacados" en la Home sirve como un "teaser" efectivo que reduce la fricción hacia el catálogo completo.
-**Action:** Seguir este patrón para "Servicios Destacados" o "Promociones" para asegurar una fuente única de verdad en elementos de marketing.
-
-## 2026-07-07 - Patrón de Vista Rápida (Quick View)
-**Learning:** En catálogos de productos técnicos o estéticos, permitir al usuario profundizar sin perder el contexto de la lista principal (vía modales) aumenta significativamente el tiempo de sesión y la probabilidad de conversión. Un overlay de "ojo" o "vista rápida" al hacer hover es un patrón estándar que los usuarios premium esperan. La conversión debe ser siempre contextual: el mensaje de WhatsApp debe incluir el nombre exacto del producto que el usuario está viendo.
-**Action:** Implementar modales de detalle similares para servicios complejos en el futuro para mantener la navegación "single-page" en áreas de catálogo.
-
-## 2026-07-06 - Mapa Interactivo y UX de Catálogo
-**Learning:** Integrar un mapa interactivo mejora drásticamente la utilidad de la página de contacto para negocios locales. Aplicar filtros CSS (`grayscale`, `invert`) a iframes de Google Maps permite mantener una estética oscura coherente sin depender de APIs pagas o pesadas. En el catálogo, la búsqueda en tiempo real y el filtrado por categorías reducen la carga cognitiva del usuario al explorar productos técnicos.
-**Action:** Usar el patrón de filtros CSS para otros elementos externos integrados y priorizar el filtrado "zero-latency" en el cliente para listas de tamaño moderado.
-
-## 2026-07-04 - Centralización y Conversión WhatsApp
-**Learning:** Centralizar la configuración de contacto (WhatsApp, RRSS, dirección) facilita el mantenimiento y asegura consistencia en toda la web pública. Integrar el formulario de contacto directamente con WhatsApp aumenta la tasa de respuesta inmediata para negocios de servicios locales.
-**Action:** Mantener `lib/config/public-site.ts` como fuente de verdad para toda la UI pública y seguir el patrón de redirección con contexto (nombre/email) para otros puntos de contacto.
-
-## 2026-07-05 - Prueba Social (Social Proof)
-**Learning:** En el sector de servicios automotrices de alta gama, la confianza es el factor decisivo. Agregar testimonios reales con modelos de vehículos específicos ayuda a los clientes potenciales a visualizar el resultado en sus propios autos y reduce la fricción en la toma de decisiones.
-**Action:** Asegurar que las secciones de prueba social sean visualmente coherentes con el diseño "high-end" del sitio para mantener la percepción de exclusividad.
+**Action:** Aplicar siempre el patrón de sufijo (ej: `rowSelectionValue`) when handling controlled vs internal states and verify production builds (`pnpm build`) for any changes in components under `components/ui/*`.
