@@ -16,7 +16,10 @@ describe('Invoice Service', () => {
     // Ensure clean state for test customers and invoices
     await prisma.invoice.deleteMany({
       where: {
-        customerName: { startsWith: 'TEST_INVOICE_CUST' },
+        OR: [
+          { customerName: { startsWith: 'TEST_INVOICE_CUST' } },
+          { number: { startsWith: 'X-0001-' } },
+        ],
       },
     });
 
