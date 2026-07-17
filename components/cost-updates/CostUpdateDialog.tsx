@@ -52,7 +52,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 // Types
 // ============================================================================
 
-type AdjustmentType = 'PERCENTAGE_INC' | 'PERCENTAGE_DEC' | 'FIXED_INC' | 'FIXED_DEC';
+type AdjustmentType = 'PERCENTAGE_INC' | 'PERCENTAGE_DEC' | 'FIXED_INC' | 'FIXED_DEC' | 'SET_VALUE';
 type UpdateTarget = 'REPLACEMENT_COST' | 'PRICE_LIST';
 
 interface CostUpdateFilters {
@@ -230,7 +230,9 @@ export function CostUpdateDialog({ open, onClose, onSuccess }: CostUpdateDialogP
 
   // Load preview data
   const loadPreview = async (page: number = 1) => {
-    if (!adjustmentValue || Number(adjustmentValue) <= 0) {
+    const isSetVal = adjustmentType === 'SET_VALUE';
+    const val = Number(adjustmentValue);
+    if (!adjustmentValue || (isSetVal ? (val < 0 || isNaN(val)) : val <= 0)) {
       toast.error('Ingresa un valor de ajuste válido');
       return;
     }
@@ -348,7 +350,9 @@ export function CostUpdateDialog({ open, onClose, onSuccess }: CostUpdateDialogP
   };
 
   const goToPreview = () => {
-    if (!adjustmentValue || Number(adjustmentValue) <= 0) {
+    const isSetVal = adjustmentType === 'SET_VALUE';
+    const val = Number(adjustmentValue);
+    if (!adjustmentValue || (isSetVal ? (val < 0 || isNaN(val)) : val <= 0)) {
       toast.error('Ingresa un valor de ajuste válido');
       return;
     }
@@ -437,27 +441,32 @@ export function CostUpdateDialog({ open, onClose, onSuccess }: CostUpdateDialogP
         accessorKey: 'variationPercent',
         header: 'Var.',
         size: 80,
-        cell: ({ row }) => (
-          <span
-            className={cn(
-              'font-medium text-xs',
-              row.original.warningFlag && 'text-red-600 font-bold',
-              !row.original.warningFlag &&
-                row.original.variationPercent > 0 &&
-                'text-emerald-600',
-              !row.original.warningFlag &&
-                row.original.variationPercent < 0 &&
-                'text-orange-600',
-              excludedProductIds.has(row.original.id) && 'opacity-30'
-            )}
-          >
-            {row.original.variationPercent > 0 ? '+' : ''}
-            {row.original.variationPercent.toFixed(1)}%
-          </span>
-        ),
+        cell: ({ row }) => {
+          if (adjustmentType === 'SET_VALUE') {
+            return <span className="text-muted-foreground">-</span>;
+          }
+          return (
+            <span
+              className={cn(
+                'font-medium text-xs',
+                row.original.warningFlag && 'text-red-600 font-bold',
+                !row.original.warningFlag &&
+                  row.original.variationPercent > 0 &&
+                  'text-emerald-600',
+                !row.original.warningFlag &&
+                  row.original.variationPercent < 0 &&
+                  'text-orange-600',
+                excludedProductIds.has(row.original.id) && 'opacity-30'
+              )}
+            >
+              {row.original.variationPercent > 0 ? '+' : ''}
+              {row.original.variationPercent.toFixed(1)}%
+            </span>
+          );
+        },
       },
     ],
-    [excludedProductIds, updateTarget, toggleExclusion]
+    [excludedProductIds, updateTarget, toggleExclusion, adjustmentType]
   );
 
   const adjustmentDescription = useMemo(() => {
@@ -467,6 +476,7 @@ export function CostUpdateDialog({ open, onClose, onSuccess }: CostUpdateDialogP
       case 'PERCENTAGE_DEC': return `Disminuir ${value}%`;
       case 'FIXED_INC': return `Aumentar $${value}`;
       case 'FIXED_DEC': return `Disminuir $${value}`;
+      case 'SET_VALUE': return `Fijar en $${value}`;
     }
   }, [adjustmentType, adjustmentValue]);
 
@@ -659,6 +669,7 @@ export function CostUpdateDialog({ open, onClose, onSuccess }: CostUpdateDialogP
                 <SelectItem value="PERCENTAGE_DEC">Disminución porcentual (%)</SelectItem>
                 <SelectItem value="FIXED_INC">Aumento monto fijo ($)</SelectItem>
                 <SelectItem value="FIXED_DEC">Disminución monto fijo ($)</SelectItem>
+                <SelectItem value="SET_VALUE">Fijar monto ($)</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -686,6 +697,7 @@ export function CostUpdateDialog({ open, onClose, onSuccess }: CostUpdateDialogP
             <span className="text-muted-foreground">Acción:</span>
             <span className={cn(
               "px-3 py-1 rounded-full",
+              adjustmentType === 'SET_VALUE' ? "bg-blue-50 text-blue-700" :
               adjustmentType.includes('INC') ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"
             )}>
               {adjustmentDescription}
@@ -771,9 +783,11 @@ export function CostUpdateDialog({ open, onClose, onSuccess }: CostUpdateDialogP
           <span className="text-xs text-muted-foreground uppercase font-bold tracking-tight">Ajuste</span>
           <p className={cn(
             "font-bold text-lg flex items-center gap-2",
+            adjustmentType === 'SET_VALUE' ? "text-blue-600" :
             adjustmentType.includes('INC') ? "text-emerald-600" : "text-red-600"
           )}>
-            {adjustmentType.includes('INC') ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
+            {adjustmentType === 'SET_VALUE' ? <DollarSign className="w-5 h-5" /> :
+             adjustmentType.includes('INC') ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
             {adjustmentDescription}
           </p>
         </div>
@@ -863,7 +877,7 @@ export function CostUpdateDialog({ open, onClose, onSuccess }: CostUpdateDialogP
           {currentStep === 'adjustment' && (
             <Button
               onClick={goToPreview}
-              disabled={!adjustmentValue || Number(adjustmentValue) <= 0}
+              disabled={!adjustmentValue || (adjustmentType === 'SET_VALUE' ? (Number(adjustmentValue) < 0 || isNaN(Number(adjustmentValue))) : Number(adjustmentValue) <= 0)}
               className="px-8 font-bold"
             >
               Ver Vista Previa

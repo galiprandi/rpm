@@ -11,7 +11,7 @@ import {
   calculateVariationPercent,
   isWarningVariation,
   type CostUpdateAdjustment,
-} from './costUpdateService';
+} from '@/lib/services/costUpdateService';
 
 describe('calculateNewCost', () => {
   it('should increase cost by percentage', () => {
@@ -57,6 +57,14 @@ describe('calculateNewCost', () => {
   it('should calculate negative cost when decrease exceeds current', () => {
     const adjustment: CostUpdateAdjustment = { type: 'FIXED_DEC', value: 150 };
     expect(calculateNewCost(100, adjustment)).toBe(-50);
+  });
+
+  it('should set cost to exactly value when SET_VALUE is used', () => {
+    const adjustment1: CostUpdateAdjustment = { type: 'SET_VALUE', value: 8000 };
+    expect(calculateNewCost(100, adjustment1)).toBe(8000);
+
+    const adjustment2: CostUpdateAdjustment = { type: 'SET_VALUE', value: 0 };
+    expect(calculateNewCost(100, adjustment2)).toBe(0);
   });
 });
 
