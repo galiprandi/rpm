@@ -15,7 +15,7 @@ import { calculateFinalPrice } from '@/lib/utils/rounding';
 // Types
 // ============================================================================
 
-export type AdjustmentType = 'PERCENTAGE_INC' | 'PERCENTAGE_DEC' | 'FIXED_INC' | 'FIXED_DEC';
+export type AdjustmentType = 'PERCENTAGE_INC' | 'PERCENTAGE_DEC' | 'FIXED_INC' | 'FIXED_DEC' | 'SET_VALUE';
 
 export interface CostUpdateFilters {
   supplierId?: string;
@@ -87,6 +87,8 @@ export function calculateNewCost(currentCost: number, adjustment: CostUpdateAdju
       return currentCost + value;
     case 'FIXED_DEC':
       return currentCost - value;
+    case 'SET_VALUE':
+      return value;
     default:
       return currentCost;
   }
@@ -245,8 +247,9 @@ export async function previewCostUpdate(
     }
 
     const newValue = calculateNewCost(currentValue, adjustment);
-    const variationPercent = calculateVariationPercent(currentValue, newValue);
-    const warningFlag = isWarningVariation(variationPercent);
+    const isSetVal = adjustment.type === 'SET_VALUE';
+    const variationPercent = isSetVal ? 0 : calculateVariationPercent(currentValue, newValue);
+    const warningFlag = isSetVal ? false : isWarningVariation(variationPercent);
 
     if (newValue < 0) {
       hasNegativeCosts = true;
