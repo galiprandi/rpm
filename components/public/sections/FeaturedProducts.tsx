@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowRight, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -38,9 +38,28 @@ const cardVariants = {
 
 export function FeaturedProducts() {
   const [selectedProduct, setSelectedProduct] = useState<FeaturedProduct | null>(null);
+  const [displayedProducts, setDisplayedProducts] = useState<FeaturedProduct[]>(featuredProducts.slice(0, 4));
 
-  // We only show the first 4 products as "featured" on the home page
-  const displayedProducts = featuredProducts.slice(0, 4);
+  useEffect(() => {
+    let cancelled = false;
+    async function loadCatalog() {
+      try {
+        const res = await fetch('/api/public/catalog');
+        if (res.ok) {
+          const data = await res.json();
+          if (!cancelled && data.products && data.products.length > 0) {
+            setDisplayedProducts(data.products.slice(0, 4));
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load home featured products from DB, falling back to static:', err);
+      }
+    }
+    loadCatalog();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <section className="py-32 bg-black overflow-hidden">
@@ -82,9 +101,18 @@ export function FeaturedProducts() {
               }}
               className="group relative aspect-[3/4] bg-zinc-900 overflow-hidden rounded-3xl border border-white/5 hover:border-brand/20 transition-all duration-700"
             >
-              <div className="absolute inset-0 flex items-center justify-center text-[180px] font-black text-white/5 select-none transition-transform duration-700 group-hover:scale-110">
-                {product.image}
-              </div>
+              {product.imageUrl ? (
+                <img
+                  src={product.imageUrl}
+                  alt={product.name}
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  loading="lazy"
+                />
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center text-[180px] font-black text-white/5 select-none transition-transform duration-700 group-hover:scale-110">
+                  {product.image}
+                </div>
+              )}
 
               {/* Quick View Icon Overlay */}
               <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-x-4 group-hover:translate-x-0 z-20">
