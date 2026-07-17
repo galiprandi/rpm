@@ -126,7 +126,7 @@ export function ProductForm({
               value={formData.barcode}
               onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
               placeholder="1234567890123"
-              className="pl-9 font-mono"
+              className="pl-10 font-mono"
             />
           </div>
         </div>
@@ -140,7 +140,7 @@ export function ProductForm({
               value={formData.sku}
               onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
               placeholder="LED-001"
-              className="pl-9 font-mono"
+              className="pl-10 font-mono"
             />
           </div>
         </div>
@@ -240,7 +240,7 @@ export function ProductForm({
               value={formData.costPrice}
               onChange={(e) => setFormData({ ...formData, costPrice: e.target.value })}
               placeholder="0.00"
-              className="pl-9 font-mono"
+              className="pl-10 font-mono"
               required
               aria-required="true"
             />
@@ -259,7 +259,7 @@ export function ProductForm({
               value={formData.replacementCost}
               onChange={(e) => setFormData({ ...formData, replacementCost: e.target.value })}
               placeholder="0.00"
-              className="pl-9 font-mono"
+              className="pl-10 font-mono"
               required
               aria-required="true"
             />
@@ -277,7 +277,7 @@ export function ProductForm({
               value={formData.stock}
               onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
               placeholder="0"
-              className="pl-9 font-mono"
+              className="pl-10 font-mono"
               required
               aria-required="true"
             />
@@ -295,7 +295,7 @@ export function ProductForm({
               value={formData.minStock}
               onChange={(e) => setFormData({ ...formData, minStock: e.target.value })}
               placeholder="0"
-              className="pl-9 font-mono"
+              className="pl-10 font-mono"
               required
               aria-required="true"
             />
