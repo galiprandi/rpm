@@ -30,6 +30,9 @@ import {
   Tag,
   FileText,
   Pencil,
+  Wallet,
+  ArrowDownLeft,
+  MessageSquare,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -45,6 +48,16 @@ import {
 } from "@/components/ui/dialog";
 import { VehicleForm } from "@/components/vehicles/VehicleForm";
 import { useUI } from "@/components/ui/UIProvider";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { getWhatsAppLink, getDebtReminderMessage } from "@/lib/utils/whatsapp";
 
 interface WorkOrder {
   id: string;
@@ -86,6 +99,31 @@ export default function VehicleDetailPage() {
   const [loading, setLoading] = useState(true);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+
+  // Lógica de pagos
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("CASH");
+  const [paymentNotes, setPaymentNotes] = useState("");
+
+  const handleOpenPaymentForWO = useCallback((total: number, id: string) => {
+    setPaymentAmount(total.toString());
+    setPaymentNotes(`Pago OT #${id.slice(-6).toUpperCase()}`);
+    setIsPaymentModalOpen(true);
+  }, []);
+
+  // Cálculo de deuda acumulada
+  const unpaidWorkOrders = useMemo(() => {
+    if (!vehicle || !vehicle.workOrders) return [];
+    return vehicle.workOrders.filter(
+      (wo) => wo.status !== "PAID" && wo.status !== "CANCELLED",
+    );
+  }, [vehicle]);
+
+  const vehicleDebt = useMemo(() => {
+    return unpaidWorkOrders.reduce((sum, wo) => sum + Number(wo.total), 0);
+  }, [unpaidWorkOrders]);
 
   const fetchVehicle = useCallback(async () => {
     try {
@@ -244,23 +282,41 @@ export default function VehicleDetailPage() {
 
   const workOrderRowActions = useCallback(
     (row: WorkOrder) => (
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Link href={`/adm/work-orders/${row.id}`}>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              aria-label="Ver detalles de la Orden de Trabajo"
-            >
-              <Eye className="h-4 w-4" />
-            </Button>
-          </Link>
-        </TooltipTrigger>
-        <TooltipContent>Ver detalles</TooltipContent>
-      </Tooltip>
+      <div className="flex items-center gap-1">
+        {row.status !== "PAID" && row.status !== "CANCELLED" && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                onClick={() => handleOpenPaymentForWO(Number(row.total), row.id)}
+                aria-label="Registrar Pago de esta Orden de Trabajo"
+              >
+                <ArrowDownLeft className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Registrar Pago</TooltipContent>
+          </Tooltip>
+        )}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Link href={`/adm/work-orders/${row.id}`}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                aria-label="Ver detalles de la Orden de Trabajo"
+              >
+                <Eye className="h-4 w-4" />
+              </Button>
+            </Link>
+          </TooltipTrigger>
+          <TooltipContent>Ver detalles</TooltipContent>
+        </Tooltip>
+      </div>
     ),
-    [],
+    [handleOpenPaymentForWO],
   );
 
   if (loading) {
@@ -542,6 +598,254 @@ export default function VehicleDetailPage() {
           </Card>
         )}
       </div>
+
+      {/* Cuenta Corriente del Vehículo */}
+      {vehicleDebt > 0 && (
+        <Card className="border-red-200 bg-red-50/30">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Wallet className="h-4 w-4 text-red-700" />
+                Cuenta Corriente del Vehículo
+              </CardTitle>
+              <div className="flex items-center gap-2">
+                {vehicle.customer && vehicle.customer.phone && (
+                  <Button
+                    asChild
+                    variant="outline"
+                    size="sm"
+                    className="border-emerald-600 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800"
+                  >
+                    <a
+                      href={getWhatsAppLink(
+                        vehicle.customer.phone,
+                        getDebtReminderMessage(
+                          vehicle.customer.name,
+                          vehicleDebt,
+                        ),
+                      )}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <MessageSquare className="h-4 w-4 mr-1" />
+                      Notificar Deuda
+                    </a>
+                  </Button>
+                )}
+                <Button
+                  onClick={() => {
+                    setPaymentAmount(vehicleDebt.toString());
+                    setPaymentNotes(`Saldo deudor de vehículo ${vehicle.identifier}`);
+                    setIsPaymentModalOpen(true);
+                  }}
+                  size="sm"
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                >
+                  <ArrowDownLeft className="h-4 w-4 mr-1" />
+                  Saldar Vehículo
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm text-muted-foreground">
+                  Deuda Pendiente de este Vehículo
+                </div>
+                <div className="text-3xl font-bold font-mono text-red-700">
+                  {formatARS(vehicleDebt, 2)}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Monto acumulado por órdenes de trabajo pendientes de pago.
+                </p>
+              </div>
+              <div className="text-right">
+                <div className="text-sm text-muted-foreground">OTs Impagas</div>
+                <div className="text-2xl font-semibold font-mono">
+                  {unpaidWorkOrders.length}
+                </div>
+              </div>
+            </div>
+
+            {/* List of Unpaid OTs */}
+            <div className="mt-4 pt-4 border-t">
+              <div className="text-sm font-medium mb-2">
+                Órdenes de trabajo impagas:
+              </div>
+              <div className="space-y-2">
+                {unpaidWorkOrders.map((wo) => (
+                  <div
+                    key={wo.id}
+                    className="flex items-center justify-between p-2 bg-white rounded border"
+                  >
+                    <div>
+                      <Link
+                        href={`/adm/work-orders/${wo.id}`}
+                        className="text-sm font-medium hover:underline text-primary"
+                      >
+                        OT #{wo.id.slice(-6).toUpperCase()}
+                      </Link>
+                      <div className="text-xs text-muted-foreground">
+                        {new Date(wo.createdAt).toLocaleDateString("es-AR")}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold font-mono text-red-700">
+                        {formatARS(Number(wo.total), 2)}
+                      </span>
+                      {getStatusBadge(wo.status)}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 px-2 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 font-medium"
+                        onClick={() => handleOpenPaymentForWO(Number(wo.total), wo.id)}
+                      >
+                        Pagar
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Modal de Pago */}
+      <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Registrar Pago</DialogTitle>
+            <DialogDescription>
+              Propietario: {vehicle.customer?.name}
+              <br />
+              Deuda de este vehículo: {formatARS(vehicleDebt, 2)}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <Label>Monto a Abonar *</Label>
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="h-auto p-0 text-xs"
+                  onClick={() => setPaymentAmount(vehicleDebt.toString())}
+                >
+                  Saldar total
+                </Button>
+              </div>
+              <Input
+                type="number"
+                step="0.01"
+                min="0.01"
+                placeholder="Ej: 5000"
+                value={paymentAmount}
+                onChange={(e) => setPaymentAmount(e.target.value)}
+                className="font-mono"
+              />
+            </div>
+            <div>
+              <Label>Método de Pago *</Label>
+              <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccione método" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="CASH">Efectivo</SelectItem>
+                  <SelectItem value="TRANSFER">Transferencia</SelectItem>
+                  <SelectItem value="CARD">Tarjeta</SelectItem>
+                  <SelectItem value="CHECK">Cheque</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Notas (opcional)</Label>
+              <Input
+                placeholder="Referencia, comprobante, etc."
+                value={paymentNotes}
+                onChange={(e) => setPaymentNotes(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsPaymentModalOpen(false);
+                setPaymentAmount("");
+                setPaymentNotes("");
+              }}
+              disabled={isSubmittingPayment}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={async () => {
+                const amount = parseFloat(paymentAmount);
+                if (!amount || amount <= 0) {
+                  await alert({
+                    title: "Error",
+                    description: "Ingrese un monto válido",
+                    variant: "error",
+                  });
+                  return;
+                }
+
+                if (!vehicle.customer) return;
+
+                setIsSubmittingPayment(true);
+                try {
+                  const res = await fetch(
+                    `/api/customers/${vehicle.customer.id}/payments`,
+                    {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        amount,
+                        method: paymentMethod,
+                        notes: paymentNotes,
+                      }),
+                    },
+                  );
+
+                  if (res.ok) {
+                    setIsPaymentModalOpen(false);
+                    setPaymentAmount("");
+                    setPaymentNotes("");
+                    fetchVehicle(); // Refresh vehicle data
+                    await alert({
+                      title: "Pago registrado",
+                      description: "El pago se ha registrado correctamente",
+                      variant: "success",
+                    });
+                  } else {
+                    const error = await res.json();
+                    await alert({
+                      title: "Error",
+                      description: error.error || "Error al registrar pago",
+                      variant: "error",
+                    });
+                  }
+                } catch (error) {
+                  console.error("Error:", error);
+                  await alert({
+                    title: "Error",
+                    description: "Error al registrar pago",
+                    variant: "error",
+                  });
+                } finally {
+                  setIsSubmittingPayment(false);
+                }
+              }}
+              disabled={isSubmittingPayment || !paymentAmount}
+            >
+              {isSubmittingPayment ? "Procesando..." : "Confirmar Pago"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Modal de edición */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
