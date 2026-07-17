@@ -16,19 +16,43 @@ import {
 } from "@/components/ui/tooltip";
 import { PUBLIC_SITE_CONFIG, DEFAULT_WHATSAPP_MESSAGE } from '@/lib/config/public-site';
 
-const categories = ['Todos', 'Iluminación', 'Estética', 'Equipamiento', 'Seguridad', 'Interior'];
-
 export default function ProductsClient() {
   const searchParams = useSearchParams();
   const [selectedCategory, setSelectedCategory] = useState('Todos');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<typeof featuredProducts[0] | null>(null);
+  const [productsList, setProductsList] = useState<any[]>(featuredProducts);
+  const [categoriesList, setCategoriesList] = useState<string[]>(['Todos', 'Iluminación', 'Estética', 'Equipamiento', 'Seguridad', 'Interior']);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadCatalog() {
+      try {
+        const res = await fetch('/api/public/catalog');
+        if (res.ok) {
+          const data = await res.json();
+          if (!cancelled && data.products && data.products.length > 0) {
+            setProductsList(data.products);
+          }
+          if (!cancelled && data.categories && data.categories.length > 0) {
+            setCategoriesList(data.categories);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load public catalog from DB, falling back to static list:', err);
+      }
+    }
+    loadCatalog();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
     const productId = searchParams.get('product');
     if (productId) {
-      const product = featuredProducts.find(p => p.id === productId);
+      const product = productsList.find(p => p.id === productId);
       if (product) {
         Promise.resolve().then(() => {
           if (!cancelled) {
@@ -40,9 +64,9 @@ export default function ProductsClient() {
     return () => {
       cancelled = true;
     };
-  }, [searchParams]);
+  }, [searchParams, productsList]);
 
-  const filteredProducts = featuredProducts.filter(product => {
+  const filteredProducts = productsList.filter(product => {
     const matchesCategory = selectedCategory === 'Todos' || product.category === selectedCategory;
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          product.category.toLowerCase().includes(searchQuery.toLowerCase());
@@ -90,7 +114,7 @@ export default function ProductsClient() {
               </div>
 
               <div className="flex flex-wrap gap-2">
-                {categories.map((category) => (
+                {categoriesList.map((category) => (
                   <button
                     key={category}
                     onClick={() => setSelectedCategory(category)}
@@ -116,9 +140,18 @@ export default function ProductsClient() {
                   className="group relative aspect-[3/4] bg-zinc-900 overflow-hidden rounded-3xl border border-white/5 hover:border-brand/20 transition-all duration-700 animate-fade-up"
                   style={{ animationDelay: `${0.1 * (index % 4)}s` }}
                 >
-                <div className="absolute inset-0 flex items-center justify-center text-[180px] font-black text-white/5 select-none transition-transform duration-700 group-hover:scale-110">
-                  {product.image}
-                </div>
+                {product.imageUrl ? (
+                  <img
+                    src={product.imageUrl}
+                    alt={product.name}
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center text-[180px] font-black text-white/5 select-none transition-transform duration-700 group-hover:scale-110">
+                    {product.image}
+                  </div>
+                )}
 
                 {/* Quick View Icon Overlay */}
                 <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-x-4 group-hover:translate-x-0 z-20">
