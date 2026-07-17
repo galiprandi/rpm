@@ -13,6 +13,7 @@ import {
   Briefcase,
   Users,
   Target,
+  Download,
 } from "lucide-react";
 import { formatARS } from "@/lib/utils/format";
 import {
@@ -153,6 +154,45 @@ export default function ProfitabilityReportClient() {
     return `${change > 0 ? "+" : change < 0 ? "-" : ""}${value}% vs período anterior`;
   };
 
+  const exportToCSV = () => {
+    if (!data) return;
+
+    const headers = [
+      data.groupBy === "hour" ? "Hora" : data.groupBy === "month" ? "Mes" : "Fecha",
+      "Ingresos",
+      "Costos",
+      "Ganancia Bruta",
+      "Margen Bruto",
+    ];
+
+    const rows = data.evolution
+      .map((item) => [
+        item.label,
+        item.revenue.toFixed(2),
+        item.cost.toFixed(2),
+        item.profit.toFixed(2),
+        (item.revenue > 0 ? (item.profit / item.revenue) * 100 : 0).toFixed(1) + "%",
+      ]);
+
+    const csvContent = "\ufeff" + [
+      headers.join(","),
+      ...rows.map((r) => r.map((field) => `"${field.replace(/"/g, '""')}"`).join(",")),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `reporte_rentabilidad_${period}_${new Date().toISOString().split("T")[0]}.csv`,
+    );
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const maxEvolutionValue = useMemo(() => {
     if (!data) return 0;
     return Math.max(...data.evolution.map((e) => Math.max(e.revenue, e.cost)), 1);
@@ -163,6 +203,15 @@ export default function ProfitabilityReportClient() {
       <Header
         title="Reporte de Rentabilidad"
         description="Análisis de margen bruto, costos estimados y productos más rentables."
+        secondaryActions={[
+          {
+            label: "Exportar CSV",
+            onClick: exportToCSV,
+            disabled: !data || loading,
+            icon: Download,
+            variant: "outline",
+          },
+        ]}
         leftActions={
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">

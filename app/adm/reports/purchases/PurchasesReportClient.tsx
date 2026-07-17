@@ -11,6 +11,7 @@ import {
   ShoppingCart,
   Clock,
   Users,
+  Download,
 } from "lucide-react";
 import { formatARS } from "@/lib/utils/format";
 import {
@@ -150,6 +151,46 @@ export default function PurchasesReportClient() {
     return `${change > 0 ? "+" : change < 0 ? "-" : ""}${value}% vs período anterior`;
   };
 
+  const exportToCSV = () => {
+    if (!data) return;
+
+    const headers = [
+      data.groupBy === "hour" ? "Hora" : data.groupBy === "month" ? "Mes" : "Fecha",
+      "Compras",
+      "Cantidad",
+      "Promedio",
+    ];
+
+    const rows = data.evolution
+      .filter((e) => e.total > 0)
+      .slice()
+      .reverse()
+      .map((item) => [
+        item.label,
+        item.total.toFixed(2),
+        item.count.toString(),
+        (item.count > 0 ? item.total / item.count : 0).toFixed(2),
+      ]);
+
+    const csvContent = "\ufeff" + [
+      headers.join(","),
+      ...rows.map((r) => r.map((field) => `"${field.replace(/"/g, '""')}"`).join(",")),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `reporte_compras_${period}_${new Date().toISOString().split("T")[0]}.csv`,
+    );
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const maxTotal = useMemo(() => {
     if (!data) return 0;
     return Math.max(...data.evolution.map((e) => e.total), 1);
@@ -160,6 +201,15 @@ export default function PurchasesReportClient() {
       <Header
         title="Reporte de Compras"
         description="Métricas de abastecimiento, proveedores y evolución de costos."
+        secondaryActions={[
+          {
+            label: "Exportar CSV",
+            onClick: exportToCSV,
+            disabled: !data || loading,
+            icon: Download,
+            variant: "outline",
+          },
+        ]}
         leftActions={
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">

@@ -13,6 +13,7 @@ import {
   Clock,
   User,
   Users,
+  Download,
 } from "lucide-react";
 import {
   Select,
@@ -169,6 +170,41 @@ export default function WorkshopReportClient() {
     return `${change > 0 ? "+" : change < 0 ? "-" : ""}${value}% vs período anterior`;
   };
 
+  const exportToCSV = () => {
+    if (!data) return;
+
+    const headers = [
+      data.groupBy === "hour" ? "Hora" : data.groupBy === "month" ? "Mes" : "Fecha",
+      "OTs Creadas",
+      "OTs Completadas",
+    ];
+
+    const rows = data.evolution
+      .map((item) => [
+        item.label,
+        item.created.toString(),
+        item.completed.toString(),
+      ]);
+
+    const csvContent = "\ufeff" + [
+      headers.join(","),
+      ...rows.map((r) => r.map((field) => `"${field.replace(/"/g, '""')}"`).join(",")),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `reporte_taller_${period}_${new Date().toISOString().split("T")[0]}.csv`,
+    );
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const formatHours = (hours: number) => {
     if (hours < 1) return `${Math.round(hours * 60)} min`;
     if (hours < 24) return `${hours.toFixed(1)} h`;
@@ -182,6 +218,15 @@ export default function WorkshopReportClient() {
       <Header
         title="Reporte de Taller & Operación"
         description="Métricas de eficiencia, estados de OTs y performance de técnicos."
+        secondaryActions={[
+          {
+            label: "Exportar CSV",
+            onClick: exportToCSV,
+            disabled: !data || loading,
+            icon: Download,
+            variant: "outline",
+          },
+        ]}
         leftActions={
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
