@@ -267,10 +267,13 @@ export async function getNextInvoiceNumber(
     prefix = "REM";
   }
 
+  // For pre-invoices, since the number format is "X-0001-XXXXXXXX" and the number field is globally @unique,
+  // we must query by prefix rather than the specific type to avoid duplicate sequence collisions in the DB.
   const lastInvoice = await tx.invoice.findFirst({
     where: {
-      type,
-      number: { startsWith: prefix },
+      ...(type.startsWith("X_") || type.startsWith("NOTA_CREDITO_X_")
+        ? { number: { startsWith: prefix } }
+        : { type, number: { startsWith: prefix } }),
     },
     orderBy: { number: "desc" },
     select: { number: true },
