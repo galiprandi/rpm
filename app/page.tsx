@@ -6,14 +6,23 @@ import { Testimonials } from '@/components/public/sections/Testimonials';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Camera } from 'lucide-react';
 import { PUBLIC_SITE_CONFIG, DEFAULT_WHATSAPP_MESSAGE } from '@/lib/config/public-site';
+import { getPublicCatalog } from '@/lib/services/publicCatalogService';
 import { Metadata } from 'next';
+
+// Revalidate the home page catalog at most every 10 minutes.
+export const revalidate = 600;
 
 export const metadata: Metadata = {
   title: 'Equipá tu Pasión',
   description: PUBLIC_SITE_CONFIG.description,
 };
 
-export default function HomePage() {
+export default async function HomePage() {
+  // Server-side fetch for featured products. Errors propagate to Next.js
+  // (renders error.tsx / 500) — no silent static fallback.
+  const catalog = await getPublicCatalog();
+  const featured = catalog.products.slice(0, 4);
+
   return (
     <PublicLayout>
       {/* Main Sections */}
@@ -21,7 +30,7 @@ export default function HomePage() {
       
       <Services />
 
-      <FeaturedProducts />
+      <FeaturedProducts initialProducts={featured} />
 
       <Testimonials />
 

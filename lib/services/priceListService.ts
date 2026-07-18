@@ -10,6 +10,17 @@ import { Prisma } from '@prisma/client';
 import { calculateFinalPrice, calculateMarginPercentage, type RoundingRule } from '@/lib/utils/rounding';
 import { getMinimumMargin } from './settingsService';
 import { randomUUID } from 'crypto';
+import { revalidatePath } from 'next/cache';
+
+/**
+ * Invalidate the public catalog cache (home + /productos) since price list
+ * mutations affect public pricing. Called at the end of every mutating
+ * function below.
+ */
+function revalidatePublicCatalog(): void {
+  revalidatePath('/');
+  revalidatePath('/productos');
+}
 
 /**
  * Calculate the effective base cost for a product.
@@ -246,6 +257,7 @@ export async function createPriceList(input: CreatePriceListInput): Promise<Pric
     },
   });
 
+  revalidatePublicCatalog();
   return {
     ...priceList,
     baseMarginPercentage: Number(priceList.baseMarginPercentage),
@@ -276,6 +288,7 @@ export async function updatePriceList(id: string, input: UpdatePriceListInput): 
     },
   });
 
+  revalidatePublicCatalog();
   return {
     ...priceList,
     baseMarginPercentage: Number(priceList.baseMarginPercentage),
@@ -289,6 +302,7 @@ export async function deletePriceList(id: string): Promise<void> {
   await prisma.price_list.delete({
     where: { id },
   });
+  revalidatePublicCatalog();
 }
 
 // CREATE price list item (exception)
@@ -354,6 +368,7 @@ export async function createPriceListItem(
 
   const actualMargin = calculateMarginPercentage(replacementCost, finalPrice);
 
+  revalidatePublicCatalog();
   return {
     id: item.id,
     priceListId: item.priceListId,
@@ -378,6 +393,7 @@ export async function deletePriceListItem(id: string): Promise<void> {
   await prisma.price_list_item.delete({
     where: { id },
   });
+  revalidatePublicCatalog();
 }
 
 // Calculate price for a product in a specific price list

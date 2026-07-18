@@ -4,7 +4,7 @@
  * Tests for CRUD operations and price calculations
  */
 
-import { describe, it, expect, beforeEach, afterAll } from 'vitest';
+import { describe, it, expect, beforeEach, afterAll, vi } from 'vitest';
 import {
   getPriceLists,
   getPriceListById,
@@ -20,6 +20,10 @@ import {
 import { prisma } from '@/lib/prisma';
 import { createCategory } from './categoryService';
 import { createSupplier } from './supplierService';
+
+vi.mock('next/cache', () => ({
+  revalidatePath: vi.fn(),
+}));
 
 // Test data helpers
 async function createTestCategory() {

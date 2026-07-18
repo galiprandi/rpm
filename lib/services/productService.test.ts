@@ -18,6 +18,10 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
+vi.mock('next/cache', () => ({
+  revalidatePath: vi.fn(),
+}));
+
 // Mock functions factory - hoisted by vitest
 const mockFns = vi.hoisted(() => ({
   findMany: vi.fn(),

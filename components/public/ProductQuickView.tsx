@@ -10,10 +10,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { FeaturedProduct } from '@/lib/constants/featured-products';
+import type { PublicCatalogProduct } from '@/lib/services/publicCatalogService';
 
 interface ProductQuickViewProps {
-  product: FeaturedProduct | null;
+  product: PublicCatalogProduct | null;
   onClose: () => void;
 }
 

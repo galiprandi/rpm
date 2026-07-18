@@ -9,6 +9,17 @@
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 import { randomUUID } from 'crypto';
+import { revalidatePath } from 'next/cache';
+
+/**
+ * Invalidate the public catalog cache (home + /productos) since category
+ * mutations affect what is shown on the public website. Called at the end
+ * of every mutating function below.
+ */
+function revalidatePublicCatalog(): void {
+  revalidatePath('/');
+  revalidatePath('/productos');
+}
 
 // Types
 export interface Category {
@@ -124,6 +135,7 @@ export async function createCategory(input: CreateCategoryInput): Promise<Catego
     },
   });
 
+  revalidatePublicCatalog();
   return {
     ...category,
     productCount: category._count.product,
@@ -151,6 +163,7 @@ export async function updateCategory(id: string, input: UpdateCategoryInput): Pr
     },
   });
 
+  revalidatePublicCatalog();
   return {
     ...category,
     productCount: category._count.product,
@@ -164,4 +177,5 @@ export async function deleteCategory(id: string): Promise<void> {
   await prisma.category.delete({
     where: { id },
   });
+  revalidatePublicCatalog();
 }
