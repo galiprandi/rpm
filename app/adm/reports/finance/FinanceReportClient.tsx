@@ -25,6 +25,14 @@ import {
 } from "@/components/ui/select";
 import { FinanceReportData, type FinanceGroupBy } from "@/lib/services/financeReportService";
 import { cn } from "@/lib/utils";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 type Period =
   | "today"
@@ -406,44 +414,44 @@ export default function FinanceReportClient() {
                 <CardTitle className="text-lg font-medium">Detalle del Flujo</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="rounded-md border overflow-hidden">
-                  <table className="w-full text-sm">
-                    <thead className="bg-muted/50 border-b">
-                      <tr>
-                        <th className="text-left p-3 font-medium">Período</th>
-                        <th className="text-right p-3 font-medium">Ingresos</th>
-                        <th className="text-right p-3 font-medium">Egresos</th>
-                        <th className="text-right p-3 font-medium">Flujo Neto</th>
-                      </tr>
-                    </thead>
-                    <tbody>
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader className="bg-muted/50">
+                      <TableRow>
+                        <TableHead className="p-3 font-medium text-foreground">Período</TableHead>
+                        <TableHead className="text-right p-3 font-medium text-foreground">Ingresos</TableHead>
+                        <TableHead className="text-right p-3 font-medium text-foreground">Egresos</TableHead>
+                        <TableHead className="text-right p-3 font-medium text-foreground">Flujo Neto</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
                       {data.evolution.length === 0 ? (
-                        <tr>
-                          <td colSpan={4} className="p-8 text-center text-muted-foreground italic">
+                        <TableRow>
+                          <TableCell colSpan={4} className="p-8 text-center text-muted-foreground italic">
                             No se encontraron movimientos
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       ) : (
                         data.evolution.slice().reverse().map((item, idx) => (
-                          <tr key={idx} className="border-b hover:bg-muted/30 transition-colors">
-                            <td className="p-3 font-medium">{item.label}</td>
-                            <td className="p-3 text-right font-mono text-emerald-700">
+                          <TableRow key={idx} className="hover:bg-muted/30 transition-colors">
+                            <TableCell className="p-3 font-medium">{item.label}</TableCell>
+                            <TableCell className="p-3 text-right font-mono text-emerald-700 font-semibold">
                               {formatARS(item.income)}
-                            </td>
-                            <td className="p-3 text-right font-mono text-red-700">
+                            </TableCell>
+                            <TableCell className="p-3 text-right font-mono text-red-700">
                               {formatARS(item.expense)}
-                            </td>
-                            <td className={cn(
+                            </TableCell>
+                            <TableCell className={cn(
                               "p-3 text-right font-mono font-bold",
                               (item.income - item.expense) >= 0 ? "text-emerald-800" : "text-red-800"
                             )}>
                               {formatARS(item.income - item.expense)}
-                            </td>
-                          </tr>
+                            </TableCell>
+                          </TableRow>
                         ))
                       )}
-                    </tbody>
-                  </table>
+                    </TableBody>
+                  </Table>
                 </div>
               </CardContent>
             </Card>

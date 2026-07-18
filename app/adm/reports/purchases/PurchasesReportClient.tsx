@@ -22,6 +22,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PurchaseReportData, type PurchaseGroupBy } from "@/lib/services/purchaseReportService";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 type Period =
   | "today"
@@ -405,58 +413,57 @@ export default function PurchasesReportClient() {
                 <CardTitle className="text-lg font-medium">Detalle por Período</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="rounded-md border overflow-hidden">
-                  <table className="w-full text-sm">
-                    <thead className="bg-muted/50 border-b">
-                      <tr>
-                        <th className="text-left p-3 font-medium">
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader className="bg-muted/50">
+                      <TableRow>
+                        <TableHead className="p-3 font-medium text-foreground">
                           {data.groupBy === "hour"
                             ? "Hora"
                             : data.groupBy === "month"
                               ? "Mes"
                               : "Fecha"}
-                        </th>
-                        <th className="text-right p-3 font-medium">Compras</th>
-                        <th className="text-right p-3 font-medium">Cantidad</th>
-                        <th className="text-right p-3 font-medium">Promedio</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {data.evolution.filter((e) => e.total > 0).length ===
-                      0 ? (
-                        <tr>
-                          <td
+                        </TableHead>
+                        <TableHead className="text-right p-3 font-medium text-foreground">Compras</TableHead>
+                        <TableHead className="text-right p-3 font-medium text-foreground">Cantidad</TableHead>
+                        <TableHead className="text-right p-3 font-medium text-foreground">Promedio</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {data.evolution.filter((e) => e.total > 0).length === 0 ? (
+                        <TableRow>
+                          <TableCell
                             colSpan={4}
                             className="p-8 text-center text-muted-foreground italic"
                           >
                             Sin datos para este período
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       ) : (
                         data.evolution
                           .filter((e) => e.total > 0)
                           .slice()
                           .reverse()
                           .map((item, idx) => (
-                            <tr
+                            <TableRow
                               key={idx}
-                              className="border-b hover:bg-muted/30 transition-colors"
+                              className="hover:bg-muted/30 transition-colors"
                             >
-                              <td className="p-3 font-medium">{item.label}</td>
-                              <td className="p-3 text-right font-mono">
+                              <TableCell className="p-3 font-medium">{item.label}</TableCell>
+                              <TableCell className="p-3 text-right font-mono text-red-700 font-semibold">
                                 {formatARS(item.total)}
-                              </td>
-                              <td className="p-3 text-right">{item.count}</td>
-                              <td className="p-3 text-right font-mono">
+                              </TableCell>
+                              <TableCell className="p-3 text-right">{item.count}</TableCell>
+                              <TableCell className="p-3 text-right font-mono">
                                 {formatARS(
                                   item.count > 0 ? item.total / item.count : 0,
                                 )}
-                              </td>
-                            </tr>
+                              </TableCell>
+                            </TableRow>
                           ))
                       )}
-                    </tbody>
-                  </table>
+                    </TableBody>
+                  </Table>
                 </div>
               </CardContent>
             </Card>
