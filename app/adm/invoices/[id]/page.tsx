@@ -41,6 +41,8 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { validateCUIT, formatCUIT } from "@/lib/utils/cuit-validation";
+import { cn } from "@/lib/utils";
 
 interface InvoiceItem {
   name: string;
@@ -88,9 +90,23 @@ export default function InvoiceDetailPage() {
   });
   const [isSaving, setIsSaving] = useState(false);
 
+  const [cuitError, setCuitError] = useState<string | null>(null);
+  const [cuitSuccess, setCuitSuccess] = useState<boolean>(false);
+
   const handleSaveBillingData = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSaving) return; // Critical form protection rule
+
+    // Extra validation for CUIT if selected
+    if (editForm.customerDocType === "CUIT") {
+      const clean = editForm.customerDoc.replace(/\D/g, "");
+      if (clean.length !== 11 || !validateCUIT(editForm.customerDoc)) {
+        setCuitError("CUIT/CUIL inválido (verifique el dígito verificador)");
+        setCuitSuccess(false);
+        toast.error("CUIT/CUIL inválido. Por favor, corríjalo antes de guardar.");
+        return;
+      }
+    }
 
     setIsSaving(true);
     const toastId = toast.loading("Guardando datos de facturación...");
@@ -547,11 +563,22 @@ export default function InvoiceDetailPage() {
                   size="icon-sm"
                   title="Editar datos de facturación"
                   onClick={() => {
+                    const currentDoc = invoice.customerDoc || "";
                     setEditForm({
                       customerName: invoice.customerName || "",
                       customerDocType: invoice.customerDocType || "SIN_DOC",
-                      customerDoc: invoice.customerDoc || "",
+                      customerDoc: currentDoc,
                     });
+
+                    // Pre-validate CUIT if it is already filled
+                    if (invoice.customerDocType === "CUIT" && currentDoc) {
+                      const isValid = validateCUIT(currentDoc);
+                      setCuitSuccess(isValid);
+                      setCuitError(isValid ? null : "CUIT/CUIL inválido (verifique el dígito verificador)");
+                    } else {
+                      setCuitSuccess(false);
+                      setCuitError(null);
+                    }
                     setIsEditDialogOpen(true);
                   }}
                   className="h-8 w-8 text-muted-foreground hover:text-foreground"
@@ -727,12 +754,71 @@ export default function InvoiceDetailPage() {
                 <Label htmlFor="customerDoc">Nro. de Documento</Label>
                 <Input
                   id="customerDoc"
+                  className={cn(
+                    "font-mono",
+                    editForm.customerDocType === "CUIT" && cuitError && "border-destructive ring-destructive/20 focus-visible:ring-destructive",
+                    editForm.customerDocType === "CUIT" && cuitSuccess && "border-emerald-500 focus-visible:ring-emerald-500"
+                  )}
                   value={editForm.customerDoc}
-                  onChange={(e) => setEditForm({ ...editForm, customerDoc: e.target.value })}
+                  onChange={(e) => {
+                    if (editForm.customerDocType === "CUIT") {
+                      const formatted = formatCUIT(e.target.value);
+                      const clean = formatted.replace(/\D/g, "");
+                      setEditForm({ ...editForm, customerDoc: formatted });
+                      if (clean.length === 11) {
+                        if (validateCUIT(formatted)) {
+                          setCuitError(null);
+                          setCuitSuccess(true);
+                        } else {
+                          setCuitError("CUIT/CUIL inválido (verifique el dígito verificador)");
+                          setCuitSuccess(false);
+                        }
+                      } else {
+                        setCuitSuccess(false);
+                        setCuitError(null);
+                      }
+                    } else {
+                      setEditForm({ ...editForm, customerDoc: e.target.value });
+                      setCuitSuccess(false);
+                      setCuitError(null);
+                    }
+                  }}
+                  onBlur={(e) => {
+                    if (editForm.customerDocType === "CUIT") {
+                      const val = e.target.value;
+                      const clean = val.replace(/\D/g, "");
+                      if (clean) {
+                        if (clean.length < 11) {
+                          setCuitError("El CUIT debe tener 11 dígitos");
+                          setCuitSuccess(false);
+                        } else if (!validateCUIT(val)) {
+                          setCuitError("CUIT/CUIL inválido (verifique el dígito verificador)");
+                          setCuitSuccess(false);
+                        } else {
+                          setCuitError(null);
+                          setCuitSuccess(true);
+                        }
+                      } else {
+                        setCuitError(null);
+                        setCuitSuccess(false);
+                      }
+                    }
+                  }}
                   disabled={editForm.customerDocType === 'SIN_DOC'}
                   required={editForm.customerDocType !== 'SIN_DOC'}
                   placeholder={editForm.customerDocType === 'CUIT' ? "20-12345678-9" : "Nro. de documento"}
                 />
+                {editForm.customerDocType === "CUIT" && cuitError && (
+                  <p className="text-[0.8rem] font-medium text-destructive mt-1">
+                    {cuitError}
+                  </p>
+                )}
+                {editForm.customerDocType === "CUIT" && cuitSuccess && (
+                  <p className="text-[0.8rem] font-medium text-emerald-700 mt-1 flex items-center gap-1">
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    CUIT válido
+                  </p>
+                )}
               </div>
             </div>
 
@@ -747,7 +833,7 @@ export default function InvoiceDetailPage() {
               </Button>
               <Button
                 type="submit"
-                disabled={isSaving || !editForm.customerName.trim()}
+                disabled={isSaving || !editForm.customerName.trim() || (editForm.customerDocType === "CUIT" && !cuitSuccess)}
               >
                 {isSaving ? "Guardando..." : "Guardar Cambios"}
               </Button>
