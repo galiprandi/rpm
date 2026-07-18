@@ -18,7 +18,10 @@ export async function GET(
         vehicle_model: true,
         work_order: {
           orderBy: { createdAt: "desc" },
-          take: 10,
+          take: 50,
+          include: {
+            photo: true,
+          },
         },
       },
     });
