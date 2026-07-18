@@ -3,6 +3,7 @@
 ## 📋 BACKLOG
 
 ## ✅ DONE
+- [x] 2026-07-18 — Estandarización de Tablas de Reportes a Componentes shadcn/ui: Refactorización completa de todos los módulos de reportes que usaban tablas HTML nativas (Ventas, Clientes, Servicios, Compras, Rentabilidad y Finanzas) para implementar los componentes de tabla unificados de `@/components/ui/table`. (PR #diego/reports/standardize-report-tables)
 - [x] 2026-07-17 — Exportación Completa de Reportes a CSV (Parity): Diseñada e implementada la exportación a CSV para todos los módulos de reportes restantes (Compras, Finanzas, Rentabilidad, Taller y Deudores). Incorporado soporte UTF-8 BOM (`\ufeff`) para garantizar la correcta visualización de caracteres con tildes y diacríticos en Microsoft Excel. (PR #diego/reports/csv-export-parity)
 - [x] 2026-07-16 — Implementación de Dashboard Comparativo de Rendimiento Multi-Período: Diseñado e implementado el widget de comparación visual lado a lado para los 4 KPIs clave en el Centro de Reportes, utilizando barras de progreso relativas y responsive. Añadida cobertura de tests completa. (PR #diego/reports/multi-period-comparison)
 - [x] 2026-07-15 — Implementación de Reporte de Rentabilidad: Nuevo módulo detallado con métricas de ganancia bruta, margen por categoría y ranking de productos más rentables. (PR #diego/reports/profitability-report)
@@ -17,6 +18,10 @@
 - [x] 2025-07-09 — Implementación de reporte de Clientes (adquisición, recurrencia y ranking) (PR #diego/reports/customer-report)
 
 ## 🧠 LEARNINGS
+## 2026-07-18 - Estandarización de Tablas de Reportes a Componentes shadcn/ui
+**Learning:** Reemplazar las tablas nativas de HTML (`<table>`, `<thead>`, `<tbody>`, etc.) con los componentes estándar de shadcn/ui (`Table`, `TableHeader`, `TableBody`, etc.) no solo unifica visualmente los reportes bajo el mismo lenguaje de diseño, sino que también hereda automáticamente comportamientos responsivos, clases de accesibilidad y estados hover consistentes sin necesidad de redefinirlos localmente.
+**Action:** Utilizar siempre las abstracciones de tabla del proyecto (`@/components/ui/table`) en lugar de etiquetas HTML nativas para cualquier vista administrativa o modular nueva.
+
 ## 2026-07-17 - UTF-8 BOM para Excel en Exportación CSV
 **Learning:** Al generar archivos CSV en el cliente usando Blobs, Excel por defecto puede fallar al decodificar caracteres UTF-8 en español (como tildes o caracteres especiales en "Teléfono", "Antigüedad", etc.). Prependiendo el Byte Order Mark (BOM) de UTF-8 (`\ufeff`) al inicio del contenido del CSV, Excel detecta automáticamente la codificación y renderiza todo correctamente.
 **Action:** Usar siempre `"\ufeff" + [headers.join(","), ...rows.join("\n")].join("\n")` al exportar archivos CSV con soporte de idioma español.

@@ -25,6 +25,14 @@ import {
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { type CustomerReportData, type GroupBy } from "@/lib/services/customerReportService";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 type Period =
   | "today"
@@ -333,49 +341,49 @@ export default function CustomersReportClient() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border overflow-hidden">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/50 border-b">
-                <tr>
-                  <th className="text-left p-3 font-medium">Cliente</th>
-                  <th className="text-right p-3 font-medium">Facturación</th>
-                  <th className="text-right p-3 font-medium">Operaciones</th>
-                  <th className="text-right p-3 font-medium">Última Op.</th>
-                  <th className="text-right p-3 font-medium">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader className="bg-muted/50">
+                <TableRow>
+                  <TableHead className="p-3 font-medium text-foreground">Cliente</TableHead>
+                  <TableHead className="text-right p-3 font-medium text-foreground">Facturación</TableHead>
+                  <TableHead className="text-right p-3 font-medium text-foreground">Operaciones</TableHead>
+                  <TableHead className="text-right p-3 font-medium text-foreground">Última Op.</TableHead>
+                  <TableHead className="text-right p-3 font-medium text-foreground">Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {data.topCustomers.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="p-8 text-center text-muted-foreground italic">
+                  <TableRow>
+                    <TableCell colSpan={5} className="p-8 text-center text-muted-foreground italic">
                       No se encontraron operaciones en este período
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ) : (
                   data.topCustomers.map((customer) => (
-                    <tr key={customer.id} className="border-b hover:bg-muted/30 transition-colors">
-                      <td className="p-3 font-medium">{customer.name}</td>
-                      <td className="p-3 text-right font-mono text-emerald-600 font-semibold">
+                    <TableRow key={customer.id} className="hover:bg-muted/30 transition-colors">
+                      <TableCell className="p-3 font-medium">{customer.name}</TableCell>
+                      <TableCell className="p-3 text-right font-mono text-emerald-700 font-semibold">
                         {formatARS(customer.totalBilling)}
-                      </td>
-                      <td className="p-3 text-right font-mono">
+                      </TableCell>
+                      <TableCell className="p-3 text-right font-mono">
                         {customer.ordersCount}
-                      </td>
-                      <td className="p-3 text-right text-muted-foreground">
+                      </TableCell>
+                      <TableCell className="p-3 text-right text-muted-foreground">
                         {customer.lastOrderDate ? new Date(customer.lastOrderDate).toLocaleDateString('es-AR') : '-'}
-                      </td>
-                      <td className="p-3 text-right">
+                      </TableCell>
+                      <TableCell className="p-3 text-right">
                         <Button variant="ghost" size="icon" asChild className="h-8 w-8">
                           <Link href={`/adm/customers/${customer.id}`}>
                             <Eye className="h-4 w-4" />
                           </Link>
                         </Button>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))
                 )}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         </CardContent>
       </Card>

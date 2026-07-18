@@ -26,6 +26,14 @@ import {
 import { ServiceReportData, type ServiceGroupBy } from "@/lib/services/serviceReportService";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 type Period =
   | "today"
@@ -440,43 +448,43 @@ export default function ServicesReportClient() {
                   <CardDescription>Ranking por facturación total</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="rounded-md border overflow-hidden">
-                    <table className="w-full text-sm">
-                      <thead className="bg-muted/50 border-b">
-                        <tr>
-                          <th className="text-left p-3 font-medium">Servicio</th>
-                          <th className="text-right p-3 font-medium">Cant.</th>
-                          <th className="text-right p-3 font-medium">Total</th>
-                        </tr>
-                      </thead>
-                      <tbody>
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader className="bg-muted/50">
+                        <TableRow>
+                          <TableHead className="p-3 font-medium text-foreground">Servicio</TableHead>
+                          <TableHead className="text-right p-3 font-medium text-foreground">Cant.</TableHead>
+                          <TableHead className="text-right p-3 font-medium text-foreground">Total</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
                         {data.topServices.length === 0 ? (
-                          <tr>
-                            <td
+                          <TableRow>
+                            <TableCell
                               colSpan={3}
                               className="p-8 text-center text-muted-foreground italic"
                             >
                               Sin actividad registrada
-                            </td>
-                          </tr>
+                            </TableCell>
+                          </TableRow>
                         ) : (
                           data.topServices.map((service) => (
-                            <tr
+                            <TableRow
                               key={service.id}
-                              className="border-b hover:bg-muted/30 transition-colors"
+                              className="hover:bg-muted/30 transition-colors"
                             >
-                              <td className="p-3 font-medium truncate max-w-[150px]">
+                              <TableCell className="p-3 font-medium truncate max-w-[150px]">
                                 {service.name}
-                              </td>
-                              <td className="p-3 text-right font-mono">{service.quantity}</td>
-                              <td className="p-3 text-right font-mono font-bold text-emerald-700">
+                              </TableCell>
+                              <TableCell className="p-3 text-right font-mono">{service.quantity}</TableCell>
+                              <TableCell className="p-3 text-right font-mono font-bold text-emerald-700">
                                 {formatARS(service.total)}
-                              </td>
-                            </tr>
+                              </TableCell>
+                            </TableRow>
                           ))
                         )}
-                      </tbody>
-                    </table>
+                      </TableBody>
+                    </Table>
                   </div>
                 </CardContent>
               </Card>
