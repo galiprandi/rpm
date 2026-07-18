@@ -7,6 +7,7 @@ import {
   draftUpdateProductTool,
   updateProductTool,
 } from "@/lib/services/product";
+import { registerVehicleTool } from "@/lib/services/vehicle";
 import { workOrderTools } from "./work-orders/tools";
 import { financeTools } from "./finance/tools";
 import { registerCustomerWithVehicle } from "./orchestrator/composite";
@@ -21,6 +22,7 @@ export const unifiedTools = {
   // Create
   createCustomer: createCustomerTool,
   createProduct: createProductTool,
+  registerVehicle: registerVehicleTool,
   registerCustomerWithVehicle,
   // Update (organizational only — no stock/cost changes)
   draftUpdateProduct: draftUpdateProductTool,

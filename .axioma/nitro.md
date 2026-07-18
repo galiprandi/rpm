@@ -9,6 +9,7 @@
 - [x] 2026-03-28 — Initial audit of bot tools, removal of mock tools, fixing conversation history unit tests, and implementing major UI/UX improvements (smart scrolling, success states for tool execution, empty-state quick start suggestion chips, and full WCAG accessibility).
 - [x] 2026-07-16 — Polish chat window UX with comprehensive icon-only button tooltips, improve keyboard navigation for suggestion chips, and refine text contrast for completed check icons and error state panels to meet WCAG AA standards.
 - [x] 2026-07-16 — Implement Clear Conversation button in the chat header, stop active stream and reset attachments, input, and errors cleanly, and disable the auto-focus logic on mobile to prevent virtual keyboard hijacking on load.
+- [x] 2026-07-25 — Integrate registerVehicle tool for existing customers standalone registration, map its visual states in ChatFloating component, document it in base instructions, and restore/refine the chatbot UI/UX enhancements (PR #212).
 
 ## 🧠 LEARNINGS
 ### 2026-03-28 — Micro-UX & Settle States
@@ -30,3 +31,7 @@
 ### 2026-07-16 — Session Reset Cleanliness
 **Learning:** Clearing a chat conversation shouldn't just set the messages array to empty; it should also gracefully reset the stream's error states (`clearError`), cancel active runs (`stop`), clear file attachments, and clean the text input to ensure a completely clean state.
 **Action:** Provide holistic reset handlers that bind client-side states, stream states, and input files in one single click action.
+
+### 2026-07-25 — Standalone Vehicle Registration & Robust State Tracking
+**Learning:** While composite tools like `registerCustomerWithVehicle` are powerful, users frequently need to perform discrete, smaller operations (like adding a vehicle to an existing customer) conversing with the chatbot. Making the `registerVehicle` tool available standalone directly expands Nitro's technical capabilities without increasing cognitive load. Additionally, maintaining a perfect 1-to-1 sync between backend tools, system instructions, and frontend label loaders ensures zero black-box states during LLM tool-calling.
+**Action:** Always provide standalone counterparts for composite operations, ensure they are documented in system instructions, and map visual progress keys (`toolLabels` & `completedLabels`) on the client layout.

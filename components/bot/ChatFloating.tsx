@@ -214,7 +214,7 @@ export function ChatFloating({
     }
   }, [messages, status]);
 
-  // Auto-focus input when chat opens
+  // Auto-focus input when chat opens (desktop only to prevent keyboard hijacking on mobile)
   useEffect(() => {
     if (isOpen && !isMobile) {
       setTimeout(() => {
@@ -467,6 +467,7 @@ export function ChatFloating({
                                 getWorkOrderDetail: "Obteniendo detalle...",
                                 updateWorkOrderStatus: "Actualizando estado...",
                                 composeWhatsAppMessage: "Redactando mensaje...",
+                                registerVehicle: "Registrando vehículo...",
                                 registerCustomerWithVehicle:
                                   "Registrando cliente y vehículo...",
                                 processPurchaseInvoice:
@@ -483,6 +484,7 @@ export function ChatFloating({
                                   "Venta registrada exitosamente",
                                 createCustomer: "Cliente creado exitosamente",
                                 createProduct: "Producto creado exitosamente",
+                                registerVehicle: "Vehículo registrado exitosamente",
                                 createWorkOrder:
                                   "Orden de trabajo creada exitosamente",
                                 getCashStatus: "Consulta de caja completada",
