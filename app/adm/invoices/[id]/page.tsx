@@ -70,6 +70,12 @@ interface Invoice {
   issuedAt?: string;
   createdBy: string;
   items: InvoiceItem[];
+  customer?: {
+    address?: string | null;
+    phone?: string | null;
+    phoneAlt?: string | null;
+    email?: string | null;
+  } | null;
 }
 
 export default function InvoiceDetailPage() {
@@ -370,7 +376,7 @@ export default function InvoiceDetailPage() {
         <div className="md:col-span-2 space-y-6 print:col-span-2">
           {/* Customer & Info Info for Print */}
           <div className="hidden print:grid grid-cols-2 gap-8 mb-8">
-            <div className="border p-4 rounded-lg">
+            <div className="border p-4 rounded-lg space-y-1">
               <h3 className="text-xs font-bold uppercase text-muted-foreground mb-2">
                 Cliente
               </h3>
@@ -380,8 +386,23 @@ export default function InvoiceDetailPage() {
                   {invoice.customerDocType}: {invoice.customerDoc}
                 </p>
               )}
+              {invoice.customer?.address && (
+                <p className="text-sm">
+                  Dirección: {invoice.customer.address}
+                </p>
+              )}
+              {(invoice.customer?.phone || invoice.customer?.phoneAlt) && (
+                <p className="text-sm">
+                  Tel: {invoice.customer.phone || invoice.customer.phoneAlt}
+                </p>
+              )}
+              {invoice.customer?.email && (
+                <p className="text-sm">
+                  Email: {invoice.customer.email}
+                </p>
+              )}
             </div>
-            <div className="border p-4 rounded-lg">
+            <div className="border p-4 rounded-lg space-y-1">
               <h3 className="text-xs font-bold uppercase text-muted-foreground mb-2">
                 Detalles
               </h3>
@@ -389,9 +410,18 @@ export default function InvoiceDetailPage() {
                 Condición: {isTypeB ? "Consumidor Final" : "Responsable Inscripto"}
               </p>
               <p className="text-sm">
-                Referencia: {invoice.referenceType} #
+                Referencia: {invoice.referenceType.replace(/_/g, " ")} #
                 {invoice.referenceId.substring(0, 8)}
               </p>
+              {invoice.type === "REMITO" && (
+                <div className="mt-2 pt-2 border-t border-dashed">
+                  <p className="text-xs font-bold uppercase text-muted-foreground mb-1">Despacho</p>
+                  <p className="text-xs font-semibold">Origen: Cipolletti, RN</p>
+                  <p className="text-xs font-semibold">
+                    Destino: {invoice.customer?.address || "Retiro en sucursal"}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -508,6 +538,17 @@ export default function InvoiceDetailPage() {
               </div>
             </CardContent>
           </Card>
+
+          {invoice.type === "PRESUPUESTO" && (
+            <div className="hidden print:block mt-6 border p-4 rounded-lg bg-gray-50/50 text-xs space-y-2">
+              <p className="font-bold uppercase tracking-wider text-muted-foreground">Condiciones del Presupuesto</p>
+              <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                <li><span className="font-semibold text-foreground">Validez:</span> Este presupuesto tiene una validez de 15 días corridos a partir de la fecha de emisión.</li>
+                <li><span className="font-semibold text-foreground">Precios:</span> Los valores expresados están sujetos a variación sin previo aviso debido a fluctuaciones de costos de mercado.</li>
+                <li><span className="font-semibold text-foreground">Reservas:</span> La reserva de turnos de taller o de productos de catálogo se efectiviza únicamente mediante el pago de la seña correspondiente.</li>
+              </ul>
+            </div>
+          )}
 
           <div className="print:hidden">
             <Card>

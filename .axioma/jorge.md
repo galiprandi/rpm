@@ -1,8 +1,8 @@
 ## 📋 BACKLOG
 - [ ] Photo Management — Bulk upload and deletion of work order photos.
-- [ ] Printing — Standardized PDF generation for Remitos and Budgets.
 - [ ] Gestión de Fotos — Carga y eliminación masiva de fotos de órdenes de trabajo.
-- [ ] Impresión — Generación estandarizada de PDF para Remitos y Presupuestos.
+- [x] Printing — Standardized PDF generation for Remitos and Budgets.
+- [x] Impresión — Generación estandarizada de PDF para Remitos y Presupuestos.
 - [x] Fecha programada en Kanban: muestre y resalte las fechas programadas en las tarjetas Kanban.
 
 ## ✅ COMPLETADO
@@ -10,6 +10,7 @@
 - [x] 2025-07-12 — Refinamiento de UX en Taller: Acciones Rápidas y Navegación (PR #jorge/work-orders/ux-refinement)
 - [x] 2026-07-16 — Paridad de Vista de Lista y Corrección de Prioridad HOY (PR #jorge/work-orders/list-view-parity)
 - [x] 2026-07-16 — Checklist Estándar e Interactivo en Taller (PR #jorge/work-orders/checklists-refactor)
+- [x] 2026-07-18 — Impresión Estandarizada de Remitos y Presupuestos (PR #jorge/work-orders/standardized-printing)
 
 ## 🧠 APRENDIZAJES
 ## 2025-07-08 - UX Kanban y Propagación de Eventos
@@ -27,3 +28,7 @@
 ## 2026-07-16 - Checklists Interactivos y Resilientes
 **Aprendizaje:** Almacenar checklists como datos serializados es flexible, pero requiere que las operaciones de actualización (PUT/POST) realicen merges seguros (preservando marcas de tiempo como `completedAt`) para evitar regresiones de datos. La inicialización con plantillas unificadas directamente en la interfaz de detalle elimina la necesidad de re-crear OTs completas para agregar protocolos faltantes.
 **Acción:** Siempre fusionar campos de forma granular en APIs que operen sobre documentos JSON embebidos.
+
+## 2026-07-18 - Emulación de Impresión y Contenido de Documentos
+**Aprendizaje:** El uso de emulación de medios de impresión (`page.emulate_media(media="print")`) en Playwright facilita enormemente la auditoría y validación visual automatizada de layouts que de otra manera no son fácilmente verificables en pantalla normal. Asimismo, estructurar secciones de despacho (origen/destino) para remitos y cláusulas de validez/precio para presupuestos entrega un nivel de profesionalismo indispensable en documentos de taller y ventas.
+**Acción:** Siempre usar emulación de impresión y validación con capturas de pantalla para todos los comprobantes y reportes imprimibles.
