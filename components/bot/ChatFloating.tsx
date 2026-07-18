@@ -17,6 +17,7 @@ import {
   Loader2,
   Wrench,
   Check,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -132,7 +133,7 @@ export function ChatFloating({
     router.refresh();
   }, [router]);
 
-  const { messages, sendMessage, status, error, stop } = useChat({
+  const { messages, sendMessage, status, error, stop, setMessages, clearError } = useChat({
     id: chatId,
     transport,
     onFinish,
@@ -159,6 +160,16 @@ export function ChatFloating({
   const handleActionClick = async (action: string) => {
     if (isSubmitting) return;
     await sendMessage({ text: action });
+  };
+
+  const handleClearConversation = () => {
+    stop();
+    setMessages([]);
+    setAttachedFile(null);
+    setLocalInput("");
+    clearError();
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    if (cameraInputRef.current) cameraInputRef.current.value = "";
   };
 
   const onSubmit = async (e: React.FormEvent) => {
@@ -205,12 +216,12 @@ export function ChatFloating({
 
   // Auto-focus input when chat opens
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !isMobile) {
       setTimeout(() => {
         inputRef.current?.focus();
       }, 100);
     }
-  }, [isOpen]);
+  }, [isOpen, isMobile]);
 
   // Handle keyboard shortcuts (global - works even when chat is closed)
   useEffect(() => {
@@ -299,6 +310,25 @@ export function ChatFloating({
               </p>
             </div>
             <div className="flex items-center gap-1">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleClearConversation}
+                    disabled={messages.length === 0}
+                    aria-label="Limpiar conversación"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="bottom"
+                  className="bg-slate-900 text-white border-slate-800"
+                >
+                  Limpiar conversación
+                </TooltipContent>
+              </Tooltip>
               {!isMobile && (
                 <Tooltip>
                   <TooltipTrigger asChild>

@@ -89,3 +89,7 @@
 ## 2026-07-16 - Interactive Tooltip Trigger Accessibility
 **Learning:** When wrapping non-native interactive elements (like `<p>` or `<span>`) in a `TooltipTrigger`, they must have `tabIndex={0}` and a visible focus state to be keyboard-accessible. Additionally, since the project provides a global `TooltipProvider` in the root layout, individual components should avoid redundant nesting to maintain a clean DOM and consistent delay behavior.
 **Action:** Always add `tabIndex={0}` and `focus-visible` styles to non-button tooltip triggers. Do not include `TooltipProvider` in local components.
+
+## 2026-07-24 - Mobile Viewport Focus and Chatbot Reset Actions
+**Learning:** Automatically focusing inputs inside slide-outs or floating panels on mobile devices (`isMobile`) triggers intrusive virtual keyboard popups that disrupt visual viewports and cause layout zoom. Additionally, in floating panel overlays, dense destructive utilities like "Clear Conversation" must be disabled in their initial empty states, and wrapped in descriptive tooltips alongside screen reader `aria-label` tags to maintain accessibility and clarity.
+**Action:** Restrict auto-focus mechanisms to `!isMobile` on overlay/modal open, and ensure any contextual destructive operations are disabled when their relevant state is empty.
