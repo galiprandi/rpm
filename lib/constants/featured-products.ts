@@ -4,6 +4,7 @@ export interface FeaturedProduct {
   category: string;
   price: number;
   image: string;
+  imageUrl?: string | null;
   description: string;
   features: string[];
 }

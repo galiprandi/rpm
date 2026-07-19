@@ -16,7 +16,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Header, CrudStats } from '@/components/adm';
-import { TrendingDown, Users, Receipt, DollarSign, Phone, Eye, Clock, User, MessageSquare } from 'lucide-react';
+import { TrendingDown, Users, Receipt, DollarSign, Phone, Eye, Clock, User, MessageSquare, Download } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { getWhatsAppLink, getDebtReminderMessage } from '@/lib/utils/whatsapp';
@@ -99,6 +99,50 @@ export default function DebtorsClient() {
     const diffTime = Math.abs(now.getTime() - date.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
+  };
+
+  const exportToCSV = () => {
+    if (!debtors || debtors.length === 0) return;
+
+    const headers = [
+      "Cliente",
+      "Teléfono",
+      "Email",
+      "Deuda Total",
+      "Cantidad OTs",
+      "Antigüedad de Deuda",
+      "Fecha Deuda Antigua",
+      "Vehículos",
+    ];
+
+    const rows = debtors.map((debtor) => [
+      debtor.customerName,
+      debtor.phone || debtor.phoneAlt || "",
+      debtor.email || "",
+      debtor.balance.toFixed(2),
+      debtor.workOrderCount.toString(),
+      debtor.oldestDebtDate ? `${getDaysSince(debtor.oldestDebtDate)} de antigüedad` : "-",
+      debtor.oldestDebtDate ? new Date(debtor.oldestDebtDate).toLocaleDateString("es-AR") : "-",
+      debtor.vehicles.join(" | "),
+    ]);
+
+    const csvContent = "\ufeff" + [
+      headers.join(","),
+      ...rows.map((r) => r.map((field) => `"${field.replace(/"/g, '""')}"`).join(",")),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `reporte_deudores_${new Date().toISOString().split("T")[0]}.csv`,
+    );
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const stats = summary ? [
@@ -279,6 +323,15 @@ export default function DebtorsClient() {
       <Header
         title="Reporte de Deudores"
         description="Clientes con saldo pendiente de pago"
+        secondaryActions={[
+          {
+            label: "Exportar CSV",
+            onClick: exportToCSV,
+            disabled: loading || debtors.length === 0,
+            icon: Download,
+            variant: "outline",
+          },
+        ]}
         leftActions={
           <div key="sort-select" className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">Ordenar por:</span>

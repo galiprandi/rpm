@@ -6,7 +6,6 @@ import { PublicLayout } from '@/components/public/layout/PublicLayout';
 import { Button } from '@/components/ui/button';
 import { Search, ArrowRight, X, Eye, MessageCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { featuredProducts } from '@/lib/constants/featured-products';
 import { ProductQuickView } from '@/components/public/ProductQuickView';
 import { formatARS } from '@/lib/utils/format';
 import {
@@ -15,38 +14,20 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { PUBLIC_SITE_CONFIG, DEFAULT_WHATSAPP_MESSAGE } from '@/lib/config/public-site';
+import type { PublicCatalogProduct } from '@/lib/services/publicCatalogService';
 
-export default function ProductsClient() {
+interface ProductsClientProps {
+  initialProducts: PublicCatalogProduct[];
+  initialCategories: string[];
+}
+
+export default function ProductsClient({ initialProducts, initialCategories }: ProductsClientProps) {
   const searchParams = useSearchParams();
   const [selectedCategory, setSelectedCategory] = useState('Todos');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedProduct, setSelectedProduct] = useState<typeof featuredProducts[0] | null>(null);
-  const [productsList, setProductsList] = useState<any[]>(featuredProducts);
-  const [categoriesList, setCategoriesList] = useState<string[]>(['Todos', 'Iluminación', 'Estética', 'Equipamiento', 'Seguridad', 'Interior']);
-
-  useEffect(() => {
-    let cancelled = false;
-    async function loadCatalog() {
-      try {
-        const res = await fetch('/api/public/catalog');
-        if (res.ok) {
-          const data = await res.json();
-          if (!cancelled && data.products && data.products.length > 0) {
-            setProductsList(data.products);
-          }
-          if (!cancelled && data.categories && data.categories.length > 0) {
-            setCategoriesList(data.categories);
-          }
-        }
-      } catch (err) {
-        console.error('Failed to load public catalog from DB, falling back to static list:', err);
-      }
-    }
-    loadCatalog();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const [selectedProduct, setSelectedProduct] = useState<PublicCatalogProduct | null>(null);
+  const [productsList] = useState<PublicCatalogProduct[]>(initialProducts);
+  const [categoriesList] = useState<string[]>(initialCategories);
 
   useEffect(() => {
     let cancelled = false;

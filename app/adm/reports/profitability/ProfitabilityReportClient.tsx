@@ -13,6 +13,7 @@ import {
   Briefcase,
   Users,
   Target,
+  Download,
 } from "lucide-react";
 import { formatARS } from "@/lib/utils/format";
 import {
@@ -24,6 +25,14 @@ import {
 } from "@/components/ui/select";
 import { ProfitabilityReportData, type ProfitabilityGroupBy } from "@/lib/services/profitabilityReportService";
 import { cn } from "@/lib/utils";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 type Period =
   | "today"
@@ -153,6 +162,45 @@ export default function ProfitabilityReportClient() {
     return `${change > 0 ? "+" : change < 0 ? "-" : ""}${value}% vs período anterior`;
   };
 
+  const exportToCSV = () => {
+    if (!data) return;
+
+    const headers = [
+      data.groupBy === "hour" ? "Hora" : data.groupBy === "month" ? "Mes" : "Fecha",
+      "Ingresos",
+      "Costos",
+      "Ganancia Bruta",
+      "Margen Bruto",
+    ];
+
+    const rows = data.evolution
+      .map((item) => [
+        item.label,
+        item.revenue.toFixed(2),
+        item.cost.toFixed(2),
+        item.profit.toFixed(2),
+        (item.revenue > 0 ? (item.profit / item.revenue) * 100 : 0).toFixed(1) + "%",
+      ]);
+
+    const csvContent = "\ufeff" + [
+      headers.join(","),
+      ...rows.map((r) => r.map((field) => `"${field.replace(/"/g, '""')}"`).join(",")),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `reporte_rentabilidad_${period}_${new Date().toISOString().split("T")[0]}.csv`,
+    );
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const maxEvolutionValue = useMemo(() => {
     if (!data) return 0;
     return Math.max(...data.evolution.map((e) => Math.max(e.revenue, e.cost)), 1);
@@ -163,6 +211,15 @@ export default function ProfitabilityReportClient() {
       <Header
         title="Reporte de Rentabilidad"
         description="Análisis de margen bruto, costos estimados y productos más rentables."
+        secondaryActions={[
+          {
+            label: "Exportar CSV",
+            onClick: exportToCSV,
+            disabled: !data || loading,
+            icon: Download,
+            variant: "outline",
+          },
+        ]}
         leftActions={
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
@@ -381,40 +438,40 @@ export default function ProfitabilityReportClient() {
                   <CardDescription>Ranking por ganancia bruta absoluta</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="rounded-md border overflow-hidden">
-                    <table className="w-full text-sm">
-                      <thead className="bg-muted/50 border-b">
-                        <tr>
-                          <th className="text-left p-3 font-medium">Producto / Servicio</th>
-                          <th className="text-right p-3 font-medium">Ganancia</th>
-                          <th className="text-right p-3 font-medium">Margen</th>
-                        </tr>
-                      </thead>
-                      <tbody>
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader className="bg-muted/50">
+                        <TableRow>
+                          <TableHead className="p-3 font-medium text-foreground">Producto / Servicio</TableHead>
+                          <TableHead className="text-right p-3 font-medium text-foreground">Ganancia</TableHead>
+                          <TableHead className="text-right p-3 font-medium text-foreground">Margen</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
                         {data.topProfitableItems.length === 0 ? (
-                          <tr>
-                            <td colSpan={3} className="p-8 text-center text-muted-foreground italic">
+                          <TableRow>
+                            <TableCell colSpan={3} className="p-8 text-center text-muted-foreground italic">
                               Sin operaciones registradas
-                            </td>
-                          </tr>
+                            </TableCell>
+                          </TableRow>
                         ) : (
                           data.topProfitableItems.map((item, idx) => (
-                            <tr key={idx} className="border-b hover:bg-muted/30 transition-colors">
-                              <td className="p-3">
+                            <TableRow key={idx} className="hover:bg-muted/30 transition-colors">
+                              <TableCell className="p-3">
                                 <div className="font-medium truncate max-w-[200px]">{item.name}</div>
                                 <div className="text-[10px] text-muted-foreground">{item.quantity} unidades</div>
-                              </td>
-                              <td className="p-3 text-right font-mono font-bold text-emerald-700">
+                              </TableCell>
+                              <TableCell className="p-3 text-right font-mono font-bold text-emerald-700">
                                 {formatARS(item.profit)}
-                              </td>
-                              <td className="p-3 text-right font-mono text-muted-foreground">
+                              </TableCell>
+                              <TableCell className="p-3 text-right font-mono text-muted-foreground">
                                 {item.margin.toFixed(1)}%
-                              </td>
-                            </tr>
+                              </TableCell>
+                            </TableRow>
                           ))
                         )}
-                      </tbody>
-                    </table>
+                      </TableBody>
+                    </Table>
                   </div>
                 </CardContent>
               </Card>

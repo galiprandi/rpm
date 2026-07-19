@@ -16,6 +16,9 @@ import {
   Layers,
   Plus,
   CheckCircle2,
+  Power,
+  ArrowLeft,
+  EyeOff,
 } from "lucide-react";
 import { type ColumnDef } from "@tanstack/react-table";
 import {
@@ -37,10 +40,12 @@ interface Category {
 
 interface CategoriesClientProps {
   initialCategories: Category[];
+  inactiveMode?: boolean;
 }
 
 export default function CategoriesClient({
   initialCategories,
+  inactiveMode = false,
 }: CategoriesClientProps) {
   const { alert } = useUI();
   const [categories, setCategories] = useState<Category[]>(initialCategories);
@@ -64,10 +69,17 @@ export default function CategoriesClient({
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch("/api/categories?includeInactive=true");
+      const includeInactive = inactiveMode ? "true" : "false";
+      const response = await fetch(
+        `/api/categories?includeInactive=${includeInactive}`,
+      );
       const data = await response.json();
       if (data.categories) {
-        setCategories(data.categories);
+        setCategories(
+          inactiveMode
+            ? data.categories.filter((c: Category) => !c.isActive)
+            : data.categories,
+        );
       }
     } catch (error) {
       console.error("Error fetching categories:", error);
@@ -123,7 +135,11 @@ export default function CategoriesClient({
       });
 
       if (response.ok) {
-        fetchCategories();
+        setCategories((prev) =>
+          prev.map((c) =>
+            c.id === category.id ? { ...c, isActive: false } : c,
+          ),
+        );
         toast.success(`Categoría "${category.name}" desactivada`, {
           action: {
             label: "Deshacer",
@@ -134,7 +150,11 @@ export default function CategoriesClient({
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({ isActive: true }),
                 });
-                fetchCategories();
+                setCategories((prev) =>
+                  prev.map((c) =>
+                    c.id === category.id ? { ...c, isActive: true } : c,
+                  ),
+                );
                 toast.success("Categoría reactivada");
               } catch {
                 toast.error("Error al reactivar categoría");
@@ -145,6 +165,35 @@ export default function CategoriesClient({
       }
     } catch (error) {
       console.error("Error deleting category:", error);
+    }
+  };
+
+  const handleReactivateCategory = async (category: Category) => {
+    try {
+      const response = await fetch(`/api/categories/${category.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isActive: true }),
+      });
+
+      if (response.ok) {
+        fetchCategories();
+        toast.success(`Categoría "${category.name}" reactivada`);
+      } else {
+        const error = await response.json();
+        await alert({
+          title: "Error",
+          description: error.error || "Error al reactivar categoría",
+          variant: "error",
+        });
+      }
+    } catch (error) {
+      console.error("Error reactivating category:", error);
+      await alert({
+        title: "Error",
+        description: "Error al reactivar categoría",
+        variant: "error",
+      });
     }
   };
 
@@ -195,24 +244,37 @@ export default function CategoriesClient({
     }
   };
 
-  const stats: StatItem[] = [
-    {
-      label: "Total",
-      value: categories.length,
-      icon: Layers,
-    },
-    {
-      label: "Activas",
-      value: categories.filter((c) => c.isActive).length,
-      icon: CheckCircle2,
-      iconColor: "#047857", // emerald-700
-    },
-    {
-      label: "Productos",
-      value: categories.reduce((acc, c) => acc + c.productCount, 0),
-      icon: Package,
-    },
-  ];
+  const stats: StatItem[] = inactiveMode
+    ? [
+        {
+          label: "Inactivas",
+          value: categories.length,
+          icon: EyeOff,
+        },
+        {
+          label: "Productos",
+          value: categories.reduce((acc, c) => acc + c.productCount, 0),
+          icon: Package,
+        },
+      ]
+    : [
+        {
+          label: "Total",
+          value: categories.length,
+          icon: Layers,
+        },
+        {
+          label: "Activas",
+          value: categories.filter((c) => c.isActive).length,
+          icon: CheckCircle2,
+          iconColor: "#047857", // emerald-700
+        },
+        {
+          label: "Productos",
+          value: categories.reduce((acc, c) => acc + c.productCount, 0),
+          icon: Package,
+        },
+      ];
 
   const columns = useMemo<ColumnDef<Category>[]>(
     () => [
@@ -263,22 +325,6 @@ export default function CategoriesClient({
           </Badge>
         ),
       },
-      {
-        accessorKey: "isActive",
-        header: "Estado",
-        cell: ({ row }) => (
-          <Badge
-            variant={row.original.isActive ? "outline" : "secondary"}
-            className={
-              row.original.isActive
-                ? "text-emerald-700 border-emerald-200 bg-emerald-50"
-                : ""
-            }
-          >
-            {row.original.isActive ? "Activa" : "Inactiva"}
-          </Badge>
-        ),
-      },
     ],
     [],
   );
@@ -286,14 +332,45 @@ export default function CategoriesClient({
   return (
     <div className="space-y-6">
       <Header
-        title="Categorías"
-        description="Gestiona las categorías de productos"
-        primaryAction={{
-          label: "Nueva Categoría",
-          onClick: () => setIsCreateDialogOpen(true),
-          icon: Plus,
-          ariaLabel: "Crear nueva categoría",
-        }}
+        title={inactiveMode ? "Categorías Inactivas" : "Categorías"}
+        description={
+          inactiveMode
+            ? "Categorías desactivadas del catálogo"
+            : "Gestiona las categorías de productos"
+        }
+        primaryAction={
+          inactiveMode
+            ? undefined
+            : {
+                label: "Nueva Categoría",
+                onClick: () => setIsCreateDialogOpen(true),
+                icon: Plus,
+                ariaLabel: "Crear nueva categoría",
+              }
+        }
+        secondaryActions={
+          inactiveMode
+            ? [
+                {
+                  label: "Volver a categorías",
+                  href: "/adm/categories",
+                  variant: "outline" as const,
+                  icon: ArrowLeft,
+                  ariaLabel: "Volver al listado de categorías",
+                },
+              ]
+            : [
+                {
+                  label: "Ver inactivos",
+                  href: "/adm/categories/inactive",
+                  variant: "ghost" as const,
+                  icon: EyeOff,
+                  iconOnly: true,
+                  title: "Ver categorías inactivas",
+                  ariaLabel: "Ver categorías inactivas",
+                },
+              ]
+        }
       />
 
       <div className="mt-4">
@@ -312,9 +389,15 @@ export default function CategoriesClient({
             aria-hidden="true"
           />
         }
-        emptyMessage="No hay categorías creadas. Haz clic en 'Nueva Categoría' para crear la primera."
+        emptyMessage={
+          inactiveMode
+            ? "No hay categorías inactivas."
+            : "No hay categorías creadas. Haz clic en 'Nueva Categoría' para crear la primera."
+        }
         createButtonText="Categoría"
-        tableTitle="Listado de Categorías"
+        tableTitle={
+          inactiveMode ? "Categorías Inactivas" : "Listado de Categorías"
+        }
         searchPlaceholder="Buscar categorías..."
         rowActions={(category) => (
           <div className="flex gap-1">
@@ -332,25 +415,42 @@ export default function CategoriesClient({
               <TooltipContent>Editar categoría</TooltipContent>
             </Tooltip>
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-destructive"
-                  onClick={() => handleDeleteCategory(category)}
-                  disabled={category.productCount > 0}
-                  aria-label="Eliminar categoría"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                {category.productCount > 0
-                  ? "No se puede eliminar una categoría con productos"
-                  : "Eliminar categoría"}
-              </TooltipContent>
-            </Tooltip>
+            {category.isActive ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-destructive"
+                    onClick={() => handleDeleteCategory(category)}
+                    disabled={category.productCount > 0}
+                    aria-label={`Desactivar categoría ${category.name}`}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {category.productCount > 0
+                    ? "No se puede desactivar una categoría con productos"
+                    : "Desactivar categoría"}
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50"
+                    onClick={() => handleReactivateCategory(category)}
+                    aria-label={`Reactivar categoría ${category.name}`}
+                  >
+                    <Power className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Reactivar categoría</TooltipContent>
+              </Tooltip>
+            )}
           </div>
         )}
       />
@@ -366,19 +466,21 @@ export default function CategoriesClient({
         isLoading={saving}
       />
 
-      {/* Create Category Dialog */}
-      <CategoryDialog
-        isOpen={isCreateDialogOpen}
-        onClose={() => setIsCreateDialogOpen(false)}
-        editingCategory={null}
-        formData={createForm}
-        setFormData={setCreateForm}
-        onSubmit={(e) => {
-          e?.preventDefault();
-          handleCreateCategory();
-        }}
-        isLoading={saving}
-      />
+      {/* Create Category Dialog - only in active mode */}
+      {!inactiveMode && (
+        <CategoryDialog
+          isOpen={isCreateDialogOpen}
+          onClose={() => setIsCreateDialogOpen(false)}
+          editingCategory={null}
+          formData={createForm}
+          setFormData={setCreateForm}
+          onSubmit={(e) => {
+            e?.preventDefault();
+            handleCreateCategory();
+          }}
+          isLoading={saving}
+        />
+      )}
     </div>
   );
 }

@@ -267,10 +267,13 @@ export async function getNextInvoiceNumber(
     prefix = "REM";
   }
 
+  // For pre-invoices, since the number format is "X-0001-XXXXXXXX" and the number field is globally @unique,
+  // we must query by prefix rather than the specific type to avoid duplicate sequence collisions in the DB.
   const lastInvoice = await tx.invoice.findFirst({
     where: {
-      type,
-      number: { startsWith: prefix },
+      ...(type.startsWith("X_") || type.startsWith("NOTA_CREDITO_X_")
+        ? { number: { startsWith: prefix } }
+        : { type, number: { startsWith: prefix } }),
     },
     orderBy: { number: "desc" },
     select: { number: true },
@@ -350,4 +353,72 @@ export function calculateInvoiceTaxes(
     iva21: tax,
     iva105: 0,
   };
+}
+
+/**
+ * Updates billing data for a DRAFT or REJECTED invoice.
+ * If the customerDocType is changed (e.g. from DNI to CUIT), automatically determines
+ * the correct new invoice type and re-generates the sequential number.
+ */
+export async function updateInvoiceBillingData(
+  id: string,
+  data: {
+    customerName?: string;
+    customerDoc?: string;
+    customerDocType?: string;
+  }
+) {
+  return await prisma.$transaction(async (tx) => {
+    const invoice = await tx.invoice.findUnique({
+      where: { id },
+    });
+
+    if (!invoice) {
+      throw new Error("Comprobante no encontrado");
+    }
+
+    if (invoice.status !== 'DRAFT' && invoice.status !== 'REJECTED') {
+      throw new Error("Solo se pueden editar comprobantes en estado DRAFT o REJECTED");
+    }
+
+    const updatedData: any = {};
+    if (data.customerName !== undefined) {
+      updatedData.customerName = data.customerName;
+    }
+    if (data.customerDoc !== undefined) {
+      updatedData.customerDoc = data.customerDoc;
+    }
+    if (data.customerDocType !== undefined) {
+      updatedData.customerDocType = data.customerDocType;
+
+      // Check if invoice type needs to change based on the document type
+      const isCreditNote = invoice.type.startsWith('NOTA_CREDITO_');
+      const isPreInvoice = invoice.type.startsWith('X_') || invoice.type.startsWith('NOTA_CREDITO_X_');
+
+      if (isPreInvoice) {
+        const letter = data.customerDocType === 'CUIT' ? 'A' : 'B';
+        const newType = isCreditNote
+          ? (`NOTA_CREDITO_X_${letter}` as InvoiceType)
+          : (`X_${letter}` as InvoiceType);
+
+        if (newType !== invoice.type) {
+          updatedData.type = newType;
+          // Assign next number for the new type
+          updatedData.number = await getNextInvoiceNumber(newType, tx);
+
+          // Re-calculate taxes as changing type A <-> B might affect display
+          const taxes = calculateInvoiceTaxes(Number(invoice.total), newType);
+          updatedData.subtotal = taxes.subtotal;
+          updatedData.tax = taxes.tax;
+          updatedData.iva21 = taxes.iva21;
+          updatedData.iva105 = taxes.iva105;
+        }
+      }
+    }
+
+    return tx.invoice.update({
+      where: { id },
+      data: updatedData,
+    });
+  });
 }

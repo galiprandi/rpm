@@ -25,6 +25,14 @@ import {
 } from "@/components/ui/select";
 import { SalesReportData, type GroupBy } from "@/lib/services/salesReportService";
 import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 type Period =
   | "today"
@@ -472,31 +480,31 @@ export default function SalesReportClient() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="rounded-md border overflow-hidden">
-                    <table className="w-full text-sm">
-                      <thead className="bg-muted/50 border-b">
-                        <tr>
-                          <th className="text-left p-3 font-medium">
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader className="bg-muted/50">
+                        <TableRow>
+                          <TableHead className="p-3 font-medium text-foreground">
                             {data.groupBy === "hour"
                               ? "Hora"
                               : data.groupBy === "month"
                                 ? "Mes"
                                 : "Fecha"}
-                          </th>
-                          <th className="text-right p-3 font-medium">Ventas</th>
-                          <th className="text-right p-3 font-medium">Cantidad</th>
-                        </tr>
-                      </thead>
-                      <tbody>
+                          </TableHead>
+                          <TableHead className="text-right p-3 font-medium text-foreground">Ventas</TableHead>
+                          <TableHead className="text-right p-3 font-medium text-foreground">Cantidad</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
                         {data.evolution.filter((e) => e.total > 0).length === 0 ? (
-                          <tr>
-                            <td
+                          <TableRow>
+                            <TableCell
                               colSpan={3}
                               className="p-8 text-center text-muted-foreground italic"
                             >
                               Sin datos para este período
-                            </td>
-                          </tr>
+                            </TableCell>
+                          </TableRow>
                         ) : (
                           data.evolution
                             .filter((e) => e.total > 0)
@@ -504,20 +512,20 @@ export default function SalesReportClient() {
                             .reverse()
                             .slice(0, 5) // Limit to 5 for preview, more details in CSV
                             .map((item, idx) => (
-                              <tr
+                              <TableRow
                                 key={idx}
-                                className="border-b hover:bg-muted/30 transition-colors"
+                                className="hover:bg-muted/30 transition-colors"
                               >
-                                <td className="p-3 font-medium">{item.label}</td>
-                                <td className="p-3 text-right font-mono">
+                                <TableCell className="p-3 font-medium">{item.label}</TableCell>
+                                <TableCell className="p-3 text-right font-mono font-semibold text-emerald-700">
                                   {formatARS(item.total)}
-                                </td>
-                                <td className="p-3 text-right">{item.count}</td>
-                              </tr>
+                                </TableCell>
+                                <TableCell className="p-3 text-right">{item.count}</TableCell>
+                              </TableRow>
                             ))
                         )}
-                      </tbody>
-                    </table>
+                      </TableBody>
+                    </Table>
                   </div>
                 </CardContent>
               </Card>

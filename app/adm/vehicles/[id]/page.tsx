@@ -30,8 +30,17 @@ import {
   Tag,
   FileText,
   Pencil,
+  Wallet,
+  ArrowDownLeft,
+  MessageSquare,
+  Camera,
+  ChevronLeft,
+  ChevronRight,
+  Download,
 } from "lucide-react";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   getVehicleCategoryLabel,
   buildVehicleDescription,
@@ -45,12 +54,31 @@ import {
 } from "@/components/ui/dialog";
 import { VehicleForm } from "@/components/vehicles/VehicleForm";
 import { useUI } from "@/components/ui/UIProvider";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { getWhatsAppLink, getDebtReminderMessage } from "@/lib/utils/whatsapp";
 
 interface WorkOrder {
   id: string;
   status: string;
   total: number;
   createdAt: string;
+  entryPhotos?: string[];
+  exitPhotos?: string[];
+  photo?: Array<{
+    id: string;
+    type: string;
+    url: string;
+    description?: string;
+    createdAt?: string;
+  }>;
 }
 
 interface VehicleDetail {
@@ -86,6 +114,158 @@ export default function VehicleDetailPage() {
   const [loading, setLoading] = useState(true);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+
+  // Lógica de pagos
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("CASH");
+  const [paymentNotes, setPaymentNotes] = useState("");
+
+  const handleOpenPaymentForWO = useCallback((total: number, id: string) => {
+    setPaymentAmount(total.toString());
+    setPaymentNotes(`Pago OT #${id.slice(-6).toUpperCase()}`);
+    setIsPaymentModalOpen(true);
+  }, []);
+
+  // Cálculo de deuda acumulada
+  const unpaidWorkOrders = useMemo(() => {
+    if (!vehicle || !vehicle.workOrders) return [];
+    return vehicle.workOrders.filter(
+      (wo) => wo.status !== "PAID" && wo.status !== "CANCELLED",
+    );
+  }, [vehicle]);
+
+  const vehicleDebt = useMemo(() => {
+    return unpaidWorkOrders.reduce((sum, wo) => sum + Number(wo.total), 0);
+  }, [unpaidWorkOrders]);
+
+  // Galería de fotos consolidada
+  const [typeFilter, setTypeFilter] = useState<string>("ALL");
+  const [woFilter, setWoFilter] = useState<string>("ALL");
+  const [activePhotoIndex, setActivePhotoIndex] = useState<number | null>(null);
+
+  const vehiclePhotos = useMemo(() => {
+    if (!vehicle || !vehicle.workOrders) return [];
+
+    const photos: Array<{
+      url: string;
+      type: "ENTRY" | "EXIT" | "GENERAL";
+      workOrderId: string;
+      workOrderCode: string;
+      createdAt: string;
+      description?: string;
+    }> = [];
+
+    const seenUrls = new Set<string>();
+
+    vehicle.workOrders.forEach((wo) => {
+      const code = wo.id.slice(-6).toUpperCase();
+
+      // 1. Extra/General Photos from work order relation
+      if (wo.photo) {
+        wo.photo.forEach((p) => {
+          if (!seenUrls.has(p.url)) {
+            seenUrls.add(p.url);
+            photos.push({
+              url: p.url,
+              type: p.type as "ENTRY" | "EXIT" | "GENERAL" || "GENERAL",
+              workOrderId: wo.id,
+              workOrderCode: code,
+              createdAt: p.createdAt || wo.createdAt,
+              description: p.description || undefined,
+            });
+          }
+        });
+      }
+
+      // 2. Entry Photos
+      if (wo.entryPhotos) {
+        wo.entryPhotos.forEach((url) => {
+          if (!seenUrls.has(url)) {
+            seenUrls.add(url);
+            photos.push({
+              url,
+              type: "ENTRY",
+              workOrderId: wo.id,
+              workOrderCode: code,
+              createdAt: wo.createdAt,
+              description: "Foto de ingreso del vehículo",
+            });
+          }
+        });
+      }
+
+      // 3. Exit Photos
+      if (wo.exitPhotos) {
+        wo.exitPhotos.forEach((url) => {
+          if (!seenUrls.has(url)) {
+            seenUrls.add(url);
+            photos.push({
+              url,
+              type: "EXIT",
+              workOrderId: wo.id,
+              workOrderCode: code,
+              createdAt: wo.createdAt,
+              description: "Foto de egreso del vehículo",
+            });
+          }
+        });
+      }
+    });
+
+    // Ordenar de más reciente a más antigua
+    return photos.sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  }, [vehicle]);
+
+  const workOrdersWithPhotos = useMemo(() => {
+    if (!vehicle || !vehicle.workOrders) return [];
+    return vehicle.workOrders.filter((wo) => {
+      const hasEntry = wo.entryPhotos && wo.entryPhotos.length > 0;
+      const hasExit = wo.exitPhotos && wo.exitPhotos.length > 0;
+      const hasGeneral = wo.photo && wo.photo.length > 0;
+      return hasEntry || hasExit || hasGeneral;
+    });
+  }, [vehicle]);
+
+  const filteredPhotos = useMemo(() => {
+    return vehiclePhotos.filter((p) => {
+      const matchesType = typeFilter === "ALL" || p.type === typeFilter;
+      const matchesWO = woFilter === "ALL" || p.workOrderId === woFilter;
+      return matchesType && matchesWO;
+    });
+  }, [vehiclePhotos, typeFilter, woFilter]);
+
+  const handleNextPhoto = useCallback(() => {
+    if (activePhotoIndex === null) return;
+    setActivePhotoIndex((prev) =>
+      prev !== null && prev < filteredPhotos.length - 1 ? prev + 1 : 0
+    );
+  }, [activePhotoIndex, filteredPhotos.length]);
+
+  const handlePrevPhoto = useCallback(() => {
+    if (activePhotoIndex === null) return;
+    setActivePhotoIndex((prev) =>
+      prev !== null && prev > 0 ? prev - 1 : filteredPhotos.length - 1
+    );
+  }, [activePhotoIndex, filteredPhotos.length]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (activePhotoIndex === null) return;
+      if (e.key === "ArrowRight") {
+        handleNextPhoto();
+      } else if (e.key === "ArrowLeft") {
+        handlePrevPhoto();
+      } else if (e.key === "Escape") {
+        setActivePhotoIndex(null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [activePhotoIndex, handleNextPhoto, handlePrevPhoto]);
 
   const fetchVehicle = useCallback(async () => {
     try {
@@ -244,23 +424,41 @@ export default function VehicleDetailPage() {
 
   const workOrderRowActions = useCallback(
     (row: WorkOrder) => (
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Link href={`/adm/work-orders/${row.id}`}>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              aria-label="Ver detalles de la Orden de Trabajo"
-            >
-              <Eye className="h-4 w-4" />
-            </Button>
-          </Link>
-        </TooltipTrigger>
-        <TooltipContent>Ver detalles</TooltipContent>
-      </Tooltip>
+      <div className="flex items-center gap-1">
+        {row.status !== "PAID" && row.status !== "CANCELLED" && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                onClick={() => handleOpenPaymentForWO(Number(row.total), row.id)}
+                aria-label="Registrar Pago de esta Orden de Trabajo"
+              >
+                <ArrowDownLeft className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Registrar Pago</TooltipContent>
+          </Tooltip>
+        )}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Link href={`/adm/work-orders/${row.id}`}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                aria-label="Ver detalles de la Orden de Trabajo"
+              >
+                <Eye className="h-4 w-4" />
+              </Button>
+            </Link>
+          </TooltipTrigger>
+          <TooltipContent>Ver detalles</TooltipContent>
+        </Tooltip>
+      </div>
     ),
-    [],
+    [handleOpenPaymentForWO],
   );
 
   if (loading) {
@@ -543,6 +741,254 @@ export default function VehicleDetailPage() {
         )}
       </div>
 
+      {/* Cuenta Corriente del Vehículo */}
+      {vehicleDebt > 0 && (
+        <Card className="border-red-200 bg-red-50/30">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Wallet className="h-4 w-4 text-red-700" />
+                Cuenta Corriente del Vehículo
+              </CardTitle>
+              <div className="flex items-center gap-2">
+                {vehicle.customer && vehicle.customer.phone && (
+                  <Button
+                    asChild
+                    variant="outline"
+                    size="sm"
+                    className="border-emerald-600 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800"
+                  >
+                    <a
+                      href={getWhatsAppLink(
+                        vehicle.customer.phone,
+                        getDebtReminderMessage(
+                          vehicle.customer.name,
+                          vehicleDebt,
+                        ),
+                      )}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <MessageSquare className="h-4 w-4 mr-1" />
+                      Notificar Deuda
+                    </a>
+                  </Button>
+                )}
+                <Button
+                  onClick={() => {
+                    setPaymentAmount(vehicleDebt.toString());
+                    setPaymentNotes(`Saldo deudor de vehículo ${vehicle.identifier}`);
+                    setIsPaymentModalOpen(true);
+                  }}
+                  size="sm"
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                >
+                  <ArrowDownLeft className="h-4 w-4 mr-1" />
+                  Saldar Vehículo
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm text-muted-foreground">
+                  Deuda Pendiente de este Vehículo
+                </div>
+                <div className="text-3xl font-bold font-mono text-red-700">
+                  {formatARS(vehicleDebt, 2)}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Monto acumulado por órdenes de trabajo pendientes de pago.
+                </p>
+              </div>
+              <div className="text-right">
+                <div className="text-sm text-muted-foreground">OTs Impagas</div>
+                <div className="text-2xl font-semibold font-mono">
+                  {unpaidWorkOrders.length}
+                </div>
+              </div>
+            </div>
+
+            {/* List of Unpaid OTs */}
+            <div className="mt-4 pt-4 border-t">
+              <div className="text-sm font-medium mb-2">
+                Órdenes de trabajo impagas:
+              </div>
+              <div className="space-y-2">
+                {unpaidWorkOrders.map((wo) => (
+                  <div
+                    key={wo.id}
+                    className="flex items-center justify-between p-2 bg-white rounded border"
+                  >
+                    <div>
+                      <Link
+                        href={`/adm/work-orders/${wo.id}`}
+                        className="text-sm font-medium hover:underline text-primary"
+                      >
+                        OT #{wo.id.slice(-6).toUpperCase()}
+                      </Link>
+                      <div className="text-xs text-muted-foreground">
+                        {new Date(wo.createdAt).toLocaleDateString("es-AR")}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold font-mono text-red-700">
+                        {formatARS(Number(wo.total), 2)}
+                      </span>
+                      {getStatusBadge(wo.status)}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 px-2 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 font-medium"
+                        onClick={() => handleOpenPaymentForWO(Number(wo.total), wo.id)}
+                      >
+                        Pagar
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Modal de Pago */}
+      <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Registrar Pago</DialogTitle>
+            <DialogDescription>
+              Propietario: {vehicle.customer?.name}
+              <br />
+              Deuda de este vehículo: {formatARS(vehicleDebt, 2)}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <Label>Monto a Abonar *</Label>
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="h-auto p-0 text-xs"
+                  onClick={() => setPaymentAmount(vehicleDebt.toString())}
+                >
+                  Saldar total
+                </Button>
+              </div>
+              <Input
+                type="number"
+                step="0.01"
+                min="0.01"
+                placeholder="Ej: 5000"
+                value={paymentAmount}
+                onChange={(e) => setPaymentAmount(e.target.value)}
+                className="font-mono"
+              />
+            </div>
+            <div>
+              <Label>Método de Pago *</Label>
+              <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccione método" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="CASH">Efectivo</SelectItem>
+                  <SelectItem value="TRANSFER">Transferencia</SelectItem>
+                  <SelectItem value="CARD">Tarjeta</SelectItem>
+                  <SelectItem value="CHECK">Cheque</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Notas (opcional)</Label>
+              <Input
+                placeholder="Referencia, comprobante, etc."
+                value={paymentNotes}
+                onChange={(e) => setPaymentNotes(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsPaymentModalOpen(false);
+                setPaymentAmount("");
+                setPaymentNotes("");
+              }}
+              disabled={isSubmittingPayment}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={async () => {
+                const amount = parseFloat(paymentAmount);
+                if (!amount || amount <= 0) {
+                  await alert({
+                    title: "Error",
+                    description: "Ingrese un monto válido",
+                    variant: "error",
+                  });
+                  return;
+                }
+
+                if (!vehicle.customer) return;
+
+                setIsSubmittingPayment(true);
+                try {
+                  const res = await fetch(
+                    `/api/customers/${vehicle.customer.id}/payments`,
+                    {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        amount,
+                        method: paymentMethod,
+                        notes: paymentNotes,
+                      }),
+                    },
+                  );
+
+                  if (res.ok) {
+                    setIsPaymentModalOpen(false);
+                    setPaymentAmount("");
+                    setPaymentNotes("");
+                    fetchVehicle(); // Refresh vehicle data
+                    await alert({
+                      title: "Pago registrado",
+                      description: "El pago se ha registrado correctamente",
+                      variant: "success",
+                    });
+                  } else {
+                    const error = await res.json();
+                    await alert({
+                      title: "Error",
+                      description: error.error || "Error al registrar pago",
+                      variant: "error",
+                    });
+                  }
+                } catch (error) {
+                  console.error("Error:", error);
+                  await alert({
+                    title: "Error",
+                    description: "Error al registrar pago",
+                    variant: "error",
+                  });
+                } finally {
+                  setIsSubmittingPayment(false);
+                }
+              }}
+              disabled={isSubmittingPayment || !paymentAmount}
+            >
+              {isSubmittingPayment ? "Procesando..." : "Confirmar Pago"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Modal de edición */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -602,61 +1048,357 @@ export default function VehicleDetailPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Work Orders - DataTable */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-xl">
-            <ClipboardList
-              className="h-5 w-5 text-primary pointer-events-none"
-              aria-hidden="true"
-            />
-            Historial de Órdenes de Trabajo
-            <Badge variant="secondary" className="ml-2 font-mono">
-              {vehicle.workOrders?.length ?? 0}
-            </Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {(vehicle.workOrders?.length ?? 0) === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center space-y-4">
-              <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center">
-                <Wrench
-                  className="h-8 w-8 text-muted-foreground/20 pointer-events-none"
+      {/* Tabs Layout: Historial y Galería */}
+      <Tabs defaultValue="orders" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 max-w-[400px]">
+          <TabsTrigger value="orders" className="flex items-center gap-1.5">
+            <ClipboardList className="h-4 w-4" />
+            Órdenes de Trabajo ({vehicle.workOrders?.length ?? 0})
+          </TabsTrigger>
+          <TabsTrigger value="gallery" className="flex items-center gap-1.5">
+            <Camera className="h-4 w-4" />
+            Fotos y Adjuntos ({vehiclePhotos.length})
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Tab: Orders List */}
+        <TabsContent value="orders" className="mt-4 outline-none">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <ClipboardList
+                  className="h-5 w-5 text-primary pointer-events-none"
                   aria-hidden="true"
                 />
+                Historial de Órdenes de Trabajo
+                <Badge variant="secondary" className="ml-2 font-mono">
+                  {vehicle.workOrders?.length ?? 0}
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {(vehicle.workOrders?.length ?? 0) === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center space-y-4">
+                  <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center">
+                    <Wrench
+                      className="h-8 w-8 text-muted-foreground/20 pointer-events-none"
+                      aria-hidden="true"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-lg font-medium text-foreground">
+                      Sin historial
+                    </p>
+                    <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+                      No hay órdenes de trabajo registradas para este vehículo o
+                      equipo.
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      router.push(`/adm/work-orders/new?vehicleId=${vehicleId}`)
+                    }
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Crear primera OT
+                  </Button>
+                </div>
+              ) : (
+                <DataTable
+                  data={vehicle.workOrders}
+                  columns={workOrderColumns}
+                  rowActions={workOrderRowActions}
+                  title="Órdenes de Trabajo"
+                  enableGlobalFilter={true}
+                  globalFilterPlaceholder="Buscar OT..."
+                />
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Tab: Photos and Attachments Gallery */}
+        <TabsContent value="gallery" className="mt-4 outline-none">
+          <Card>
+            <CardHeader className="pb-3 border-b">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <CardTitle className="flex items-center gap-2 text-xl">
+                    <Camera className="h-5 w-5 text-primary" />
+                    Fotos y Archivos Adjuntos
+                    <Badge variant="secondary" className="ml-2 font-mono">
+                      {vehiclePhotos.length}
+                    </Badge>
+                  </CardTitle>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Historial fotográfico de ingresos, egresos y reparaciones asociadas al vehículo.
+                  </p>
+                </div>
+
+                {/* Filters */}
+                {vehiclePhotos.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-2">
+                    {/* Filter by Category */}
+                    <Select value={typeFilter} onValueChange={setTypeFilter}>
+                      <SelectTrigger className="w-[130px] h-8 text-xs font-medium">
+                        <SelectValue placeholder="Categoría" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ALL">Todas las fotos</SelectItem>
+                        <SelectItem value="ENTRY">Ingreso</SelectItem>
+                        <SelectItem value="EXIT">Egreso</SelectItem>
+                        <SelectItem value="GENERAL">General</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    {/* Filter by Work Order */}
+                    <Select value={woFilter} onValueChange={setWoFilter}>
+                      <SelectTrigger className="w-[150px] h-8 text-xs font-medium font-mono">
+                        <SelectValue placeholder="Orden de Trabajo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ALL">Todas las OTs</SelectItem>
+                        {workOrdersWithPhotos.map((wo) => (
+                          <SelectItem key={wo.id} value={wo.id} className="font-mono text-xs">
+                            OT #{wo.id.slice(-6).toUpperCase()}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    {/* Clear Filters */}
+                    {(typeFilter !== "ALL" || woFilter !== "ALL") && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 px-2 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => {
+                          setTypeFilter("ALL");
+                          setWoFilter("ALL");
+                        }}
+                      >
+                        Limpiar
+                      </Button>
+                    )}
+                  </div>
+                )}
               </div>
-              <div className="space-y-1">
-                <p className="text-lg font-medium text-foreground">
-                  Sin historial
-                </p>
-                <p className="text-sm text-muted-foreground max-w-xs mx-auto">
-                  No hay órdenes de trabajo registradas para este vehículo o
-                  equipo.
-                </p>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  router.push(`/adm/work-orders/new?vehicleId=${vehicleId}`)
-                }
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Crear primera OT
-              </Button>
+            </CardHeader>
+            <CardContent className="pt-6">
+              {vehiclePhotos.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center space-y-4">
+                  <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center">
+                    <Camera className="h-8 w-8 text-muted-foreground/30" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-lg font-medium text-foreground">
+                      Sin registro visual
+                    </p>
+                    <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+                      Aún no se han cargado fotos de ingreso, egreso o registros técnicos para este vehículo.
+                    </p>
+                  </div>
+                </div>
+              ) : filteredPhotos.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center space-y-2">
+                  <p className="text-lg font-semibold">Sin resultados</p>
+                  <p className="text-sm text-muted-foreground">
+                    Ninguna foto coincide con los filtros de búsqueda seleccionados.
+                  </p>
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="text-primary mt-2"
+                    onClick={() => {
+                      setTypeFilter("ALL");
+                      setWoFilter("ALL");
+                    }}
+                  >
+                    Restablecer filtros
+                  </Button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {filteredPhotos.map((photo, index) => (
+                    <div
+                      key={photo.url}
+                      className="group relative aspect-video overflow-hidden rounded-xl border bg-muted shadow-sm transition-all duration-300 hover:shadow-md hover:border-primary/30"
+                    >
+                      <img
+                        src={photo.url}
+                        alt={photo.description || `Foto de vehículo ${photo.workOrderCode}`}
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 pointer-events-none"
+                      />
+
+                      {/* Top Overlay Badges */}
+                      <div className="absolute top-2 left-2 flex flex-wrap gap-1">
+                        <Badge
+                          variant="secondary"
+                          className={cn(
+                            "text-[10px] font-semibold tracking-wide py-0.5 px-1.5 uppercase shadow-sm border",
+                            photo.type === "ENTRY"
+                              ? "bg-blue-50 text-blue-700 border-blue-200"
+                              : photo.type === "EXIT"
+                                ? "bg-amber-50 text-amber-700 border-amber-200"
+                                : "bg-purple-50 text-purple-700 border-purple-200"
+                          )}
+                        >
+                          {photo.type === "ENTRY"
+                            ? "Ingreso"
+                            : photo.type === "EXIT"
+                              ? "Egreso"
+                              : "General"}
+                        </Badge>
+                      </div>
+
+                      {/* Bottom Overlay Info on Hover */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3 text-white">
+                        <div className="text-xs font-semibold font-mono flex items-center justify-between">
+                          <Link
+                            href={`/adm/work-orders/${photo.workOrderId}`}
+                            className="hover:underline flex items-center gap-1 text-primary-foreground/90 hover:text-white"
+                          >
+                            OT #{photo.workOrderCode}
+                          </Link>
+                          <span className="text-[10px] text-white/70">
+                            {new Date(photo.createdAt).toLocaleDateString("es-AR")}
+                          </span>
+                        </div>
+                        {photo.description && (
+                          <p className="text-[10px] text-white/90 line-clamp-1 mt-1 font-medium italic">
+                            {photo.description}
+                          </p>
+                        )}
+
+                        {/* Quick View Button */}
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          className="w-full h-7 text-[11px] font-semibold mt-2 bg-white text-black hover:bg-white/90"
+                          onClick={() => setActivePhotoIndex(index)}
+                        >
+                          <Eye className="h-3 w-3 mr-1" />
+                          Ampliar Foto
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* Lightbox / Fullscreen Preview Modal */}
+      {activePhotoIndex !== null && filteredPhotos[activePhotoIndex] && (
+        <Dialog open={activePhotoIndex !== null} onOpenChange={(open) => !open && setActivePhotoIndex(null)}>
+          <DialogContent className="max-w-4xl p-0 overflow-hidden bg-black/95 border-none text-white sm:rounded-2xl">
+            <div className="relative w-full aspect-video flex items-center justify-center p-4 min-h-[50vh]">
+              {/* Image */}
+              <img
+                src={filteredPhotos[activePhotoIndex].url}
+                alt={filteredPhotos[activePhotoIndex].description || "Vista de detalle"}
+                className="max-h-[75vh] max-w-full object-contain rounded-lg shadow-2xl select-none"
+              />
+
+              {/* Navigation arrows */}
+              {filteredPhotos.length > 1 && (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute left-4 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-black/40 hover:bg-black/60 text-white border border-white/10"
+                    onClick={handlePrevPhoto}
+                    aria-label="Foto anterior"
+                  >
+                    <ChevronLeft className="h-6 w-6" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-black/40 hover:bg-black/60 text-white border border-white/10"
+                    onClick={handleNextPhoto}
+                    aria-label="Siguiente foto"
+                  >
+                    <ChevronRight className="h-6 w-6" />
+                  </Button>
+                </>
+              )}
             </div>
-          ) : (
-            <DataTable
-              data={vehicle.workOrders}
-              columns={workOrderColumns}
-              rowActions={workOrderRowActions}
-              title="Órdenes de Trabajo"
-              enableGlobalFilter={true}
-              globalFilterPlaceholder="Buscar OT..."
-            />
-          )}
-        </CardContent>
-      </Card>
+
+            {/* Lightbox Footer Metadata */}
+            <div className="bg-zinc-900 p-4 border-t border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-sm">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge
+                    variant="secondary"
+                    className={cn(
+                      "text-[10px] font-semibold py-0.5 px-1.5 uppercase",
+                      filteredPhotos[activePhotoIndex].type === "ENTRY"
+                        ? "bg-blue-500 text-white"
+                        : filteredPhotos[activePhotoIndex].type === "EXIT"
+                          ? "bg-amber-500 text-white"
+                          : "bg-purple-500 text-white"
+                    )}
+                  >
+                    {filteredPhotos[activePhotoIndex].type === "ENTRY"
+                      ? "Ingreso"
+                      : filteredPhotos[activePhotoIndex].type === "EXIT"
+                        ? "Egreso"
+                        : "General"}
+                  </Badge>
+                  <Link
+                    href={`/adm/work-orders/${filteredPhotos[activePhotoIndex].workOrderId}`}
+                    className="text-primary-foreground font-mono font-semibold hover:underline"
+                    onClick={() => setActivePhotoIndex(null)}
+                  >
+                    OT #{filteredPhotos[activePhotoIndex].workOrderCode}
+                  </Link>
+                  <span className="text-zinc-400 font-mono text-xs">
+                    • {new Date(filteredPhotos[activePhotoIndex].createdAt).toLocaleDateString("es-AR")}
+                  </span>
+                </div>
+                {filteredPhotos[activePhotoIndex].description && (
+                  <p className="text-xs text-zinc-300 italic font-medium">
+                    {filteredPhotos[activePhotoIndex].description}
+                  </p>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="bg-transparent border-zinc-700 hover:bg-zinc-800 text-zinc-100"
+                  asChild
+                >
+                  <a
+                    href={filteredPhotos[activePhotoIndex].url}
+                    download={`RPM-${filteredPhotos[activePhotoIndex].workOrderCode}-${filteredPhotos[activePhotoIndex].type}.jpg`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Download className="h-4 w-4 mr-1.5" />
+                    Descargar
+                  </a>
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="bg-zinc-800 hover:bg-zinc-700 text-white"
+                  onClick={() => setActivePhotoIndex(null)}
+                >
+                  Cerrar
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

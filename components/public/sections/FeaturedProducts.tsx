@@ -1,10 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { ArrowRight, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { featuredProducts, FeaturedProduct } from '@/lib/constants/featured-products';
 import { ProductQuickView } from '@/components/public/ProductQuickView';
 import { formatARS } from '@/lib/utils/format';
 import { motion } from 'framer-motion';
@@ -13,6 +12,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import type { PublicCatalogProduct } from '@/lib/services/publicCatalogService';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -36,30 +36,13 @@ const cardVariants = {
   },
 };
 
-export function FeaturedProducts() {
-  const [selectedProduct, setSelectedProduct] = useState<FeaturedProduct | null>(null);
-  const [displayedProducts, setDisplayedProducts] = useState<FeaturedProduct[]>(featuredProducts.slice(0, 4));
+interface FeaturedProductsProps {
+  initialProducts: PublicCatalogProduct[];
+}
 
-  useEffect(() => {
-    let cancelled = false;
-    async function loadCatalog() {
-      try {
-        const res = await fetch('/api/public/catalog');
-        if (res.ok) {
-          const data = await res.json();
-          if (!cancelled && data.products && data.products.length > 0) {
-            setDisplayedProducts(data.products.slice(0, 4));
-          }
-        }
-      } catch (err) {
-        console.error('Failed to load home featured products from DB, falling back to static:', err);
-      }
-    }
-    loadCatalog();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+export function FeaturedProducts({ initialProducts }: FeaturedProductsProps) {
+  const [selectedProduct, setSelectedProduct] = useState<PublicCatalogProduct | null>(null);
+  const [displayedProducts] = useState<PublicCatalogProduct[]>(initialProducts.slice(0, 4));
 
   return (
     <section className="py-32 bg-black overflow-hidden">

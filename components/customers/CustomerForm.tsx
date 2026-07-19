@@ -64,6 +64,12 @@ export function CustomerForm({
   });
 
   const [cuitError, setCuitError] = useState<string | null>(null);
+  const [cuitSuccess, setCuitSuccess] = useState<boolean>(() => {
+    return !!(
+      initialData?.billingData?.cuit &&
+      validateCUIT(initialData.billingData.cuit)
+    );
+  });
 
   const [formData, setFormData] = useState<CustomerFormData>({
     name: initialData?.name || "",
@@ -80,11 +86,13 @@ export function CustomerForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
 
     // Validar CUIT si está presente
     if (formData.billingData.cuit) {
       if (!validateCUIT(formData.billingData.cuit)) {
         setCuitError("CUIT/CUIL inválido (verifique el dígito verificador)");
+        setCuitSuccess(false);
         return;
       }
     }
@@ -235,11 +243,13 @@ export function CustomerForm({
                     id="customer-cuit"
                     className={cn(
                       "font-mono pl-9",
-                      cuitError && "border-destructive ring-destructive/20"
+                      cuitError && "border-destructive ring-destructive/20 focus-visible:ring-destructive",
+                      cuitSuccess && "border-emerald-500 focus-visible:ring-emerald-500"
                     )}
                     value={formData.billingData.cuit}
                     onChange={(e) => {
                       const formatted = formatCUIT(e.target.value);
+                      const clean = formatted.replace(/\D/g, "");
                       setFormData((prev) => ({
                         ...prev,
                         billingData: {
@@ -247,11 +257,36 @@ export function CustomerForm({
                           cuit: formatted,
                         },
                       }));
-                      if (cuitError) setCuitError(null);
+                      if (clean.length === 11) {
+                        if (validateCUIT(formatted)) {
+                          setCuitError(null);
+                          setCuitSuccess(true);
+                        } else {
+                          setCuitError("CUIT/CUIL inválido (verifique el dígito verificador)");
+                          setCuitSuccess(false);
+                        }
+                      } else {
+                        setCuitSuccess(false);
+                        setCuitError(null);
+                      }
                     }}
                     onBlur={(e) => {
-                      if (e.target.value && !validateCUIT(e.target.value)) {
-                        setCuitError("CUIT/CUIL inválido (verifique el dígito verificador)");
+                      const val = e.target.value;
+                      const clean = val.replace(/\D/g, "");
+                      if (clean) {
+                        if (clean.length < 11) {
+                          setCuitError("El CUIT debe tener 11 dígitos");
+                          setCuitSuccess(false);
+                        } else if (!validateCUIT(val)) {
+                          setCuitError("CUIT/CUIL inválido (verifique el dígito verificador)");
+                          setCuitSuccess(false);
+                        } else {
+                          setCuitError(null);
+                          setCuitSuccess(true);
+                        }
+                      } else {
+                        setCuitError(null);
+                        setCuitSuccess(false);
                       }
                     }}
                     placeholder="20-XXXXXXXX-X"
@@ -261,6 +296,12 @@ export function CustomerForm({
                 {cuitError && (
                   <p className="text-[0.8rem] font-medium text-destructive mt-1">
                     {cuitError}
+                  </p>
+                )}
+                {cuitSuccess && (
+                  <p className="text-[0.8rem] font-medium text-emerald-700 mt-1 flex items-center gap-1">
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    CUIT válido
                   </p>
                 )}
               </div>

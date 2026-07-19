@@ -18,6 +18,17 @@
 
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
+import { revalidatePath } from 'next/cache';
+
+/**
+ * Invalidate the public catalog cache (home + /productos) since product
+ * mutations affect what is shown on the public website. Called at the end
+ * of every mutating function below.
+ */
+function revalidatePublicCatalog(): void {
+  revalidatePath('/');
+  revalidatePath('/productos');
+}
 
 // Types
 export interface Product {
@@ -205,6 +216,7 @@ export async function createProduct(input: CreateProductInput): Promise<Product>
     include: { category: true },
   });
 
+  revalidatePublicCatalog();
   return transformProduct(product);
 }
 
@@ -239,6 +251,7 @@ export async function updateProduct(id: string, input: UpdateProductInput): Prom
     include: { category: true },
   });
 
+  revalidatePublicCatalog();
   return transformProduct(product);
 }
 
@@ -250,6 +263,7 @@ export async function deactivateProduct(id: string): Promise<void> {
     where: { id },
     data: { isActive: false },
   });
+  revalidatePublicCatalog();
 }
 
 /**
@@ -259,6 +273,7 @@ export async function deleteProduct(id: string): Promise<void> {
   await prisma.product.delete({
     where: { id },
   });
+  revalidatePublicCatalog();
 }
 
 // ============================================

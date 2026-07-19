@@ -589,8 +589,10 @@ export default function WorkOrdersPage() {
       const searchLower = searchQuery.toLowerCase();
       const matchesSearch =
         !searchQuery ||
+        wo.id.toLowerCase().includes(searchLower) ||
         wo.vehicle.identifier.toLowerCase().includes(searchLower) ||
         wo.customer.name.toLowerCase().includes(searchLower) ||
+        wo.customer.phone?.toLowerCase().includes(searchLower) ||
         wo.vehicle.make?.name?.toLowerCase().includes(searchLower) ||
         wo.vehicle.model?.name?.toLowerCase().includes(searchLower);
 
@@ -870,17 +872,30 @@ export default function WorkOrdersPage() {
 
           <div className="w-px h-6 bg-border mx-1 hidden sm:block" />
 
-          <div className="relative">
-            <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none"
-              aria-hidden="true"
-            />
-            <Input
-              placeholder="Buscar por patente, cliente..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-8 w-[200px] pl-9 text-xs"
-            />
+          <div className="relative flex items-center gap-2">
+            <div className="relative">
+              <Search
+                className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none"
+                aria-hidden="true"
+              />
+              <Input
+                placeholder="Buscar por patente, cliente..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="h-8 w-[220px] pl-10 pr-8 text-xs font-mono"
+              />
+              {searchQuery && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0 text-muted-foreground hover:text-foreground hover:bg-transparent"
+                  onClick={() => setSearchQuery("")}
+                  aria-label="Limpiar búsqueda"
+                >
+                  <X className="h-3.5 w-3.5 pointer-events-none" />
+                </Button>
+              )}
+            </div>
             {searchQuery && (
               <span className="text-[10px] text-muted-foreground font-mono whitespace-nowrap">
                 {filteredWorkOrders.length} resultado
@@ -1018,8 +1033,12 @@ export default function WorkOrdersPage() {
             <div className="text-center py-8 text-muted-foreground">
               No hay órdenes de trabajo
             </div>
+          ) : filteredWorkOrders.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No se encontraron órdenes de trabajo que coincidan con los filtros
+            </div>
           ) : (
-            workOrders.map((wo) => {
+            filteredWorkOrders.map((wo) => {
               const { icon: categoryIcon, label: categoryLabel } =
                 getCategoryIcon(wo.vehicle.category);
               return (

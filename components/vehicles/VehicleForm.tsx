@@ -84,6 +84,7 @@ export function VehicleForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
 
     if (isVehicle) {
       const isValid = validatePlate(formData.identifier);
