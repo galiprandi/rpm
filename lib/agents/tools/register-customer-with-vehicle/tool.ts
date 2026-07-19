@@ -8,7 +8,7 @@ import logger from '../../utils/logger';
 const validCategories = [...vehicleCategories] as const;
 
 export const registerCustomerWithVehicleTool = tool({
-  description: 'CREA un nuevo cliente Y registra su vehículo en UNA sola operación. Usar cuando el usuario quiere dar de alta un cliente nuevo con su vehículo.',
+  description: 'Crea un nuevo cliente Y registra su vehículo en una sola operación. Requiere nombre del cliente, patente/identificador y categoría del vehículo. Opcionalmente teléfono, email, dirección, año, color y notas. Debe llamarse solo después de que el usuario confirma explícitamente.',
   inputSchema: z.object({
     customerName: z.string().describe('Nombre completo del cliente'),
     identifier: z.string().describe('Patente o identificador del vehículo'),

@@ -7,23 +7,23 @@ import logger from "../utils/logger";
 
 export const searchWorkOrdersTool = tool({
   description:
-    'Busca órdenes de trabajo por estado, nombre de cliente o ID de cliente. Usá customerName para buscar por nombre del cliente (ej: "Aliprandi").',
+    'Busca órdenes de trabajo por estado, nombre de cliente o ID de cliente. Devuelve ID, estado, cliente, vehículo, total y cantidad de items. Usar customerName para buscar por nombre del cliente (ej: "Aliprandi").',
   inputSchema: z.object({
     status: z
       .string()
       .optional()
       .describe(
-        "Filtrar por estado (WAITING, CONFIRMED, IN_PROGRESS, QC_CHECK, READY, PAID, DELIVERED)",
+        "Filtrar por estado: WAITING, CONFIRMED, IN_PROGRESS, QC_CHECK, READY, PAID, DELIVERED",
       ),
     customerName: z
       .string()
       .optional()
-      .describe('Nombre del cliente (búsqueda parcial, ej: "Aliprandi")'),
+      .describe("Nombre del cliente (búsqueda parcial, ej: \"Aliprandi\")"),
     customerId: z.string().optional().describe("ID del cliente"),
     limit: z
       .number()
       .optional()
-      .describe("Cantidad máxima de resultados (default 10)"),
+      .describe("Cantidad máxima de resultados (default: 10)"),
   }),
   execute: async ({ status, customerName, customerId, limit }) => {
     logger.debug({ status, customerName, customerId }, "Search work orders");
@@ -63,7 +63,7 @@ export const searchWorkOrdersTool = tool({
 
 export const createWorkOrderTool = tool({
   description:
-    "Crea una orden de trabajo (OT). Requiere ID del cliente y del vehículo. Opcionalmente puede incluir items y fecha programada.",
+    "Crea una orden de trabajo (OT). Requiere ID del cliente y ID del vehículo. Opcionalmente notas y fecha programada. Debe llamarse solo después de que el usuario confirma explícitamente.",
   inputSchema: z.object({
     customerId: z.string().describe("ID del cliente"),
     vehicleId: z.string().describe("ID del vehículo"),
@@ -71,7 +71,7 @@ export const createWorkOrderTool = tool({
     scheduledDate: z
       .string()
       .optional()
-      .describe("Fecha programada (ISO string)"),
+      .describe("Fecha programada (formato ISO, ej: 2026-07-20)"),
   }),
   execute: async (input) => {
     logger.debug(
@@ -106,7 +106,7 @@ export const createWorkOrderTool = tool({
 
 export const updateWorkOrderStatusTool = tool({
   description:
-    "Actualiza el estado de una orden de trabajo. Estados válidos: WAITING, CONFIRMED, IN_PROGRESS, QC_CHECK, READY, PAID, DELIVERED.",
+    "Actualiza el estado de una orden de trabajo. Estados válidos: WAITING, CONFIRMED, IN_PROGRESS, QC_CHECK, READY, PAID, DELIVERED. Debe llamarse solo después de que el usuario confirma explícitamente.",
   inputSchema: z.object({
     workOrderId: z.string().describe("ID de la orden de trabajo"),
     status: z
@@ -119,7 +119,7 @@ export const updateWorkOrderStatusTool = tool({
         "PAID",
         "DELIVERED",
       ])
-      .describe("Nuevo estado"),
+      .describe("Nuevo estado de la OT"),
   }),
   execute: async (input) => {
     logger.debug(
@@ -144,7 +144,7 @@ export const updateWorkOrderStatusTool = tool({
 });
 
 export const getWorkOrderDetailTool = tool({
-  description: "Obtiene el detalle completo de una orden de trabajo por su ID.",
+  description: "Obtiene el detalle completo de una orden de trabajo: cliente, vehículo, estado, técnico, total, pagado, saldo e items.",
   inputSchema: z.object({
     workOrderId: z.string().describe("ID de la orden de trabajo"),
   }),

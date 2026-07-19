@@ -10,7 +10,7 @@ import logger from '@/lib/agents/utils/logger';
  */
 export const searchCustomersTool = createTool({
   name: 'searchCustomers',
-  description: 'Busca clientes por nombre o teléfono. Devuelve una lista de clientes coincidentes.',
+  description: 'Busca clientes por nombre o teléfono. Devuelve ID, nombre, teléfono y email de cada cliente coincidente. Usar antes de crear una OT, venta o registrar un vehículo.',
   schema: searchCustomersSchema,
   service: async (input) => {
     const { search, limit } = input;

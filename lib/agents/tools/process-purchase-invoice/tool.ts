@@ -45,13 +45,11 @@ const invoiceSchema = z.object({
 
 export const processPurchaseInvoiceTool = tool({
   description:
-    "Procesa una imagen o PDF de una factura de compra del proveedor. Extrae automáticamente los datos de la factura (proveedor, tipo, número, fecha, total, items) usando vision AI, busca el proveedor en la base de datos, y crea un borrador del comprobante de compra para que el usuario lo revise y finalice. Requiere la URL de la imagen/PDF subido por el usuario.",
+    "Procesa una imagen o PDF de una factura de compra del proveedor. Extrae automáticamente proveedor, tipo, número, fecha, total e items usando vision AI. Busca el proveedor en la base de datos, hace match de productos y crea un borrador del comprobante para revisión. Requiere la URL del archivo subido por el usuario.",
   inputSchema: z.object({
     fileUrl: z
       .string()
-      .describe(
-        "URL de la imagen o PDF de la factura (data URL o URL pública)",
-      ),
+      .describe("URL de la imagen o PDF de la factura (data URL o URL pública)"),
     createdBy: z
       .string()
       .describe("ID del usuario que está creando el comprobante"),

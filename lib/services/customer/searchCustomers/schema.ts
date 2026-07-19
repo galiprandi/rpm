@@ -9,8 +9,8 @@ import { z } from 'zod';
  * - Direct service calls
  */
 export const searchCustomersSchema = z.object({
-  search: z.string().describe('Término de búsqueda (nombre o teléfono)'),
-  limit: z.number().optional().default(10).describe('Límite de resultados (default: 10)'),
+  search: z.string().describe('Término de búsqueda: nombre o teléfono del cliente'),
+  limit: z.number().optional().default(10).describe('Cantidad máxima de resultados (default: 10)'),
 });
 
 export type SearchCustomersInput = z.infer<typeof searchCustomersSchema>;
