@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { PublicService } from '@/lib/constants/services';
+import Image from 'next/image';
 
 interface ServiceQuickViewProps {
   service: PublicService | null;
@@ -22,11 +23,21 @@ export function ServiceQuickView({ service, onClose }: ServiceQuickViewProps) {
       <DialogContent className="max-w-3xl bg-zinc-950 border-white/10 p-0 overflow-hidden">
         {service && (
           <div className="flex flex-col md:flex-row h-full">
-            <div className="md:w-1/2 aspect-video md:aspect-auto bg-zinc-900 flex items-center justify-center relative overflow-hidden">
+            <div className="md:w-1/2 aspect-video md:aspect-auto bg-zinc-900 flex items-center justify-center relative overflow-hidden group">
+              {service.imageUrl ? (
+                <Image
+                  src={service.imageUrl}
+                  alt={service.title}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  className="object-cover opacity-30 group-hover:opacity-45 group-hover:scale-105 transition-all duration-1000"
+                />
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center text-white/5 font-black text-6xl italic select-none">
+                  RPM TECH
+                </div>
+              )}
               <div className="absolute inset-0 bg-brand/5" />
-              <div className="absolute inset-0 flex items-center justify-center text-white/5 font-black text-6xl italic select-none">
-                RPM TECH
-              </div>
               <div className="relative z-10 w-20 h-20 rounded-3xl bg-brand/10 flex items-center justify-center text-brand border border-brand/20 backdrop-blur-sm">
                 <service.icon className="h-10 w-10" />
               </div>

@@ -1,4 +1,27 @@
 import { Quote, Star } from 'lucide-react';
+import { motion } from 'framer-motion';
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
+};
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.8,
+      ease: [0.21, 0.47, 0.32, 0.98] as const,
+    }
+  },
+};
 
 const testimonials = [
   {
@@ -35,11 +58,23 @@ export function Testimonials() {
           </h3>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-100px" }}
+          className="grid grid-cols-1 md:grid-cols-3 gap-8"
+        >
           {testimonials.map((t, i) => (
-            <div
+            <motion.div
               key={i}
-              className="bg-zinc-900/50 border border-white/5 p-10 rounded-[32px] flex flex-col justify-between group hover:border-brand/20 transition-all duration-500"
+              variants={cardVariants}
+              whileHover={{
+                scale: 0.98,
+                transition: { duration: 0.4 }
+              }}
+              whileTap={{ scale: 0.96 }}
+              className="bg-zinc-900/50 border border-white/5 p-10 rounded-[32px] flex flex-col justify-between group hover:border-brand/20 transition-all duration-500 cursor-pointer"
             >
               <div>
                 <Quote className="h-10 w-10 text-brand/20 group-hover:text-brand/40 transition-colors mb-6" />
@@ -62,9 +97,9 @@ export function Testimonials() {
                   <p className="text-zinc-500 text-sm uppercase tracking-widest font-medium">{t.vehicle}</p>
                 </div>
               </div>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   );

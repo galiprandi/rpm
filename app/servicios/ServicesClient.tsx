@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { PUBLIC_SITE_CONFIG, DEFAULT_WHATSAPP_MESSAGE } from '@/lib/config/public-site';
 import { publicServices, PublicService } from '@/lib/constants/services';
 import { ServiceQuickView } from '@/components/public/ServiceQuickView';
+import Image from 'next/image';
 
 const serviceDetails = publicServices.filter(s => s.fullDescription && s.benefits);
 
@@ -93,10 +94,21 @@ export default function ServicesClient() {
                   </Button>
                 </div>
                 <div className="flex-1 w-full aspect-video bg-zinc-900 rounded-3xl overflow-hidden relative group cursor-pointer" onClick={() => setSelectedService(service)}>
+                   {service.imageUrl ? (
+                     <Image
+                       src={service.imageUrl}
+                       alt={service.title}
+                       fill
+                       sizes="(max-width: 768px) 100vw, 50vw"
+                       className="object-cover opacity-30 group-hover:opacity-45 group-hover:scale-105 transition-all duration-1000"
+                       priority={index < 2}
+                     />
+                   ) : (
+                     <div className="absolute inset-0 flex items-center justify-center text-white/5 font-black text-6xl italic select-none transition-transform duration-1000 group-hover:scale-110">
+                       RPM TECH
+                     </div>
+                   )}
                    <div className="absolute inset-0 bg-brand/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-                   <div className="absolute inset-0 flex items-center justify-center text-white/5 font-black text-6xl italic select-none transition-transform duration-1000 group-hover:scale-110">
-                     RPM TECH
-                   </div>
                 </div>
               </div>
             ))}

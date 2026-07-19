@@ -1,9 +1,9 @@
 # 📓 Journal — Sofía 🌐
 
 ## 📋 BACKLOG
-- [ ] Optimizar imágenes de la galería "Nosotros" para mejorar el LCP.
 
 ## ✅ DONE
+- [x] 2026-07-19 — Integración de imágenes optimizadas para servicios y estandarización de animaciones en testimonios (PR #sofia/public/services-images-and-testimonials-animation)
 - [x] 2026-07-16 — Galería de Excelencia interactiva con soporte para Deep-Linking y Lightbox (PR #sofia/public/nosotros-gallery-improvement)
 - [x] 2026-07-15 — Refinado de animaciones, accesibilidad y estabilidad de SEO (PR #sofia/public/polish-and-accessibility)
 - [x] 2026-07-14 — Micro-interacciones con Framer Motion y correcciones semánticas (PR #sofia/public/tactile-feedback)
@@ -19,6 +19,10 @@
 - [x] 2026-07-07 — Vista rápida de productos con modal y conversión contextual (PR #sofia/public/product-quick-view)
 
 ## 🧠 LEARNINGS
+
+## 2026-07-19 - Next.js Public Services Image Integration & Staggered Entrance Standard
+**Learning:** El uso de imágenes optimizadas de fondo mediante Next.js `<Image />` con propiedades LCP (como `fill`, `sizes` y `priority` condicional) en las páginas públicas y modales de vista rápida proporciona una experiencia visual extremadamente premium. Asimismo, la estandarización de animaciones de entrada usando variantes escalonadas de Framer Motion (`containerVariants` y `cardVariants`) a lo largo de todas las secciones principales de la Home (`Services`, `FeaturedProducts` y `Testimonials`) aporta una gran consistencia de marca y un flujo de navegación muy fluido.
+**Action:** Utilizar consistentemente imágenes optimizadas y animaciones escalonadas de Framer Motion en todas las páginas públicas del sitio para asegurar un estándar visual superior.
 
 ## 2026-07-16 - Next.js Public Page Architecture Standard
 **Learning:** En Next.js, utilizar `useSearchParams` en páginas estáticas de forma desprotegida provoca de-optimización en el build e hidrataciones fallidas en producción. El estándar robusto de arquitectura de páginas públicas consiste en definir un archivo de página de servidor (como `app/nosotros/page.tsx`) que define los metadatos estáticos estables para motores de búsqueda (SEO) y renderiza el cliente interactivo real (como `AboutClient.tsx`) envuelto en un boundary de `<Suspense>`. Esto permite un excelente rendimiento de LCP y total compatibilidad con deep-linking (ej: `?project=iluminacion-2012`).
