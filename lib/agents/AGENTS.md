@@ -22,8 +22,6 @@ lib/agents/
 └── utils/
     ├── promptComposer.ts      # Compositor del system prompt (4 capas)
     ├── promptComposer.test.ts # Test: routeContexts cobertura + prompt composition
-    ├── createTool.ts          # Factory legacy (no usar, usar tool() del AI SDK)
-    ├── pendingActions.ts      # Acciones pendientes (confirmación de tools)
     ├── extract-document.ts    # Extracción de datos de documentos (vision AI)
     └── logger.ts              # Logger centralizado
 ```

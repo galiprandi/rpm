@@ -4,7 +4,7 @@
  * This index file exports all customer-related functionality:
  * - Services: Pure functions for business logic
  * - Schemas: Zod validation schemas (shared with API routes)
- * - Tools: AI SDK tools (using createTool factory)
+ * - Tools: AI SDK tools (using tool() from ai package)
  */
 
 // Tools
