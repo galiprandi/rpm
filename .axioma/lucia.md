@@ -1,7 +1,10 @@
 ## 📋 BACKLOG
-- [ ] Implementar exportación PDF de cuenta corriente y deuda de vehículo desde su ficha técnica
 
 ## ✅ DONE
+- [x] 2026-07-19 — Exportación PDF y Resumen Impreso de Cuenta Corriente del Vehículo
+  - Adición de un botón "Exportar PDF" en la tarjeta "Cuenta Corriente del Vehículo" de la ficha detallada (`app/adm/vehicles/[id]/page.tsx`).
+  - Creación de un componente para impresión (`id="print-section"`) con estilo de factura/resumen formal de deudas del vehículo, conteniendo cabecera de RPM Accesorios, datos del propietario y vehículo, tabla de OTs adeudadas con totales, disclaimer legal y líneas de firma.
+  - Implementación de un bloque autoinyectable `<style media="print">` que formatea el documento para impresión al 100% de ancho sobre fondo blanco y oculta de forma infalible elementos como sidebars, botones del sistema, menús de navegación y widgets flotantes.
 - [x] 2026-07-18 — Galería Fotográfica y Registro de Adjuntos Consolidado en la Ficha del Vehículo
   - Conexión de la API `/api/vehicles/[id]` para incluir todas las fotos (`photo` relation) de las últimas 50 Órdenes de Trabajo del vehículo.
   - Creación del panel de pestañas (`Tabs`) separando el listado histórico de OTs de la nueva galería fotográfica consolidada del vehículo.
@@ -33,6 +36,10 @@
   - Mejora de navegación con botón de "Volver" en el detalle del cliente.
 
 ## 🧠 LEARNINGS
+## 2026-07-19 - Resúmenes de Cuenta Autocontenidos y Listos para Imprimir
+**Learning:** Ofrecer capacidades de exportación rápida a PDF sin añadir dependencias de backend o pesadas librerías de renderizado se puede lograr elegantemente combinando `window.print()` nativo con un bloque `<style media="print">` localizado. De esta manera, el navegador hace todo el trabajo pesado garantizando el renderizado exacto de fuentes y colores. Además, diseñar el documento impreso como un recibo formal o resumen estructurado (con firmas y disclaimers legales) añade un inmenso valor profesional para los operadores del taller.
+**Action:** Usar estilos autocontenidos `@media print` y contenedores semánticos listos para impresión en módulos de informes u hojas de detalles.
+
 ## 2026-07-18 - Consolidación de Historial Visual de Entidades Relacionadas
 **Learning:** En fichas técnicas o perfiles de nivel intermedio (como un Vehículo), los archivos adjuntos y fotos suelen estar dispersos a nivel operativo de transacciones (en Órdenes de Trabajo). Ofrecer una vista agregada y consolidada de todos estos archivos directamente en el perfil del vehículo, junto con herramientas de filtrado rápido y un visualizador Lightbox cómodo, ahorra valiosos clics de navegación y permite al operador realizar una inspección de daños previa y posterior de forma impecable.
 **Action:** Consolidar fotos, notas y adjuntos dispersos en sub-entidades operativas y presentarlos unificados en las fichas del cliente y vehículo.
