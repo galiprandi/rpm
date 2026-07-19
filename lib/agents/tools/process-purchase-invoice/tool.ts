@@ -1,5 +1,7 @@
 import { tool } from "ai";
 import { z } from "zod";
+import { readFileSync } from "fs";
+import { join } from "path";
 import { prisma } from "@/lib/prisma";
 import {
   createDraftVoucher,
@@ -45,31 +47,21 @@ const invoiceSchema = z.object({
 
 export const processPurchaseInvoiceTool = tool({
   description:
-    "Procesa una imagen o PDF de una factura de compra del proveedor. Extrae automáticamente los datos de la factura (proveedor, tipo, número, fecha, total, items) usando vision AI, busca el proveedor en la base de datos, y crea un borrador del comprobante de compra para que el usuario lo revise y finalice. Requiere la URL de la imagen/PDF subido por el usuario.",
+    "Procesa una imagen o PDF de una factura de compra del proveedor. Extrae automáticamente proveedor, tipo, número, fecha, total e items usando vision AI. Busca el proveedor en la base de datos, hace match de productos y crea un borrador del comprobante para revisión. Requiere la URL del archivo subido por el usuario.",
   inputSchema: z.object({
     fileUrl: z
       .string()
-      .describe(
-        "URL de la imagen o PDF de la factura (data URL o URL pública)",
-      ),
+      .describe("URL de la imagen o PDF de la factura (data URL o URL pública)"),
     createdBy: z
       .string()
       .describe("ID del usuario que está creando el comprobante"),
   }),
   execute: async ({ fileUrl, createdBy }) => {
     try {
-      const extractionPrompt = `Extraé todos los datos de esta factura de compra del proveedor.
-Identificá con precisión:
-- Proveedor: nombre completo y CUIT si está visible
-- Tipo de factura: letra A, B o C
-- Número de factura: punto de venta y número completo
-- Fecha: en formato ISO (YYYY-MM-DD)
-- Monto total: número sin símbolos
-- Método de pago: si está visible (efectivo, transferencia, tarjeta, etc.)
-- Items: cada producto con nombre/descripción, cantidad y precio unitario de costo
-
-Si un campo no está visible o no se puede leer, dejalo como null.
-Para los items, extraé TODOS los que veas en la factura.`;
+      const extractionPrompt = readFileSync(
+        join(process.cwd(), "lib/agents/tools/process-purchase-invoice/extraction-prompt.md"),
+        "utf-8",
+      ).trim();
 
       const extracted = await extractDocumentData(
         fileUrl,

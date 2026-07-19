@@ -2,7 +2,7 @@
 
 ## Visión General
 
-Nitro es el asistente virtual del staff de RPM. Esta arquitectura unificada permite componer el system prompt dinámicamente según el **rol del usuario** y la **ruta que está visitando**, sin duplicar lógica entre entry points.
+Nitro es el asistente virtual del staff de RPM. Arquitectura de **agente único** con system prompt compuesto dinámicamente según el **rol del usuario** y la **ruta que está visitando**.
 
 ## Estructura de Directorios
 
@@ -11,26 +11,22 @@ lib/agents/
 ├── AGENTS.md                  # Este archivo
 ├── unified-instructions.md    # Layer 2: tools, flujos, reglas (base prompt)
 ├── unified-tools.ts           # Tools disponibles para el agente
-├── registry.ts                # Tools por rol + helpers
-├── utils/
-│   ├── promptComposer.ts      # Compositor del system prompt (4 capas)
-│   ├── createAgent.ts         # Helper para crear agentes (Groq/Google)
-│   ├── types.ts               # Re-exports de BotContext + BotToolInput
-│   └── logger.ts              # Logger centralizado
-├── orchestrator/
-│   ├── index.ts               # Crea el agente con prompt + tools
-│   ├── delegation.ts          # Tools de delegación a subagentes
-│   └── composite.ts           # Tools compuestas (multi-step)
-├── tools/                     # Tools individuales
-│   ├── search-products-with-prices/
+├── unified-tools.test.ts      # Test: tools expuestas = tools documentadas = tools con labels
+├── tools/                     # Tools individuales (una por carpeta)
 │   ├── compose-message/
-│   └── process-purchase-invoice/
-├── customers/                 # Subagente de clientes
-├── finance/                   # Subagente de finanzas
-├── inventory/                 # Subagente de inventario
-├── work-orders/               # Subagente de OTs
-└── simple/                    # Agente simple (legacy, solo createProduct)
+│   ├── process-purchase-invoice/
+│   ├── register-customer-with-vehicle/
+│   └── search-products-with-prices/
+├── work-orders/tools.ts       # Tools de órdenes de trabajo
+├── finance/tools.ts           # Tools de finanzas/caja
+└── utils/
+    ├── promptComposer.ts      # Compositor del system prompt (4 capas)
+    ├── promptComposer.test.ts # Test: routeContexts cobertura + prompt composition
+    ├── extract-document.ts    # Extracción de datos de documentos (vision AI)
+    └── logger.ts              # Logger centralizado
 ```
+
+> **Nota:** Las tools de clientes, productos y vehículos viven en `lib/services/{customer,product,vehicle}/` y se importan en `unified-tools.ts`. Las tools de work-orders y finanzas viven en `lib/agents/{work-orders,finance}/tools.ts` porque son específicas del bot.
 
 ## Arquitectura del System Prompt (4 Capas)
 
@@ -55,8 +51,8 @@ El system prompt se compone en `promptComposer.ts` mediante `composeSystemPrompt
 │ (/adm/products, /adm/work-orders, etc.)          │
 ├─────────────────────────────────────────────────┤
 │ Layer 4: RUNTIME                                 │
-│ chatId, userName, current page, page content,    │
-│ modal content, file attachments                  │
+│ chatId, userId, userName, current page,          │
+│ page content, modal content, file attachments    │
 │ (dinámico, por request)                          │
 └─────────────────────────────────────────────────┘
 ```
@@ -67,7 +63,7 @@ El system prompt se compone en `promptComposer.ts` mediante `composeSystemPrompt
 interface BotContext {
   role: UserRole;           // ADMIN | STAFF | USER (from lib/auth/roles)
   pathname?: string;        // Ruta actual del usuario (ej: /adm/products)
-  userId?: string;          // ID del usuario autenticado
+  userId?: string;          // ID del usuario autenticado (se pasa a tools de creación)
   userName?: string;        // Nombre del usuario (para personalizar respuestas)
   chatId: string;           // ID único del chat
   pageContent?: string;     // Texto extraído del <main> (lo que el usuario ve en pantalla)
@@ -86,20 +82,19 @@ El bot recibe `pageContent` y `modalContent` extraídos del DOM client-side en `
 - Si el contenido es menor a 50 chars, no se envía (evita ruido)
 - El bot sabe que es una representación textual, no datos definitivos — debe usar tools para datos precisos
 
-### Entry Points
+### Entry Point
 
-Hay dos entry points que usan la misma arquitectura:
+**`/api/bot/chat` (route.ts)** — Streaming con `streamText` y `unifiedTools`. Llama a `composeSystemPrompt(context)` para obtener el prompt completo.
 
-1. **`/api/bot/chat` (route.ts)** — Streaming con `streamText`, tools unificadas
-2. **`orchestrator/index.ts`** — Creación de agente con `createAgent`, tools por rol
-
-Ambos llaman a `composeSystemPrompt(context)` para obtener el prompt completo.
+- Modelo: Groq (`GROQ_MODEL` env var)
+- Temperature: 0.3 (balance entre precisión y naturalidad)
+- stopWhen: 12 steps (permite flujos multi-step como procesar factura + match productos)
 
 ## Mantenimiento Obligatorio
 
 ### routeContexts — Debe mantenerse actualizado
 
-El diccionario `routeContexts` en `promptComposer.ts` **debe** mantenerse sincronizado con las rutas reales de `app/adm/`. 
+El diccionario `routeContexts` en `promptComposer.ts` **debe** mantenerse sincronizado con las rutas reales de `app/adm/`.
 
 **Reglas:**
 
@@ -109,17 +104,7 @@ El diccionario `routeContexts` en `promptComposer.ts` **debe** mantenerse sincro
 - El matching es exacto primero, luego prefix (longest first) — las rutas más largas tienen prioridad
 - No requiere changes en otros archivos
 
-**Cómo agregar una ruta nueva:**
-
-```typescript
-const routeContexts: Record<string, string> = {
-  // ...
-  '/adm/new-page': `## Contexto de Ruta
-El usuario se encuentra en la sección **New Page** y posiblemente te haga consultas relacionadas con X, Y y Z.`,
-};
-```
-
-**Verificación:** Al agregar o mover una ruta en `app/adm/`, verificar que `routeContexts` tenga cobertura. Una ruta sin entrada cae en fallback (sin contexto de ruta), lo que degrada la calidad de las respuestas del bot.
+**Verificación:** El test `promptComposer.test.ts` valida automáticamente que toda ruta bajo `app/adm/` tenga su entrada en `routeContexts`.
 
 ### getRolePrompt — Mantener sincronizado con roles.ts
 
@@ -131,17 +116,13 @@ Si se agregan nuevos campos dinámicos al runtime (además de `pageContent`, `mo
 
 ### Agregar tools
 
-1. Crear la tool en `lib/agents/tools/{tool-name}/index.ts`
+1. Crear la tool en `lib/agents/tools/{tool-name}/` o `lib/services/{domain}/{tool-name}/tool.ts`
 2. Exportar desde `unified-tools.ts`
-3. Si es por rol específico, agregar en `registry.ts` → `toolsByRole`
+3. Documentar en `unified-instructions.md` (sección "Tools Disponibles")
+4. Agregar labels visuales (`toolLabels` y `completedLabels`) en `components/bot/ChatFloating.tsx`
+5. Agregar la tool a `EXPECTED_TOOLS` en `unified-tools.test.ts`
 
-### Agregar subagente especialista
-
-1. Crear directorio `lib/agents/{domain}/`
-2. Crear `instructions.md` con el prompt del subagente
-3. Crear `index.ts` usando `createAgent`
-4. Crear tool de delegación en `orchestrator/delegation.ts`
-5. Agregar al `registry.ts`
+**Verificación:** El test `unified-tools.test.ts` valida automáticamente que toda tool expuesta tenga documentación y labels.
 
 ### Modificar identidad o personalidad
 
@@ -159,13 +140,15 @@ Los roles se definen en `lib/auth/roles.ts`:
 - **STAFF** — Operativo: ventas, OTs, clientes, vehículos (sin config)
 - **USER** — Limitado: consulta de productos y precios
 
-Cada rol recibe un prompt de permisos diferente (Layer 3a) y potencialmente tools diferentes (`registry.ts`).
+Cada rol recibe un prompt de permisos diferente (Layer 3a). Las tools son las mismas para todos los roles — el control de acceso se hace por prompt, no por tools selectivas.
 
 ## Convenciones
 
 - **Idioma:** Código en inglés, prompts en español argentino
 - **Prompts base:** Archivos `.md`, no strings inline
-- **Tools:** Usar `tool()` del AI SDK con `zod` para input schema
+- **Tools:** Usar `tool()` del AI SDK con `zod` para input schema (no usar `createTool` factory)
 - **Logging:** Usar `logger` de `utils/logger.ts`, no `console.log`
 - **Tipos:** `BotContext` se importa de `promptComposer.ts`, `UserRole` de `auth/roles.ts`
 - **No duplicar:** La identidad y reglas viven en un solo lugar (promptComposer + unified-instructions.md)
+- **Trazabilidad:** Las tools de creación/modificación deben aceptar `createdBy` o `userId` del runtime
+- **Timezone:** Usar `getArgentinaStartOfDay` / `getArgentinaEndOfDay` de `lib/utils/date.ts`, no `new Date().setHours(0,0,0,0)`

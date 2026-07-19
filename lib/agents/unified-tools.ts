@@ -4,13 +4,14 @@ import {
 } from "@/lib/services/customer";
 import {
   createProductTool,
-  draftUpdateProductTool,
-  updateProductTool,
 } from "@/lib/services/product";
-import { registerVehicleTool } from "@/lib/services/vehicle";
+import {
+  registerVehicleTool,
+  searchVehiclesTool,
+} from "@/lib/services/vehicle";
 import { workOrderTools } from "./work-orders/tools";
 import { financeTools } from "./finance/tools";
-import { registerCustomerWithVehicle } from "./orchestrator/composite";
+import { registerCustomerWithVehicleTool } from "./tools/register-customer-with-vehicle";
 import { searchProductsWithPricesTool } from "./tools/search-products-with-prices";
 import { composeWhatsAppMessageTool } from "./tools/compose-message";
 import { processPurchaseInvoiceTool } from "./tools/process-purchase-invoice";
@@ -19,20 +20,23 @@ export const unifiedTools = {
   // Search
   searchProducts: searchProductsWithPricesTool,
   searchCustomers: searchCustomersTool,
+  searchVehicles: searchVehiclesTool,
+  searchWorkOrders: workOrderTools.searchWorkOrders,
   // Create
   createCustomer: createCustomerTool,
   createProduct: createProductTool,
   registerVehicle: registerVehicleTool,
-  registerCustomerWithVehicle,
-  // Update (organizational only — no stock/cost changes)
-  draftUpdateProduct: draftUpdateProductTool,
-  updateProduct: updateProductTool,
-  // Work Orders
-  ...workOrderTools,
-  // Finance
-  ...financeTools,
+  registerCustomerWithVehicle: registerCustomerWithVehicleTool,
+  createWorkOrder: workOrderTools.createWorkOrder,
+  createDirectSale: financeTools.createDirectSale,
+  // Update
+  updateWorkOrderStatus: workOrderTools.updateWorkOrderStatus,
+  // Query
+  getWorkOrderDetail: workOrderTools.getWorkOrderDetail,
+  getCashStatus: financeTools.getCashStatus,
+  getTodaySummary: financeTools.getTodaySummary,
   // Communication
   composeWhatsAppMessage: composeWhatsAppMessageTool,
-  // Purchase Vouchers
+  // Purchases
   processPurchaseInvoice: processPurchaseInvoiceTool,
 };

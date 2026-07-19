@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 
 export const composeWhatsAppMessageTool = tool({
-  description: 'Redacta un mensaje de WhatsApp para un cliente basándose en los datos de una OT. Útil para avisar que el auto está listo, informar el importe a pagar, o notificar cambios de estado. NO envía el mensaje, solo lo redacta para que el empleado lo copie y envíe.',
+  description: 'Redacta un mensaje de WhatsApp para un cliente basándose en los datos de una OT. NO envía el mensaje, solo lo redacta para que el empleado lo copie y envíe. Tipos: "ready" (auto listo), "progress" (avance del trabajo), "payment_reminder" (recordatorio de pago).',
   inputSchema: z.object({
     workOrderId: z.string().describe('ID de la orden de trabajo'),
     messageType: z.enum(['ready', 'progress', 'payment_reminder']).describe('Tipo de mensaje: "ready" (auto listo), "progress" (avance del trabajo), "payment_reminder" (recordatorio de pago)'),

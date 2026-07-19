@@ -3,18 +3,20 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { randomUUID } from "crypto";
 import logger from "../utils/logger";
+import {
+  getArgentinaStartOfDay,
+  getArgentinaEndOfDay,
+} from "@/lib/utils/date";
 
 const todayRange = () => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
+  const today = getArgentinaStartOfDay();
+  const tomorrow = getArgentinaEndOfDay();
   return { today, tomorrow };
 };
 
 export const getCashStatusTool = tool({
   description:
-    "Consulta el estado actual de la caja: resumen del día con ingresos, egresos y saldo.",
+    "Consulta el estado actual de la caja: ingresos, egresos, saldo y cantidad de movimientos del día.",
   inputSchema: z.object({}),
   execute: async () => {
     logger.debug("Get cash status");
@@ -41,7 +43,7 @@ export const getCashStatusTool = tool({
 
 export const getTodaySummaryTool = tool({
   description:
-    "Resumen del día actual: ventas, gastos, movimientos de caja y órdenes de trabajo.",
+    "Resumen del día actual: ventas directas (cantidad y total), OTs creadas, y movimientos de caja (ingresos, egresos, neto).",
   inputSchema: z.object({}),
   execute: async () => {
     logger.debug("Get today summary");
@@ -75,7 +77,7 @@ export const getTodaySummaryTool = tool({
 
 export const createDirectSaleTool = tool({
   description:
-    'Registra una venta directa (mostrador). Requiere producto, cantidad, precio unitario, nombre del cliente y método de pago. Método de pago: "contado", "tarjeta", "transferencia" (se resuelve automáticamente).',
+    'Registra una venta directa (mostrador). Requiere ID de producto, cantidad, precio unitario, nombre del cliente y método de pago. Método de pago: "contado", "tarjeta" o "transferencia" (se resuelve automáticamente). Debe llamarse solo después de que el usuario confirma explícitamente.',
   inputSchema: z.object({
     productId: z.string().describe("ID del producto"),
     productName: z.string().describe("Nombre del producto visible"),
@@ -83,7 +85,7 @@ export const createDirectSaleTool = tool({
     unitPrice: z.number().min(0).describe("Precio unitario de venta"),
     paymentMethod: z
       .string()
-      .describe('Método de pago: "contado", "tarjeta", "transferencia"'),
+      .describe('Método de pago: "contado", "tarjeta" o "transferencia"'),
     customerName: z
       .string()
       .describe('Nombre del cliente (o "Mostrador" para venta sin cliente)'),
@@ -93,6 +95,10 @@ export const createDirectSaleTool = tool({
       .optional()
       .describe("ID del cliente (opcional, null para consumidor final)"),
     notes: z.string().optional().describe("Notas de la venta"),
+    createdBy: z
+      .string()
+      .optional()
+      .describe("ID del usuario que registra la venta (del runtime USER_ID, si está disponible)"),
   }),
   execute: async (input) => {
     logger.debug(
@@ -128,7 +134,7 @@ export const createDirectSaleTool = tool({
           customerName: input.customerName,
           total: totalPrice,
           notes: input.notes ?? "",
-          createdBy: "nitro-bot",
+          createdBy: input.createdBy || "nitro-bot",
           items: {
             create: [
               {
@@ -148,7 +154,7 @@ export const createDirectSaleTool = tool({
                 paymentMethodId: pm.id,
                 amount: totalPrice,
                 notes: input.notes ?? "",
-                createdBy: "nitro-bot",
+                createdBy: input.createdBy || "nitro-bot",
               },
             ],
           },

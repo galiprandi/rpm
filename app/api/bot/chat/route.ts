@@ -13,6 +13,7 @@ import {
   type BotContext,
 } from "@/lib/agents/utils/promptComposer";
 import { UserRole } from "@/lib/auth/roles";
+import logger from "@/lib/agents/utils/logger";
 
 const groq = createGroq({
   apiKey: process.env.GROQ_API_KEY,
@@ -79,19 +80,25 @@ export async function POST(req: Request) {
     const modelName = process.env.GROQ_MODEL;
     if (!modelName) throw new Error("GROQ_MODEL env var is required");
 
+    // Truncate message history to last 20 messages to prevent context window overflow
+    const MAX_MESSAGES = 20;
+    const truncatedMessages = cleanedMessages.length > MAX_MESSAGES
+      ? cleanedMessages.slice(-MAX_MESSAGES)
+      : cleanedMessages;
+
     const result = streamText({
       model: groq(modelName),
       system: systemPrompt,
-      messages: await convertToModelMessages(cleanedMessages),
+      messages: await convertToModelMessages(truncatedMessages),
       tools: unifiedTools as any,
-      temperature: 0,
-      stopWhen: isStepCount(8),
+      temperature: 0.3,
+      stopWhen: isStepCount(12),
       onStepFinish({ toolCalls, toolResults, usage }) {
         if (toolCalls && toolCalls.length > 0) {
           for (const tc of toolCalls) {
-            console.log(
-              `🔧 Tool call: ${tc.toolName}`,
-              `\n   args: ${JSON.stringify(tc.input, null, 2)}`,
+            logger.debug(
+              { toolName: tc.toolName, input: tc.input },
+              "Tool call",
             );
           }
           if (toolResults) {
@@ -100,15 +107,14 @@ export async function POST(req: Request) {
                 typeof tr.output === "string"
                   ? tr.output.substring(0, 200)
                   : JSON.stringify(tr.output).substring(0, 200);
-              console.log(
-                `   ✅ Result: ${resultStr}${tr.output && JSON.stringify(tr.output).length > 200 ? "..." : ""}`,
-              );
+              logger.debug({ result: resultStr }, "Tool result");
             }
           }
         }
         if (usage) {
-          console.log(
-            `📊 Tokens: ${usage.inputTokens} in / ${usage.outputTokens} out`,
+          logger.debug(
+            { inputTokens: usage.inputTokens, outputTokens: usage.outputTokens },
+            "Token usage",
           );
         }
       },
@@ -116,13 +122,10 @@ export async function POST(req: Request) {
         const err = error as Record<string, unknown>;
         const statusCode = err?.statusCode;
         const errorMsg = (error as Error)?.message || "";
-        console.error("❌ Stream error:", {
-          statusCode,
-          message: errorMsg,
-          name: (error as Error)?.name,
-          keys: Object.keys(err || {}),
-          responseHeaders: err?.responseHeaders,
-        });
+        logger.error(
+          { statusCode, message: errorMsg, name: (error as Error)?.name },
+          "Stream error",
+        );
       },
     });
 
@@ -153,14 +156,16 @@ export async function POST(req: Request) {
             .toLowerCase();
 
           // Log full error details for debugging
-          console.error("❌ UI Stream error:", {
-            statusCode,
-            message: errorMsg,
-            name: errorName,
-            keys: Object.keys(err || {}),
-            responseHeaders,
-            responseBody: responseBody?.substring(0, 200),
-          });
+          logger.error(
+            {
+              statusCode,
+              message: errorMsg,
+              name: errorName,
+              responseHeaders,
+              responseBody: responseBody?.substring(0, 200),
+            },
+            "UI Stream error",
+          );
 
           const isRateLimit =
             statusCode === 429 ||
@@ -211,9 +216,9 @@ export async function POST(req: Request) {
           }
 
           // Log non-rate-limit errors with full detail for debugging
-          console.error(
-            "❌ Non-rate-limit error:",
-            JSON.stringify(error, Object.getOwnPropertyNames(error), 2),
+          logger.error(
+            { error: JSON.stringify(error, Object.getOwnPropertyNames(error), 2) },
+            "Non-rate-limit error",
           );
 
           return `Ocurrió un error procesando tu mensaje. Intentá nuevamente en unos segundos.`;
@@ -221,7 +226,7 @@ export async function POST(req: Request) {
       }),
     });
   } catch (error) {
-    console.error("❌ Error:", error);
+    logger.error({ error }, "Chat route error");
     return new Response(
       JSON.stringify({
         error: error instanceof Error ? error.message : "Unknown error",

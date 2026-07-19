@@ -4,18 +4,16 @@ import { searchProductsWithPricesService } from "./service";
 
 export const searchProductsWithPricesTool = tool({
   description:
-    "Busca productos por nombre, SKU o código de barras. Devuelve stock disponible, precio de contado y precio con tarjeta para cada producto encontrado. Usá esta tool cuando el usuario pregunte por productos, stock o precios.",
+    "Busca productos por nombre, SKU o código de barras. Devuelve ID, nombre, categoría, stock disponible, precio de contado y precio con tarjeta. Usar cuando el usuario pregunte por productos, stock o precios.",
   inputSchema: z.object({
     search: z
       .string()
-      .describe(
-        "Término de búsqueda (nombre del producto, SKU o código de barras)",
-      ),
+      .describe("Término de búsqueda: nombre del producto, SKU o código de barras"),
     limit: z
       .number()
       .optional()
       .default(10)
-      .describe("Límite de resultados (default: 10)"),
+      .describe("Cantidad máxima de resultados (default: 10)"),
   }),
   execute: async ({ search, limit }) => {
     const products = await searchProductsWithPricesService(search, limit);

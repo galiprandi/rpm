@@ -456,6 +456,7 @@ export function ChatFloating({
                               const toolLabels: Record<string, string> = {
                                 searchProducts: "Buscando productos...",
                                 searchCustomers: "Buscando clientes...",
+                                searchVehicles: "Buscando vehículos...",
                                 searchWorkOrders:
                                   "Buscando órdenes de trabajo...",
                                 createDirectSale: "Registrando venta...",
@@ -478,6 +479,8 @@ export function ChatFloating({
                                   "Búsqueda de productos completada",
                                 searchCustomers:
                                   "Búsqueda de clientes completada",
+                                searchVehicles:
+                                  "Búsqueda de vehículos completada",
                                 searchWorkOrders:
                                   "Búsqueda de órdenes completada",
                                 createDirectSale:
