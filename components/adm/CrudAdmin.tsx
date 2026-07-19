@@ -36,6 +36,9 @@ interface CrudAdminProps<T extends { id: string }> {
     variant?: "outline" | "ghost" | "secondary";
     icon?: React.ComponentType<{ className?: string }>;
   }>;
+  onExport?: () => void;
+  externalGlobalFilter?: string;
+  onExternalGlobalFilterChange?: (value: string) => void;
 }
 
 export function CrudAdmin<T extends { id: string }>({
@@ -61,8 +64,16 @@ export function CrudAdmin<T extends { id: string }>({
   exportFilename = "export.csv",
   rowActions,
   secondaryActions,
+  onExport,
+  externalGlobalFilter,
+  onExternalGlobalFilterChange,
 }: CrudAdminProps<T>) {
   const handleExport = () => {
+    if (onExport) {
+      onExport();
+      return;
+    }
+
     if (!items.length) return;
 
     const data = getExportData
@@ -212,6 +223,8 @@ export function CrudAdmin<T extends { id: string }>({
               emptyMessage={emptyMessage}
               filterFn={filterFn}
               headerFilter={headerFilter}
+          externalGlobalFilter={externalGlobalFilter}
+          onExternalGlobalFilterChange={onExternalGlobalFilterChange}
               headerActions={[
                 ...(enableExport && items.length > 0 ? [exportAction] : []),
                 ...(createAction && !hideCreateAction ? [createAction] : []),
