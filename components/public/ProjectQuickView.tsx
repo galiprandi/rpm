@@ -1,6 +1,7 @@
 'use client';
 
 import { Check, MessageCircle } from 'lucide-react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { PUBLIC_SITE_CONFIG } from '@/lib/config/public-site';
 import {
@@ -22,13 +23,23 @@ export function ProjectQuickView({ project, onClose }: ProjectQuickViewProps) {
       <DialogContent className="max-w-3xl bg-zinc-950 border-white/10 p-0 overflow-hidden">
         {project && (
           <div className="flex flex-col md:flex-row h-full">
-            {/* Left Column: Stylized Visual Placeholder */}
+            {/* Left Column: Stylized Visual Placeholder or Optimized Image */}
             <div className="md:w-1/2 aspect-square md:aspect-auto bg-zinc-900 flex items-center justify-center relative overflow-hidden min-h-[250px]">
               <div className="absolute inset-0 bg-gradient-to-br from-brand/10 via-transparent to-transparent opacity-60" />
-              <span className="text-[140px] font-black text-white/5 select-none transition-transform duration-700 hover:scale-105">
-                {project.visualKey}
-              </span>
-              <div className="absolute top-6 left-6 flex flex-col gap-2">
+              {project.imageUrl ? (
+                <Image
+                  src={project.imageUrl}
+                  alt={project.title}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  className="object-cover opacity-50 hover:opacity-65 transition-opacity duration-700"
+                />
+              ) : (
+                <span className="text-[140px] font-black text-white/5 select-none transition-transform duration-700 hover:scale-105">
+                  {project.visualKey}
+                </span>
+              )}
+              <div className="absolute top-6 left-6 flex flex-col gap-2 z-10">
                 <span className="px-3 py-1 bg-brand text-white text-[10px] font-bold uppercase tracking-widest rounded-full self-start">
                   Hito {project.year}
                 </span>

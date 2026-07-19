@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Award, Users, CheckCircle2, History, Eye, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 import {
   Tooltip,
   TooltipContent,
@@ -19,6 +20,7 @@ export interface GalleryItem {
   description: string;
   details: string[];
   visualKey: string;
+  imageUrl?: string;
 }
 
 export const galleryItems: GalleryItem[] = [
@@ -29,7 +31,8 @@ export const galleryItems: GalleryItem[] = [
     category: 'Iluminación',
     description: 'El origen de nuestra especialización. Comenzamos instalando los sistemas lumínicos más potentes y seguros, estableciendo las bases de la precisión eléctrica en Tucumán.',
     details: ['Tecnología Bi-LED de alto flujo', 'Sistemas secuenciales progresivos', 'Alineación láser de precisión', 'Instalación 100% Plug & Play'],
-    visualKey: '💡'
+    visualKey: '💡',
+    imageUrl: 'https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=1200&q=80'
   },
   {
     id: 'detailing-2015',
@@ -38,7 +41,8 @@ export const galleryItems: GalleryItem[] = [
     category: 'Estética',
     description: 'Inauguramos nuestra división de Detailing Avanzado. Cuidado minucioso de la pintura utilizando recubrimientos cerámicos alemanes y láminas de protección PPF (Paint Protection Film) de alta resistencia.',
     details: ['Tratamientos Cerámicos 9H', 'Láminas PPF Pro-Shield', 'Corrección de laca en múltiples pasos', 'Protección extrema contra rayos UV'],
-    visualKey: '✨'
+    visualKey: '✨',
+    imageUrl: 'https://images.unsplash.com/photo-1607860108855-64acf2078ed9?auto=format&fit=crop&w=1200&q=80'
   },
   {
     id: 'electronica-2018',
@@ -47,7 +51,8 @@ export const galleryItems: GalleryItem[] = [
     category: 'Integración',
     description: 'Ampliamos nuestra infraestructura para incorporar un laboratorio de electrónica. Integración de audio premium y sistemas multimedia de última generación sin alterar la garantía de fábrica.',
     details: ['Sistemas multimedia integrados', 'Insonorización acústica premium', 'Módulos de confort vehicular', 'Calibración de audio DSP'],
-    visualKey: '🔌'
+    visualKey: '🔌',
+    imageUrl: 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=1200&q=80'
   },
   {
     id: 'offroad-2021',
@@ -56,7 +61,8 @@ export const galleryItems: GalleryItem[] = [
     category: 'Equipamiento',
     description: 'Creamos la división especializada en equipamiento extremo para vehículos todo terreno y expedición, diseñando suspensiones y montajes para desafíos extremos.',
     details: ['Suspensiones de nitrógeno regulables', 'Malacates Winch de alta performance', 'Soportes estructurales reforzados', 'Barras LED de grado militar'],
-    visualKey: '🏔️'
+    visualKey: '🏔️',
+    imageUrl: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=1200&q=80'
   }
 ];
 
@@ -153,7 +159,7 @@ export function AboutClient() {
             viewport={{ once: true, margin: "-100px" }}
             className="grid grid-cols-1 md:grid-cols-2 gap-6"
           >
-            {galleryItems.map((project) => (
+            {galleryItems.map((project, index) => (
               <motion.div
                 key={project.id}
                 variants={cardVariants}
@@ -163,9 +169,22 @@ export function AboutClient() {
                 }}
                 className="group relative aspect-[4/3] bg-zinc-900/40 overflow-hidden rounded-[32px] border border-white/5 hover:border-brand/20 transition-all duration-700"
               >
-                {/* Visual Symbol Background */}
-                <div className="absolute inset-0 flex items-center justify-center text-[130px] md:text-[160px] font-black text-white/5 select-none transition-transform duration-700 group-hover:scale-110">
-                  {project.visualKey}
+                {/* Optimized Image with Emoji fallback */}
+                <div className="absolute inset-0 flex items-center justify-center select-none overflow-hidden rounded-[32px]">
+                  {project.imageUrl ? (
+                    <Image
+                      src={project.imageUrl}
+                      alt={project.title}
+                      fill
+                      sizes="(max-width: 768px) 100vw, 50vw"
+                      className="object-cover opacity-30 group-hover:opacity-45 group-hover:scale-105 transition-all duration-1000"
+                      priority={index < 2}
+                    />
+                  ) : (
+                    <div className="text-[130px] md:text-[160px] font-black text-white/5 transition-transform duration-700 group-hover:scale-110">
+                      {project.visualKey}
+                    </div>
+                  )}
                 </div>
 
                 {/* Quick View Icon Overlay */}
