@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { ProductDialog } from "@/components/products/ProductDialog";
 import { ProductMovementsModal } from "@/components/products/ProductMovementsModal";
 import { ProductPricesModal } from "@/components/products/ProductPricesModal";
+import { ProductExportModal } from "@/components/products/ProductExportModal";
 import { QuickSaleModal } from "@/components/dashboard/QuickSaleModal";
 import { useUI } from "@/components/ui/UIProvider";
 import { toast } from "sonner";
@@ -87,10 +88,27 @@ export function ProductsClient({
 
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const filteredProducts =
-    selectedCategory === "all"
-      ? products
-      : products.filter((p) => p.categoryId === selectedCategory);
+  const [searchTerm, setSearchTerm] = useState<string>("");
+
+  // Helper matching logic consistent with productSearchFilter
+  const matchProduct = useCallback((p: Product, term: string) => {
+    if (!term) return true;
+    const terms = term.toLowerCase().split(/\s+/).filter(Boolean);
+    return terms.every((t) => {
+      if (p.name?.toLowerCase().includes(t)) return true;
+      if (p.sku?.toLowerCase().includes(t)) return true;
+      if (p.barcode?.toLowerCase().includes(t)) return true;
+      if (p.category?.name?.toLowerCase().includes(t)) return true;
+      return false;
+    });
+  }, []);
+
+  const filteredProducts = products.filter((p) => {
+    const matchesCategory = selectedCategory === "all" || p.categoryId === selectedCategory;
+    const matchesSearch = matchProduct(p, searchTerm);
+    return matchesCategory && matchesSearch;
+  });
+
   const lowStockCount = filteredProducts.filter((p) => p.isLowStock).length;
   const totalInventoryValue = filteredProducts.reduce(
     (acc, p) => acc + p.costPrice * (p.stock || 0),
@@ -99,6 +117,7 @@ export function ProductsClient({
 
   // Modal states
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [formData, setFormData] = useState<ProductFormData>({
     sku: "",
@@ -668,6 +687,9 @@ export function ProductsClient({
           hideCreateAction
           columns={columns}
           filterFn={productSearchFilter}
+          externalGlobalFilter={searchTerm}
+          onExternalGlobalFilterChange={setSearchTerm}
+          onExport={() => setIsExportDialogOpen(true)}
           headerFilter={
             <Select
               value={selectedCategory}
@@ -801,6 +823,13 @@ export function ProductsClient({
         isOpen={pricesModalOpen}
         onClose={() => setPricesModalOpen(false)}
         product={selectedProductForPrices}
+      />
+
+      <ProductExportModal
+        isOpen={isExportDialogOpen}
+        onClose={() => setIsExportDialogOpen(false)}
+        filteredProducts={filteredProducts}
+        filename={inactiveMode ? "productos_inactivos_filtrados.csv" : "productos_filtrados.csv"}
       />
 
       <ProductMovementsModal
