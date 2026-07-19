@@ -10,7 +10,7 @@ import {
 import { registerVehicleTool } from "@/lib/services/vehicle";
 import { workOrderTools } from "./work-orders/tools";
 import { financeTools } from "./finance/tools";
-import { registerCustomerWithVehicle } from "./orchestrator/composite";
+import { registerCustomerWithVehicleTool } from "./tools/register-customer-with-vehicle";
 import { searchProductsWithPricesTool } from "./tools/search-products-with-prices";
 import { composeWhatsAppMessageTool } from "./tools/compose-message";
 import { processPurchaseInvoiceTool } from "./tools/process-purchase-invoice";
@@ -23,7 +23,7 @@ export const unifiedTools = {
   createCustomer: createCustomerTool,
   createProduct: createProductTool,
   registerVehicle: registerVehicleTool,
-  registerCustomerWithVehicle,
+  registerCustomerWithVehicle: registerCustomerWithVehicleTool,
   // Update (organizational only — no stock/cost changes)
   draftUpdateProduct: draftUpdateProductTool,
   updateProduct: updateProductTool,

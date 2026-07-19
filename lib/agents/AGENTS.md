@@ -2,7 +2,7 @@
 
 ## Visión General
 
-Nitro es el asistente virtual del staff de RPM. Esta arquitectura unificada permite componer el system prompt dinámicamente según el **rol del usuario** y la **ruta que está visitando**, sin duplicar lógica entre entry points.
+Nitro es el asistente virtual del staff de RPM. Arquitectura de **agente único** con system prompt compuesto dinámicamente según el **rol del usuario** y la **ruta que está visitando**.
 
 ## Estructura de Directorios
 
@@ -11,26 +11,22 @@ lib/agents/
 ├── AGENTS.md                  # Este archivo
 ├── unified-instructions.md    # Layer 2: tools, flujos, reglas (base prompt)
 ├── unified-tools.ts           # Tools disponibles para el agente
-├── registry.ts                # Tools por rol + helpers
-├── utils/
-│   ├── promptComposer.ts      # Compositor del system prompt (4 capas)
-│   ├── createAgent.ts         # Helper para crear agentes (Groq/Google)
-│   ├── types.ts               # Re-exports de BotContext + BotToolInput
-│   └── logger.ts              # Logger centralizado
-├── orchestrator/
-│   ├── index.ts               # Crea el agente con prompt + tools
-│   ├── delegation.ts          # Tools de delegación a subagentes
-│   └── composite.ts           # Tools compuestas (multi-step)
-├── tools/                     # Tools individuales
-│   ├── search-products-with-prices/
+├── tools/                     # Tools individuales (una por carpeta)
 │   ├── compose-message/
-│   └── process-purchase-invoice/
-├── customers/                 # Subagente de clientes
-├── finance/                   # Subagente de finanzas
-├── inventory/                 # Subagente de inventario
-├── work-orders/               # Subagente de OTs
-└── simple/                    # Agente simple (legacy, solo createProduct)
+│   ├── process-purchase-invoice/
+│   ├── register-customer-with-vehicle/
+│   └── search-products-with-prices/
+├── work-orders/tools.ts       # Tools de órdenes de trabajo
+├── finance/tools.ts           # Tools de finanzas/caja
+└── utils/
+    ├── promptComposer.ts      # Compositor del system prompt (4 capas)
+    ├── createTool.ts          # Factory para eliminar boilerplate de tools
+    ├── pendingActions.ts      # Acciones pendientes (confirmación de tools)
+    ├── extract-document.ts    # Extracción de datos de documentos (vision AI)
+    └── logger.ts              # Logger centralizado
 ```
+
+> **Nota:** Las tools de clientes, productos y vehículos viven en `lib/services/{customer,product,vehicle}/` y se importan en `unified-tools.ts`. Las tools de work-orders y finanzas viven en `lib/agents/{work-orders,finance}/tools.ts` porque son específicas del bot.
 
 ## Arquitectura del System Prompt (4 Capas)
 
@@ -86,14 +82,9 @@ El bot recibe `pageContent` y `modalContent` extraídos del DOM client-side en `
 - Si el contenido es menor a 50 chars, no se envía (evita ruido)
 - El bot sabe que es una representación textual, no datos definitivos — debe usar tools para datos precisos
 
-### Entry Points
+### Entry Point
 
-Hay dos entry points que usan la misma arquitectura:
-
-1. **`/api/bot/chat` (route.ts)** — Streaming con `streamText`, tools unificadas
-2. **`orchestrator/index.ts`** — Creación de agente con `createAgent`, tools por rol
-
-Ambos llaman a `composeSystemPrompt(context)` para obtener el prompt completo.
+**`/api/bot/chat` (route.ts)** — Streaming con `streamText` y `unifiedTools`. Llama a `composeSystemPrompt(context)` para obtener el prompt completo.
 
 ## Mantenimiento Obligatorio
 
@@ -131,17 +122,10 @@ Si se agregan nuevos campos dinámicos al runtime (además de `pageContent`, `mo
 
 ### Agregar tools
 
-1. Crear la tool en `lib/agents/tools/{tool-name}/index.ts`
+1. Crear la tool en `lib/agents/tools/{tool-name}/index.ts` + `tool.ts`
 2. Exportar desde `unified-tools.ts`
-3. Si es por rol específico, agregar en `registry.ts` → `toolsByRole`
-
-### Agregar subagente especialista
-
-1. Crear directorio `lib/agents/{domain}/`
-2. Crear `instructions.md` con el prompt del subagente
-3. Crear `index.ts` usando `createAgent`
-4. Crear tool de delegación en `orchestrator/delegation.ts`
-5. Agregar al `registry.ts`
+3. Documentar en `unified-instructions.md` (sección "Tools Disponibles")
+4. Agregar labels visuales (`toolLabels` y `completedLabels`) en `components/bot/ChatFloating.tsx`
 
 ### Modificar identidad o personalidad
 
@@ -159,7 +143,7 @@ Los roles se definen en `lib/auth/roles.ts`:
 - **STAFF** — Operativo: ventas, OTs, clientes, vehículos (sin config)
 - **USER** — Limitado: consulta de productos y precios
 
-Cada rol recibe un prompt de permisos diferente (Layer 3a) y potencialmente tools diferentes (`registry.ts`).
+Cada rol recibe un prompt de permisos diferente (Layer 3a). Las tools son las mismas para todos los roles — el control de acceso se hace por prompt, no por tools selectivas.
 
 ## Convenciones
 

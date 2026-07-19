@@ -3,11 +3,11 @@ import { z } from 'zod';
 import { createCustomerService } from '@/lib/services/customer';
 import { createVehicleService } from '@/lib/services/vehicle';
 import { vehicleCategories } from '@/lib/services/vehicle';
-import logger from '../utils/logger';
+import logger from '../../utils/logger';
 
 const validCategories = [...vehicleCategories] as const;
 
-export const registerCustomerWithVehicle = tool({
+export const registerCustomerWithVehicleTool = tool({
   description: 'CREA un nuevo cliente Y registra su vehículo en UNA sola operación. Usar cuando el usuario quiere dar de alta un cliente nuevo con su vehículo.',
   inputSchema: z.object({
     customerName: z.string().describe('Nombre completo del cliente'),
@@ -49,7 +49,3 @@ export const registerCustomerWithVehicle = tool({
     }
   },
 });
-
-export const compositeTools = {
-  registerCustomerWithVehicle,
-};
