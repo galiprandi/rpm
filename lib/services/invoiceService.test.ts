@@ -10,7 +10,7 @@ import {
   determineInvoiceType,
   calculateInvoiceTaxes,
   getNextInvoiceNumber,
-} from '@/lib/services/invoiceService';
+} from './invoiceService';
 
 describe('Invoice Service', () => {
   let testCustomer: any;
