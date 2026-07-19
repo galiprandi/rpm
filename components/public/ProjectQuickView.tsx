@@ -29,7 +29,7 @@ export function ProjectQuickView({ project, onClose }: ProjectQuickViewProps) {
               {project.imageUrl ? (
                 <Image
                   src={project.imageUrl}
-                  alt={project.title}
+                  alt=""
                   fill
                   sizes="(max-width: 768px) 100vw, 50vw"
                   className="object-cover opacity-50 hover:opacity-65 transition-opacity duration-700"

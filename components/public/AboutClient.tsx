@@ -32,7 +32,7 @@ export const galleryItems: GalleryItem[] = [
     description: 'El origen de nuestra especialización. Comenzamos instalando los sistemas lumínicos más potentes y seguros, estableciendo las bases de la precisión eléctrica en Tucumán.',
     details: ['Tecnología Bi-LED de alto flujo', 'Sistemas secuenciales progresivos', 'Alineación láser de precisión', 'Instalación 100% Plug & Play'],
     visualKey: '💡',
-    imageUrl: 'https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=1200&q=80'
+    imageUrl: 'https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=600&q=80'
   },
   {
     id: 'detailing-2015',
@@ -42,7 +42,7 @@ export const galleryItems: GalleryItem[] = [
     description: 'Inauguramos nuestra división de Detailing Avanzado. Cuidado minucioso de la pintura utilizando recubrimientos cerámicos alemanes y láminas de protección PPF (Paint Protection Film) de alta resistencia.',
     details: ['Tratamientos Cerámicos 9H', 'Láminas PPF Pro-Shield', 'Corrección de laca en múltiples pasos', 'Protección extrema contra rayos UV'],
     visualKey: '✨',
-    imageUrl: 'https://images.unsplash.com/photo-1607860108855-64acf2078ed9?auto=format&fit=crop&w=1200&q=80'
+    imageUrl: 'https://images.unsplash.com/photo-1607860108855-64acf2078ed9?auto=format&fit=crop&w=600&q=80'
   },
   {
     id: 'electronica-2018',
@@ -52,7 +52,7 @@ export const galleryItems: GalleryItem[] = [
     description: 'Ampliamos nuestra infraestructura para incorporar un laboratorio de electrónica. Integración de audio premium y sistemas multimedia de última generación sin alterar la garantía de fábrica.',
     details: ['Sistemas multimedia integrados', 'Insonorización acústica premium', 'Módulos de confort vehicular', 'Calibración de audio DSP'],
     visualKey: '🔌',
-    imageUrl: 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=1200&q=80'
+    imageUrl: 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=600&q=80'
   },
   {
     id: 'offroad-2021',
@@ -62,7 +62,7 @@ export const galleryItems: GalleryItem[] = [
     description: 'Creamos la división especializada en equipamiento extremo para vehículos todo terreno y expedición, diseñando suspensiones y montajes para desafíos extremos.',
     details: ['Suspensiones de nitrógeno regulables', 'Malacates Winch de alta performance', 'Soportes estructurales reforzados', 'Barras LED de grado militar'],
     visualKey: '🏔️',
-    imageUrl: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=1200&q=80'
+    imageUrl: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=600&q=80'
   }
 ];
 
@@ -174,7 +174,7 @@ export function AboutClient() {
                   {project.imageUrl ? (
                     <Image
                       src={project.imageUrl}
-                      alt={project.title}
+                      alt=""
                       fill
                       sizes="(max-width: 768px) 100vw, 50vw"
                       className="object-cover opacity-30 group-hover:opacity-45 group-hover:scale-105 transition-all duration-1000"
