@@ -120,6 +120,14 @@ export const updateWorkOrderStatusTool = tool({
         "DELIVERED",
       ])
       .describe("Nuevo estado de la OT"),
+    userId: z
+      .string()
+      .optional()
+      .describe("ID del usuario que realiza el cambio (del runtime USER_ID, si está disponible)"),
+    userEmail: z
+      .string()
+      .optional()
+      .describe("Email del usuario que realiza el cambio (si está disponible)"),
   }),
   execute: async (input) => {
     logger.debug(
@@ -132,8 +140,8 @@ export const updateWorkOrderStatusTool = tool({
         input.workOrderId,
         { status: input.status },
         {
-          userId: "bot",
-          userEmail: "nitro@rpm",
+          userId: input.userId || "bot",
+          userEmail: input.userEmail || "nitro@rpm",
         },
       );
       return `✅ OT #${input.workOrderId.slice(0, 8)} actualizada a: ${input.status}`;

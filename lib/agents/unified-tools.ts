@@ -5,7 +5,10 @@ import {
 import {
   createProductTool,
 } from "@/lib/services/product";
-import { registerVehicleTool } from "@/lib/services/vehicle";
+import {
+  registerVehicleTool,
+  searchVehiclesTool,
+} from "@/lib/services/vehicle";
 import { workOrderTools } from "./work-orders/tools";
 import { financeTools } from "./finance/tools";
 import { registerCustomerWithVehicleTool } from "./tools/register-customer-with-vehicle";
@@ -17,6 +20,7 @@ export const unifiedTools = {
   // Search
   searchProducts: searchProductsWithPricesTool,
   searchCustomers: searchCustomersTool,
+  searchVehicles: searchVehiclesTool,
   searchWorkOrders: workOrderTools.searchWorkOrders,
   // Create
   createCustomer: createCustomerTool,

@@ -9,7 +9,7 @@ import { z } from 'zod';
  * - Direct service calls
  */
 export const searchCustomersSchema = z.object({
-  search: z.string().describe('Término de búsqueda: nombre o teléfono del cliente'),
+  search: z.string().describe('Término de búsqueda: nombre, teléfono, email, dirección o patente del vehículo del cliente'),
   limit: z.number().optional().default(10).describe('Cantidad máxima de resultados (default: 10)'),
 });
 

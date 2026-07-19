@@ -2,24 +2,32 @@ import { prisma } from '@/lib/prisma';
 import type { SearchCustomersInput } from './schema';
 
 /**
- * searchCustomersService - Pure function to search customers
+ * searchCustomersService - Search customers by name, phone, email, or vehicle plate.
  *
- * This service is shared between:
- * - API routes (app/api/customers/route.ts)
- * - AI tools (lib/services/customer/searchCustomers/tool.ts)
+ * Shared between API routes and AI tools.
  *
  * @param input - Search parameters
- * @returns List of matching customers
+ * @returns List of matching customers with vehicles and OT count
  */
 export async function searchCustomersService(input: SearchCustomersInput) {
   const { search, limit = 10 } = input;
 
-  // Build where clause
+  // Build where clause — search across name, phone, phoneAlt, email, and vehicle identifier
   const where = search
     ? {
         OR: [
           { name: { contains: search, mode: 'insensitive' as const } },
           { phone: { contains: search, mode: 'insensitive' as const } },
+          { phoneAlt: { contains: search, mode: 'insensitive' as const } },
+          { email: { contains: search, mode: 'insensitive' as const } },
+          { address: { contains: search, mode: 'insensitive' as const } },
+          {
+            vehicle: {
+              some: {
+                identifier: { contains: search.toUpperCase(), mode: 'insensitive' as const },
+              },
+            },
+          },
         ],
       }
     : {};

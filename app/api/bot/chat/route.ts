@@ -84,8 +84,8 @@ export async function POST(req: Request) {
       system: systemPrompt,
       messages: await convertToModelMessages(cleanedMessages),
       tools: unifiedTools as any,
-      temperature: 0,
-      stopWhen: isStepCount(8),
+      temperature: 0.3,
+      stopWhen: isStepCount(12),
       onStepFinish({ toolCalls, toolResults, usage }) {
         if (toolCalls && toolCalls.length > 0) {
           for (const tc of toolCalls) {

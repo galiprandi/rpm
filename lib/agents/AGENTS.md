@@ -11,6 +11,7 @@ lib/agents/
 ├── AGENTS.md                  # Este archivo
 ├── unified-instructions.md    # Layer 2: tools, flujos, reglas (base prompt)
 ├── unified-tools.ts           # Tools disponibles para el agente
+├── unified-tools.test.ts      # Test: tools expuestas = tools documentadas = tools con labels
 ├── tools/                     # Tools individuales (una por carpeta)
 │   ├── compose-message/
 │   ├── process-purchase-invoice/
@@ -20,7 +21,8 @@ lib/agents/
 ├── finance/tools.ts           # Tools de finanzas/caja
 └── utils/
     ├── promptComposer.ts      # Compositor del system prompt (4 capas)
-    ├── createTool.ts          # Factory para eliminar boilerplate de tools
+    ├── promptComposer.test.ts # Test: routeContexts cobertura + prompt composition
+    ├── createTool.ts          # Factory legacy (no usar, usar tool() del AI SDK)
     ├── pendingActions.ts      # Acciones pendientes (confirmación de tools)
     ├── extract-document.ts    # Extracción de datos de documentos (vision AI)
     └── logger.ts              # Logger centralizado
@@ -51,8 +53,8 @@ El system prompt se compone en `promptComposer.ts` mediante `composeSystemPrompt
 │ (/adm/products, /adm/work-orders, etc.)          │
 ├─────────────────────────────────────────────────┤
 │ Layer 4: RUNTIME                                 │
-│ chatId, userName, current page, page content,    │
-│ modal content, file attachments                  │
+│ chatId, userId, userName, current page,          │
+│ page content, modal content, file attachments    │
 │ (dinámico, por request)                          │
 └─────────────────────────────────────────────────┘
 ```
@@ -63,7 +65,7 @@ El system prompt se compone en `promptComposer.ts` mediante `composeSystemPrompt
 interface BotContext {
   role: UserRole;           // ADMIN | STAFF | USER (from lib/auth/roles)
   pathname?: string;        // Ruta actual del usuario (ej: /adm/products)
-  userId?: string;          // ID del usuario autenticado
+  userId?: string;          // ID del usuario autenticado (se pasa a tools de creación)
   userName?: string;        // Nombre del usuario (para personalizar respuestas)
   chatId: string;           // ID único del chat
   pageContent?: string;     // Texto extraído del <main> (lo que el usuario ve en pantalla)
@@ -86,11 +88,15 @@ El bot recibe `pageContent` y `modalContent` extraídos del DOM client-side en `
 
 **`/api/bot/chat` (route.ts)** — Streaming con `streamText` y `unifiedTools`. Llama a `composeSystemPrompt(context)` para obtener el prompt completo.
 
+- Modelo: Groq (`GROQ_MODEL` env var)
+- Temperature: 0.3 (balance entre precisión y naturalidad)
+- stopWhen: 12 steps (permite flujos multi-step como procesar factura + match productos)
+
 ## Mantenimiento Obligatorio
 
 ### routeContexts — Debe mantenerse actualizado
 
-El diccionario `routeContexts` en `promptComposer.ts` **debe** mantenerse sincronizado con las rutas reales de `app/adm/`. 
+El diccionario `routeContexts` en `promptComposer.ts` **debe** mantenerse sincronizado con las rutas reales de `app/adm/`.
 
 **Reglas:**
 
@@ -100,17 +106,7 @@ El diccionario `routeContexts` en `promptComposer.ts` **debe** mantenerse sincro
 - El matching es exacto primero, luego prefix (longest first) — las rutas más largas tienen prioridad
 - No requiere changes en otros archivos
 
-**Cómo agregar una ruta nueva:**
-
-```typescript
-const routeContexts: Record<string, string> = {
-  // ...
-  '/adm/new-page': `## Contexto de Ruta
-El usuario se encuentra en la sección **New Page** y posiblemente te haga consultas relacionadas con X, Y y Z.`,
-};
-```
-
-**Verificación:** Al agregar o mover una ruta en `app/adm/`, verificar que `routeContexts` tenga cobertura. Una ruta sin entrada cae en fallback (sin contexto de ruta), lo que degrada la calidad de las respuestas del bot.
+**Verificación:** El test `promptComposer.test.ts` valida automáticamente que toda ruta bajo `app/adm/` tenga su entrada en `routeContexts`.
 
 ### getRolePrompt — Mantener sincronizado con roles.ts
 
@@ -122,10 +118,13 @@ Si se agregan nuevos campos dinámicos al runtime (además de `pageContent`, `mo
 
 ### Agregar tools
 
-1. Crear la tool en `lib/agents/tools/{tool-name}/index.ts` + `tool.ts`
+1. Crear la tool en `lib/agents/tools/{tool-name}/` o `lib/services/{domain}/{tool-name}/tool.ts`
 2. Exportar desde `unified-tools.ts`
 3. Documentar en `unified-instructions.md` (sección "Tools Disponibles")
 4. Agregar labels visuales (`toolLabels` y `completedLabels`) en `components/bot/ChatFloating.tsx`
+5. Agregar la tool a `EXPECTED_TOOLS` en `unified-tools.test.ts`
+
+**Verificación:** El test `unified-tools.test.ts` valida automáticamente que toda tool expuesta tenga documentación y labels.
 
 ### Modificar identidad o personalidad
 
@@ -149,7 +148,9 @@ Cada rol recibe un prompt de permisos diferente (Layer 3a). Las tools son las mi
 
 - **Idioma:** Código en inglés, prompts en español argentino
 - **Prompts base:** Archivos `.md`, no strings inline
-- **Tools:** Usar `tool()` del AI SDK con `zod` para input schema
+- **Tools:** Usar `tool()` del AI SDK con `zod` para input schema (no usar `createTool` factory)
 - **Logging:** Usar `logger` de `utils/logger.ts`, no `console.log`
 - **Tipos:** `BotContext` se importa de `promptComposer.ts`, `UserRole` de `auth/roles.ts`
 - **No duplicar:** La identidad y reglas viven en un solo lugar (promptComposer + unified-instructions.md)
+- **Trazabilidad:** Las tools de creación/modificación deben aceptar `createdBy` o `userId` del runtime
+- **Timezone:** Usar `getArgentinaStartOfDay` / `getArgentinaEndOfDay` de `lib/utils/date.ts`, no `new Date().setHours(0,0,0,0)`

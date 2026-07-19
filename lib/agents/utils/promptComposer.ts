@@ -179,6 +179,24 @@ El usuario se encuentra en la sección **Notas de Crédito** y posiblemente te h
   "/adm/operations": `## Contexto de Ruta
 El usuario se encuentra en la sección **Operativos** y posiblemente te haga consultas relacionadas con operaciones del día y deudores.`,
 
+  "/adm/invoices": `## Contexto de Ruta
+El usuario se encuentra en la sección **Facturas** y posiblemente te haga consultas relacionadas con facturación de ventas y OTs, consulta de facturas emitidas y oficialización.`,
+
+  "/adm/price-lists": `## Contexto de Ruta
+El usuario se encuentra en la sección **Listas de Precios** y posiblemente te haga consultas relacionadas con configuración de listas, márgenes y cálculo de precios.`,
+
+  "/adm/payment-methods": `## Contexto de Ruta
+El usuario se encuentra en la sección **Métodos de Pago** y posiblemente te haga consultas relacionadas con configuración de métodos de pago disponibles.`,
+
+  "/adm/users": `## Contexto de Ruta
+El usuario se encuentra en la sección **Usuarios** y posiblemente te haga consultas relacionadas con gestión de usuarios del sistema y roles de acceso.`,
+
+  "/adm/services": `## Contexto de Ruta
+El usuario se encuentra en la sección **Servicios** y posiblemente te haga consultas relacionadas con servicios ofrecidos por el taller, costos y tiempos.`,
+
+  "/adm/novedades": `## Contexto de Ruta
+El usuario se encuentra en la sección **Novedades** y posiblemente te haga consultas relacionadas con publicaciones del blog o novedades del negocio.`,
+
   "/adm": `## Contexto de Ruta
 El usuario se encuentra en el **Panel Admin** (dashboard principal) y posiblemente te haga consultas generales o pida un resumen del día.`,
 
@@ -192,13 +210,16 @@ function getRoutePrompt(pathname?: string): string {
   // Try exact match first
   if (routeContexts[pathname]) return routeContexts[pathname];
 
-  // Try prefix match (longest first)
-  const sortedKeys = Object.keys(routeContexts).sort(
-    (a, b) => b.length - a.length,
-  );
+  // Try prefix match (longest first), but skip "/" to avoid matching everything
+  const sortedKeys = Object.keys(routeContexts)
+    .filter((k) => k !== "/")
+    .sort((a, b) => b.length - a.length);
   for (const key of sortedKeys) {
     if (pathname.startsWith(key)) return routeContexts[key];
   }
+
+  // Fall back to "/" only for exact match
+  if (pathname === "/") return routeContexts["/"];
 
   return "";
 }
@@ -209,6 +230,10 @@ function getRuntimePrompt(context: BotContext): string {
   const parts: string[] = [];
 
   parts.push(`CHAT_ID: ${context.chatId}`);
+
+  if (context.userId) {
+    parts.push(`USER_ID: ${context.userId}`);
+  }
 
   if (context.userName) {
     parts.push(`USER_NAME: ${context.userName}`);

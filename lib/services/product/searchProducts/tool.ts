@@ -1,34 +1,31 @@
-import { createTool } from '@/lib/agents/utils/createTool';
+import { tool } from 'ai';
 import { searchProductsService } from './service';
 import { searchProductsSchema } from './schema';
 import logger from '@/lib/agents/utils/logger';
 
 /**
- * searchProductsTool - Search for products by name, SKU, or barcode
+ * searchProductsTool - Search for products by name, SKU, or barcode.
  *
- * Uses the createTool factory with the searchProductsService.
+ * Note: This tool does NOT return prices. For prices, use searchProductsWithPricesTool.
  */
-export const searchProductsTool = createTool({
-  name: 'searchProducts',
-  description: 'Busca productos por nombre, SKU o código de barras. Devuelve una lista de productos coincidentes.',
-  schema: searchProductsSchema,
-  service: async (input) => {
-    const { search, limit } = input;
-    logger.debug({ search, limit }, 'Searching products');
-    return searchProductsService(input);
-  },
-  format: (result) => {
-    const products = result as any[];
+export const searchProductsTool = tool({
+  description: 'Busca productos por nombre, SKU o código de barras. Devuelve ID, nombre, SKU, código de barras y categoría.',
+  inputSchema: searchProductsSchema,
+  execute: async (input) => {
+    logger.debug({ search: input.search }, 'Searching products');
+
+    const products = await searchProductsService(input);
+
     if (products.length === 0) {
       return 'No se encontraron productos con ese criterio de búsqueda.';
     }
 
     const formatted = products
       .map((p) => {
-        let line = `- ${p.name}`;
+        let line = `- [ID: ${p.id}] ${p.name}`;
         if (p.sku) line += ` | SKU: ${p.sku}`;
-        if (p.barcode) line += ` | Barcode: ${p.barcode}`;
-        if (p.category) line += ` | Categoría: ${p.category.name}`;
+        if (p.barcode) line += ` | EAN: ${p.barcode}`;
+        if ((p as any).category) line += ` | Categoría: ${(p as any).category.name}`;
         return line;
       })
       .join('\n');

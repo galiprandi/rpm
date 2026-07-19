@@ -3,12 +3,14 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { randomUUID } from "crypto";
 import logger from "../utils/logger";
+import {
+  getArgentinaStartOfDay,
+  getArgentinaEndOfDay,
+} from "@/lib/utils/date";
 
 const todayRange = () => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
+  const today = getArgentinaStartOfDay();
+  const tomorrow = getArgentinaEndOfDay();
   return { today, tomorrow };
 };
 
@@ -93,6 +95,10 @@ export const createDirectSaleTool = tool({
       .optional()
       .describe("ID del cliente (opcional, null para consumidor final)"),
     notes: z.string().optional().describe("Notas de la venta"),
+    createdBy: z
+      .string()
+      .optional()
+      .describe("ID del usuario que registra la venta (del runtime USER_ID, si está disponible)"),
   }),
   execute: async (input) => {
     logger.debug(
@@ -128,7 +134,7 @@ export const createDirectSaleTool = tool({
           customerName: input.customerName,
           total: totalPrice,
           notes: input.notes ?? "",
-          createdBy: "nitro-bot",
+          createdBy: input.createdBy || "nitro-bot",
           items: {
             create: [
               {
@@ -148,7 +154,7 @@ export const createDirectSaleTool = tool({
                 paymentMethodId: pm.id,
                 amount: totalPrice,
                 notes: input.notes ?? "",
-                createdBy: "nitro-bot",
+                createdBy: input.createdBy || "nitro-bot",
               },
             ],
           },
