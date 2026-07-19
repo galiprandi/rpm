@@ -7,7 +7,10 @@ import { prisma } from '@/lib/prisma';
 import {
   createInvoice,
   updateInvoiceBillingData,
-} from './invoiceService';
+  determineInvoiceType,
+  calculateInvoiceTaxes,
+  getNextInvoiceNumber,
+} from '@/lib/services/invoiceService';
 
 describe('Invoice Service', () => {
   let testCustomer: any;
@@ -150,6 +153,60 @@ describe('Invoice Service', () => {
           customerName: 'TEST_INVOICE_CUST_FORBIDDEN',
         })
       ).rejects.toThrow('Solo se pueden editar comprobantes en estado DRAFT o REJECTED');
+    });
+  });
+
+  describe('determineInvoiceType', () => {
+    it('should determine correct type based on billing data', () => {
+      expect(determineInvoiceType({ invoiceType: 'A' })).toBe('X_A');
+      expect(determineInvoiceType({ invoiceType: 'B' })).toBe('X_B');
+      expect(determineInvoiceType(null)).toBe('X_B');
+      expect(determineInvoiceType({}, 'NOTA_CREDITO')).toBe('NOTA_CREDITO_X_B');
+      expect(determineInvoiceType({ invoiceType: 'A' }, 'FACTURA', false)).toBe('FACTURA_A');
+    });
+  });
+
+  describe('calculateInvoiceTaxes', () => {
+    it('should calculate 21% taxes correctly', () => {
+      const breakdown = calculateInvoiceTaxes(1210, 'X_B');
+      expect(breakdown.subtotal).toBeCloseTo(1000);
+      expect(breakdown.tax).toBeCloseTo(210);
+      expect(breakdown.iva21).toBeCloseTo(210);
+      expect(breakdown.iva105).toBe(0);
+    });
+  });
+
+  describe('getNextInvoiceNumber', () => {
+    it('should generate first invoice number if none exists', async () => {
+      const num = await getNextInvoiceNumber('X_A');
+      expect(num).toBe('X-0001-00000001');
+
+      const presNum = await getNextInvoiceNumber('PRESUPUESTO');
+      expect(presNum).toMatch(/^PRES-\d{8}$/);
+    });
+
+    it('should increment existing sequence number', async () => {
+      const numBefore = await getNextInvoiceNumber('X_A');
+
+      // Create invoice
+      await createInvoice({
+        type: 'X_A',
+        referenceId: 'wo-1',
+        referenceType: 'work_order',
+        customerId: testCustomer.id,
+        customerName: testCustomer.name,
+        subtotal: 100,
+        total: 121,
+        status: 'DRAFT',
+        createdBy: 'test',
+      });
+
+      const nextNum = await getNextInvoiceNumber('X_A');
+      const partsBefore = numBefore.split('-');
+      const nextParts = nextNum.split('-');
+      const beforeVal = parseInt(partsBefore[partsBefore.length - 1], 10);
+      const nextVal = parseInt(nextParts[nextParts.length - 1], 10);
+      expect(nextVal).toBe(beforeVal + 1);
     });
   });
 });
