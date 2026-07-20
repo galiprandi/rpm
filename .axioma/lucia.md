@@ -1,6 +1,10 @@
 ## 📋 BACKLOG
 
 ## ✅ DONE
+- [x] 2026-07-20 — Exportación de Datos en CSV y Resumen de Cuenta Corriente de Cliente
+  - Implementación de exportación client-side de CSV en el listado de clientes (`CustomersClient.tsx`) y vehículos (`VehiclesClient.tsx`) con codificación UTF-8 BOM (`\ufeff`) y escaping de campos.
+  - Integración del botón de "Exportar PDF" en la tarjeta "Cuenta Corriente" de la ficha detallada del cliente (`app/adm/customers/[id]/page.tsx`).
+  - Creación del layout de impresión unificado en `app/adm/customers/[id]/page.tsx` (`id="print-section"`) con estilo formal, cabecera de RPM, datos del cliente, tabla de OTs adeudadas, términos y líneas de firmas de conformidad.
 - [x] 2026-07-19 — Exportación PDF y Resumen Impreso de Cuenta Corriente del Vehículo
   - Adición de un botón "Exportar PDF" en la tarjeta "Cuenta Corriente del Vehículo" de la ficha detallada (`app/adm/vehicles/[id]/page.tsx`).
   - Creación de un componente para impresión (`id="print-section"`) con estilo de factura/resumen formal de deudas del vehículo, conteniendo cabecera de RPM Accesorios, datos del propietario y vehículo, tabla de OTs adeudadas con totales, disclaimer legal y líneas de firma.
@@ -36,6 +40,10 @@
   - Mejora de navegación con botón de "Volver" en el detalle del cliente.
 
 ## 🧠 LEARNINGS
+## 2026-07-20 - Resumen de Cuenta Corriente del Cliente Impreso y Exportación CSV
+**Learning:** Ofrecer un resumen de cuenta corriente de cliente con soporte para impresión física o PDF permite una experiencia administrativa del taller sin fisuras. Mediante window.print() y estilos `@media print` scoped, se genera un documento elegante que reúne la deuda total y el detalle de OTs impagas. Asimismo, la exportación de listados de Clientes y Vehículos a formato CSV que respeta el filtrado y búsqueda del usuario actual con BOM UTF-8 y entrecomillado adecuado de campos simplifica enormemente la reportería en Excel.
+**Action:** Mantener la simetría de exportaciones PDF imprimibles y exportaciones de listados en formato CSV con BOM compatible con Excel en todo el sistema.
+
 ## 2026-07-19 - Resúmenes de Cuenta Autocontenidos y Listos para Imprimir
 **Learning:** Ofrecer capacidades de exportación rápida a PDF sin añadir dependencias de backend o pesadas librerías de renderizado se puede lograr elegantemente combinando `window.print()` nativo con un bloque `<style media="print">` localizado. De esta manera, el navegador hace todo el trabajo pesado garantizando el renderizado exacto de fuentes y colores. Además, diseñar el documento impreso como un recibo formal o resumen estructurado (con firmas y disclaimers legales) añade un inmenso valor profesional para los operadores del taller.
 **Action:** Usar estilos autocontenidos `@media print` y contenedores semánticos listos para impresión en módulos de informes u hojas de detalles.

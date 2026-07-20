@@ -12,6 +12,7 @@ import {
   Wallet,
   Plus,
   MessageSquare,
+  Download,
 } from "lucide-react";
 import Link from "next/link";
 import { type ColumnDef, type FilterFn } from "@tanstack/react-table";
@@ -33,6 +34,7 @@ interface Customer {
   phone: string | null;
   phoneAlt?: string | null;
   email?: string | null;
+  address?: string | null;
   balance: number;
   billingData?: unknown;
   vehicles: Array<{
@@ -77,6 +79,59 @@ export default function CustomersClient({
     if (!showOnlyWithBalance) return customers;
     return customers.filter((c) => c.balance !== 0);
   }, [customers, showOnlyWithBalance]);
+
+  const exportToCSV = useCallback(() => {
+    if (!filteredCustomers || filteredCustomers.length === 0) return;
+
+    const headers = [
+      "Nombre",
+      "Teléfono",
+      "Teléfono Alternativo",
+      "Email",
+      "Dirección",
+      "CUIT/CUIL",
+      "Tipo Factura",
+      "Saldo",
+      "Cantidad de OTs",
+      "Vehículos",
+    ];
+
+    const rows = filteredCustomers.map((c) => {
+      const cuit = isBillingData(c.billingData) ? c.billingData.cuit : "";
+      const invoiceType = isBillingData(c.billingData) ? c.billingData.invoiceType : "";
+      const plates = c.vehicles ? c.vehicles.map((v) => v.identifier).join(", ") : "";
+      return [
+        c.name,
+        c.phone || "",
+        c.phoneAlt || "",
+        c.email || "",
+        c.address || "",
+        cuit,
+        invoiceType,
+        c.balance.toFixed(2),
+        c._count.workOrders.toString(),
+        plates,
+      ];
+    });
+
+    const csvContent = "\ufeff" + [
+      headers.join(","),
+      ...rows.map((r) => r.map((field) => `"${field.replace(/"/g, '""')}"`).join(",")),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `reporte_clientes_${new Date().toISOString().split("T")[0]}.csv`,
+    );
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, [filteredCustomers]);
 
   const fetchCustomers = useCallback(async () => {
     setLoading(true);
@@ -368,6 +423,12 @@ export default function CustomersClient({
             variant: "outline",
             icon: TrendingDown,
           },
+          {
+            label: "Exportar CSV",
+            onClick: exportToCSV,
+            variant: "outline",
+            icon: Download,
+          },
         ]}
       />
 
@@ -389,6 +450,7 @@ export default function CustomersClient({
         createButtonText="Cliente"
         tableTitle="Listado de Clientes"
         searchPlaceholder="Buscar por nombre, CUIT, vehículo o patente..."
+        onExport={exportToCSV}
         rowActions={(customer) => (
           <Tooltip>
             <TooltipTrigger asChild>
