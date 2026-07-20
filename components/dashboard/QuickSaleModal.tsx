@@ -1,28 +1,47 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Search, Trash2, X, ShoppingCart, User, CreditCard, Phone, Mail, DollarSign } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { formatARS } from '@/lib/utils/format';
-import { ProductServiceSelector, type SelectedItem } from '@/components/ui/ProductServiceSelector';
-import { Stepper } from '@/components/ui/stepper';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Search,
+  Trash2,
+  X,
+  ShoppingCart,
+  User,
+  CreditCard,
+  Phone,
+  Mail,
+  DollarSign,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { formatARS } from "@/lib/utils/format";
+import {
+  ProductServiceSelector,
+  type SelectedItem,
+} from "@/components/ui/ProductServiceSelector";
+import { Stepper } from "@/components/ui/stepper";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { useMemo, useCallback } from 'react';
+} from "@/components/ui/tooltip";
+import { useMemo, useCallback } from "react";
 
 interface CartItem extends SelectedItem {
   totalPrice: number;
@@ -57,32 +76,38 @@ interface QuickSaleModalProps {
 }
 
 const QUICK_SALE_STEPS = [
-  { value: 1, label: 'Productos', icon: ShoppingCart },
-  { value: 2, label: 'Cliente', icon: User },
-  { value: 3, label: 'Pago', icon: CreditCard },
+  { value: 1, label: "Productos", icon: ShoppingCart },
+  { value: 2, label: "Cliente", icon: User },
+  { value: 3, label: "Pago", icon: CreditCard },
 ];
 
-export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModalProps) {
-  const [step, setStep] = useState<'search' | 'customer' | 'payment'>('search');
+export function QuickSaleModal({
+  open,
+  onOpenChange,
+  onSuccess,
+}: QuickSaleModalProps) {
+  const [step, setStep] = useState<"search" | "customer" | "payment">("search");
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [customerId, setCustomerId] = useState<string>('');
-  const [customerName, setCustomerName] = useState('Consumidor final');
+  const [customerId, setCustomerId] = useState<string>("");
+  const [customerName, setCustomerName] = useState("Consumidor final");
   const [payments, setPayments] = useState<Payment[]>([]);
-  const [paymentMethodId, setPaymentMethodId] = useState('');
+  const [paymentMethodId, setPaymentMethodId] = useState("");
   const [paymentAmount, setPaymentAmount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [priceLists, setPriceLists] = useState<PriceList[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [customerSearch, setCustomerSearch] = useState('');
-  const [foundCustomers, setFoundCustomers] = useState<Array<{ id: string; name: string; phone: string; balance?: number }>>([]);
+  const [customerSearch, setCustomerSearch] = useState("");
+  const [foundCustomers, setFoundCustomers] = useState<
+    Array<{ id: string; name: string; phone: string; balance?: number }>
+  >([]);
   const [customerBalance, setCustomerBalance] = useState<number>(0);
   const [creatingCustomer, setCreatingCustomer] = useState(false);
   const [newCustomerData, setNewCustomerData] = useState({
-    name: '',
-    phone: '',
-    email: '',
+    name: "",
+    phone: "",
+    email: "",
   });
   const [sellOnCredit, setSellOnCredit] = useState(false);
 
@@ -93,10 +118,14 @@ export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModal
 
   const currentStepNumber = useMemo(() => {
     switch (step) {
-      case 'search': return 1;
-      case 'customer': return 2;
-      case 'payment': return 3;
-      default: return 1;
+      case "search":
+        return 1;
+      case "customer":
+        return 2;
+      case "payment":
+        return 3;
+      default:
+        return 1;
     }
   }, [step]);
 
@@ -104,15 +133,18 @@ export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModal
   useEffect(() => {
     if (open) {
       const fetchData = async () => {
-        const [paymentMethodsRes, priceListsRes, categoriesRes] = await Promise.all([
-          fetch('/api/payment-methods'),
-          fetch('/api/price-lists'),
-          fetch('/api/categories'),
-        ]);
-        
+        const [paymentMethodsRes, priceListsRes, categoriesRes] =
+          await Promise.all([
+            fetch("/api/payment-methods"),
+            fetch("/api/price-lists"),
+            fetch("/api/categories"),
+          ]);
+
         if (paymentMethodsRes.ok) {
           const data = await paymentMethodsRes.json();
-          const methods = Array.isArray(data) ? data : (data.paymentMethods || []);
+          const methods = Array.isArray(data)
+            ? data
+            : data.paymentMethods || [];
           setPaymentMethods(methods);
           if (methods.length > 0) {
             setPaymentMethodId(methods[0].id);
@@ -135,22 +167,24 @@ export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModal
 
   // Handle selection changes from ProductServiceSelector - memoized to prevent loops
   const handleSelectionChange = useCallback((items: SelectedItem[]) => {
-    console.log('[QuickSaleModal] Received items from selector:', items.length);
+    console.log("[QuickSaleModal] Received items from selector:", items.length);
     // Calculate totalPrice for each item
-    const cartItems: CartItem[] = items.map(item => ({
+    const cartItems: CartItem[] = items.map((item) => ({
       ...item,
       totalPrice: item.unitPrice * item.quantity,
     }));
     setCart(cartItems);
   }, []);
-  
+
   // Memoize props for ProductServiceSelector to prevent unnecessary re-renders
   const memoizedCategories = useMemo(() => categories, [categories]);
   const memoizedPriceLists = useMemo(() => priceLists, [priceLists]);
 
   const searchCustomers = async () => {
     if (!customerSearch.trim()) return;
-    const res = await fetch(`/api/customers?search=${encodeURIComponent(customerSearch)}`);
+    const res = await fetch(
+      `/api/customers?search=${encodeURIComponent(customerSearch)}`,
+    );
     if (res.ok) {
       const data = await res.json();
       setFoundCustomers(data.customers || []);
@@ -160,9 +194,9 @@ export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModal
   const createCustomer = async () => {
     if (!newCustomerData.name || !newCustomerData.phone) return;
     try {
-      const res = await fetch('/api/customers', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/customers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newCustomerData),
       });
       if (res.ok) {
@@ -170,18 +204,21 @@ export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModal
         setCustomerId(customer.id);
         setCustomerName(customer.name);
         setCreatingCustomer(false);
-        setNewCustomerData({ name: '', phone: '', email: '' });
+        setNewCustomerData({ name: "", phone: "", email: "" });
         setFoundCustomers([]);
-        setCustomerSearch('');
+        setCustomerSearch("");
       }
     } catch (err) {
-      console.error('Error creating customer:', err);
+      console.error("Error creating customer:", err);
     }
   };
 
   const addPayment = () => {
     if (!paymentMethodId || paymentAmount <= 0) return;
-    const newPayments = [...payments, { paymentMethodId, amount: paymentAmount }];
+    const newPayments = [
+      ...payments,
+      { paymentMethodId, amount: paymentAmount },
+    ];
     setPayments(newPayments);
     const newTotalPaid = newPayments.reduce((sum, p) => sum + p.amount, 0);
     const newRemaining = total - newTotalPaid;
@@ -200,7 +237,7 @@ export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModal
 
   // Auto-fill payment amount when entering payment step
   useEffect(() => {
-    if (step === 'payment' && remaining > 0) {
+    if (step === "payment" && remaining > 0) {
       setPaymentAmount(remaining);
     }
   }, [step, remaining]);
@@ -218,16 +255,18 @@ export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModal
 
   const handleSubmit = async () => {
     if (cart.length === 0) return;
-    
+
     // For cash sales (not credit), require full payment
     if (!sellOnCredit && totalPaid < total) {
-      setError('El monto pagado es insuficiente. Active "Venta a cuenta corriente" si desea dejar saldo pendiente.');
+      setError(
+        'El monto pagado es insuficiente. Active "Venta a cuenta corriente" si desea dejar saldo pendiente.',
+      );
       return;
     }
-    
+
     // For credit sales, require customer selection
     if (sellOnCredit && !customerId) {
-      setError('Debe seleccionar un cliente para venta a cuenta corriente');
+      setError("Debe seleccionar un cliente para venta a cuenta corriente");
       return;
     }
 
@@ -235,15 +274,15 @@ export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModal
     setError(null);
 
     try {
-      const res = await fetch('/api/direct-sales', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/direct-sales", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           customerId: customerId || null,
           customerName: customerName,
           items: cart.map((item) => ({
-            productId: item.type === 'product' ? item.id : null,
-            serviceId: item.type === 'service' ? item.id : null,
+            productId: item.type === "product" ? item.id : null,
+            serviceId: item.type === "service" ? item.id : null,
             name: item.name,
             quantity: item.quantity,
             unitPrice: item.unitPrice,
@@ -257,13 +296,13 @@ export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModal
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || 'Error al crear la venta');
+        throw new Error(data.error || "Error al crear la venta");
       }
 
       onSuccess?.();
       handleClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al crear la venta');
+      setError(err instanceof Error ? err.message : "Error al crear la venta");
     } finally {
       setLoading(false);
     }
@@ -272,13 +311,13 @@ export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModal
   const handleClose = () => {
     if (!loading) {
       setCart([]);
-      setCustomerId('');
-      setCustomerName('Consumidor final');
+      setCustomerId("");
+      setCustomerName("Consumidor final");
       setCustomerBalance(0);
       setPayments([]);
       setPaymentAmount(0);
       setSellOnCredit(false);
-      setStep('search');
+      setStep("search");
       setError(null);
       onOpenChange(false);
     }
@@ -296,9 +335,9 @@ export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModal
             currentStep={currentStepNumber}
             steps={QUICK_SALE_STEPS}
             onStepClick={(s) => {
-              if (s === 1) setStep('search');
-              if (s === 2 && cart.length > 0) setStep('customer');
-              if (s === 3 && cart.length > 0) setStep('payment');
+              if (s === 1) setStep("search");
+              if (s === 2 && cart.length > 0) setStep("customer");
+              if (s === 3 && cart.length > 0) setStep("payment");
             }}
           />
         </div>
@@ -310,7 +349,7 @@ export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModal
         )}
 
         {/* Step 1: Search and Add Items */}
-        {step === 'search' && (
+        {step === "search" && (
           <div className="space-y-4">
             {/* ProductServiceSelector - Search and Cart */}
             <ProductServiceSelector
@@ -323,11 +362,15 @@ export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModal
             />
 
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={handleClose} disabled={loading}>
+              <Button
+                variant="outline"
+                onClick={handleClose}
+                disabled={loading}
+              >
                 Cancelar
               </Button>
               <Button
-                onClick={() => setStep('customer')}
+                onClick={() => setStep("customer")}
                 disabled={cart.length === 0 || loading}
               >
                 Continuar
@@ -337,27 +380,30 @@ export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModal
         )}
 
         {/* Step 2: Customer */}
-        {step === 'customer' && (
+        {step === "customer" && (
           <div className="space-y-4">
             {/* Customer Search/Create */}
             <div>
-              <Label>Cliente (opcional)</Label>
+              <Label htmlFor="customer-search-input">Cliente (opcional)</Label>
               {!customerId && !creatingCustomer && (
                 <div className="space-y-2 mt-2">
                   <div className="flex gap-2">
                     <div className="relative flex-1">
                       <Input
+                        id="customer-search-input"
                         placeholder="Buscar cliente por nombre o teléfono..."
                         value={customerSearch}
                         onChange={(e) => setCustomerSearch(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && searchCustomers()}
+                        onKeyDown={(e) =>
+                          e.key === "Enter" && searchCustomers()
+                        }
                         className={cn("pr-10")}
                       />
                       {customerSearch && (
                         <button
                           type="button"
                           onClick={() => {
-                            setCustomerSearch('');
+                            setCustomerSearch("");
                             setFoundCustomers([]);
                           }}
                           className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
@@ -403,12 +449,14 @@ export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModal
                             setCustomerName(customer.name);
                             setCustomerBalance(customer.balance || 0);
                             setFoundCustomers([]);
-                            setCustomerSearch('');
+                            setCustomerSearch("");
                           }}
                           className="w-full p-3 text-left hover:bg-muted transition-colors"
                         >
                           <div className="font-medium">{customer.name}</div>
-                          <div className="text-sm text-muted-foreground">{customer.phone}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {customer.phone}
+                          </div>
                           {customer.balance && customer.balance > 0 && (
                             <div className="text-xs text-red-700 mt-1">
                               Saldo pendiente: {formatARS(customer.balance)}
@@ -424,26 +472,46 @@ export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModal
               {creatingCustomer && (
                 <div className="space-y-3 mt-2 border p-4 rounded-md">
                   <div className="space-y-2">
-                    <Label htmlFor="cust-name" required>Nombre</Label>
+                    <Label htmlFor="cust-name" required>
+                      Nombre
+                    </Label>
                     <div className="relative">
-                      <User className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <User
+                        className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none z-10"
+                        aria-hidden="true"
+                      />
                       <Input
                         id="cust-name"
                         value={newCustomerData.name}
-                        onChange={(e) => setNewCustomerData({ ...newCustomerData, name: e.target.value })}
+                        onChange={(e) =>
+                          setNewCustomerData({
+                            ...newCustomerData,
+                            name: e.target.value,
+                          })
+                        }
                         placeholder="Nombre del cliente"
                         className="pl-9"
                       />
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="cust-phone" required>Teléfono</Label>
+                    <Label htmlFor="cust-phone" required>
+                      Teléfono
+                    </Label>
                     <div className="relative">
-                      <Phone className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Phone
+                        className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none z-10"
+                        aria-hidden="true"
+                      />
                       <Input
                         id="cust-phone"
                         value={newCustomerData.phone}
-                        onChange={(e) => setNewCustomerData({ ...newCustomerData, phone: e.target.value })}
+                        onChange={(e) =>
+                          setNewCustomerData({
+                            ...newCustomerData,
+                            phone: e.target.value,
+                          })
+                        }
                         placeholder="Teléfono"
                         className="pl-9"
                       />
@@ -452,11 +520,19 @@ export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModal
                   <div className="space-y-2">
                     <Label htmlFor="cust-email">Email</Label>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Mail
+                        className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none z-10"
+                        aria-hidden="true"
+                      />
                       <Input
                         id="cust-email"
                         value={newCustomerData.email}
-                        onChange={(e) => setNewCustomerData({ ...newCustomerData, email: e.target.value })}
+                        onChange={(e) =>
+                          setNewCustomerData({
+                            ...newCustomerData,
+                            email: e.target.value,
+                          })
+                        }
                         placeholder="Email (opcional)"
                         className="pl-9"
                       />
@@ -470,7 +546,7 @@ export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModal
                       variant="outline"
                       onClick={() => {
                         setCreatingCustomer(false);
-                        setNewCustomerData({ name: '', phone: '', email: '' });
+                        setNewCustomerData({ name: "", phone: "", email: "" });
                       }}
                     >
                       Cancelar
@@ -488,8 +564,8 @@ export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModal
                     variant="ghost"
                     size="sm"
                     onClick={() => {
-                      setCustomerId('');
-                      setCustomerName('Consumidor final');
+                      setCustomerId("");
+                      setCustomerName("Consumidor final");
                     }}
                     aria-label="Cambiar cliente"
                   >
@@ -500,13 +576,14 @@ export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModal
             </div>
 
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setStep('search')} disabled={loading}>
-                Atrás
-              </Button>
               <Button
-                onClick={() => setStep('payment')}
+                variant="outline"
+                onClick={() => setStep("search")}
                 disabled={loading}
               >
+                Atrás
+              </Button>
+              <Button onClick={() => setStep("payment")} disabled={loading}>
                 Continuar
               </Button>
             </div>
@@ -514,7 +591,7 @@ export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModal
         )}
 
         {/* Step 3: Payment */}
-        {step === 'payment' && (
+        {step === "payment" && (
           <div className="space-y-4">
             {/* Payment Summary */}
             <div className="bg-slate-50 p-4 rounded-md">
@@ -524,26 +601,38 @@ export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModal
               </div>
               <div className="flex justify-between items-center mt-2">
                 <span className="text-sm text-muted-foreground">Pagado</span>
-                <span className="text-lg font-semibold">{formatARS(totalPaid)}</span>
+                <span className="text-lg font-semibold">
+                  {formatARS(totalPaid)}
+                </span>
               </div>
               <div className="flex justify-between items-center mt-2">
                 <span className="text-sm text-muted-foreground">Restante</span>
-                <span className={`text-lg font-semibold ${remaining > 0 ? 'text-red-700' : 'text-emerald-700'}`}>
+                <span
+                  className={`text-lg font-semibold ${remaining > 0 ? "text-red-700" : "text-emerald-700"}`}
+                >
                   {formatARS(remaining)}
                 </span>
               </div>
-              
+
               {/* Customer Balance Info */}
               {customerId && customerBalance > 0 && (
                 <div className="mt-3 pt-3 border-t border-slate-200">
                   <div className="flex justify-between items-center text-sm">
-                    <span className="text-muted-foreground">Saldo actual cliente:</span>
-                    <span className="text-red-700 font-medium">{formatARS(customerBalance)}</span>
+                    <span className="text-muted-foreground">
+                      Saldo actual cliente:
+                    </span>
+                    <span className="text-red-700 font-medium">
+                      {formatARS(customerBalance)}
+                    </span>
                   </div>
                   {sellOnCredit && remaining > 0 && (
                     <div className="flex justify-between items-center text-sm mt-1">
-                      <span className="text-muted-foreground">Nuevo saldo sería:</span>
-                      <span className="text-red-700 font-bold">{formatARS(newBalanceIfCredit)}</span>
+                      <span className="text-muted-foreground">
+                        Nuevo saldo sería:
+                      </span>
+                      <span className="text-red-700 font-bold">
+                        {formatARS(newBalanceIfCredit)}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -565,41 +654,74 @@ export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModal
             )}
 
             {/* Add Payment Form */}
-            <div className="space-y-2">
-              <Label htmlFor="payment-amount">Agregar pago</Label>
-              <div className="flex gap-2">
-                <Select value={paymentMethodId} onValueChange={setPaymentMethodId}>
-                  <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Medio de pago" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {paymentMethods.map((method) => (
-                      <SelectItem key={method.id} value={method.id}>
-                        {method.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <div className="relative w-32">
-                  <DollarSign className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="payment-amount"
-                    type="number"
-                    placeholder="Monto"
-                    value={paymentAmount || ''}
-                    onChange={(e) => setPaymentAmount(Number(e.target.value))}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && paymentMethodId && paymentAmount > 0) {
-                        e.preventDefault();
-                        addPayment();
-                      }
-                    }}
-                    className="pl-9"
-                  />
+            <div className="space-y-3 p-4 border rounded-md bg-slate-50/50">
+              <span className="text-sm font-semibold text-muted-foreground block">
+                Agregar pago
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+                <div className="sm:col-span-5 space-y-1.5">
+                  <Label htmlFor="payment-method-select" className="text-xs">
+                    Medio de pago
+                  </Label>
+                  <Select
+                    value={paymentMethodId}
+                    onValueChange={setPaymentMethodId}
+                  >
+                    <SelectTrigger
+                      id="payment-method-select"
+                      className="w-full bg-background"
+                      aria-label="Seleccionar medio de pago"
+                    >
+                      <SelectValue placeholder="Seleccionar..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {paymentMethods.map((method) => (
+                        <SelectItem key={method.id} value={method.id}>
+                          {method.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-                <Button onClick={addPayment} disabled={!paymentMethodId || paymentAmount <= 0}>
-                  Registrar pago
-                </Button>
+                <div className="sm:col-span-4 space-y-1.5">
+                  <Label htmlFor="payment-amount" className="text-xs">
+                    Monto a pagar
+                  </Label>
+                  <div className="relative">
+                    <DollarSign
+                      className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none z-10"
+                      aria-hidden="true"
+                    />
+                    <Input
+                      id="payment-amount"
+                      type="number"
+                      placeholder="0"
+                      value={paymentAmount || ""}
+                      onChange={(e) => setPaymentAmount(Number(e.target.value))}
+                      onKeyDown={(e) => {
+                        if (
+                          e.key === "Enter" &&
+                          paymentMethodId &&
+                          paymentAmount > 0
+                        ) {
+                          e.preventDefault();
+                          addPayment();
+                        }
+                      }}
+                      className="pl-9 bg-background"
+                    />
+                  </div>
+                </div>
+                <div className="sm:col-span-3">
+                  <Button
+                    onClick={addPayment}
+                    disabled={!paymentMethodId || paymentAmount <= 0}
+                    className="w-full"
+                    aria-label="Registrar pago ingresado"
+                  >
+                    Registrar pago
+                  </Button>
+                </div>
               </div>
             </div>
 
@@ -609,14 +731,23 @@ export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModal
                 <div className="p-3 border-b bg-muted font-medium">Pagos</div>
                 <div className="divide-y">
                   {payments.map((payment, index) => {
-                    const method = paymentMethods.find(m => m.id === payment.paymentMethodId);
+                    const method = paymentMethods.find(
+                      (m) => m.id === payment.paymentMethodId,
+                    );
                     return (
-                      <div key={index} className="p-3 flex justify-between items-center">
+                      <div
+                        key={index}
+                        className="p-3 flex justify-between items-center"
+                      >
                         <div>
-                          <div className="font-medium">{method?.name || 'Desconocido'}</div>
+                          <div className="font-medium">
+                            {method?.name || "Desconocido"}
+                          </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="font-semibold">{formatARS(payment.amount)}</span>
+                          <span className="font-semibold">
+                            {formatARS(payment.amount)}
+                          </span>
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button
@@ -640,16 +771,28 @@ export function QuickSaleModal({ open, onOpenChange, onSuccess }: QuickSaleModal
             )}
 
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setStep('customer')} disabled={loading}>
+              <Button
+                variant="outline"
+                onClick={() => setStep("customer")}
+                disabled={loading}
+              >
                 Atrás
               </Button>
               <Button
                 onClick={handleSubmit}
                 loading={loading}
-                disabled={loading || (!sellOnCredit && (payments.length === 0 || totalPaid < total))}
-                className={sellOnCredit ? 'bg-amber-600 hover:bg-amber-700' : ''}
+                disabled={
+                  loading ||
+                  (!sellOnCredit &&
+                    (payments.length === 0 || totalPaid < total))
+                }
+                className={
+                  sellOnCredit ? "bg-amber-600 hover:bg-amber-700" : ""
+                }
               >
-                {sellOnCredit ? 'Confirmar Venta a Cuenta Corriente' : 'Confirmar Venta'}
+                {sellOnCredit
+                  ? "Confirmar Venta a Cuenta Corriente"
+                  : "Confirmar Venta"}
               </Button>
             </div>
           </div>
