@@ -201,17 +201,20 @@ export default function SalesReportClient() {
         (item.count > 0 ? item.total / item.count : 0).toFixed(2),
       ]);
 
-    const csvContent =
-      "data:text/csv;charset=utf-8," +
-      [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    const csvContent = "\ufeff" + [
+      headers.join(","),
+      ...rows.map((r) => r.map((field) => `"${field.replace(/"/g, '""')}"`).join(",")),
+    ].join("\n");
 
-    const encodedUri = encodeURI(csvContent);
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
     link.setAttribute(
       "download",
       `reporte_ventas_${period}_${new Date().toISOString().split("T")[0]}.csv`,
     );
+    link.style.visibility = "hidden";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
