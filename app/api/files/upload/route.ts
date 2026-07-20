@@ -5,7 +5,7 @@
  * Categories: products, vehicles, receipts, documents, general
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { withAdmin } from '@/lib/api-middleware';
+import { withStaff } from '@/lib/api-middleware';
 import { uploadFile, FileCategory } from '@/lib/services/githubCdnService';
 
  
@@ -102,9 +102,9 @@ async function downloadFromUrl(url: string): Promise<{ buffer: Buffer; mimeType:
   return { buffer, mimeType, size: buffer.length };
 }
 
-// POST /api/files/upload - Upload file (requiere ADMIN)
+// POST /api/files/upload - Upload file (requiere STAFF o superior)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const POST = withAdmin(async (request: NextRequest, _session) => {
+export const POST = withStaff(async (request: NextRequest, _session) => {
   try {
     const formData = await request.formData();
     
@@ -235,9 +235,9 @@ export const POST = withAdmin(async (request: NextRequest, _session) => {
   }
 });
 
-// GET /api/files/upload?category=x&id=y&ext=z - Get CDN URL without uploading (requiere ADMIN)
+// GET /api/files/upload?category=x&id=y&ext=z - Get CDN URL without uploading (requiere STAFF o superior)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const GET = withAdmin(async (request: NextRequest, _session) => {
+export const GET = withStaff(async (request: NextRequest, _session) => {
   try {
     const { searchParams } = new URL(request.url);
     const category = searchParams.get('category') as FileCategory;

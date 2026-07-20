@@ -274,6 +274,9 @@ export default function WorkOrderDetailPage() {
   const [loading, setLoading] = useState(true);
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+  const [uploadingEntry, setUploadingEntry] = useState(false);
+  const [uploadingExit, setUploadingExit] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [payments, setPayments] = useState<
     Array<{
       id: string;
@@ -306,6 +309,34 @@ export default function WorkOrderDetailPage() {
   const [savingNotes, setSavingNotes] = useState(false);
   const [newScheduledDate, setNewScheduledDate] = useState<string>("");
   const [newNotes, setNewNotes] = useState<string>("");
+
+  const lightboxPhotos = useMemo(() => {
+    const list: Array<{ url: string; type: "ENTRY" | "EXIT"; label: string }> = [];
+    workOrder?.entryPhotos?.forEach((url, i) => {
+      list.push({ url, type: "ENTRY", label: `Ingreso #${i + 1}` });
+    });
+    workOrder?.exitPhotos?.forEach((url, i) => {
+      list.push({ url, type: "EXIT", label: `Egreso #${i + 1}` });
+    });
+    return list;
+  }, [workOrder]);
+
+  useEffect(() => {
+    if (lightboxIndex === null) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowRight") {
+        setLightboxIndex((prev) =>
+          prev !== null && prev < lightboxPhotos.length - 1 ? prev + 1 : prev
+        );
+      } else if (e.key === "ArrowLeft") {
+        setLightboxIndex((prev) => (prev !== null && prev > 0 ? prev - 1 : prev));
+      } else if (e.key === "Escape") {
+        setLightboxIndex(null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [lightboxIndex, lightboxPhotos]);
   const [isCashOpen, setIsCashOpen] = useState<boolean | null>(null);
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loadingInvoices, setLoadingInvoices] = useState(false);
@@ -541,6 +572,98 @@ export default function WorkOrderDetailPage() {
       });
     } finally {
       setSavingChecklist(false);
+    }
+  };
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: "ENTRY" | "EXIT") => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    if (type === "ENTRY") setUploadingEntry(true);
+    else setUploadingExit(true);
+
+    const totalFiles = files.length;
+    let successCount = 0;
+    const toastId = toast.loading(`Subiendo ${totalFiles} foto(s)...`);
+
+    try {
+      for (let i = 0; i < totalFiles; i++) {
+        const file = files[i];
+
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("category", "vehicles");
+        formData.append("id", `${workOrderId}-${type.toLowerCase()}-${Date.now()}-${i}`);
+
+        const uploadRes = await fetch("/api/files/upload", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!uploadRes.ok) {
+          throw new Error(`Error subiendo archivo ${file.name}`);
+        }
+
+        const uploadData = await uploadRes.json();
+        const cdnUrl = uploadData.urls?.cdn;
+
+        if (!cdnUrl) {
+          throw new Error(`No se recibió URL CDN para ${file.name}`);
+        }
+
+        const registerRes = await fetch(`/api/work-orders/${workOrderId}/photos`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type,
+            url: cdnUrl,
+            description: `Foto de ${type === "ENTRY" ? "ingreso" : "egreso"}`,
+          }),
+        });
+
+        if (!registerRes.ok) {
+          throw new Error(`Error registrando foto ${file.name}`);
+        }
+
+        successCount++;
+      }
+
+      toast.success(`${successCount} foto(s) subida(s) y registrada(s) con éxito`, { id: toastId });
+      await fetchWorkOrder();
+      void fetchAuditLogs();
+    } catch (error: any) {
+      console.error("Error in photo upload process:", error);
+      toast.error(error?.message || "Ocurrió un error al subir las fotos", { id: toastId });
+    } finally {
+      if (type === "ENTRY") setUploadingEntry(false);
+      else setUploadingExit(false);
+      e.target.value = "";
+    }
+  };
+
+  const handlePhotoDelete = async (url: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const confirmed = window.confirm("¿Estás seguro de que deseas eliminar esta foto?");
+    if (!confirmed) return;
+
+    const toastId = toast.loading("Eliminando foto...");
+    try {
+      const res = await fetch(`/api/work-orders/${workOrderId}/photos?url=${encodeURIComponent(url)}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        throw new Error("No se pudo eliminar la foto");
+      }
+
+      toast.success("Foto eliminada con éxito", { id: toastId });
+      await fetchWorkOrder();
+      void fetchAuditLogs();
+    } catch (error: any) {
+      console.error("Error deleting photo:", error);
+      toast.error(error?.message || "Error al eliminar la foto", { id: toastId });
     }
   };
 
@@ -2000,28 +2123,75 @@ export default function WorkOrderDetailPage() {
           <div className="grid md:grid-cols-2 gap-4">
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Camera className="h-4 w-4" />
-                  Fotos de Ingreso
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Camera className="h-4 w-4 text-blue-500" />
+                    Fotos de Ingreso
+                  </CardTitle>
+                  {workOrder.status !== "DELIVERED" && (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="file"
+                        id="entry-photo-upload"
+                        multiple
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => handlePhotoUpload(e, "ENTRY")}
+                      />
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => document.getElementById("entry-photo-upload")?.click()}
+                        disabled={uploadingEntry}
+                      >
+                        {uploadingEntry ? (
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        ) : (
+                          <Plus className="h-4 w-4 mr-2" />
+                        )}
+                        Cargar Fotos
+                      </Button>
+                    </div>
+                  )}
+                </div>
               </CardHeader>
               <CardContent>
                 {workOrder.entryPhotos.length > 0 ? (
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {workOrder.entryPhotos.map((url, index) => (
-                      <Image
+                      <div
                         key={index}
-                        src={url}
-                        alt={`Ingreso ${index + 1}`}
-                        width={300}
-                        height={160}
-                        className="rounded-lg max-h-40 object-cover w-full"
-                      />
+                        className="relative group overflow-hidden rounded-lg border aspect-video cursor-pointer"
+                        onClick={() => {
+                          const idx = lightboxPhotos.findIndex((item) => item.url === url && item.type === "ENTRY");
+                          if (idx !== -1) setLightboxIndex(idx);
+                        }}
+                      >
+                        <Image
+                          src={url}
+                          alt={`Ingreso ${index + 1}`}
+                          width={300}
+                          height={160}
+                          className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
+                        />
+                        {workOrder.status !== "DELIVERED" && (
+                          <Button
+                            variant="destructive"
+                            size="icon"
+                            className="absolute top-1.5 right-1.5 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10"
+                            onClick={(e) => handlePhotoDelete(url, e)}
+                            title="Eliminar foto"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                      </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="text-muted-foreground py-8 text-center">
-                    Sin fotos de ingreso
+                  <div className="text-muted-foreground py-12 text-center border-2 border-dashed rounded-lg bg-muted/20">
+                    <Camera className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
+                    Sin fotos de ingreso registradas
                   </div>
                 )}
               </CardContent>
@@ -2029,28 +2199,75 @@ export default function WorkOrderDetailPage() {
 
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Camera className="h-4 w-4" />
-                  Fotos de Egreso
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Camera className="h-4 w-4 text-green-500" />
+                    Fotos de Egreso
+                  </CardTitle>
+                  {workOrder.status !== "DELIVERED" && (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="file"
+                        id="exit-photo-upload"
+                        multiple
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => handlePhotoUpload(e, "EXIT")}
+                      />
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => document.getElementById("exit-photo-upload")?.click()}
+                        disabled={uploadingExit}
+                      >
+                        {uploadingExit ? (
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        ) : (
+                          <Plus className="h-4 w-4 mr-2" />
+                        )}
+                        Cargar Fotos
+                      </Button>
+                    </div>
+                  )}
+                </div>
               </CardHeader>
               <CardContent>
                 {workOrder.exitPhotos.length > 0 ? (
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {workOrder.exitPhotos.map((url, index) => (
-                      <Image
+                      <div
                         key={index}
-                        src={url}
-                        alt={`Egreso ${index + 1}`}
-                        width={300}
-                        height={160}
-                        className="rounded-lg max-h-40 object-cover w-full"
-                      />
+                        className="relative group overflow-hidden rounded-lg border aspect-video cursor-pointer"
+                        onClick={() => {
+                          const idx = lightboxPhotos.findIndex((item) => item.url === url && item.type === "EXIT");
+                          if (idx !== -1) setLightboxIndex(idx);
+                        }}
+                      >
+                        <Image
+                          src={url}
+                          alt={`Egreso ${index + 1}`}
+                          width={300}
+                          height={160}
+                          className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
+                        />
+                        {workOrder.status !== "DELIVERED" && (
+                          <Button
+                            variant="destructive"
+                            size="icon"
+                            className="absolute top-1.5 right-1.5 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10"
+                            onClick={(e) => handlePhotoDelete(url, e)}
+                            title="Eliminar foto"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                      </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="text-muted-foreground py-8 text-center">
-                    Sin fotos de egreso
+                  <div className="text-muted-foreground py-12 text-center border-2 border-dashed rounded-lg bg-muted/20">
+                    <Camera className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
+                    Sin fotos de egreso registradas
                   </div>
                 )}
               </CardContent>
@@ -2256,6 +2473,82 @@ export default function WorkOrderDetailPage() {
             fetchAuditLogs();
           }}
         />
+      )}
+
+      {/* Fullscreen Lightbox Modal */}
+      {lightboxIndex !== null && lightboxPhotos[lightboxIndex] && (
+        <div className="fixed inset-0 bg-black/90 z-50 flex flex-col justify-between p-4 md:p-6 transition-all animate-in fade-in duration-200">
+          {/* Header controls */}
+          <div className="flex items-center justify-between text-white select-none">
+            <span className="text-sm font-medium font-mono">
+              {lightboxPhotos[lightboxIndex].label} ({lightboxIndex + 1} de {lightboxPhotos.length})
+            </span>
+            <div className="flex items-center gap-2">
+              <a
+                href={lightboxPhotos[lightboxIndex].url}
+                target="_blank"
+                rel="noreferrer"
+                download
+                className="p-2 hover:bg-white/10 rounded-full transition-colors text-white"
+                title="Descargar imagen"
+              >
+                <FileDown className="h-5 w-5" />
+              </a>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setLightboxIndex(null)}
+                className="text-white hover:bg-white/10 rounded-full h-9 w-9"
+                title="Cerrar (Esc)"
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Main area */}
+          <div className="flex-1 flex items-center justify-center relative my-4">
+            {/* Left navigation */}
+            {lightboxIndex > 0 && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setLightboxIndex((prev) => prev !== null ? prev - 1 : null)}
+                className="absolute left-2 md:left-4 z-10 text-white bg-black/20 hover:bg-white/10 rounded-full h-11 w-11"
+                title="Anterior (←)"
+              >
+                <Undo2 className="h-6 w-6 rotate-180" />
+              </Button>
+            )}
+
+            {/* Image */}
+            <div className="relative max-w-full max-h-[75vh] md:max-h-[80vh] aspect-video w-full flex items-center justify-center">
+              <img
+                src={lightboxPhotos[lightboxIndex].url}
+                alt={lightboxPhotos[lightboxIndex].label}
+                className="max-w-full max-h-full object-contain rounded-md shadow-2xl"
+              />
+            </div>
+
+            {/* Right navigation */}
+            {lightboxIndex < lightboxPhotos.length - 1 && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setLightboxIndex((prev) => prev !== null ? prev + 1 : null)}
+                className="absolute right-2 md:right-4 z-10 text-white bg-black/20 hover:bg-white/10 rounded-full h-11 w-11"
+                title="Siguiente (→)"
+              >
+                <Undo2 className="h-6 w-6 scale-x-[-1]" />
+              </Button>
+            )}
+          </div>
+
+          {/* Footer description */}
+          <div className="text-center text-white/70 text-xs py-2 font-mono">
+            {lightboxPhotos[lightboxIndex].type === "ENTRY" ? "Foto tomada al ingreso del vehículo" : "Foto tomada al egreso del vehículo"}
+          </div>
+        </div>
       )}
     </div>
   );
