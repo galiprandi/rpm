@@ -13,6 +13,7 @@ import {
   ExternalLink,
   Clock,
   RefreshCw,
+  Download,
 } from "lucide-react";
 import { formatARS } from "@/lib/utils/format";
 import { StockReportData } from "@/lib/services/stockReportService";
@@ -55,6 +56,68 @@ export default function StockReportClient() {
     fetchReport();
   }, []);
 
+  const exportToCSV = () => {
+    if (!data) return;
+
+    const sections: string[] = [];
+
+    // 1. Resumen de Inventario
+    sections.push("Resumen de Inventario");
+    sections.push("Métrica,Valor,Detalle");
+    sections.push(`Valor Total Stock,${data.totalValue.toFixed(2)},A costo de reposición`);
+    sections.push(`Rotación de Stock,${data.inventoryTurnover.toFixed(2)}x,Anualizado (base 30 días)`);
+    sections.push(`Stock Inmovilizado,${data.deadStockValue.toFixed(2)},"${data.deadStockCount} productos sin movimiento (90d)"`);
+    sections.push(`Unidades en Stock,${data.totalProducts},"${data.activeProducts} productos activos"`);
+    sections.push(`Alertas de Stock,${data.lowStockCount},Productos bajo stock mínimo`);
+    sections.push("");
+
+    // 2. Distribución por Categoría
+    sections.push("Distribución por Categoría");
+    sections.push("Categoría,Cantidad de Productos,Valorización");
+    data.categoryDistribution.forEach((cat) => {
+      sections.push(`"${cat.name.replace(/"/g, '""')}",${cat.count},${cat.value.toFixed(2)}`);
+    });
+    sections.push("");
+
+    // 3. Productos con Mayor Capital Inmovilizado
+    sections.push("Productos con Mayor Capital Inmovilizado");
+    sections.push("ID,Producto,Stock,Valorización");
+    data.topValuedProducts.forEach((prod) => {
+      sections.push(`"${prod.id}","${prod.name.replace(/"/g, '""')}",${prod.stock},${prod.value.toFixed(2)}`);
+    });
+    sections.push("");
+
+    // 4. Alertas de Reposición
+    sections.push("Alertas de Reposición");
+    sections.push("ID,Producto,Stock Actual,Stock Mínimo,Categoría");
+    data.lowStockProducts.forEach((prod) => {
+      sections.push(`"${prod.id}","${prod.name.replace(/"/g, '""')}",${prod.stock},${prod.minStock},"${prod.category.replace(/"/g, '""')}"`);
+    });
+    sections.push("");
+
+    // 5. Productos Inmovilizados (Sin Movimiento 90 días)
+    sections.push("Productos Inmovilizados (Sin Movimiento 90 días)");
+    sections.push("ID,Producto,Stock,Valor,Último Movimiento");
+    data.deadStockProducts.forEach((prod) => {
+      const lastMov = prod.lastMovement ? new Date(prod.lastMovement).toLocaleDateString("es-AR") : "Sin movimientos";
+      sections.push(`"${prod.id}","${prod.name.replace(/"/g, '""')}",${prod.stock},${prod.value.toFixed(2)},"${lastMov}"`);
+    });
+
+    const csvContent = "\ufeff" + sections.join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `reporte_stock_${new Date().toISOString().split("T")[0]}.csv`
+    );
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -85,6 +148,15 @@ export default function StockReportClient() {
         <Header
           title="Stock & Inventario"
           description="Valorización de stock, rotación y alertas de reposición."
+          secondaryActions={[
+            {
+              label: "Exportar CSV",
+              onClick: exportToCSV,
+              disabled: loading || !data,
+              icon: Download,
+              variant: "outline",
+            },
+          ]}
         />
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
