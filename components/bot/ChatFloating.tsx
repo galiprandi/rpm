@@ -141,7 +141,16 @@ export function ChatFloating({
 
   const isSubmitting = status === "submitted" || status === "streaming";
 
-  const quickSuggestions = [
+  const lastAssistantMessageId = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === "assistant") {
+        return messages[i].id;
+      }
+    }
+    return null;
+  }, [messages]);
+
+  const quickSuggestions = useMemo(() => [
     { label: "📦 Consultar Stock", text: "¿Hay stock de luces LED?" },
     { label: "🔧 Ver OTs de hoy", text: "Ver órdenes de trabajo de hoy" },
     { label: "💰 Ver Caja de hoy", text: "Ver estado de caja de hoy" },
@@ -149,13 +158,13 @@ export function ChatFloating({
       label: "📝 Registrar Venta",
       text: "Quiero registrar una venta directa de mostrador",
     },
-  ];
+  ], []);
 
-  const handleSuggestionClick = async (text: string) => {
+  const handleSuggestionClick = useCallback(async (text: string) => {
     if (isSubmitting) return;
     setLocalInput("");
     await sendMessage({ text });
-  };
+  }, [isSubmitting, sendMessage]);
 
   const handleActionClick = async (action: string) => {
     if (isSubmitting) return;
@@ -240,11 +249,24 @@ export function ChatFloating({
         setIsOpen(false);
         return;
       }
+
+      // Alt+1 to Alt+4 to trigger quick suggestions when conversation is empty
+      if (e.altKey && messages.length === 0) {
+        const num = parseInt(e.key);
+        if (num >= 1 && num <= 4) {
+          e.preventDefault();
+          const suggestion = quickSuggestions[num - 1];
+          if (suggestion) {
+            handleSuggestionClick(suggestion.text);
+          }
+          return;
+        }
+      }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, setIsOpen]);
+  }, [isOpen, setIsOpen, messages.length, quickSuggestions, handleSuggestionClick]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -402,14 +424,17 @@ export function ChatFloating({
                         key={idx}
                         type="button"
                         onClick={() => handleSuggestionClick(s.text)}
-                        className="text-left text-xs bg-muted/50 hover:bg-primary/5 hover:text-primary border hover:border-primary/20 rounded-lg p-3 transition-all duration-200 cursor-pointer active:scale-95 flex flex-col justify-between h-20 shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                        className="relative text-left text-xs bg-muted/50 hover:bg-primary/5 hover:text-primary border hover:border-primary/20 rounded-lg p-3 transition-all duration-200 cursor-pointer active:scale-95 flex flex-col justify-between h-20 shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                       >
-                        <span className="font-semibold text-foreground/90">
+                        <span className="font-semibold text-foreground/90 pr-10">
                           {s.label}
                         </span>
                         <span className="text-[10px] text-muted-foreground line-clamp-2 mt-1 leading-snug">
                           {s.text}
                         </span>
+                        <kbd className="absolute top-2 right-2 px-1 text-[9px] font-mono rounded bg-background border border-muted-foreground/20 text-muted-foreground select-none">
+                          Alt+{idx + 1}
+                        </kbd>
                       </button>
                     ))}
                   </div>
@@ -447,7 +472,7 @@ export function ChatFloating({
                                   key={i}
                                   text={part.text}
                                   onAction={handleActionClick}
-                                  disabled={isSubmitting}
+                                  disabled={isSubmitting || message.id !== lastAssistantMessageId}
                                 />
                               );
                             }
