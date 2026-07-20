@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Header } from '@/components/adm/Header';
 import { DataTable } from '@/components/ui/data-table';
-import { FileText, Search, RefreshCw, Send, Download, Eye, XCircle } from 'lucide-react';
+import { FileText, Search, RefreshCw, Send, Download, Eye, XCircle, Calendar, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
@@ -23,6 +23,8 @@ export default function InvoicesPage() {
     type: '',
     status: '',
     search: '',
+    startDate: '',
+    endDate: '',
   });
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
 
@@ -33,6 +35,8 @@ export default function InvoicesPage() {
       if (filters.type) queryParams.append('type', filters.type);
       if (filters.status) queryParams.append('status', filters.status);
       if (filters.search) queryParams.append('search', filters.search);
+      if (filters.startDate) queryParams.append('startDate', filters.startDate);
+      if (filters.endDate) queryParams.append('endDate', filters.endDate);
 
       const response = await fetch(`/api/invoices?${queryParams.toString()}`);
       if (response.ok) {
@@ -51,7 +55,7 @@ export default function InvoicesPage() {
 
   useEffect(() => {
     fetchInvoices();
-  }, [filters.type, filters.status]);
+  }, [filters.type, filters.status, filters.startDate, filters.endDate]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -310,13 +314,90 @@ export default function InvoicesPage() {
     });
   }
 
+  const handleExportCSV = () => {
+    if (invoices.length === 0) {
+      toast.error('No hay comprobantes para exportar');
+      return;
+    }
+
+    const headers = [
+      'Número',
+      'Tipo',
+      'Cliente',
+      'Tipo Doc.',
+      'Número Doc.',
+      'Fecha',
+      'Subtotal',
+      'IVA 21%',
+      'IVA 10.5%',
+      'Total',
+      'Estado',
+      'CAE',
+      'Vto. CAE'
+    ];
+
+    const rows = invoices.map((inv) => {
+      const typeStr = inv.type.replace(/_/g, ' ');
+      const dateStr = format(new Date(inv.createdAt), 'dd/MM/yyyy HH:mm', { locale: es });
+      const vtoCae = inv.afipData?.caeVencimiento
+        ? format(new Date(inv.afipData.caeVencimiento), 'dd/MM/yyyy', { locale: es })
+        : '';
+
+      return [
+        inv.number || '',
+        typeStr,
+        inv.customerName || '',
+        inv.customerDocType || '',
+        inv.customerDoc || '',
+        dateStr,
+        Number(inv.subtotal || 0).toFixed(2),
+        Number(inv.iva21 || 0).toFixed(2),
+        Number(inv.iva105 || 0).toFixed(2),
+        Number(inv.total || 0).toFixed(2),
+        inv.status || '',
+        inv.afipData?.cae || '',
+        vtoCae
+      ];
+    });
+
+    const csvContent = "\ufeff" + [
+      headers.join(","),
+      ...rows.map((r) => r.map((field) => `"${String(field).replace(/"/g, '""')}"`).join(",")),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `comprobantes_${new Date().toISOString().split("T")[0]}.csv`,
+    );
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success('Comprobantes exportados con éxito');
+  };
+
+  const secondaryActions = [
+    ...headerActions.slice(1),
+    {
+      label: 'Exportar CSV',
+      icon: Download,
+      onClick: handleExportCSV,
+      variant: 'outline' as const,
+      disabled: invoices.length === 0,
+    }
+  ];
+
   return (
     <div className="flex flex-col gap-6">
       <Header
         title="Comprobantes"
         description="Gestión de facturación, presupuestos y remitos"
         primaryAction={headerActions[0]}
-        secondaryActions={headerActions.slice(1)}
+        secondaryActions={secondaryActions}
       />
 
       <div className="bg-background border rounded-xl shadow-sm overflow-hidden">
@@ -342,7 +423,42 @@ export default function InvoicesPage() {
             </button>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
+            {/* Filtros de Fecha */}
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground font-medium">Desde:</span>
+              <input
+                type="date"
+                className="px-2 py-1.5 text-sm bg-background border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
+                value={filters.startDate}
+                onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground font-medium">Hasta:</span>
+              <input
+                type="date"
+                className="px-2 py-1.5 text-sm bg-background border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
+                value={filters.endDate}
+                onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
+              />
+            </div>
+
+            {(filters.startDate || filters.endDate) && (
+              <button
+                onClick={() => setFilters({ ...filters, startDate: '', endDate: '' })}
+                className="p-1.5 hover:bg-background border rounded-lg transition-colors shadow-sm text-muted-foreground hover:text-foreground text-xs flex items-center gap-1 cursor-pointer"
+                title="Limpiar fechas"
+              >
+                <X className="h-3.5 w-3.5" />
+                <span>Limpiar fechas</span>
+              </button>
+            )}
+
+            <div className="h-4 w-px bg-border hidden sm:block mx-1" />
+
             <select
               className="px-3 py-2 text-sm bg-background border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
               value={filters.type}
