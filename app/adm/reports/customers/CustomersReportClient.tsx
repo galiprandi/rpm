@@ -167,13 +167,13 @@ export default function CustomersReportClient() {
     const rows = data.topCustomers.map((c) => [
       c.name,
       c.totalBilling.toFixed(2),
-      c.ordersCount,
+      c.ordersCount.toString(),
       c.lastOrderDate ? new Date(c.lastOrderDate).toLocaleDateString("es-AR") : "-",
     ]);
 
-    const csvContent = [
+    const csvContent = "\ufeff" + [
       headers.join(","),
-      ...rows.map((r) => r.join(",")),
+      ...rows.map((r) => r.map((field) => `"${field.replace(/"/g, '""')}"`).join(",")),
     ].join("\n");
 
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });

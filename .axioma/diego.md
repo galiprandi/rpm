@@ -3,6 +3,7 @@
 ## 📋 BACKLOG
 
 ## ✅ DONE
+- [x] 2026-07-20 — Estandarización de Exportación a CSV en Reportes de Ventas, Servicios y Clientes: Refactorización completa del comportamiento de exportación a CSV en SalesReportClient, ServicesReportClient y CustomersReportClient para asegurar el uso del BOM UTF-8 (`\ufeff`) y del objeto Blob, evitando rotura de estructura de columnas en Excel ante caracteres con tildes, diacríticos o comas internas. (PR #diego/reports/standardize-csv-exports)
 - [x] 2026-07-19 — Exportación de Reporte de Stock y Unit Tests de Inventario: Diseñada e implementada la exportación de reporte de stock a CSV en StockReportClient.tsx con UTF-8 BOM, incluyendo múltiples secciones de análisis y alertas. Creada suite de pruebas unitarias completas en tests/unit/stockReportService.test.ts. (PR #diego/reports/stock-csv-export-testing)
 - [x] 2026-07-18 — Estandarización de Tablas de Reportes a Componentes shadcn/ui: Refactorización completa de todos los módulos de reportes que usaban tablas HTML nativas (Ventas, Clientes, Servicios, Compras, Rentabilidad y Finanzas) para implementar los componentes de tabla unificados de `@/components/ui/table`. (PR #diego/reports/standardize-report-tables)
 - [x] 2026-07-17 — Exportación Completa de Reportes a CSV (Parity): Diseñada e implementada la exportación a CSV para todos los módulos de reportes restantes (Compras, Finanzas, Rentabilidad, Taller y Deudores). Incorporado soporte UTF-8 BOM (`\ufeff`) para garantizar la correcta visualización de caracteres con tildes y diacríticos en Microsoft Excel. (PR #diego/reports/csv-export-parity)
@@ -19,6 +20,10 @@
 - [x] 2025-07-09 — Implementación de reporte de Clientes (adquisición, recurrencia y ranking) (PR #diego/reports/customer-report)
 
 ## 🧠 LEARNINGS
+## 2026-07-20 - Consistencia en Exportación a CSV
+**Learning:** En un sistema de reportes multi-módulo, la consistencia en utilidades secundarias (como la exportación a CSV) es tan crítica como los KPIs visuales principales. Utilizar primitivas legacy (`data:text/csv`) sin BOM UTF-8 o sin escape de caracteres en algunos módulos mientras que otros usan Blobs estructurados genera una experiencia inconsistente para el usuario final al abrir sus datos en Excel.
+**Action:** Unificar y estandarizar siempre las rutinas de descarga de archivos exportados usando el mismo estándar robusto de codificación y formateo en todas las pantallas.
+
 ## 2026-07-19 - Exportación Estructurada Multi-Sección en CSV
 **Learning:** Cuando un reporte analítico (como el de Stock & Inventario) se compone de múltiples colecciones o tablas independientes en lugar de una única tabla plana, exportar un CSV estructurado con secciones de datos tituladas y líneas en blanco intermedias resulta infinitamente más útil para el usuario que un CSV plano o exportaciones parciales desarticuladas.
 **Action:** Utilizar el formato multi-sección con cabeceras de sección separadas para exportar reportes analíticos complejos a un único archivo CSV.
