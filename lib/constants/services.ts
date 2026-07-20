@@ -10,6 +10,7 @@ export interface PublicService {
   benefits?: string[];
   gridClassName?: string;
   bg?: string;
+  imageUrl?: string;
 }
 
 export const publicServices: PublicService[] = [
@@ -23,6 +24,7 @@ export const publicServices: PublicService[] = [
     benefits: ['Aumento de visión 300%', 'Bajo consumo eléctrico', 'Garantía de un año'],
     gridClassName: 'md:col-span-2 md:row-span-2',
     bg: 'bg-zinc-900',
+    imageUrl: 'https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=800&q=80',
   },
   {
     id: 'estetica',
@@ -34,6 +36,7 @@ export const publicServices: PublicService[] = [
     benefits: ['Rechazo de calor hasta 60%', 'Protección contra fragmentos de vidrio', 'Privacidad y estética superior'],
     gridClassName: 'md:col-span-1 md:row-span-1',
     bg: 'bg-zinc-950',
+    imageUrl: 'https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&w=800&q=80',
   },
   {
     id: 'detailing',
@@ -45,6 +48,7 @@ export const publicServices: PublicService[] = [
     benefits: ['Descontaminado profundo', 'Corrección de micro-rayones', 'Protección duradera de interiores'],
     gridClassName: 'md:col-span-1 md:row-span-1',
     bg: 'bg-zinc-950',
+    imageUrl: 'https://images.unsplash.com/photo-1607860108855-64acf2078ed9?auto=format&fit=crop&w=800&q=80',
   },
   {
     id: 'proteccion',
@@ -56,6 +60,7 @@ export const publicServices: PublicService[] = [
     benefits: ['Resistencia a rayones', 'Repelencia al agua', 'Brillo espejo permanente'],
     gridClassName: 'md:col-span-1 md:row-span-2',
     bg: 'bg-zinc-900',
+    imageUrl: 'https://images.unsplash.com/photo-1507136566006-cfc505b114fc?auto=format&fit=crop&w=800&q=80',
   },
   {
     id: 'off-road',
@@ -67,5 +72,6 @@ export const publicServices: PublicService[] = [
     benefits: ['Instalación certificada', 'Componentes de alta resistencia', 'Asesoramiento técnico'],
     gridClassName: 'md:col-span-2 md:row-span-1',
     bg: 'bg-zinc-950',
+    imageUrl: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=800&q=80',
   }
 ];
