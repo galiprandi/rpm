@@ -61,29 +61,56 @@ export function BotMessageContent({
     segments.push({ type: "text", content: text.slice(lastIndex) });
   }
 
+  // Filter out whitespace-only text segments to allow consecutive action grouping
+  const nonWhitespaceSegments = segments.filter(
+    (seg) => seg.type === "action" || seg.content.trim() !== ""
+  );
+
+  const groupedSegments: { type: "text" | "actions"; content: string | string[] }[] = [];
+  for (const seg of nonWhitespaceSegments) {
+    if (seg.type === "text") {
+      groupedSegments.push({ type: "text", content: seg.content });
+    } else {
+      const lastGroup = groupedSegments[groupedSegments.length - 1];
+      if (lastGroup && lastGroup.type === "actions") {
+        (lastGroup.content as string[]).push(seg.content);
+      } else {
+        groupedSegments.push({ type: "actions", content: [seg.content] });
+      }
+    }
+  }
+
   return (
     <div className="space-y-2">
-      {segments.map((seg, i) => {
+      {groupedSegments.map((seg, i) => {
         if (seg.type === "text") {
-          return seg.content.trim() ? (
-            <Streamdown key={i}>{seg.content}</Streamdown>
+          const textContent = seg.content as string;
+          return textContent.trim() ? (
+            <Streamdown key={i}>{textContent}</Streamdown>
           ) : null;
         }
-        const isConfirm = CONFIRM_ACTIONS.includes(seg.content);
-        const isCancel = CANCEL_ACTIONS.includes(seg.content);
+        const actionsList = seg.content as string[];
         return (
-          <Button
-            key={i}
-            size="sm"
-            variant={isConfirm ? "default" : isCancel ? "outline" : "secondary"}
-            disabled={disabled}
-            onClick={() => onAction(seg.content)}
-            className="mr-2 h-8 text-xs"
-          >
-            {isConfirm && <Check className="h-3 w-3 mr-1" aria-hidden="true" />}
-            {isCancel && <X className="h-3 w-3 mr-1" aria-hidden="true" />}
-            {seg.content}
-          </Button>
+          <div key={i} className="flex flex-wrap gap-2 mt-1">
+            {actionsList.map((actionText, idx) => {
+              const isConfirm = CONFIRM_ACTIONS.includes(actionText);
+              const isCancel = CANCEL_ACTIONS.includes(actionText);
+              return (
+                <Button
+                  key={idx}
+                  size="sm"
+                  variant={isConfirm ? "default" : isCancel ? "outline" : "secondary"}
+                  disabled={disabled}
+                  onClick={() => onAction(actionText)}
+                  className="h-8 text-xs font-medium"
+                >
+                  {isConfirm && <Check className="h-3 w-3 mr-1" aria-hidden="true" />}
+                  {isCancel && <X className="h-3 w-3 mr-1" aria-hidden="true" />}
+                  {actionText}
+                </Button>
+              );
+            })}
+          </div>
         );
       })}
     </div>
