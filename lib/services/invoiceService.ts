@@ -125,6 +125,7 @@ export async function getInvoices(filters: {
     where.OR = [
       { number: { contains: filters.search, mode: "insensitive" } },
       { customerName: { contains: filters.search, mode: "insensitive" } },
+      { customerDoc: { contains: filters.search, mode: "insensitive" } },
     ];
   }
 

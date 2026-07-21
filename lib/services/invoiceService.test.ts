@@ -10,6 +10,7 @@ import {
   determineInvoiceType,
   calculateInvoiceTaxes,
   getNextInvoiceNumber,
+  getInvoices,
 } from './invoiceService';
 
 describe('Invoice Service', () => {
@@ -207,6 +208,53 @@ describe('Invoice Service', () => {
       const beforeVal = parseInt(partsBefore[partsBefore.length - 1], 10);
       const nextVal = parseInt(nextParts[nextParts.length - 1], 10);
       expect(nextVal).toBe(beforeVal + 1);
+    });
+  });
+
+  describe('getInvoices and Search', () => {
+    it('should successfully filter and search invoices by customerDoc', async () => {
+      // 1. Create invoices with different customer docs
+      await createInvoice({
+        type: 'X_B',
+        referenceId: 'some-wo-id-search-1',
+        referenceType: 'work_order',
+        customerId: testCustomer.id,
+        customerName: testCustomer.name,
+        customerDoc: '20456789012',
+        customerDocType: 'CUIT',
+        subtotal: 1000,
+        tax: 210,
+        iva21: 210,
+        total: 1210,
+        status: 'DRAFT',
+        createdBy: 'test-user-id',
+      });
+
+      await createInvoice({
+        type: 'X_B',
+        referenceId: 'some-wo-id-search-2',
+        referenceType: 'work_order',
+        customerId: testCustomer.id,
+        customerName: testCustomer.name,
+        customerDoc: '11223344',
+        customerDocType: 'DNI',
+        subtotal: 1000,
+        tax: 210,
+        iva21: 210,
+        total: 1210,
+        status: 'DRAFT',
+        createdBy: 'test-user-id',
+      });
+
+      // 2. Search for the CUIT number
+      const searchResult1 = await getInvoices({ search: '20456789012' });
+      expect(searchResult1.length).toBeGreaterThanOrEqual(1);
+      expect(searchResult1.some(inv => inv.customerDoc === '20456789012')).toBe(true);
+
+      // 3. Search for the DNI number
+      const searchResult2 = await getInvoices({ search: '11223344' });
+      expect(searchResult2.length).toBeGreaterThanOrEqual(1);
+      expect(searchResult2.some(inv => inv.customerDoc === '11223344')).toBe(true);
     });
   });
 });

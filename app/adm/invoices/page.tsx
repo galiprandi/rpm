@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { AlertCircle } from 'lucide-react';
 import { ColumnDef } from '@tanstack/react-table';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Input } from '@/components/ui/input';
 
 export default function InvoicesPage() {
   const [invoices, setInvoices] = useState<any[]>([]);
@@ -28,13 +29,16 @@ export default function InvoicesPage() {
   });
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
 
-  const fetchInvoices = async () => {
+  const fetchInvoices = async (searchOverride?: string) => {
     setLoading(true);
     try {
       const queryParams = new URLSearchParams();
       if (filters.type) queryParams.append('type', filters.type);
       if (filters.status) queryParams.append('status', filters.status);
-      if (filters.search) queryParams.append('search', filters.search);
+
+      const searchVal = searchOverride !== undefined ? searchOverride : filters.search;
+      if (searchVal) queryParams.append('search', searchVal);
+
       if (filters.startDate) queryParams.append('startDate', filters.startDate);
       if (filters.endDate) queryParams.append('endDate', filters.endDate);
 
@@ -51,6 +55,11 @@ export default function InvoicesPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleClearSearch = () => {
+    setFilters({ ...filters, search: '' });
+    fetchInvoices('');
   };
 
   useEffect(() => {
@@ -405,18 +414,29 @@ export default function InvoicesPage() {
           <div className="flex items-center gap-3 flex-1 min-w-[300px]">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-              <input
+              <Input
                 type="text"
                 placeholder="Buscar por número o cliente..."
-                className="w-full pl-9 pr-4 py-2 text-sm bg-background border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
+                className="w-full pl-10 pr-8 py-2 text-sm font-mono"
                 value={filters.search}
                 onChange={(e) => setFilters({ ...filters, search: e.target.value })}
                 onKeyDown={(e) => e.key === 'Enter' && fetchInvoices()}
               />
+              {filters.search && (
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+                  onClick={handleClearSearch}
+                  title="Limpiar búsqueda"
+                  aria-label="Limpiar búsqueda"
+                >
+                  <X className="h-4 w-4 pointer-events-none" />
+                </button>
+              )}
             </div>
             <button
-              onClick={fetchInvoices}
-              className="p-2 hover:bg-background border rounded-lg transition-colors shadow-sm"
+              onClick={() => fetchInvoices()}
+              className="p-2 hover:bg-background border rounded-lg transition-colors shadow-sm cursor-pointer"
               title="Refrescar"
             >
               <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />

@@ -51,12 +51,18 @@ export async function POST(
     const customerDoc = invoice.customerDoc || '';
     const customerDocType = (invoice.customerDocType as 'CUIT' | 'DNI' | 'SIN_DOC') || 'SIN_DOC';
 
-    if (mappedType === 'FACTURA_A' || mappedType === 'NOTA_CREDITO_A') {
-      if (!customerDoc || customerDocType !== 'CUIT') {
-        return NextResponse.json({ error: "Para comprobantes tipo A se requiere el CUIT del cliente" }, { status: 400 });
+    if (customerDocType === 'CUIT') {
+      if (!customerDoc) {
+        return NextResponse.json({ error: "Se requiere el CUIT del cliente" }, { status: 400 });
       }
       if (!validateCUIT(customerDoc)) {
         return NextResponse.json({ error: "El CUIT del cliente no es válido" }, { status: 400 });
+      }
+    }
+
+    if (mappedType === 'FACTURA_A' || mappedType === 'NOTA_CREDITO_A') {
+      if (!customerDoc || customerDocType !== 'CUIT') {
+        return NextResponse.json({ error: "Para comprobantes tipo A se requiere el CUIT del cliente" }, { status: 400 });
       }
     }
 
