@@ -38,16 +38,37 @@ type Period =
   | "thisMonth"
   | "lastMonth"
   | "last12months"
-  | "thisYear";
+  | "thisYear"
+  | "custom";
 
 export default function PurchasesReportClient() {
   const [period, setPeriod] = useState<Period>("last30days");
   const [data, setData] = useState<PurchaseReportData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [customStartDate, setCustomStartDate] = useState<string>("");
+  const [customEndDate, setCustomEndDate] = useState<string>("");
+
+  useEffect(() => {
+    if (!customStartDate || !customEndDate) {
+      const end = new Date();
+      const start = new Date();
+      start.setDate(end.getDate() - 30);
+      setCustomStartDate(start.toISOString().split("T")[0]);
+      setCustomEndDate(end.toISOString().split("T")[0]);
+    }
+  }, []);
 
   const getGroupByForPeriod = (p: Period): PurchaseGroupBy => {
     if (p === "today") return "hour";
     if (p === "thisYear" || p === "last12months") return "month";
+    if (p === "custom" && customStartDate && customEndDate) {
+      const start = new Date(customStartDate + "T00:00:00");
+      const end = new Date(customEndDate + "T23:59:59.999");
+      const diffDays = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
+      if (diffDays <= 1) return "hour";
+      if (diffDays <= 31) return "day";
+      return "month";
+    }
     return "day";
   };
 
@@ -57,6 +78,18 @@ export default function PurchasesReportClient() {
     let endDate = new Date();
     let comparisonStartDate = new Date();
     let comparisonEndDate = new Date();
+
+    if (p === "custom") {
+      const start = customStartDate ? new Date(customStartDate + "T00:00:00") : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      const end = customEndDate ? new Date(customEndDate + "T23:59:59.999") : new Date();
+      start.setHours(0, 0, 0, 0);
+      end.setHours(23, 59, 59, 999);
+
+      const diff = end.getTime() - start.getTime();
+      comparisonStartDate = new Date(start.getTime() - diff - 1);
+      comparisonEndDate = new Date(start.getTime() - 1);
+      return { startDate: start, endDate: end, comparisonStartDate, comparisonEndDate };
+    }
 
     switch (p) {
       case "today":
@@ -132,7 +165,7 @@ export default function PurchasesReportClient() {
     const response = await fetch(`/api/reports/purchases?${params.toString()}`);
     if (!response.ok) throw new Error("Failed to fetch report");
     return response.json();
-  }, [period]);
+  }, [period, customStartDate, customEndDate]);
 
   useEffect(() => {
     let cancelled = false;
@@ -219,7 +252,7 @@ export default function PurchasesReportClient() {
           },
         ]}
         leftActions={
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4 text-muted-foreground" />
               <Select
@@ -237,9 +270,30 @@ export default function PurchasesReportClient() {
                   <SelectItem value="lastMonth">Mes pasado</SelectItem>
                   <SelectItem value="last12months">Últimos 12 meses</SelectItem>
                   <SelectItem value="thisYear">Este año</SelectItem>
+                  <SelectItem value="custom">Personalizado</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+
+            {period === "custom" && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground font-medium">Desde:</span>
+                <input
+                  type="date"
+                  className="px-2 py-1 text-xs bg-background border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 h-8"
+                  value={customStartDate}
+                  onChange={(e) => setCustomStartDate(e.target.value)}
+                />
+                <span className="text-xs text-muted-foreground font-medium">Hasta:</span>
+                <input
+                  type="date"
+                  className="px-2 py-1 text-xs bg-background border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 h-8"
+                  value={customEndDate}
+                  onChange={(e) => setCustomEndDate(e.target.value)}
+                />
+              </div>
+            )}
+
             {data && period === "today" && (
               <div className="flex items-center gap-1 text-xs text-muted-foreground">
                 <Clock className="h-3 w-3" />

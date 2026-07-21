@@ -3,6 +3,7 @@
 ## 📋 BACKLOG
 
 ## ✅ DONE
+- [x] 2026-07-21 — Implementación de Filtro por Rango de Fechas Personalizado en Reportes: Diseñado e implementado el soporte para selección de períodos personalizados ("custom") en el Centro de Reportes y en todos los reportes analíticos basados en el tiempo (Ventas, Compras, Rentabilidad, Finanzas, Taller, Clientes y Servicios). Añadidos inputs de fecha inline ("Desde" y "Hasta") que por defecto se inicializan con un rango de 30 días, y cálculo dinámico de período de comparación matemáticamente equivalente e inmediatamente anterior para análisis comparativos fidedignos. (PR #diego/reports/custom-date-range-filter)
 - [x] 2026-07-20 — Estandarización de Exportación a CSV en Reportes de Ventas, Servicios y Clientes: Refactorización completa del comportamiento de exportación a CSV en SalesReportClient, ServicesReportClient y CustomersReportClient para asegurar el uso del BOM UTF-8 (`\ufeff`) y del objeto Blob, evitando rotura de estructura de columnas en Excel ante caracteres con tildes, diacríticos o comas internas. (PR #diego/reports/standardize-csv-exports)
 - [x] 2026-07-19 — Exportación de Reporte de Stock y Unit Tests de Inventario: Diseñada e implementada la exportación de reporte de stock a CSV en StockReportClient.tsx con UTF-8 BOM, incluyendo múltiples secciones de análisis y alertas. Creada suite de pruebas unitarias completas en tests/unit/stockReportService.test.ts. (PR #diego/reports/stock-csv-export-testing)
 - [x] 2026-07-18 — Estandarización de Tablas de Reportes a Componentes shadcn/ui: Refactorización completa de todos los módulos de reportes que usaban tablas HTML nativas (Ventas, Clientes, Servicios, Compras, Rentabilidad y Finanzas) para implementar los componentes de tabla unificados de `@/components/ui/table`. (PR #diego/reports/standardize-report-tables)
@@ -20,6 +21,10 @@
 - [x] 2025-07-09 — Implementación de reporte de Clientes (adquisición, recurrencia y ranking) (PR #diego/reports/customer-report)
 
 ## 🧠 LEARNINGS
+## 2026-07-21 - Filtro Temporal Personalizado en Business Intelligence
+**Learning:** Ofrecer únicamente filtros de rango predefinidos (como 'últimos 30 días' o 'este mes') limita la capacidad analítica de los tomadores de decisiones que necesitan auditar fechas arbitrarias o períodos específicos. Al habilitar selección personalizada de fechas ('custom'), es esencial acompañarla de una lógica automática de comparación de períodos que mantenga una ventana de igual duración inmediatamente anterior para conservar la validez matemática de los porcentajes de cambio (MoM, WoW, etc.).
+**Action:** Al implementar filtros de fecha dinámicos, autocalcular siempre la ventana de comparación anterior con la misma cantidad de milisegundos y desfasada exactamente por la duración seleccionada.
+
 ## 2026-07-20 - Consistencia en Exportación a CSV
 **Learning:** En un sistema de reportes multi-módulo, la consistencia en utilidades secundarias (como la exportación a CSV) es tan crítica como los KPIs visuales principales. Utilizar primitivas legacy (`data:text/csv`) sin BOM UTF-8 o sin escape de caracteres en algunos módulos mientras que otros usan Blobs estructurados genera una experiencia inconsistente para el usuario final al abrir sus datos en Excel.
 **Action:** Unificar y estandarizar siempre las rutinas de descarga de archivos exportados usando el mismo estándar robusto de codificación y formateo en todas las pantallas.
@@ -45,7 +50,7 @@
 **Action:** Consultar siempre la definición del componente en `components/dashboard/MetricCard.tsx`.
 
 ## 2025-07-05 - Performance en Reportes
-**Learning:** El cálculo de valorización de inventario puede ser pesado si el catálogo es extenso. La implementación de caching en el API Route (`revalidate` y `Cache-Control`) es fundamental para mantener la respuesta rápida del sistema.
+**Learning:** El cálculo de valorización de inventario puede ser pesado si el catálogo es extenso. La implementación de caching en el API Route (`revalidate` y `Cache-Control`) is fundamental para mantener la respuesta rápida del sistema.
 **Action:** Mantener el patrón de caching en futuros reportes (Ventas, Taller, etc).
 
 ## 2026-07-12 - Consistencia en Reportes
