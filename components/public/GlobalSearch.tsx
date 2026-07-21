@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Search, X, ArrowRight } from 'lucide-react';
+import { Search, X, ArrowRight, Loader2 } from 'lucide-react';
+import Image from 'next/image';
 import {
   Dialog,
   DialogContent,
@@ -17,8 +18,21 @@ interface GlobalSearchProps {
   onClose: () => void;
 }
 
+interface SearchProduct {
+  id: string;
+  sku: string;
+  name: string;
+  category: string;
+  price: number;
+  image: string;
+  imageUrl: string | null;
+  description: string;
+}
+
 export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
   const [query, setQuery] = useState('');
+  const [liveProducts, setLiveProducts] = useState<SearchProduct[] | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
   // Reset query when dialog closes
@@ -28,12 +42,67 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
     }
   }, [isOpen]);
 
+  // Fetch live public catalog on open
+  useEffect(() => {
+    if (isOpen && !liveProducts && !isLoading) {
+      setIsLoading(true);
+      fetch('/api/public/catalog')
+        .then((res) => {
+          if (!res.ok) throw new Error('Failed to fetch public catalog');
+          return res.json();
+        })
+        .then((data) => {
+          if (data && Array.isArray(data.products)) {
+            const mapped: SearchProduct[] = data.products.map((p: any) => ({
+              id: p.id,
+              sku: p.sku || '',
+              name: p.name,
+              category: p.category || 'Varios',
+              price: Number(p.price) || 0,
+              image: p.image || (p.name ? p.name.charAt(0).toUpperCase() : 'P'),
+              imageUrl: p.imageUrl || null,
+              description: p.description || '',
+            }));
+            setLiveProducts(mapped);
+          } else {
+            setLiveProducts([]);
+          }
+        })
+        .catch((err) => {
+          console.error('Error fetching dynamic public catalog for search:', err);
+          // Set to empty array to prevent infinite re-fetch loops while reverting to static featuredProducts
+          setLiveProducts([]);
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+    }
+  }, [isOpen, liveProducts, isLoading]);
+
+  // Determine which list of products to search across
+  const productsToSearch = useMemo<SearchProduct[]>(() => {
+    if (liveProducts && liveProducts.length > 0) {
+      return liveProducts;
+    }
+    // Revert seamlessly to static featuredProducts
+    return featuredProducts.map((p) => ({
+      id: p.id,
+      sku: '',
+      name: p.name,
+      category: p.category,
+      price: p.price,
+      image: p.image,
+      imageUrl: p.imageUrl || null,
+      description: p.description,
+    }));
+  }, [liveProducts]);
+
   const results = useMemo(() => {
     if (!query.trim()) return { products: [], services: [] };
 
     const searchStr = query.toLowerCase();
 
-    const filteredProducts = featuredProducts.filter(p =>
+    const filteredProducts = productsToSearch.filter(p =>
       p.name.toLowerCase().includes(searchStr) ||
       p.category.toLowerCase().includes(searchStr) ||
       p.description.toLowerCase().includes(searchStr)
@@ -49,7 +118,7 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
       products: filteredProducts,
       services: filteredServices
     };
-  }, [query]);
+  }, [query, productsToSearch]);
 
   const hasResults = results.products.length > 0 || results.services.length > 0;
 
@@ -68,7 +137,11 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
       <DialogContent className="max-w-2xl bg-zinc-950 border-white/10 p-0 overflow-hidden top-[20%] translate-y-0">
         <div className="p-6 border-b border-white/5">
           <div className="relative group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-500 group-focus-within:text-brand transition-colors" />
+            {isLoading ? (
+              <Loader2 className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-500 animate-spin" />
+            ) : (
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-500 group-focus-within:text-brand transition-colors" />
+            )}
             <Input
               autoFocus
               placeholder="Buscar productos, servicios..."
@@ -80,6 +153,7 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
               <button
                 onClick={() => setQuery('')}
                 className="absolute right-4 top-1/2 -translate-y-1/2 h-6 w-6 flex items-center justify-center rounded-full bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
+                aria-label="Limpiar búsqueda"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -114,7 +188,7 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
                       <button
                         key={service.id}
                         onClick={() => handleSelectService(service.id)}
-                        className="flex items-center p-3 rounded-2xl bg-white/0 hover:bg-white/5 border border-transparent hover:border-white/10 transition-all group text-left"
+                        className="flex items-center p-3 rounded-2xl bg-white/0 hover:bg-white/5 border border-transparent hover:border-white/10 transition-all group text-left w-full"
                       >
                         <div className="w-10 h-10 rounded-xl bg-brand/10 flex items-center justify-center text-brand mr-4 shrink-0 group-hover:scale-110 transition-transform">
                           <service.icon className="h-5 w-5" />
@@ -139,10 +213,22 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
                       <button
                         key={product.id}
                         onClick={() => handleSelectProduct(product.id)}
-                        className="flex items-center p-3 rounded-2xl bg-white/0 hover:bg-white/5 border border-transparent hover:border-white/10 transition-all group text-left"
+                        className="flex items-center p-3 rounded-2xl bg-white/0 hover:bg-white/5 border border-transparent hover:border-white/10 transition-all group text-left w-full"
                       >
-                        <div className="w-10 h-10 rounded-xl bg-zinc-900 flex items-center justify-center text-white/20 font-black italic mr-4 shrink-0 group-hover:scale-110 transition-transform border border-white/5">
-                          {product.image}
+                        <div className="w-10 h-10 rounded-xl bg-zinc-900 flex items-center justify-center relative overflow-hidden mr-4 shrink-0 group-hover:scale-110 transition-transform border border-white/5">
+                          {product.imageUrl ? (
+                            <Image
+                              src={product.imageUrl}
+                              alt={product.name}
+                              fill
+                              sizes="40px"
+                              className="object-cover opacity-70 group-hover:opacity-90 transition-opacity"
+                            />
+                          ) : (
+                            <span className="text-white/20 font-black italic select-none">
+                              {product.image}
+                            </span>
+                          )}
                         </div>
                         <div className="flex-grow min-w-0">
                           <div className="flex items-center gap-2">
