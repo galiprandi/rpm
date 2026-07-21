@@ -6,6 +6,7 @@
 - [ ] Direct photo attachments for work order checklist items.
 
 ## ✅ DONE
+- [x] 2026-07-21 — Implement dynamic context-aware suggestions, accidental-wipe protection (double click clear confirm), robust session persistence, friendly client-side error formatting, and Escape key stream cancellation.
 - [x] 2026-07-20 — Group adjacent confirmation actions inline, restrict interaction buttons to the latest assistant message, add Alt+1 to Alt+4 keyboard shortcuts for empty-state suggestion chips with visual badges, and author a comprehensive component unit test suite.
 - [x] 2026-07-25 — Integrate registerVehicle tool for existing customers standalone registration, map its visual states in ChatFloating component, document it in base instructions, and restore/refine the chatbot UI/UX enhancements (PR #212).
 - [x] 2026-07-16 — Implement Clear Conversation button in the chat header, stop active stream and reset attachments, input, and errors cleanly, and disable the auto-focus logic on mobile to prevent virtual keyboard hijacking on load.
@@ -13,6 +14,10 @@
 - [x] 2026-03-28 — Initial audit of bot tools, removal of mock tools, fixing conversation history unit tests, and implementing major UI/UX improvements (smart scrolling, success states for tool execution, empty-state quick start suggestion chips, and full WCAG accessibility).
 
 ## 🧠 LEARNINGS
+### 2026-07-21 — State Loading & Multi-User State Separation
+**Learning:** Persisting state to sessionStorage/localStorage is highly beneficial for seamless navigation, but naive multi-effect sync patterns based on `userId` dependencies introduce race conditions when the user identifier transitions. During a render tick, React schedules state updates, so effects that save state may fire using the *previous* user's messages bound to the *new* user's key. Wrapping loading and saving into a unified effect gated by a `lastLoadedUserIdRef` ref solves this cleanly and prevents data leaks.
+**Action:** Always coordinate local storage loads and saves for key-dynamic resources in a single synchronized block or ref gate to guarantee data privacy.
+
 ### 2026-07-20 — Button Grouping and State Guarding
 **Learning:** Rendering adjacent confirmation action buttons block-wise takes up excessive vertical space in a compact chat window, while permitting old action triggers to remain clickable can lead to accidental double actions on obsolete context. Grouping adjacent actions inline inside a flex row makes the interface extremely compact and modern, while disabling triggers on older historical messages guarantees prompt safety.
 **Action:** Always group consecutive inline actions side-by-side inside a single flex container (safely bypassing whitespace/empty tokens) and restrict active interaction triggers strictly to the latest message.
