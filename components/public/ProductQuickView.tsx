@@ -1,6 +1,7 @@
 'use client';
 
 import { Check, MessageCircle } from 'lucide-react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { PUBLIC_SITE_CONFIG } from '@/lib/config/public-site';
 import { formatARS } from '@/lib/utils/format';
@@ -23,12 +24,22 @@ export function ProductQuickView({ product, onClose }: ProductQuickViewProps) {
       <DialogContent className="max-w-3xl bg-zinc-950 border-white/10 p-0 overflow-hidden">
         {product && (
           <div className="flex flex-col md:flex-row h-full">
-            <div className="md:w-1/2 aspect-square md:aspect-auto bg-zinc-900 flex items-center justify-center relative overflow-hidden">
+            <div className="md:w-1/2 aspect-square md:aspect-auto bg-zinc-900 flex items-center justify-center relative overflow-hidden min-h-[250px]">
               <div className="absolute inset-0 bg-brand/5" />
-              <span className="text-[140px] font-black text-white/5 italic select-none">
-                {product.image}
-              </span>
-              <div className="absolute top-6 left-6">
+              {product.imageUrl ? (
+                <Image
+                  src={product.imageUrl}
+                  alt={product.name}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  className="object-cover opacity-70 hover:opacity-85 transition-opacity duration-700"
+                />
+              ) : (
+                <span className="text-[140px] font-black text-white/5 italic select-none">
+                  {product.image}
+                </span>
+              )}
+              <div className="absolute top-6 left-6 z-10">
                 <span className="px-3 py-1 bg-brand text-white text-[10px] font-bold uppercase tracking-widest rounded-full">
                   {product.category}
                 </span>
@@ -62,8 +73,9 @@ export function ProductQuickView({ product, onClose }: ProductQuickViewProps) {
 
               <div className="pt-4">
                 <Button
-                  className="w-full bg-white text-black hover:bg-brand hover:text-white font-bold h-14 rounded-2xl transition-all duration-300 gap-3 group"
+                  className="w-full bg-white text-black hover:bg-brand hover:text-white font-bold h-14 rounded-2xl transition-all duration-300 gap-3 group border-none outline-none focus-visible:ring-2 focus-visible:ring-brand"
                   onClick={() => window.open(PUBLIC_SITE_CONFIG.links.whatsapp(`Hola RPM! Me interesa el producto: ${product.name}. ¿Tienen stock disponible?`), '_blank')}
+                  aria-label={`Consultar por WhatsApp sobre ${product.name}`}
                 >
                   <MessageCircle className="h-5 w-5 fill-current transition-transform group-hover:scale-110" />
                   CONSULTAR POR WHATSAPP
