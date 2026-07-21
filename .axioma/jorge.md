@@ -8,6 +8,7 @@
 - [x] 2026-07-16 — Checklist Estándar e Interactivo en Taller (PR #jorge/work-orders/checklists-refactor)
 - [x] 2026-07-18 — Impresión Estandarizada de Remitos y Presupuestos (PR #jorge/work-orders/standardized-printing)
 - [x] 2026-07-20 — Gestión de Fotos — Carga y eliminación masiva de fotos de órdenes de trabajo (PR jorge/work-orders/photo-management)
+- [x] 2026-07-21 — Botones de Filtro Rápido en Taller: Demoradas y Turnos de Hoy (PR #jorge/work-orders/quick-filters)
 
 ## 🧠 APRENDIZAJES
 ## 2025-07-08 - UX Kanban y Propagación de Eventos
@@ -33,3 +34,7 @@
 ## 2026-07-20 - Gestión de Fotos con Carga Masiva y Lightbox Immersivo
 **Aprendizaje:** La implementación de flujos de carga masivos que realizan llamadas secuenciales a los endpoints de carga y de registro de fotos evita las complejidades y el riesgo de timeouts asociados a las cargas de bloques grandes (multipart uploads) de una sola vez. Además, para los componentes de lightbox, el uso de memos robustos que unifican las fotos de ingreso y egreso en un solo carrusel, junto con controles de navegación con el teclado (flechas y Esc) y de descarga, proporciona una navegación sumamente fluida.
 **Acción:** Siempre unificar arrays de archivos dispersos en un solo carrusel indexado cuando se implementen lightboxes interactivos.
+
+## 2026-07-21 - Botones de Filtro Rápido para Eficiencia en Taller
+**Learning:** En flujos con alta carga de trabajo (como talleres mecánicos), disponer de contadores globales dinámicos en los botones de filtro rápido ("Demoradas", "Turnos de Hoy", etc.) le da al usuario visibilidad inmediata del estado de su operación sin tener que aplicar cada filtro. Esto acelera drásticamente la toma de decisiones.
+**Acción:** Siempre incluir recuentos informativos y badges dinámicos con contrastes WCAG AA adecuados en todos los componentes de filtro principal.
