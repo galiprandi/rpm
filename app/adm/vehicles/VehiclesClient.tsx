@@ -12,6 +12,7 @@ import {
   X,
   Filter,
   MessageSquare,
+  Download,
 } from "lucide-react";
 import Link from "next/link";
 import { type ColumnDef, type FilterFn } from "@tanstack/react-table";
@@ -72,6 +73,61 @@ export default function VehiclesClient({
     if (categoryFilter === "all") return vehicles;
     return vehicles.filter((v) => v.category === categoryFilter);
   }, [vehicles, categoryFilter]);
+
+  const exportToCSV = useCallback(() => {
+    if (!filteredVehicles || filteredVehicles.length === 0) return;
+
+    const headers = [
+      "Patente / Identificador",
+      "Categoría",
+      "Marca",
+      "Modelo",
+      "Nombre de Equipo",
+      "Propietario",
+      "Cantidad de OTs",
+    ];
+
+    const rows = filteredVehicles.map((v) => {
+      const isEquipment = [
+        "AUDIO_EQUIPMENT",
+        "ELECTRIC_SCOOTER",
+        "OTHER",
+        "TRAILER",
+      ].includes(v.category);
+
+      const makeName = !isEquipment && v.vehicle_make ? v.vehicle_make.name : "";
+      const modelName = !isEquipment && v.vehicle_model ? v.vehicle_model.name : "";
+      const equipmentName = isEquipment ? (v.equipmentName || "") : "";
+
+      return [
+        v.identifier,
+        getVehicleCategoryLabel(v.category),
+        makeName,
+        modelName,
+        equipmentName,
+        v.customer?.name || "",
+        v._count.work_order.toString(),
+      ];
+    });
+
+    const csvContent = "\ufeff" + [
+      headers.join(","),
+      ...rows.map((r) => r.map((field) => `"${field.replace(/"/g, '""')}"`).join(",")),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `reporte_vehiculos_${new Date().toISOString().split("T")[0]}.csv`,
+    );
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, [filteredVehicles]);
 
   const fetchVehicles = useCallback(async () => {
     setLoading(true);
@@ -230,6 +286,14 @@ export default function VehiclesClient({
       <Header
         title="Vehículos y Equipos"
         description="Gestión centralizada de vehículos de clientes y equipamiento técnico"
+        secondaryActions={[
+          {
+            label: "Exportar CSV",
+            onClick: exportToCSV,
+            variant: "outline",
+            icon: Download,
+          },
+        ]}
       >
         <div className="flex items-center gap-2 mt-4">
           <div className="relative group">
@@ -282,6 +346,7 @@ export default function VehiclesClient({
         tableTitle="Base de Datos de Vehículos"
         createButtonText="Nuevo Vehículo"
         searchPlaceholder="Buscar por patente o dueño..."
+        onExport={exportToCSV}
         rowActions={(vehicle) => (
           <div className="flex items-center gap-1">
             <Tooltip>

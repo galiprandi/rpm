@@ -31,6 +31,7 @@ import {
   Receipt,
   MessageSquare,
   Tag,
+  Download,
 } from "lucide-react";
 import Link from "next/link";
 import { Header } from "@/components/adm/Header";
@@ -605,6 +606,15 @@ export default function CustomerDetailPage() {
                       </a>
                     </Button>
                   )}
+                <Button
+                  onClick={() => window.print()}
+                  variant="outline"
+                  size="sm"
+                  className="border-zinc-300 text-zinc-700 hover:bg-zinc-50 hover:text-zinc-800"
+                >
+                  <Download className="h-4 w-4 mr-1" />
+                  Exportar PDF
+                </Button>
                 <Button
                   onClick={() => setIsPaymentModalOpen(true)}
                   size="sm"
@@ -1252,6 +1262,217 @@ export default function CustomerDetailPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Sección de Impresión de Cuenta Corriente (Solo visible al imprimir) */}
+      <div className="hidden print:block font-sans p-6 text-black" id="print-section">
+        {/* Header de la Empresa */}
+        <div className="flex justify-between items-start border-b-2 border-zinc-900 pb-4 mb-6">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-zinc-900">RPM ACCESORIOS</h1>
+            <p className="text-xs text-zinc-500 uppercase font-medium mt-0.5">Taller de Equipamiento y Estética Vehicular</p>
+            <p className="text-[11px] text-zinc-400 font-mono mt-1">Sarmiento 1234, Rosario, Santa Fe | Tel: 341-5556789</p>
+          </div>
+          <div className="text-right">
+            <Badge variant="outline" className="border-zinc-900 text-zinc-900 font-semibold text-xs py-1 px-3">
+              RESUMEN DE CUENTA CLIENTE
+            </Badge>
+            <p className="text-xs text-zinc-500 font-mono mt-2">
+              Fecha: {new Date().toLocaleDateString("es-AR")}
+            </p>
+          </div>
+        </div>
+
+        {/* Información General del Cliente */}
+        <div className="grid grid-cols-2 gap-6 border border-zinc-300 rounded-lg p-4 mb-6">
+          <div className="space-y-1.5">
+            <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-wider">DATOS DEL CLIENTE</h3>
+            <div className="grid grid-cols-3 text-sm gap-y-1">
+              <span className="text-zinc-500 font-medium">Nombre:</span>
+              <span className="col-span-2 font-bold text-zinc-900">{customer.name}</span>
+
+              {customer.phone && (
+                <>
+                  <span className="text-zinc-500 font-medium">Teléfono:</span>
+                  <span className="col-span-2 font-mono">{customer.phone}</span>
+                </>
+              )}
+
+              {customer.phoneAlt && (
+                <>
+                  <span className="text-zinc-500 font-medium">Tel. Alt:</span>
+                  <span className="col-span-2 font-mono">{customer.phoneAlt}</span>
+                </>
+              )}
+
+              {customer.email && (
+                <>
+                  <span className="text-zinc-500 font-medium">Email:</span>
+                  <span className="col-span-2 font-mono truncate">{customer.email}</span>
+                </>
+              )}
+
+              {customer.address && (
+                <>
+                  <span className="text-zinc-500 font-medium">Dirección:</span>
+                  <span className="col-span-2">{customer.address}</span>
+                </>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-1.5 border-l border-zinc-300 pl-6">
+            <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-wider">INFORMACIÓN FISCAL & ADICIONAL</h3>
+            <div className="grid grid-cols-3 text-sm gap-y-1">
+              {customer.billingData ? (
+                <>
+                  <span className="text-zinc-500 font-medium">Tipo Fact:</span>
+                  <span className="col-span-2 font-semibold">Factura {customer.billingData.invoiceType}</span>
+
+                  <span className="text-zinc-500 font-medium">CUIT/CUIL:</span>
+                  <span className="col-span-2 font-mono">{customer.billingData.cuit}</span>
+                </>
+              ) : (
+                <>
+                  <span className="text-zinc-500 font-medium">Condición:</span>
+                  <span className="col-span-2">Consumidor Final</span>
+                </>
+              )}
+
+              <span className="text-zinc-500 font-medium">Vehículos:</span>
+              <span className="col-span-2 font-medium">
+                {customer.vehicles.length > 0
+                  ? customer.vehicles.map((v) => v.identifier).join(", ")
+                  : "Ninguno registrado"}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Detalle de Órdenes de Trabajo Impagas */}
+        <div className="mb-6">
+          <h2 className="text-sm font-bold text-zinc-800 uppercase tracking-wider mb-3">
+            Órdenes de Trabajo Pendientes de Pago
+          </h2>
+          <table className="w-full border-collapse border border-zinc-300 text-sm">
+            <thead>
+              <tr className="bg-zinc-100 text-zinc-700 border-b border-zinc-300">
+                <th className="py-2.5 px-3 text-left font-bold border-r border-zinc-300">Nro. OT</th>
+                <th className="py-2.5 px-3 text-left font-bold border-r border-zinc-300">Vehículo / Patente</th>
+                <th className="py-2.5 px-3 text-left font-bold border-r border-zinc-300">Fecha de Ingreso</th>
+                <th className="py-2.5 px-3 text-left font-bold border-r border-zinc-300">Estado de OT</th>
+                <th className="py-2.5 px-3 text-right font-bold">Monto Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {customer.workOrders.filter(
+                (wo) => wo.status !== "PAID" && wo.status !== "CANCELLED",
+              ).length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="py-4 px-3 text-center text-zinc-500 italic">
+                    No hay órdenes de trabajo pendientes de pago.
+                  </td>
+                </tr>
+              ) : (
+                customer.workOrders
+                  .filter((wo) => wo.status !== "PAID" && wo.status !== "CANCELLED")
+                  .map((wo) => (
+                    <tr key={wo.id} className="border-b border-zinc-300">
+                      <td className="py-2 px-3 font-mono font-semibold border-r border-zinc-300 text-zinc-900">
+                        #{wo.id.slice(-6).toUpperCase()}
+                      </td>
+                      <td className="py-2 px-3 font-mono border-r border-zinc-300 text-zinc-800">
+                        {wo.vehicle?.identifier || "-"}
+                      </td>
+                      <td className="py-2 px-3 font-mono border-r border-zinc-300 text-zinc-600">
+                        {new Date(wo.createdAt).toLocaleDateString("es-AR")}
+                      </td>
+                      <td className="py-2 px-3 border-r border-zinc-300 text-zinc-700">
+                        {wo.status === "CONFIRMED" ? "Confirmada" :
+                         wo.status === "WAITING" ? "En espera" :
+                         wo.status === "IN_PROGRESS" ? "En progreso" :
+                         wo.status === "QC_CHECK" ? "Control de Calidad" :
+                         wo.status === "READY" ? "Listo" :
+                         wo.status === "DELIVERED" ? "Entregado" : wo.status}
+                      </td>
+                      <td className="py-2 px-3 text-right font-mono font-semibold text-zinc-900">
+                        {formatARS(Number(wo.total), 2)}
+                      </td>
+                    </tr>
+                  ))
+              )}
+              {/* Fila del Total Acumulado */}
+              <tr className="bg-zinc-50 border-t-2 border-zinc-900 font-bold">
+                <td colSpan={4} className="py-3 px-3 text-right text-zinc-700">
+                  TOTAL SALDO DEUDOR:
+                </td>
+                <td className="py-3 px-3 text-right text-lg text-zinc-900 font-mono">
+                  {formatARS(customer.balance, 2)}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        {/* Términos y Firmas */}
+        <div className="mt-12">
+          <div className="p-3 bg-zinc-50 border border-zinc-200 rounded-md text-xs text-zinc-500 mb-10 leading-relaxed">
+            <p className="font-semibold text-zinc-700 mb-1">TÉRMINOS Y CONDICIONES:</p>
+            <p>1. Este documento representa el estado de cuenta corriente unificado del cliente a la fecha de emisión indicada.</p>
+            <p>2. Los montos expresados corresponden a órdenes de trabajo y/o transacciones autorizadas y pendientes de cobro.</p>
+            <p>3. El saldo adeudado deberá cancelarse conforme a las condiciones pactadas. La empresa se reserva el derecho de suspender la entrega de unidades o la realización de nuevos trabajos en caso de mora.</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-20 pt-8">
+            <div className="flex flex-col items-center">
+              <div className="w-48 border-b border-zinc-400 h-10" />
+              <span className="text-xs text-zinc-500 font-semibold uppercase tracking-wider mt-2">
+                Firma Autorizada RPM
+              </span>
+            </div>
+            <div className="flex flex-col items-center">
+              <div className="w-48 border-b border-zinc-400 h-10" />
+              <span className="text-xs text-zinc-500 font-semibold uppercase tracking-wider mt-2">
+                Firma del Cliente
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-14 text-center border-t border-zinc-200 pt-4 text-[10px] text-zinc-400 font-mono">
+          RPM Accesorios © {new Date().getFullYear()} - Documento de control interno no válido como factura fiscal.
+        </div>
+      </div>
+
+      {/* Estilos para impresión (Oculta sidebar, botones, widgets, etc.) */}
+      <style media="print">
+        {`
+          @media print {
+            aside,
+            [data-sidebar="sidebar"],
+            .print\\:hidden,
+            button,
+            header,
+            footer,
+            nav,
+            .web-mcp-tools,
+            #chat-floating-button {
+              display: none !important;
+            }
+
+            main, .container, body {
+              padding: 0 !important;
+              margin: 0 !important;
+              max-width: none !important;
+              background: white !important;
+              color: black !important;
+            }
+
+            .container {
+              width: 100% !important;
+            }
+          }
+        `}
+      </style>
     </div>
   );
 }
