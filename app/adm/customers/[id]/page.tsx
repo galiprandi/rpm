@@ -736,15 +736,31 @@ export default function CustomerDetailPage() {
 
       {/* Vehículos y Equipos - DataTable */}
       {customer.vehicles.length === 0 ? (
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold flex items-center gap-2">
-            <Car className="h-5 w-5" />
-            Vehículos y Equipos (0)
-          </h2>
-          <div className="text-center py-8 text-muted-foreground">
-            No hay vehículos registrados
-          </div>
-        </div>
+        <Card className="border-dashed bg-muted/10">
+          <CardContent className="flex flex-col items-center justify-center py-12 text-center space-y-4">
+            <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center border border-dashed">
+              <Car className="h-8 w-8 text-muted-foreground/40 pointer-events-none" aria-hidden="true" />
+            </div>
+            <div className="space-y-1">
+              <p className="text-lg font-medium text-foreground">
+                Sin vehículos o equipos
+              </p>
+              <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+                No hay vehículos ni equipos registrados para este cliente. Agregue uno para comenzar.
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setIsVehicleModalOpen(true)}
+              className="flex items-center gap-1.5"
+            >
+              <Plus className="h-4 w-4" />
+              Agregar Vehículo
+            </Button>
+          </CardContent>
+        </Card>
       ) : (
         <DataTable
           data={customer.vehicles}
@@ -778,15 +794,33 @@ export default function CustomerDetailPage() {
 
       {/* Historial de OTs - DataTable */}
       {customer.workOrders.length === 0 ? (
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold flex items-center gap-2">
-            <Wrench className="h-5 w-5" />
-            Historial de Órdenes de Trabajo (0)
-          </h2>
-          <div className="text-center py-8 text-muted-foreground">
-            No hay órdenes de trabajo registradas
-          </div>
-        </div>
+        <Card className="border-dashed bg-muted/10">
+          <CardContent className="flex flex-col items-center justify-center py-12 text-center space-y-4">
+            <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center border border-dashed">
+              <Wrench className="h-8 w-8 text-muted-foreground/40 pointer-events-none" aria-hidden="true" />
+            </div>
+            <div className="space-y-1">
+              <p className="text-lg font-medium text-foreground">
+                Sin órdenes de trabajo
+              </p>
+              <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+                No hay registros de órdenes de trabajo para este cliente en el taller.
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                (window.location.href = `/adm/work-orders/new?customerId=${customerId}`)
+              }
+              className="flex items-center gap-1.5"
+            >
+              <Plus className="h-4 w-4" />
+              Crear Nueva OT
+            </Button>
+          </CardContent>
+        </Card>
       ) : (
         <DataTable
           data={customer.workOrders}
