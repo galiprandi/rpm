@@ -1,6 +1,10 @@
 ## 📋 BACKLOG
 
 ## ✅ DONE
+- [x] 2026-07-21 — Registro de Pago Directo en Reporte de Deudores y Empty States Optimizados
+  - Implementación de un modal de registro de pago rápido directamente desde el listado de deudores (`DebtorsClient.tsx`), permitiendo cobrar sin necesidad de salir del reporte.
+  - Diseño de un botón con el icono `ArrowDownLeft` y tooltip "Registrar Pago" en la columna de acciones de la tabla de deudores.
+  - Rediseño de los empty states del detalle del cliente (`page.tsx`) para vehículos y órdenes de trabajo, reemplazando el texto estático con tarjetas informales elegantes y botones directos de llamada a la acción ("+ Agregar Vehículo" y "+ Crear Nueva OT").
 - [x] 2026-07-20 — Exportación de Datos en CSV y Resumen de Cuenta Corriente de Cliente
   - Implementación de exportación client-side de CSV en el listado de clientes (`CustomersClient.tsx`) y vehículos (`VehiclesClient.tsx`) con codificación UTF-8 BOM (`\ufeff`) y escaping de campos.
   - Integración del botón de "Exportar PDF" en la tarjeta "Cuenta Corriente" de la ficha detallada del cliente (`app/adm/customers/[id]/page.tsx`).
