@@ -505,6 +505,8 @@ export default function WorkOrdersPage() {
   const isMobile = useIsMobile();
   const [viewMode, setViewMode] = useState<"kanban" | "list">("kanban");
   const [paymentFilter, setPaymentFilter] = useState<"all" | "pending">("all");
+  const [delayedFilter, setDelayedFilter] = useState<"all" | "delayed">("all");
+  const [todayFilter, setTodayFilter] = useState<"all" | "today">("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [technicianFilter, setTechnicianFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -578,6 +580,23 @@ export default function WorkOrdersPage() {
     );
   };
 
+  const countPendingPayment = useMemo(() => {
+    return workOrders.filter((wo) => !wo.isFullyPaid).length;
+  }, [workOrders]);
+
+  const countDelayed = useMemo(() => {
+    return workOrders.filter((wo) => isDelayed(wo)).length;
+  }, [workOrders]);
+
+  const countToday = useMemo(() => {
+    return workOrders.filter((wo) => {
+      return (
+        wo.scheduledDate &&
+        new Date(wo.scheduledDate).toDateString() === new Date().toDateString()
+      );
+    }).length;
+  }, [workOrders]);
+
   const filteredWorkOrders = useMemo(() => {
     return workOrders.filter((wo) => {
       const matchesPayment = paymentFilter === "all" || !wo.isFullyPaid;
@@ -585,6 +604,14 @@ export default function WorkOrdersPage() {
         statusFilter === "all" || wo.status === statusFilter;
       const matchesTechnician =
         technicianFilter === "all" || wo.technicianId === technicianFilter;
+
+      const isDelayedWO = isDelayed(wo);
+      const matchesDelayed = delayedFilter === "all" || isDelayedWO;
+
+      const isTodayWO =
+        wo.scheduledDate &&
+        new Date(wo.scheduledDate).toDateString() === new Date().toDateString();
+      const matchesToday = todayFilter === "all" || isTodayWO;
 
       const searchLower = searchQuery.toLowerCase();
       const matchesSearch =
@@ -597,10 +624,23 @@ export default function WorkOrdersPage() {
         wo.vehicle.model?.name?.toLowerCase().includes(searchLower);
 
       return (
-        matchesPayment && matchesStatus && matchesTechnician && matchesSearch
+        matchesPayment &&
+        matchesStatus &&
+        matchesTechnician &&
+        matchesSearch &&
+        matchesDelayed &&
+        matchesToday
       );
     });
-  }, [workOrders, paymentFilter, statusFilter, technicianFilter, searchQuery]);
+  }, [
+    workOrders,
+    paymentFilter,
+    statusFilter,
+    technicianFilter,
+    searchQuery,
+    delayedFilter,
+    todayFilter,
+  ]);
 
   const workOrdersByStatus = useMemo(
     () =>
@@ -911,18 +951,75 @@ export default function WorkOrdersPage() {
               setPaymentFilter(paymentFilter === "pending" ? "all" : "pending")
             }
             className={cn(
-              "h-8 text-xs",
+              "h-8 text-xs flex items-center gap-1.5",
               paymentFilter === "pending"
                 ? "bg-amber-500 text-white border-amber-500 hover:bg-amber-600 hover:border-amber-600"
                 : "",
             )}
           >
             Pendientes de Pago
-            {paymentFilter === "pending" && (
-              <span className="ml-2 text-[10px] bg-amber-700/10 px-1.5 py-0.5 rounded font-mono">
-                {filteredWorkOrders.length}
-              </span>
+            <span
+              className={cn(
+                "text-[10px] px-1.5 py-0.5 rounded font-mono font-bold",
+                paymentFilter === "pending"
+                  ? "bg-white text-amber-700"
+                  : "bg-amber-100 text-amber-800",
+              )}
+            >
+              {countPendingPayment}
+            </span>
+          </Button>
+
+          <Button
+            variant={delayedFilter === "delayed" ? "default" : "outline"}
+            size="sm"
+            onClick={() =>
+              setDelayedFilter(delayedFilter === "delayed" ? "all" : "delayed")
+            }
+            className={cn(
+              "h-8 text-xs flex items-center gap-1.5",
+              delayedFilter === "delayed"
+                ? "bg-orange-500 text-white border-orange-500 hover:bg-orange-600 hover:border-orange-600"
+                : "",
             )}
+          >
+            Demoradas
+            <span
+              className={cn(
+                "text-[10px] px-1.5 py-0.5 rounded font-mono font-bold",
+                delayedFilter === "delayed"
+                  ? "bg-white text-orange-700"
+                  : "bg-orange-100 text-orange-800",
+              )}
+            >
+              {countDelayed}
+            </span>
+          </Button>
+
+          <Button
+            variant={todayFilter === "today" ? "default" : "outline"}
+            size="sm"
+            onClick={() =>
+              setTodayFilter(todayFilter === "today" ? "all" : "today")
+            }
+            className={cn(
+              "h-8 text-xs flex items-center gap-1.5",
+              todayFilter === "today"
+                ? "bg-blue-500 text-white border-blue-500 hover:bg-blue-600 hover:border-blue-600"
+                : "",
+            )}
+          >
+            Turnos de Hoy
+            <span
+              className={cn(
+                "text-[10px] px-1.5 py-0.5 rounded font-mono font-bold",
+                todayFilter === "today"
+                  ? "bg-white text-blue-700"
+                  : "bg-blue-100 text-blue-800",
+              )}
+            >
+              {countToday}
+            </span>
           </Button>
 
           <div className="relative">
@@ -970,6 +1067,8 @@ export default function WorkOrdersPage() {
 
           {(searchQuery ||
             paymentFilter !== "all" ||
+            delayedFilter !== "all" ||
+            todayFilter !== "all" ||
             statusFilter !== "all" ||
             technicianFilter !== "all") && (
             <Button
@@ -978,6 +1077,8 @@ export default function WorkOrdersPage() {
               onClick={() => {
                 setSearchQuery("");
                 setPaymentFilter("all");
+                setDelayedFilter("all");
+                setTodayFilter("all");
                 setStatusFilter("all");
                 setTechnicianFilter("all");
               }}
