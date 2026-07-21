@@ -61,6 +61,16 @@ export function ChatFloating({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [localInput, setLocalInput] = useState("");
+  const [isConfirmingClear, setIsConfirmingClear] = useState(false);
+  const confirmClearTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (confirmClearTimerRef.current) {
+        clearTimeout(confirmClearTimerRef.current);
+      }
+    };
+  }, []);
 
   const pathname = usePathname();
   const router = useRouter();
@@ -139,7 +149,66 @@ export function ChatFloating({
     onFinish,
   });
 
+  const lastLoadedUserIdRef = useRef<string | null>(null);
+
+  // Client-side Session Persistence for chat messages (safe from state leaks/race conditions)
+  useEffect(() => {
+    if (lastLoadedUserIdRef.current !== userId) {
+      try {
+        const stored = sessionStorage.getItem(`nitro-messages-${userId}`);
+        if (stored) {
+          setMessages(JSON.parse(stored));
+        } else {
+          setMessages([]);
+        }
+      } catch (e) {
+        console.error("Error reading stored messages", e);
+      }
+      lastLoadedUserIdRef.current = userId;
+      return;
+    }
+
+    try {
+      if (messages.length > 0) {
+        sessionStorage.setItem(`nitro-messages-${userId}`, JSON.stringify(messages));
+      } else {
+        sessionStorage.removeItem(`nitro-messages-${userId}`);
+      }
+    } catch (e) {
+      console.error("Error saving messages", e);
+    }
+  }, [messages, userId, setMessages]);
+
   const isSubmitting = status === "submitted" || status === "streaming";
+
+  const friendlyErrorMessage = useMemo(() => {
+    if (!error) return null;
+    const msg = error.message?.toLowerCase() || "";
+    if (msg.includes("failed to fetch") || msg.includes("networkerror")) {
+      return "No se pudo conectar con el servidor. Por favor, verifica tu conexión a internet.";
+    }
+    if (msg.includes("401") || msg.includes("unauthorized") || msg.includes("session")) {
+      return "Tu sesión ha expirado o no tienes permisos. Por favor, recarga la página.";
+    }
+    if (msg.includes("429") || msg.includes("rate_limit") || msg.includes("rate limit")) {
+      return "Se alcanzó el límite de solicitudes. Por favor, espera un momento antes de volver a intentar.";
+    }
+    if (
+      msg.includes("syntaxerror") ||
+      msg.includes("unexpected token") ||
+      msg.includes("internal server error") ||
+      msg.includes("500") ||
+      msg.includes("groq_model") ||
+      msg.includes("env var") ||
+      msg.includes("api_key") ||
+      msg.includes("database") ||
+      msg.includes("prisma") ||
+      msg.startsWith("{") // JSON block
+    ) {
+      return "El asistente virtual no está disponible o no está configurado correctamente en este momento. Por favor, intenta de nuevo más tarde o contacta al administrador.";
+    }
+    return error.message;
+  }, [error]);
 
   const lastAssistantMessageId = useMemo(() => {
     for (let i = messages.length - 1; i >= 0; i--) {
@@ -150,15 +219,31 @@ export function ChatFloating({
     return null;
   }, [messages]);
 
-  const quickSuggestions = useMemo(() => [
-    { label: "📦 Consultar Stock", text: "¿Hay stock de luces LED?" },
-    { label: "🔧 Ver OTs de hoy", text: "Ver órdenes de trabajo de hoy" },
-    { label: "💰 Ver Caja de hoy", text: "Ver estado de caja de hoy" },
-    {
-      label: "📝 Registrar Venta",
-      text: "Quiero registrar una venta directa de mostrador",
-    },
-  ], []);
+  const quickSuggestions = useMemo(() => {
+    const base = [
+      { label: "📦 Consultar Stock", text: "¿Hay stock de luces LED?" },
+      { label: "🔧 Ver OTs de hoy", text: "Ver órdenes de trabajo de hoy" },
+      { label: "💰 Ver Caja de hoy", text: "Ver estado de caja de hoy" },
+      {
+        label: "📝 Registrar Venta",
+        text: "Quiero registrar una venta directa de mostrador",
+      },
+    ];
+
+    if (pathname.includes("/work-orders")) {
+      base[1] = { label: "🔧 Crear OT rápida", text: "Quiero crear una nueva orden de trabajo" };
+    } else if (pathname.includes("/customers")) {
+      base[1] = { label: "👥 Buscar Clientes", text: "Buscar clientes por teléfono o patente" };
+    } else if (pathname.includes("/vehicles")) {
+      base[1] = { label: "🚗 Registrar Vehículo", text: "Quiero registrar un vehículo para un cliente" };
+    } else if (pathname.includes("/products")) {
+      base[0] = { label: "📦 Crear Producto", text: "Quiero crear un nuevo producto en catálogo" };
+    } else if (pathname.includes("/invoices")) {
+      base[3] = { label: "🧾 Facturas del día", text: "Ver estado de las facturas de hoy" };
+    }
+
+    return base;
+  }, [pathname]);
 
   const handleSuggestionClick = useCallback(async (text: string) => {
     if (isSubmitting) return;
@@ -172,6 +257,23 @@ export function ChatFloating({
   };
 
   const handleClearConversation = () => {
+    if (messages.length === 0) return;
+
+    if (!isConfirmingClear) {
+      setIsConfirmingClear(true);
+      if (confirmClearTimerRef.current) {
+        clearTimeout(confirmClearTimerRef.current);
+      }
+      confirmClearTimerRef.current = setTimeout(() => {
+        setIsConfirmingClear(false);
+      }, 3000);
+      return;
+    }
+
+    if (confirmClearTimerRef.current) {
+      clearTimeout(confirmClearTimerRef.current);
+    }
+    setIsConfirmingClear(false);
     stop();
     setMessages([]);
     setAttachedFile(null);
@@ -244,9 +346,14 @@ export function ChatFloating({
 
       if (!isOpen) return;
 
-      // Escape to close chat
+      // Escape to close chat or stop stream if active
       if (e.key === "Escape") {
-        setIsOpen(false);
+        if (isSubmitting) {
+          e.preventDefault();
+          stop();
+        } else {
+          setIsOpen(false);
+        }
         return;
       }
 
@@ -339,16 +446,31 @@ export function ChatFloating({
                     size="icon"
                     onClick={handleClearConversation}
                     disabled={messages.length === 0}
-                    aria-label="Limpiar conversación"
+                    aria-label={
+                      isConfirmingClear
+                        ? "Haz clic de nuevo para confirmar"
+                        : "Limpiar conversación"
+                    }
+                    className={
+                      isConfirmingClear
+                        ? "text-red-600 hover:text-red-700 hover:bg-red-50"
+                        : ""
+                    }
                   >
-                    <Trash2 className="h-4 w-4" />
+                    {isConfirmingClear ? (
+                      <Check className="h-4 w-4 animate-pulse" />
+                    ) : (
+                      <Trash2 className="h-4 w-4" />
+                    )}
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent
                   side="bottom"
                   className="bg-slate-900 text-white border-slate-800"
                 >
-                  Limpiar conversación
+                  {isConfirmingClear
+                    ? "Haz clic de nuevo para confirmar"
+                    : "Limpiar conversación"}
                 </TooltipContent>
               </Tooltip>
               {!isMobile && (
@@ -611,12 +733,12 @@ export function ChatFloating({
               )}
 
               {/* Error message */}
-              {error && (
+              {friendlyErrorMessage && (
                 <div className="flex justify-start">
                   <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center gap-2">
                     <X className="h-4 w-4 text-red-700" aria-hidden="true" />
                     <span className="text-sm text-red-700 font-medium">
-                      {error.message || "Ocurrió un error. Intenta nuevamente."}
+                      {friendlyErrorMessage}
                     </span>
                   </div>
                 </div>
