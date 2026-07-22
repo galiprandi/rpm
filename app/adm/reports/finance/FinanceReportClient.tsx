@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   TrendingUp,
   Calendar,
-  DollarSign,
   Wallet,
   ArrowUpRight,
   ArrowDownRight,
