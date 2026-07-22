@@ -5,6 +5,7 @@ import { eq, desc, gte, and } from "drizzle-orm";
 import { UserRole } from "@/lib/auth/roles";
 import { invalidateCashStatus } from "@/lib/cache";
 import { getSessionWithAuth } from "@/lib/api-middleware";
+import { toISODate } from "@/lib/utils/date";
 
 // POST /api/cash/open - Open cash register
 export async function POST(request: NextRequest) {
@@ -121,9 +122,9 @@ export async function POST(request: NextRequest) {
         success: true,
         opening: {
           id: opening.id,
-          amount: opening.amount,
+          amount: Number(opening.amount),
           method: opening.method,
-          createdAt: opening.createdAt,
+          createdAt: toISODate(opening.createdAt),
         },
       },
       { status: 201 },

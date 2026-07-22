@@ -28,7 +28,7 @@ export const GET = withAdmin(async (_request: NextRequest, _session) => {
 
   return NextResponse.json({
     stats: queryStats,
-    connections: activeConnections.rows[0]?.count || 0,
+    connections: Number(activeConnections.rows[0]?.count) || 0,
     uptime: process.uptime(),
     timestamp: new Date().toISOString(),
   });

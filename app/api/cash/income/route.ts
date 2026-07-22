@@ -5,6 +5,7 @@ import { UserRole } from "@/lib/auth/roles";
 import { invalidateCashStatus } from "@/lib/cache";
 import { isCashRegisterOpen } from "@/lib/services/cashMovementService";
 import { getSessionWithAuth } from "@/lib/api-middleware";
+import { toISODate } from "@/lib/utils/date";
 
 // POST /api/cash/income - Register a manual cash income (capital injection, refunds, etc.)
 export async function POST(request: NextRequest) {
@@ -87,10 +88,10 @@ export async function POST(request: NextRequest) {
         success: true,
         income: {
           id: income.id,
-          amount: income.amount,
+          amount: Number(income.amount),
           method: income.method,
           reason: income.reason,
-          createdAt: income.createdAt,
+          createdAt: toISODate(income.createdAt),
         },
       },
       { status: 201 },

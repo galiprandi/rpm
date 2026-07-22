@@ -404,6 +404,7 @@ export async function applyCostUpdate(
 
   // Create audit record outside transaction (using main db client)
   await db.insert(costUpdateBatch).values({
+    id: crypto.randomUUID(),
     userId,
     userName,
     filtersApplied: filters as any,

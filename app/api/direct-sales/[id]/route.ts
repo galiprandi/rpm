@@ -19,6 +19,12 @@ export async function GET(
       ...sale,
       total: Number(sale.total),
       createdAt: toISODate(sale.createdAt),
+      customer: sale.customer
+        ? {
+            ...sale.customer,
+            balance: Number(sale.customer.balance),
+          }
+        : sale.customer,
       directSaleItems: sale.directSaleItems.map((item) => ({
         ...item,
         unitPrice: Number(item.unitPrice),

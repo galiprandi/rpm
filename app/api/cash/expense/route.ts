@@ -5,6 +5,7 @@ import { UserRole } from "@/lib/auth/roles";
 import { invalidateCashStatus } from "@/lib/cache";
 import { isCashRegisterOpen } from "@/lib/services/cashMovementService";
 import { getSessionWithAuth } from "@/lib/api-middleware";
+import { toISODate } from "@/lib/utils/date";
 
 // POST /api/cash/expense - Register a cash expense
 export async function POST(request: NextRequest) {
@@ -87,10 +88,10 @@ export async function POST(request: NextRequest) {
         success: true,
         expense: {
           id: expense.id,
-          amount: expense.amount,
+          amount: Number(expense.amount),
           method: expense.method,
           reason: expense.reason,
-          createdAt: expense.createdAt,
+          createdAt: toISODate(expense.createdAt),
         },
       },
       { status: 201 },

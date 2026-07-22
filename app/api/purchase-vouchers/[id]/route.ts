@@ -20,8 +20,9 @@ function formatVoucher(voucher: Record<string, unknown>) {
   const items = Array.isArray(voucher.items)
     ? voucher.items.map(formatVoucherItem)
     : voucher.items;
+  const { purchaseVoucherItems: _raw, ...rest } = voucher;
   return {
-    ...voucher,
+    ...rest,
     date: toISODate(voucher.date),
     totalAmount: Number(voucher.totalAmount),
     createdAt: toISODate(voucher.createdAt),

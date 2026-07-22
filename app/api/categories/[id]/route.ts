@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { category, product } from '@/db/schema';
 import { eq, count } from 'drizzle-orm';
+import { toISODate } from '@/lib/utils/date';
 
 interface Params {
   params: Promise<{ id: string }>;
@@ -94,7 +95,13 @@ export async function PUT(request: NextRequest, { params }: Params) {
       .where(eq(category.id, id))
       .returning();
 
-    return NextResponse.json({ category: updated });
+    return NextResponse.json({
+      category: {
+        ...updated,
+        createdAt: toISODate(updated.createdAt),
+        updatedAt: toISODate(updated.updatedAt),
+      },
+    });
   } catch (error) {
     console.error('Error updating category:', error);
     return NextResponse.json(

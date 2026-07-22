@@ -32,6 +32,11 @@ export async function GET(
             service: true,
           },
         },
+        payments: {
+          with: {
+            paymentMethod: true,
+          },
+        },
         technician: {
           columns: {
             id: true,
@@ -58,6 +63,18 @@ export async function GET(
       total: Number(workOrderRecord.total),
       totalProducts: Number(workOrderRecord.totalProducts),
       totalServices: Number(workOrderRecord.totalServices),
+      // Convert nested workOrderItems decimals
+      workOrderItems: (workOrderRecord.workOrderItems || []).map((item) => ({
+        ...item,
+        unitPrice: Number(item.unitPrice),
+        subtotal: Number(item.subtotal),
+      })),
+      // Convert nested payments decimals + timestamps
+      payments: (workOrderRecord.payments || []).map((p) => ({
+        ...p,
+        amount: Number(p.amount),
+        createdAt: toISODate(p.createdAt),
+      })),
       // Convert timestamps from PG raw format to ISO 8601
       createdAt: toISODate(workOrderRecord.createdAt),
       updatedAt: toISODate(workOrderRecord.updatedAt),
@@ -99,9 +116,9 @@ export async function PUT(
 
     return NextResponse.json({
       ...workOrderResult,
-      total: Number((workOrderResult as any).total) || (workOrderResult as any).total,
-      totalProducts: Number((workOrderResult as any).totalProducts) || (workOrderResult as any).totalProducts,
-      totalServices: Number((workOrderResult as any).totalServices) || (workOrderResult as any).totalServices,
+      total: Number((workOrderResult as any).total),
+      totalProducts: Number((workOrderResult as any).totalProducts),
+      totalServices: Number((workOrderResult as any).totalServices),
       createdAt: toISODate((workOrderResult as any).createdAt),
       updatedAt: toISODate((workOrderResult as any).updatedAt),
       scheduledDate: toISODate((workOrderResult as any).scheduledDate),

@@ -51,7 +51,8 @@ export async function POST(request: NextRequest) {
 
     const operative = await createCountOperative(session.user.id, productIds);
     return NextResponse.json(formatOperative(operative as unknown as Record<string, unknown>));
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    console.error('Error creating inventory count:', error);
+    return NextResponse.json({ error: 'Error al crear arqueo de inventario' }, { status: 500 });
   }
 }

@@ -6,11 +6,13 @@ import { UserRole } from "@/lib/auth/roles";
 import { invalidateCashStatus } from "@/lib/cache";
 import { isCashRegisterOpen } from "@/lib/services/cashMovementService";
 import { getSessionWithAuth } from "@/lib/api-middleware";
+import { toISODate } from "@/lib/utils/date";
 
-// Helper para convertir Decimal a number
+// Helper para convertir Decimal/string a number
 function decimalToNumber(decimal: unknown): number {
   if (decimal === null || decimal === undefined) return 0;
   if (typeof decimal === "number") return decimal;
+  if (typeof decimal === "string") return Number(decimal);
   if (
     typeof decimal === "object" &&
     "toNumber" in decimal &&
@@ -194,9 +196,9 @@ export async function POST(request: NextRequest) {
         success: true,
         closing: {
           id: closing.id,
-          amount: closing.amount,
+          amount: Number(closing.amount),
           method: closing.method,
-          createdAt: closing.createdAt,
+          createdAt: toISODate(closing.createdAt),
         },
         differences,
         expected: expectedByMethod,

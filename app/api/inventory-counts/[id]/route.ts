@@ -17,8 +17,9 @@ function formatOperativeDetails(details: Record<string, unknown>) {
   const items = Array.isArray(details.items)
     ? details.items.map((i) => formatCountItem(i as Record<string, unknown>))
     : details.items;
+  const { inventoryCountItems: _raw, ...rest } = details;
   return {
-    ...details,
+    ...rest,
     createdAt: toISODate(details.createdAt),
     updatedAt: toISODate(details.updatedAt),
     finishedAt: toISODate(details.finishedAt),

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { workOrder } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { toISODate } from "@/lib/utils/date";
 
 // PUT /api/work-orders/[id]/checklist - Update checklist data (items, notes, odometer, fuel level)
 export async function PUT(
@@ -143,7 +144,18 @@ export async function POST(
       },
     });
 
-    return NextResponse.json(workOrderRecord);
+    return NextResponse.json({
+      ...workOrderRecord,
+      total: workOrderRecord ? Number(workOrderRecord.total) : undefined,
+      totalProducts: workOrderRecord ? Number(workOrderRecord.totalProducts) : undefined,
+      totalServices: workOrderRecord ? Number(workOrderRecord.totalServices) : undefined,
+      createdAt: toISODate(workOrderRecord?.createdAt),
+      updatedAt: toISODate(workOrderRecord?.updatedAt),
+      scheduledDate: toISODate(workOrderRecord?.scheduledDate),
+      startedAt: toISODate(workOrderRecord?.startedAt),
+      completedAt: toISODate(workOrderRecord?.completedAt),
+      deliveredAt: toISODate(workOrderRecord?.deliveredAt),
+    });
   } catch (error) {
     console.error("Error updating checklist:", error);
     return NextResponse.json(

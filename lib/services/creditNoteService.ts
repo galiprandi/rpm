@@ -144,6 +144,10 @@ export async function createCreditNote(input: CreateCreditNoteInput) {
     throw new Error("El total de la nota de credito no puede ser cero");
   }
 
+  if (!customerId) {
+    throw new Error("No se puede emitir una nota de credito para una venta sin cliente asociado (Consumidor Final)");
+  }
+
   // Transaction
   const result = await db.transaction(async (tx) => {
     // Create credit note

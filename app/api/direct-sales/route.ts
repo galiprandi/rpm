@@ -127,6 +127,11 @@ export const POST = withAdmin(async (request: NextRequest, session) => {
           { status: 400 }
         );
       }
+
+      // Compute totalPrice if not provided
+      if (item.totalPrice === undefined) {
+        item.totalPrice = item.unitPrice * item.quantity;
+      }
     }
 
     // Validate payments

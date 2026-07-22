@@ -167,6 +167,7 @@ export const PUT = withAdminDynamic(async (request: NextRequest, { params }: Par
 
     return NextResponse.json({
       ...updated,
+      balance: Number(updated.balance),
       createdAt: toISODate(updated.createdAt),
       updatedAt: toISODate(updated.updatedAt),
     });

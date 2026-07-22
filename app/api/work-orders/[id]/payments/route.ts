@@ -10,6 +10,7 @@ import {
 } from "@/lib/services/cashMovementService";
 import { invalidateCashStatus } from "@/lib/cache";
 import { adjustBalanceAtomically } from "@/lib/services/balanceService";
+import { toISODate } from "@/lib/utils/date";
 
 // GET /api/work-orders/[id]/payments - List payments with totals
 export async function GET(
@@ -62,7 +63,11 @@ export async function GET(
     const isFullyPaid = totalPaid >= workOrderTotal;
 
     return NextResponse.json({
-      payments,
+      payments: payments.map((p) => ({
+        ...p,
+        amount: Number(p.amount),
+        createdAt: toISODate(p.createdAt),
+      })),
       totalPaid,
       pendingAmount,
       isFullyPaid,
@@ -230,7 +235,13 @@ export async function POST(
 
     return NextResponse.json(
       {
-        payment: paymentWithRelations,
+        payment: paymentWithRelations
+          ? {
+              ...paymentWithRelations,
+              amount: Number(paymentWithRelations.amount),
+              createdAt: toISODate(paymentWithRelations.createdAt),
+            }
+          : null,
         totalPaid,
         pendingAmount,
         isFullyPaid,
