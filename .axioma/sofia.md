@@ -3,6 +3,7 @@
 ## 📋 BACKLOG
 
 ## ✅ DONE
+- [x] 2026-07-22 — Widget interactivo de WhatsApp en la web pública con Sofi como asistente virtual (PR #sofia/public/whatsapp-widget)
 - [x] 2026-07-20 — Optimización de LCP con Next.js Image y mejora del hito 2011 en Nosotros (PR #sofia/public/lcp-image-optimization)
 - [x] 2026-07-19 — Integración de imágenes optimizadas para servicios y estandarización de animaciones en testimonios (PR #sofia/public/services-images-and-testimonials-animation)
 - [x] 2026-07-16 — Galería de Excelencia interactiva con soporte para Deep-Linking y Lightbox (PR #sofia/public/nosotros-gallery-improvement)
@@ -21,6 +22,10 @@
 
 ## 🧠 LEARNINGS
 
+## 2026-07-22 - Conversión Contextual y Chat de WhatsApp
+**Learning:** Reemplazar el botón flotante estático de WhatsApp por un widget de chat interactivo que personifica una asistente de atención al cliente ("Sofi") eleva de forma extraordinaria la conversión y la cercanía de la marca. Ofrecer chips interactivos con consultas pre-escritas (como coordinar turnos, cotizar iluminación LED, detailing/PPF o equipamiento off-road) elimina la "fricción de la hoja en blanco", incentivando al usuario a iniciar la interacción de forma lúdica. Además, asegurar accesibilidad total (tecla ESC para cerrar, enfoque inteligente y clic fuera) garantiza que el widget no obstaculice la navegación.
+**Action:** Mantener un estándar de micro-UX humanizado y accesible en todas las integraciones flotantes y de contacto del sitio web público.
+
 ## 2026-07-20 - Optimización LCP de Imágenes y Configuración de Host Remoto
 **Learning:** Al optimizar imágenes de fondo en secciones complejas como hitos/milestones en la página Nosotros, usar el componente `<Image>` de Next.js con `fill`, responsive `sizes` y un contenedor relativo con opacidad controlada (`opacity-10`) permite una lectura impecable del texto sobre fondos oscuros. Asimismo, si la base de datos contiene URLs externas (como `cdn.jsdelivr.net`), es indispensable registrarlas en `next.config.ts` bajo `remotePatterns` para evitar que la compilación de desarrollo o producción de Next.js falle en tiempo de ejecución.
 **Action:** Asegurar que todo host externo de recursos de imagen esté declarado en el archivo de configuración de Next.js y validar la visualización mediante emulación móvil y desktop en Playwright.
@@ -30,7 +35,7 @@
 **Action:** Utilizar consistentemente imágenes optimizadas y animaciones escalonadas de Framer Motion en todas las páginas públicas del sitio para asegurar un estándar visual superior.
 
 ## 2026-07-16 - Next.js Public Page Architecture Standard
-**Learning:** En Next.js, utilizar `useSearchParams` en páginas estáticas de forma desprotegida provoca de-optimización en el build e hidrataciones fallidas en producción. El estándar robusto de arquitectura de páginas públicas consiste en definir un archivo de página de servidor (como `app/nosotros/page.tsx`) que define los metadatos estáticos estables para motores de búsqueda (SEO) y renderiza el cliente interactivo real (como `AboutClient.tsx`) envuelto en un boundary de `<Suspense>`. Esto permite un excelente rendimiento de LCP y total compatibilidad con deep-linking (ej: `?project=iluminacion-2012`).
+**Learning:** En Next.js, utilizar `useSearchParams` in páginas estáticas de forma desprotegida provoca de-optimización en el build e hidrataciones fallidas en producción. El estándar robusto de arquitectura de páginas públicas consiste en definir un archivo de página de servidor (como `app/nosotros/page.tsx`) que define los metadatos estáticos estables para motores de búsqueda (SEO) y renderiza el cliente interactivo real (como `AboutClient.tsx`) envuelto en un boundary de `<Suspense>`. Esto permite un excelente rendimiento de LCP y total compatibilidad con deep-linking (ej: `?project=iluminacion-2012`).
 **Action:** Seguir sistemáticamente la estructura de página de servidor + `<Suspense>` + Client Component para todas las rutas con interacciones dinámicas.
 
 ## 2026-07-15 - Accesibilidad Proactiva y Estabilidad de Builds
