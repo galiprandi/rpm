@@ -90,6 +90,7 @@ export interface SelectedItem {
   priceListId?: string;
   sku?: string;
   stock?: number;
+  location?: string;
   categoryId?: string;
   categoryName?: string;
   allPrices?: Record<
@@ -125,6 +126,7 @@ interface SearchResult {
   allPrices?: Record<string, PriceInfo>;
   sku?: string;
   stock?: number;
+  location?: string;
   categoryId?: string;
   categoryName?: string;
   description?: string;
@@ -339,6 +341,7 @@ export function ProductServiceSelector({
         priceListId: priceListIdToUse,
         sku: result.sku,
         stock: result.stock,
+        location: result.location,
         categoryId: result.categoryId,
         categoryName: result.categoryName,
         allPrices: result.allPrices,
@@ -598,12 +601,21 @@ export function ProductServiceSelector({
                               : "Servicio"}
                           </Badge>
                           {result.type === "product" ? (
-                            <span className="text-xs text-muted-foreground truncate min-w-0 font-mono">
+                            <span className="text-xs text-muted-foreground truncate min-w-0 font-mono flex items-center gap-1.5 flex-wrap">
                               {result.sku && <span>SKU: {result.sku}</span>}
+                              {result.sku && result.stock !== undefined && <span className="text-muted-foreground/40 select-none">•</span>}
                               {result.stock !== undefined && (
-                                <span className="ml-1.5">
+                                <span>
                                   Stock: {result.stock}
                                 </span>
+                              )}
+                              {result.location && (
+                                <>
+                                  {(result.sku || result.stock !== undefined) && <span className="text-muted-foreground/40 select-none">•</span>}
+                                  <span className="text-muted-foreground truncate" title={`Ubicación: ${result.location}`}>
+                                    📍 {result.location}
+                                  </span>
+                                </>
                               )}
                             </span>
                           ) : (
@@ -809,9 +821,15 @@ export function ProductServiceSelector({
                       )}
                     </div>
                   )}
-                  <div className="text-xs text-muted-foreground mt-0.5 font-mono">
+                  <div className="text-xs text-muted-foreground mt-0.5 font-mono flex items-center gap-1.5 flex-wrap">
                     {item.type === "product" && item.stock !== undefined && (
                       <span>Stock: {item.stock}</span>
+                    )}
+                    {item.type === "product" && item.location && (
+                      <>
+                        {item.stock !== undefined && <span className="text-muted-foreground/40 select-none">•</span>}
+                        <span title={`Ubicación: ${item.location}`}>📍 {item.location}</span>
+                      </>
                     )}
                   </div>
                 </div>

@@ -38,7 +38,7 @@ const AVAILABLE_COLUMNS: ExportColumn[] = [
   { id: "isActive", label: "Activo", getValue: (p) => (p.isActive ? "Sí" : "No") },
 ];
 
-const DEFAULT_COLUMNS = ["sku", "name", "categoryName", "supplierName", "stock", "costPrice"];
+const DEFAULT_COLUMNS = ["sku", "name", "categoryName", "supplierName", "stock", "costPrice", "location"];
 
 interface ProductExportModalProps {
   isOpen: boolean;
