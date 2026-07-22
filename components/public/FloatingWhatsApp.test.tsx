@@ -5,19 +5,16 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import React from 'react';
 
 // Mock framer-motion to render elements statically in tests
-vi.mock('framer-motion', () => {
-  const ReactObj = require('react');
-  return {
-    motion: {
-      div: ReactObj.forwardRef(({ children, ...props }: any, ref: any) => (
-        <div ref={ref} {...props}>
-          {children}
-        </div>
-      )),
-    },
-    AnimatePresence: ({ children }: any) => <>{children}</>,
-  };
-});
+vi.mock('framer-motion', () => ({
+  motion: {
+    div: ({ children, ...props }: { children: React.ReactNode; [key: string]: unknown }) => (
+      <div {...props}>
+        {children}
+      </div>
+    ),
+  },
+  AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}));
 
 // Mock window.open
 const mockOpen = vi.fn();
