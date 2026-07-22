@@ -7,6 +7,7 @@ import { eq, gte, lte, and, desc } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
 import { invalidateCashStatus } from "@/lib/cache";
+import { toISODate } from "@/lib/utils/date";
 
 // GET /api/cash-movements - List cash movements
 export async function GET(request: NextRequest) {
@@ -38,7 +39,12 @@ export async function GET(request: NextRequest) {
       orderBy: desc(cashMovement.createdAt),
     });
 
-    return NextResponse.json({ movements });
+    return NextResponse.json({
+      movements: movements.map((m) => ({
+        ...m,
+        createdAt: toISODate(m.createdAt),
+      })),
+    });
   } catch (error) {
     console.error("Error fetching cash movements:", error);
     return NextResponse.json(
@@ -91,7 +97,12 @@ export async function POST(request: NextRequest) {
     revalidatePath("/adm");
     invalidateCashStatus();
 
-    return NextResponse.json({ movement }, { status: 201 });
+    return NextResponse.json({
+      movement: {
+        ...movement,
+        createdAt: toISODate(movement.createdAt),
+      },
+    }, { status: 201 });
   } catch (error) {
     console.error("Error creating cash movement:", error);
     return NextResponse.json(

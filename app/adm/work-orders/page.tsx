@@ -86,10 +86,8 @@ interface WorkOrder {
   vehicle: {
     identifier: string;
     category: string;
-    make?: { name: string };
-    model?: { name: string };
-    vehicle_make?: { name: string };
-    vehicle_model?: { name: string };
+    vehicleMake?: { name: string };
+    vehicleModel?: { name: string };
   };
   total: number;
   technicianId?: string;
@@ -686,8 +684,8 @@ export default function WorkOrdersPage() {
         wo.vehicle.identifier.toLowerCase().includes(searchLower) ||
         wo.customer.name.toLowerCase().includes(searchLower) ||
         wo.customer.phone?.toLowerCase().includes(searchLower) ||
-        wo.vehicle.make?.name?.toLowerCase().includes(searchLower) ||
-        wo.vehicle.model?.name?.toLowerCase().includes(searchLower);
+        wo.vehicle.vehicleMake?.name?.toLowerCase().includes(searchLower) ||
+        wo.vehicle.vehicleModel?.name?.toLowerCase().includes(searchLower);
 
       return (
         matchesPayment &&
@@ -733,8 +731,8 @@ export default function WorkOrdersPage() {
 
     const rows = filteredWorkOrders.map((wo) => {
       const balance = Math.max(0, Number(wo.total) - (wo.totalPaid || 0));
-      const makeName = wo.vehicle.vehicle_make?.name || wo.vehicle.make?.name || "";
-      const modelName = wo.vehicle.vehicle_model?.name || wo.vehicle.model?.name || "";
+      const makeName = wo.vehicle.vehicleMake?.name || "";
+      const modelName = wo.vehicle.vehicleModel?.name || "";
       const technicianName = wo.technician?.name || "Sin asignar";
       const entryChecklistStatus = wo.entryChecklist ? "Completado" : "Pendiente";
       const exitChecklistStatus = wo.exitChecklist ? "Completado" : "Pendiente";
@@ -1315,8 +1313,8 @@ export default function WorkOrdersPage() {
                               {wo.vehicle.identifier}
                             </div>
                             <div className="text-sm text-muted-foreground">
-                              {wo.customer.name} • {wo.vehicle.make?.name || wo.vehicle.vehicle_make?.name || ""}{" "}
-                              {wo.vehicle.model?.name || wo.vehicle.vehicle_model?.name || ""}
+                              {wo.customer.name} • {wo.vehicle.vehicleMake?.name || ""}{" "}
+                              {wo.vehicle.vehicleModel?.name || ""}
                             </div>
                           </div>
                         </div>

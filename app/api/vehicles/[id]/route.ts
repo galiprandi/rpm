@@ -32,14 +32,10 @@ export async function GET(
       return NextResponse.json({ error: "Vehicle not found" }, { status: 404 });
     }
 
-    // Transform DB field names to match frontend interface
+    // Drizzle returns camelCase relation names (vehicleMake, vehicleModel)
     const transformedVehicle = {
       ...vehicleRecord,
       workOrders: vehicleRecord.workOrders || [],
-      vehicle_make: undefined,
-      vehicle_model: undefined,
-      make: vehicleRecord.vehicleMake,
-      model: vehicleRecord.vehicleModel,
     };
 
     return NextResponse.json(transformedVehicle);

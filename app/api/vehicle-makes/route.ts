@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     const makesWithCount = makes.map((make) => ({
       ...make,
       _count: {
-        vehicle_model: make.vehicleModels.length,
+        vehicleModels: make.vehicleModels.length,
       },
     }));
 

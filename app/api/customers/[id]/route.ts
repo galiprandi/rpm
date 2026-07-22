@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { customer, cashMovement, workOrder, directSale, creditNote } from "@/db/schema";
 import { eq, desc, and } from "drizzle-orm";
 import { capitalizeText } from "@/lib/utils/format";
+import { toISODate } from "@/lib/utils/date";
 
 interface Params {
   params: Promise<{ id: string }>;
@@ -72,14 +73,39 @@ export const GET = withAdminDynamic(async (request: NextRequest, { params }: Par
     };
 
     // Transform to match frontend interface
+    // Drizzle mode:'string' timestamps return raw PG format ("2026-07-21 21:32:23.162")
+    // Convert to ISO 8601 for API consistency
     const transformedCustomer = {
       ...cust,
+      createdAt: toISODate(cust.createdAt),
+      updatedAt: toISODate(cust.updatedAt),
       balance: decimalToNumber(cust.balance),
-      vehicles: cust.vehicles || [],
-      workOrders: cust.workOrders || [],
-      directSales: cust.directSales || [],
-      creditNotes: cust.creditNotes || [],
-      payments: payments || [],
+      vehicles: (cust.vehicles || []).map((v) => ({
+        ...v,
+        createdAt: toISODate(v.createdAt),
+        updatedAt: toISODate(v.updatedAt),
+      })),
+      workOrders: (cust.workOrders || []).map((wo) => ({
+        ...wo,
+        createdAt: toISODate(wo.createdAt),
+        updatedAt: toISODate(wo.updatedAt),
+        scheduledDate: toISODate(wo.scheduledDate),
+        startedAt: toISODate(wo.startedAt),
+        completedAt: toISODate(wo.completedAt),
+        deliveredAt: toISODate(wo.deliveredAt),
+      })),
+      directSales: (cust.directSales || []).map((ds) => ({
+        ...ds,
+        createdAt: toISODate(ds.createdAt),
+      })),
+      creditNotes: (cust.creditNotes || []).map((cn) => ({
+        ...cn,
+        createdAt: toISODate(cn.createdAt),
+      })),
+      payments: (payments || []).map((p) => ({
+        ...p,
+        createdAt: toISODate(p.createdAt),
+      })),
     };
 
     return NextResponse.json(transformedCustomer);
@@ -131,7 +157,11 @@ export const PUT = withAdminDynamic(async (request: NextRequest, { params }: Par
       .where(eq(customer.id, id))
       .returning();
 
-    return NextResponse.json(updated);
+    return NextResponse.json({
+      ...updated,
+      createdAt: toISODate(updated.createdAt),
+      updatedAt: toISODate(updated.updatedAt),
+    });
   } catch (error) {
     console.error("Error updating customer:", error);
     return NextResponse.json(

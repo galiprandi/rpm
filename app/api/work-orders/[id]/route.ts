@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { updateWorkOrder } from "@/lib/services/workOrderService";
 import { getSessionWithAuth } from "@/lib/api-middleware";
 import { adjustBalanceAtomically } from "@/lib/services/balanceService";
+import { toISODate } from "@/lib/utils/date";
 
 export const dynamic = "force-dynamic";
 
@@ -48,7 +49,19 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(workOrderRecord);
+    return NextResponse.json({
+      ...workOrderRecord,
+      // Normalize nullable arrays to empty arrays (Prisma returned [] by default)
+      entryPhotos: workOrderRecord.entryPhotos || [],
+      exitPhotos: workOrderRecord.exitPhotos || [],
+      // Convert timestamps from PG raw format to ISO 8601
+      createdAt: toISODate(workOrderRecord.createdAt),
+      updatedAt: toISODate(workOrderRecord.updatedAt),
+      scheduledDate: toISODate(workOrderRecord.scheduledDate),
+      startedAt: toISODate(workOrderRecord.startedAt),
+      completedAt: toISODate(workOrderRecord.completedAt),
+      deliveredAt: toISODate(workOrderRecord.deliveredAt),
+    });
   } catch (error) {
     console.error("Error fetching work order:", error);
     return NextResponse.json(
@@ -80,7 +93,15 @@ export async function PUT(
       userAgent,
     });
 
-    return NextResponse.json(workOrderResult);
+    return NextResponse.json({
+      ...workOrderResult,
+      createdAt: toISODate((workOrderResult as any).createdAt),
+      updatedAt: toISODate((workOrderResult as any).updatedAt),
+      scheduledDate: toISODate((workOrderResult as any).scheduledDate),
+      startedAt: toISODate((workOrderResult as any).startedAt),
+      completedAt: toISODate((workOrderResult as any).completedAt),
+      deliveredAt: toISODate((workOrderResult as any).deliveredAt),
+    });
   } catch (error) {
     console.error("Error updating work order:", error);
     return NextResponse.json(

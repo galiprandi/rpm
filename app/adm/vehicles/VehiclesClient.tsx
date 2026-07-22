@@ -43,15 +43,15 @@ interface Vehicle {
     name: string;
     phone: string | null;
   };
-  vehicle_make: {
+  vehicleMake: {
     name: string;
   } | null;
-  vehicle_model: {
+  vehicleModel: {
     name: string;
   } | null;
   equipmentName: string | null;
   _count: {
-    work_order: number;
+    workOrders: number;
   };
 }
 
@@ -95,8 +95,8 @@ export default function VehiclesClient({
         "TRAILER",
       ].includes(v.category);
 
-      const makeName = !isEquipment && v.vehicle_make ? v.vehicle_make.name : "";
-      const modelName = !isEquipment && v.vehicle_model ? v.vehicle_model.name : "";
+      const makeName = !isEquipment && v.vehicleMake ? v.vehicleMake.name : "";
+      const modelName = !isEquipment && v.vehicleModel ? v.vehicleModel.name : "";
       const equipmentName = isEquipment ? (v.equipmentName || "") : "";
 
       return [
@@ -106,7 +106,7 @@ export default function VehiclesClient({
         modelName,
         equipmentName,
         v.customer?.name || "",
-        v._count.work_order.toString(),
+        v._count.workOrders.toString(),
       ];
     });
 
@@ -157,8 +157,8 @@ export default function VehiclesClient({
       (vehicle.identifier?.toLowerCase() ?? "").includes(search) ||
       (vehicle.customer?.name?.toLowerCase() ?? "").includes(search) ||
       (vehicle.equipmentName?.toLowerCase() ?? "").includes(search) ||
-      (vehicle.vehicle_make?.name?.toLowerCase() ?? "").includes(search) ||
-      (vehicle.vehicle_model?.name?.toLowerCase() ?? "").includes(search)
+      (vehicle.vehicleMake?.name?.toLowerCase() ?? "").includes(search) ||
+      (vehicle.vehicleModel?.name?.toLowerCase() ?? "").includes(search)
     );
   }, []);
 
@@ -202,11 +202,11 @@ export default function VehiclesClient({
               <span className="font-medium">{row.original.equipmentName}</span>
             );
           }
-          if (row.original.vehicle_make) {
+          if (row.original.vehicleMake) {
             return (
               <span className="font-medium">
-                {row.original.vehicle_make.name}{" "}
-                {row.original.vehicle_model?.name || ""}
+                {row.original.vehicleMake.name}{" "}
+                {row.original.vehicleModel?.name || ""}
               </span>
             );
           }
@@ -251,11 +251,11 @@ export default function VehiclesClient({
         ),
       },
       {
-        accessorKey: "_count.work_order",
+        accessorKey: "_count.workOrders",
         header: "OTs",
         cell: ({ row }) => (
           <span className="font-mono font-medium">
-            {row.original._count.work_order}
+            {row.original._count.workOrders}
           </span>
         ),
       },

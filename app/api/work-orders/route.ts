@@ -8,6 +8,7 @@ import {
   vehicleModel,
 } from "@/db/schema";
 import { eq, and, desc, count } from "drizzle-orm";
+import { toISODate } from "@/lib/utils/date";
 import { randomUUID } from "crypto";
 import { capitalizeText, normalizeText } from "@/lib/utils/format";
 import { adjustBalanceAtomically } from "@/lib/services/balanceService";
@@ -101,6 +102,14 @@ export async function GET(request: NextRequest) {
       );
       return {
         ...wo,
+        entryPhotos: wo.entryPhotos || [],
+        exitPhotos: wo.exitPhotos || [],
+        createdAt: toISODate(wo.createdAt),
+        updatedAt: toISODate(wo.updatedAt),
+        scheduledDate: toISODate(wo.scheduledDate),
+        startedAt: toISODate(wo.startedAt),
+        completedAt: toISODate(wo.completedAt),
+        deliveredAt: toISODate(wo.deliveredAt),
         totalPaid,
         isFullyPaid: totalPaid >= Number(wo.total),
       };
@@ -422,7 +431,17 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return NextResponse.json(workOrderWithRelations, { status: 201 });
+    return NextResponse.json({
+      ...workOrderWithRelations,
+      entryPhotos: workOrderWithRelations?.entryPhotos || [],
+      exitPhotos: workOrderWithRelations?.exitPhotos || [],
+      createdAt: toISODate(workOrderWithRelations?.createdAt),
+      updatedAt: toISODate(workOrderWithRelations?.updatedAt),
+      scheduledDate: toISODate(workOrderWithRelations?.scheduledDate),
+      startedAt: toISODate(workOrderWithRelations?.startedAt),
+      completedAt: toISODate(workOrderWithRelations?.completedAt),
+      deliveredAt: toISODate(workOrderWithRelations?.deliveredAt),
+    }, { status: 201 });
   } catch (error) {
     console.error("Error creating work order:", error);
     return NextResponse.json(

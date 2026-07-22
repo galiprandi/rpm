@@ -74,7 +74,7 @@ export interface VehicleCustomerRef {
 
 /**
  * Vehicle as returned by GET/POST/PUT /api/vehicles endpoints.
- * Uses Drizzle's vehicle_make / vehicle_model relation names.
+ * Uses Drizzle's camelCase relation names (vehicleMake / vehicleModel).
  */
 export interface VehicleApiResponse {
   id: string;
@@ -91,8 +91,8 @@ export interface VehicleApiResponse {
   customerId: string;
   createdAt: string;
   updatedAt: string;
-  vehicle_make?: VehicleMakeRef | null;
-  vehicle_model?: VehicleModelRef | null;
+  vehicleMake?: VehicleMakeRef | null;
+  vehicleModel?: VehicleModelRef | null;
   customer?: VehicleCustomerRef;
 }
 

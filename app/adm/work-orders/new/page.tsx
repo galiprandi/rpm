@@ -58,8 +58,8 @@ interface VehicleWithCustomer {
   id: string;
   identifier: string;
   category: string;
-  vehicle_make?: { name: string };
-  vehicle_model?: { name: string };
+  vehicleMake?: { name: string };
+  vehicleModel?: { name: string };
   year?: number;
   color?: string;
   equipmentName?: string;
@@ -640,8 +640,8 @@ export default function NewWorkOrderPage() {
                           <p className="text-sm text-muted-foreground truncate mt-0.5">
                             {buildVehicleDescription({
                               category: vehicle.category,
-                              make: vehicle.vehicle_make?.name,
-                              model: vehicle.vehicle_model?.name,
+                              make: vehicle.vehicleMake?.name,
+                              model: vehicle.vehicleModel?.name,
                               year: vehicle.year,
                             })
                               .split(" · ")
@@ -702,8 +702,8 @@ export default function NewWorkOrderPage() {
                           <p className="text-sm text-muted-foreground mt-0.5">
                             {buildVehicleDescription({
                               category: foundVehicle.category,
-                              make: foundVehicle.vehicle_make?.name,
-                              model: foundVehicle.vehicle_model?.name,
+                              make: foundVehicle.vehicleMake?.name,
+                              model: foundVehicle.vehicleModel?.name,
                               color: foundVehicle.color,
                               year: foundVehicle.year,
                             })

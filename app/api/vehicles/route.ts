@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
     const vehiclesWithCount = vehicles.map((v) => ({
       ...v,
       _count: {
-        work_order: v.workOrders.length,
+        workOrders: v.workOrders.length,
       },
     }));
 
