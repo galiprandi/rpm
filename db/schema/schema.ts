@@ -9,7 +9,7 @@ export const customer = pgTable("customer", {
 	address: text(),
 	notes: text(),
 	createdAt: timestamp({ precision: 3, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
-	updatedAt: timestamp({ precision: 3, mode: 'string' }).notNull(),
+	updatedAt: timestamp({ precision: 3, mode: 'string' }).defaultNow().notNull(),
 	billingData: jsonb(),
 	name: text().notNull(),
 	balance: numeric({ precision: 10, scale:  2 }).default('0').notNull(),
@@ -159,7 +159,7 @@ export const inventoryCountOperative = pgTable("inventory_count_operative", {
 	itemCount: integer().notNull(),
 	createdBy: text().notNull(),
 	createdAt: timestamp({ precision: 3, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
-	updatedAt: timestamp({ precision: 3, mode: 'string' }).notNull(),
+	updatedAt: timestamp({ precision: 3, mode: 'string' }).defaultNow().notNull(),
 	finishedAt: timestamp({ precision: 3, mode: 'string' }),
 	approvedAt: timestamp({ precision: 3, mode: 'string' }),
 	approvedBy: text(),
@@ -203,7 +203,7 @@ export const category = pgTable("category", {
 	sortOrder: integer().default(0).notNull(),
 	isActive: boolean().default(true).notNull(),
 	createdAt: timestamp({ precision: 3, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
-	updatedAt: timestamp({ precision: 3, mode: 'string' }).notNull(),
+	updatedAt: timestamp({ precision: 3, mode: 'string' }).defaultNow().notNull(),
 }, (table) => [
 	uniqueIndex("category_name_key").using("btree", table.name.asc().nullsLast().op("text_ops")),
 	index("category_sortOrder_idx").using("btree", table.sortOrder.asc().nullsLast().op("int4_ops")),
@@ -222,7 +222,7 @@ export const account = pgTable("account", {
 	scope: text(),
 	password: text(),
 	createdAt: timestamp({ precision: 3, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
-	updatedAt: timestamp({ precision: 3, mode: 'string' }).notNull(),
+	updatedAt: timestamp({ precision: 3, mode: 'string' }).defaultNow().notNull(),
 }, (table) => [
 	index("account_userId_idx").using("btree", table.userId.asc().nullsLast().op("text_ops")),
 	foreignKey({
@@ -282,7 +282,7 @@ export const priceList = pgTable("price_list", {
 	baseMarginPercentage: numeric({ precision: 5, scale:  2 }).notNull(),
 	roundingRule: text().default('SMART_HUNDREDS').notNull(),
 	createdAt: timestamp({ precision: 3, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
-	updatedAt: timestamp({ precision: 3, mode: 'string' }).notNull(),
+	updatedAt: timestamp({ precision: 3, mode: 'string' }).defaultNow().notNull(),
 }, (table) => [
 	index("price_list_isActive_idx").using("btree", table.isActive.asc().nullsLast().op("bool_ops")),
 	index("price_list_isPublic_idx").using("btree", table.isPublic.asc().nullsLast().op("bool_ops")),
@@ -332,7 +332,7 @@ export const paymentMethod = pgTable("payment_method", {
 	isActive: boolean().default(true).notNull(),
 	sortOrder: integer().default(0).notNull(),
 	createdAt: timestamp({ precision: 3, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
-	updatedAt: timestamp({ precision: 3, mode: 'string' }).notNull(),
+	updatedAt: timestamp({ precision: 3, mode: 'string' }).defaultNow().notNull(),
 }, (table) => [
 	uniqueIndex("payment_method_code_key").using("btree", table.code.asc().nullsLast().op("text_ops")),
 	index("payment_method_isActive_idx").using("btree", table.isActive.asc().nullsLast().op("bool_ops")),
@@ -352,7 +352,7 @@ export const product = pgTable("product", {
 	location: text(),
 	isActive: boolean().default(true).notNull(),
 	createdAt: timestamp({ precision: 3, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
-	updatedAt: timestamp({ precision: 3, mode: 'string' }).notNull(),
+	updatedAt: timestamp({ precision: 3, mode: 'string' }).defaultNow().notNull(),
 	categoryId: text().notNull(),
 	supplierId: text(),
 	lastMovementAt: timestamp({ precision: 3, mode: 'string' }),
@@ -395,7 +395,7 @@ export const purchaseVoucher = pgTable("purchase_voucher", {
 	status: text().default('DRAFT').notNull(),
 	createdBy: text().notNull(),
 	createdAt: timestamp({ precision: 3, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
-	updatedAt: timestamp({ precision: 3, mode: 'string' }).notNull(),
+	updatedAt: timestamp({ precision: 3, mode: 'string' }).defaultNow().notNull(),
 	finalizedAt: timestamp({ precision: 3, mode: 'string' }),
 }, (table) => [
 	index("purchase_voucher_createdAt_idx").using("btree", table.createdAt.asc().nullsLast().op("timestamp_ops")),
@@ -424,7 +424,7 @@ export const supplier = pgTable("supplier", {
 	notes: text(),
 	isActive: boolean().default(true).notNull(),
 	createdAt: timestamp({ precision: 3, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
-	updatedAt: timestamp({ precision: 3, mode: 'string' }).notNull(),
+	updatedAt: timestamp({ precision: 3, mode: 'string' }).defaultNow().notNull(),
 	cuit: text(),
 }, (table) => [
 	index("supplier_isActive_idx").using("btree", table.isActive.asc().nullsLast().op("bool_ops")),
@@ -460,7 +460,7 @@ export const setting = pgTable("setting", {
 	id: text().primaryKey().default(sql`gen_random_uuid()`).notNull(),
 	key: text().notNull(),
 	value: text().notNull(),
-	updatedAt: timestamp({ precision: 3, mode: 'string' }).notNull(),
+	updatedAt: timestamp({ precision: 3, mode: 'string' }).defaultNow().notNull(),
 }, (table) => [
 	uniqueIndex("setting_key_key").using("btree", table.key.asc().nullsLast().op("text_ops")),
 ]);
@@ -479,7 +479,7 @@ export const vehicle = pgTable("vehicle", {
 	notes: text(),
 	customerId: text().notNull(),
 	createdAt: timestamp({ precision: 3, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
-	updatedAt: timestamp({ precision: 3, mode: 'string' }).notNull(),
+	updatedAt: timestamp({ precision: 3, mode: 'string' }).defaultNow().notNull(),
 }, (table) => [
 	index("vehicle_category_idx").using("btree", table.category.asc().nullsLast().op("text_ops")),
 	index("vehicle_customerId_idx").using("btree", table.customerId.asc().nullsLast().op("text_ops")),
@@ -511,7 +511,7 @@ export const purchaseVoucherItem = pgTable("purchase_voucher_item", {
 	unitCost: numeric({ precision: 10, scale:  2 }).notNull(),
 	subtotal: numeric({ precision: 10, scale:  2 }).notNull(),
 	createdAt: timestamp({ precision: 3, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
-	updatedAt: timestamp({ precision: 3, mode: 'string' }).notNull(),
+	updatedAt: timestamp({ precision: 3, mode: 'string' }).defaultNow().notNull(),
 	priceListData: jsonb(),
 }, (table) => [
 	index("purchase_voucher_item_productId_idx").using("btree", table.productId.asc().nullsLast().op("text_ops")),
@@ -538,7 +538,7 @@ export const service = pgTable("service", {
 	vehicleFactor: numeric({ precision: 3, scale:  2 }).default('1.0').notNull(),
 	isActive: boolean().default(true).notNull(),
 	createdAt: timestamp({ precision: 3, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
-	updatedAt: timestamp({ precision: 3, mode: 'string' }).notNull(),
+	updatedAt: timestamp({ precision: 3, mode: 'string' }).defaultNow().notNull(),
 }, (table) => [
 	index("service_isActive_idx").using("btree", table.isActive.asc().nullsLast().op("bool_ops")),
 	uniqueIndex("service_name_key").using("btree", table.name.asc().nullsLast().op("text_ops")),
@@ -552,7 +552,7 @@ export const userRole = pgTable("user_role", {
 	notes: text(),
 	isActive: boolean().default(true).notNull(),
 	createdAt: timestamp({ precision: 3, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
-	updatedAt: timestamp({ precision: 3, mode: 'string' }).notNull(),
+	updatedAt: timestamp({ precision: 3, mode: 'string' }).defaultNow().notNull(),
 	lastLogin: timestamp({ precision: 3, mode: 'string' }),
 	image: text(),
 }, (table) => [
@@ -599,7 +599,7 @@ export const user = pgTable("user", {
 	emailVerified: boolean().default(false).notNull(),
 	image: text(),
 	createdAt: timestamp({ precision: 3, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
-	updatedAt: timestamp({ precision: 3, mode: 'string' }).notNull(),
+	updatedAt: timestamp({ precision: 3, mode: 'string' }).defaultNow().notNull(),
 	role: text().default('USER').notNull(),
 }, (table) => [
 	uniqueIndex("user_email_key").using("btree", table.email.asc().nullsLast().op("text_ops")),
@@ -610,7 +610,7 @@ export const session = pgTable("session", {
 	expiresAt: timestamp({ precision: 3, mode: 'string' }).notNull(),
 	token: text().notNull(),
 	createdAt: timestamp({ precision: 3, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
-	updatedAt: timestamp({ precision: 3, mode: 'string' }).notNull(),
+	updatedAt: timestamp({ precision: 3, mode: 'string' }).defaultNow().notNull(),
 	ipAddress: text(),
 	userAgent: text(),
 	userId: text().notNull(),
@@ -630,7 +630,7 @@ export const verification = pgTable("verification", {
 	value: text().notNull(),
 	expiresAt: timestamp({ precision: 3, mode: 'string' }).notNull(),
 	createdAt: timestamp({ precision: 3, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
-	updatedAt: timestamp({ precision: 3, mode: 'string' }).notNull(),
+	updatedAt: timestamp({ precision: 3, mode: 'string' }).defaultNow().notNull(),
 }, (table) => [
 	index("verification_identifier_idx").using("btree", table.identifier.asc().nullsLast().op("text_ops")),
 ]);
@@ -746,7 +746,7 @@ export const workOrder = pgTable("work_order", {
 	invoiceId: text(),
 	notes: text().notNull(),
 	createdAt: timestamp({ precision: 3, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
-	updatedAt: timestamp({ precision: 3, mode: 'string' }).notNull(),
+	updatedAt: timestamp({ precision: 3, mode: 'string' }).defaultNow().notNull(),
 	source: text().default('IN_PERSON').notNull(),
 	fuelLevel: integer(),
 	odometerValue: integer(),
@@ -776,7 +776,7 @@ export const priceListItem = pgTable("price_list_item", {
 	overrideMarginPercentage: numeric({ precision: 5, scale:  2 }),
 	fixedPrice: numeric({ precision: 10, scale:  2 }),
 	createdAt: timestamp({ precision: 3, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
-	updatedAt: timestamp({ precision: 3, mode: 'string' }).notNull(),
+	updatedAt: timestamp({ precision: 3, mode: 'string' }).defaultNow().notNull(),
 }, (table) => [
 	index("price_list_item_priceListId_idx").using("btree", table.priceListId.asc().nullsLast().op("text_ops")),
 	uniqueIndex("price_list_item_priceListId_productId_key").using("btree", table.priceListId.asc().nullsLast().op("text_ops"), table.productId.asc().nullsLast().op("text_ops")),

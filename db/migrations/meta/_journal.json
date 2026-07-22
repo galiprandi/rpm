@@ -15,6 +15,20 @@
       "when": 1784736194133,
       "tag": "0001_light_scrambler",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1784736567252,
+      "tag": "0002_loose_ezekiel_stane",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1784737000000,
+      "tag": "0003_auto_update_timestamps",
+      "breakpoints": true
     }
   ]
 }
