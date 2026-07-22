@@ -18,6 +18,7 @@ export default defineConfig({
       '**/lib/services/*Service.test.ts',
       '**/tests/db.test.ts',
       '**/tests/regression/**',
+      '**/tests/migration/**',
     ],
     coverage: {
       provider: 'v8',

@@ -308,7 +308,7 @@ export default function CustomerDetailPage() {
         ),
       },
     ],
-    [customerId],
+    [customerId, customer?.workOrders],
   );
 
   // Columnas para DataTable de OTs
