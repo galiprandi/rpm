@@ -7,6 +7,7 @@ import {
   createCashMovement,
 } from "@/lib/services/cashMovementService";
 import { invalidateCashStatus } from "@/lib/cache";
+import { adjustBalanceAtomically } from "@/lib/services/balanceService";
 
 // GET /api/work-orders/[id]/payments - List payments with totals
 export async function GET(
@@ -187,39 +188,14 @@ export async function POST(
         tx,
       );
 
-      // Update customer balance if associated with one
+      // Update customer balance atomically
       if (workOrder.customerId) {
-        const customer = await tx.customer.findUnique({
-          where: { id: workOrder.customerId },
-          select: { balance: true },
-        });
-
-        if (customer) {
-          // Helper to convert Decimal to number
-          const decimalToNumber = (decimal: unknown): number => {
-            if (decimal === null || decimal === undefined) return 0;
-            if (typeof decimal === "number") return decimal;
-            if (
-              typeof decimal === "object" &&
-              "toNumber" in decimal &&
-              typeof (decimal as { toNumber: () => number }).toNumber ===
-                "function"
-            ) {
-              return (decimal as { toNumber: () => number }).toNumber();
-            }
-            return 0;
-          };
-
-          const currentBalance = decimalToNumber(customer.balance);
-          const newBalance = currentBalance - amount;
-
-          await tx.customer.update({
-            where: { id: workOrder.customerId },
-            data: {
-              balance: newBalance,
-            },
-          });
-        }
+        await adjustBalanceAtomically(
+          workOrder.customerId,
+          -amount,
+          "payment",
+          tx,
+        );
       }
 
       return newPayment;
@@ -235,6 +211,14 @@ export async function POST(
     const workOrderTotal = Number(workOrder.total);
     const pendingAmount = Math.max(0, workOrderTotal - totalPaid);
     const isFullyPaid = totalPaid >= workOrderTotal;
+
+    // Update work order status to PAID if fully paid
+    if (isFullyPaid) {
+      await prisma.work_order.update({
+        where: { id: workOrderId },
+        data: { status: "PAID" },
+      });
+    }
 
     invalidateCashStatus();
 

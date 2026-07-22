@@ -4,10 +4,15 @@
 import { prisma } from "@/lib/prisma";
 import { randomUUID } from "crypto";
 import { createCashMovement } from "./cashMovementService";
-import { createInvoice, determineInvoiceType, type InvoiceType } from "./invoiceService";
+import {
+  createInvoice,
+  determineInvoiceType,
+  type InvoiceType,
+} from "./invoiceService";
 import { revalidatePath } from "next/cache";
 import { invalidateCashStatus } from "@/lib/cache";
 import { getArgentinaStartOfDay, getArgentinaEndOfDay } from "@/lib/utils/date";
+import { adjustBalanceAtomically } from "./balanceService";
 
 export interface DirectSaleItemInput {
   productId?: string;
@@ -42,7 +47,7 @@ export async function generateDocumentFromDirectSale(
   directSaleId: string,
   createdBy: string,
   options: { type?: InvoiceType; forceNew?: boolean } = {},
-  existingTx?: any
+  existingTx?: any,
 ) {
   const execute = async (tx: any) => {
     // Fetch direct sale with items and customer
@@ -55,23 +60,24 @@ export async function generateDocumentFromDirectSale(
     });
 
     if (!directSale) {
-      throw new Error('Venta no encontrada');
+      throw new Error("Venta no encontrada");
     }
 
     const customer = directSale.customer;
     const billingData = customer?.billingData;
 
     // Determine document type
-    const docType = options.type || determineInvoiceType(billingData, 'FACTURA', true);
+    const docType =
+      options.type || determineInvoiceType(billingData, "FACTURA", true);
 
     // Check if a document of this type already exists to avoid duplicates
     if (!options.forceNew) {
       const existingDocument = await tx.invoice.findFirst({
         where: {
           referenceId: directSaleId,
-          referenceType: 'direct_sale',
+          referenceType: "direct_sale",
           type: docType,
-          status: { notIn: ['CANCELLED', 'ANNULLED'] },
+          status: { notIn: ["CANCELLED", "ANNULLED"] },
         },
       });
 
@@ -83,28 +89,31 @@ export async function generateDocumentFromDirectSale(
     let customerDoc: string | undefined = undefined;
     let customerDocType: string | undefined = undefined;
 
-    if (billingData && typeof billingData === 'object') {
+    if (billingData && typeof billingData === "object") {
       const bd = billingData as any;
       customerDoc = bd.cuit || bd.dni || undefined;
-      customerDocType = bd.cuit ? 'CUIT' : (bd.dni ? 'DNI' : undefined);
+      customerDocType = bd.cuit ? "CUIT" : bd.dni ? "DNI" : undefined;
     }
 
     const total = Number(directSale.total);
 
     // Create the invoice/document
-    return await createInvoice({
-      type: docType,
-      referenceId: directSale.id,
-      referenceType: 'direct_sale',
-      customerId: directSale.customerId,
-      customerName: directSale.customerName,
-      customerDoc,
-      customerDocType,
-      subtotal: total,
-      total: total,
-      status: 'DRAFT',
-      createdBy,
-    }, tx);
+    return await createInvoice(
+      {
+        type: docType,
+        referenceId: directSale.id,
+        referenceType: "direct_sale",
+        customerId: directSale.customerId,
+        customerName: directSale.customerName,
+        customerDoc,
+        customerDocType,
+        subtotal: total,
+        total: total,
+        status: "DRAFT",
+        createdBy,
+      },
+      tx,
+    );
   };
 
   if (existingTx) {
@@ -301,44 +310,9 @@ export async function createDirectSale(input: CreateDirectSaleInput) {
         );
       }
 
-      // For credit sales, update customer balance
+      // For credit sales, update customer balance atomically
       if (sellOnCredit && customerId && remaining > 0) {
-        const customer = await tx.customer.findUnique({
-          where: { id: customerId },
-          select: { balance: true, name: true },
-        });
-
-        if (!customer) {
-          throw new Error("Cliente no encontrado");
-        }
-
-        // Helper to convert Decimal to number
-        const decimalToNumber = (decimal: unknown): number => {
-          if (decimal === null || decimal === undefined) return 0;
-          if (typeof decimal === "number") return decimal;
-          if (
-            typeof decimal === "object" &&
-            "toNumber" in decimal &&
-            typeof (decimal as { toNumber: () => number }).toNumber ===
-              "function"
-          ) {
-            return (decimal as { toNumber: () => number }).toNumber();
-          }
-          return 0;
-        };
-
-        const currentBalance = decimalToNumber(customer.balance);
-        const newBalance = currentBalance + remaining;
-
-        await tx.customer.update({
-          where: { id: customerId },
-          data: {
-            balance: newBalance,
-          },
-        });
-
-        // Note: The remaining debt is tracked in customer.balance
-        // No separate payment record needed - the balance is the source of truth
+        await adjustBalanceAtomically(customerId, remaining, "direct_sale", tx);
       }
 
       // --- Generate Pre-Invoice ---

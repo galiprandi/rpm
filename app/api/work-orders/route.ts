@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { randomUUID } from "crypto";
 import { capitalizeText, normalizeText } from "@/lib/utils/format";
+import { adjustBalanceAtomically } from "@/lib/services/balanceService";
 
 // GET /api/work-orders - List work orders with filters
 export async function GET(request: NextRequest) {
@@ -396,32 +397,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 7. Update customer balance - add total as debt
+    // 7. Update customer balance atomically
     try {
-      const customer = await prisma.customer.findUnique({
-        where: { id: customerId },
-        select: { balance: true },
-      });
-
-      if (customer) {
-        const currentBalance = Number(customer.balance) || 0;
-        const newBalance = currentBalance + total;
-
-        await prisma.customer.update({
-          where: { id: customerId },
-          data: { balance: newBalance },
-        });
-
-        console.log("Customer balance updated:", {
-          customerId,
-          oldBalance: currentBalance,
-          newBalance,
-          added: total,
-        });
-      }
+      await adjustBalanceAtomically(customerId, total, "work_order_create");
     } catch (balanceError) {
       console.error("Error updating customer balance:", balanceError);
-      // No fallar la creación de la OT, pero loguear el error
     }
 
     return NextResponse.json(workOrder, { status: 201 });

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { UserRole } from "@/lib/auth/roles";
 import { revalidatePath } from "next/cache";
 import { invalidateCashStatus } from "@/lib/cache";
+import { adjustBalanceAtomically } from "@/lib/services/balanceService";
 
 // Helper para convertir Decimal a number
 function decimalToNumber(decimal: unknown): number {
@@ -69,15 +70,7 @@ export async function POST(
     // Check if customer exists
     const customer = await prisma.customer.findUnique({
       where: { id },
-      include: {
-        work_order: {
-          where: {
-            status: {
-              notIn: ["CANCELLED", "PAID"],
-            },
-          },
-        },
-      },
+      select: { id: true, name: true, balance: true },
     });
 
     if (!customer) {
@@ -87,21 +80,15 @@ export async function POST(
       );
     }
 
-    // Get current balance
-    const currentBalance = decimalToNumber(customer.balance);
-
-    // Calculate new balance
-    const newBalance = currentBalance - amount;
-
-    // Start transaction: update customer balance and update work orders if balance is 0
+    // Start transaction: adjust balance atomically and mark individual OTs/direct sales as PAID
     const result = await prisma.$transaction(async (tx) => {
-      // Update customer balance
-      const updatedCustomer = await tx.customer.update({
-        where: { id },
-        data: {
-          balance: newBalance,
-        },
-      });
+      // Adjust customer balance atomically
+      const newBalance = await adjustBalanceAtomically(
+        id,
+        -amount,
+        "payment",
+        tx,
+      );
 
       // Create a cash movement record for this payment
       const paymentMovement = await tx.cash_movement.create({
@@ -117,23 +104,56 @@ export async function POST(
         },
       });
 
-      // If balance is now exactly 0, mark all pending work orders as PAID
-      // Note: If balance is negative, customer has credit - keep OTs pending
-      if (newBalance === 0) {
-        await tx.work_order.updateMany({
-          where: {
-            customerId: id,
-            status: {
-              notIn: ["CANCELLED", "PAID"],
-            },
-          },
-          data: {
-            status: "PAID",
-          },
-        });
+      // Mark individual work orders as PAID if their total - payments <= 0
+      const customerWorkOrders = await tx.work_order.findMany({
+        where: {
+          customerId: id,
+          status: { notIn: ["CANCELLED", "PAID"] },
+        },
+        select: {
+          id: true,
+          total: true,
+          payments: { select: { amount: true } },
+        },
+      });
+
+      for (const wo of customerWorkOrders) {
+        const woTotal = decimalToNumber(wo.total);
+        const woPaid = wo.payments.reduce(
+          (s, p) => s + decimalToNumber(p.amount),
+          0,
+        );
+        if (woTotal - woPaid <= 0.01) {
+          await tx.work_order.update({
+            where: { id: wo.id },
+            data: { status: "PAID" },
+          });
+        }
       }
 
-      return { updatedCustomer, paymentMovement };
+      // Mark individual direct sales as fully paid if applicable
+      const customerDirectSales = await tx.direct_sale.findMany({
+        where: { customerId: id },
+        select: {
+          id: true,
+          total: true,
+          payments: { select: { amount: true } },
+        },
+      });
+
+      for (const ds of customerDirectSales) {
+        const dsTotal = decimalToNumber(ds.total);
+        const dsPaid = ds.payments.reduce(
+          (s, p) => s + decimalToNumber(p.amount),
+          0,
+        );
+        if (dsTotal - dsPaid <= 0.01) {
+          // Direct sales don't have a status field, but we can track via payments
+          // No status update needed — balance is the source of truth
+        }
+      }
+
+      return { newBalance, paymentMovement };
     });
 
     // Revalidate relevant paths
@@ -142,7 +162,8 @@ export async function POST(
     revalidatePath("/adm/work-orders");
     invalidateCashStatus();
 
-    const finalNewBalance = decimalToNumber(result.updatedCustomer.balance);
+    const finalNewBalance = result.newBalance;
+    const previousBalance = finalNewBalance + amount;
 
     return NextResponse.json(
       {
@@ -155,11 +176,11 @@ export async function POST(
           createdAt: result.paymentMovement.createdAt,
         },
         customer: {
-          id: result.updatedCustomer.id,
-          name: result.updatedCustomer.name,
-          previousBalance: currentBalance,
+          id: id,
+          name: customer.name,
+          previousBalance: previousBalance,
           newBalance: finalNewBalance,
-          hasCredit: finalNewBalance < 0, // True if customer has credit (negative balance)
+          hasCredit: finalNewBalance < 0,
         },
       },
       { status: 201 },
