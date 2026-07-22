@@ -336,7 +336,7 @@ export default function CustomersReportClient() {
       <Card>
         <CardHeader>
           <CardTitle className="text-lg font-medium flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-primary" />
+            <TrendingUp className="h-5 w-5 text-primary pointer-events-none" aria-hidden="true" />
             Evolución de Clientes Nuevos
           </CardTitle>
         </CardHeader>
@@ -390,7 +390,7 @@ export default function CustomersReportClient() {
       <Card>
         <CardHeader>
           <CardTitle className="text-lg font-medium flex items-center gap-2">
-            <Trophy className="h-5 w-5 text-yellow-500" />
+            <Trophy className="h-5 w-5 text-yellow-500 pointer-events-none" aria-hidden="true" />
             Top 10 Clientes por Facturación
           </CardTitle>
         </CardHeader>

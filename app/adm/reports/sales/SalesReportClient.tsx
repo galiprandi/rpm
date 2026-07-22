@@ -24,7 +24,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { SalesReportData, type GroupBy } from "@/lib/services/salesReportService";
-import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -378,7 +377,7 @@ export default function SalesReportClient() {
               <Card className="lg:col-span-2">
                 <CardHeader>
                   <CardTitle className="text-lg font-medium flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5 text-primary" />
+                    <TrendingUp className="h-5 w-5 text-primary pointer-events-none" aria-hidden="true" />
                     {data.groupBy === "hour"
                       ? "Evolución por Hora"
                       : data.groupBy === "month"
@@ -443,7 +442,7 @@ export default function SalesReportClient() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg font-medium flex items-center gap-2">
-                    <Layers className="h-5 w-5 text-primary" />
+                    <Layers className="h-5 w-5 text-primary pointer-events-none" aria-hidden="true" />
                     Ventas por Categoría
                   </CardTitle>
                 </CardHeader>
@@ -485,7 +484,7 @@ export default function SalesReportClient() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg font-medium flex items-center gap-2">
-                    <Package className="h-5 w-5 text-primary" />
+                    <Package className="h-5 w-5 text-primary pointer-events-none" aria-hidden="true" />
                     Top Productos / Servicios
                   </CardTitle>
                 </CardHeader>
