@@ -561,10 +561,38 @@ export function ProductsClient({
             <span className="font-semibold tracking-tight truncate">
               {row.original.name}
             </span>
-            {row.original.sku && (
-              <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground/70">
-                {row.original.sku}
-              </span>
+            {(row.original.sku || row.original.barcode || row.original.location || row.original.supplier?.name) && (
+              <div className="flex flex-wrap items-center gap-1.5 mt-0.5 text-[10.5px] leading-none font-medium">
+                {row.original.sku && (
+                  <span className="font-mono uppercase tracking-wider text-neutral-950 dark:text-neutral-50 font-semibold bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded border border-neutral-200 dark:border-neutral-700">
+                    {row.original.sku}
+                  </span>
+                )}
+                {row.original.barcode && (
+                  <>
+                    {row.original.sku && <span className="text-muted-foreground/40 select-none" aria-hidden="true">•</span>}
+                    <span className="font-mono text-muted-foreground truncate max-w-[120px]" title={`EAN: ${row.original.barcode}`}>
+                      EAN {row.original.barcode}
+                    </span>
+                  </>
+                )}
+                {row.original.location && (
+                  <>
+                    {(row.original.sku || row.original.barcode) && <span className="text-muted-foreground/40 select-none" aria-hidden="true">•</span>}
+                    <span className="text-muted-foreground truncate max-w-[120px]" title={`Ubicación: ${row.original.location}`}>
+                      📍 {row.original.location}
+                    </span>
+                  </>
+                )}
+                {row.original.supplier?.name && (
+                  <>
+                    {(row.original.sku || row.original.barcode || row.original.location) && <span className="text-muted-foreground/40 select-none" aria-hidden="true">•</span>}
+                    <span className="text-muted-foreground truncate max-w-[150px]" title={`Proveedor: ${row.original.supplier.name}`}>
+                      {row.original.supplier.name}
+                    </span>
+                  </>
+                )}
+              </div>
             )}
           </div>
         </div>

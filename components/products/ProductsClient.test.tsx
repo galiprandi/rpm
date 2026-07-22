@@ -44,19 +44,25 @@ vi.mock('@/components/ui/UIProvider', () => ({
 
 vi.mock('@/components/adm', () => ({
   Header: ({ title, children }: { title: string; children?: React.ReactNode }) => <div><h1>{title}</h1>{children}</div>,
-  CrudAdmin: ({ items, onCreate, rowActions }: { items: Product[]; onCreate: () => void; rowActions?: (item: Product) => React.ReactNode }) => (
-    <div>
-      <button onClick={onCreate}>Create</button>
-      <div data-testid="crud-admin">
-        {items.map((item: Product) => (
-          <div key={item.id}>
-            {item.name}
-            {rowActions && rowActions(item)}
-          </div>
-        ))}
+  CrudAdmin: ({ items, onCreate, rowActions, columns }: { items: Product[]; onCreate: () => void; rowActions?: (item: Product) => React.ReactNode; columns: any[] }) => {
+    return (
+      <div>
+        <button onClick={onCreate}>Create</button>
+        <div data-testid="crud-admin">
+          {items.map((item: Product) => {
+            const nameColumn = columns.find((col) => col.accessorKey === 'name');
+            const CellRenderer = nameColumn?.cell;
+            return (
+              <div key={item.id} data-testid={`product-row-${item.id}`}>
+                {CellRenderer ? CellRenderer({ row: { original: item } }) : item.name}
+                {rowActions && rowActions(item)}
+              </div>
+            );
+          })}
+        </div>
       </div>
-    </div>
-  ),
+    );
+  },
   CrudStats: ({ stats }: { stats: Array<{ label: string; value: React.ReactNode }> }) => (
     <div>
       {stats.map((stat, i) => (
@@ -188,5 +194,97 @@ describe('ProductsClient', () => {
     );
 
     expect(screen.getByText('Productos')).toBeInTheDocument();
+  });
+
+  it('should render secondary line with SKU, Barcode, Location, and Supplier when all are present', () => {
+    const customProducts: Product[] = [
+      {
+        id: 'test-id-1',
+        sku: 'TEST-SKU-123',
+        name: 'Test Product X',
+        description: 'Test Desc',
+        barcode: 'EAN-99999',
+        categoryId: 'cat-1',
+        category: { id: 'cat-1', name: 'Category 1', color: '#ff0000' },
+        costPrice: 100,
+        replacementCost: 150,
+        stock: 10,
+        minStock: 5,
+        supplierId: 'sup-1',
+        supplier: { id: 'sup-1', name: 'Super Supplier Inc' },
+        location: 'Estanteria B3',
+        isActive: true,
+        margin: 50,
+        isLowStock: false,
+      },
+    ];
+
+    render(
+      <TooltipProvider>
+        <ProductsClient
+          products={customProducts}
+          categories={mockCategories}
+          suppliers={mockSuppliers}
+        />
+      </TooltipProvider>
+    );
+
+    // Verify name
+    expect(screen.getByText('Test Product X')).toBeInTheDocument();
+
+    // Verify SKU
+    expect(screen.getByText('TEST-SKU-123')).toBeInTheDocument();
+    // Verify high-contrast classes on SKU
+    const skuElement = screen.getByText('TEST-SKU-123');
+    expect(skuElement).toHaveClass('text-neutral-950');
+    expect(skuElement).toHaveClass('font-mono');
+
+    // Verify barcode/EAN
+    expect(screen.getByText('EAN EAN-99999')).toBeInTheDocument();
+
+    // Verify location
+    expect(screen.getByText(/Estanteria B3/)).toBeInTheDocument();
+
+    // Verify supplier
+    expect(screen.getByText('Super Supplier Inc')).toBeInTheDocument();
+  });
+
+  it('should only render SKU when other optional fields are missing', () => {
+    const customProducts: Product[] = [
+      {
+        id: 'test-id-2',
+        sku: 'JUST-SKU-456',
+        name: 'Only SKU Product',
+        description: null,
+        barcode: null,
+        categoryId: 'cat-1',
+        category: null,
+        costPrice: 10,
+        replacementCost: 15,
+        stock: 1,
+        minStock: 0,
+        supplierId: null,
+        supplier: null,
+        location: null,
+        isActive: true,
+        margin: 50,
+        isLowStock: false,
+      },
+    ];
+
+    render(
+      <TooltipProvider>
+        <ProductsClient
+          products={customProducts}
+          categories={mockCategories}
+          suppliers={mockSuppliers}
+        />
+      </TooltipProvider>
+    );
+
+    expect(screen.getByText('Only SKU Product')).toBeInTheDocument();
+    expect(screen.getByText('JUST-SKU-456')).toBeInTheDocument();
+    expect(screen.queryByText(/EAN/)).toBeNull();
+    expect(screen.queryByText(/📍/)).toBeNull();
   });
 });
