@@ -1,6 +1,8 @@
 import { tool } from 'ai';
 import { z } from 'zod';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
+import { workOrder } from '@/db/schema';
+import { eq } from 'drizzle-orm';
 
 export const composeWhatsAppMessageTool = tool({
   description: 'Redacta un mensaje de WhatsApp para un cliente basándose en los datos de una OT. NO envía el mensaje, solo lo redacta para que el empleado lo copie y envíe. Tipos: "ready" (auto listo), "progress" (avance del trabajo), "payment_reminder" (recordatorio de pago).',
@@ -10,25 +12,23 @@ export const composeWhatsAppMessageTool = tool({
     customNote: z.string().optional().describe('Nota adicional para incluir en el mensaje'),
   }),
   execute: async ({ workOrderId, messageType, customNote }) => {
-    const wo = await prisma.work_order.findUnique({
-      where: { id: workOrderId },
-      include: {
-        customer: { select: { name: true, phone: true } },
+    const wo = await db.query.workOrder.findFirst({
+      where: eq(workOrder.id, workOrderId),
+      with: {
+        customer: true,
         vehicle: {
-          select: {
-            identifier: true,
-            category: true,
-            vehicle_make: { select: { name: true } },
-            vehicle_model: { select: { name: true } },
+          with: {
+            vehicleMake: true,
+            vehicleModel: true,
           },
         },
-        work_order_item: {
-          include: {
-            product: { select: { name: true } },
-            service: { select: { name: true } },
+        workOrderItems: {
+          with: {
+            product: true,
+            service: true,
           },
         },
-        payments: { select: { amount: true } },
+        payments: true,
       },
     });
 
@@ -36,12 +36,12 @@ export const composeWhatsAppMessageTool = tool({
 
     const customerName = wo.customer?.name || 'cliente';
     const vehicleDesc = wo.vehicle
-      ? `${wo.vehicle.vehicle_make?.name || ''} ${wo.vehicle.vehicle_model?.name || ''} (${wo.vehicle.identifier || ''})`.trim()
+      ? `${wo.vehicle.vehicleMake?.name || ''} ${wo.vehicle.vehicleModel?.name || ''} (${wo.vehicle.identifier || ''})`.trim()
       : 'su vehículo';
     const total = Number(wo.total);
     const totalPaid = wo.payments.reduce((s, p) => s + Number(p.amount), 0);
     const balance = total - totalPaid;
-    const itemsList = wo.work_order_item
+    const itemsList = wo.workOrderItems
       .map((i) => `  - ${i.type === 'PRODUCT' ? i.product?.name : i.service?.name} x${i.quantity}`)
       .join('\n');
 

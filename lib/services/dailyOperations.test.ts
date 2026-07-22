@@ -1,31 +1,50 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as dashboardService from './dashboardService';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
 import { getArgentinaNow } from '@/lib/utils/date';
 
-vi.mock('@/lib/prisma', () => ({
-  prisma: {
-    cash_movement: {
-      findMany: vi.fn(),
+// vi.hoisted runs before vi.mock factory
+const { createChainable, mockFns } = vi.hoisted(() => {
+  function createChainable(resolveValue: unknown = []): any {
+    const target = () => {};
+    return new Proxy(target, {
+      get(_t: any, prop: string) {
+        if (prop === 'then') {
+          return (resolve: any, reject: any) =>
+            Promise.resolve(resolveValue).then(resolve, reject);
+        }
+        if (prop === 'catch') {
+          return (onRejected: any) =>
+            Promise.resolve(resolveValue).catch(onRejected);
+        }
+        return vi.fn(() => createChainable(resolveValue));
+      },
+      apply() {
+        return createChainable(resolveValue);
+      },
+    });
+  }
+
+  return {
+    createChainable,
+    mockFns: {
+      cashMovementFindMany: vi.fn(),
+      directSalePaymentFindFirst: vi.fn(),
+      customerFindFirst: vi.fn(),
+      paymentFindFirst: vi.fn(),
     },
-    direct_sale: {
-      findUnique: vi.fn(),
-    },
-    work_order: {
-      findUnique: vi.fn(),
-    },
-    payment: {
-      findUnique: vi.fn(),
-    },
-    direct_sale_payment: {
-        findUnique: vi.fn(),
-    },
-    customer: {
-      findUnique: vi.fn(),
-    },
-    payment_method: {
-      findMany: vi.fn(),
+  };
+});
+
+vi.mock('@/lib/db', () => ({
+  db: {
+    select: vi.fn(() => createChainable([])),
+    query: {
+      cashMovement: { findMany: mockFns.cashMovementFindMany },
+      directSalePayment: { findFirst: mockFns.directSalePaymentFindFirst },
+      customer: { findFirst: mockFns.customerFindFirst },
+      payment: { findFirst: mockFns.paymentFindFirst },
     },
   },
 }));
@@ -33,7 +52,8 @@ vi.mock('@/lib/prisma', () => ({
 describe('Daily Operations Service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(prisma.payment_method.findMany).mockResolvedValue([]);
+    // db.select returns empty array for payment methods by default
+    vi.mocked(db.select).mockReturnValue(createChainable([]));
   });
 
   it('should fetch and enrich daily operations', async () => {
@@ -43,11 +63,11 @@ describe('Daily Operations Service', () => {
       {
         id: '1',
         type: 'INCOME',
-        amount: { toNumber: () => 1000 },
+        amount: '1000',
         method: 'CASH',
         referenceId: 'sale-1',
         referenceType: 'direct_sale_payment',
-        createdAt: mockDate,
+        createdAt: mockDate.toISOString(),
         createdBy: 'user-1',
       },
     ];
@@ -55,13 +75,13 @@ describe('Daily Operations Service', () => {
     const mockSalePayment = {
       id: 'sale-1',
       directSale: {
-          id: 'ds-1',
-          customer: { id: 'c-1', name: 'John Doe' }
+        id: 'ds-1',
+        customer: { id: 'c-1', name: 'John Doe' },
       },
     };
 
-    vi.mocked(prisma.cash_movement.findMany).mockResolvedValue(mockMovements as any);
-    vi.mocked(prisma.direct_sale_payment.findUnique).mockResolvedValue(mockSalePayment as any);
+    mockFns.cashMovementFindMany.mockResolvedValue(mockMovements as any);
+    mockFns.directSalePaymentFindFirst.mockResolvedValue(mockSalePayment as any);
 
     const result = await dashboardService.getDailyOperations(mockDate);
 
@@ -77,19 +97,19 @@ describe('Daily Operations Service', () => {
       {
         id: '2',
         type: 'INCOME',
-        amount: { toNumber: () => 500 },
+        amount: '500',
         method: 'TRANSFER',
         referenceId: 'cust-1',
         referenceType: 'customer_payment',
-        createdAt: mockDate,
+        createdAt: mockDate.toISOString(),
         createdBy: 'user-1',
       },
     ];
 
     const mockCustomer = { id: 'cust-1', name: 'Jane Smith' };
 
-    vi.mocked(prisma.cash_movement.findMany).mockResolvedValue(mockMovements as any);
-    vi.mocked(prisma.customer.findUnique).mockResolvedValue(mockCustomer as any);
+    mockFns.cashMovementFindMany.mockResolvedValue(mockMovements as any);
+    mockFns.customerFindFirst.mockResolvedValue(mockCustomer as any);
 
     const result = await dashboardService.getDailyOperations(mockDate);
 

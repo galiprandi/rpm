@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { vehicleModel, vehicleMake } from "@/db/schema";
+import { eq, ilike, and } from "drizzle-orm";
 
 // GET /api/vehicle-models/search?q=query&makeId=id - Search models with NHTSA fallback
 export async function GET(request: NextRequest) {
@@ -18,21 +20,22 @@ export async function GET(request: NextRequest) {
     const normalizedQuery = query.trim().toLowerCase();
 
     // 1. Buscar en DB local
-    const localModels = await prisma.vehicle_model.findMany({
-      where: {
-        ...(makeId && { makeId }),
-        normalizedName: { contains: normalizedQuery },
-      },
-      include: { vehicle_make: true },
-      take: 10,
+    const conditions = [];
+    if (makeId) conditions.push(eq(vehicleModel.makeId, makeId));
+    conditions.push(ilike(vehicleModel.normalizedName, `%${normalizedQuery}%`));
+
+    const localModels = await db.query.vehicleModel.findMany({
+      where: and(...conditions),
+      with: { vehicleMake: true },
+      limit: 10,
     });
 
     // 2. Si hay menos de 5 resultados y tenemos makeId, buscar en NHTSA
     let externalModels: Array<{ Model_Name: string }> = [];
     if (localModels.length < 5 && makeId) {
       try {
-        const make = await prisma.vehicle_make.findUnique({
-          where: { id: makeId },
+        const make = await db.query.vehicleMake.findFirst({
+          where: eq(vehicleMake.id, makeId),
         });
         if (make) {
           const nhtsaResponse = await fetch(

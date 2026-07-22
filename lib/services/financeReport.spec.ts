@@ -1,11 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { getFinanceReport } from './financeReportService';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
 
-vi.mock('@/lib/prisma', () => ({
-  prisma: {
-    cash_movement: {
-      findMany: vi.fn(),
+vi.mock('@/lib/db', () => ({
+  db: {
+    query: {
+      cashMovement: {
+        findMany: vi.fn(),
+      },
     },
   },
 }));
@@ -17,13 +19,13 @@ describe('financeReportService', () => {
 
   it('should calculate total income and expenses correctly', async () => {
     const mockMovements = [
-      { type: 'INCOME', amount: 1000, method: 'CASH', createdAt: new Date('2024-01-01T10:00:00Z') },
-      { type: 'INCOME', amount: 500, method: 'TRANSFER', createdAt: new Date('2024-01-01T11:00:00Z') },
-      { type: 'EXPENSE', amount: 200, method: 'CASH', createdAt: new Date('2024-01-01T12:00:00Z') },
-      { type: 'PURCHASE_VOUCHER', amount: 300, method: 'PURCHASE', createdAt: new Date('2024-01-01T13:00:00Z') },
+      { type: 'INCOME', amount: '1000', method: 'CASH', createdAt: '2024-01-01 10:00:00.000' },
+      { type: 'INCOME', amount: '500', method: 'TRANSFER', createdAt: '2024-01-01 11:00:00.000' },
+      { type: 'EXPENSE', amount: '200', method: 'CASH', createdAt: '2024-01-01 12:00:00.000' },
+      { type: 'PURCHASE_VOUCHER', amount: '300', method: 'PURCHASE', createdAt: '2024-01-01 13:00:00.000' },
     ];
 
-    vi.mocked(prisma.cash_movement.findMany).mockResolvedValue(mockMovements as any);
+    vi.mocked(db.query.cashMovement.findMany).mockResolvedValue(mockMovements as any);
 
     const report = await getFinanceReport({
       startDate: new Date('2024-01-01T00:00:00Z'),
@@ -44,15 +46,15 @@ describe('financeReportService', () => {
 
   it('should handle period comparison', async () => {
     // Mock current period
-    vi.mocked(prisma.cash_movement.findMany)
+    vi.mocked(db.query.cashMovement.findMany)
       .mockResolvedValueOnce([
-        { type: 'INCOME', amount: 100, method: 'CASH', createdAt: new Date() }
+        { type: 'INCOME', amount: '100', method: 'CASH', createdAt: new Date().toISOString() }
       ] as any) // for current metrics
       .mockResolvedValueOnce([
-        { type: 'INCOME', amount: 50, method: 'CASH', createdAt: new Date() }
+        { type: 'INCOME', amount: '50', method: 'CASH', createdAt: new Date().toISOString() }
       ] as any) // for previous metrics
       .mockResolvedValueOnce([
-        { type: 'INCOME', amount: 100, method: 'CASH', createdAt: new Date() }
+        { type: 'INCOME', amount: '100', method: 'CASH', createdAt: new Date().toISOString() }
       ] as any); // for evolution
 
     const report = await getFinanceReport({

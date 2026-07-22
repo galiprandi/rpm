@@ -1,5 +1,8 @@
-import { prisma } from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
+import { db, type Database } from "@/lib/db";
+import { invoice, workOrderItem, directSaleItem, creditNoteItem } from "@/db/schema";
+import { eq, and, or, gte, lte, ilike, like, desc, type SQL } from "drizzle-orm";
+
+type DbOrTx = Database | Parameters<Parameters<Database["transaction"]>[0]>[0];
 
 export type InvoiceType =
   | "X_A"
@@ -35,10 +38,10 @@ export interface InvoiceInput {
   tax?: number;
   iva21?: number;
   iva105?: number;
-  exemptions?: Prisma.InputJsonValue;
-  perceptions?: Prisma.InputJsonValue;
+  exemptions?: unknown;
+  perceptions?: unknown;
   total: number;
-  afipData?: Prisma.InputJsonValue;
+  afipData?: unknown;
   status: InvoiceStatus;
   issuedAt?: Date;
   createdBy: string;
@@ -52,9 +55,9 @@ const DEFAULT_IVA_RATE = 21;
  */
 export async function createInvoice(
   data: InvoiceInput,
-  tx?: Prisma.TransactionClient,
+  tx?: DbOrTx,
 ) {
-  const execute = async (transaction: Prisma.TransactionClient) => {
+  const execute = async (transaction: DbOrTx) => {
     const number = await getNextInvoiceNumber(data.type, transaction);
 
     // Auto-calculate taxes if not provided
@@ -69,36 +72,40 @@ export async function createInvoice(
       taxes = calculateInvoiceTaxes(data.total, data.type);
     }
 
-    return transaction.invoice.create({
-      data: {
+    const [created] = await transaction
+      .insert(invoice)
+      .values({
+        id: crypto.randomUUID(),
         number,
         type: data.type,
         referenceId: data.referenceId,
         referenceType: data.referenceType,
-        customerId: data.customerId,
+        customerId: data.customerId || null,
         customerName: data.customerName,
         customerDoc: data.customerDoc,
         customerDocType: data.customerDocType,
-        subtotal: taxes.subtotal,
-        tax: taxes.tax,
-        iva21: taxes.iva21,
-        iva105: taxes.iva105,
-        exemptions: data.exemptions,
-        perceptions: data.perceptions,
-        total: data.total,
-        afipData: data.afipData,
+        subtotal: taxes.subtotal.toString(),
+        tax: taxes.tax.toString(),
+        iva21: taxes.iva21.toString(),
+        iva105: taxes.iva105.toString(),
+        exemptions: data.exemptions as any,
+        perceptions: data.perceptions as any,
+        total: data.total.toString(),
+        afipData: data.afipData as any,
         status: data.status,
-        issuedAt: data.issuedAt,
+        issuedAt: data.issuedAt ? data.issuedAt.toISOString() : undefined,
         createdBy: data.createdBy,
-      },
-    });
+      })
+      .returning();
+
+    return created;
   };
 
   if (tx) {
     return execute(tx);
   }
 
-  return await prisma.$transaction(execute);
+  return await db.transaction(execute);
 }
 
 export async function getInvoices(filters: {
@@ -109,46 +116,49 @@ export async function getInvoices(filters: {
   customerId?: string;
   search?: string;
 }) {
-  const where: Prisma.invoiceWhereInput = {};
+  const conditions: SQL[] = [];
 
   if (filters.startDate || filters.endDate) {
-    where.createdAt = {};
-    if (filters.startDate) where.createdAt.gte = filters.startDate;
-    if (filters.endDate) where.createdAt.lte = filters.endDate;
+    if (filters.startDate) conditions.push(gte(invoice.createdAt, filters.startDate.toISOString()));
+    if (filters.endDate) conditions.push(lte(invoice.createdAt, filters.endDate.toISOString()));
   }
 
-  if (filters.type) where.type = filters.type;
-  if (filters.status) where.status = filters.status;
-  if (filters.customerId) where.customerId = filters.customerId;
+  if (filters.type) conditions.push(eq(invoice.type, filters.type));
+  if (filters.status) conditions.push(eq(invoice.status, filters.status));
+  if (filters.customerId) conditions.push(eq(invoice.customerId, filters.customerId));
 
   if (filters.search) {
-    where.OR = [
-      { number: { contains: filters.search, mode: "insensitive" } },
-      { customerName: { contains: filters.search, mode: "insensitive" } },
-      { customerDoc: { contains: filters.search, mode: "insensitive" } },
-    ];
+    conditions.push(
+      or(
+        ilike(invoice.number, `%${filters.search}%`),
+        ilike(invoice.customerName, `%${filters.search}%`),
+        ilike(invoice.customerDoc, `%${filters.search}%`),
+      )!,
+    );
   }
 
-  return prisma.invoice.findMany({
+  const where = conditions.length > 0 ? and(...conditions) : undefined;
+
+  return db.query.invoice.findMany({
     where,
-    include: {
+    with: {
       customer: {
-        select: { name: true, phone: true },
+        columns: { name: true, phone: true },
       },
     },
-    orderBy: { createdAt: "desc" },
+    orderBy: desc(invoice.createdAt),
   });
 }
 
 export async function getInvoiceById(id: string) {
-  const invoice = await prisma.invoice.findUnique({
-    where: { id },
-    include: {
+  const foundInvoice = await db.query.invoice.findFirst({
+    where: eq(invoice.id, id),
+    with: {
       customer: true,
     },
   });
 
-  if (!invoice) return null;
+  if (!foundInvoice) return null;
 
   // Fetch line items based on reference type
   let items: Array<{
@@ -159,12 +169,12 @@ export async function getInvoiceById(id: string) {
   }> = [];
 
   try {
-    if (invoice.referenceType === "work_order") {
-      const woItems = await prisma.work_order_item.findMany({
-        where: { workOrderId: invoice.referenceId },
-        include: {
-          product: { select: { name: true } },
-          service: { select: { name: true } },
+    if (foundInvoice.referenceType === "work_order") {
+      const woItems = await db.query.workOrderItem.findMany({
+        where: eq(workOrderItem.workOrderId, foundInvoice.referenceId),
+        with: {
+          product: { columns: { name: true } },
+          service: { columns: { name: true } },
         },
       });
       items = woItems.map((item) => ({
@@ -177,9 +187,9 @@ export async function getInvoiceById(id: string) {
         unitPrice: Number(item.unitPrice),
         totalPrice: Number(item.subtotal),
       }));
-    } else if (invoice.referenceType === "direct_sale") {
-      const saleItems = await prisma.direct_sale_item.findMany({
-        where: { directSaleId: invoice.referenceId },
+    } else if (foundInvoice.referenceType === "direct_sale") {
+      const saleItems = await db.query.directSaleItem.findMany({
+        where: eq(directSaleItem.directSaleId, foundInvoice.referenceId),
       });
       items = saleItems.map((item) => ({
         name: item.name,
@@ -187,9 +197,9 @@ export async function getInvoiceById(id: string) {
         unitPrice: Number(item.unitPrice),
         totalPrice: Number(item.totalPrice),
       }));
-    } else if (invoice.referenceType === "credit_note") {
-      const cnItems = await prisma.credit_note_item.findMany({
-        where: { creditNoteId: invoice.referenceId },
+    } else if (foundInvoice.referenceType === "credit_note") {
+      const cnItems = await db.query.creditNoteItem.findMany({
+        where: eq(creditNoteItem.creditNoteId, foundInvoice.referenceId),
       });
       items = cnItems.map((item) => ({
         name: item.name,
@@ -204,7 +214,7 @@ export async function getInvoiceById(id: string) {
   }
 
   return {
-    ...invoice,
+    ...foundInvoice,
     items,
   };
 }
@@ -213,16 +223,19 @@ export async function updateInvoiceStatus(
   id: string,
   status: InvoiceStatus,
   issuedAt?: Date,
-  afipData?: Prisma.InputJsonValue,
+  afipData?: unknown,
 ) {
-  return prisma.invoice.update({
-    where: { id },
-    data: {
+  const [updated] = await db
+    .update(invoice)
+    .set({
       status,
-      issuedAt: issuedAt || (status === "ISSUED" ? new Date() : undefined),
-      afipData: afipData || undefined,
-    },
-  });
+      issuedAt: issuedAt ? issuedAt.toISOString() : (status === "ISSUED" ? new Date().toISOString() : undefined),
+      afipData: afipData as any,
+    })
+    .where(eq(invoice.id, id))
+    .returning();
+
+  return updated;
 }
 
 /**
@@ -235,19 +248,22 @@ export async function markInvoiceAsOfficial(
     type: InvoiceType;
     cae: string;
     caeVencimiento: Date;
-    afipData: Prisma.InputJsonValue;
+    afipData: unknown;
   },
 ) {
-  return prisma.invoice.update({
-    where: { id },
-    data: {
+  const [updated] = await db
+    .update(invoice)
+    .set({
       number: data.number,
       type: data.type,
       status: "ISSUED",
-      issuedAt: new Date(),
-      afipData: data.afipData,
-    },
-  });
+      issuedAt: new Date().toISOString(),
+      afipData: data.afipData as any,
+    })
+    .where(eq(invoice.id, id))
+    .returning();
+
+  return updated;
 }
 
 /**
@@ -256,7 +272,7 @@ export async function markInvoiceAsOfficial(
  */
 export async function getNextInvoiceNumber(
   type: string,
-  tx: Prisma.TransactionClient = prisma,
+  tx: DbOrTx = db,
 ): Promise<string> {
   // Determine prefix based on type
   let prefix = "0001";
@@ -270,14 +286,15 @@ export async function getNextInvoiceNumber(
 
   // For pre-invoices, since the number format is "X-0001-XXXXXXXX" and the number field is globally @unique,
   // we must query by prefix rather than the specific type to avoid duplicate sequence collisions in the DB.
-  const lastInvoice = await tx.invoice.findFirst({
-    where: {
-      ...(type.startsWith("X_") || type.startsWith("NOTA_CREDITO_X_")
-        ? { number: { startsWith: prefix } }
-        : { type, number: { startsWith: prefix } }),
-    },
-    orderBy: { number: "desc" },
-    select: { number: true },
+  const isPreInvoice = type.startsWith("X_") || type.startsWith("NOTA_CREDITO_X_");
+  const where = isPreInvoice
+    ? like(invoice.number, `${prefix}%`)
+    : and(eq(invoice.type, type), like(invoice.number, `${prefix}%`));
+
+  const lastInvoice = await tx.query.invoice.findFirst({
+    where,
+    orderBy: desc(invoice.number),
+    columns: { number: true },
   });
 
   if (!lastInvoice) {
@@ -369,19 +386,20 @@ export async function updateInvoiceBillingData(
     customerDocType?: string;
   }
 ) {
-  return await prisma.$transaction(async (tx) => {
-    const invoice = await tx.invoice.findUnique({
-      where: { id },
+  return await db.transaction(async (tx) => {
+    const foundInvoice = await tx.query.invoice.findFirst({
+      where: eq(invoice.id, id),
     });
 
-    if (!invoice) {
+    if (!foundInvoice) {
       throw new Error("Comprobante no encontrado");
     }
 
-    if (invoice.status !== 'DRAFT' && invoice.status !== 'REJECTED') {
+    if (foundInvoice.status !== 'DRAFT' && foundInvoice.status !== 'REJECTED') {
       throw new Error("Solo se pueden editar comprobantes en estado DRAFT o REJECTED");
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const updatedData: any = {};
     if (data.customerName !== undefined) {
       updatedData.customerName = data.customerName;
@@ -393,8 +411,8 @@ export async function updateInvoiceBillingData(
       updatedData.customerDocType = data.customerDocType;
 
       // Check if invoice type needs to change based on the document type
-      const isCreditNote = invoice.type.startsWith('NOTA_CREDITO_');
-      const isPreInvoice = invoice.type.startsWith('X_') || invoice.type.startsWith('NOTA_CREDITO_X_');
+      const isCreditNote = foundInvoice.type.startsWith('NOTA_CREDITO_');
+      const isPreInvoice = foundInvoice.type.startsWith('X_') || foundInvoice.type.startsWith('NOTA_CREDITO_X_');
 
       if (isPreInvoice) {
         const letter = data.customerDocType === 'CUIT' ? 'A' : 'B';
@@ -402,24 +420,27 @@ export async function updateInvoiceBillingData(
           ? (`NOTA_CREDITO_X_${letter}` as InvoiceType)
           : (`X_${letter}` as InvoiceType);
 
-        if (newType !== invoice.type) {
+        if (newType !== foundInvoice.type) {
           updatedData.type = newType;
           // Assign next number for the new type
           updatedData.number = await getNextInvoiceNumber(newType, tx);
 
           // Re-calculate taxes as changing type A <-> B might affect display
-          const taxes = calculateInvoiceTaxes(Number(invoice.total), newType);
-          updatedData.subtotal = taxes.subtotal;
-          updatedData.tax = taxes.tax;
-          updatedData.iva21 = taxes.iva21;
-          updatedData.iva105 = taxes.iva105;
+          const taxes = calculateInvoiceTaxes(Number(foundInvoice.total), newType);
+          updatedData.subtotal = taxes.subtotal.toString();
+          updatedData.tax = taxes.tax.toString();
+          updatedData.iva21 = taxes.iva21.toString();
+          updatedData.iva105 = taxes.iva105.toString();
         }
       }
     }
 
-    return tx.invoice.update({
-      where: { id },
-      data: updatedData,
-    });
+    const [updated] = await tx
+      .update(invoice)
+      .set(updatedData)
+      .where(eq(invoice.id, id))
+      .returning();
+
+    return updated;
   });
 }

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { service } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
 // GET /api/services/[id] - Get service by ID
 export async function GET(
@@ -9,18 +11,18 @@ export async function GET(
   try {
     const { id } = await params;
     
-    const service = await prisma.service.findUnique({
-      where: { id },
+    const serviceRecord = await db.query.service.findFirst({
+      where: eq(service.id, id),
     });
 
-    if (!service) {
+    if (!serviceRecord) {
       return NextResponse.json(
         { error: "Service not found" },
         { status: 404 }
       );
     }
 
-    return NextResponse.json({ service });
+    return NextResponse.json({ service: serviceRecord });
   } catch (error) {
     console.error("Error fetching service:", error);
     return NextResponse.json(
@@ -41,8 +43,8 @@ export async function PUT(
     const { name, description, baseCost, timeMinutes, vehicleFactor, isActive } = body;
 
     // Check if service exists
-    const existingService = await prisma.service.findUnique({
-      where: { id },
+    const existingService = await db.query.service.findFirst({
+      where: eq(service.id, id),
     });
 
     if (!existingService) {
@@ -54,8 +56,8 @@ export async function PUT(
 
     // If name is being changed, check for duplicates
     if (name && name !== existingService.name) {
-      const duplicate = await prisma.service.findUnique({
-        where: { name },
+      const duplicate = await db.query.service.findFirst({
+        where: eq(service.name, name),
       });
       if (duplicate) {
         return NextResponse.json(
@@ -65,19 +67,17 @@ export async function PUT(
       }
     }
 
-    const service = await prisma.service.update({
-      where: { id },
-      data: {
-        name,
-        description,
-        baseCost,
-        timeMinutes,
-        vehicleFactor,
-        isActive,
-      },
-    });
+    const updateData: Record<string, unknown> = {};
+    if (name !== undefined) updateData.name = name;
+    if (description !== undefined) updateData.description = description;
+    if (baseCost !== undefined) updateData.baseCost = String(baseCost);
+    if (timeMinutes !== undefined) updateData.timeMinutes = timeMinutes;
+    if (vehicleFactor !== undefined) updateData.vehicleFactor = String(vehicleFactor);
+    if (isActive !== undefined) updateData.isActive = isActive;
 
-    return NextResponse.json({ service });
+    const [updated] = await db.update(service).set(updateData).where(eq(service.id, id)).returning();
+
+    return NextResponse.json({ service: updated });
   } catch (error) {
     console.error("Error updating service:", error);
     return NextResponse.json(
@@ -96,8 +96,8 @@ export async function DELETE(
     const { id } = await params;
 
     // Check if service exists
-    const existingService = await prisma.service.findUnique({
-      where: { id },
+    const existingService = await db.query.service.findFirst({
+      where: eq(service.id, id),
     });
 
     if (!existingService) {
@@ -108,12 +108,9 @@ export async function DELETE(
     }
 
     // Soft delete - set isActive to false
-    const service = await prisma.service.update({
-      where: { id },
-      data: { isActive: false },
-    });
+    const [updated] = await db.update(service).set({ isActive: false }).where(eq(service.id, id)).returning();
 
-    return NextResponse.json({ service });
+    return NextResponse.json({ service: updated });
   } catch (error) {
     console.error("Error deleting service:", error);
     return NextResponse.json(

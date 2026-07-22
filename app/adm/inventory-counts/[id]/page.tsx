@@ -4,7 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { QrCode, Smartphone, Info } from 'lucide-react';
 import { headers } from 'next/headers';
 
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
+import { inventoryCountOperative } from '@/db/schema';
+import { eq } from 'drizzle-orm';
 import { Badge } from '@/components/ui/badge';
 import { Package, ClipboardList, Calendar } from 'lucide-react';
 
@@ -15,12 +17,10 @@ export default async function InventoryCountDetailPage({
 }) {
   const { id } = await params;
 
-  const operative = await prisma.inventory_count_operative.findUnique({
-    where: { id },
-    include: {
-      _count: {
-        select: { items: true },
-      },
+  const operative = await db.query.inventoryCountOperative.findFirst({
+    where: eq(inventoryCountOperative.id, id),
+    with: {
+      inventoryCountItems: true,
     },
   });
 
@@ -89,7 +89,7 @@ export default async function InventoryCountDetailPage({
                 className="h-3.5 w-3.5 text-primary pointer-events-none"
                 aria-hidden="true"
               />
-              <span className="font-mono">{operative._count.items}</span>{' '}
+              <span className="font-mono">{operative.inventoryCountItems.length}</span>{' '}
               Artículos
             </div>
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted/50 border text-xs font-medium text-muted-foreground">

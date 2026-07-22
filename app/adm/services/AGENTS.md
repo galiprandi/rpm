@@ -46,4 +46,4 @@ Catálogo de servicios de instalación con costos base, tiempos estimados y fact
 - **Para inicializar buckets mensuales**, generar claves `YYYY-MM` como strings usando `Intl.DateTimeFormat` en lugar de crear objetos `Date` con `new Date(year, month, 1)` que se desplazan por timezone
 - **Frontend**: `new Date()` y `.setHours()` operan en la timezone del navegador del usuario (Argentina), y `.toISOString()` convierte a UTC antes de enviar a la API — esto es correcto
 - **API routes**: Reciben ISO strings UTC, los pasan por `getArgentinaStartOfDay/EndOfDay` para obtener rangos correctos
-- **Prisma queries**: Usar `gte`/`lte` con Date objects UTC obtenidos de las utilidades de timezone
+- **Drizzle queries**: Usar `gte`/`lte` con Date objects UTC obtenidos de las utilidades de timezone

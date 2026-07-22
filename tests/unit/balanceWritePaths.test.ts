@@ -12,41 +12,16 @@ vi.mock("@/lib/services/balanceService", () => ({
   getBalanceBreakdown: vi.fn(),
 }));
 
-// Mock prisma
-vi.mock("@/lib/prisma", () => ({
-  prisma: {
-    $transaction: vi.fn((fn) => fn({})),
-    work_order: {
-      findUnique: vi.fn(),
-      update: vi.fn(),
-      delete: vi.fn(),
-      findMany: vi.fn(),
-    },
-    payment: {
-      findMany: vi.fn(),
-      create: vi.fn(),
-    },
-    customer: {
-      findUnique: vi.fn(),
-      update: vi.fn(),
-    },
-    direct_sale: {
-      findUnique: vi.fn(),
-      create: vi.fn(),
-      findMany: vi.fn(),
-    },
-    direct_sale_payment: {
-      create: vi.fn(),
-    },
-    credit_note: {
-      findUnique: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-      findMany: vi.fn(),
-    },
-    balance_audit: {
-      create: vi.fn(),
-    },
+// Mock db (Drizzle) — not directly used in these tests since balanceService is mocked,
+// but needed to prevent real DB module from loading
+vi.mock("@/lib/db", () => ({
+  db: {
+    select: vi.fn(),
+    query: {},
+    insert: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+    transaction: vi.fn(),
   },
 }));
 

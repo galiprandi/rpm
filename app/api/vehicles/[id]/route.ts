@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { vehicle, workOrder } from "@/db/schema";
+import { eq, desc } from "drizzle-orm";
 import { capitalizeText } from "@/lib/utils/format";
 import { resolveMakeModel } from "@/lib/utils/vehicle-helpers";
 
@@ -10,35 +12,34 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const vehicle = await prisma.vehicle.findUnique({
-      where: { id },
-      include: {
+    const vehicleRecord = await db.query.vehicle.findFirst({
+      where: eq(vehicle.id, id),
+      with: {
         customer: true,
-        vehicle_make: true,
-        vehicle_model: true,
-        work_order: {
-          orderBy: { createdAt: "desc" },
-          take: 50,
-          include: {
-            photo: true,
+        vehicleMake: true,
+        vehicleModel: true,
+        workOrders: {
+          orderBy: desc(workOrder.createdAt),
+          limit: 50,
+          with: {
+            photos: true,
           },
         },
       },
     });
 
-    if (!vehicle) {
+    if (!vehicleRecord) {
       return NextResponse.json({ error: "Vehicle not found" }, { status: 404 });
     }
 
-    // Transform Prisma field names to match frontend interface
+    // Transform DB field names to match frontend interface
     const transformedVehicle = {
-      ...vehicle,
-      workOrders: vehicle.work_order || [],
-      work_order: undefined,
+      ...vehicleRecord,
+      workOrders: vehicleRecord.workOrders || [],
       vehicle_make: undefined,
       vehicle_model: undefined,
-      make: vehicle.vehicle_make,
-      model: vehicle.vehicle_model,
+      make: vehicleRecord.vehicleMake,
+      model: vehicleRecord.vehicleModel,
     };
 
     return NextResponse.json(transformedVehicle);
@@ -79,28 +80,30 @@ export async function PUT(
       ? await resolveMakeModel(makeName, modelName)
       : { makeId: rawMakeId, modelId: rawModelId };
 
-    const vehicle = await prisma.vehicle.update({
-      where: { id },
-      data: {
-        identifier: identifier?.toUpperCase(),
-        category,
-        makeId,
-        modelId,
-        year,
-        color: color ? capitalizeText(color) : null,
-        equipmentName,
-        equipmentType,
-        description,
-        notes,
-      },
-      include: {
+    await db.update(vehicle).set({
+      identifier: identifier?.toUpperCase(),
+      category,
+      makeId,
+      modelId,
+      year,
+      color: color ? capitalizeText(color) : null,
+      equipmentName,
+      equipmentType,
+      description,
+      notes,
+    }).where(eq(vehicle.id, id));
+
+    // Fetch with relations
+    const vehicleWithRelations = await db.query.vehicle.findFirst({
+      where: eq(vehicle.id, id),
+      with: {
         customer: true,
-        vehicle_make: true,
-        vehicle_model: true,
+        vehicleMake: true,
+        vehicleModel: true,
       },
     });
 
-    return NextResponse.json(vehicle);
+    return NextResponse.json(vehicleWithRelations);
   } catch (error) {
     console.error("Error updating vehicle:", error);
     return NextResponse.json(
@@ -117,9 +120,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    await prisma.vehicle.delete({
-      where: { id },
-    });
+    await db.delete(vehicle).where(eq(vehicle.id, id));
 
     return NextResponse.json({ success: true });
   } catch (error) {

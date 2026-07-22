@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAdmin } from '@/lib/api-middleware';
 import { createDirectSale } from '@/lib/services/directSaleService';
 import { isCashRegisterOpen } from '@/lib/services/cashMovementService';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
+import { directSale } from '@/db/schema';
+import { eq, desc, count } from 'drizzle-orm';
 
 // GET /api/direct-sales - List direct sales with filters
 export async function GET(request: NextRequest) {
@@ -12,28 +14,29 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50');
     const offset = parseInt(searchParams.get('offset') || '0');
 
-    const where: Record<string, unknown> = {};
-    if (customerId) where.customerId = customerId;
-
-    const directSales = await prisma.direct_sale.findMany({
-      where,
-      include: {
+    const directSales = await db.query.directSale.findMany({
+      where: customerId ? eq(directSale.customerId, customerId) : undefined,
+      with: {
         customer: {
-          select: {
+          columns: {
             id: true,
             name: true,
             phone: true,
           },
         },
-        items: true,
-        payments: true,
+        directSaleItems: true,
+        directSalePayments: true,
       },
-      orderBy: { createdAt: 'desc' },
-      take: limit,
-      skip: offset,
+      orderBy: desc(directSale.createdAt),
+      limit,
+      offset,
     });
 
-    const total = await prisma.direct_sale.count({ where });
+    const totalResult = await db
+      .select({ value: count() })
+      .from(directSale)
+      .where(customerId ? eq(directSale.customerId, customerId) : undefined);
+    const total = totalResult[0]?.value || 0;
 
     return NextResponse.json({ directSales, total, limit, offset });
   } catch (error) {

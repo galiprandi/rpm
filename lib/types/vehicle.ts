@@ -74,7 +74,7 @@ export interface VehicleCustomerRef {
 
 /**
  * Vehicle as returned by GET/POST/PUT /api/vehicles endpoints.
- * Uses Prisma's vehicle_make / vehicle_model relation names.
+ * Uses Drizzle's vehicle_make / vehicle_model relation names.
  */
 export interface VehicleApiResponse {
   id: string;

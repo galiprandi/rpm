@@ -202,7 +202,7 @@ export function ChatFloating({
       msg.includes("env var") ||
       msg.includes("api_key") ||
       msg.includes("database") ||
-      msg.includes("prisma") ||
+      msg.includes("drizzle") ||
       msg.startsWith("{") // JSON block
     ) {
       return "El asistente virtual no está disponible o no está configurado correctamente en este momento. Por favor, intenta de nuevo más tarde o contacta al administrador.";

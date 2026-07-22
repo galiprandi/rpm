@@ -26,6 +26,10 @@ export const creditNoteRelations = relations(creditNote, ({one, many}) => ({
 		fields: [creditNote.invoiceId],
 		references: [invoice.id]
 	}),
+	paymentMethod: one(paymentMethod, {
+		fields: [creditNote.paymentMethodId],
+		references: [paymentMethod.id]
+	}),
 }));
 
 export const productRelations = relations(product, ({one, many}) => ({
@@ -127,6 +131,7 @@ export const accountRelations = relations(account, ({one}) => ({
 export const userRelations = relations(user, ({many}) => ({
 	accounts: many(account),
 	sessions: many(session),
+	workOrders: many(workOrder),
 }));
 
 export const photoRelations = relations(photo, ({one}) => ({
@@ -148,6 +153,10 @@ export const workOrderRelations = relations(workOrder, ({one, many}) => ({
 	vehicle: one(vehicle, {
 		fields: [workOrder.vehicleId],
 		references: [vehicle.id]
+	}),
+	technician: one(user, {
+		fields: [workOrder.technicianId],
+		references: [user.id]
 	}),
 }));
 

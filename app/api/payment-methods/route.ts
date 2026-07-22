@@ -1,16 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withStaff, withAdmin } from "@/lib/api-middleware";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { paymentMethod } from "@/db/schema";
+import { desc, asc } from "drizzle-orm";
 
 // GET /api/payment-methods - List all payment methods
 export const GET = withStaff(async () => {
   try {
-    const paymentMethods = await prisma.payment_method.findMany({
-      orderBy: [
-        { isActive: "desc" },
-        { sortOrder: "asc" },
-        { name: "asc" },
-      ],
+    const paymentMethods = await db.query.paymentMethod.findMany({
+      orderBy: [desc(paymentMethod.isActive), asc(paymentMethod.sortOrder), asc(paymentMethod.name)],
     });
 
     return NextResponse.json({ paymentMethods });
@@ -45,25 +43,26 @@ export const POST = withAdmin(async (request: NextRequest) => {
       );
     }
 
-    const paymentMethod = await prisma.payment_method.create({
-      data: {
+    const [paymentMethodRecord] = await db
+      .insert(paymentMethod)
+      .values({
         name,
         code,
         description,
         sortOrder: sortOrder ?? 0,
         isActive: true,
-        updatedAt: new Date(),
-      },
-    });
+        updatedAt: new Date().toISOString(),
+      })
+      .returning();
 
-    return NextResponse.json({ paymentMethod }, { status: 201 });
+    return NextResponse.json({ paymentMethod: paymentMethodRecord }, { status: 201 });
   } catch (error: unknown) {
     console.error("Error creating payment method:", error);
     
     // Handle unique constraint violations
-    if (error && typeof error === "object" && "code" in error && error.code === "P2002") {
-      const meta = (error as { meta?: { target?: string[] } }).meta;
-      const field = meta?.target?.[0];
+    if (error && typeof error === "object" && "code" in error && error.code === "23505") {
+      const detail = (error as { detail?: string }).detail;
+      const field = detail?.match(/Key \((\w+)\)=/)?.[1];
       return NextResponse.json(
         { error: `${field} already exists` },
         { status: 409 }

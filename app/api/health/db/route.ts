@@ -1,22 +1,25 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
+import { sql } from 'drizzle-orm';
 
 export async function GET() {
   try {
     // Test database connection with a simple query
-    await prisma.$queryRaw`SELECT 1`;
+    await db.execute(sql`SELECT 1`);
     
     // Get connection count (PostgreSQL specific)
-    const connectionCount = await prisma.$queryRaw`
+    const connectionCount = await db.execute<{
+      active_connections: bigint;
+    }>(sql`
       SELECT count(*) as active_connections 
       FROM pg_stat_activity 
       WHERE state = 'active'
-    ` as Array<{ active_connections: bigint }>;
+    `);
     
     return NextResponse.json({
       status: 'healthy',
       database: 'postgresql',
-      connections: Number(connectionCount[0]?.active_connections || 0),
+      connections: Number(connectionCount.rows[0]?.active_connections || 0),
       timestamp: new Date().toISOString(),
     });
   } catch (error) {

@@ -1,7 +1,9 @@
 /**
  * Service for direct sales (sales without work orders)
  */
-import { prisma } from "@/lib/prisma";
+import { db, type Database } from "@/lib/db";
+import { directSale, directSaleItem, directSalePayment, product, paymentMethod, stockMovement, customer, invoice } from "@/db/schema";
+import { eq, and, gte, lte, notInArray, inArray, desc, type SQL } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { createCashMovement } from "./cashMovementService";
 import {
@@ -13,6 +15,8 @@ import { revalidatePath } from "next/cache";
 import { invalidateCashStatus } from "@/lib/cache";
 import { getArgentinaStartOfDay, getArgentinaEndOfDay } from "@/lib/utils/date";
 import { adjustBalanceAtomically } from "./balanceService";
+
+type DbOrTx = Database | Parameters<Parameters<Database["transaction"]>[0]>[0];
 
 export interface DirectSaleItemInput {
   productId?: string;
@@ -47,24 +51,24 @@ export async function generateDocumentFromDirectSale(
   directSaleId: string,
   createdBy: string,
   options: { type?: InvoiceType; forceNew?: boolean } = {},
-  existingTx?: any,
+  existingTx?: DbOrTx,
 ) {
-  const execute = async (tx: any) => {
+  const execute = async (tx: DbOrTx) => {
     // Fetch direct sale with items and customer
-    const directSale = await tx.direct_sale.findUnique({
-      where: { id: directSaleId },
-      include: {
+    const sale = await tx.query.directSale.findFirst({
+      where: eq(directSale.id, directSaleId),
+      with: {
         customer: true,
-        items: true,
+        directSaleItems: true,
       },
     });
 
-    if (!directSale) {
+    if (!sale) {
       throw new Error("Venta no encontrada");
     }
 
-    const customer = directSale.customer;
-    const billingData = customer?.billingData;
+    const foundCustomer = sale.customer;
+    const billingData = foundCustomer?.billingData;
 
     // Determine document type
     const docType =
@@ -72,13 +76,13 @@ export async function generateDocumentFromDirectSale(
 
     // Check if a document of this type already exists to avoid duplicates
     if (!options.forceNew) {
-      const existingDocument = await tx.invoice.findFirst({
-        where: {
-          referenceId: directSaleId,
-          referenceType: "direct_sale",
-          type: docType,
-          status: { notIn: ["CANCELLED", "ANNULLED"] },
-        },
+      const existingDocument = await tx.query.invoice.findFirst({
+        where: and(
+          eq(invoice.referenceId, directSaleId),
+          eq(invoice.referenceType, "direct_sale"),
+          eq(invoice.type, docType),
+          notInArray(invoice.status, ["CANCELLED", "ANNULLED"]),
+        ),
       });
 
       if (existingDocument) {
@@ -95,16 +99,16 @@ export async function generateDocumentFromDirectSale(
       customerDocType = bd.cuit ? "CUIT" : bd.dni ? "DNI" : undefined;
     }
 
-    const total = Number(directSale.total);
+    const total = Number(sale.total);
 
     // Create the invoice/document
     return await createInvoice(
       {
         type: docType,
-        referenceId: directSale.id,
+        referenceId: sale.id,
         referenceType: "direct_sale",
-        customerId: directSale.customerId,
-        customerName: directSale.customerName,
+        customerId: sale.customerId ?? undefined,
+        customerName: sale.customerName,
         customerDoc,
         customerDocType,
         subtotal: total,
@@ -120,7 +124,7 @@ export async function generateDocumentFromDirectSale(
     return execute(existingTx);
   }
 
-  return await prisma.$transaction(execute);
+  return await db.transaction(execute);
 }
 
 /**
@@ -173,15 +177,15 @@ export async function createDirectSale(input: CreateDirectSaleInput) {
 
   const [products, paymentMethods] = await Promise.all([
     productIds.length > 0
-      ? prisma.product.findMany({
-          where: { id: { in: productIds } },
-          select: { id: true, stock: true, name: true },
+      ? db.query.product.findMany({
+          where: inArray(product.id, productIds),
+          columns: { id: true, stock: true, name: true },
         })
       : Promise.resolve([]),
     paymentMethodIds.length > 0
-      ? prisma.payment_method.findMany({
-          where: { id: { in: paymentMethodIds } },
-          select: { id: true, code: true },
+      ? db.query.paymentMethod.findMany({
+          where: inArray(paymentMethod.id, paymentMethodIds),
+          columns: { id: true, code: true },
         })
       : Promise.resolve([]),
   ]);
@@ -192,115 +196,117 @@ export async function createDirectSale(input: CreateDirectSaleInput) {
   // Validate stock for products before starting transaction
   for (const item of items) {
     if (item.productId) {
-      const product = productMap.get(item.productId);
+      const foundProduct = productMap.get(item.productId);
 
-      if (!product) {
+      if (!foundProduct) {
         throw new Error(`Producto no encontrado: ${item.name}`);
       }
 
-      if (product.stock < item.quantity) {
+      if (foundProduct.stock < item.quantity) {
         throw new Error(
-          `Stock insuficiente para ${product.name}. Disponible: ${product.stock}, Solicitado: ${item.quantity}`,
+          `Stock insuficiente para ${foundProduct.name}. Disponible: ${foundProduct.stock}, Solicitado: ${item.quantity}`,
         );
       }
     }
   }
 
   // Create direct sale in a transaction with extended timeout
-  const result = await prisma.$transaction(
+  const result = await db.transaction(
     async (tx) => {
       // Create direct sale
-      const directSale = await tx.direct_sale.create({
-        data: {
-          customerId,
+      const [createdDirectSale] = await tx
+        .insert(directSale)
+        .values({
+          id: randomUUID(),
+          customerId: customerId || null,
           customerName,
-          total,
+          total: total.toString(),
           notes,
           createdBy,
-        },
-      });
+        })
+        .returning();
 
-      // Create items in bulk - we must provide IDs because cuid() is not handled by createMany in some Prisma versions/DBs
-      await tx.direct_sale_item.createMany({
-        data: items.map((item) => ({
+      // Create items in bulk
+      await tx.insert(directSaleItem).values(
+        items.map((item) => ({
           id: randomUUID(),
-          directSaleId: directSale.id,
-          productId: item.productId,
-          serviceId: item.serviceId,
+          directSaleId: createdDirectSale.id,
+          productId: item.productId || null,
+          serviceId: item.serviceId || null,
           name: item.name,
           quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          totalPrice: item.totalPrice,
+          unitPrice: item.unitPrice.toString(),
+          totalPrice: item.totalPrice.toString(),
         })),
-      });
+      );
 
       // Update stock and create stock movements
       for (const item of items) {
         if (item.productId) {
           // Re-fetch within transaction to ensure data consistency
-          const product = await tx.product.findUnique({
-            where: { id: item.productId },
-            select: { stock: true, name: true },
+          const foundProduct = await tx.query.product.findFirst({
+            where: eq(product.id, item.productId),
+            columns: { stock: true, name: true },
           });
 
-          if (!product) {
+          if (!foundProduct) {
             throw new Error(`Producto no encontrado: ${item.name}`);
           }
 
-          if (product.stock < item.quantity) {
+          if (foundProduct.stock < item.quantity) {
             throw new Error(
-              `Stock insuficiente para ${product.name} (actualización concurrente)`,
+              `Stock insuficiente para ${foundProduct.name} (actualización concurrente)`,
             );
           }
 
-          const previousStock = product.stock;
+          const previousStock = foundProduct.stock;
           const newStock = previousStock - item.quantity;
 
-          await tx.product.update({
-            where: { id: item.productId },
-            data: {
+          await tx
+            .update(product)
+            .set({
               stock: newStock,
-              lastMovementAt: new Date(),
-            },
-          });
+              lastMovementAt: new Date().toISOString(),
+            })
+            .where(eq(product.id, item.productId));
 
           // Create stock movement
-          await tx.stock_movement.create({
-            data: {
-              id: randomUUID(),
-              productId: item.productId,
-              quantity: -item.quantity,
-              type: "OUT",
-              previousStock,
-              newStock,
-              reason: `Venta directa - ${customerName || "Consumidor final"}`,
-              userName: createdBy,
-            },
+          await tx.insert(stockMovement).values({
+            id: randomUUID(),
+            productId: item.productId,
+            quantity: -item.quantity,
+            type: "OUT",
+            previousStock,
+            newStock,
+            reason: `Venta directa - ${customerName || "Consumidor final"}`,
+            userName: createdBy,
           });
         }
       }
 
       // Create payments
       for (const payment of payments) {
-        const paymentRecord = await tx.direct_sale_payment.create({
-          data: {
-            directSaleId: directSale.id,
+        const [paymentRecord] = await tx
+          .insert(directSalePayment)
+          .values({
+            id: randomUUID(),
+            directSaleId: createdDirectSale.id,
             paymentMethodId: payment.paymentMethodId,
-            amount: payment.amount,
+            amount: payment.amount.toString(),
             notes: payment.notes,
             createdBy,
-          },
-        });
+          })
+          .returning();
 
         // Use pre-fetched payment method
-        const paymentMethod = paymentMethodMap.get(payment.paymentMethodId);
+        const foundPaymentMethod = paymentMethodMap.get(payment.paymentMethodId);
 
         // Create cash movement
         await createCashMovement(
           {
             type: "INCOME",
             amount: payment.amount,
-            method: paymentMethod?.code || "CASH",
+            method: foundPaymentMethod?.code || "CASH",
             referenceId: paymentRecord.id,
             referenceType: "direct_sale_payment",
             reason: `Venta directa - ${customerName || "Consumidor final"}`,
@@ -323,11 +329,11 @@ export async function createDirectSale(input: CreateDirectSaleInput) {
         let customerDocType: string | undefined = undefined;
 
         if (customerId) {
-          const customer = await tx.customer.findUnique({
-            where: { id: customerId },
-            select: { billingData: true },
+          const foundCustomer = await tx.query.customer.findFirst({
+            where: eq(customer.id, customerId),
+            columns: { billingData: true },
           });
-          billingData = customer?.billingData;
+          billingData = foundCustomer?.billingData;
 
           // Extract doc info from billingData if available
           if (billingData && typeof billingData === "object") {
@@ -346,7 +352,7 @@ export async function createDirectSale(input: CreateDirectSaleInput) {
         await createInvoice(
           {
             type: invoiceType,
-            referenceId: directSale.id,
+            referenceId: createdDirectSale.id,
             referenceType: "direct_sale",
             customerId,
             customerName,
@@ -367,10 +373,7 @@ export async function createDirectSale(input: CreateDirectSaleInput) {
         );
       }
 
-      return directSale;
-    },
-    {
-      timeout: 15000, // Increase timeout to 15 seconds for sales with many items
+      return createdDirectSale;
     },
   );
 
@@ -388,27 +391,25 @@ export async function getDirectSalesByDateRange(
   startDate: Date,
   endDate: Date,
 ) {
-  return prisma.direct_sale.findMany({
-    where: {
-      createdAt: {
-        gte: startDate,
-        lte: endDate,
-      },
-    },
-    include: {
+  return db.query.directSale.findMany({
+    where: and(
+      gte(directSale.createdAt, startDate.toISOString()),
+      lte(directSale.createdAt, endDate.toISOString()),
+    ),
+    with: {
       customer: {
-        select: { name: true, phone: true },
+        columns: { name: true, phone: true },
       },
-      items: true,
-      payments: {
-        include: {
+      directSaleItems: true,
+      directSalePayments: {
+        with: {
           paymentMethod: {
-            select: { name: true, code: true },
+            columns: { name: true, code: true },
           },
         },
       },
     },
-    orderBy: { createdAt: "desc" },
+    orderBy: desc(directSale.createdAt),
   });
 }
 
@@ -419,18 +420,16 @@ export async function getDirectSalesSummaryForDate(date: Date) {
   const startOfDay = getArgentinaStartOfDay(date);
   const endOfDay = getArgentinaEndOfDay(date);
 
-  const sales = await prisma.direct_sale.findMany({
-    where: {
-      createdAt: {
-        gte: startOfDay,
-        lte: endOfDay,
-      },
-    },
-    include: {
-      payments: {
-        include: {
+  const sales = await db.query.directSale.findMany({
+    where: and(
+      gte(directSale.createdAt, startOfDay.toISOString()),
+      lte(directSale.createdAt, endOfDay.toISOString()),
+    ),
+    with: {
+      directSalePayments: {
+        with: {
           paymentMethod: {
-            select: { code: true },
+            columns: { code: true },
           },
         },
       },
@@ -446,7 +445,7 @@ export async function getDirectSalesSummaryForDate(date: Date) {
 
   // Group by payment method
   const paymentsByMethod = sales
-    .flatMap((sale: unknown) => (sale as { payments: unknown[] }).payments)
+    .flatMap((sale: unknown) => (sale as { directSalePayments: unknown[] }).directSalePayments)
     .reduce(
       (acc: Record<string, number>, payment: unknown) => {
         const code = (payment as { paymentMethod: { code: string } })
@@ -471,11 +470,11 @@ export async function getDirectSalesSummaryForDate(date: Date) {
  * Get direct sale by ID with full details
  */
 export async function getDirectSaleById(id: string) {
-  return prisma.direct_sale.findUnique({
-    where: { id },
-    include: {
+  return db.query.directSale.findFirst({
+    where: eq(directSale.id, id),
+    with: {
       customer: {
-        select: {
+        columns: {
           id: true,
           name: true,
           phone: true,
@@ -483,20 +482,20 @@ export async function getDirectSaleById(id: string) {
           balance: true,
         },
       },
-      items: {
-        include: {
+      directSaleItems: {
+        with: {
           product: {
-            select: { id: true, name: true, sku: true },
+            columns: { id: true, name: true, sku: true },
           },
           service: {
-            select: { id: true, name: true },
+            columns: { id: true, name: true },
           },
         },
       },
-      payments: {
-        include: {
+      directSalePayments: {
+        with: {
           paymentMethod: {
-            select: { id: true, name: true, code: true },
+            columns: { id: true, name: true, code: true },
           },
         },
       },

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth-server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { vehicle } from "@/db/schema";
+import { eq, ilike, and, desc, count } from "drizzle-orm";
 import { capitalizeText } from "@/lib/utils/format";
 import { resolveMakeModel } from "@/lib/utils/vehicle-helpers";
 
@@ -36,38 +38,48 @@ export async function GET(request: NextRequest) {
     const offset = parseInt(searchParams.get("offset") || "0");
 
     // Build where clause
-    const where: Record<string, unknown> = {};
-    if (customerId) where.customerId = customerId;
+    const conditions = [];
+    if (customerId) conditions.push(eq(vehicle.customerId, customerId));
     if (identifier)
-      where.identifier = { contains: identifier, mode: "insensitive" };
-    if (category) where.category = category;
+      conditions.push(ilike(vehicle.identifier, `%${identifier}%`));
+    if (category) conditions.push(eq(vehicle.category, category));
 
-    const vehicles = await prisma.vehicle.findMany({
+    const where = conditions.length > 0 ? and(...conditions) : undefined;
+
+    const vehicles = await db.query.vehicle.findMany({
       where,
-      include: {
+      with: {
         customer: {
-          select: {
+          columns: {
             id: true,
             name: true,
             phone: true,
           },
         },
-        vehicle_make: true,
-        vehicle_model: true,
-        _count: {
-          select: {
-            work_order: true,
-          },
-        },
+        vehicleMake: true,
+        vehicleModel: true,
+        workOrders: true,
       },
-      orderBy: { createdAt: "desc" },
-      take: limit,
-      skip: offset,
+      orderBy: desc(vehicle.createdAt),
+      limit,
+      offset,
     });
 
-    const total = await prisma.vehicle.count({ where });
+    // Count total
+    const [{ count: total }] = await db
+      .select({ count: count() })
+      .from(vehicle)
+      .where(where ?? undefined);
 
-    return NextResponse.json({ vehicles, total, limit, offset });
+    // Transform to include _count equivalent
+    const vehiclesWithCount = vehicles.map((v) => ({
+      ...v,
+      _count: {
+        work_order: v.workOrders.length,
+      },
+    }));
+
+    return NextResponse.json({ vehicles: vehiclesWithCount, total, limit, offset });
   } catch (error) {
     console.error("Error fetching vehicles:", error);
     return NextResponse.json(
@@ -136,30 +148,33 @@ export async function POST(request: NextRequest) {
       ? await resolveMakeModel(makeName, modelName)
       : { makeId: rawMakeId, modelId: rawModelId };
 
-    const vehicle = await prisma.vehicle.create({
-      data: {
-        id: crypto.randomUUID(),
-        identifier: identifier.toUpperCase(),
-        category,
-        customerId,
-        makeId,
-        modelId,
-        year,
-        color: color ? capitalizeText(color) : null,
-        equipmentName,
-        equipmentType,
-        description,
-        notes,
-        updatedAt: new Date(),
-      },
-      include: {
+    const [created] = await db.insert(vehicle).values({
+      id: crypto.randomUUID(),
+      identifier: identifier.toUpperCase(),
+      category,
+      customerId,
+      makeId,
+      modelId,
+      year,
+      color: color ? capitalizeText(color) : null,
+      equipmentName,
+      equipmentType,
+      description,
+      notes,
+      updatedAt: new Date().toISOString(),
+    }).returning();
+
+    // Fetch with relations
+    const vehicleWithRelations = await db.query.vehicle.findFirst({
+      where: eq(vehicle.id, created.id),
+      with: {
         customer: true,
-        vehicle_make: true,
-        vehicle_model: true,
+        vehicleMake: true,
+        vehicleModel: true,
       },
     });
 
-    return NextResponse.json(vehicle, { status: 201 });
+    return NextResponse.json(vehicleWithRelations, { status: 201 });
   } catch (error) {
     console.error("Error creating vehicle:", error);
     return NextResponse.json(

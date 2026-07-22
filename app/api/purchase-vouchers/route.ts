@@ -23,14 +23,13 @@ export const POST = withStaff(async (request: NextRequest, session) => {
   if (!supplierId || !letter || !number || !date) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
-  const { Decimal } = await import('@prisma/client/runtime/library');
   const voucher = await createDraftVoucher({
     supplierId,
     letter,
     number,
     date: new Date(date),
     notes,
-    totalAmount: new Decimal(totalAmount ?? 0),
+    totalAmount: Number(totalAmount ?? 0),
     paymentMethodId: paymentMethodId || null,
     createdBy: session.user.id,
   });

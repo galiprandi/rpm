@@ -1,5 +1,14 @@
-import { prisma } from "@/lib/prisma";
-import { ARGENTINA_TIMEZONE } from "@/lib/utils/date";
+import { db } from "@/lib/db";
+import {
+  workOrder,
+  directSale,
+  workOrderItem,
+  directSaleItem,
+  customer,
+  product,
+  service,
+} from "@/db/schema";
+import { eq, and, inArray, gte, lte, isNotNull, sql, count, sum } from "drizzle-orm";
 
 export interface OverviewReportParams {
   startDate: Date;
@@ -26,99 +35,97 @@ export interface OverviewReportData {
   generatedAt: string;
 }
 
-function decimalToNumber(decimal: unknown): number {
-  if (decimal === null || decimal === undefined) return 0;
-  if (typeof decimal === "number") return decimal;
-  if (
-    typeof decimal === "object" &&
-    decimal !== null &&
-    "toNumber" in decimal &&
-    typeof (decimal as { toNumber: unknown }).toNumber === "function"
-  ) {
-    return (decimal as { toNumber: () => number }).toNumber();
-  }
-  return Number(decimal);
+function decimalToNumber(value: unknown): number {
+  if (value === null || value === undefined) return 0;
+  if (typeof value === "number") return value;
+  return Number(value) || 0;
 }
 
 async function getPeriodMetrics(start: Date, end: Date) {
+  const saleStatuses = ["DELIVERED", "READY", "PAID"];
   // 1. Revenue
   const [woSales, dsSales] = await Promise.all([
-    prisma.work_order.aggregate({
-      where: {
-        status: { in: ["DELIVERED", "READY", "PAID"] },
-        completedAt: { gte: start, lte: end },
-      },
-      _sum: { total: true },
-    }),
-    prisma.direct_sale.aggregate({
-      where: {
-        createdAt: { gte: start, lte: end },
-      },
-      _sum: { total: true },
-    }),
+    db.select({ totalSum: sum(workOrder.total) }).from(workOrder).where(and(
+      inArray(workOrder.status, saleStatuses),
+      gte(workOrder.completedAt, start.toISOString()),
+      lte(workOrder.completedAt, end.toISOString()),
+    )),
+    db.select({ totalSum: sum(directSale.total) }).from(directSale).where(and(
+      gte(directSale.createdAt, start.toISOString()),
+      lte(directSale.createdAt, end.toISOString()),
+    )),
   ]);
 
-  const revenue = decimalToNumber(woSales._sum.total) + decimalToNumber(dsSales._sum.total);
+  const revenue = decimalToNumber(woSales[0]?.totalSum) + decimalToNumber(dsSales[0]?.totalSum);
 
   // 2. Estimated Profit (Revenue - Estimated Cost)
-  // We calculate cost from items
   const [woItems, dsItems] = await Promise.all([
-    prisma.work_order_item.findMany({
-      where: {
-        work_order: {
-          status: { in: ["DELIVERED", "READY", "PAID"] },
-          completedAt: { gte: start, lte: end },
-        },
-      },
-      include: {
-        product: { select: { costPrice: true } },
-        service: { select: { baseCost: true } },
-      },
-    }),
-    prisma.direct_sale_item.findMany({
-      where: {
-        directSale: {
-          createdAt: { gte: start, lte: end },
-        },
-      },
-      include: {
-        product: { select: { costPrice: true } },
-        service: { select: { baseCost: true } },
-      },
-    }),
+    db.select({
+      productId: workOrderItem.productId,
+      quantity: workOrderItem.quantity,
+      productCostPrice: product.costPrice,
+      serviceBaseCost: service.baseCost,
+    }).from(workOrderItem).innerJoin(
+      workOrder, eq(workOrderItem.workOrderId, workOrder.id),
+    ).leftJoin(
+      product, eq(workOrderItem.productId, product.id),
+    ).leftJoin(
+      service, eq(workOrderItem.serviceId, service.id),
+    ).where(and(
+      inArray(workOrder.status, saleStatuses),
+      gte(workOrder.completedAt, start.toISOString()),
+      lte(workOrder.completedAt, end.toISOString()),
+    )),
+    db.select({
+      productId: directSaleItem.productId,
+      quantity: directSaleItem.quantity,
+      productCostPrice: product.costPrice,
+      serviceBaseCost: service.baseCost,
+    }).from(directSaleItem).innerJoin(
+      directSale, eq(directSaleItem.directSaleId, directSale.id),
+    ).leftJoin(
+      product, eq(directSaleItem.productId, product.id),
+    ).leftJoin(
+      service, eq(directSaleItem.serviceId, service.id),
+    ).where(and(
+      gte(directSale.createdAt, start.toISOString()),
+      lte(directSale.createdAt, end.toISOString()),
+    )),
   ]);
 
   let totalCost = 0;
   woItems.forEach((item) => {
     const unitCost = item.productId
-      ? decimalToNumber(item.product?.costPrice)
-      : decimalToNumber(item.service?.baseCost);
+      ? decimalToNumber(item.productCostPrice)
+      : decimalToNumber(item.serviceBaseCost);
     totalCost += unitCost * item.quantity;
   });
 
   dsItems.forEach((item) => {
     const unitCost = item.productId
-      ? decimalToNumber(item.product?.costPrice)
-      : decimalToNumber(item.service?.baseCost);
+      ? decimalToNumber(item.productCostPrice)
+      : decimalToNumber(item.serviceBaseCost);
     totalCost += unitCost * item.quantity;
   });
 
   const estimatedProfit = revenue - totalCost;
 
   // 3. Completed Orders
-  const completedOrders = await prisma.work_order.count({
-    where: {
-      status: { in: ["DELIVERED", "READY", "PAID"] },
-      completedAt: { gte: start, lte: end },
-    },
-  });
+  const completedOrdersResult = await db.select({ count: count(workOrder.id) })
+    .from(workOrder).where(and(
+      inArray(workOrder.status, saleStatuses),
+      gte(workOrder.completedAt, start.toISOString()),
+      lte(workOrder.completedAt, end.toISOString()),
+    ));
+  const completedOrders = Number(completedOrdersResult[0]?.count ?? 0);
 
   // 4. New Customers
-  const newCustomers = await prisma.customer.count({
-    where: {
-      createdAt: { gte: start, lte: end },
-    },
-  });
+  const newCustomersResult = await db.select({ count: count(customer.id) })
+    .from(customer).where(and(
+      gte(customer.createdAt, start.toISOString()),
+      lte(customer.createdAt, end.toISOString()),
+    ));
+  const newCustomers = Number(newCustomersResult[0]?.count ?? 0);
 
   return { revenue, estimatedProfit, completedOrders, newCustomers };
 }
@@ -134,22 +141,20 @@ export async function getOverviewReport(params: OverviewReportParams): Promise<O
   }
 
   // Stock status is current, not per period
-  const [stockAgg, lowStockCount] = await Promise.all([
-    prisma.product.findMany({
-      where: { isActive: true },
-      select: { stock: true, costPrice: true },
-    }),
-    prisma.product.count({
-      where: {
-        isActive: true,
-        stock: { lte: prisma.product.fields.minStock },
-      },
-    }),
+  const [stockProducts, lowStockCountResult] = await Promise.all([
+    db.select({ stock: product.stock, costPrice: product.costPrice })
+      .from(product).where(eq(product.isActive, true)),
+    db.select({ count: count(product.id) }).from(product).where(and(
+      eq(product.isActive, true),
+      sql`${product.stock} <= ${product.minStock}`,
+    )),
   ]);
 
-  const totalStockValue = stockAgg.reduce((acc, p) => {
+  const totalStockValue = stockProducts.reduce((acc, p) => {
     return acc + p.stock * decimalToNumber(p.costPrice);
   }, 0);
+
+  const lowStockCount = Number(lowStockCountResult[0]?.count ?? 0);
 
   const calculateChange = (curr: number, prev: number) => {
     if (prev === 0) return curr > 0 ? 100 : 0;

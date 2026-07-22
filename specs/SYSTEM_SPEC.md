@@ -4,7 +4,7 @@ Bienvenido a las especificaciones de RPM. Esta documentación ha sido refactoriz
 
 ## 1. Arquitectura Técnica Global (`/specs/architecture/`)
 Define las bases técnicas y de infraestructura sobre las que está construida la aplicación.
-- [Arquitectura Backend y Datos](architecture/backend-data-architecture.md) - Servicios, Prisma, Caché y Transacciones.
+- [Arquitectura Backend y Datos](architecture/backend-data-architecture.md) - Servicios, Drizzle ORM, Caché y Transacciones.
 - [Arquitectura Frontend](architecture/frontend-architecture.md) - Next.js, UI, Manejo de Estado y Layouts.
 - [Operaciones, Deploy y Escalamiento](architecture/ops-architecture.md) - Vercel, Base de datos, CDN de imágenes.
 

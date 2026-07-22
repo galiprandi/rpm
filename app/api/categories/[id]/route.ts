@@ -4,7 +4,9 @@
  * Spec: /specs/inventory-sales.md
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
+import { category, product } from '@/db/schema';
+import { eq, count } from 'drizzle-orm';
 
 interface Params {
   params: Promise<{ id: string }>;
@@ -15,27 +17,28 @@ export async function GET(request: NextRequest, { params }: Params) {
   try {
     const { id } = await params;
 
-    const category = await prisma.category.findUnique({
-      where: { id },
-      include: {
-        _count: {
-          select: { product: true },
-        },
-      },
+    const cat = await db.query.category.findFirst({
+      where: eq(category.id, id),
     });
 
-    if (!category) {
+    if (!cat) {
       return NextResponse.json(
         { error: 'Categoría no encontrada' },
         { status: 404 }
       );
     }
 
+    // Count products in this category
+    const productCountResult = await db
+      .select({ value: count() })
+      .from(product)
+      .where(eq(product.categoryId, id));
+    const productCount = productCountResult[0]?.value || 0;
+
     return NextResponse.json({
       category: {
-        ...category,
-        productCount: category._count.product,
-        _count: undefined,
+        ...cat,
+        productCount,
       },
     });
   } catch (error) {
@@ -54,8 +57,8 @@ export async function PUT(request: NextRequest, { params }: Params) {
     const body = await request.json();
 
     // Verificar que la categoría existe
-    const existing = await prisma.category.findUnique({
-      where: { id },
+    const existing = await db.query.category.findFirst({
+      where: eq(category.id, id),
     });
 
     if (!existing) {
@@ -67,8 +70,8 @@ export async function PUT(request: NextRequest, { params }: Params) {
 
     // Validar nombre único si cambia
     if (body.name && body.name !== existing.name) {
-      const nameExists = await prisma.category.findUnique({
-        where: { name: body.name },
+      const nameExists = await db.query.category.findFirst({
+        where: eq(category.name, body.name),
       });
       if (nameExists) {
         return NextResponse.json(
@@ -78,19 +81,20 @@ export async function PUT(request: NextRequest, { params }: Params) {
       }
     }
 
-    const category = await prisma.category.update({
-      where: { id },
-      data: {
+    const [updated] = await db
+      .update(category)
+      .set({
         name: body.name,
         description: body.description,
         defaultMarginPercent: body.defaultMarginPercent,
         color: body.color,
         sortOrder: body.sortOrder,
         isActive: body.isActive,
-      },
-    });
+      })
+      .where(eq(category.id, id))
+      .returning();
 
-    return NextResponse.json({ category });
+    return NextResponse.json({ category: updated });
   } catch (error) {
     console.error('Error updating category:', error);
     return NextResponse.json(
@@ -106,13 +110,8 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     const { id } = await params;
 
     // Verificar que la categoría existe
-    const existing = await prisma.category.findUnique({
-      where: { id },
-      include: {
-        _count: {
-          select: { product: true },
-        },
-      },
+    const existing = await db.query.category.findFirst({
+      where: eq(category.id, id),
     });
 
     if (!existing) {
@@ -123,7 +122,13 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     }
 
     // Verificar que no tenga productos activos
-    if (existing._count.product > 0) {
+    const productCountResult = await db
+      .select({ value: count() })
+      .from(product)
+      .where(eq(product.categoryId, id));
+    const productCount = productCountResult[0]?.value || 0;
+
+    if (productCount > 0) {
       return NextResponse.json(
         { error: 'No se puede desactivar una categoría con productos' },
         { status: 400 }
@@ -131,14 +136,15 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     }
 
     // Soft delete: desactivar en lugar de borrar
-    const category = await prisma.category.update({
-      where: { id },
-      data: { isActive: false },
-    });
+    const [updated] = await db
+      .update(category)
+      .set({ isActive: false })
+      .where(eq(category.id, id))
+      .returning();
 
     return NextResponse.json({
       message: 'Categoría desactivada exitosamente',
-      category,
+      category: updated,
     });
   } catch (error) {
     console.error('Error deleting category:', error);

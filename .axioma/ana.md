@@ -37,7 +37,7 @@
 - **Resolución de Colisiones en Secuencias:** El campo `number` de la tabla `invoice` tiene un índice único global. Por lo tanto, cuando pre-facturas de diferentes tipos (ej: `X_A` and `X_B`) comparten el mismo prefijo `X-0001` pero usan secuencias independientes por tipo, el sistema genera números de comprobantes duplicados (como `X-0001-00000001`), rompiendo la base de datos con violaciones de clave única. Al unificar la asignación secuencial de todas las pre-facturas bajo la misma consulta de prefijo, se garantiza la total unicidad de números y se corrigen colisiones en entornos de producción y pruebas concurrentes.
 - **Edición de Datos de Facturación:** Para dar flexibilidad al usuario ante errores de tipeo o cambio de datos del cliente, habilitar la edición de `customerName`, `customerDoc` y `customerDocType` en comprobantes no emitidos (`DRAFT` / `REJECTED`) evita tener que cancelar y refacturar toda la operación. Si cambian el tipo de documento (ej: de DNI a CUIT), el sistema debe recalcular el tipo de factura de forma transaccional (`X_B` a `X_A` o viceversa), re-asignar el número secuencial correspondiente a la nueva serie, y actualizar el desglose impositivo.
 - **Desglose impositivo:** Para comprobantes tipo B (consumidor final), aunque el total sea lo que ve el cliente, el sistema debe registrar el neto y el IVA por separado para futuros reportes fiscales (Libro IVA Digital). Se implementó un cálculo automático del 21% para pre-facturas.
-- **Esquema:** Se verificó que `work_order.invoiceId` ya existe en el esquema de Prisma, permitiendo la vinculación directa sin migraciones adicionales en este paso.
+- **Esquema:** Se verificó que `work_order.invoiceId` ya existe en el esquema de Drizzle, permitiendo la vinculación directa sin migraciones adicionales en este paso.
 - **Configuración Tipada:** Al manejar booleanos en `settingsService`, es crítico asegurar la conversión de tipos en la API, ya que los valores de base de datos pueden recuperarse como strings (ej: "true") que fallan comparaciones estrictas con literales booleanos.
 - **Componentes Custom:** Se optó por una implementación local del componente `Switch` para evitar conflictos de importación interna con Radix-UI detectados durante la revisión de código.
 - **Virtualización de Items:** Dado que el modelo `invoice` no guarda items propios (para evitar redundancia con las ventas originales), se implementó una estrategia de fetch dinámico en `getInvoiceById` que une los items de la referencia (`work_order`, `direct_sale`, etc.). Esto simplifica la integridad referencial.
@@ -56,12 +56,13 @@
 ## 🛠️ PROPUESTA DE CAMBIO DE SCHEMA
 Para un desglose preciso de IVA por item, se propone agregar `taxRate` a los items de venta:
 
-```prisma
+```typescript
 // En work_order_item, direct_sale_item, credit_note_item
-model ..._item {
+// db/schema/schema.ts
+export const workOrderItem = pgTable('work_order_item', {
   // ...
-  taxRate Decimal @db.Decimal(5, 2) @default(21.00) // Alicuota de IVA (21, 10.5, 0)
-}
+  taxRate: decimal('tax_rate', { precision: 5, scale: 2 }).default('21.00').notNull(), // Alicuota de IVA (21, 10.5, 0)
+});
 ```
 
 **Justificación:** Actualmente el sistema asume 21% de forma global para pre-facturas. AFIP requiere el desglose por alicuota real en el comprobante oficial. Tenerlo por item permite ventas mixtas y mayor precisión.

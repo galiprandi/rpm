@@ -2,8 +2,8 @@
  * Characterization tests for Prisma → Drizzle migration.
  *
  * These tests exercise the service layer against the real database,
- * capturing current behavior BEFORE the migration so we can verify
- * the Drizzle implementation produces identical results AFTER.
+ * capturing current behavior so we can verify the Drizzle implementation
+ * produces identical results.
  *
  * All test data is cleaned up in afterAll to leave the database pristine.
  *
@@ -11,7 +11,24 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { eq, sql } from "drizzle-orm";
+import {
+  category,
+  supplier,
+  paymentMethod,
+  product,
+  customer,
+  directSale,
+  directSaleItem,
+  directSalePayment,
+  cashMovement,
+  setting,
+  vehicle,
+  workOrder,
+  stockMovement,
+  balanceAudit,
+} from "@/db/schema";
 import {
   getProducts,
   createProduct,
@@ -36,6 +53,7 @@ import {
 } from "@/lib/services/directSaleService";
 import { createCashMovement, getCashMovements } from "@/lib/services/cashMovementService";
 import { getSetting, setSetting } from "@/lib/services/settingsService";
+import type { SettingKey } from "@/lib/services/settingsService";
 import { recalculateCustomerBalance } from "@/lib/services/balanceService";
 
 const TEST_TS = Date.now();
@@ -51,7 +69,24 @@ let vehicleId: string;
 let workOrderId: string;
 let settingKey: string;
 
-// Track all created IDs for cleanup
+// Track all created IDs for cleanup — maps table name to Drizzle table object
+const tableMap: Record<string, any> = {
+  category,
+  supplier,
+  payment_method: paymentMethod,
+  product,
+  customer,
+  direct_sale: directSale,
+  direct_sale_item: directSaleItem,
+  direct_sale_payment: directSalePayment,
+  cash_movement: cashMovement,
+  setting,
+  vehicle,
+  work_order: workOrder,
+  stock_movement: stockMovement,
+  balance_audit: balanceAudit,
+};
+
 const createdIds: { table: string; id: string }[] = [];
 
 function track(table: string, id: string) {
@@ -59,9 +94,13 @@ function track(table: string, id: string) {
 }
 
 async function cleanupAll() {
-  for (const { table, id } of createdIds) {
+  // Delete in reverse order to respect FK constraints
+  for (const { table, id } of [...createdIds].reverse()) {
     try {
-      await (prisma as unknown as Record<string, { delete: (args: { where: { id: string } }) => Promise<unknown> }>)[table].delete({ where: { id } });
+      const tableDef = tableMap[table];
+      if (tableDef) {
+        await db.delete(tableDef).where(eq(tableDef.id, id));
+      }
     } catch {
       // Already deleted or cascade handled
     }
@@ -70,51 +109,45 @@ async function cleanupAll() {
 }
 
 beforeAll(async () => {
-  await prisma.$connect();
+  // Drizzle's Pool auto-connects; no explicit connect needed.
 
   // Create prerequisite data
   categoryId = `migtest-cat-${TEST_TS}`;
   supplierId = `migtest-sup-${TEST_TS}`;
   paymentMethodId = `migtest-pm-${TEST_TS}`;
 
-  await prisma.category.create({
-    data: {
-      id: categoryId,
-      name: `TestCat ${TEST_TS}`,
-      defaultMarginPercent: 40,
-      sortOrder: 999,
-      isActive: true,
-      updatedAt: new Date(),
-    },
+  await db.insert(category).values({
+    id: categoryId,
+    name: `TestCat ${TEST_TS}`,
+    defaultMarginPercent: 40,
+    sortOrder: 999,
+    isActive: true,
+    updatedAt: new Date().toISOString(),
   });
   track("category", categoryId);
 
-  await prisma.supplier.create({
-    data: {
-      id: supplierId,
-      name: `TestSup ${TEST_TS}`,
-      isActive: true,
-      updatedAt: new Date(),
-    },
+  await db.insert(supplier).values({
+    id: supplierId,
+    name: `TestSup ${TEST_TS}`,
+    isActive: true,
+    updatedAt: new Date().toISOString(),
   });
   track("supplier", supplierId);
 
-  await prisma.payment_method.create({
-    data: {
-      id: paymentMethodId,
-      name: `TestPM ${TEST_TS}`,
-      code: `TESTPM${TEST_TS}`,
-      sortOrder: 999,
-      isActive: true,
-      updatedAt: new Date(),
-    },
+  await db.insert(paymentMethod).values({
+    id: paymentMethodId,
+    name: `TestPM ${TEST_TS}`,
+    code: `TESTPM${TEST_TS}`,
+    sortOrder: 999,
+    isActive: true,
+    updatedAt: new Date().toISOString(),
   });
   track("payment_method", paymentMethodId);
 });
 
 afterAll(async () => {
   await cleanupAll();
-  await prisma.$disconnect();
+  // Drizzle's Pool is managed globally; no explicit disconnect needed.
 });
 
 describe("Characterization: Product Service", () => {
@@ -215,7 +248,7 @@ describe("Characterization: Direct Sale Service", () => {
   it("should create a direct sale with items and payment", async () => {
     const sale = await createDirectSale({
       customerName: `Walk-in ${TEST_TS}`,
-      customerId: null,
+      customerId: undefined,
       items: [
         {
           productId,
@@ -240,15 +273,18 @@ describe("Characterization: Direct Sale Service", () => {
     expect(sale.id).toBeDefined();
     expect(Number(sale.total)).toBe(400);
 
-    // Re-fetch with items and payments (createDirectSale returns bare sale)
-    const full = await prisma.direct_sale.findUnique({
-      where: { id: directSaleId },
-      include: { items: true, payments: true },
+    // Re-fetch with items and payments using Drizzle query API
+    const full = await db.query.directSale.findFirst({
+      where: eq(directSale.id, directSaleId),
+      with: {
+        directSaleItems: true,
+        directSalePayments: true,
+      },
     });
-    expect(full!.items).toHaveLength(1);
-    expect(full!.payments).toHaveLength(1);
-    for (const item of full!.items) track("direct_sale_item", item.id);
-    for (const p of full!.payments) track("direct_sale_payment", p.id);
+    expect(full!.directSaleItems).toHaveLength(1);
+    expect(full!.directSalePayments).toHaveLength(1);
+    for (const item of full!.directSaleItems) track("direct_sale_item", item.id);
+    for (const p of full!.directSalePayments) track("direct_sale_payment", p.id);
   });
 });
 
@@ -277,10 +313,10 @@ describe("Characterization: Cash Movement Service", () => {
 describe("Characterization: Settings Service", () => {
   it("should set and get a setting", async () => {
     settingKey = `test_setting_${TEST_TS}`;
-    await setSetting(settingKey, "test_value");
+    await setSetting(settingKey as SettingKey, "test_value");
     track("setting", settingKey);
 
-    const value = await getSetting(settingKey);
+    const value = await getSetting(settingKey as SettingKey);
     expect(value).toBe("test_value");
   });
 });
@@ -312,10 +348,10 @@ describe("Characterization: Category & Supplier Services", () => {
 
 describe("Characterization: Database Schema Integrity", () => {
   it("should have all expected tables", async () => {
-    const tables = await prisma.$queryRaw<{ tablename: string }[]>`
+    const result = await db.execute(sql`
       SELECT tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename
-    `;
-    const tableNames = tables.map((t) => t.tablename);
+    `);
+    const tableNames = (result.rows as { tablename: string }[]).map((t) => t.tablename);
     expect(tableNames).toContain("customer");
     expect(tableNames).toContain("product");
     expect(tableNames).toContain("work_order");
@@ -332,45 +368,41 @@ describe("Characterization: Database Schema Integrity", () => {
   });
 
   it("should preserve Decimal precision on numeric columns", async () => {
-    const product = await prisma.product.findUnique({
-      where: { id: productId },
+    const result = await db.query.product.findFirst({
+      where: eq(product.id, productId),
     });
-    expect(product).toBeDefined();
-    expect(product).not.toBeNull();
+    expect(result).toBeDefined();
+    expect(result).not.toBeNull();
     // costPrice is numeric(10,2) - should be 150.00
-    expect(Number(product!.costPrice)).toBe(150);
+    expect(Number(result!.costPrice)).toBe(150);
   });
 
   it("should preserve array columns (entryPhotos on work_order)", async () => {
     vehicleId = `migtest-veh-${TEST_TS}`;
     workOrderId = `migtest-wo-${TEST_TS}`;
 
-    await prisma.vehicle.create({
-      data: {
-        id: vehicleId,
-        identifier: `TEST-VEH-${TEST_TS}`,
-        category: "MOTO",
-        customerId,
-        updatedAt: new Date(),
-      },
+    await db.insert(vehicle).values({
+      id: vehicleId,
+      identifier: `TEST-VEH-${TEST_TS}`,
+      category: "MOTO",
+      customerId,
+      updatedAt: new Date().toISOString(),
     });
     track("vehicle", vehicleId);
 
-    const wo = await prisma.work_order.create({
-      data: {
-        id: workOrderId,
-        status: "PENDING",
-        customerId,
-        vehicleId,
-        entryPhotos: ["photo1.jpg", "photo2.jpg"],
-        exitPhotos: [],
-        total: 0,
-        totalProducts: 0,
-        totalServices: 0,
-        notes: "Test work order",
-        updatedAt: new Date(),
-      },
-    });
+    const [wo] = await db.insert(workOrder).values({
+      id: workOrderId,
+      status: "PENDING",
+      customerId,
+      vehicleId,
+      entryPhotos: ["photo1.jpg", "photo2.jpg"],
+      exitPhotos: [],
+      total: "0",
+      totalProducts: "0",
+      totalServices: "0",
+      notes: "Test work order",
+      updatedAt: new Date().toISOString(),
+    }).returning();
     track("work_order", workOrderId);
 
     expect(wo.entryPhotos).toEqual(["photo1.jpg", "photo2.jpg"]);
@@ -378,12 +410,12 @@ describe("Characterization: Database Schema Integrity", () => {
   });
 
   it("should preserve JSON columns", async () => {
-    const updated = await prisma.work_order.update({
-      where: { id: workOrderId },
-      data: {
+    const [updated] = await db.update(workOrder)
+      .set({
         entryChecklist: { items: ["brakes", "tires"], passed: true },
-      },
-    });
+      })
+      .where(eq(workOrder.id, workOrderId))
+      .returning();
     expect(updated.entryChecklist).toEqual({ items: ["brakes", "tires"], passed: true });
   });
 });

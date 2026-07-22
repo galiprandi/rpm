@@ -1,4 +1,6 @@
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
+import { product } from '@/db/schema';
+import { eq } from 'drizzle-orm';
 import type { UpdateProductInput } from './schema';
 
 /**
@@ -13,20 +15,21 @@ import type { UpdateProductInput } from './schema';
 export async function updateProductService(input: UpdateProductInput) {
   const { productId, name, categoryId, location, description, sku, barcode } = input;
 
-  const data: Record<string, unknown> = {};
+  const data: Partial<typeof product.$inferInsert> = {};
   if (name !== undefined) data.name = name;
-  if (categoryId !== undefined) data.category = { connect: { id: categoryId } };
+  if (categoryId !== undefined) data.categoryId = categoryId;
   if (location !== undefined) data.location = location || null;
   if (description !== undefined) data.description = description || null;
   if (sku !== undefined) data.sku = sku || null;
   if (barcode !== undefined) data.barcode = barcode || null;
-  data.updatedAt = new Date();
+  data.updatedAt = new Date().toISOString();
 
-  const product = await prisma.product.update({
-    where: { id: productId },
-    data,
-    include: { category: true },
+  await db.update(product).set(data).where(eq(product.id, productId));
+
+  const p = await db.query.product.findFirst({
+    where: eq(product.id, productId),
+    with: { category: true },
   });
 
-  return product;
+  return p;
 }

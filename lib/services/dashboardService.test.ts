@@ -6,43 +6,84 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { getDashboardData } from "./dashboardService";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 
-vi.mock("@/lib/prisma", () => ({
-  prisma: {
-    work_order: {
-      findMany: vi.fn(),
-      aggregate: vi.fn(),
-      groupBy: vi.fn(),
-      count: vi.fn(),
-    },
-    direct_sale: {
-      aggregate: vi.fn(),
-    },
-    direct_sale_item: {
-      findMany: vi.fn(),
-    },
-    work_order_item: {
-      findMany: vi.fn(),
-    },
-    product: {
-      findMany: vi.fn(),
-      fields: {
-        minStock: "minStock",
+// vi.hoisted runs before vi.mock factory
+const { createChainable, createDbMockObj } = vi.hoisted(() => {
+  function createChainable(resolveValue: unknown = []): any {
+    const target = () => {};
+    return new Proxy(target, {
+      get(_t: any, prop: string) {
+        if (prop === "then") {
+          return (resolve: any, reject: any) =>
+            Promise.resolve(resolveValue).then(resolve, reject);
+        }
+        if (prop === "catch") {
+          return (onRejected: any) =>
+            Promise.resolve(resolveValue).catch(onRejected);
+        }
+        return vi.fn(() => createChainable(resolveValue));
       },
-    },
-    customer: {
-      aggregate: vi.fn(),
-      findMany: vi.fn(),
-    },
-    cash_movement: {
-      findMany: vi.fn(),
-      findFirst: vi.fn(),
-    },
-    payment_method: {
-      findMany: vi.fn(),
-    },
-  },
+      apply() {
+        return createChainable(resolveValue);
+      },
+    });
+  }
+
+  function createDbMockObj() {
+    const query = {
+      workOrder: { findMany: vi.fn(), findFirst: vi.fn() },
+      directSale: { findMany: vi.fn(), findFirst: vi.fn() },
+      cashMovement: { findMany: vi.fn(), findFirst: vi.fn() },
+      customer: { findMany: vi.fn(), findFirst: vi.fn() },
+      paymentMethod: { findMany: vi.fn(), findFirst: vi.fn() },
+    };
+    return {
+      select: vi.fn(() => createChainable()),
+      query,
+      insert: vi.fn(() => ({
+        values: vi.fn(() => ({
+          returning: vi.fn(() => Promise.resolve([{}])),
+        })),
+      })),
+      update: vi.fn(() => ({
+        set: vi.fn(() => ({
+          where: vi.fn(() => Promise.resolve()),
+          returning: vi.fn(() => Promise.resolve([{}])),
+        })),
+      })),
+      delete: vi.fn(() => ({
+        where: vi.fn(() => Promise.resolve()),
+      })),
+      transaction: vi.fn(async (callback: any) => {
+        const tx = {
+          select: vi.fn(() => createChainable()),
+          query,
+          insert: vi.fn(() => ({
+            values: vi.fn(() => ({
+              returning: vi.fn(() => Promise.resolve([{}])),
+            })),
+          })),
+          update: vi.fn(() => ({
+            set: vi.fn(() => ({
+              where: vi.fn(() => Promise.resolve()),
+              returning: vi.fn(() => Promise.resolve([{}])),
+            })),
+          })),
+          delete: vi.fn(() => ({
+            where: vi.fn(() => Promise.resolve()),
+          })),
+        };
+        return callback(tx);
+      }),
+    };
+  }
+
+  return { createChainable, createDbMockObj };
+});
+
+vi.mock("@/lib/db", () => ({
+  db: createDbMockObj(),
 }));
 
 describe("Dashboard Service", () => {
@@ -50,28 +91,14 @@ describe("Dashboard Service", () => {
     vi.clearAllMocks();
 
     // Default mocks to return empty results
-    vi.mocked(prisma.work_order.findMany).mockResolvedValue([]);
-    vi.mocked(prisma.work_order.aggregate).mockResolvedValue({
-      _sum: { total: null },
-      _count: { id: 0 },
-    } as any);
-    vi.mocked(prisma.work_order.groupBy).mockResolvedValue([] as any);
-    vi.mocked(prisma.direct_sale.aggregate).mockResolvedValue({
-      _sum: { total: null },
-      _count: { id: 0 },
-    } as any);
-    vi.mocked(prisma.direct_sale_item.findMany).mockResolvedValue([] as any);
-    vi.mocked(prisma.work_order_item.findMany).mockResolvedValue([] as any);
-    vi.mocked(prisma.product.findMany).mockResolvedValue([] as any);
-    vi.mocked(prisma.customer.aggregate).mockResolvedValue({
-      _sum: { balance: null },
-      _count: { id: 0 },
-    } as any);
-    vi.mocked(prisma.customer.findMany).mockResolvedValue([] as any);
-    vi.mocked(prisma.cash_movement.findMany).mockResolvedValue([] as any);
-    vi.mocked(prisma.cash_movement.findFirst).mockResolvedValue(null as any);
-    vi.mocked(prisma.work_order.count).mockResolvedValue(0);
-    vi.mocked(prisma.payment_method.findMany).mockResolvedValue([] as any);
+    vi.mocked(db.select).mockReturnValue(createChainable());
+    vi.mocked(db.query.workOrder.findMany).mockResolvedValue([] as any);
+    vi.mocked(db.query.workOrder.findFirst).mockResolvedValue(null as any);
+    vi.mocked(db.query.directSale.findMany).mockResolvedValue([] as any);
+    vi.mocked(db.query.cashMovement.findMany).mockResolvedValue([] as any);
+    vi.mocked(db.query.cashMovement.findFirst).mockResolvedValue(null as any);
+    vi.mocked(db.query.customer.findMany).mockResolvedValue([] as any);
+    vi.mocked(db.query.paymentMethod.findMany).mockResolvedValue([] as any);
   });
 
   describe("getDashboardData", () => {

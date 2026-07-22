@@ -6,7 +6,9 @@
  * - /specs/auth.md
  */
 
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
+import { userRole, user } from '@/db/schema';
+import { eq, and, ne, sql, desc } from 'drizzle-orm';
 
 // Types
 export interface UserWithRole {
@@ -53,34 +55,34 @@ function mapToUserRoleEnum(role: string): string {
  * Get all users with their roles from UserRole table
  */
 export async function getUsers(includeInactive: boolean = false): Promise<UserListResult> {
-  const userRoles = await prisma.user_role.findMany({
-    where: includeInactive ? {} : { isActive: true },
-    orderBy: { createdAt: 'desc' },
+  const userRoles = await db.query.userRole.findMany({
+    where: includeInactive ? undefined : eq(userRole.isActive, true),
+    orderBy: desc(userRole.createdAt),
   });
 
   // Get user info for each userRole
   const usersWithRoles = await Promise.all(
-    userRoles.map(async (userRole) => {
-      const user = await prisma.user.findUnique({
-        where: { email: userRole.email },
+    userRoles.map(async (userRoleRec) => {
+      const userRec = await db.query.user.findFirst({
+        where: eq(user.email, userRoleRec.email),
       });
 
       return {
-        id: user?.id || userRole.id,
-        name: userRole.name || user?.name || userRole.email.split('@')[0],
-        email: userRole.email,
-        image: user?.image || null,
-        role: userRole.role,
-        isActive: userRole.isActive,
-        notes: userRole.notes,
-        createdAt: user?.createdAt || userRole.createdAt,
-        updatedAt: user?.updatedAt || userRole.updatedAt,
+        id: userRec?.id || userRoleRec.id,
+        name: userRoleRec.name || userRec?.name || userRoleRec.email.split('@')[0],
+        email: userRoleRec.email,
+        image: userRec?.image || null,
+        role: userRoleRec.role,
+        isActive: userRoleRec.isActive,
+        notes: userRoleRec.notes,
+        createdAt: userRec?.createdAt ? new Date(userRec.createdAt) : new Date(userRoleRec.createdAt),
+        updatedAt: userRec?.updatedAt ? new Date(userRec.updatedAt) : new Date(userRoleRec.updatedAt),
       };
     })
   );
 
   // Sort by most recently created first
-  const sortedUsers = usersWithRoles.sort((a, b) => 
+  const sortedUsers = usersWithRoles.sort((a, b) =>
     new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
 
@@ -94,26 +96,26 @@ export async function getUsers(includeInactive: boolean = false): Promise<UserLi
  * Get a single user by email
  */
 export async function getUserByEmail(email: string): Promise<UserWithRole | null> {
-  const userRole = await prisma.user_role.findUnique({
-    where: { email: email.toLowerCase() },
+  const userRoleRec = await db.query.userRole.findFirst({
+    where: eq(userRole.email, email.toLowerCase()),
   });
 
-  if (!userRole) return null;
+  if (!userRoleRec) return null;
 
-  const user = await prisma.user.findUnique({
-    where: { email: userRole.email },
+  const userRec = await db.query.user.findFirst({
+    where: eq(user.email, userRoleRec.email),
   });
 
   return {
-    id: user?.id || userRole.id,
-    name: userRole.name || user?.name || userRole.email.split('@')[0],
-    email: userRole.email,
-    image: user?.image || null,
-    role: userRole.role,
-    isActive: userRole.isActive,
-    notes: userRole.notes,
-    createdAt: user?.createdAt || userRole.createdAt,
-    updatedAt: user?.updatedAt || userRole.updatedAt,
+    id: userRec?.id || userRoleRec.id,
+    name: userRoleRec.name || userRec?.name || userRoleRec.email.split('@')[0],
+    email: userRoleRec.email,
+    image: userRec?.image || null,
+    role: userRoleRec.role,
+    isActive: userRoleRec.isActive,
+    notes: userRoleRec.notes,
+    createdAt: userRec?.createdAt ? new Date(userRec.createdAt) : new Date(userRoleRec.createdAt),
+    updatedAt: userRec?.updatedAt ? new Date(userRec.updatedAt) : new Date(userRoleRec.updatedAt),
   };
 }
 
@@ -122,51 +124,51 @@ export async function getUserByEmail(email: string): Promise<UserWithRole | null
  */
 export async function getUserById(id: string): Promise<UserWithRole | null> {
   // First try to find by user id
-  const user = await prisma.user.findUnique({
-    where: { id },
+  const userRec = await db.query.user.findFirst({
+    where: eq(user.id, id),
   });
 
-  if (user) {
-    const userRole = await prisma.user_role.findUnique({
-      where: { email: user.email },
+  if (userRec) {
+    const userRoleRec = await db.query.userRole.findFirst({
+      where: eq(userRole.email, userRec.email),
     });
 
-    if (userRole) {
+    if (userRoleRec) {
       return {
-        id: user.id,
-        name: userRole.name || user.name,
-        email: user.email,
-        image: user.image,
-        role: userRole.role,
-        isActive: userRole.isActive,
-        notes: userRole.notes,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
+        id: userRec.id,
+        name: userRoleRec.name || userRec.name,
+        email: userRec.email,
+        image: userRec.image,
+        role: userRoleRec.role,
+        isActive: userRoleRec.isActive,
+        notes: userRoleRec.notes,
+        createdAt: new Date(userRec.createdAt),
+        updatedAt: new Date(userRec.updatedAt),
       };
     }
   }
 
   // Try to find by UserRole id
-  const userRole = await prisma.user_role.findFirst({
-    where: { id },
+  const userRoleRec = await db.query.userRole.findFirst({
+    where: eq(userRole.id, id),
   });
 
-  if (!userRole) return null;
+  if (!userRoleRec) return null;
 
-  const linkedUser = await prisma.user.findUnique({
-    where: { email: userRole.email },
+  const linkedUser = await db.query.user.findFirst({
+    where: eq(user.email, userRoleRec.email),
   });
 
   return {
-    id: linkedUser?.id || userRole.id,
-    name: userRole.name || linkedUser?.name || userRole.email.split('@')[0],
-    email: userRole.email,
+    id: linkedUser?.id || userRoleRec.id,
+    name: userRoleRec.name || linkedUser?.name || userRoleRec.email.split('@')[0],
+    email: userRoleRec.email,
     image: linkedUser?.image || null,
-    role: userRole.role,
-    isActive: userRole.isActive,
-    notes: userRole.notes,
-    createdAt: linkedUser?.createdAt || userRole.createdAt,
-    updatedAt: linkedUser?.updatedAt || userRole.updatedAt,
+    role: userRoleRec.role,
+    isActive: userRoleRec.isActive,
+    notes: userRoleRec.notes,
+    createdAt: linkedUser?.createdAt ? new Date(linkedUser.createdAt) : new Date(userRoleRec.createdAt),
+    updatedAt: linkedUser?.updatedAt ? new Date(linkedUser.updatedAt) : new Date(userRoleRec.updatedAt),
   };
 }
 
@@ -179,13 +181,19 @@ async function validateAdminCount(
 ): Promise<void> {
   // If changing role to non-admin, check remaining admins
   if (newRole && newRole !== 'ADMIN') {
-    const adminCount = await prisma.user_role.count({
-      where: {
-        role: 'ADMIN',
-        isActive: true,
-        email: excludeEmail ? { not: excludeEmail } : undefined,
-      },
-    });
+    const conditions = [
+      eq(userRole.role, 'ADMIN'),
+      eq(userRole.isActive, true),
+    ];
+    if (excludeEmail) {
+      conditions.push(ne(userRole.email, excludeEmail));
+    }
+
+    const result = await db.select({ count: sql<number>`count(*)::int` })
+      .from(userRole)
+      .where(and(...conditions));
+
+    const adminCount = result[0]?.count ?? 0;
 
     if (adminCount === 0) {
       throw new Error('Debe existir al menos un administrador activo');
@@ -200,8 +208,8 @@ export async function createUser(input: CreateUserInput): Promise<UserWithRole> 
   const email = input.email.toLowerCase();
 
   // Check if userRole already exists
-  const existingRole = await prisma.user_role.findUnique({
-    where: { email },
+  const existingRole = await db.query.userRole.findFirst({
+    where: eq(userRole.email, email),
   });
 
   if (existingRole) {
@@ -209,52 +217,48 @@ export async function createUser(input: CreateUserInput): Promise<UserWithRole> 
   }
 
   // Create UserRole record
-  const userRole = await prisma.user_role.create({
-    data: {
-      id: crypto.randomUUID(),
-      email,
-      role: input.role,
-      name: input.name,
-      notes: input.notes || null,
-      isActive: true,
-      updatedAt: new Date(),
-    },
-  });
+  const [createdRole] = await db.insert(userRole).values({
+    id: crypto.randomUUID(),
+    email,
+    role: input.role,
+    name: input.name,
+    notes: input.notes || null,
+    isActive: true,
+    updatedAt: new Date().toISOString(),
+  }).returning();
 
   // If user already exists (had logged in before), update their role
-  const existingUser = await prisma.user.findUnique({
-    where: { email },
+  const existingUser = await db.query.user.findFirst({
+    where: eq(user.email, email),
   });
 
   if (existingUser) {
-    await prisma.user.update({
-      where: { id: existingUser.id },
-      data: { role: mapToUserRoleEnum(input.role) },
-    });
+    await db.update(user).set({ role: mapToUserRoleEnum(input.role) })
+      .where(eq(user.id, existingUser.id));
 
     return {
       id: existingUser.id,
-      name: userRole.name || existingUser.name,
+      name: createdRole.name || existingUser.name,
       email: existingUser.email,
       image: existingUser.image,
-      role: userRole.role,
-      isActive: userRole.isActive,
-      notes: userRole.notes,
-      createdAt: existingUser.createdAt,
-      updatedAt: existingUser.updatedAt,
+      role: createdRole.role,
+      isActive: createdRole.isActive,
+      notes: createdRole.notes,
+      createdAt: new Date(existingUser.createdAt),
+      updatedAt: new Date(existingUser.updatedAt),
     };
   }
 
   return {
-    id: userRole.id,
-    name: userRole.name || email.split('@')[0],
-    email: userRole.email,
+    id: createdRole.id,
+    name: createdRole.name || email.split('@')[0],
+    email: createdRole.email,
     image: null,
-    role: userRole.role,
-    isActive: userRole.isActive,
-    notes: userRole.notes,
-    createdAt: userRole.createdAt,
-    updatedAt: userRole.updatedAt,
+    role: createdRole.role,
+    isActive: createdRole.isActive,
+    notes: createdRole.notes,
+    createdAt: new Date(createdRole.createdAt),
+    updatedAt: new Date(createdRole.updatedAt),
   };
 }
 
@@ -267,60 +271,56 @@ export async function updateUser(
   adminEmail: string
 ): Promise<UserWithRole> {
   // Find the user first
-  const user = await getUserById(id);
-  if (!user) {
+  const userRec = await getUserById(id);
+  if (!userRec) {
     throw new Error('Usuario no encontrado');
   }
 
   // Prevent self-demotion from admin
-  if (user.email === adminEmail && input.role && input.role !== 'ADMIN') {
+  if (userRec.email === adminEmail && input.role && input.role !== 'ADMIN') {
     throw new Error('No puedes quitarte tu propio rol de administrador');
   }
 
   // Validate admin count if changing role
   if (input.role) {
-    await validateAdminCount(user.email, input.role);
+    await validateAdminCount(userRec.email, input.role);
   }
 
   // Update UserRole record
-  const userRole = await prisma.user_role.update({
-    where: { email: user.email },
-    data: {
-      ...(input.name !== undefined && { name: input.name }),
-      ...(input.role !== undefined && { role: input.role }),
-      ...(input.notes !== undefined && { notes: input.notes || null }),
-      ...(input.isActive !== undefined && { isActive: input.isActive }),
-      updatedAt: new Date(),
-    },
-  });
+  const updateData: Partial<typeof userRole.$inferInsert> = { updatedAt: new Date().toISOString() };
+  if (input.name !== undefined) updateData.name = input.name;
+  if (input.role !== undefined) updateData.role = input.role;
+  if (input.notes !== undefined) updateData.notes = input.notes || null;
+  if (input.isActive !== undefined) updateData.isActive = input.isActive;
+
+  const [updatedRole] = await db.update(userRole).set(updateData)
+    .where(eq(userRole.email, userRec.email)).returning();
 
   // Update User record if exists
-  const existingUser = await prisma.user.findUnique({
-    where: { email: user.email },
+  const existingUser = await db.query.user.findFirst({
+    where: eq(user.email, userRec.email),
   });
 
   if (existingUser && input.role !== undefined) {
-    await prisma.user.update({
-      where: { id: existingUser.id },
-      data: { role: mapToUserRoleEnum(input.role) },
-    });
+    await db.update(user).set({ role: mapToUserRoleEnum(input.role) })
+      .where(eq(user.id, existingUser.id));
   }
 
   // Return updated user
-  const updatedUser = await prisma.user.findUnique({
-    where: { email: user.email },
+  const updatedUser = await db.query.user.findFirst({
+    where: eq(user.email, userRec.email),
   });
 
   return {
-    id: updatedUser?.id || userRole.id,
-    name: userRole.name || updatedUser?.name || userRole.email.split('@')[0],
-    email: userRole.email,
+    id: updatedUser?.id || updatedRole.id,
+    name: updatedRole.name || updatedUser?.name || updatedRole.email.split('@')[0],
+    email: updatedRole.email,
     image: updatedUser?.image || null,
-    role: userRole.role,
-    isActive: userRole.isActive,
-    notes: userRole.notes,
-    createdAt: updatedUser?.createdAt || userRole.createdAt,
-    updatedAt: updatedUser?.updatedAt || userRole.updatedAt,
+    role: updatedRole.role,
+    isActive: updatedRole.isActive,
+    notes: updatedRole.notes,
+    createdAt: updatedUser?.createdAt ? new Date(updatedUser.createdAt) : new Date(updatedRole.createdAt),
+    updatedAt: updatedUser?.updatedAt ? new Date(updatedUser.updatedAt) : new Date(updatedRole.updatedAt),
   };
 }
 
@@ -331,22 +331,22 @@ export async function toggleUserActive(
   id: string,
   adminEmail: string
 ): Promise<UserWithRole> {
-  const user = await getUserById(id);
-  if (!user) {
+  const userRec = await getUserById(id);
+  if (!userRec) {
     throw new Error('Usuario no encontrado');
   }
 
   // Prevent self-deactivation for admins
-  if (user.email === adminEmail && user.role === 'ADMIN') {
+  if (userRec.email === adminEmail && userRec.role === 'ADMIN') {
     throw new Error('No puedes desactivar tu propia cuenta de administrador');
   }
 
   // If deactivating an admin, validate admin count
-  if (user.isActive && user.role === 'ADMIN') {
-    await validateAdminCount(user.email, 'USER');
+  if (userRec.isActive && userRec.role === 'ADMIN') {
+    await validateAdminCount(userRec.email, 'USER');
   }
 
-  return updateUser(id, { isActive: !user.isActive }, adminEmail);
+  return updateUser(id, { isActive: !userRec.isActive }, adminEmail);
 }
 
 /**
@@ -354,25 +354,23 @@ export async function toggleUserActive(
  * Note: In practice, we use soft delete (toggleUserActive) instead
  */
 export async function deleteUser(id: string, adminEmail: string): Promise<void> {
-  const user = await getUserById(id);
-  if (!user) {
+  const userRec = await getUserById(id);
+  if (!userRec) {
     throw new Error('Usuario no encontrado');
   }
 
   // Prevent self-deletion
-  if (user.email === adminEmail) {
+  if (userRec.email === adminEmail) {
     throw new Error('No puedes eliminar tu propia cuenta');
   }
 
   // Validate admin count for admins
-  if (user.role === 'ADMIN') {
-    await validateAdminCount(user.email, 'USER');
+  if (userRec.role === 'ADMIN') {
+    await validateAdminCount(userRec.email, 'USER');
   }
 
   // Delete UserRole record
-  await prisma.user_role.delete({
-    where: { email: user.email },
-  });
+  await db.delete(userRole).where(eq(userRole.email, userRec.email));
 
   // Note: User record in auth tables is kept for audit trail
 }

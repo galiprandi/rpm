@@ -32,14 +32,13 @@ export const PUT = withStaffDynamic(async (request: NextRequest, { params }: Par
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
   try {
-    const { Decimal } = await import('@prisma/client/runtime/library');
     const updated = await updateVoucherHeader({
       voucherId: id,
       supplierId,
       letter,
       number,
       date: new Date(date),
-      totalAmount: new Decimal(totalAmount),
+      totalAmount: Number(totalAmount),
       paymentMethodId: paymentMethodId || null,
       notes,
     });
@@ -62,12 +61,11 @@ export const PATCH = withStaffDynamic(async (request: NextRequest, { params }: P
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
   try {
-    const { Decimal } = await import('@prisma/client/runtime/library');
     const item = await addItemToVoucher({
       voucherId: id,
       productId,
       quantity,
-      unitCost: new Decimal(unitCost),
+      unitCost: Number(unitCost),
     });
     return NextResponse.json(item, { status: 201 });
   } catch (e: unknown) {

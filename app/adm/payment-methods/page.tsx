@@ -1,5 +1,7 @@
 import PaymentMethodsClient from './PaymentMethodsClient';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
+import { paymentMethod } from '@/db/schema';
+import { desc, asc } from 'drizzle-orm';
 import { requireAuth } from '@/lib/auth-server';
 import { UserRole } from '@/lib/auth/roles';
 
@@ -14,13 +16,9 @@ export default async function PaymentMethodsPage() {
     throw new Error('Acceso denegado');
   }
 
-  const paymentMethods = await prisma.payment_method.findMany({
-    orderBy: [
-      { isActive: 'desc' },
-      { sortOrder: 'asc' },
-      { name: 'asc' },
-    ],
+  const paymentMethods = await db.query.paymentMethod.findMany({
+    orderBy: [desc(paymentMethod.isActive), asc(paymentMethod.sortOrder), asc(paymentMethod.name)],
   });
 
-  return <PaymentMethodsClient initialPaymentMethods={paymentMethods} />;
+  return <PaymentMethodsClient initialPaymentMethods={paymentMethods as any} />;
 }

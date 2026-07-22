@@ -16,8 +16,9 @@
  * - Performance: <100ms por query
  */
 
-import { prisma } from '@/lib/prisma';
-import { Prisma } from '@prisma/client';
+import { db } from '@/lib/db';
+import { product, stockMovement } from '@/db/schema';
+import { eq, and, or, ilike, sql, lte, asc, desc, type SQL } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 
 /**
@@ -101,22 +102,50 @@ function isLowStock(stock: number, minStock: number): boolean {
   return stock <= minStock;
 }
 
-// Helper: Transform Prisma product to Product type
-type PrismaProductWithCategory = Prisma.productGetPayload<{ include: { category: true } }>;
+// Helper: Transform Drizzle product to Product type
+type DrizzleProductWithRelations = {
+  id: string;
+  sku: string | null;
+  name: string;
+  description: string | null;
+  barcode: string | null;
+  categoryId: string;
+  costPrice: string;
+  replacementCost: string;
+  stock: number;
+  minStock: number;
+  supplierId: string | null;
+  location: string | null;
+  lastMovementAt: string | null;
+  isActive: boolean;
+  category: { id: string; name: string; color: string | null } | null;
+  supplier?: { id: string; name: string } | null;
+};
 
-function transformProduct(product: PrismaProductWithCategory & { supplier?: { id: string; name: string } | null }): Product {
-  const cost = product.costPrice?.toNumber ? product.costPrice.toNumber() : Number(product.costPrice) || 0;
-  const replacement = product.replacementCost?.toNumber ? product.replacementCost.toNumber() : Number(product.replacementCost) || 0;
+function transformProduct(p: DrizzleProductWithRelations): Product {
+  const cost = Number(p.costPrice) || 0;
+  const replacement = Number(p.replacementCost) || 0;
   return {
-    ...product,
+    id: p.id,
+    sku: p.sku || '',
+    name: p.name,
+    description: p.description,
+    barcode: p.barcode,
+    categoryId: p.categoryId,
+    category: p.category
+      ? { id: p.category.id, name: p.category.name, color: p.category.color }
+      : null,
     costPrice: cost,
     replacementCost: replacement,
+    stock: p.stock,
+    minStock: p.minStock,
+    isLowStock: isLowStock(p.stock, p.minStock),
     margin: calculateMargin(cost, replacement),
-    isLowStock: isLowStock(product.stock, product.minStock),
-    supplierId: product.supplierId,
-    supplier: product.supplier || null,
-    sku: product.sku || '',
-    lastMovementAt: product.lastMovementAt,
+    supplierId: p.supplierId,
+    supplier: p.supplier || null,
+    location: p.location,
+    lastMovementAt: p.lastMovementAt ? new Date(p.lastMovementAt) : null,
+    isActive: p.isActive,
   };
 }
 
@@ -124,58 +153,64 @@ function transformProduct(product: PrismaProductWithCategory & { supplier?: { id
  * Get all products with optional filters
  */
 export async function getProducts(filters: ProductFilters = {}): Promise<ProductListResult> {
-  const where: Prisma.productWhereInput = {};
+  // Build where conditions
+  const conditions: SQL[] = [];
 
   // Search by EAN, name, or SKU
   if (filters.search) {
     const searchLower = filters.search.toLowerCase();
-    where.OR = [
-      { barcode: { contains: searchLower, mode: 'insensitive' } },
-      { name: { contains: searchLower, mode: 'insensitive' } },
-      { sku: { contains: searchLower, mode: 'insensitive' } },
-    ];
+    conditions.push(
+      or(
+        ilike(product.barcode, `%${searchLower}%`),
+        ilike(product.name, `%${searchLower}%`),
+        ilike(product.sku, `%${searchLower}%`),
+      )!
+    );
   }
 
   // Filter by category
   if (filters.categoryId) {
-    where.categoryId = filters.categoryId;
+    conditions.push(eq(product.categoryId, filters.categoryId));
   }
 
   // Filter by active status
   if (filters.isActive !== undefined) {
-    where.isActive = filters.isActive;
+    conditions.push(eq(product.isActive, filters.isActive));
   }
 
-  // Filter by low stock (applied post-query)
-  const [products, total, lowStockCount] = await Promise.all([
-    prisma.product.findMany({
+  const where = conditions.length > 0 ? and(...conditions) : undefined;
+
+  // Low stock count condition (stock <= minStock AND isActive)
+  const lowStockWhere = and(lte(product.stock, product.minStock), eq(product.isActive, true));
+
+  const [products, totalRows, lowStockRows] = await Promise.all([
+    db.query.product.findMany({
       where,
-      include: { 
+      with: {
         category: true,
-        supplier: { select: { id: true, name: true } },
+        supplier: { columns: { id: true, name: true } },
       },
-      orderBy: { name: 'asc' },
+      orderBy: asc(product.name),
     }),
-    prisma.product.count({ where }),
-    prisma.product.count({
-      where: {
-        stock: { lte: prisma.product.fields.minStock },
-        isActive: true,
-      },
-    }),
+    db.select({ count: sql<number>`count(*)::int` })
+      .from(product)
+      .where(where),
+    db.select({ count: sql<number>`count(*)::int` })
+      .from(product)
+      .where(lowStockWhere),
   ]);
 
   let transformedProducts = products.map(transformProduct);
 
   // Apply low stock filter post-transformation
   if (filters.lowStock) {
-    transformedProducts = transformedProducts.filter((p: any) => p.isLowStock);
+    transformedProducts = transformedProducts.filter((p) => p.isLowStock);
   }
 
   return {
     products: transformedProducts,
-    total,
-    lowStockCount,
+    total: totalRows[0]?.count ?? 0,
+    lowStockCount: lowStockRows[0]?.count ?? 0,
   };
 }
 
@@ -183,86 +218,86 @@ export async function getProducts(filters: ProductFilters = {}): Promise<Product
  * Get a single product by ID
  */
 export async function getProductById(id: string): Promise<Product | null> {
-  const product = await prisma.product.findUnique({
-    where: { id },
-    include: { category: true },
+  const p = await db.query.product.findFirst({
+    where: eq(product.id, id),
+    with: { category: true },
   });
 
-  if (!product) return null;
-  return transformProduct(product);
+  if (!p) return null;
+  return transformProduct(p);
 }
 
 /**
  * Create a new product
  */
 export async function createProduct(input: CreateProductInput): Promise<Product> {
-  const product = await prisma.product.create({
-    data: {
-      id: `prod-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      sku: input.sku,
-      name: input.name,
-      description: input.description || null,
-      barcode: input.barcode || null,
-      categoryId: input.categoryId,
-      costPrice: Prisma?.Decimal ? new Prisma.Decimal(input.costPrice) : input.costPrice,
-      replacementCost: Prisma?.Decimal ? new Prisma.Decimal(input.replacementCost) : input.replacementCost,
-      stock: input.stock,
-      minStock: input.minStock,
-      supplierId: input.supplierId || null,
-      location: input.location || null,
-      isActive: true,
-      updatedAt: new Date(),
-    },
-    include: { category: true },
+  const [created] = await db.insert(product).values({
+    id: `prod-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    sku: input.sku || null,
+    name: input.name,
+    description: input.description || null,
+    barcode: input.barcode || null,
+    categoryId: input.categoryId,
+    costPrice: input.costPrice.toString(),
+    replacementCost: input.replacementCost.toString(),
+    stock: input.stock,
+    minStock: input.minStock,
+    supplierId: input.supplierId || null,
+    location: input.location || null,
+    isActive: true,
+    updatedAt: new Date().toISOString(),
+  }).returning();
+
+  // Fetch with category relation
+  const p = await db.query.product.findFirst({
+    where: eq(product.id, created.id),
+    with: { category: true },
   });
 
+  if (!p) throw new Error('Failed to create product');
+
   revalidatePublicCatalog();
-  return transformProduct(product);
+  return transformProduct(p);
 }
 
 /**
  * Update an existing product
  */
 export async function updateProduct(id: string, input: UpdateProductInput): Promise<Product> {
-  const data: Prisma.productUpdateInput = {};
+  const data: Partial<typeof product.$inferInsert> = {};
 
   if (input.sku !== undefined) data.sku = input.sku;
   if (input.name !== undefined) data.name = input.name;
   if (input.description !== undefined) data.description = input.description || null;
   if (input.barcode !== undefined) data.barcode = input.barcode ?? null;
-  if (input.categoryId !== undefined) {
-    data.category = { connect: { id: input.categoryId } };
-  }
+  if (input.categoryId !== undefined) data.categoryId = input.categoryId;
   if (input.costPrice !== undefined) data.costPrice = input.costPrice.toString();
   if (input.replacementCost !== undefined) data.replacementCost = input.replacementCost.toString();
   if (input.stock !== undefined) data.stock = input.stock;
   if (input.minStock !== undefined) data.minStock = input.minStock;
-  if (input.supplierId !== undefined) {
-    data.supplier = input.supplierId 
-      ? { connect: { id: input.supplierId } }
-      : { disconnect: true };
-  }
+  if (input.supplierId !== undefined) data.supplierId = input.supplierId || null;
   if (input.location !== undefined) data.location = input.location || null;
   if (input.isActive !== undefined) data.isActive = input.isActive;
+  data.updatedAt = new Date().toISOString();
 
-  const product = await prisma.product.update({
-    where: { id },
-    data,
-    include: { category: true },
+  await db.update(product).set(data).where(eq(product.id, id));
+
+  const p = await db.query.product.findFirst({
+    where: eq(product.id, id),
+    with: { category: true },
   });
 
+  if (!p) throw new Error('Product not found after update');
+
   revalidatePublicCatalog();
-  return transformProduct(product);
+  return transformProduct(p);
 }
 
 /**
  * Soft delete (deactivate) a product
  */
 export async function deactivateProduct(id: string): Promise<void> {
-  await prisma.product.update({
-    where: { id },
-    data: { isActive: false },
-  });
+  await db.update(product).set({ isActive: false }).where(eq(product.id, id));
   revalidatePublicCatalog();
 }
 
@@ -270,9 +305,7 @@ export async function deactivateProduct(id: string): Promise<void> {
  * Hard delete a product (use with caution)
  */
 export async function deleteProduct(id: string): Promise<void> {
-  await prisma.product.delete({
-    where: { id },
-  });
+  await db.delete(product).where(eq(product.id, id));
   revalidatePublicCatalog();
 }
 
@@ -297,9 +330,9 @@ export async function adjustStock(
   reasonDetails?: string
 ): Promise<Product> {
   // Get current stock
-  const existing = await prisma.product.findUnique({
-    where: { id },
-    include: { category: true },
+  const existing = await db.query.product.findFirst({
+    where: eq(product.id, id),
+    with: { category: true },
   });
 
   if (!existing) {
@@ -329,11 +362,15 @@ export async function adjustStock(
   }
 
   // Update product stock
-  const product = await prisma.product.update({
-    where: { id },
-    data: { stock: newStock },
-    include: { category: true },
+  await db.update(product).set({ stock: newStock }).where(eq(product.id, id));
+
+  // Re-fetch with category
+  const p = await db.query.product.findFirst({
+    where: eq(product.id, id),
+    with: { category: true },
   });
+
+  if (!p) throw new Error('Product not found after stock update');
 
   // Calculate movement type and quantity
   const quantityChange = newStock - previousStock;
@@ -352,7 +389,7 @@ export async function adjustStock(
     reasonDetails: reasonDetails || `Ajuste de stock: ${previousStock} → ${newStock}`,
   });
 
-  return transformProduct(product);
+  return transformProduct(p);
 }
 
 /**
@@ -364,29 +401,27 @@ export async function updateStock(
   quantity: number,
   operation: 'add' | 'subtract' | 'set'
 ): Promise<Product> {
-  let data: Prisma.productUpdateInput;
-
-  switch (operation) {
-    case 'add':
-      data = { stock: { increment: quantity } };
-      break;
-    case 'subtract':
-      data = { stock: { decrement: quantity } };
-      break;
-    case 'set':
-      data = { stock: quantity };
-      break;
-    default:
-      throw new Error(`Invalid operation: ${operation}`);
+  // For add/subtract we use SQL expression; for set we use literal
+  if (operation === 'add' || operation === 'subtract') {
+    await db.update(product)
+      .set({ stock: sql`${product.stock} ${operation === 'add' ? '+' : '-'} ${quantity}`, updatedAt: new Date().toISOString() })
+      .where(eq(product.id, id));
+  } else if (operation === 'set') {
+    await db.update(product)
+      .set({ stock: quantity, updatedAt: new Date().toISOString() })
+      .where(eq(product.id, id));
+  } else {
+    throw new Error(`Invalid operation: ${operation}`);
   }
 
-  const product = await prisma.product.update({
-    where: { id },
-    data,
-    include: { category: true },
+  const p = await db.query.product.findFirst({
+    where: eq(product.id, id),
+    with: { category: true },
   });
 
-  return transformProduct(product);
+  if (!p) throw new Error('Product not found after stock update');
+
+  return transformProduct(p);
 }
 
 // ============================================
@@ -425,38 +460,31 @@ export interface CreateMovementInput {
  * Create a stock movement record (audit trail)
  */
 export async function createStockMovement(input: CreateMovementInput): Promise<StockMovement> {
-  // Check if prisma is available
-  if (!prisma) {
-    throw new Error('Database connection not available');
-  }
-  
-  const movement = await prisma.stock_movement.create({
-    data: {
-      id: `movement-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      productId: input.productId,
-      userId: input.userId || null,
-      userName: input.userName || null,
-      type: input.type,
-      quantity: input.quantity,
-      previousStock: input.previousStock,
-      newStock: input.newStock,
-      reason: input.reason,
-      reasonDetails: input.reasonDetails || null,
-      salePrice: input.salePrice ? input.salePrice.toString() : null,
-    },
-  });
+  const [movement] = await db.insert(stockMovement).values({
+    id: `movement-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    productId: input.productId,
+    userId: input.userId || null,
+    userName: input.userName || null,
+    type: input.type,
+    quantity: input.quantity,
+    previousStock: input.previousStock,
+    newStock: input.newStock,
+    reason: input.reason,
+    reasonDetails: input.reasonDetails || null,
+    salePrice: input.salePrice ? input.salePrice.toString() : null,
+  }).returning();
 
   // Update lastMovementAt on the product
-  await prisma.product.update({
-    where: { id: input.productId },
-    data: { lastMovementAt: new Date() },
-  });
+  await db.update(product)
+    .set({ lastMovementAt: new Date().toISOString() })
+    .where(eq(product.id, input.productId));
 
   return {
     ...movement,
     type: movement.type as MovementType,
     reason: movement.reason as MovementReason,
     salePrice: movement.salePrice ? Number(movement.salePrice) : null,
+    createdAt: new Date(movement.createdAt),
   };
 }
 
@@ -464,15 +492,16 @@ export async function createStockMovement(input: CreateMovementInput): Promise<S
  * Get all movements for a product
  */
 export async function getProductMovements(productId: string): Promise<StockMovement[]> {
-  const movements = await prisma.stock_movement.findMany({
-    where: { productId },
-    orderBy: { createdAt: 'desc' },
+  const movements = await db.query.stockMovement.findMany({
+    where: eq(stockMovement.productId, productId),
+    orderBy: desc(stockMovement.createdAt),
   });
 
-  return movements.map((m: any) => ({
+  return movements.map((m) => ({
     ...m,
     type: m.type as MovementType,
     reason: m.reason as MovementReason,
     salePrice: m.salePrice ? Number(m.salePrice) : null,
+    createdAt: new Date(m.createdAt),
   }));
 }

@@ -14,11 +14,16 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ---
 
-# Prisma v6 (NO v7)
+# Drizzle ORM
 
-- **Versión:** Prisma v6.19.3 — NO actualizar a v7 (incompatible con Next.js 16)
+- **Versión:** Drizzle ORM 0.45.2 + Drizzle Kit 0.31.10
 - **Prohibido reset de la base de datos**
 - **Sharp:** Importación dinámica `await import('sharp')` con fallback (módulo nativo no bundlable)
+- **Schema:** `db/schema/schema.ts` — definición de tablas
+- **Relations:** `db/schema/relations.ts` — relaciones entre tablas
+- **Client:** `lib/db.ts` — exporta `db` (Drizzle instance con node-postgres Pool)
+- **Migraciones:** `db/migrations/` — usar `pnpm db:generate` para crear, `pnpm db:migrate` para aplicar
+- **Timestamps:** Todas las columnas timestamp usan `mode: 'string'` — Drizzle devuelve strings, no Date objects
 
 ---
 

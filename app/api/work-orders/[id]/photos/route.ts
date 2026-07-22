@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { photo, workOrder } from "@/db/schema";
+import { eq, and, desc, sql } from "drizzle-orm";
 import { withStaffDynamic } from "@/lib/api-middleware";
 
 interface Params {
@@ -29,34 +31,30 @@ export const POST = withStaffDynamic(
       }
 
       // Create photo record
-      const photo = await prisma.photo.create({
-        data: {
-          id: crypto.randomUUID(),
-          workOrderId: id,
-          type,
-          url,
-          description,
-        },
-      });
+      const [createdPhoto] = await db.insert(photo).values({
+        id: crypto.randomUUID(),
+        workOrderId: id,
+        type,
+        url,
+        description,
+      }).returning();
 
       // Update work order photo arrays
       if (type === "ENTRY") {
-        await prisma.work_order.update({
-          where: { id },
-          data: {
-            entryPhotos: { push: url },
-          },
-        });
+        await db.update(workOrder)
+          .set({
+            entryPhotos: sql`array_append(${workOrder.entryPhotos}, ${url})`,
+          })
+          .where(eq(workOrder.id, id));
       } else {
-        await prisma.work_order.update({
-          where: { id },
-          data: {
-            exitPhotos: { push: url },
-          },
-        });
+        await db.update(workOrder)
+          .set({
+            exitPhotos: sql`array_append(${workOrder.exitPhotos}, ${url})`,
+          })
+          .where(eq(workOrder.id, id));
       }
 
-      return NextResponse.json(photo, { status: 201 });
+      return NextResponse.json(createdPhoto, { status: 201 });
     } catch (error) {
       console.error("Error adding photo:", error);
       return NextResponse.json(
@@ -75,12 +73,12 @@ export const GET = withStaffDynamic(
       const { searchParams } = request.nextUrl;
       const type = searchParams.get("type");
 
-      const where: Record<string, unknown> = { workOrderId: id };
-      if (type) where.type = type;
+      const conditions = [eq(photo.workOrderId, id)];
+      if (type) conditions.push(eq(photo.type, type));
 
-      const photos = await prisma.photo.findMany({
-        where,
-        orderBy: { createdAt: "desc" },
+      const photos = await db.query.photo.findMany({
+        where: and(...conditions),
+        orderBy: desc(photo.createdAt),
       });
 
       return NextResponse.json({ photos });
@@ -112,29 +110,28 @@ export const DELETE = withStaffDynamic(
 
       let photoRecord;
       if (photoId) {
-        photoRecord = await prisma.photo.findUnique({
-          where: { id: photoId },
+        photoRecord = await db.query.photo.findFirst({
+          where: eq(photo.id, photoId),
         });
       } else if (url) {
-        photoRecord = await prisma.photo.findFirst({
-          where: { workOrderId: id, url },
+        photoRecord = await db.query.photo.findFirst({
+          where: and(eq(photo.workOrderId, id), eq(photo.url, url)),
         });
       }
 
       if (!photoRecord) {
         // Fallback: if no photo record found in DB but url is provided, remove url from the arrays of work_order anyway.
         if (url) {
-          const wo = await prisma.work_order.findUnique({
-            where: { id },
-            select: { entryPhotos: true, exitPhotos: true },
+          const wo = await db.query.workOrder.findFirst({
+            where: eq(workOrder.id, id),
+            columns: { entryPhotos: true, exitPhotos: true },
           });
           if (wo) {
-            const entryPhotos = wo.entryPhotos.filter((p) => p !== url);
-            const exitPhotos = wo.exitPhotos.filter((p) => p !== url);
-            await prisma.work_order.update({
-              where: { id },
-              data: { entryPhotos, exitPhotos },
-            });
+            const entryPhotos = (wo.entryPhotos || []).filter((p) => p !== url);
+            const exitPhotos = (wo.exitPhotos || []).filter((p) => p !== url);
+            await db.update(workOrder)
+              .set({ entryPhotos, exitPhotos })
+              .where(eq(workOrder.id, id));
           }
           return NextResponse.json({
             success: true,
@@ -145,29 +142,25 @@ export const DELETE = withStaffDynamic(
       }
 
       // Delete photo record from DB
-      await prisma.photo.delete({
-        where: { id: photoRecord.id },
-      });
+      await db.delete(photo).where(eq(photo.id, photoRecord.id));
 
       // Update work order arrays
-      const wo = await prisma.work_order.findUnique({
-        where: { id },
-        select: { entryPhotos: true, exitPhotos: true },
+      const wo = await db.query.workOrder.findFirst({
+        where: eq(workOrder.id, id),
+        columns: { entryPhotos: true, exitPhotos: true },
       });
 
       if (wo) {
         if (photoRecord.type === "ENTRY") {
-          const entryPhotos = wo.entryPhotos.filter((p) => p !== photoRecord.url);
-          await prisma.work_order.update({
-            where: { id },
-            data: { entryPhotos },
-          });
+          const entryPhotos = (wo.entryPhotos || []).filter((p) => p !== photoRecord.url);
+          await db.update(workOrder)
+            .set({ entryPhotos })
+            .where(eq(workOrder.id, id));
         } else {
-          const exitPhotos = wo.exitPhotos.filter((p) => p !== photoRecord.url);
-          await prisma.work_order.update({
-            where: { id },
-            data: { exitPhotos },
-          });
+          const exitPhotos = (wo.exitPhotos || []).filter((p) => p !== photoRecord.url);
+          await db.update(workOrder)
+            .set({ exitPhotos })
+            .where(eq(workOrder.id, id));
         }
       }
 

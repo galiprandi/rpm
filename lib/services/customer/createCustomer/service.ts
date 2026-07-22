@@ -1,4 +1,5 @@
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
+import { customer } from '@/db/schema';
 import { randomUUID } from 'crypto';
 import { capitalizeText } from '@/lib/utils/format';
 import type { CreateCustomerInput } from './schema';
@@ -32,19 +33,17 @@ export async function createCustomerService(input: CreateCustomerInput) {
     }
   }
 
-  const customer = await prisma.customer.create({
-    data: {
-      id: randomUUID(),
-      name: capitalizeText(name) || name,
-      phone,
-      phoneAlt,
-      email,
-      address,
-      notes,
-      billingData: billingData as any || null,
-      updatedAt: new Date(),
-    },
-  });
+  const [created] = await db.insert(customer).values({
+    id: randomUUID(),
+    name: capitalizeText(name) || name,
+    phone: phone || null,
+    phoneAlt: phoneAlt || null,
+    email: email || null,
+    address: address || null,
+    notes: notes || null,
+    billingData: billingData as any || null,
+    updatedAt: new Date().toISOString(),
+  }).returning();
 
-  return customer;
+  return created;
 }

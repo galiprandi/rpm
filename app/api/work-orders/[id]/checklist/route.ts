@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { workOrder } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
 // PUT /api/work-orders/[id]/checklist - Update checklist data (items, notes, odometer, fuel level)
 export async function PUT(
@@ -19,19 +21,19 @@ export async function PUT(
     }
 
     // Get current checklist to merge
-    const workOrder = await prisma.work_order.findUnique({
-      where: { id },
-      select: { entryChecklist: true, exitChecklist: true },
+    const workOrderRecord = await db.query.workOrder.findFirst({
+      where: eq(workOrder.id, id),
+      columns: { entryChecklist: true, exitChecklist: true },
     });
 
-    if (!workOrder) {
+    if (!workOrderRecord) {
       return NextResponse.json(
         { error: "Work order not found" },
         { status: 404 }
       );
     }
 
-    const currentChecklist = (type === "ENTRY" ? workOrder.entryChecklist : workOrder.exitChecklist) || {};
+    const currentChecklist = (type === "ENTRY" ? workOrderRecord.entryChecklist : workOrderRecord.exitChecklist) || {};
 
     // Merge updates
     const updatedChecklist = {
@@ -48,19 +50,21 @@ export async function PUT(
         ? { entryChecklist: updatedChecklist as any }
         : { exitChecklist: updatedChecklist as any };
 
-    const updatedWorkOrder = await prisma.work_order.update({
-      where: { id },
-      data: updateData,
-      include: {
+    await db.update(workOrder).set(updateData).where(eq(workOrder.id, id));
+
+    // Fetch with relations
+    const updatedWorkOrder = await db.query.workOrder.findFirst({
+      where: eq(workOrder.id, id),
+      with: {
         customer: {
-          select: {
+          columns: {
             id: true,
             name: true,
             phone: true,
           },
         },
         vehicle: {
-          select: {
+          columns: {
             id: true,
             identifier: true,
             category: true,
@@ -116,19 +120,21 @@ export async function POST(
         ? { entryChecklist: checklistData as any }
         : { exitChecklist: checklistData as any };
 
-    const workOrder = await prisma.work_order.update({
-      where: { id },
-      data: updateData,
-      include: {
+    await db.update(workOrder).set(updateData).where(eq(workOrder.id, id));
+
+    // Fetch with relations
+    const workOrderRecord = await db.query.workOrder.findFirst({
+      where: eq(workOrder.id, id),
+      with: {
         customer: {
-          select: {
+          columns: {
             id: true,
             name: true,
             phone: true,
           },
         },
         vehicle: {
-          select: {
+          columns: {
             id: true,
             identifier: true,
             category: true,
@@ -137,7 +143,7 @@ export async function POST(
       },
     });
 
-    return NextResponse.json(workOrder);
+    return NextResponse.json(workOrderRecord);
   } catch (error) {
     console.error("Error updating checklist:", error);
     return NextResponse.json(

@@ -1,5 +1,7 @@
 import ServicesClient from './ServicesClient';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
+import { service } from '@/db/schema';
+import { asc } from 'drizzle-orm';
 import { requireAuth } from '@/lib/auth-server';
 import { UserRole } from '@/lib/auth/roles';
 
@@ -14,15 +16,15 @@ export default async function ServicesPage() {
     throw new Error('Acceso denegado');
   }
 
-  const services = await prisma.service.findMany({
-    orderBy: { name: 'asc' },
+  const services = await db.query.service.findMany({
+    orderBy: asc(service.name),
   });
 
-  return <ServicesClient initialServices={services.map((s: any) => ({
+  return <ServicesClient initialServices={services.map((s) => ({
     ...s,
     baseCost: Number(s.baseCost),
     vehicleFactor: Number(s.vehicleFactor),
-    createdAt: s.createdAt.toISOString(),
-    updatedAt: s.updatedAt.toISOString(),
-  }))} />;
+    createdAt: new Date(s.createdAt).toISOString(),
+    updatedAt: new Date(s.updatedAt).toISOString(),
+  })) as any} />;
 }

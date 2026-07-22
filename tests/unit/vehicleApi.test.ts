@@ -12,21 +12,36 @@
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
-// Mock prisma before importing route handlers
-vi.mock("@/lib/prisma", () => ({
-  prisma: {
-    vehicle: {
-      create: vi.fn(),
-      update: vi.fn(),
-      findUnique: vi.fn(),
+// Mock resolveMakeModel to avoid complex Drizzle chain mocking
+vi.mock("@/lib/utils/vehicle-helpers", () => ({
+  resolveMakeModel: vi.fn(),
+}));
+
+// Mock db (Drizzle) before importing route handlers
+const { mockDb } = vi.hoisted(() => {
+  const mockDb = {
+    query: {
+      vehicle: { findFirst: vi.fn() },
     },
-    vehicle_make: {
-      upsert: vi.fn(),
-    },
-    vehicle_model: {
-      upsert: vi.fn(),
-    },
-  },
+    insert: vi.fn(() => ({
+      values: vi.fn(() => ({
+        returning: vi.fn(() => Promise.resolve([{}])),
+      })),
+    })),
+    update: vi.fn(() => ({
+      set: vi.fn(() => ({
+        where: vi.fn(() => Promise.resolve()),
+      })),
+    })),
+    delete: vi.fn(() => ({
+      where: vi.fn(() => Promise.resolve()),
+    })),
+  };
+  return { mockDb };
+});
+
+vi.mock("@/lib/db", () => ({
+  db: mockDb,
 }));
 
 vi.mock("@/lib/auth-server", () => ({
@@ -59,20 +74,14 @@ describe("POST /api/vehicles", () => {
   });
 
   it("should create a vehicle with makeName/modelName and resolve to IDs", async () => {
-    const { prisma } = await import("@/lib/prisma");
+    const { resolveMakeModel } = await import("@/lib/utils/vehicle-helpers");
+    const { db } = await import("@/lib/db");
     const { POST } = await import("@/app/api/vehicles/route");
 
-    // Mock resolveMakeModel upserts
-    (prisma.vehicle_make.upsert as any).mockResolvedValue({
-      id: "make-uuid",
-      name: "Toyota",
-      normalizedName: "toyota",
-    });
-    (prisma.vehicle_model.upsert as any).mockResolvedValue({
-      id: "model-uuid",
+    // Mock resolveMakeModel to return resolved IDs
+    (resolveMakeModel as any).mockResolvedValue({
       makeId: "make-uuid",
-      name: "Hilux",
-      normalizedName: "hilux",
+      modelId: "model-uuid",
     });
 
     const createdVehicle = {
@@ -84,11 +93,18 @@ describe("POST /api/vehicles", () => {
       year: 2020,
       color: "Blanco",
       customerId: "customer-1",
-      vehicle_make: { id: "make-uuid", name: "Toyota", normalizedName: "toyota" },
-      vehicle_model: { id: "model-uuid", name: "Hilux", normalizedName: "hilux" },
+      vehicleMake: { id: "make-uuid", name: "Toyota", normalizedName: "toyota" },
+      vehicleModel: { id: "model-uuid", name: "Hilux", normalizedName: "hilux" },
       customer: { id: "customer-1", name: "Test", phone: "123" },
     };
-    (prisma.vehicle.create as any).mockResolvedValue(createdVehicle);
+
+    // Mock db.insert(vehicle).values({...}).returning() to return created vehicle
+    const returningFn = vi.fn(() => Promise.resolve([createdVehicle]));
+    const valuesFn = vi.fn(() => ({ returning: returningFn }));
+    (db.insert as any).mockReturnValue({ values: valuesFn });
+
+    // Mock db.query.vehicle.findFirst to return vehicle with relations
+    (db.query.vehicle.findFirst as any).mockResolvedValue(createdVehicle);
 
     const { status, data } = await getResponse(POST, makeRequest({
       identifier: "ab123cd",
@@ -102,42 +118,31 @@ describe("POST /api/vehicles", () => {
 
     expect(status).toBe(201);
     expect(data.id).toBe("vehicle-uuid");
-    expect(data.vehicle_make.name).toBe("Toyota");
-    expect(data.vehicle_model.name).toBe("Hilux");
+    expect(data.vehicleMake.name).toBe("Toyota");
+    expect(data.vehicleModel.name).toBe("Hilux");
 
-    // Verify resolveMakeModel was called via upserts
-    expect(prisma.vehicle_make.upsert).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { normalizedName: "toyota" },
-        create: expect.objectContaining({ name: "Toyota", normalizedName: "toyota" }),
-      }),
-    );
-    expect(prisma.vehicle_model.upsert).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { makeId_normalizedName: { makeId: "make-uuid", normalizedName: "hilux" } },
-        create: expect.objectContaining({ name: "Hilux", normalizedName: "hilux" }),
-      }),
-    );
+    // Verify resolveMakeModel was called with makeName and modelName
+    expect(resolveMakeModel).toHaveBeenCalledWith("toyota", "hilux");
 
-    // Verify vehicle.create was called with resolved IDs
-    expect(prisma.vehicle.create).toHaveBeenCalledWith(
+    // Verify db.insert was called and values received the correct data
+    expect(db.insert).toHaveBeenCalled();
+    expect(valuesFn).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({
-          identifier: "AB123CD",
-          makeId: "make-uuid",
-          modelId: "model-uuid",
-          year: 2020,
-          color: "Blanco",
-        }),
+        identifier: "AB123CD",
+        makeId: "make-uuid",
+        modelId: "model-uuid",
+        year: 2020,
+        color: "Blanco",
       }),
     );
   });
 
   it("should create a vehicle without make/model (equipment)", async () => {
-    const { prisma } = await import("@/lib/prisma");
+    const { resolveMakeModel } = await import("@/lib/utils/vehicle-helpers");
+    const { db } = await import("@/lib/db");
     const { POST } = await import("@/app/api/vehicles/route");
 
-    (prisma.vehicle.create as any).mockResolvedValue({
+    const createdVehicle = {
       id: "vehicle-uuid",
       identifier: "SN123456",
       category: "AUDIO_EQUIPMENT",
@@ -146,10 +151,15 @@ describe("POST /api/vehicles", () => {
       equipmentName: "JBL Sound System",
       equipmentType: "Audio Profesional",
       customerId: "customer-1",
-      vehicle_make: null,
-      vehicle_model: null,
+      vehicleMake: null,
+      vehicleModel: null,
       customer: { id: "customer-1", name: "Test", phone: "123" },
-    });
+    };
+
+    const returningFn = vi.fn(() => Promise.resolve([createdVehicle]));
+    const valuesFn = vi.fn(() => ({ returning: returningFn }));
+    (db.insert as any).mockReturnValue({ values: valuesFn });
+    (db.query.vehicle.findFirst as any).mockResolvedValue(createdVehicle);
 
     const { status, data } = await getResponse(POST, makeRequest({
       identifier: "sn123456",
@@ -161,8 +171,8 @@ describe("POST /api/vehicles", () => {
 
     expect(status).toBe(201);
     expect(data.equipmentName).toBe("JBL Sound System");
-    expect(prisma.vehicle_make.upsert).not.toHaveBeenCalled();
-    expect(prisma.vehicle_model.upsert).not.toHaveBeenCalled();
+    // resolveMakeModel should not be called when no makeName is provided
+    expect(resolveMakeModel).not.toHaveBeenCalled();
   });
 
   it("should reject missing required fields", async () => {
@@ -191,18 +201,26 @@ describe("POST /api/vehicles", () => {
   });
 
   it("should uppercase the identifier", async () => {
-    const { prisma } = await import("@/lib/prisma");
+    const { resolveMakeModel } = await import("@/lib/utils/vehicle-helpers");
+    const { db } = await import("@/lib/db");
     const { POST } = await import("@/app/api/vehicles/route");
 
-    (prisma.vehicle.create as any).mockResolvedValue({
+    (resolveMakeModel as any).mockResolvedValue({ makeId: undefined, modelId: undefined });
+
+    const createdVehicle = {
       id: "v-1",
       identifier: "AB123CD",
       category: "CAR",
       customerId: "c-1",
-      vehicle_make: null,
-      vehicle_model: null,
+      vehicleMake: null,
+      vehicleModel: null,
       customer: { id: "c-1", name: "T", phone: "1" },
-    });
+    };
+
+    const returningFn = vi.fn(() => Promise.resolve([createdVehicle]));
+    const valuesFn = vi.fn(() => ({ returning: returningFn }));
+    (db.insert as any).mockReturnValue({ values: valuesFn });
+    (db.query.vehicle.findFirst as any).mockResolvedValue(createdVehicle);
 
     await getResponse(POST, makeRequest({
       identifier: "ab123cd",
@@ -210,10 +228,8 @@ describe("POST /api/vehicles", () => {
       customerId: "c-1",
     }));
 
-    expect(prisma.vehicle.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({ identifier: "AB123CD" }),
-      }),
+    expect(valuesFn).toHaveBeenCalledWith(
+      expect.objectContaining({ identifier: "AB123CD" }),
     );
   });
 });
@@ -224,19 +240,13 @@ describe("PUT /api/vehicles/[id]", () => {
   });
 
   it("should update vehicle and resolve makeName/modelName to IDs", async () => {
-    const { prisma } = await import("@/lib/prisma");
+    const { resolveMakeModel } = await import("@/lib/utils/vehicle-helpers");
+    const { db } = await import("@/lib/db");
     const { PUT } = await import("@/app/api/vehicles/[id]/route");
 
-    (prisma.vehicle_make.upsert as any).mockResolvedValue({
-      id: "make-2",
-      name: "Fiat",
-      normalizedName: "fiat",
-    });
-    (prisma.vehicle_model.upsert as any).mockResolvedValue({
-      id: "model-2",
+    (resolveMakeModel as any).mockResolvedValue({
       makeId: "make-2",
-      name: "Cronos",
-      normalizedName: "cronos",
+      modelId: "model-2",
     });
 
     const updatedVehicle = {
@@ -248,11 +258,18 @@ describe("PUT /api/vehicles/[id]", () => {
       year: 2022,
       color: "Blanco",
       customerId: "customer-1",
-      vehicle_make: { id: "make-2", name: "Fiat", normalizedName: "fiat" },
-      vehicle_model: { id: "model-2", name: "Cronos", normalizedName: "cronos" },
+      vehicleMake: { id: "make-2", name: "Fiat", normalizedName: "fiat" },
+      vehicleModel: { id: "model-2", name: "Cronos", normalizedName: "cronos" },
       customer: { id: "customer-1", name: "Test", phone: "123" },
     };
-    (prisma.vehicle.update as any).mockResolvedValue(updatedVehicle);
+
+    // Mock update chain
+    const whereFn = vi.fn(() => Promise.resolve());
+    const setFn = vi.fn(() => ({ where: whereFn }));
+    (db.update as any).mockReturnValue({ set: setFn });
+
+    // Mock findFirst to return updated vehicle with relations
+    (db.query.vehicle.findFirst as any).mockResolvedValue(updatedVehicle);
 
     const { status, data } = await getResponse(
       PUT,
@@ -268,28 +285,27 @@ describe("PUT /api/vehicles/[id]", () => {
     );
 
     expect(status).toBe(200);
-    expect(data.vehicle_make.name).toBe("Fiat");
-    expect(data.vehicle_model.name).toBe("Cronos");
+    expect(data.vehicleMake.name).toBe("Fiat");
+    expect(data.vehicleModel.name).toBe("Cronos");
 
     // Verify update was called with resolved IDs
-    expect(prisma.vehicle.update).toHaveBeenCalledWith(
+    expect(db.update).toHaveBeenCalled();
+    expect(setFn).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { id: "vehicle-uuid" },
-        data: expect.objectContaining({
-          identifier: "AF719HZ",
-          makeId: "make-2",
-          modelId: "model-2",
-          color: "Blanco",
-        }),
+        identifier: "AF719HZ",
+        makeId: "make-2",
+        modelId: "model-2",
+        color: "Blanco",
       }),
     );
   });
 
   it("should update vehicle without make/model (clearing them)", async () => {
-    const { prisma } = await import("@/lib/prisma");
+    const { resolveMakeModel } = await import("@/lib/utils/vehicle-helpers");
+    const { db } = await import("@/lib/db");
     const { PUT } = await import("@/app/api/vehicles/[id]/route");
 
-    (prisma.vehicle.update as any).mockResolvedValue({
+    const updatedVehicle = {
       id: "vehicle-uuid",
       identifier: "SN999",
       category: "OTHER",
@@ -297,10 +313,15 @@ describe("PUT /api/vehicles/[id]", () => {
       modelId: null,
       equipmentName: "Updated Equipment",
       customerId: "c-1",
-      vehicle_make: null,
-      vehicle_model: null,
+      vehicleMake: null,
+      vehicleModel: null,
       customer: { id: "c-1", name: "T", phone: "1" },
-    });
+    };
+
+    const whereFn = vi.fn(() => Promise.resolve());
+    const setFn = vi.fn(() => ({ where: whereFn }));
+    (db.update as any).mockReturnValue({ set: setFn });
+    (db.query.vehicle.findFirst as any).mockResolvedValue(updatedVehicle);
 
     const { status, data } = await getResponse(
       PUT,
@@ -314,6 +335,7 @@ describe("PUT /api/vehicles/[id]", () => {
 
     expect(status).toBe(200);
     expect(data.equipmentName).toBe("Updated Equipment");
-    expect(prisma.vehicle_make.upsert).not.toHaveBeenCalled();
+    // resolveMakeModel should not be called when no makeName is provided
+    expect(resolveMakeModel).not.toHaveBeenCalled();
   });
 });

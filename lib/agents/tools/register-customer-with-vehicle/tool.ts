@@ -42,6 +42,10 @@ export const registerCustomerWithVehicleTool = tool({
         notes: input.notes,
       });
 
+      if (!vehicle) {
+        throw new Error('Vehicle creation returned no result');
+      }
+
       return `✅ Cliente y vehículo creados exitosamente:\n\n📋 Cliente: ${customer.name} (ID: ${customer.id})\n🚗 Vehículo: ${vehicle.identifier} - ${vehicle.category} (ID: ${vehicle.id})`;
     } catch (error) {
       logger.error({ error }, 'Composite: registerCustomerWithVehicle failed');

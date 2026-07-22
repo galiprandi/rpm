@@ -46,7 +46,7 @@ Toda nueva especificación (especialmente de features/negocio) DEBE seguir la si
 - **Validación 1**: [Regla de validación de formulario/API].
 
 ## 5. Dependencias Técnicas Clave
-[Qué tablas de la base de datos (Prisma) afecta directamente, componentes de UI críticos, endpoints de API específicos o dependencias externas.]
+[Qué tablas de la base de datos (Drizzle) afecta directamente, componentes de UI críticos, endpoints de API específicos o dependencias externas.]
 - **Tablas BD**: `Tabla1`, `Tabla2`
 - **Servicios**: `servicioX.ts`
 - **Rutas API**: `/api/ruta`

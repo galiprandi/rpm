@@ -2,7 +2,7 @@ import { pgTable, varchar, timestamp, text, integer, index, jsonb, numeric, fore
 import { sql } from "drizzle-orm"
 
 export const customer = pgTable("customer", {
-	id: text().primaryKey().notNull(),
+	id: text().primaryKey().default(sql`gen_random_uuid()`).notNull(),
 	phone: text(),
 	phoneAlt: text(),
 	email: text(),
@@ -20,7 +20,7 @@ export const customer = pgTable("customer", {
 ]);
 
 export const cashMovement = pgTable("cash_movement", {
-	id: text().primaryKey().notNull(),
+	id: text().primaryKey().default(sql`gen_random_uuid()`).notNull(),
 	type: text().notNull(),
 	amount: numeric({ precision: 10, scale:  2 }).notNull(),
 	method: text().notNull(),
@@ -53,7 +53,7 @@ export const costUpdateBatch = pgTable("cost_update_batch", {
 ]);
 
 export const creditNoteItem = pgTable("credit_note_item", {
-	id: text().primaryKey().notNull(),
+	id: text().primaryKey().default(sql`gen_random_uuid()`).notNull(),
 	creditNoteId: text().notNull(),
 	productId: text(),
 	serviceId: text(),
@@ -83,7 +83,7 @@ export const creditNoteItem = pgTable("credit_note_item", {
 ]);
 
 export const directSale = pgTable("direct_sale", {
-	id: text().primaryKey().notNull(),
+	id: text().primaryKey().default(sql`gen_random_uuid()`).notNull(),
 	customerId: text(),
 	customerName: text().notNull(),
 	total: numeric({ precision: 10, scale:  2 }).notNull(),
@@ -101,7 +101,7 @@ export const directSale = pgTable("direct_sale", {
 ]);
 
 export const directSaleItem = pgTable("direct_sale_item", {
-	id: text().primaryKey().notNull(),
+	id: text().primaryKey().default(sql`gen_random_uuid()`).notNull(),
 	directSaleId: text().notNull(),
 	productId: text(),
 	serviceId: text(),
@@ -131,7 +131,7 @@ export const directSaleItem = pgTable("direct_sale_item", {
 ]);
 
 export const directSalePayment = pgTable("direct_sale_payment", {
-	id: text().primaryKey().notNull(),
+	id: text().primaryKey().default(sql`gen_random_uuid()`).notNull(),
 	directSaleId: text().notNull(),
 	paymentMethodId: text().notNull(),
 	amount: numeric({ precision: 10, scale:  2 }).notNull(),
@@ -154,7 +154,7 @@ export const directSalePayment = pgTable("direct_sale_payment", {
 ]);
 
 export const inventoryCountOperative = pgTable("inventory_count_operative", {
-	id: text().primaryKey().notNull(),
+	id: text().primaryKey().default(sql`gen_random_uuid()`).notNull(),
 	status: text().default('PENDING').notNull(),
 	itemCount: integer().notNull(),
 	createdBy: text().notNull(),
@@ -169,7 +169,7 @@ export const inventoryCountOperative = pgTable("inventory_count_operative", {
 ]);
 
 export const inventoryCountItem = pgTable("inventory_count_item", {
-	id: text().primaryKey().notNull(),
+	id: text().primaryKey().default(sql`gen_random_uuid()`).notNull(),
 	operativeId: text().notNull(),
 	productId: text().notNull(),
 	theoreticalStock: integer().notNull(),
@@ -195,7 +195,7 @@ export const inventoryCountItem = pgTable("inventory_count_item", {
 ]);
 
 export const category = pgTable("category", {
-	id: text().primaryKey().notNull(),
+	id: text().primaryKey().default(sql`gen_random_uuid()`).notNull(),
 	name: text().notNull(),
 	description: text(),
 	defaultMarginPercent: doublePrecision().default(40).notNull(),
@@ -210,7 +210,7 @@ export const category = pgTable("category", {
 ]);
 
 export const account = pgTable("account", {
-	id: text().primaryKey().notNull(),
+	id: text().primaryKey().default(sql`gen_random_uuid()`).notNull(),
 	accountId: text().notNull(),
 	providerId: text().notNull(),
 	userId: text().notNull(),
@@ -233,7 +233,7 @@ export const account = pgTable("account", {
 ]);
 
 export const photo = pgTable("photo", {
-	id: text().primaryKey().notNull(),
+	id: text().primaryKey().default(sql`gen_random_uuid()`).notNull(),
 	workOrderId: text().notNull(),
 	type: text().notNull(),
 	url: text().notNull(),
@@ -250,7 +250,7 @@ export const photo = pgTable("photo", {
 ]);
 
 export const payment = pgTable("payment", {
-	id: text().primaryKey().notNull(),
+	id: text().primaryKey().default(sql`gen_random_uuid()`).notNull(),
 	workOrderId: text().notNull(),
 	paymentMethodId: text().notNull(),
 	amount: numeric({ precision: 10, scale:  2 }).notNull(),
@@ -273,7 +273,7 @@ export const payment = pgTable("payment", {
 ]);
 
 export const priceList = pgTable("price_list", {
-	id: text().primaryKey().notNull(),
+	id: text().primaryKey().default(sql`gen_random_uuid()`).notNull(),
 	name: text().notNull(),
 	isPublic: boolean().default(false).notNull(),
 	isActive: boolean().default(true).notNull(),
@@ -289,7 +289,7 @@ export const priceList = pgTable("price_list", {
 ]);
 
 export const invoice = pgTable("invoice", {
-	id: text().primaryKey().notNull(),
+	id: text().primaryKey().default(sql`gen_random_uuid()`).notNull(),
 	number: text().notNull(),
 	type: text().notNull(),
 	referenceId: text().notNull(),
@@ -325,7 +325,7 @@ export const invoice = pgTable("invoice", {
 ]);
 
 export const paymentMethod = pgTable("payment_method", {
-	id: text().primaryKey().notNull(),
+	id: text().primaryKey().default(sql`gen_random_uuid()`).notNull(),
 	name: text().notNull(),
 	code: text().notNull(),
 	description: text(),
@@ -341,7 +341,7 @@ export const paymentMethod = pgTable("payment_method", {
 ]);
 
 export const product = pgTable("product", {
-	id: text().primaryKey().notNull(),
+	id: text().primaryKey().default(sql`gen_random_uuid()`).notNull(),
 	sku: text(),
 	name: text().notNull(),
 	description: text(),
@@ -384,7 +384,7 @@ export const product = pgTable("product", {
 ]);
 
 export const purchaseVoucher = pgTable("purchase_voucher", {
-	id: text().primaryKey().notNull(),
+	id: text().primaryKey().default(sql`gen_random_uuid()`).notNull(),
 	supplierId: text().notNull(),
 	letter: text().notNull(),
 	number: text().notNull(),
@@ -415,7 +415,7 @@ export const purchaseVoucher = pgTable("purchase_voucher", {
 ]);
 
 export const supplier = pgTable("supplier", {
-	id: text().primaryKey().notNull(),
+	id: text().primaryKey().default(sql`gen_random_uuid()`).notNull(),
 	name: text().notNull(),
 	contactName: text(),
 	phone: text(),
@@ -433,7 +433,7 @@ export const supplier = pgTable("supplier", {
 ]);
 
 export const stockMovement = pgTable("stock_movement", {
-	id: text().primaryKey().notNull(),
+	id: text().primaryKey().default(sql`gen_random_uuid()`).notNull(),
 	productId: text().notNull(),
 	userId: text(),
 	userName: text(),
@@ -457,7 +457,7 @@ export const stockMovement = pgTable("stock_movement", {
 ]);
 
 export const setting = pgTable("setting", {
-	id: text().primaryKey().notNull(),
+	id: text().primaryKey().default(sql`gen_random_uuid()`).notNull(),
 	key: text().notNull(),
 	value: text().notNull(),
 	updatedAt: timestamp({ precision: 3, mode: 'string' }).notNull(),
@@ -466,7 +466,7 @@ export const setting = pgTable("setting", {
 ]);
 
 export const vehicle = pgTable("vehicle", {
-	id: text().primaryKey().notNull(),
+	id: text().primaryKey().default(sql`gen_random_uuid()`).notNull(),
 	identifier: text().notNull(),
 	category: text().notNull(),
 	makeId: text(),
@@ -503,7 +503,7 @@ export const vehicle = pgTable("vehicle", {
 ]);
 
 export const purchaseVoucherItem = pgTable("purchase_voucher_item", {
-	id: text().primaryKey().notNull(),
+	id: text().primaryKey().default(sql`gen_random_uuid()`).notNull(),
 	voucherId: text().notNull(),
 	productId: text().notNull(),
 	productName: text().notNull(),
@@ -530,7 +530,7 @@ export const purchaseVoucherItem = pgTable("purchase_voucher_item", {
 ]);
 
 export const service = pgTable("service", {
-	id: text().primaryKey().notNull(),
+	id: text().primaryKey().default(sql`gen_random_uuid()`).notNull(),
 	name: text().notNull(),
 	description: text(),
 	baseCost: numeric({ precision: 10, scale:  2 }).notNull(),
@@ -545,7 +545,7 @@ export const service = pgTable("service", {
 ]);
 
 export const userRole = pgTable("user_role", {
-	id: text().primaryKey().notNull(),
+	id: text().primaryKey().default(sql`gen_random_uuid()`).notNull(),
 	email: text().notNull(),
 	role: text().notNull(),
 	name: text(),
@@ -562,7 +562,7 @@ export const userRole = pgTable("user_role", {
 ]);
 
 export const vehicleMake = pgTable("vehicle_make", {
-	id: text().primaryKey().notNull(),
+	id: text().primaryKey().default(sql`gen_random_uuid()`).notNull(),
 	name: text().notNull(),
 	normalizedName: text().notNull(),
 	category: text().array(),
@@ -574,7 +574,7 @@ export const vehicleMake = pgTable("vehicle_make", {
 ]);
 
 export const vehicleModel = pgTable("vehicle_model", {
-	id: text().primaryKey().notNull(),
+	id: text().primaryKey().default(sql`gen_random_uuid()`).notNull(),
 	makeId: text().notNull(),
 	name: text().notNull(),
 	normalizedName: text().notNull(),
@@ -593,7 +593,7 @@ export const vehicleModel = pgTable("vehicle_model", {
 ]);
 
 export const user = pgTable("user", {
-	id: text().primaryKey().notNull(),
+	id: text().primaryKey().default(sql`gen_random_uuid()`).notNull(),
 	name: text().notNull(),
 	email: text().notNull(),
 	emailVerified: boolean().default(false).notNull(),
@@ -606,7 +606,7 @@ export const user = pgTable("user", {
 ]);
 
 export const session = pgTable("session", {
-	id: text().primaryKey().notNull(),
+	id: text().primaryKey().default(sql`gen_random_uuid()`).notNull(),
 	expiresAt: timestamp({ precision: 3, mode: 'string' }).notNull(),
 	token: text().notNull(),
 	createdAt: timestamp({ precision: 3, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
@@ -625,7 +625,7 @@ export const session = pgTable("session", {
 ]);
 
 export const verification = pgTable("verification", {
-	id: text().primaryKey().notNull(),
+	id: text().primaryKey().default(sql`gen_random_uuid()`).notNull(),
 	identifier: text().notNull(),
 	value: text().notNull(),
 	expiresAt: timestamp({ precision: 3, mode: 'string' }).notNull(),
@@ -636,7 +636,7 @@ export const verification = pgTable("verification", {
 ]);
 
 export const workOrderItem = pgTable("work_order_item", {
-	id: text().primaryKey().notNull(),
+	id: text().primaryKey().default(sql`gen_random_uuid()`).notNull(),
 	workOrderId: text().notNull(),
 	type: text().notNull(),
 	productId: text(),
@@ -692,7 +692,7 @@ export const workOrderAuditLog = pgTable("work_order_audit_log", {
 ]);
 
 export const creditNote = pgTable("credit_note", {
-	id: text().primaryKey().notNull(),
+	id: text().primaryKey().default(sql`gen_random_uuid()`).notNull(),
 	invoiceId: text(),
 	originalSaleId: text().notNull(),
 	originalSaleType: text().notNull(),
@@ -725,7 +725,7 @@ export const creditNote = pgTable("credit_note", {
 ]);
 
 export const workOrder = pgTable("work_order", {
-	id: text().primaryKey().notNull(),
+	id: text().primaryKey().default(sql`gen_random_uuid()`).notNull(),
 	status: text().notNull(),
 	customerId: text().notNull(),
 	vehicleId: text().notNull(),
@@ -770,7 +770,7 @@ export const workOrder = pgTable("work_order", {
 ]);
 
 export const priceListItem = pgTable("price_list_item", {
-	id: text().primaryKey().notNull(),
+	id: text().primaryKey().default(sql`gen_random_uuid()`).notNull(),
 	priceListId: text().notNull(),
 	productId: text(),
 	overrideMarginPercentage: numeric({ precision: 5, scale:  2 }),
@@ -794,7 +794,7 @@ export const priceListItem = pgTable("price_list_item", {
 ]);
 
 export const balanceAudit = pgTable("balance_audit", {
-	id: text().primaryKey().notNull(),
+	id: text().primaryKey().default(sql`gen_random_uuid()`).notNull(),
 	customerId: text().notNull(),
 	oldBalance: numeric({ precision: 10, scale:  2 }).notNull(),
 	newBalance: numeric({ precision: 10, scale:  2 }).notNull(),

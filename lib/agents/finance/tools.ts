@@ -1,6 +1,8 @@
 import { tool } from "ai";
 import { z } from "zod";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { cashMovement, directSale, directSaleItem, directSalePayment, product, paymentMethod, workOrder } from "@/db/schema";
+import { eq, and, gte, lt, ilike, desc, sql } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import logger from "../utils/logger";
 import {
@@ -22,8 +24,11 @@ export const getCashStatusTool = tool({
     logger.debug("Get cash status");
     const { today, tomorrow } = todayRange();
 
-    const movements = await prisma.cash_movement.findMany({
-      where: { createdAt: { gte: today, lt: tomorrow } },
+    const movements = await db.query.cashMovement.findMany({
+      where: and(
+        gte(cashMovement.createdAt, today.toISOString()),
+        lt(cashMovement.createdAt, tomorrow.toISOString()),
+      ),
     });
 
     const totalIncome = movements
@@ -49,19 +54,28 @@ export const getTodaySummaryTool = tool({
     logger.debug("Get today summary");
     const { today, tomorrow } = todayRange();
 
-    const sales = await prisma.direct_sale.findMany({
-      where: { createdAt: { gte: today, lt: tomorrow } },
+    const sales = await db.query.directSale.findMany({
+      where: and(
+        gte(directSale.createdAt, today.toISOString()),
+        lt(directSale.createdAt, tomorrow.toISOString()),
+      ),
     });
 
     const totalSales = sales.reduce((s, sale) => s + Number(sale.total), 0);
     const salesCount = sales.length;
 
-    const workOrders = await prisma.work_order.findMany({
-      where: { createdAt: { gte: today, lt: tomorrow } },
+    const workOrders = await db.query.workOrder.findMany({
+      where: and(
+        gte(workOrder.createdAt, today.toISOString()),
+        lt(workOrder.createdAt, tomorrow.toISOString()),
+      ),
     });
 
-    const cashMovements = await prisma.cash_movement.findMany({
-      where: { createdAt: { gte: today, lt: tomorrow } },
+    const cashMovements = await db.query.cashMovement.findMany({
+      where: and(
+        gte(cashMovement.createdAt, today.toISOString()),
+        lt(cashMovement.createdAt, tomorrow.toISOString()),
+      ),
     });
 
     const totalIncome = cashMovements
@@ -107,70 +121,69 @@ export const createDirectSaleTool = tool({
     );
 
     try {
-      const product = await prisma.product.findUnique({
-        where: { id: input.productId },
-        select: { name: true, stock: true },
+      const productRecord = await db.query.product.findFirst({
+        where: eq(product.id, input.productId),
       });
 
-      if (!product) return "Producto no encontrado.";
-      if (Number(product.stock) < input.quantity)
-        return `Stock insuficiente. Disponible: ${product.stock}, solicitado: ${input.quantity}`;
+      if (!productRecord) return "Producto no encontrado.";
+      if (Number(productRecord.stock) < input.quantity)
+        return `Stock insuficiente. Disponible: ${productRecord.stock}, solicitado: ${input.quantity}`;
 
       // Resolve payment method by name
-      const pm = await prisma.payment_method.findFirst({
-        where: { name: { contains: input.paymentMethod, mode: "insensitive" } },
+      const pm = await db.query.paymentMethod.findFirst({
+        where: ilike(paymentMethod.name, `%${input.paymentMethod}%`),
       });
       if (!pm) {
-        const allPms = await prisma.payment_method.findMany();
+        const allPms = await db.query.paymentMethod.findMany();
         return `Método de pago "${input.paymentMethod}" no encontrado. Disponibles: ${allPms.map((p) => p.name).join(", ")}`;
       }
 
       const totalPrice = input.quantity * input.unitPrice;
 
-      const sale = await prisma.direct_sale.create({
-        data: {
+      const sale = await db.transaction(async (tx) => {
+        const [newSale] = await tx
+          .insert(directSale)
+          .values({
+            id: randomUUID(),
+            customerId: input.customerId ?? null,
+            customerName: input.customerName,
+            total: totalPrice.toString(),
+            notes: input.notes ?? "",
+            createdBy: input.createdBy || "nitro-bot",
+          })
+          .returning();
+
+        await tx.insert(directSaleItem).values({
           id: randomUUID(),
-          customerId: input.customerId ?? null,
-          customerName: input.customerName,
-          total: totalPrice,
+          directSaleId: newSale.id,
+          productId: input.productId,
+          name: input.productName || productRecord.name,
+          quantity: input.quantity,
+          unitPrice: input.unitPrice.toString(),
+          totalPrice: totalPrice.toString(),
+        });
+
+        await tx.insert(directSalePayment).values({
+          id: randomUUID(),
+          directSaleId: newSale.id,
+          paymentMethodId: pm.id,
+          amount: totalPrice.toString(),
           notes: input.notes ?? "",
           createdBy: input.createdBy || "nitro-bot",
-          items: {
-            create: [
-              {
-                id: randomUUID(),
-                productId: input.productId,
-                name: input.productName || product.name,
-                quantity: input.quantity,
-                unitPrice: input.unitPrice,
-                totalPrice,
-              },
-            ],
-          },
-          payments: {
-            create: [
-              {
-                id: randomUUID(),
-                paymentMethodId: pm.id,
-                amount: totalPrice,
-                notes: input.notes ?? "",
-                createdBy: input.createdBy || "nitro-bot",
-              },
-            ],
-          },
-        },
-        include: { items: true, payments: true },
+        });
+
+        return newSale;
       });
 
-      await prisma.product.update({
-        where: { id: input.productId },
-        data: {
-          stock: { decrement: input.quantity },
-          lastMovementAt: new Date(),
-        },
-      });
+      await db
+        .update(product)
+        .set({
+          stock: sql`${product.stock} - ${input.quantity}`,
+          lastMovementAt: new Date().toISOString(),
+        })
+        .where(eq(product.id, input.productId));
 
-      return `✅ Venta registrada:\n- Producto: ${input.productName || product.name} x${input.quantity}\n- Total: $${totalPrice}\n- Cliente: ${input.customerName}\n- Pago: ${pm.name}\n- ID: ${sale.id.slice(0, 8)}`;
+      return `✅ Venta registrada:\n- Producto: ${input.productName || productRecord.name} x${input.quantity}\n- Total: $${totalPrice}\n- Cliente: ${input.customerName}\n- Pago: ${pm.name}\n- ID: ${sale.id.slice(0, 8)}`;
     } catch (error) {
       logger.error({ error }, "Error creating direct sale");
       return `Error al registrar venta: ${error instanceof Error ? error.message : "Error desconocido"}`;

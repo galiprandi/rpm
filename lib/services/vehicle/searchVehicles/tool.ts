@@ -18,7 +18,7 @@ export const searchVehiclesTool = tool({
 
     const formatted = vehicles
       .map((v) => {
-        const makeModel = [v.vehicle_make?.name, v.vehicle_model?.name]
+        const makeModel = [v.vehicleMake?.name, v.vehicleModel?.name]
           .filter(Boolean)
           .join(' ');
         const yearStr = v.year ? ` ${v.year}` : '';

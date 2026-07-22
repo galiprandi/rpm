@@ -1,4 +1,6 @@
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
+import { customer, vehicle } from '@/db/schema';
+import { or, ilike, inArray, desc, type SQL } from 'drizzle-orm';
 import type { SearchCustomersInput } from './schema';
 
 /**
@@ -12,44 +14,39 @@ import type { SearchCustomersInput } from './schema';
 export async function searchCustomersService(input: SearchCustomersInput) {
   const { search, limit = 10 } = input;
 
-  // Build where clause — search across name, phone, phoneAlt, email, and vehicle identifier
-  const where = search
-    ? {
-        OR: [
-          { name: { contains: search, mode: 'insensitive' as const } },
-          { phone: { contains: search, mode: 'insensitive' as const } },
-          { phoneAlt: { contains: search, mode: 'insensitive' as const } },
-          { email: { contains: search, mode: 'insensitive' as const } },
-          { address: { contains: search, mode: 'insensitive' as const } },
-          {
-            vehicle: {
-              some: {
-                identifier: { contains: search.toUpperCase(), mode: 'insensitive' as const },
-              },
-            },
-          },
-        ],
-      }
-    : {};
+  // Build where conditions — search across name, phone, phoneAlt, email, and vehicle identifier
+  let where: SQL | undefined;
 
-  const customers = await prisma.customer.findMany({
+  if (search) {
+    const customerSearch = or(
+      ilike(customer.name, `%${search}%`),
+      ilike(customer.phone, `%${search}%`),
+      ilike(customer.phoneAlt, `%${search}%`),
+      ilike(customer.email, `%${search}%`),
+      ilike(customer.address, `%${search}%`),
+    );
+
+    const vehicleMatch = inArray(
+      customer.id,
+      db.select({ id: vehicle.customerId }).from(vehicle).where(ilike(vehicle.identifier, `%${search.toUpperCase()}%`))
+    );
+
+    where = or(customerSearch, vehicleMatch)!;
+  }
+
+  const customers = await db.query.customer.findMany({
     where,
-    include: {
-      vehicle: {
-        select: {
+    with: {
+      vehicles: {
+        columns: {
           id: true,
           identifier: true,
           category: true,
         },
       },
-      _count: {
-        select: {
-          work_order: true,
-        },
-      },
     },
-    orderBy: { createdAt: 'desc' },
-    take: limit,
+    orderBy: desc(customer.createdAt),
+    limit,
   });
 
   return customers;

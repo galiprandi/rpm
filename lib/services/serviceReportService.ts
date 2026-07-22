@@ -1,4 +1,14 @@
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import {
+  workOrder,
+  directSale,
+  workOrderItem,
+  directSaleItem,
+  service,
+  vehicle,
+  user,
+} from "@/db/schema";
+import { and, inArray, gte, lte, eq, isNotNull, sum, count } from "drizzle-orm";
 import { ARGENTINA_TIMEZONE } from "@/lib/utils/date";
 
 export type ServiceGroupBy = "hour" | "day" | "month";
@@ -77,37 +87,40 @@ function decimalToNumber(decimal: unknown): number {
  * Gets service metrics for a specific period
  */
 async function getServicePeriodMetrics(start: Date, end: Date) {
+  const saleStatuses = ["DELIVERED", "READY", "PAID"];
+  const startStr = start.toISOString();
+  const endStr = end.toISOString();
   const [woItems, dsItems] = await Promise.all([
-    prisma.work_order_item.aggregate({
-      where: {
-        serviceId: { not: null },
-        work_order: {
-          status: { in: ["DELIVERED", "READY", "PAID"] },
-          completedAt: { gte: start, lte: end },
-        },
-      },
-      _sum: { subtotal: true },
-      _count: { id: true },
-    }),
-    prisma.direct_sale_item.aggregate({
-      where: {
-        serviceId: { not: null },
-        directSale: {
-          createdAt: { gte: start, lte: end },
-        },
-      },
-      _sum: { totalPrice: true },
-      _count: { id: true },
-    }),
+    db.select({
+      subtotalSum: sum(workOrderItem.subtotal),
+      idCount: count(workOrderItem.id),
+    }).from(workOrderItem).innerJoin(
+      workOrder, eq(workOrderItem.workOrderId, workOrder.id),
+    ).where(and(
+      isNotNull(workOrderItem.serviceId),
+      inArray(workOrder.status, saleStatuses),
+      gte(workOrder.completedAt, startStr),
+      lte(workOrder.completedAt, endStr),
+    )),
+    db.select({
+      totalPriceSum: sum(directSaleItem.totalPrice),
+      idCount: count(directSaleItem.id),
+    }).from(directSaleItem).innerJoin(
+      directSale, eq(directSaleItem.directSaleId, directSale.id),
+    ).where(and(
+      isNotNull(directSaleItem.serviceId),
+      gte(directSale.createdAt, startStr),
+      lte(directSale.createdAt, endStr),
+    )),
   ]);
 
   const total =
-    decimalToNumber(woItems._sum.subtotal) +
-    decimalToNumber(dsItems._sum.totalPrice);
-  const count = woItems._count.id + dsItems._count.id;
-  const average = count > 0 ? total / count : 0;
+    decimalToNumber(woItems[0]?.subtotalSum) +
+    decimalToNumber(dsItems[0]?.totalPriceSum);
+  const countVal = Number(woItems[0]?.idCount ?? 0) + Number(dsItems[0]?.idCount ?? 0);
+  const average = countVal > 0 ? total / countVal : 0;
 
-  return { total, count, average };
+  return { total, count: countVal, average };
 }
 
 function determineGroupBy(startDate: Date, endDate: Date): ServiceGroupBy {
@@ -278,37 +291,49 @@ export async function getServiceReport(
   }
 
   // 3. Detailed items for distributions and evolution
+  const saleStatuses = ["DELIVERED", "READY", "PAID"];
+  const startDateStr = startDate.toISOString();
+  const endDateStr = endDate.toISOString();
   const [woItems, dsItems] = await Promise.all([
-    prisma.work_order_item.findMany({
-      where: {
-        serviceId: { not: null },
-        work_order: {
-          status: { in: ["DELIVERED", "READY", "PAID"] },
-          completedAt: { gte: startDate, lte: endDate },
-        },
-      },
-      include: {
-        service: true,
-        work_order: {
-          include: {
-            vehicle: true,
-            technician: true,
-          },
-        },
-      },
-    }),
-    prisma.direct_sale_item.findMany({
-      where: {
-        serviceId: { not: null },
-        directSale: {
-          createdAt: { gte: startDate, lte: endDate },
-        },
-      },
-      include: {
-        service: true,
-        directSale: true,
-      },
-    }),
+    db.select({
+      subtotal: workOrderItem.subtotal,
+      serviceId: workOrderItem.serviceId,
+      quantity: workOrderItem.quantity,
+      serviceName: service.name,
+      technicianId: workOrder.technicianId,
+      technicianName: user.name,
+      vehicleCategory: vehicle.category,
+      completedAt: workOrder.completedAt,
+    }).from(workOrderItem).innerJoin(
+      workOrder, eq(workOrderItem.workOrderId, workOrder.id),
+    ).leftJoin(
+      service, eq(workOrderItem.serviceId, service.id),
+    ).leftJoin(
+      user, eq(workOrder.technicianId, user.id),
+    ).leftJoin(
+      vehicle, eq(workOrder.vehicleId, vehicle.id),
+    ).where(and(
+      isNotNull(workOrderItem.serviceId),
+      inArray(workOrder.status, saleStatuses),
+      gte(workOrder.completedAt, startDateStr),
+      lte(workOrder.completedAt, endDateStr),
+    )),
+    db.select({
+      totalPrice: directSaleItem.totalPrice,
+      serviceId: directSaleItem.serviceId,
+      quantity: directSaleItem.quantity,
+      itemName: directSaleItem.name,
+      serviceName: service.name,
+      createdAt: directSale.createdAt,
+    }).from(directSaleItem).innerJoin(
+      directSale, eq(directSaleItem.directSaleId, directSale.id),
+    ).leftJoin(
+      service, eq(directSaleItem.serviceId, service.id),
+    ).where(and(
+      isNotNull(directSaleItem.serviceId),
+      gte(directSale.createdAt, startDateStr),
+      lte(directSale.createdAt, endDateStr),
+    )),
   ]);
 
   const serviceMap: Record<string, TopServiceItem> = {};
@@ -319,7 +344,7 @@ export async function getServiceReport(
   // Process Work Order items
   woItems.forEach((item) => {
     const total = decimalToNumber(item.subtotal);
-    const serviceName = item.service?.name || "Servicio Desconocido";
+    const serviceName = item.serviceName || "Servicio Desconocido";
     const serviceId = item.serviceId || "unknown";
 
     // Top services
@@ -330,7 +355,7 @@ export async function getServiceReport(
     serviceMap[serviceId].quantity += item.quantity;
 
     // Category distribution
-    const category = item.work_order.vehicle?.category || "Otros";
+    const category = item.vehicleCategory || "Otros";
     if (!categoryMap[category]) {
       categoryMap[category] = { category, total: 0, count: 0 };
     }
@@ -338,8 +363,8 @@ export async function getServiceReport(
     categoryMap[category].count += item.quantity;
 
     // Technician performance
-    const techId = item.work_order.technicianId || "no-tech";
-    const techName = item.work_order.technician?.name || "Sin Asignar";
+    const techId = item.technicianId || "no-tech";
+    const techName = item.technicianName || "Sin Asignar";
     if (!technicianMap[techId]) {
       technicianMap[techId] = { technicianId: techId, technicianName: techName, totalRevenue: 0, serviceCount: 0 };
     }
@@ -347,7 +372,7 @@ export async function getServiceReport(
     technicianMap[techId].serviceCount += item.quantity;
 
     // Evolution
-    const date = item.work_order.completedAt || new Date();
+    const date = item.completedAt ? new Date(item.completedAt) : new Date();
     const { key } = getBucketKeyAndLabel(date, groupBy);
     if (buckets[key]) {
       buckets[key].total += total;
@@ -358,7 +383,7 @@ export async function getServiceReport(
   // Process Direct Sale items
   dsItems.forEach((item) => {
     const total = decimalToNumber(item.totalPrice);
-    const serviceName = item.service?.name || item.name || "Servicio Desconocido";
+    const serviceName = item.serviceName || item.itemName || "Servicio Desconocido";
     const serviceId = item.serviceId || "unknown";
 
     // Top services
@@ -377,7 +402,7 @@ export async function getServiceReport(
     categoryMap[category].count += item.quantity;
 
     // Evolution
-    const date = item.directSale.createdAt;
+    const date = new Date(item.createdAt);
     const { key } = getBucketKeyAndLabel(date, groupBy);
     if (buckets[key]) {
       buckets[key].total += total;

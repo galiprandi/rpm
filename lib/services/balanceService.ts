@@ -2,13 +2,16 @@
  * Centralized balance service — source of truth for customer.balance
  * All balance mutations go through this service to ensure atomicity and auditability.
  */
-import { prisma } from "@/lib/prisma";
+import { db, type Database } from "@/lib/db";
+import { customer, workOrder, directSale, creditNote, balanceAudit } from "@/db/schema";
+import { eq, and, notInArray, inArray, sql } from "drizzle-orm";
 
-type PrismaTx = Parameters<Parameters<typeof prisma["$transaction"]>[0]>[0];
+type DbOrTx = Database | Parameters<Parameters<Database["transaction"]>[0]>[0];
 
 function decimalToNumber(value: unknown): number {
   if (value === null || value === undefined) return 0;
   if (typeof value === "number") return value;
+  if (typeof value === "string") return Number(value);
   if (
     typeof value === "object" &&
     "toNumber" in value &&
@@ -30,20 +33,19 @@ function decimalToNumber(value: unknown): number {
  */
 export async function recalculateCustomerBalance(
   customerId: string,
-  tx?: PrismaTx,
+  tx?: DbOrTx,
 ): Promise<number> {
-  const db = tx || prisma;
+  const client = tx ?? db;
 
   // 1. Work orders: sum totals minus payments, excluding CANCELLED
-  const workOrders = await db.work_order.findMany({
-    where: {
-      customerId,
-      status: { notIn: ["CANCELLED"] },
-    },
-    select: {
+  const workOrders = await client.query.workOrder.findMany({
+    where: and(eq(workOrder.customerId, customerId), notInArray(workOrder.status, ["CANCELLED"])),
+    columns: {
       id: true,
       total: true,
-      payments: { select: { amount: true } },
+    },
+    with: {
+      payments: { columns: { amount: true } },
     },
   });
 
@@ -54,18 +56,20 @@ export async function recalculateCustomerBalance(
   }, 0);
 
   // 2. Direct sales with customerId: sum totals minus payments
-  const directSales = await db.direct_sale.findMany({
-    where: { customerId },
-    select: {
+  const directSales = await client.query.directSale.findMany({
+    where: eq(directSale.customerId, customerId),
+    columns: {
       id: true,
       total: true,
-      payments: { select: { amount: true } },
+    },
+    with: {
+      directSalePayments: { columns: { amount: true } },
     },
   });
 
   const directSaleDebt = directSales.reduce((sum, ds) => {
     const total = decimalToNumber(ds.total);
-    const paid = ds.payments.reduce(
+    const paid = ds.directSalePayments.reduce(
       (s, p) => s + decimalToNumber(p.amount),
       0,
     );
@@ -73,12 +77,9 @@ export async function recalculateCustomerBalance(
   }, 0);
 
   // 3. Credit notes: subtract for ISSUED + ACCOUNT_CREDIT (CANCELLED excluded)
-  const creditNotes = await db.credit_note.findMany({
-    where: {
-      customerId,
-      status: { in: ["ISSUED", "ACCOUNT_CREDIT"] },
-    },
-    select: { total: true },
+  const creditNotes = await client.query.creditNote.findMany({
+    where: and(eq(creditNote.customerId, customerId), inArray(creditNote.status, ["ISSUED", "ACCOUNT_CREDIT"])),
+    columns: { total: true },
   });
 
   const creditNoteCredit = creditNotes.reduce(
@@ -89,30 +90,29 @@ export async function recalculateCustomerBalance(
   const calculatedBalance = workOrderDebt + directSaleDebt - creditNoteCredit;
 
   // Verify against stored balance and audit if different
-  const customer = await db.customer.findUnique({
-    where: { id: customerId },
-    select: { balance: true },
+  const foundCustomer = await client.query.customer.findFirst({
+    where: eq(customer.id, customerId),
+    columns: { balance: true },
   });
 
-  if (customer) {
-    const storedBalance = decimalToNumber(customer.balance);
+  if (foundCustomer) {
+    const storedBalance = decimalToNumber(foundCustomer.balance);
     const drift = storedBalance - calculatedBalance;
 
     if (Math.abs(drift) > 0.01) {
       // Fix the stored balance and log the drift
-      await db.customer.update({
-        where: { id: customerId },
-        data: { balance: calculatedBalance },
-      });
+      await client
+        .update(customer)
+        .set({ balance: calculatedBalance.toString() })
+        .where(eq(customer.id, customerId));
 
-      await db.balance_audit.create({
-        data: {
-          customerId,
-          oldBalance: storedBalance,
-          newBalance: calculatedBalance,
-          driftAmount: drift,
-          source: "recalculate",
-        },
+      await client.insert(balanceAudit).values({
+        id: crypto.randomUUID(),
+        customerId,
+        oldBalance: storedBalance.toString(),
+        newBalance: calculatedBalance.toString(),
+        driftAmount: drift.toString(),
+        source: "recalculate",
       });
     }
   }
@@ -121,47 +121,46 @@ export async function recalculateCustomerBalance(
 }
 
 /**
- * Atomically adjusts customer balance by delta using Prisma increment.
+ * Atomically adjusts customer balance by delta using SQL increment.
  * Then verifies via recalculate to catch any drift.
  */
 export async function adjustBalanceAtomically(
   customerId: string,
   delta: number,
   source: string,
-  tx?: PrismaTx,
+  tx?: DbOrTx,
 ): Promise<number> {
-  const db = tx || prisma;
+  const client = tx ?? db;
 
-  const customer = await db.customer.findUnique({
-    where: { id: customerId },
-    select: { balance: true },
+  const foundCustomer = await client.query.customer.findFirst({
+    where: eq(customer.id, customerId),
+    columns: { balance: true },
   });
 
-  if (!customer) {
+  if (!foundCustomer) {
     throw new Error(`Customer not found: ${customerId}`);
   }
 
-  const oldBalance = decimalToNumber(customer.balance);
+  const oldBalance = decimalToNumber(foundCustomer.balance);
 
-  const updated = await db.customer.update({
-    where: { id: customerId },
-    data: {
-      balance: { increment: delta },
-    },
-    select: { balance: true },
-  });
+  const [updated] = await client
+    .update(customer)
+    .set({
+      balance: sql`${customer.balance} + ${delta.toString()}`,
+    })
+    .where(eq(customer.id, customerId))
+    .returning({ balance: customer.balance });
 
-  const newBalance = decimalToNumber(updated.balance);
+  const newBalance = decimalToNumber(updated?.balance);
 
   // Audit log
-  await db.balance_audit.create({
-    data: {
-      customerId,
-      oldBalance,
-      newBalance,
-      driftAmount: 0,
-      source,
-    },
+  await client.insert(balanceAudit).values({
+    id: crypto.randomUUID(),
+    customerId,
+    oldBalance: oldBalance.toString(),
+    newBalance: newBalance.toString(),
+    driftAmount: "0",
+    source,
   });
 
   return newBalance;
@@ -176,33 +175,32 @@ export async function setBalanceIfDifferent(
   expectedOld: number,
   newBalance: number,
   source: string,
-  tx?: PrismaTx,
+  tx?: DbOrTx,
 ): Promise<void> {
-  const db = tx || prisma;
+  const client = tx ?? db;
 
-  const customer = await db.customer.findUnique({
-    where: { id: customerId },
-    select: { balance: true },
+  const foundCustomer = await client.query.customer.findFirst({
+    where: eq(customer.id, customerId),
+    columns: { balance: true },
   });
 
-  if (!customer) return;
+  if (!foundCustomer) return;
 
-  const currentBalance = decimalToNumber(customer.balance);
+  const currentBalance = decimalToNumber(foundCustomer.balance);
 
   if (Math.abs(currentBalance - expectedOld) < 0.01) {
-    await db.customer.update({
-      where: { id: customerId },
-      data: { balance: newBalance },
-    });
+    await client
+      .update(customer)
+      .set({ balance: newBalance.toString() })
+      .where(eq(customer.id, customerId));
 
-    await db.balance_audit.create({
-      data: {
-        customerId,
-        oldBalance: expectedOld,
-        newBalance,
-        driftAmount: newBalance - expectedOld,
-        source,
-      },
+    await client.insert(balanceAudit).values({
+      id: crypto.randomUUID(),
+      customerId,
+      oldBalance: expectedOld.toString(),
+      newBalance: newBalance.toString(),
+      driftAmount: (newBalance - expectedOld).toString(),
+      source,
     });
   }
 }
@@ -210,35 +208,33 @@ export async function setBalanceIfDifferent(
 /**
  * Get balance breakdown for a customer (used by debtors report).
  */
-export async function getBalanceBreakdown(customerId: string, tx?: PrismaTx) {
-  const db = tx || prisma;
+export async function getBalanceBreakdown(customerId: string, tx?: DbOrTx) {
+  const client = tx ?? db;
 
   const [workOrders, directSales, creditNotes] = await Promise.all([
-    db.work_order.findMany({
-      where: {
-        customerId,
-        status: { notIn: ["CANCELLED"] },
-      },
-      select: {
+    client.query.workOrder.findMany({
+      where: and(eq(workOrder.customerId, customerId), notInArray(workOrder.status, ["CANCELLED"])),
+      columns: {
         id: true,
         total: true,
-        payments: { select: { amount: true } },
+      },
+      with: {
+        payments: { columns: { amount: true } },
       },
     }),
-    db.direct_sale.findMany({
-      where: { customerId },
-      select: {
+    client.query.directSale.findMany({
+      where: eq(directSale.customerId, customerId),
+      columns: {
         id: true,
         total: true,
-        payments: { select: { amount: true } },
+      },
+      with: {
+        directSalePayments: { columns: { amount: true } },
       },
     }),
-    db.credit_note.findMany({
-      where: {
-        customerId,
-        status: { in: ["ISSUED", "ACCOUNT_CREDIT"] },
-      },
-      select: { total: true },
+    client.query.creditNote.findMany({
+      where: and(eq(creditNote.customerId, customerId), inArray(creditNote.status, ["ISSUED", "ACCOUNT_CREDIT"])),
+      columns: { total: true },
     }),
   ]);
 
@@ -253,7 +249,7 @@ export async function getBalanceBreakdown(customerId: string, tx?: PrismaTx) {
 
   const directSaleDebt = directSales.reduce((sum, ds) => {
     const total = decimalToNumber(ds.total);
-    const paid = ds.payments.reduce(
+    const paid = ds.directSalePayments.reduce(
       (s, p) => s + decimalToNumber(p.amount),
       0,
     );
@@ -274,3 +270,4 @@ export async function getBalanceBreakdown(customerId: string, tx?: PrismaTx) {
     directSaleCount: directSales.length,
   };
 }
+

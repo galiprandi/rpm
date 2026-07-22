@@ -5,7 +5,9 @@
  * Spec: /specs/components/product-service-selector.md
  */
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { priceList, product, service, priceListItem } from "@/db/schema";
+import { eq, ilike, or, and, asc, inArray, type SQL } from "drizzle-orm";
 import {
   calculateFinalPrice,
   calculateMarginPercentage,
@@ -56,7 +58,7 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(parseInt(searchParams.get("limit") || "20"), 50);
 
     // Obtener lista de precios seleccionada y todas las listas activas (siempre cacheamos todos los precios)
-    let priceList: {
+    let selectedPriceList: {
       id: string;
       baseMarginPercentage: number;
       roundingRule: RoundingRule;
@@ -67,9 +69,9 @@ export async function GET(request: NextRequest) {
       roundingRule: RoundingRule;
     }> = [];
 
-    const lists = await prisma.price_list.findMany({
-      where: { isActive: true },
-      orderBy: { name: "asc" },
+    const lists = await db.query.priceList.findMany({
+      where: eq(priceList.isActive, true),
+      orderBy: asc(priceList.name),
     });
 
     for (const pl of lists) {
@@ -80,25 +82,26 @@ export async function GET(request: NextRequest) {
       };
       allActivePriceLists.push(listData);
       if (pl.id === priceListId) {
-        priceList = listData;
+        selectedPriceList = listData;
       }
     }
 
-    // Build search conditions for a field
-    function buildFieldConditions(
+    // Build search conditions for a column
+    function buildColumnConditions(
       terms: ReturnType<typeof parseSearchQuery>,
-      field: string,
-    ) {
-      const conditions: unknown[] = [];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      column: any,
+    ): SQL[] {
+      const conditions: SQL[] = [];
 
       // Phrases must be present as exact substrings
       for (const phrase of terms.phrases) {
-        conditions.push({ [field]: { contains: phrase, mode: "insensitive" } });
+        conditions.push(ilike(column, `%${phrase}%`));
       }
 
       // Required terms must be present
       for (const term of terms.required) {
-        conditions.push({ [field]: { contains: term, mode: "insensitive" } });
+        conditions.push(ilike(column, `%${term}%`));
       }
 
       // If we have optional terms, at least one must match (but only if no required/phrases)
@@ -107,19 +110,11 @@ export async function GET(request: NextRequest) {
         terms.required.length === 0 &&
         terms.phrases.length === 0
       ) {
-        conditions.push({
-          OR: terms.optional.map((term) => ({
-            [field]: { contains: term, mode: "insensitive" },
-          })),
-        });
+        conditions.push(or(...terms.optional.map((term) => ilike(column, `%${term}%`)))!);
       } else if (terms.optional.length > 0) {
         // Optional terms when we have required/phrases - they just expand the match
         // but aren't mandatory
-        conditions.push({
-          OR: terms.optional.map((term) => ({
-            [field]: { contains: term, mode: "insensitive" },
-          })),
-        });
+        conditions.push(or(...terms.optional.map((term) => ilike(column, `%${term}%`)))!);
       }
 
       return conditions;
@@ -128,12 +123,12 @@ export async function GET(request: NextRequest) {
     const searchTerms = q ? parseSearchQuery(q) : null;
 
     // Buscar productos
-    const productWhere: Record<string, unknown> = { isActive: true };
+    let productWhere: SQL | undefined = eq(product.isActive, true);
 
     if (searchTerms) {
-      const nameConditions = buildFieldConditions(searchTerms, "name");
-      const skuConditions = buildFieldConditions(searchTerms, "sku");
-      const barcodeConditions = buildFieldConditions(searchTerms, "barcode");
+      const nameConditions = buildColumnConditions(searchTerms, product.name);
+      const skuConditions = buildColumnConditions(searchTerms, product.sku);
+      const barcodeConditions = buildColumnConditions(searchTerms, product.barcode);
 
       // Combine with OR across fields, but each field must satisfy all its conditions
       const allFieldConditions = [
@@ -145,69 +140,66 @@ export async function GET(request: NextRequest) {
       if (allFieldConditions.length > 0) {
         // If we have required terms or phrases, use AND logic
         if (searchTerms.required.length > 0 || searchTerms.phrases.length > 0) {
-          // Group required conditions - all must match
-          const requiredAndPhrases = [
-            ...searchTerms.phrases.map((phrase) => ({
-              OR: [
-                { name: { contains: phrase, mode: "insensitive" } },
-                { sku: { contains: phrase, mode: "insensitive" } },
-                { barcode: { contains: phrase, mode: "insensitive" } },
-              ],
-            })),
-            ...searchTerms.required.map((term) => ({
-              OR: [
-                { name: { contains: term, mode: "insensitive" } },
-                { sku: { contains: term, mode: "insensitive" } },
-                { barcode: { contains: term, mode: "insensitive" } },
-              ],
-            })),
+          // Group required conditions - all must match across any field
+          const requiredAndPhrases: SQL[] = [
+            ...searchTerms.phrases.map((phrase) =>
+              or(
+                ilike(product.name, `%${phrase}%`),
+                ilike(product.sku, `%${phrase}%`),
+                ilike(product.barcode, `%${phrase}%`),
+              )!,
+            ),
+            ...searchTerms.required.map((term) =>
+              or(
+                ilike(product.name, `%${term}%`),
+                ilike(product.sku, `%${term}%`),
+                ilike(product.barcode, `%${term}%`),
+              )!,
+            ),
           ];
 
-          productWhere.AND = requiredAndPhrases;
+          const conditions = [eq(product.isActive, true), ...requiredAndPhrases];
 
           // Optional terms can match in any field (for relevance boost)
           if (searchTerms.optional.length > 0) {
-            productWhere.OR = [
-              {
-                name: {
-                  contains: searchTerms.optional.join(" "),
-                  mode: "insensitive",
-                },
-              },
-              {
-                sku: {
-                  contains: searchTerms.optional.join(" "),
-                  mode: "insensitive",
-                },
-              },
-              {
-                barcode: {
-                  contains: searchTerms.optional.join(" "),
-                  mode: "insensitive",
-                },
-              },
-            ];
+            const optionalStr = searchTerms.optional.join(" ");
+            conditions.push(
+              or(
+                ilike(product.name, `%${optionalStr}%`),
+                ilike(product.sku, `%${optionalStr}%`),
+                ilike(product.barcode, `%${optionalStr}%`),
+              )!,
+            );
           }
+
+          productWhere = and(...conditions);
         } else {
           // Only optional terms - OR logic
-          productWhere.OR = [
-            { name: { contains: q, mode: "insensitive" } },
-            { sku: { contains: q, mode: "insensitive" } },
-            { barcode: { contains: q, mode: "insensitive" } },
-          ];
+          productWhere = and(
+            eq(product.isActive, true),
+            or(
+              ilike(product.name, `%${q}%`),
+              ilike(product.sku, `%${q}%`),
+              ilike(product.barcode, `%${q}%`),
+            ),
+          );
         }
       }
     }
 
     if (categoryId) {
-      productWhere.categoryId = categoryId;
+      productWhere = productWhere
+        ? and(productWhere, eq(product.categoryId, categoryId))
+        : eq(product.categoryId, categoryId);
     }
 
-    const products = await prisma.product.findMany({
+    const products = await db.query.product.findMany({
       where: productWhere,
-      take: limit,
-      orderBy: { name: "asc" },
-      include: { category: true },
+      limit,
+      orderBy: asc(product.name),
+      with: {
+        category: true,
+      },
     });
 
     // Buscar servicios (solo si hay término de búsqueda o si no hay filtro de categoría)
@@ -219,43 +211,46 @@ export async function GET(request: NextRequest) {
     }> = [];
 
     if (!categoryId) {
-      const serviceWhere: Record<string, unknown> = { isActive: true };
+      let serviceWhere: SQL | undefined = eq(service.isActive, true);
 
       if (searchTerms) {
         if (searchTerms.required.length > 0 || searchTerms.phrases.length > 0) {
           // Required/phrases must match in name OR description
-          const requiredConditions = [
-            ...searchTerms.phrases.map((phrase) => ({
-              OR: [
-                { name: { contains: phrase, mode: "insensitive" } },
-                { description: { contains: phrase, mode: "insensitive" } },
-              ],
-            })),
-            ...searchTerms.required.map((term) => ({
-              OR: [
-                { name: { contains: term, mode: "insensitive" } },
-                { description: { contains: term, mode: "insensitive" } },
-              ],
-            })),
+          const requiredConditions: SQL[] = [
+            ...searchTerms.phrases.map((phrase) =>
+              or(
+                ilike(service.name, `%${phrase}%`),
+                ilike(service.description, `%${phrase}%`),
+              )!,
+            ),
+            ...searchTerms.required.map((term) =>
+              or(
+                ilike(service.name, `%${term}%`),
+                ilike(service.description, `%${term}%`),
+              )!,
+            ),
           ];
 
-          serviceWhere.AND = requiredConditions;
+          serviceWhere = and(eq(service.isActive, true), ...requiredConditions);
         } else if (searchTerms.optional.length > 0) {
           // Only optional terms - match in name OR description
-          serviceWhere.OR = [
-            { name: { contains: q, mode: "insensitive" } },
-            { description: { contains: q, mode: "insensitive" } },
-          ];
+          serviceWhere = and(
+            eq(service.isActive, true),
+            or(
+              ilike(service.name, `%${q}%`),
+              ilike(service.description, `%${q}%`),
+            ),
+          );
         }
       }
 
-      const rawServices = await prisma.service.findMany({
+      const rawServices = await db.query.service.findMany({
         where: serviceWhere,
-        take: limit,
-        orderBy: { name: "asc" },
+        limit,
+        orderBy: asc(service.name),
       });
 
-      services = rawServices.map((s: any) => ({
+      services = rawServices.map((s) => ({
         id: s.id,
         name: s.name,
         baseCost: Number(s.baseCost),
@@ -270,12 +265,12 @@ export async function GET(request: NextRequest) {
     > = new Map();
 
     if (priceListId && products.length > 0) {
-      const productIds = products.map((p: any) => p.id);
-      const exceptions = await prisma.price_list_item.findMany({
-        where: {
-          priceListId,
-          productId: { in: productIds },
-        },
+      const productIds = products.map((p) => p.id);
+      const exceptions = await db.query.priceListItem.findMany({
+        where: and(
+          eq(priceListItem.priceListId, priceListId),
+          inArray(priceListItem.productId, productIds),
+        ),
       });
 
       for (const ex of exceptions) {
@@ -301,14 +296,14 @@ export async function GET(request: NextRequest) {
     > = new Map();
 
     if (products.length > 0 && allActivePriceLists.length > 0) {
-      const productIds = products.map((p: any) => p.id);
+      const productIds = products.map((p) => p.id);
       const allListIds = allActivePriceLists.map((pl) => pl.id);
 
-      const exceptions = await prisma.price_list_item.findMany({
-        where: {
-          priceListId: { in: allListIds },
-          productId: { in: productIds },
-        },
+      const exceptions = await db.query.priceListItem.findMany({
+        where: and(
+          inArray(priceListItem.priceListId, allListIds),
+          inArray(priceListItem.productId, productIds),
+        ),
       });
 
       for (const ex of exceptions) {
@@ -400,12 +395,12 @@ export async function GET(request: NextRequest) {
       let finalPrice: number;
       let isBelowMinimum = false;
 
-      if (priceList) {
+      if (selectedPriceList) {
         const exception = priceExceptions.get(product.id);
         const priceInfo = calculateProductPriceForList(
           product,
           baseCost,
-          priceList,
+          selectedPriceList,
           exception,
         );
         finalPrice = priceInfo.finalPrice;

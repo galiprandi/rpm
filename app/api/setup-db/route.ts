@@ -1,17 +1,19 @@
 import { NextResponse } from 'next/server';
 import { withAdmin } from '@/lib/api-middleware';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
+import { sql } from 'drizzle-orm';
 
 export const POST = withAdmin(async () => {
   try {
     // Check if tables exist
-    const tables = await prisma.$queryRaw`
+    const result = await db.execute(sql`
       SELECT table_name 
       FROM information_schema.tables 
       WHERE table_schema = 'public' 
       AND table_name IN ('user', 'account', 'session', 'verification')
-    ` as Array<{ table_name: string }>;
+    `);
 
+    const tables = result.rows as Array<{ table_name: string }>;
     const existingTables = tables.map((t) => t.table_name);
     
     if (existingTables.length === 4) {
@@ -22,14 +24,14 @@ export const POST = withAdmin(async () => {
     }
 
     // Create tables manually
-    await prisma.$executeRaw`
+    await db.execute(sql`
       DROP TABLE IF EXISTS verification CASCADE;
       DROP TABLE IF EXISTS session CASCADE;
       DROP TABLE IF EXISTS account CASCADE;
       DROP TABLE IF EXISTS "user" CASCADE;
-    `;
+    `);
 
-    await prisma.$executeRaw`
+    await db.execute(sql`
       CREATE TABLE "user" (
         id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
@@ -39,13 +41,13 @@ export const POST = withAdmin(async () => {
         "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
-    `;
+    `);
 
-    await prisma.$executeRaw`
+    await db.execute(sql`
       CREATE UNIQUE INDEX "user_email_idx" ON "user"(email);
-    `;
+    `);
 
-    await prisma.$executeRaw`
+    await db.execute(sql`
       CREATE TABLE account (
         id TEXT PRIMARY KEY,
         "accountId" TEXT NOT NULL,
@@ -61,13 +63,13 @@ export const POST = withAdmin(async () => {
         "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
-    `;
+    `);
 
-    await prisma.$executeRaw`
+    await db.execute(sql`
       CREATE INDEX "account_userId_idx" ON account("userId");
-    `;
+    `);
 
-    await prisma.$executeRaw`
+    await db.execute(sql`
       CREATE TABLE session (
         id TEXT PRIMARY KEY,
         "expiresAt" TIMESTAMP NOT NULL,
@@ -78,17 +80,17 @@ export const POST = withAdmin(async () => {
         "userAgent" TEXT,
         "userId" TEXT NOT NULL
       );
-    `;
+    `);
 
-    await prisma.$executeRaw`
+    await db.execute(sql`
       CREATE UNIQUE INDEX "session_token_idx" ON session(token);
-    `;
+    `);
 
-    await prisma.$executeRaw`
+    await db.execute(sql`
       CREATE INDEX "session_userId_idx" ON session("userId");
-    `;
+    `);
 
-    await prisma.$executeRaw`
+    await db.execute(sql`
       CREATE TABLE verification (
         id TEXT PRIMARY KEY,
         identifier TEXT NOT NULL,
@@ -97,32 +99,32 @@ export const POST = withAdmin(async () => {
         "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
-    `;
+    `);
 
-    await prisma.$executeRaw`
+    await db.execute(sql`
       CREATE INDEX "verification_identifier_idx" ON verification(identifier);
-    `;
+    `);
 
     // Add foreign keys
-    await prisma.$executeRaw`
+    await db.execute(sql`
       ALTER TABLE account ADD CONSTRAINT "account_userId_fkey"
       FOREIGN KEY ("userId") REFERENCES "user"(id) ON DELETE CASCADE;
-    `;
+    `);
 
-    await prisma.$executeRaw`
+    await db.execute(sql`
       ALTER TABLE session ADD CONSTRAINT "session_userId_fkey"
       FOREIGN KEY ("userId") REFERENCES "user"(id) ON DELETE CASCADE;
-    `;
+    `);
 
     // Verify tables were created
-    const newTables = await prisma.$queryRaw`
+    const verifyResult = await db.execute(sql`
       SELECT table_name 
       FROM information_schema.tables 
       WHERE table_schema = 'public' 
       AND table_name IN ('user', 'account', 'session', 'verification')
-    `;
+    `);
 
-    const finalTables = newTables as Array<{ table_name: string }>;
+    const finalTables = verifyResult.rows as Array<{ table_name: string }>;
     return NextResponse.json({ 
       message: 'Database setup completed successfully',
       tables: finalTables.map((t) => t.table_name)

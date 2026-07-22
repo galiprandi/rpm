@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSessionWithAuth } from "@/lib/api-middleware";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { customer } from "@/db/schema";
 import { UserRole } from "@/lib/auth/roles";
 import { recalculateCustomerBalance } from "@/lib/services/balanceService";
 
@@ -24,9 +25,9 @@ export async function POST() {
     }
 
     // Get all customers
-    const customers = await prisma.customer.findMany({
-      select: { id: true, name: true, balance: true },
-    });
+    const customers = await db
+      .select({ id: customer.id, name: customer.name, balance: customer.balance })
+      .from(customer);
 
     const results = [];
     let totalDrift = 0;

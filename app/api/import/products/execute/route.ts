@@ -6,7 +6,9 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { withAdmin } from '@/lib/api-middleware';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
+import { product, category } from '@/db/schema';
+import { eq } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import {
   ImportPayloadSchema,
@@ -44,40 +46,40 @@ async function processBatch(
   let skipped = 0;
 
   // Get existing products for duplicate checking
-  const existingProducts = await prisma.product.findMany({
-    select: { id: true, name: true, sku: true },
-  });
-  const existingNames = new Set(existingProducts.map((p: any) => p.name.toLowerCase()));
-  const existingSkus = new Set(existingProducts.map((p: any) => p.sku?.toLowerCase()).filter(Boolean));
+  const existingProducts = await db
+    .select({ id: product.id, name: product.name, sku: product.sku })
+    .from(product);
+  const existingNames = new Set(existingProducts.map((p) => p.name.toLowerCase()));
+  const existingSkus = new Set(existingProducts.map((p) => p.sku?.toLowerCase()).filter(Boolean));
 
   // Process sequentially within batch for transaction safety
   for (let i = 0; i < products.length; i++) {
-    const product = products[i];
+    const item = products[i];
     const globalIndex = startIndex + i;
 
     try {
       // Resolve category ID
-      const finalCategoryId = categoryIdMap.get(product.categoryId);
+      const finalCategoryId = categoryIdMap.get(item.categoryId);
       if (!finalCategoryId) {
         results.push({
           row: globalIndex,
-          name: product.name,
+          name: item.name,
           status: 'error',
-          message: `Categoría no encontrada: ${product.categoryId}`,
+          message: `Categoría no encontrada: ${item.categoryId}`,
         });
         failed++;
         continue;
       }
 
       // Check for duplicates
-      const isDuplicate = existingNames.has(product.name.toLowerCase()) ||
-        (product.sku && existingSkus.has(product.sku.toLowerCase()));
+      const isDuplicate = existingNames.has(item.name.toLowerCase()) ||
+        (item.sku && existingSkus.has(item.sku.toLowerCase()));
 
       if (isDuplicate) {
         if (duplicateAction === 'skip') {
           results.push({
             row: globalIndex,
-            name: product.name,
+            name: item.name,
             status: 'skipped',
             message: 'Producto duplicado (omitido por configuración)',
           });
@@ -86,28 +88,37 @@ async function processBatch(
         } else if (duplicateAction === 'create_with_suffix') {
           // Add suffix to make unique
           const suffix = 2;
-          product.name = `${product.name} (${suffix})`;
-          if (product.sku) {
-            product.sku = `${product.sku}-${suffix}`;
+          item.name = `${item.name} (${suffix})`;
+          if (item.sku) {
+            item.sku = `${item.sku}-${suffix}`;
           }
         }
       }
 
       // Create product
-      const createdProduct = await prisma.product.create({
-        data: {
+      const [createdProduct] = await db
+        .insert(product)
+        .values({
           id: randomUUID(),
-          ...product,
+          name: item.name,
+          sku: item.sku,
+          barcode: item.barcode,
+          description: item.description,
+          costPrice: item.costPrice.toString(),
+          replacementCost: item.replacementCost.toString(),
+          stock: item.stock,
+          minStock: item.minStock,
+          location: item.location,
           categoryId: finalCategoryId,
-          supplierId: product.supplierId || defaultSupplierId || null,
+          supplierId: item.supplierId || defaultSupplierId || null,
           isActive: true,
-          updatedAt: new Date(),
-        },
-      });
+          updatedAt: new Date().toISOString(),
+        })
+        .returning();
 
       results.push({
         row: globalIndex,
-        name: product.name,
+        name: item.name,
         status: 'success',
         message: isDuplicate ? 'Producto creado con sufijo' : 'Producto creado',
         productId: createdProduct.id,
@@ -117,7 +128,7 @@ async function processBatch(
       const message = error instanceof Error ? error.message : 'Error desconocido';
       results.push({
         row: globalIndex,
-        name: product.name,
+        name: item.name,
         status: 'error',
         message: `Error: ${message}`,
       });
@@ -155,20 +166,21 @@ async function createCategories(
         idMap.set(mapping.sourceName, existingId);
       } else {
         try {
-          const newCategory = await prisma.category.create({
-            data: {
+          const [newCategory] = await db
+            .insert(category)
+            .values({
               id: randomUUID(),
               name: mapping.newName,
               description: null,
-              updatedAt: new Date(),
-            },
-          });
+              updatedAt: new Date().toISOString(),
+            })
+            .returning();
           idMap.set(mapping.sourceName, newCategory.id);
           created.push({ id: newCategory.id, name: newCategory.name });
         } catch {
           // If creation failed, try to find existing
-          const existing = await prisma.category.findUnique({
-            where: { name: mapping.newName },
+          const existing = await db.query.category.findFirst({
+            where: eq(category.name, mapping.newName),
           });
           if (existing) {
             idMap.set(mapping.sourceName, existing.id);
@@ -209,9 +221,9 @@ export const POST = withAdmin(async (request: NextRequest, _session) => {
     }
 
     // Get existing categories
-    const existingCategories = await prisma.category.findMany({
-      select: { id: true, name: true },
-    });
+    const existingCategories = await db
+      .select({ id: category.id, name: category.name })
+      .from(category);
 
     // Create/resolve categories first
     const { idMap: categoryIdMap, created: createdCategories } = await createCategories(

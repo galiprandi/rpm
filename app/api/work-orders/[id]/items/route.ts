@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { workOrder, workOrderItem } from "@/db/schema";
+import { eq } from "drizzle-orm";
 import { adjustBalanceAtomically } from "@/lib/services/balanceService";
 
 // PUT /api/work-orders/[id]/items - Update work order items
@@ -13,33 +15,31 @@ export async function PUT(
     const { items } = body;
 
     // Check if work order is delivered
-    const workOrder = await prisma.work_order.findUnique({
-      where: { id },
-      select: { status: true, total: true, customerId: true },
+    const workOrderRecord = await db.query.workOrder.findFirst({
+      where: eq(workOrder.id, id),
+      columns: { status: true, total: true, customerId: true },
     });
 
-    if (!workOrder) {
+    if (!workOrderRecord) {
       return NextResponse.json(
         { error: "Work order not found" },
         { status: 404 },
       );
     }
 
-    if (workOrder.status === "DELIVERED") {
+    if (workOrderRecord.status === "DELIVERED") {
       return NextResponse.json(
         { error: "Cannot modify items of a delivered work order" },
         { status: 403 },
       );
     }
 
-    const oldTotal = Number(workOrder.total);
+    const oldTotal = Number(workOrderRecord.total);
 
     // Delete existing items, update totals, and adjust balance in a transaction
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await db.transaction(async (tx) => {
       // Delete existing items
-      await tx.work_order_item.deleteMany({
-        where: { workOrderId: id },
-      });
+      await tx.delete(workOrderItem).where(eq(workOrderItem.workOrderId, id));
 
       // Create new items
       let totalProducts = 0;
@@ -50,21 +50,19 @@ export async function PUT(
         const isProduct = item.type === "product";
         const subtotal = item.quantity * item.unitPrice;
 
-        await tx.work_order_item.create({
-          data: {
-            id: crypto.randomUUID(),
-            workOrderId: id,
-            type: isProduct ? "PRODUCT" : "SERVICE",
-            productId: isProduct ? item.id : null,
-            serviceId: !isProduct ? item.id : null,
-            name: item.isManualName ? item.name : null,
-            isManualName: item.isManualName || false,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-            subtotal: subtotal,
-            priceListId: item.priceListId,
-            isManualPrice: item.isManualPrice,
-          },
+        await tx.insert(workOrderItem).values({
+          id: crypto.randomUUID(),
+          workOrderId: id,
+          type: isProduct ? "PRODUCT" : "SERVICE",
+          productId: isProduct ? item.id : null,
+          serviceId: !isProduct ? item.id : null,
+          name: item.isManualName ? item.name : null,
+          isManualName: item.isManualName || false,
+          quantity: item.quantity,
+          unitPrice: String(item.unitPrice),
+          subtotal: String(subtotal),
+          priceListId: item.priceListId,
+          isManualPrice: item.isManualPrice,
         });
 
         if (isProduct) {
@@ -76,20 +74,17 @@ export async function PUT(
       }
 
       // Update work order totals
-      await tx.work_order.update({
-        where: { id },
-        data: {
-          totalProducts,
-          totalServices,
-          total,
-        },
-      });
+      await tx.update(workOrder).set({
+        totalProducts: String(totalProducts),
+        totalServices: String(totalServices),
+        total: String(total),
+      }).where(eq(workOrder.id, id));
 
       // Adjust customer balance by the delta
       const delta = total - oldTotal;
       if (Math.abs(delta) > 0.01) {
         await adjustBalanceAtomically(
-          workOrder.customerId,
+          workOrderRecord.customerId,
           delta,
           "work_order_items_update",
           tx,

@@ -1,7 +1,7 @@
 /**
  * Client-side role management system for RPM Accesorios
  * 
- * This file contains only synchronous, client-safe functions that don't use Prisma.
+ * This file contains only synchronous, client-safe functions that don't use Drizzle.
  * For server-side role logic with database access, use roles.ts instead.
  */
 

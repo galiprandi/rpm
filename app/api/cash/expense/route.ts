@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { cashMovement } from "@/db/schema";
 import { UserRole } from "@/lib/auth/roles";
 import { invalidateCashStatus } from "@/lib/cache";
 import { isCashRegisterOpen } from "@/lib/services/cashMovementService";
@@ -65,17 +66,18 @@ export async function POST(request: NextRequest) {
     }
 
     // Create expense movement
-    const expense = await prisma.cash_movement.create({
-      data: {
+    const [expense] = await db
+      .insert(cashMovement)
+      .values({
         type: "EXPENSE",
-        amount,
+        amount: amount.toString(),
         method,
         referenceType: "manual",
         reason,
         notes,
         createdBy: session.user.id,
-      },
-    });
+      })
+      .returning();
 
     // Invalidate cash status cache so next request gets fresh data
     invalidateCashStatus();

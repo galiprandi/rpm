@@ -114,10 +114,10 @@ export const POST = withAdmin(async (request: NextRequest, session) => {
 
       return NextResponse.json(product, { status: 201 });
     } catch (error: unknown) {
-      // Handle Prisma unique constraint errors
-      if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
-        const prismaError = error as { meta?: { target?: string[] } };
-        if (prismaError.meta?.target?.includes('sku')) {
+      // Handle unique constraint violations (PostgreSQL code 23505)
+      if (error && typeof error === 'object' && 'code' in error && error.code === '23505') {
+        const detail = (error as { detail?: string }).detail;
+        if (detail?.includes('sku')) {
           return NextResponse.json(
             { error: 'Ya existe un producto con ese SKU' },
             { status: 409 }

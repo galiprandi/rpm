@@ -17,13 +17,12 @@ export const POST = withStaffDynamic(async (request: NextRequest, { params }: Pa
   if (!productId || quantity === undefined || !unitCost) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
-  const { Decimal } = await import('@prisma/client/runtime/library');
   try {
     const item = await addItemToVoucher({
       voucherId: id,
       productId,
       quantity: parseInt(quantity),
-      unitCost: new Decimal(unitCost),
+      unitCost: Number(unitCost),
       priceListData: priceListData || undefined,
     });
     return NextResponse.json(item, { status: 201 });

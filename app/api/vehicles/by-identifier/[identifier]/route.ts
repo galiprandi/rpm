@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { vehicle } from "@/db/schema";
+import { ilike } from "drizzle-orm";
 
 // GET /api/vehicles/by-identifier/[identifier] - Find vehicle by identifier (patent/serial)
 export async function GET(
@@ -9,27 +11,26 @@ export async function GET(
   try {
     const { identifier } = await params;
 
-    const vehicles = await prisma.vehicle.findMany({
-      where: {
-        identifier: {
-          contains: identifier,
-          mode: "insensitive",
-        },
-      },
-      include: {
+    const vehicles = await db.query.vehicle.findMany({
+      where: ilike(vehicle.identifier, `%${identifier}%`),
+      with: {
         customer: true,
-        vehicle_make: true,
-        vehicle_model: true,
-        _count: {
-          select: {
-            work_order: true,
-          },
-        },
+        vehicleMake: true,
+        vehicleModel: true,
+        workOrders: true,
       },
-      take: 10,
+      limit: 10,
     });
 
-    return NextResponse.json({ vehicles });
+    // Transform to include _count equivalent
+    const vehiclesWithCount = vehicles.map((v) => ({
+      ...v,
+      _count: {
+        work_order: v.workOrders.length,
+      },
+    }));
+
+    return NextResponse.json({ vehicles: vehiclesWithCount });
   } catch (error) {
     console.error("Error searching vehicles by identifier:", error);
     return NextResponse.json(

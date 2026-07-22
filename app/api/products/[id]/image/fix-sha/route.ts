@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
+import { product } from '@/db/schema';
+import { eq } from 'drizzle-orm';
 
 interface Params {
   params: Promise<{ id: string }>;
@@ -11,19 +13,20 @@ export async function POST(request: NextRequest, { params }: Params) {
     const { id } = await params;
 
     // Get current product
-    const product = await prisma.product.findUnique({
-      where: { id },
-      select: { imageUrl: true, imageCommit: true, imageBranch: true },
-    });
+    const productRecord = await db
+      .select({ imageUrl: product.imageUrl, imageCommit: product.imageCommit, imageBranch: product.imageBranch })
+      .from(product)
+      .where(eq(product.id, id))
+      .limit(1);
 
-    if (!product) {
+    if (!productRecord.length) {
       return NextResponse.json(
         { error: 'Producto no encontrado' },
         { status: 404 }
       );
     }
 
-    if (!product.imageUrl) {
+    if (!productRecord[0].imageUrl) {
       return NextResponse.json(
         { error: 'Producto no tiene imagen' },
         { status: 400 }
@@ -33,7 +36,7 @@ export async function POST(request: NextRequest, { params }: Params) {
     // Fetch current file SHA from GitHub
     const [owner, repo] = process.env.PRODUCT_IMAGES_REPO!.split('/');
     const path = `products/${id}.jpeg`;
-    const branch = product.imageBranch || 'main';
+    const branch = productRecord[0].imageBranch || 'main';
 
     const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${branch}`;
 
@@ -56,17 +59,17 @@ export async function POST(request: NextRequest, { params }: Params) {
     const currentSha = data.sha;
 
     // Update product if SHA is different
-    if (currentSha !== product.imageCommit) {
-      await prisma.product.update({
-        where: { id },
-        data: {
+    if (currentSha !== productRecord[0].imageCommit) {
+      await db
+        .update(product)
+        .set({
           imageCommit: currentSha,
-        },
-      });
+        })
+        .where(eq(product.id, id));
 
       return NextResponse.json({
         success: true,
-        oldSha: product.imageCommit,
+        oldSha: productRecord[0].imageCommit,
         newSha: currentSha,
         message: 'SHA actualizado correctamente',
       });

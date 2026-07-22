@@ -1,6 +1,10 @@
-import { prisma } from "@/lib/prisma";
+import { db, type Database } from "@/lib/db";
+import { cashMovement } from "@/db/schema";
+import { eq, and, gte, lte, desc, inArray, type SQL } from "drizzle-orm";
 import { getArgentinaStartOfDay, getArgentinaEndOfDay } from "@/lib/utils/date";
 import { invalidateCashStatus } from "@/lib/cache";
+
+type DbOrTx = Database | Parameters<Parameters<Database["transaction"]>[0]>[0];
 
 export interface CashMovementInput {
   type: "INCOME" | "EXPENSE" | "OPENING" | "CLOSING" | "COUNT";
@@ -21,22 +25,23 @@ export interface CashMovementInput {
 
 export async function createCashMovement(
   data: CashMovementInput,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  tx?: any,
+  tx?: DbOrTx,
 ) {
-  const client = tx || prisma;
-  const result = await client.cash_movement.create({
-    data: {
+  const client = tx ?? db;
+  const [result] = await client
+    .insert(cashMovement)
+    .values({
+      id: crypto.randomUUID(),
       type: data.type,
-      amount: data.amount,
+      amount: data.amount.toString(),
       method: data.method,
       referenceId: data.referenceId,
       referenceType: data.referenceType,
       reason: data.reason,
       notes: data.notes,
       createdBy: data.createdBy,
-    },
-  });
+    })
+    .returning();
 
   // Invalidate cash status cache so the UI always reflects fresh data
   if (!tx) {
@@ -52,21 +57,21 @@ export async function getCashMovements(filters: {
   type?: string;
   method?: string;
 }) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const where: any = {};
+  const conditions: SQL[] = [];
 
   if (filters.startDate || filters.endDate) {
-    where.createdAt = {};
-    if (filters.startDate) where.createdAt.gte = filters.startDate;
-    if (filters.endDate) where.createdAt.lte = filters.endDate;
+    if (filters.startDate) conditions.push(gte(cashMovement.createdAt, filters.startDate.toISOString()));
+    if (filters.endDate) conditions.push(lte(cashMovement.createdAt, filters.endDate.toISOString()));
   }
 
-  if (filters.type) where.type = filters.type;
-  if (filters.method) where.method = filters.method;
+  if (filters.type) conditions.push(eq(cashMovement.type, filters.type));
+  if (filters.method) conditions.push(eq(cashMovement.method, filters.method));
 
-  return prisma.cash_movement.findMany({
+  const where = conditions.length > 0 ? and(...conditions) : undefined;
+
+  return db.query.cashMovement.findMany({
     where,
-    orderBy: { createdAt: "desc" },
+    orderBy: desc(cashMovement.createdAt),
   });
 }
 
@@ -74,13 +79,11 @@ export async function getCashMovementSummary(date: Date) {
   const startOfDay = getArgentinaStartOfDay(date);
   const endOfDay = getArgentinaEndOfDay(date);
 
-  const movements = await prisma.cash_movement.findMany({
-    where: {
-      createdAt: {
-        gte: startOfDay,
-        lte: endOfDay,
-      },
-    },
+  const movements = await db.query.cashMovement.findMany({
+    where: and(
+      gte(cashMovement.createdAt, startOfDay.toISOString()),
+      lte(cashMovement.createdAt, endOfDay.toISOString()),
+    ),
   });
 
   const summary = {
@@ -121,15 +124,9 @@ export async function getCashMovementSummary(date: Date) {
  */
 export async function isCashRegisterOpen(): Promise<boolean> {
   // Find the absolute latest OPENING or CLOSING movement
-  const lastMovement = await prisma.cash_movement.findFirst({
-    where: {
-      type: {
-        in: ["OPENING", "CLOSING"],
-      },
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
+  const lastMovement = await db.query.cashMovement.findFirst({
+    where: inArray(cashMovement.type, ["OPENING", "CLOSING"]),
+    orderBy: desc(cashMovement.createdAt),
   });
 
   // If no opening/closing ever happened, it's closed

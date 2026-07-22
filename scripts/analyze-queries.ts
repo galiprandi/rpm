@@ -24,7 +24,7 @@ function scanFile(filePath: string): void {
   const lines = content.split('\n');
 
   // Pattern 1: N+1 - Query inside loop
-  const loopQueryPattern = /(for|while)\s*\([^)]*\)\s*\{[\s\S]*?prisma\.\w+\.(find|create|update|delete)/;
+  const loopQueryPattern = /(for|while)\s*\([^)]*\)\s*\{[\s\S]*?db\.(select|insert|update|delete|query)/;
   const loopMatch = content.match(loopQueryPattern);
   if (loopMatch && !filePath.includes('.test.')) {
     const lineNum = content.substring(0, loopMatch.index).split('\n').length;
@@ -52,7 +52,7 @@ function scanFile(filePath: string): void {
     }
 
     // Count queries
-    if (line.match(/prisma\.\w+\.(find|create|update|delete|count|aggregate)/)) {
+    if (line.match(/db\.(select|insert|update|delete|query)\b/)) {
       queryCount++;
 
       // Flag if >3 queries in one function
@@ -79,7 +79,7 @@ function scanFile(filePath: string): void {
           type: 'INEFFICIENT',
           severity: 'MEDIUM',
           description: 'findMany followed by loop - may indicate inefficient data processing',
-          suggestion: 'Use Prisma include/select to fetch related data in single query',
+          suggestion: 'Use Drizzle with: relations to fetch related data in single query',
         });
       }
     }
@@ -160,6 +160,6 @@ for (const [file, issues] of sortedFiles) {
 
 console.log('\n---');
 console.log('Next steps:');
-console.log('1. Set PRISMA_PERF_LOG=true in production to track real query counts');
+console.log('1. Set DB_PERF_LOG=true in production to track real query counts');
 console.log('2. Monitor /api/admin/query-stats for live metrics');
 console.log('3. Focus on HIGH priority N+1 patterns first');

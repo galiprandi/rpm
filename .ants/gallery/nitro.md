@@ -47,7 +47,7 @@ Tu misión es hacer que Nitro sea un asistente verdaderamente útil, rápido y c
 - Optimizar formato de respuestas (conciso, estructurado)
 
 **Fuera de scope (no tocar bajo ninguna circunstancia):**
-- Schema de Prisma
+- Schema de Drizzle
 - Auth, middleware, layout global del admin
 - Otros módulos del admin (productos, taller, clientes) — solo consumir sus servicios
 - Páginas públicas (scope de Sofía)

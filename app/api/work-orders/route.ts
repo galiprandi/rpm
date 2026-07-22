@@ -1,5 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import {
+  workOrder,
+  workOrderItem,
+  vehicle,
+  vehicleMake,
+  vehicleModel,
+} from "@/db/schema";
+import { eq, and, desc, count } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { capitalizeText, normalizeText } from "@/lib/utils/format";
 import { adjustBalanceAtomically } from "@/lib/services/balanceService";
@@ -16,67 +24,74 @@ export async function GET(request: NextRequest) {
     const offset = parseInt(searchParams.get("offset") || "0");
 
     // Build where clause
-    const where: Record<string, unknown> = {};
-    if (status) where.status = status;
-    if (customerId) where.customerId = customerId;
-    if (vehicleId) where.vehicleId = vehicleId;
-    if (technicianId) where.technicianId = technicianId;
+    const conditions = [];
+    if (status) conditions.push(eq(workOrder.status, status));
+    if (customerId) conditions.push(eq(workOrder.customerId, customerId));
+    if (vehicleId) conditions.push(eq(workOrder.vehicleId, vehicleId));
+    if (technicianId) conditions.push(eq(workOrder.technicianId, technicianId));
 
-    const workOrders = await prisma.work_order.findMany({
+    const where = conditions.length > 0 ? and(...conditions) : undefined;
+
+    const workOrders = await db.query.workOrder.findMany({
       where,
-      include: {
+      with: {
         customer: {
-          select: {
+          columns: {
             id: true,
             name: true,
             phone: true,
           },
         },
         vehicle: {
-          select: {
+          columns: {
             id: true,
             identifier: true,
             category: true,
-            vehicle_make: {
-              select: {
+          },
+          with: {
+            vehicleMake: {
+              columns: {
                 id: true,
                 name: true,
               },
             },
-            vehicle_model: {
-              select: {
+            vehicleModel: {
+              columns: {
                 id: true,
                 name: true,
               },
             },
           },
         },
-        work_order_item: {
-          include: {
+        workOrderItems: {
+          with: {
             product: true,
             service: true,
           },
         },
         technician: {
-          select: {
+          columns: {
             id: true,
             name: true,
           },
         },
-        photo: true,
+        photos: true,
         payments: {
-          select: {
+          columns: {
             amount: true,
             paymentMethodId: true,
           },
         },
       },
-      orderBy: { createdAt: "desc" },
-      take: limit,
-      skip: offset,
+      orderBy: desc(workOrder.createdAt),
+      limit,
+      offset,
     });
 
-    const total = await prisma.work_order.count({ where });
+    const [{ count: total }] = await db
+      .select({ count: count() })
+      .from(workOrder)
+      .where(where ?? undefined);
 
     // Calculate payment status for each work order
     const workOrdersWithPaymentStatus = workOrders.map((wo) => {
@@ -134,15 +149,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let vehicle;
+    let vehicleRecord: typeof vehicle.$inferSelect | undefined;
 
     // If vehicleId is provided, use existing vehicle
     if (vehicleId) {
-      vehicle = await prisma.vehicle.findUnique({
-        where: { id: vehicleId },
+      vehicleRecord = await db.query.vehicle.findFirst({
+        where: eq(vehicle.id, vehicleId),
       });
 
-      if (!vehicle) {
+      if (!vehicleRecord) {
         return NextResponse.json(
           { error: "Vehicle not found" },
           { status: 404 },
@@ -150,7 +165,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Verify vehicle belongs to customer
-      if (vehicle.customerId !== customerId) {
+      if (vehicleRecord.customerId !== customerId) {
         return NextResponse.json(
           { error: "Vehicle does not belong to customer" },
           { status: 400 },
@@ -185,82 +200,82 @@ export async function POST(request: NextRequest) {
 
       if (isVehicle && makeName) {
         const normalizedMakeName = normalizeText(makeName);
-        let make = await prisma.vehicle_make.findUnique({
-          where: { normalizedName: normalizedMakeName },
+        let make = await db.query.vehicleMake.findFirst({
+          where: eq(vehicleMake.normalizedName, normalizedMakeName),
         });
 
         if (!make) {
-          make = await prisma.vehicle_make.create({
-            data: {
-              id: randomUUID(),
-              name: capitalizeText(makeName),
-              normalizedName: normalizedMakeName,
-              category: [category],
-            },
-          });
+          const [createdMake] = await db.insert(vehicleMake).values({
+            id: randomUUID(),
+            name: capitalizeText(makeName),
+            normalizedName: normalizedMakeName,
+            category: [category],
+          }).returning();
+          make = createdMake;
         }
         makeId = make.id;
 
         // 2. Find or create VehicleModel
         if (modelName) {
           const normalizedModelName = normalizeText(modelName);
-          let model = await prisma.vehicle_model.findFirst({
-            where: {
-              makeId: make.id,
-              normalizedName: normalizedModelName,
-            },
+          let model = await db.query.vehicleModel.findFirst({
+            where: and(
+              eq(vehicleModel.makeId, make.id),
+              eq(vehicleModel.normalizedName, normalizedModelName),
+            ),
           });
 
           if (!model) {
-            model = await prisma.vehicle_model.create({
-              data: {
-                id: randomUUID(),
-                makeId: make.id,
-                name: capitalizeText(modelName),
-                normalizedName: normalizedModelName,
-                years: year ? [year] : [],
-              },
-            });
-          } else if (year && !model.years.includes(year)) {
-            model = await prisma.vehicle_model.update({
-              where: { id: model.id },
-              data: { years: { push: year } },
-            });
+            const [createdModel] = await db.insert(vehicleModel).values({
+              id: randomUUID(),
+              makeId: make.id,
+              name: capitalizeText(modelName),
+              normalizedName: normalizedModelName,
+              years: year ? [year] : [],
+            }).returning();
+            model = createdModel;
+          } else if (year && !(model.years || []).includes(year)) {
+            const [updatedModel] = await db.update(vehicleModel)
+              .set({
+                years: [...(model.years || []), year],
+              })
+              .where(eq(vehicleModel.id, model.id))
+              .returning();
+            model = updatedModel;
           }
           modelId = model.id;
         }
       }
 
       // 3. Find or create Vehicle
-      vehicle = await prisma.vehicle.findFirst({
-        where: {
-          identifier: identifier.toUpperCase(),
-          customerId,
-        },
+      vehicleRecord = await db.query.vehicle.findFirst({
+        where: and(
+          eq(vehicle.identifier, identifier.toUpperCase()),
+          eq(vehicle.customerId, customerId),
+        ),
       });
 
-      if (!vehicle) {
-        vehicle = await prisma.vehicle.create({
-          data: {
-            id: randomUUID(),
-            identifier: identifier.toUpperCase(),
-            category,
-            customerId,
-            makeId: makeId || null,
-            modelId: modelId || null,
-            year: year || null,
-            color: color ? capitalizeText(color) : null,
-            equipmentName: equipmentName || null,
-            equipmentType: equipmentType || null,
-            description: description || null,
-            updatedAt: new Date(),
-          },
-        });
+      if (!vehicleRecord) {
+        const [createdVehicle] = await db.insert(vehicle).values({
+          id: randomUUID(),
+          identifier: identifier.toUpperCase(),
+          category,
+          customerId,
+          makeId: makeId || null,
+          modelId: modelId || null,
+          year: year || null,
+          color: color ? capitalizeText(color) : null,
+          equipmentName: equipmentName || null,
+          equipmentType: equipmentType || null,
+          description: description || null,
+          updatedAt: new Date().toISOString(),
+        }).returning();
+        vehicleRecord = createdVehicle;
       }
     }
 
     // Ensure vehicle was resolved
-    if (!vehicle) {
+    if (!vehicleRecord) {
       return NextResponse.json(
         { error: "Failed to resolve vehicle" },
         { status: 500 },
@@ -271,7 +286,7 @@ export async function POST(request: NextRequest) {
     let totalProducts = 0;
     let totalServices = 0;
 
-    const workOrderItems =
+    const workOrderItemsData =
       items?.map(
         (item: {
           type: string;
@@ -308,7 +323,7 @@ export async function POST(request: NextRequest) {
     // 5. Create WorkOrder
     console.log("Creating WorkOrder with data:", {
       customerId,
-      vehicleId: vehicle.id,
+      vehicleId: vehicleRecord.id,
       technicianId,
       status: scheduledDate ? "CONFIRMED" : "WAITING",
       source,
@@ -322,51 +337,34 @@ export async function POST(request: NextRequest) {
       totalServices,
     });
 
-    const workOrder = await prisma.work_order.create({
-      data: {
-        id: randomUUID(),
-        customerId,
-        vehicleId: vehicle.id,
-        technicianId,
-        status: scheduledDate ? "CONFIRMED" : "WAITING",
-        source,
-        entryChecklist,
-        odometerValue: odometerValue || null,
-        fuelLevel: fuelLevel || null,
-        notes: notes || "",
-        scheduledDate: scheduledDate ? new Date(scheduledDate) : null,
-        total,
-        totalProducts,
-        totalServices,
-        updatedAt: new Date(),
-      },
-      include: {
-        customer: true,
-        vehicle: {
-          include: {
-            vehicle_make: true,
-            vehicle_model: true,
-          },
-        },
-        work_order_item: {
-          include: {
-            product: true,
-            service: true,
-          },
-        },
-      },
-    });
+    const [createdWorkOrder] = await db.insert(workOrder).values({
+      id: randomUUID(),
+      customerId,
+      vehicleId: vehicleRecord.id,
+      technicianId,
+      status: scheduledDate ? "CONFIRMED" : "WAITING",
+      source,
+      entryChecklist,
+      odometerValue: odometerValue || null,
+      fuelLevel: fuelLevel || null,
+      notes: notes || "",
+      scheduledDate: scheduledDate ? new Date(scheduledDate).toISOString() : null,
+      total: String(total),
+      totalProducts: String(totalProducts),
+      totalServices: String(totalServices),
+      updatedAt: new Date().toISOString(),
+    }).returning();
 
-    console.log("WorkOrder created successfully:", workOrder.id);
+    console.log("WorkOrder created successfully:", createdWorkOrder.id);
 
     // 6. Create WorkOrderItems separately
-    if (workOrderItems.length > 0) {
-      console.log("Creating WorkOrderItems:", workOrderItems);
-      console.log("WorkOrder ID:", workOrder.id);
+    if (workOrderItemsData.length > 0) {
+      console.log("Creating WorkOrderItems:", workOrderItemsData);
+      console.log("WorkOrder ID:", createdWorkOrder.id);
 
       try {
-        await prisma.work_order_item.createMany({
-          data: workOrderItems.map(
+        await db.insert(workOrderItem).values(
+          workOrderItemsData.map(
             (item: {
               type: string;
               productId?: string;
@@ -384,12 +382,12 @@ export async function POST(request: NextRequest) {
               name: item.name || null,
               isManualName: item.isManualName || false,
               quantity: item.quantity,
-              unitPrice: item.unitPrice,
-              subtotal: item.subtotal,
-              workOrderId: workOrder.id,
+              unitPrice: String(item.unitPrice),
+              subtotal: String(item.subtotal),
+              workOrderId: createdWorkOrder.id,
             }),
           ),
-        });
+        );
         console.log("WorkOrderItems created successfully");
       } catch (itemError) {
         console.error("Error creating WorkOrderItems:", itemError);
@@ -404,7 +402,27 @@ export async function POST(request: NextRequest) {
       console.error("Error updating customer balance:", balanceError);
     }
 
-    return NextResponse.json(workOrder, { status: 201 });
+    // Fetch with relations
+    const workOrderWithRelations = await db.query.workOrder.findFirst({
+      where: eq(workOrder.id, createdWorkOrder.id),
+      with: {
+        customer: true,
+        vehicle: {
+          with: {
+            vehicleMake: true,
+            vehicleModel: true,
+          },
+        },
+        workOrderItems: {
+          with: {
+            product: true,
+            service: true,
+          },
+        },
+      },
+    });
+
+    return NextResponse.json(workOrderWithRelations, { status: 201 });
   } catch (error) {
     console.error("Error creating work order:", error);
     return NextResponse.json(

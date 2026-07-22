@@ -1,4 +1,15 @@
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import {
+  workOrder,
+  directSale,
+  workOrderItem,
+  directSaleItem,
+  product,
+  service,
+  category,
+  user,
+} from "@/db/schema";
+import { and, inArray, gte, lte, eq, sum } from "drizzle-orm";
 import { ARGENTINA_TIMEZONE } from "@/lib/utils/date";
 
 export type ProfitabilityGroupBy = "hour" | "day" | "month";
@@ -83,64 +94,73 @@ function decimalToNumber(decimal: unknown): number {
  * Gets profitability metrics for a specific period
  */
 async function getProfitabilityPeriodMetrics(start: Date, end: Date) {
+  const saleStatuses = ["DELIVERED", "READY", "PAID"];
+  const startStr = start.toISOString();
+  const endStr = end.toISOString();
   // 1. Revenue
   const [woSales, dsSales] = await Promise.all([
-    prisma.work_order.aggregate({
-      where: {
-        status: { in: ["DELIVERED", "READY", "PAID"] },
-        completedAt: { gte: start, lte: end },
-      },
-      _sum: { total: true },
-    }),
-    prisma.direct_sale.aggregate({
-      where: {
-        createdAt: { gte: start, lte: end },
-      },
-      _sum: { total: true },
-    }),
+    db.select({ totalSum: sum(workOrder.total) }).from(workOrder).where(and(
+      inArray(workOrder.status, saleStatuses),
+      gte(workOrder.completedAt, startStr),
+      lte(workOrder.completedAt, endStr),
+    )),
+    db.select({ totalSum: sum(directSale.total) }).from(directSale).where(and(
+      gte(directSale.createdAt, startStr),
+      lte(directSale.createdAt, endStr),
+    )),
   ]);
 
-  const revenue = decimalToNumber(woSales._sum.total) + decimalToNumber(dsSales._sum.total);
+  const revenue = decimalToNumber(woSales[0]?.totalSum) + decimalToNumber(dsSales[0]?.totalSum);
 
   // 2. Cost (COGS)
   const [woItems, dsItems] = await Promise.all([
-    prisma.work_order_item.findMany({
-      where: {
-        work_order: {
-          status: { in: ["DELIVERED", "READY", "PAID"] },
-          completedAt: { gte: start, lte: end },
-        },
-      },
-      include: {
-        product: { select: { costPrice: true } },
-        service: { select: { baseCost: true } },
-      },
-    }),
-    prisma.direct_sale_item.findMany({
-      where: {
-        directSale: {
-          createdAt: { gte: start, lte: end },
-        },
-      },
-      include: {
-        product: { select: { costPrice: true } },
-        service: { select: { baseCost: true } },
-      },
-    }),
+    db.select({
+      productId: workOrderItem.productId,
+      serviceId: workOrderItem.serviceId,
+      quantity: workOrderItem.quantity,
+      productCostPrice: product.costPrice,
+      serviceBaseCost: service.baseCost,
+    }).from(workOrderItem).innerJoin(
+      workOrder, eq(workOrderItem.workOrderId, workOrder.id),
+    ).leftJoin(
+      product, eq(workOrderItem.productId, product.id),
+    ).leftJoin(
+      service, eq(workOrderItem.serviceId, service.id),
+    ).where(and(
+      inArray(workOrder.status, saleStatuses),
+      gte(workOrder.completedAt, startStr),
+      lte(workOrder.completedAt, endStr),
+    )),
+    db.select({
+      productId: directSaleItem.productId,
+      serviceId: directSaleItem.serviceId,
+      quantity: directSaleItem.quantity,
+      productCostPrice: product.costPrice,
+      serviceBaseCost: service.baseCost,
+    }).from(directSaleItem).innerJoin(
+      directSale, eq(directSaleItem.directSaleId, directSale.id),
+    ).leftJoin(
+      product, eq(directSaleItem.productId, product.id),
+    ).leftJoin(
+      service, eq(directSaleItem.serviceId, service.id),
+    ).where(and(
+      gte(directSale.createdAt, startStr),
+      lte(directSale.createdAt, endStr),
+    )),
   ]);
 
   let totalCost = 0;
   woItems.forEach((item) => {
     const unitCost = item.productId
-      ? decimalToNumber(item.product?.costPrice)
-      : decimalToNumber(item.service?.baseCost);
+      ? decimalToNumber(item.productCostPrice)
+      : decimalToNumber(item.serviceBaseCost);
     totalCost += unitCost * item.quantity;
   });
 
   dsItems.forEach((item) => {
     const unitCost = item.productId
-      ? decimalToNumber(item.product?.costPrice)
-      : decimalToNumber(item.service?.baseCost);
+      ? decimalToNumber(item.productCostPrice)
+      : decimalToNumber(item.serviceBaseCost);
     totalCost += unitCost * item.quantity;
   });
 
@@ -271,32 +291,64 @@ export async function getProfitabilityReport(params: ProfitabilityReportParams):
   }
 
   // 2. Fetch Detailed Items for Distributions and Evolution
+  const saleStatuses = ["DELIVERED", "READY", "PAID"];
+  const startDateStr = startDate.toISOString();
+  const endDateStr = endDate.toISOString();
   const [woItems, dsItems] = await Promise.all([
-    prisma.work_order_item.findMany({
-      where: {
-        work_order: {
-          status: { in: ["DELIVERED", "READY", "PAID"] },
-          completedAt: { gte: startDate, lte: endDate },
-        },
-      },
-      include: {
-        product: { include: { category: true } },
-        service: true,
-        work_order: { include: { technician: true } },
-      },
-    }),
-    prisma.direct_sale_item.findMany({
-      where: {
-        directSale: {
-          createdAt: { gte: startDate, lte: endDate },
-        },
-      },
-      include: {
-        product: { include: { category: true } },
-        service: true,
-        directSale: true,
-      },
-    }),
+    db.select({
+      subtotal: workOrderItem.subtotal,
+      productId: workOrderItem.productId,
+      serviceId: workOrderItem.serviceId,
+      quantity: workOrderItem.quantity,
+      productName: product.name,
+      productCostPrice: product.costPrice,
+      productCategoryId: product.categoryId,
+      categoryName: category.name,
+      serviceName: service.name,
+      serviceBaseCost: service.baseCost,
+      technicianId: workOrder.technicianId,
+      technicianName: user.name,
+      completedAt: workOrder.completedAt,
+    }).from(workOrderItem).innerJoin(
+      workOrder, eq(workOrderItem.workOrderId, workOrder.id),
+    ).leftJoin(
+      product, eq(workOrderItem.productId, product.id),
+    ).leftJoin(
+      category, eq(product.categoryId, category.id),
+    ).leftJoin(
+      service, eq(workOrderItem.serviceId, service.id),
+    ).leftJoin(
+      user, eq(workOrder.technicianId, user.id),
+    ).where(and(
+      inArray(workOrder.status, saleStatuses),
+      gte(workOrder.completedAt, startDateStr),
+      lte(workOrder.completedAt, endDateStr),
+    )),
+    db.select({
+      totalPrice: directSaleItem.totalPrice,
+      productId: directSaleItem.productId,
+      serviceId: directSaleItem.serviceId,
+      quantity: directSaleItem.quantity,
+      itemName: directSaleItem.name,
+      productName: product.name,
+      productCostPrice: product.costPrice,
+      productCategoryId: product.categoryId,
+      categoryName: category.name,
+      serviceName: service.name,
+      serviceBaseCost: service.baseCost,
+      createdAt: directSale.createdAt,
+    }).from(directSaleItem).innerJoin(
+      directSale, eq(directSaleItem.directSaleId, directSale.id),
+    ).leftJoin(
+      product, eq(directSaleItem.productId, product.id),
+    ).leftJoin(
+      category, eq(product.categoryId, category.id),
+    ).leftJoin(
+      service, eq(directSaleItem.serviceId, service.id),
+    ).where(and(
+      gte(directSale.createdAt, startDateStr),
+      lte(directSale.createdAt, endDateStr),
+    )),
   ]);
 
   const buckets = initializeBuckets(startDate, endDate, groupBy);
@@ -355,17 +407,17 @@ export async function getProfitabilityReport(params: ProfitabilityReportParams):
   woItems.forEach((item) => {
     const revenue = decimalToNumber(item.subtotal);
     const unitCost = item.productId
-      ? decimalToNumber(item.product?.costPrice)
-      : decimalToNumber(item.service?.baseCost);
+      ? decimalToNumber(item.productCostPrice)
+      : decimalToNumber(item.serviceBaseCost);
     const cost = unitCost * item.quantity;
 
     const id = item.productId || item.serviceId || "unknown";
-    const name = item.product?.name || item.service?.name || "Desconocido";
-    const categoryId = item.productId ? item.product?.categoryId || "p-uncat" : "services-cat";
-    const categoryName = item.productId ? item.product?.category?.name || "Productos s/cat" : "Servicios";
-    const techId = item.work_order.technicianId;
-    const techName = item.work_order.technician?.name;
-    const date = item.work_order.completedAt || new Date();
+    const name = item.productName || item.serviceName || "Desconocido";
+    const categoryId = item.productId ? item.productCategoryId || "p-uncat" : "services-cat";
+    const categoryName = item.productId ? item.categoryName || "Productos s/cat" : "Servicios";
+    const techId = item.technicianId;
+    const techName = item.technicianName;
+    const date = item.completedAt ? new Date(item.completedAt) : new Date();
 
     processItem(id, name, revenue, cost, item.quantity, categoryId, categoryName, techId, techName, date);
   });
@@ -373,15 +425,15 @@ export async function getProfitabilityReport(params: ProfitabilityReportParams):
   dsItems.forEach((item) => {
     const revenue = decimalToNumber(item.totalPrice);
     const unitCost = item.productId
-      ? decimalToNumber(item.product?.costPrice)
-      : decimalToNumber(item.service?.baseCost);
+      ? decimalToNumber(item.productCostPrice)
+      : decimalToNumber(item.serviceBaseCost);
     const cost = unitCost * item.quantity;
 
     const id = item.productId || item.serviceId || "unknown";
-    const name = item.product?.name || item.service?.name || item.name || "Desconocido";
-    const categoryId = item.productId ? item.product?.categoryId || "p-uncat" : "services-cat";
-    const categoryName = item.productId ? item.product?.category?.name || "Productos s/cat" : "Servicios (Venta Directa)";
-    const date = item.directSale.createdAt;
+    const name = item.productName || item.serviceName || item.itemName || "Desconocido";
+    const categoryId = item.productId ? item.productCategoryId || "p-uncat" : "services-cat";
+    const categoryName = item.productId ? item.categoryName || "Productos s/cat" : "Servicios (Venta Directa)";
+    const date = new Date(item.createdAt);
 
     processItem(id, name, revenue, cost, item.quantity, categoryId, categoryName, null, null, date);
   });
@@ -397,8 +449,8 @@ export async function getProfitabilityReport(params: ProfitabilityReportParams):
   woItems.forEach(item => {
     const rev = decimalToNumber(item.subtotal);
     const id = item.productId || item.serviceId || "unknown";
-    const name = item.product?.name || item.service?.name || "Desconocido";
-    const unitCost = item.productId ? decimalToNumber(item.product?.costPrice) : decimalToNumber(item.service?.baseCost);
+    const name = item.productName || item.serviceName || "Desconocido";
+    const unitCost = item.productId ? decimalToNumber(item.productCostPrice) : decimalToNumber(item.serviceBaseCost);
     const cost = unitCost * item.quantity;
     if (!finalProductMap[id]) finalProductMap[id] = {id, name, revenue: 0, profit: 0, quantity: 0};
     finalProductMap[id].revenue += rev;
@@ -408,8 +460,8 @@ export async function getProfitabilityReport(params: ProfitabilityReportParams):
   dsItems.forEach(item => {
     const rev = decimalToNumber(item.totalPrice);
     const id = item.productId || item.serviceId || "unknown";
-    const name = item.product?.name || item.service?.name || item.name || "Desconocido";
-    const unitCost = item.productId ? decimalToNumber(item.product?.costPrice) : decimalToNumber(item.service?.baseCost);
+    const name = item.productName || item.serviceName || item.itemName || "Desconocido";
+    const unitCost = item.productId ? decimalToNumber(item.productCostPrice) : decimalToNumber(item.serviceBaseCost);
     const cost = unitCost * item.quantity;
     if (!finalProductMap[id]) finalProductMap[id] = {id, name, revenue: 0, profit: 0, quantity: 0};
     finalProductMap[id].revenue += rev;

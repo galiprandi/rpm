@@ -4,7 +4,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
+import { category, product } from '@/db/schema';
 import {
   ProductWithCategorySchema,
   ValidationResultSchema,
@@ -131,14 +132,14 @@ export async function POST(request: NextRequest) {
 
     // Load existing data for duplicate/category detection
     const [existingCategories, existingProducts] = await Promise.all([
-      prisma.category.findMany({ select: { id: true, name: true } }),
-      prisma.product.findMany({
-        select: { id: true, name: true, sku: true, barcode: true },
-      }),
+      db.select({ id: category.id, name: category.name }).from(category),
+      db
+        .select({ id: product.id, name: product.name, sku: product.sku, barcode: product.barcode })
+        .from(product),
     ]);
 
-    const existingNames = new Set(existingProducts.map((p: any) => p.name.toLowerCase()));
-    const existingSkus = new Set(existingProducts.map((p: any) => p.sku?.toLowerCase()).filter(Boolean));
+    const existingNames = new Set(existingProducts.map((p) => p.name.toLowerCase()));
+    const existingSkus = new Set(existingProducts.map((p) => p.sku?.toLowerCase()).filter(Boolean));
 
     // Process rows
     const validProducts: ProductWithCategoryInput[] = [];

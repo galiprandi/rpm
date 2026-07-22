@@ -156,7 +156,7 @@ Si `currentUrl.path` incluye `/products`, Nitro puede responder:
 ### Responsabilidades
 
 1. Recibe `Product[]` + `UserRole`
-2. Filtra campos según rol (SELECT dinámico en Prisma o transformación post-query)
+2. Filtra campos según rol (SELECT dinámico en Drizzle o transformación post-query)
 3. Formatea a Markdown con template definido
 4. Agrega mensaje contextual según cantidad de resultados
 
@@ -246,27 +246,26 @@ describe('productToMarkdown', () => {
 **Problema:** El historial se pierde al reiniciar el servidor.
 
 **Solución requerida:**
-1. Crear tabla `ChatConversations` en Prisma:
-   ```prisma
-   model ChatConversation {
-     id        String   @id @default(cuid())
-     chatId    String   @unique
-     userId    String?
-     createdAt DateTime @default(now())
-     updatedAt DateTime @updatedAt
-     messages  ChatMessage[]
-   }
+1. Crear tabla `ChatConversations` en Drizzle:
+   ```typescript
+   // db/schema/schema.ts
+   export const chatConversations = pgTable('chat_conversation', {
+     id        text('id').primaryKey().$defaultFn(() => cuid()),
+     chatId    text('chat_id').notNull().unique(),
+     userId    text('user_id'),
+     createdAt timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
+     updatedAt timestamp('updated_at', { mode: 'string' }).defaultNow().notNull(),
+   });
 
-   model ChatMessage {
-     id        String   @id @default(cuid())
-     role      String   // "user" | "assistant"
-     content   String
-     conversationId String
-     conversation ChatConversation @relation(fields: [conversationId], references: [id])
-     createdAt DateTime @default(now())
-   }
+   export const chatMessages = pgTable('chat_message', {
+     id             text('id').primaryKey().$defaultFn(() => cuid()),
+     role           text('role').notNull(), // "user" | "assistant"
+     content        text('content').notNull(),
+     conversationId text('conversation_id').notNull(),
+     createdAt      timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
+   });
    ```
 
-2. Implementar `loadChat(id)` y `saveChat({ chatId, messages })` usando Prisma
+2. Implementar `loadChat(id)` y `saveChat({ chatId, messages })` usando Drizzle
 3. Agregar cleanup de conversaciones antiguas (ej: > 30 días)
 

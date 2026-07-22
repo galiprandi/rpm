@@ -1,4 +1,6 @@
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
+import { creditNote } from '@/db/schema';
+import { desc } from 'drizzle-orm';
 import { requireAuth } from '@/lib/auth-server';
 import { UserRole } from '@/lib/auth/roles';
 import CreditNotesClient from './CreditNotesClient';
@@ -14,33 +16,20 @@ export default async function CreditNotesPage() {
     throw new Error('Acceso denegado');
   }
 
-  const creditNotes = await prisma.credit_note.findMany({
-    take: 50,
-    include: {
-      customer: {
-        select: { id: true, name: true, phone: true },
-      },
-      _count: {
-        select: { items: true },
-      },
+  const creditNotes = await db.query.creditNote.findMany({
+    limit: 50,
+    with: {
+      customer: true,
+      creditNoteItems: true,
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy: desc(creditNote.createdAt),
   });
 
-  const decimalToNumber = (decimal: unknown): number => {
-    if (decimal === null || decimal === undefined) return 0;
-    if (typeof decimal === 'number') return decimal;
-    if (typeof decimal === 'object' && 'toNumber' in decimal && typeof (decimal as { toNumber: () => number }).toNumber === 'function') {
-      return (decimal as { toNumber: () => number }).toNumber();
-    }
-    return 0;
-  };
-
-  const creditNotesFormatted = creditNotes.map((cn: typeof creditNotes[number]) => ({
+  const creditNotesFormatted = creditNotes.map((cn) => ({
     ...cn,
-    total: decimalToNumber(cn.total),
-    itemCount: cn._count.items,
-    createdAt: cn.createdAt.toISOString(),
+    total: Number(cn.total),
+    itemCount: cn.creditNoteItems.length,
+    createdAt: new Date(cn.createdAt).toISOString(),
   }));
 
   return <CreditNotesClient initialCreditNotes={creditNotesFormatted} />;

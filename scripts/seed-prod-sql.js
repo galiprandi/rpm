@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Direct SQL Seed for Production Database
- * Bypasses Prisma Client issues
+ * Bypasses ORM Client issues
  */
 
 import { Client } from 'pg';

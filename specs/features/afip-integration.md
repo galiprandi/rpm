@@ -119,7 +119,7 @@ Esta leyenda aparece en:
 
 ### 4.4 Race condition
 
-La numeración debe usar `prisma.$transaction` con `SELECT FOR UPDATE` o un mecanismo de lock para evitar duplicados en envíos concurrentes a AFIP. El sistema debe garantizar que dos comprobantes no obtengan el mismo número.
+La numeración debe usar `db.transaction` con `SELECT FOR UPDATE` o un mecanismo de lock para evitar duplicados en envíos concurrentes a AFIP. El sistema debe garantizar que dos comprobantes no obtengan el mismo número.
 
 ---
 

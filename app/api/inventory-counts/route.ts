@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireRole } from '@/lib/auth-server';
 import { UserRole } from '@/lib/auth/roles';
 import { getSuggestedProductsForCount, createCountOperative } from '@/lib/services/inventoryCountService';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
+import { inventoryCountOperative } from '@/db/schema';
+import { desc } from 'drizzle-orm';
 
 /**
  * GET /api/inventory-counts
@@ -11,9 +13,9 @@ import { prisma } from '@/lib/prisma';
 export async function GET() {
   try {
     await requireRole(UserRole.STAFF);
-    const counts = await prisma.inventory_count_operative.findMany({
-      orderBy: { createdAt: 'desc' },
-      take: 20
+    const counts = await db.query.inventoryCountOperative.findMany({
+      orderBy: desc(inventoryCountOperative.createdAt),
+      limit: 20
     });
     return NextResponse.json(counts);
   } catch (error: any) {

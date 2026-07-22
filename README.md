@@ -64,10 +64,10 @@ Sistema de administración para RPM Accesorios con autenticación Google OAuth y
 │   └── sidebar.tsx       # Sidebar del admin
 ├── lib/                  # Utilidades y configuración
 │   ├── auth-client.ts    # Cliente Better Auth
-│   └── prisma.ts         # Cliente Prisma
-├── prisma/               # Base de datos
-│   ├── schema.prisma     # Schema Prisma
-│   └── migrations/       # Migraciones automáticas
+│   └── db.ts             # Cliente Drizzle ORM
+├── db/                   # Base de datos
+│   ├── schema/           # Schema Drizzle (tablas + relaciones)
+│   └── migrations/       # Migraciones SQL
 ├── specs/                # Especificaciones del sistema
 └── docs/                 # Documentación técnica
 ```
@@ -124,9 +124,9 @@ pnpm db:start
 createdb rpm_dev
 
 # Aplicar migraciones
-npx prisma migrate deploy
+pnpm db:migrate
 
-# Generar cliente Prisma
+# Generar migración nueva (si hay cambios de schema)
 pnpm db:generate
 ```
 
@@ -162,7 +162,7 @@ pnpm start
 
 ### Base de Datos
 
-- **Prisma** como ORM
+- **Drizzle ORM** como ORM
 - **PostgreSQL** como motor
 - **Migraciones automáticas** en deploy
 - **Better Auth adapter** para integración
@@ -190,8 +190,9 @@ git checkout -b feature/nueva-funcionalidad
 
 2. **Desarrollar cambios**
 ```bash
-# Modificar schema si es necesario
-npx prisma migrate dev --name feature
+# Modificar schema si es necesario (db/schema/schema.ts)
+pnpm db:generate
+pnpm db:migrate
 
 # Probar cambios
 pnpm dev
@@ -219,15 +220,16 @@ git push origin feature/nueva-funcionalidad
 
 **Nueva tabla/campo:**
 ```bash
-# 1. Modificar schema.prisma
+# 1. Modificar db/schema/schema.ts
 # 2. Crear migración
-npx prisma migrate dev --name nueva_tabla
+pnpm db:generate
+pnpm db:migrate
 
 # 3. Probar localmente
 pnpm dev
 
 # 4. Commit y push (auto-aplica en producción)
-git add prisma/migrations/
+git add db/migrations/
 git commit -m "feat: add nueva_tabla"
 git push
 ```
@@ -245,7 +247,7 @@ vercel env ls
 ```
 
 **Build process automático:**
-1. `npx prisma migrate deploy` - Aplica migraciones
+1. `npx drizzle-kit migrate` - Aplica migraciones
 2. `next build` - Build aplicación
 3. Deploy - Despliegue automático
 
@@ -309,14 +311,11 @@ RPM_DEV_BYPASS_AUTH=true pnpm dev
 
 **Migraciones fallan:**
 ```bash
-# Revisar estado de migraciones
-npx prisma migrate status
-
 # Aplicar manualmente
-npx prisma migrate deploy
+pnpm db:migrate
 
-# Reset si es necesario
-npx prisma migrate reset --force
+# Verificar schema
+pnpm db:push
 ```
 
 **Build falla:**
@@ -335,8 +334,8 @@ pnpm type-check
 # Ver logs detallados
 DEBUG=* pnpm dev
 
-# Logs de Prisma
-DEBUG=prisma:* pnpm dev
+# Logs de DB (Drizzle)
+DB_PERF_LOG=true pnpm dev
 
 # Logs de Better Auth
 BETTER_AUTH_DEBUG=true pnpm dev

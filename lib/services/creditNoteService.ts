@@ -1,7 +1,9 @@
 /**
  * Credit note service - simplified: operational returns only
  */
-import { prisma } from "@/lib/prisma";
+import { db, type Database } from "@/lib/db";
+import { creditNote, creditNoteItem, directSale, workOrder, product, stockMovement, customer, paymentMethod } from "@/db/schema";
+import { eq, and, gte, lte, desc, type SQL } from "drizzle-orm";
 import { createCashMovement } from "./cashMovementService";
 import { createInvoice, determineInvoiceType } from "./invoiceService";
 import { revalidatePath } from "next/cache";
@@ -12,9 +14,12 @@ import {
 } from "./creditNoteValidationService";
 import { adjustBalanceAtomically } from "./balanceService";
 
+type DbOrTx = Database | Parameters<Parameters<Database["transaction"]>[0]>[0];
+
 function decimalToNumber(decimal: unknown): number {
   if (decimal === null || decimal === undefined) return 0;
   if (typeof decimal === "number") return decimal;
+  if (typeof decimal === "string") return Number(decimal);
   if (
     typeof decimal === "object" &&
     "toNumber" in decimal &&
@@ -25,12 +30,12 @@ function decimalToNumber(decimal: unknown): number {
   return 0;
 }
 
-// Using 'any' for Prisma types because Prisma generates complex types with many fields
+// Using 'any' for Drizzle types to avoid complex inferred types with many fields
 // that don't match simple interfaces. This is acceptable for service logic.
 /* eslint-disable @typescript-eslint/no-explicit-any */
 function getOriginalItems(saleType: "direct_sale" | "work_order", sale: any) {
   if (saleType === "direct_sale") {
-    return sale.items.map((item: any) => ({
+    return sale.directSaleItems.map((item: any) => ({
       id: item.id,
       productId: item.productId ?? undefined,
       serviceId: item.serviceId ?? undefined,
@@ -40,7 +45,7 @@ function getOriginalItems(saleType: "direct_sale" | "work_order", sale: any) {
         item.name || item.product?.name || item.service?.name || "Sin nombre",
     }));
   }
-  return sale.work_order_item.map((item: any) => ({
+  return sale.workOrderItems.map((item: any) => ({
     id: item.id,
     productId: item.productId ?? undefined,
     serviceId: item.serviceId ?? undefined,
@@ -73,13 +78,13 @@ export async function createCreditNote(input: CreateCreditNoteInput) {
   let customerId: string;
 
   if (originalSaleType === "direct_sale") {
-    sale = await prisma.direct_sale.findUnique({
-      where: { id: originalSaleId },
-      include: {
-        items: {
-          include: {
-            product: { select: { name: true } },
-            service: { select: { name: true } },
+    sale = await db.query.directSale.findFirst({
+      where: eq(directSale.id, originalSaleId),
+      with: {
+        directSaleItems: {
+          with: {
+            product: { columns: { name: true } },
+            service: { columns: { name: true } },
           },
         },
         customer: true,
@@ -87,13 +92,13 @@ export async function createCreditNote(input: CreateCreditNoteInput) {
     });
     customerId = sale.customerId;
   } else {
-    sale = await prisma.work_order.findUnique({
-      where: { id: originalSaleId },
-      include: {
-        work_order_item: {
-          include: {
-            product: { select: { name: true } },
-            service: { select: { name: true } },
+    sale = await db.query.workOrder.findFirst({
+      where: eq(workOrder.id, originalSaleId),
+      with: {
+        workOrderItems: {
+          with: {
+            product: { columns: { name: true } },
+            service: { columns: { name: true } },
           },
         },
         customer: true,
@@ -140,29 +145,31 @@ export async function createCreditNote(input: CreateCreditNoteInput) {
   }
 
   // Transaction
-  const result = await prisma.$transaction(async (tx) => {
+  const result = await db.transaction(async (tx) => {
     // Create credit note
-    const creditNote = await tx.credit_note.create({
-      data: {
+    const [createdCreditNote] = await tx
+      .insert(creditNote)
+      .values({
+        id: crypto.randomUUID(),
         originalSaleId,
         originalSaleType,
         customerId,
-        total,
+        total: total.toString(),
         refundMethod,
-        paymentMethodId: refundMethod === "CASH" ? paymentMethodId : null,
+        paymentMethodId: refundMethod === "CASH" ? paymentMethodId || null : null,
         status: "ISSUED",
         notes,
         createdBy,
-      },
-    });
+      })
+      .returning();
 
     // --- Generate Pre-Invoice (Credit Note) ---
     try {
-      const customer = await tx.customer.findUnique({
-        where: { id: customerId },
-        select: { billingData: true, name: true },
+      const foundCustomer = await tx.query.customer.findFirst({
+        where: eq(customer.id, customerId),
+        columns: { billingData: true, name: true },
       });
-      const billingData = customer?.billingData;
+      const billingData = foundCustomer?.billingData;
 
       let customerDoc: string | undefined = undefined;
       let customerDocType: string | undefined = undefined;
@@ -182,10 +189,10 @@ export async function createCreditNote(input: CreateCreditNoteInput) {
       await createInvoice(
         {
           type: invoiceType,
-          referenceId: creditNote.id,
+          referenceId: createdCreditNote.id,
           referenceType: "credit_note",
           customerId,
-          customerName: customer?.name || "Cliente",
+          customerName: foundCustomer?.name || "Cliente",
           customerDoc,
           customerDocType,
           subtotal: Number(total),
@@ -204,53 +211,50 @@ export async function createCreditNote(input: CreateCreditNoteInput) {
 
     // Create items and update stock
     for (const item of creditNoteItems) {
-      await tx.credit_note_item.create({
-        data: {
-          creditNoteId: creditNote.id,
-          productId: item.productId || null,
-          serviceId: item.serviceId || null,
-          name: item.name,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          totalPrice: item.totalPrice,
-        },
+      await tx.insert(creditNoteItem).values({
+        id: crypto.randomUUID(),
+        creditNoteId: createdCreditNote.id,
+        productId: item.productId || null,
+        serviceId: item.serviceId || null,
+        name: item.name,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice.toString(),
+        totalPrice: item.totalPrice.toString(),
       });
 
       if (item.productId) {
-        const product = await tx.product.findUnique({
-          where: { id: item.productId },
-          select: { stock: true },
+        const foundProduct = await tx.query.product.findFirst({
+          where: eq(product.id, item.productId),
+          columns: { stock: true },
         });
-        if (!product) throw new Error(`Producto no encontrado: ${item.name}`);
+        if (!foundProduct) throw new Error(`Producto no encontrado: ${item.name}`);
 
-        const previousStock = product.stock;
+        const previousStock = foundProduct.stock;
         const newStock = previousStock + item.quantity;
 
         console.log(
           `[CreditNote] Updating stock for product ${item.productId}: ${previousStock} -> ${newStock} (+${item.quantity})`,
         );
 
-        await tx.product.update({
-          where: { id: item.productId },
-          data: { stock: newStock, lastMovementAt: new Date() },
-        });
+        await tx
+          .update(product)
+          .set({ stock: newStock, lastMovementAt: new Date().toISOString() })
+          .where(eq(product.id, item.productId));
 
-        await tx.stock_movement.create({
-          data: {
-            id: crypto.randomUUID(),
-            productId: item.productId,
-            quantity: item.quantity,
-            type: "IN",
-            previousStock,
-            newStock,
-            reason: `Devolucion NC #${creditNote.id}`,
-            reasonDetails: notes,
-            userName: createdBy,
-          },
+        await tx.insert(stockMovement).values({
+          id: crypto.randomUUID(),
+          productId: item.productId,
+          quantity: item.quantity,
+          type: "IN",
+          previousStock,
+          newStock,
+          reason: `Devolucion NC #${createdCreditNote.id}`,
+          reasonDetails: notes,
+          userName: createdBy,
         });
 
         console.log(
-          `[CreditNote] Stock movement created for NC ${creditNote.id}`,
+          `[CreditNote] Stock movement created for NC ${createdCreditNote.id}`,
         );
       }
     }
@@ -262,9 +266,9 @@ export async function createCreditNote(input: CreateCreditNoteInput) {
           type: "EXPENSE",
           amount: total,
           method: paymentMethodCode || "CASH",
-          referenceId: creditNote.id,
+          referenceId: createdCreditNote.id,
           referenceType: "credit_note_refund",
-          reason: `Reintegro NC #${creditNote.id}`,
+          reason: `Reintegro NC #${createdCreditNote.id}`,
           notes,
           createdBy,
         },
@@ -277,7 +281,7 @@ export async function createCreditNote(input: CreateCreditNoteInput) {
       await adjustBalanceAtomically(customerId, -total, "credit_note", tx);
     }
 
-    return creditNote;
+    return createdCreditNote;
   });
 
   // Invalidate dashboard cache to show fresh data
@@ -294,34 +298,37 @@ export async function getCreditNotes(filters: {
   startDate?: Date;
   endDate?: Date;
 }) {
-  const where: Record<string, unknown> = {};
-  if (filters.customerId) where.customerId = filters.customerId;
-  if (filters.originalSaleId) where.originalSaleId = filters.originalSaleId;
-  if (filters.status) where.status = filters.status;
-  if (filters.startDate || filters.endDate) {
-    where.createdAt = {};
-    if (filters.startDate)
-      (where.createdAt as Record<string, unknown>).gte = filters.startDate;
-    if (filters.endDate)
-      (where.createdAt as Record<string, unknown>).lte = filters.endDate;
-  }
+  const conditions: SQL[] = [];
+  if (filters.customerId) conditions.push(eq(creditNote.customerId, filters.customerId));
+  if (filters.originalSaleId) conditions.push(eq(creditNote.originalSaleId, filters.originalSaleId));
+  if (filters.status) conditions.push(eq(creditNote.status, filters.status));
+  if (filters.startDate) conditions.push(gte(creditNote.createdAt, filters.startDate.toISOString()));
+  if (filters.endDate) conditions.push(lte(creditNote.createdAt, filters.endDate.toISOString()));
 
-  return prisma.credit_note.findMany({
+  const where = conditions.length > 0 ? and(...conditions) : undefined;
+
+  const notes = await db.query.creditNote.findMany({
     where,
-    include: {
-      customer: { select: { id: true, name: true, phone: true } },
-      _count: { select: { items: true } },
+    with: {
+      customer: { columns: { id: true, name: true, phone: true } },
+      creditNoteItems: { columns: { id: true } },
     },
-    orderBy: { createdAt: "desc" },
+    orderBy: desc(creditNote.createdAt),
   });
+
+  // Compute item counts manually (Drizzle has no built-in _count)
+  return notes.map((note) => ({
+    ...note,
+    _count: { items: note.creditNoteItems.length },
+  }));
 }
 
 export async function getCreditNoteById(id: string) {
-  return prisma.credit_note.findUnique({
-    where: { id },
-    include: {
+  return db.query.creditNote.findFirst({
+    where: eq(creditNote.id, id),
+    with: {
       customer: {
-        select: {
+        columns: {
           id: true,
           name: true,
           phone: true,
@@ -329,66 +336,67 @@ export async function getCreditNoteById(id: string) {
           balance: true,
         },
       },
-      items: {
-        include: {
-          product: { select: { id: true, name: true } },
-          service: { select: { id: true, name: true } },
+      creditNoteItems: {
+        with: {
+          product: { columns: { id: true, name: true } },
+          service: { columns: { id: true, name: true } },
         },
       },
-      paymentMethod: { select: { id: true, name: true, code: true } },
+      paymentMethod: { columns: { id: true, name: true, code: true } },
     },
   });
 }
 
 export async function cancelCreditNote(id: string, reason?: string) {
-  return prisma.$transaction(async (tx) => {
-    const creditNote = await tx.credit_note.findUnique({
-      where: { id },
-      include: { items: true, paymentMethod: { select: { code: true } } },
+  const result = await db.transaction(async (tx) => {
+    const foundCreditNote = await tx.query.creditNote.findFirst({
+      where: eq(creditNote.id, id),
+      with: {
+        creditNoteItems: true,
+        paymentMethod: { columns: { code: true } },
+      },
     });
 
-    if (!creditNote) throw new Error("Nota de credito no encontrada");
-    if (creditNote.status === "CANCELLED")
+    if (!foundCreditNote) throw new Error("Nota de credito no encontrada");
+    if (foundCreditNote.status === "CANCELLED")
       throw new Error("La nota de credito ya esta cancelada");
 
     // Reverse stock
-    for (const item of creditNote.items) {
+    for (const item of foundCreditNote.creditNoteItems) {
       if (item.productId) {
-        const product = await tx.product.findUnique({
-          where: { id: item.productId },
-          select: { stock: true },
+        const foundProduct = await tx.query.product.findFirst({
+          where: eq(product.id, item.productId),
+          columns: { stock: true },
         });
-        if (product) {
-          const previousStock = product.stock;
+        if (foundProduct) {
+          const previousStock = foundProduct.stock;
           const newStock = previousStock - item.quantity;
-          await tx.product.update({
-            where: { id: item.productId },
-            data: { stock: newStock, lastMovementAt: new Date() },
-          });
-          await tx.stock_movement.create({
-            data: {
-              id: crypto.randomUUID(),
-              productId: item.productId,
-              quantity: -item.quantity,
-              type: "OUT",
-              previousStock,
-              newStock,
-              reason: `Cancelacion NC #${id}`,
-              reasonDetails: reason,
-              userName: "system",
-            },
+          await tx
+            .update(product)
+            .set({ stock: newStock, lastMovementAt: new Date().toISOString() })
+            .where(eq(product.id, item.productId));
+          await tx.insert(stockMovement).values({
+            id: crypto.randomUUID(),
+            productId: item.productId,
+            quantity: -item.quantity,
+            type: "OUT",
+            previousStock,
+            newStock,
+            reason: `Cancelacion NC #${id}`,
+            reasonDetails: reason,
+            userName: "system",
           });
         }
       }
     }
 
     // Reverse cash movement if CASH
-    if (creditNote.refundMethod === "CASH" && creditNote.paymentMethodId) {
+    if (foundCreditNote.refundMethod === "CASH" && foundCreditNote.paymentMethodId) {
       await createCashMovement(
         {
           type: "INCOME",
-          amount: Number(creditNote.total),
-          method: creditNote.paymentMethod?.code || "CASH",
+          amount: Number(foundCreditNote.total),
+          method: foundCreditNote.paymentMethod?.code || "CASH",
           referenceId: id,
           referenceType: "credit_note_cancelled",
           reason: `Cancelacion NC #${id}`,
@@ -400,22 +408,24 @@ export async function cancelCreditNote(id: string, reason?: string) {
     }
 
     // Reverse customer balance if ACCOUNT_CREDIT
-    if (creditNote.refundMethod === "ACCOUNT_CREDIT") {
+    if (foundCreditNote.refundMethod === "ACCOUNT_CREDIT") {
       await adjustBalanceAtomically(
-        creditNote.customerId,
-        Number(creditNote.total),
+        foundCreditNote.customerId,
+        Number(foundCreditNote.total),
         "credit_note_cancel",
         tx,
       );
     }
 
-    const updated = await tx.credit_note.update({
-      where: { id },
-      data: { status: "CANCELLED" },
-    });
+    const [updated] = await tx
+      .update(creditNote)
+      .set({ status: "CANCELLED" })
+      .where(eq(creditNote.id, id))
+      .returning();
 
     return updated;
   });
 
   invalidateCashStatus();
+  return result;
 }

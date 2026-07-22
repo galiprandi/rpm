@@ -15,23 +15,17 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 // Mock functions factory
 const mockFns = vi.hoisted(() => ({
-  findUnique: vi.fn(),
+  findFirst: vi.fn(),
   findMany: vi.fn(),
 }));
 
-vi.mock('@/lib/prisma', () => ({
-  prisma: {
-    direct_sale: {
-      findUnique: mockFns.findUnique,
-    },
-    work_order: {
-      findUnique: mockFns.findUnique,
-    },
-    payment_method: {
-      findUnique: mockFns.findUnique,
-    },
-    credit_note: {
-      findMany: mockFns.findMany,
+vi.mock('@/lib/db', () => ({
+  db: {
+    query: {
+      directSale: { findFirst: mockFns.findFirst },
+      workOrder: { findFirst: mockFns.findFirst },
+      paymentMethod: { findFirst: mockFns.findFirst },
+      creditNote: { findMany: mockFns.findMany },
     },
   },
 }));
@@ -216,11 +210,11 @@ describe('CreditNoteValidationService', () => {
       const mockSale = {
         id: 'sale-123',
         customerId: 'customer-1',
-        items: [],
+        directSaleItems: [],
         customer: { id: 'customer-1', name: 'Test Customer' },
       };
 
-      mockFns.findUnique.mockResolvedValue(mockSale);
+      mockFns.findFirst.mockResolvedValue(mockSale);
 
       const result = await validateOriginalSaleExists('sale-123', 'direct_sale');
 
@@ -233,11 +227,11 @@ describe('CreditNoteValidationService', () => {
       const mockSale = {
         id: 'wo-123',
         customerId: 'customer-1',
-        work_order_item: [],
+        workOrderItems: [],
         customer: { id: 'customer-1', name: 'Test Customer' },
       };
 
-      mockFns.findUnique.mockResolvedValue(mockSale);
+      mockFns.findFirst.mockResolvedValue(mockSale);
 
       const result = await validateOriginalSaleExists('wo-123', 'work_order');
 
@@ -247,7 +241,7 @@ describe('CreditNoteValidationService', () => {
     });
 
     it('should return not found for non-existent direct sale', async () => {
-      mockFns.findUnique.mockResolvedValue(null);
+      mockFns.findFirst.mockResolvedValue(null);
 
       const result = await validateOriginalSaleExists('nonexistent', 'direct_sale');
 
@@ -257,7 +251,7 @@ describe('CreditNoteValidationService', () => {
     });
 
     it('should return not found for non-existent work order', async () => {
-      mockFns.findUnique.mockResolvedValue(null);
+      mockFns.findFirst.mockResolvedValue(null);
 
       const result = await validateOriginalSaleExists('nonexistent', 'work_order');
 
@@ -296,7 +290,7 @@ describe('CreditNoteValidationService', () => {
     });
 
     it('should reject non-existent payment method', async () => {
-      mockFns.findUnique.mockResolvedValue(null);
+      mockFns.findFirst.mockResolvedValue(null);
 
       const result = await validatePaymentMethodForCash('nonexistent');
 
@@ -305,7 +299,7 @@ describe('CreditNoteValidationService', () => {
     });
 
     it('should accept valid payment method', async () => {
-      mockFns.findUnique.mockResolvedValue({ id: 'payment-1', code: 'EFECTIVO' });
+      mockFns.findFirst.mockResolvedValue({ id: 'payment-1', code: 'EFECTIVO' });
 
       const result = await validatePaymentMethodForCash('payment-1');
 
@@ -318,7 +312,7 @@ describe('CreditNoteValidationService', () => {
     const mockDirectSale = {
       id: 'sale-123',
       customerId: 'customer-1',
-      items: [
+      directSaleItems: [
         { id: 'item-1', productId: 'product-1', serviceId: null, quantity: 5, name: 'Product 1' },
         { id: 'item-2', productId: 'product-2', serviceId: null, quantity: 3, name: 'Product 2' },
       ],
@@ -327,7 +321,7 @@ describe('CreditNoteValidationService', () => {
     const mockWorkOrder = {
       id: 'wo-123',
       customerId: 'customer-1',
-      work_order_item: [
+      workOrderItems: [
         { id: 'item-1', productId: 'product-1', serviceId: null, quantity: 5, product: { name: 'Product 1' } },
         { id: 'item-2', productId: 'product-2', serviceId: null, quantity: 3, product: { name: 'Product 2' } },
       ],
@@ -370,7 +364,7 @@ describe('CreditNoteValidationService', () => {
       const mockSaleWithServices = {
         id: 'sale-123',
         customerId: 'customer-1',
-        items: [
+        directSaleItems: [
           { id: 'item-1', productId: null, serviceId: 'service-1', quantity: 2, name: 'Service 1' },
         ],
       };
@@ -398,14 +392,14 @@ describe('CreditNoteValidationService', () => {
       const mockCreditNotes = [
         {
           id: 'cn-1',
-          items: [
+          creditNoteItems: [
             { productId: 'product-1', serviceId: null, id: 'item-1', quantity: 2 },
             { productId: 'product-2', serviceId: null, id: 'item-2', quantity: 1 },
           ],
         },
         {
           id: 'cn-2',
-          items: [
+          creditNoteItems: [
             { productId: 'product-1', serviceId: null, id: 'item-3', quantity: 1 },
           ],
         },
@@ -423,7 +417,7 @@ describe('CreditNoteValidationService', () => {
       const mockCreditNotes = [
         {
           id: 'cn-1',
-          items: [
+          creditNoteItems: [
             { productId: null, serviceId: 'service-1', id: 'item-1', quantity: 2 },
           ],
         },
@@ -440,7 +434,7 @@ describe('CreditNoteValidationService', () => {
       const mockCreditNotes = [
         {
           id: 'cn-1',
-          items: [
+          creditNoteItems: [
             { productId: null, serviceId: null, id: 'item-1', quantity: 2 },
           ],
         },
@@ -457,7 +451,7 @@ describe('CreditNoteValidationService', () => {
   describe('validateReturnQuantities', () => {
     const mockSale = {
       id: 'sale-123',
-      items: [
+      directSaleItems: [
         { id: 'item-1', productId: 'product-1', serviceId: null, quantity: 5, name: 'Product 1' },
         { id: 'item-2', productId: 'product-2', serviceId: null, quantity: 3, name: 'Product 2' },
       ],
@@ -505,7 +499,7 @@ describe('CreditNoteValidationService', () => {
       const mockCreditNotes = [
         {
           id: 'cn-1',
-          items: [
+          creditNoteItems: [
             { productId: 'product-1', serviceId: null, id: 'item-1', quantity: 3 },
           ],
         },
@@ -540,7 +534,7 @@ describe('CreditNoteValidationService', () => {
     it('should work with work order items', async () => {
       const mockWorkOrder = {
         id: 'wo-123',
-        work_order_item: [
+        workOrderItems: [
           { id: 'item-1', productId: 'product-1', serviceId: null, quantity: 5, product: { name: 'Product 1' } },
         ],
       };
@@ -569,13 +563,13 @@ describe('CreditNoteValidationService', () => {
     const mockSale = {
       id: 'sale-123',
       customerId: 'customer-1',
-      items: [
+      directSaleItems: [
         { id: 'item-1', productId: 'product-1', serviceId: null, quantity: 5, name: 'Product 1' },
       ],
     };
 
     it('should validate ACCOUNT_CREDIT credit note successfully', async () => {
-      mockFns.findUnique.mockResolvedValue(mockSale);
+      mockFns.findFirst.mockResolvedValue(mockSale);
       mockFns.findMany.mockResolvedValue([]);
 
       const result = await validateCreditNoteCreation(validInput);
@@ -585,7 +579,7 @@ describe('CreditNoteValidationService', () => {
 
     it('should validate CASH credit note successfully', async () => {
       vi.mocked(isCashRegisterOpen).mockResolvedValue(true);
-      mockFns.findUnique.mockResolvedValue(mockSale);
+      mockFns.findFirst.mockResolvedValue(mockSale);
       mockFns.findMany.mockResolvedValue([]);
 
       const cashInput: CreateCreditNoteInput = {
@@ -615,7 +609,7 @@ describe('CreditNoteValidationService', () => {
     });
 
     it('should fail when original sale not found', async () => {
-      mockFns.findUnique.mockResolvedValue(null);
+      mockFns.findFirst.mockResolvedValue(null);
 
       const result = await validateCreditNoteCreation(validInput);
 
@@ -624,7 +618,7 @@ describe('CreditNoteValidationService', () => {
     });
 
     it('should fail when item not in original sale', async () => {
-      mockFns.findUnique.mockResolvedValue(mockSale);
+      mockFns.findFirst.mockResolvedValue(mockSale);
       mockFns.findMany.mockResolvedValue([]);
 
       const invalidItemsInput: CreateCreditNoteInput = {
@@ -639,7 +633,7 @@ describe('CreditNoteValidationService', () => {
     });
 
     it('should fail when returning more than sold', async () => {
-      mockFns.findUnique.mockResolvedValue(mockSale);
+      mockFns.findFirst.mockResolvedValue(mockSale);
       mockFns.findMany.mockResolvedValue([]);
 
       const invalidQuantityInput: CreateCreditNoteInput = {
@@ -655,7 +649,7 @@ describe('CreditNoteValidationService', () => {
 
     it('should fail when cash register is closed for CASH refund', async () => {
       vi.mocked(isCashRegisterOpen).mockResolvedValue(false);
-      mockFns.findUnique.mockResolvedValue(mockSale);
+      mockFns.findFirst.mockResolvedValue(mockSale);
       mockFns.findMany.mockResolvedValue([]);
 
       const cashInput: CreateCreditNoteInput = {
@@ -672,7 +666,7 @@ describe('CreditNoteValidationService', () => {
 
     it('should fail when payment method not found for CASH refund', async () => {
       vi.mocked(isCashRegisterOpen).mockResolvedValue(true);
-      mockFns.findUnique.mockResolvedValueOnce(mockSale).mockResolvedValueOnce(null);
+      mockFns.findFirst.mockResolvedValueOnce(mockSale).mockResolvedValueOnce(null);
       mockFns.findMany.mockResolvedValue([]);
 
       const cashInput: CreateCreditNoteInput = {
@@ -691,12 +685,12 @@ describe('CreditNoteValidationService', () => {
       const mockWorkOrder = {
         id: 'wo-123',
         customerId: 'customer-1',
-        work_order_item: [
+        workOrderItems: [
           { id: 'item-1', productId: 'product-1', serviceId: null, quantity: 5, product: { name: 'Product 1' } },
         ],
       };
 
-      mockFns.findUnique.mockResolvedValue(mockWorkOrder);
+      mockFns.findFirst.mockResolvedValue(mockWorkOrder);
       mockFns.findMany.mockResolvedValue([]);
 
       const workOrderInput: CreateCreditNoteInput = {

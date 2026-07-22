@@ -24,8 +24,8 @@ export const searchCustomersTool = tool({
         let line = `- [ID: ${c.id}] ${c.name}`;
         if (c.phone) line += ` | Tel: ${c.phone}`;
         if (c.email) line += ` | Email: ${c.email}`;
-        if (c.vehicle && c.vehicle.length > 0) {
-          const vehicles = c.vehicle
+        if (c.vehicles && c.vehicles.length > 0) {
+          const vehicles = c.vehicles
             .map((v: { identifier: string; category: string }) => `${v.identifier} (${v.category})`)
             .join(', ');
           line += `\n  Vehículos: ${vehicles}`;

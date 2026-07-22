@@ -2,12 +2,13 @@ import { tool } from "ai";
 import { z } from "zod";
 import { readFileSync } from "fs";
 import { join } from "path";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { supplier, paymentMethod, product } from "@/db/schema";
+import { eq, and, ilike, asc } from "drizzle-orm";
 import {
   createDraftVoucher,
   addItemToVoucher,
 } from "@/lib/services/purchaseVoucherService";
-import { Decimal } from "@prisma/client/runtime/library";
 import { extractDocumentData } from "@/lib/agents/utils/extract-document";
 
 const invoiceSchema = z.object({
@@ -70,18 +71,17 @@ export const processPurchaseInvoiceTool = tool({
       );
 
       // Search for supplier by name (fuzzy match)
-      const supplier = await prisma.supplier.findFirst({
-        where: {
-          name: { contains: extracted.supplierName, mode: "insensitive" },
-          isActive: true,
-        },
+      const supplierRecord = await db.query.supplier.findFirst({
+        where: and(
+          ilike(supplier.name, `%${extracted.supplierName}%`),
+          eq(supplier.isActive, true),
+        ),
       });
 
-      if (!supplier) {
-        const allSuppliers = await prisma.supplier.findMany({
-          where: { isActive: true },
-          select: { id: true, name: true },
-          orderBy: { name: "asc" },
+      if (!supplierRecord) {
+        const allSuppliers = await db.query.supplier.findMany({
+          where: eq(supplier.isActive, true),
+          orderBy: asc(supplier.name),
         });
         return `No se encontró un proveedor con el nombre "${extracted.supplierName}".\n\nProveedores disponibles:\n${allSuppliers.map((s) => `- ${s.name}`).join("\n")}\n\nDecile al usuario cuál es el proveedor correcto y volvé a intentarlo.`;
       }
@@ -89,22 +89,22 @@ export const processPurchaseInvoiceTool = tool({
       // Resolve payment method if provided
       let paymentMethodId: string | null = null;
       if (extracted.paymentMethod) {
-        const pm = await prisma.payment_method.findFirst({
-          where: {
-            name: { contains: extracted.paymentMethod, mode: "insensitive" },
-            isActive: true,
-          },
+        const pm = await db.query.paymentMethod.findFirst({
+          where: and(
+            ilike(paymentMethod.name, `%${extracted.paymentMethod}%`),
+            eq(paymentMethod.isActive, true),
+          ),
         });
         if (pm) paymentMethodId = pm.id;
       }
 
       // Create draft voucher
       const voucher = await createDraftVoucher({
-        supplierId: supplier.id,
+        supplierId: supplierRecord.id,
         letter: extracted.invoiceType,
         number: extracted.invoiceNumber,
         date: new Date(extracted.invoiceDate),
-        totalAmount: new Decimal(extracted.totalAmount),
+        totalAmount: extracted.totalAmount,
         paymentMethodId,
         createdBy,
       });
@@ -113,23 +113,22 @@ export const processPurchaseInvoiceTool = tool({
       const itemsResults: string[] = [];
       for (const item of extracted.items) {
         // Try to find product by name (fuzzy)
-        const product = await prisma.product.findFirst({
-          where: {
-            name: { contains: item.productName, mode: "insensitive" },
-            isActive: true,
-          },
-          select: { id: true, name: true },
+        const productRecord = await db.query.product.findFirst({
+          where: and(
+            ilike(product.name, `%${item.productName}%`),
+            eq(product.isActive, true),
+          ),
         });
 
-        if (product) {
+        if (productRecord) {
           await addItemToVoucher({
             voucherId: voucher.id,
-            productId: product.id,
+            productId: productRecord.id,
             quantity: item.quantity,
-            unitCost: new Decimal(item.unitCost),
+            unitCost: item.unitCost,
           });
           itemsResults.push(
-            `✅ ${item.productName} → match: "${product.name}" (x${item.quantity} @ $${item.unitCost})`,
+            `✅ ${item.productName} → match: "${productRecord.name}" (x${item.quantity} @ $${item.unitCost})`,
           );
         } else {
           itemsResults.push(
@@ -141,7 +140,7 @@ export const processPurchaseInvoiceTool = tool({
       // Build summary for user
       const summary = `📋 **Borrador de comprobante creado** (ID: ${voucher.id.slice(0, 8)})
 
-**Proveedor:** ${supplier.name}
+**Proveedor:** ${supplierRecord.name}
 **Factura:** ${extracted.invoiceType} ${extracted.invoiceNumber}
 **Fecha:** ${extracted.invoiceDate}
 **Total:** $${extracted.totalAmount.toLocaleString("es-AR")}

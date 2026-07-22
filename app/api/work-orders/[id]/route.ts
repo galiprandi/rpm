@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { workOrder } from "@/db/schema";
+import { eq } from "drizzle-orm";
 import { updateWorkOrder } from "@/lib/services/workOrderService";
 import { getSessionWithAuth } from "@/lib/api-middleware";
 import { adjustBalanceAtomically } from "@/lib/services/balanceService";
@@ -13,40 +15,40 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const workOrder = await prisma.work_order.findUnique({
-      where: { id },
-      include: {
+    const workOrderRecord = await db.query.workOrder.findFirst({
+      where: eq(workOrder.id, id),
+      with: {
         customer: true,
         vehicle: {
-          include: {
-            vehicle_make: true,
-            vehicle_model: true,
+          with: {
+            vehicleMake: true,
+            vehicleModel: true,
           },
         },
-        work_order_item: {
-          include: {
+        workOrderItems: {
+          with: {
             product: true,
             service: true,
           },
         },
         technician: {
-          select: {
+          columns: {
             id: true,
             name: true,
           },
         },
-        photo: true,
+        photos: true,
       },
     });
 
-    if (!workOrder) {
+    if (!workOrderRecord) {
       return NextResponse.json(
         { error: "Work order not found" },
         { status: 404 },
       );
     }
 
-    return NextResponse.json(workOrder);
+    return NextResponse.json(workOrderRecord);
   } catch (error) {
     console.error("Error fetching work order:", error);
     return NextResponse.json(
@@ -71,14 +73,14 @@ export async function PUT(
       undefined;
     const userAgent = request.headers.get("user-agent") || undefined;
 
-    const workOrder = await updateWorkOrder(id, body, {
+    const workOrderResult = await updateWorkOrder(id, body, {
       userId: session?.user.id || "system",
       userEmail: session?.user.email || "system",
       ipAddress,
       userAgent,
     });
 
-    return NextResponse.json(workOrder);
+    return NextResponse.json(workOrderResult);
   } catch (error) {
     console.error("Error updating work order:", error);
     return NextResponse.json(
@@ -102,17 +104,21 @@ export async function DELETE(
     const { id } = await params;
 
     // Fetch WO to calculate balance reversal (total - payments already made)
-    const workOrder = await prisma.work_order.findUnique({
-      where: { id },
-      select: {
+    const workOrderRecord = await db.query.workOrder.findFirst({
+      where: eq(workOrder.id, id),
+      columns: {
         customerId: true,
         total: true,
         status: true,
-        payments: { select: { amount: true } },
+      },
+      with: {
+        payments: {
+          columns: { amount: true },
+        },
       },
     });
 
-    if (!workOrder) {
+    if (!workOrderRecord) {
       return NextResponse.json(
         { error: "Work order not found" },
         { status: 404 },
@@ -120,9 +126,9 @@ export async function DELETE(
     }
 
     // Only reverse balance for non-CANCELLED work orders
-    if (workOrder.status !== "CANCELLED") {
-      const total = Number(workOrder.total);
-      const paymentsMade = workOrder.payments.reduce(
+    if (workOrderRecord.status !== "CANCELLED") {
+      const total = Number(workOrderRecord.total);
+      const paymentsMade = workOrderRecord.payments.reduce(
         (sum, p) => sum + Number(p.amount),
         0,
       );
@@ -130,16 +136,14 @@ export async function DELETE(
 
       if (Math.abs(reversal) > 0.01) {
         await adjustBalanceAtomically(
-          workOrder.customerId,
+          workOrderRecord.customerId,
           -reversal,
           "work_order_delete",
         );
       }
     }
 
-    await prisma.work_order.delete({
-      where: { id },
-    });
+    await db.delete(workOrder).where(eq(workOrder.id, id));
 
     return NextResponse.json({ success: true });
   } catch (error) {

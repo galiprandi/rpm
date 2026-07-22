@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide covers database migrations for RPM Accesorios using Prisma Migrate. Migrations are automatically applied during deployment to ensure the database schema is always up to date.
+This guide covers database migrations for RPM Accesorios using Drizzle Kit. Migrations are automatically applied during deployment to ensure the database schema is always up to date.
 
 ## Migration Strategy
 
@@ -12,24 +12,24 @@ This guide covers database migrations for RPM Accesorios using Prisma Migrate. M
 ```json
 {
   "scripts": {
-    "build": "npx prisma migrate deploy && next build"
+    "build": "pnpm db:migrate && next build"
   }
 }
 ```
 
 **Deployment Flow:**
 1. **Code pushed** → Vercel triggers build
-2. **Prisma migrate deploy** → Applies pending migrations
+2. **Drizzle migrate** → Applies pending migrations
 3. **Next build** → Builds application
 4. **Deploy** → Application deployed with updated schema
 
 ### Migration Files
 
-**Location:** `prisma/migrations/`
+**Location:** `db/migrations/`
 
 **Structure:**
 ```
-prisma/migrations/
+db/migrations/
 ├── 001_init_auth_tables/
 │   └── migration.sql
 ├── 002_add_products/
@@ -42,45 +42,45 @@ prisma/migrations/
 ### Creating New Migrations
 
 **1. Modify Schema:**
-```prisma
-// prisma/schema.prisma
-model Product {
-  id          String   @id @default(cuid())
-  name        String
-  price       Decimal
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
+```typescript
+// db/schema/schema.ts
+export const product = pgTable('product', {
+  id: text('id').primaryKey().$defaultFn(() => cuid()),
+  name: text('name').notNull(),
+  price: decimal('price', { precision: 65, scale: 30 }).notNull(),
+  createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'string' }).defaultNow().notNull(),
+});
 ```
 
 **2. Generate Migration:**
 ```bash
-npx prisma migrate dev --name add_products
+pnpm db:generate && pnpm db:migrate
 ```
 
 **3. Review Generated SQL:**
 ```sql
--- prisma/migrations/002_add_products/migration.sql
-CREATE TABLE "Product" (
+-- db/migrations/002_add_products/migration.sql
+CREATE TABLE "product" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "price" DECIMAL(65,30) NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "Product_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "product_pkey" PRIMARY KEY ("id")
 );
 ```
 
 **4. Test Locally:**
 ```bash
-npx prisma migrate dev
+pnpm db:generate && pnpm db:migrate
 npm run dev
 ```
 
 **5. Commit and Deploy:**
 ```bash
-git add prisma/migrations/002_add_products/
+git add db/migrations/002_add_products/
 git commit -m "feat: add products table"
 git push origin main
 ```
@@ -93,7 +93,7 @@ Migrations are automatically applied during the Vercel build process:
 
 ```bash
 # Vercel build command
-npx prisma migrate deploy && next build
+pnpm db:migrate && next build
 ```
 
 **Benefits:**
@@ -106,12 +106,12 @@ npx prisma migrate deploy && next build
 
 **Check applied migrations:**
 ```bash
-npx prisma migrate status
+pnpm db:migrate
 ```
 
 **Apply migrations manually:**
 ```bash
-npx prisma migrate deploy
+pnpm db:migrate
 ```
 
 ## Current Migrations
@@ -126,62 +126,56 @@ npx prisma migrate deploy
 - `session` - User sessions with tokens
 - `verification` - Email verification tokens
 
-**SQL Location:** `prisma/migrations/001_init_auth_tables/migration.sql`
+**SQL Location:** `db/migrations/001_init_auth_tables/migration.sql`
 
 **Schema Integration:**
-```prisma
-model User {
-  id            String    @id
-  name          String
-  email         String    @unique
-  emailVerified Boolean   @default(false)
-  image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  
-  accounts      Account[]
-  sessions      Session[]
-}
+```typescript
+// db/schema/schema.ts
+export const user = pgTable('user', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  email: text('email').notNull().unique(),
+  emailVerified: boolean('email_verified').default(false).notNull(),
+  image: text('image'),
+  createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'string' }).defaultNow().notNull(),
+});
 
-model Account {
-  id                     String  @id
-  userId                 String
-  providerId             String
-  accountId              String
-  accessToken            String?
-  refreshToken           String?
-  idToken                String?
-  accessTokenExpiresAt   DateTime?
-  refreshTokenExpiresAt  DateTime?
-  scope                  String?
-  password               String?
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
+export const account = pgTable('account', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull(),
+  providerId: text('provider_id').notNull(),
+  accountId: text('account_id').notNull(),
+  accessToken: text('access_token'),
+  refreshToken: text('refresh_token'),
+  idToken: text('id_token'),
+  accessTokenExpiresAt: timestamp('access_token_expires_at', { mode: 'string' }),
+  refreshTokenExpiresAt: timestamp('refresh_token_expires_at', { mode: 'string' }),
+  scope: text('scope'),
+  password: text('password'),
+  createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'string' }).defaultNow().notNull(),
+});
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
+export const session = pgTable('session', {
+  id: text('id').primaryKey(),
+  token: text('token').notNull().unique(),
+  userId: text('user_id').notNull(),
+  expiresAt: timestamp('expires_at', { mode: 'string' }).notNull(),
+  ipAddress: text('ip_address'),
+  userAgent: text('user_agent'),
+  createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'string' }).defaultNow().notNull(),
+});
 
-model Session {
-  id        String   @id
-  token     String   @unique
-  userId    String
-  expiresAt DateTime
-  ipAddress String?
-  userAgent String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model Verification {
-  id         String   @id
-  identifier String
-  value      String
-  expiresAt  DateTime
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-}
+export const verification = pgTable('verification', {
+  id: text('id').primaryKey(),
+  identifier: text('identifier').notNull(),
+  value: text('value').notNull(),
+  expiresAt: timestamp('expires_at', { mode: 'string' }).notNull(),
+  createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'string' }).defaultNow().notNull(),
+});
 ```
 
 ## Best Practices
@@ -190,46 +184,45 @@ model Verification {
 
 **Use descriptive names:**
 ```bash
-✅ npx prisma migrate dev --name add_user_profile
-✅ npx prisma migrate dev --name create_orders_table
-❌ npx prisma migrate dev --name migration1
-❌ npx prisma migrate dev --name stuff
+✅ pnpm db:generate && pnpm db:migrate  # add_user_profile
+✅ pnpm db:generate && pnpm db:migrate  # create_orders_table
+❌ pnpm db:generate && pnpm db:migrate  # migration1
+❌ pnpm db:generate && pnpm db:migrate  # stuff
 ```
 
 ### Schema Changes
 
 **Additive changes:**
-```prisma
+```typescript
+// db/schema/schema.ts
 // ✅ Safe - Add new optional field
-model User {
-  // ... existing fields
-  bio String? // New optional field
-}
+export const user = pgTable('user', {
+  // ... existing columns
+  bio: text('bio'), // New optional field
+});
 ```
 
 **Breaking changes:**
-```prisma
+```typescript
+// db/schema/schema.ts
 // ⚠️  Requires careful planning
-model User {
-  // ... existing fields
-  email String @unique // Adding unique constraint
-}
+export const user = pgTable('user', {
+  // ... existing columns
+  email: text('email').notNull().unique(), // Adding unique constraint
+});
 ```
 
 ### Testing
 
 **Always test locally:**
 ```bash
-# 1. Reset database
-npx prisma migrate reset
+# 1. Apply all migrations
+pnpm db:generate && pnpm db:migrate
 
-# 2. Apply all migrations
-npx prisma migrate dev
+# 2. Verify schema
+pnpm db:push
 
-# 3. Verify schema
-npx prisma db pull
-
-# 4. Test application
+# 3. Test application
 npm run dev
 ```
 
@@ -242,20 +235,17 @@ npm run dev
 Error: Migration `001_init_auth_tables` has already been applied
 ```
 
-**Solution:** Mark as applied
-```bash
-npx prisma migrate resolve --applied 001_init_auth_tables
-```
+**Solution:** Drizzle tracks applied migrations in the `__drizzle_migrations` table. Remove the offending entry if needed, or re-run `pnpm db:migrate`.
 
 **Table already exists:**
 ```bash
 Error: relation "user" already exists
 ```
 
-**Solution:** Reset and reapply
+**Solution:** Review migration state and reapply
 ```bash
-npx prisma migrate reset --force
-npx prisma migrate dev
+# Review pending migrations
+pnpm db:migrate
 ```
 
 **Build failure:**
@@ -266,10 +256,10 @@ Error: Migration SQL syntax error
 **Solution:** Review and fix migration SQL
 ```bash
 # Edit migration file manually
-vim prisma/migrations/001_init_auth_tables/migration.sql
+vim db/migrations/001_init_auth_tables/migration.sql
 
 # Test locally
-npx prisma migrate deploy
+pnpm db:migrate
 ```
 
 ### Production Issues
@@ -277,22 +267,19 @@ npx prisma migrate deploy
 **Migration stuck:**
 ```bash
 # Check migration status
-npx prisma migrate status
+pnpm db:migrate
 
 # Apply manually if needed
-npx prisma migrate deploy
+pnpm db:migrate
 ```
 
 **Schema drift:**
 ```bash
-# Pull current schema
-npx prisma db pull
-
-# Compare with expected schema
-npx prisma diff
+# Push current schema directly
+pnpm db:push
 
 # Create patch migration if needed
-npx prisma migrate dev --name patch_schema
+pnpm db:generate && pnpm db:migrate
 ```
 
 ## Environment Variables
@@ -302,9 +289,6 @@ npx prisma migrate dev --name patch_schema
 ```bash
 # Database connection
 DATABASE_URL="postgresql://user:password@host:port/database"
-
-# Prisma configuration
-PRISMA_GENERATE_DATAPROXY="true"
 ```
 
 ### Vercel Environment
@@ -324,26 +308,22 @@ DATABASE_URL="postgresql://localhost:5432/rpm_dev"
 
 1. **Create schema migration:**
 ```bash
-npx prisma migrate dev --name add_new_field
+pnpm db:generate && pnpm db:migrate
 ```
 
 2. **Create data migration script:**
 ```typescript
 // scripts/migrate-user-data.ts
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { db } from '../lib/db';
+import { user } from '../db/schema/schema';
 
 async function migrateUserData() {
-  const users = await prisma.user.findMany();
-  
-  for (const user of users) {
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        // Transform data
-      }
-    });
+  const users = await db.select().from(user);
+
+  for (const u of users) {
+    await db.update(user).set({
+      // Transform data
+    }).where(eq(user.id, u.id));
   }
 }
 
@@ -357,22 +337,22 @@ npx tsx scripts/migrate-user-data.ts
 
 ### Rollback Strategy
 
-**Prisma doesn't support automatic rollbacks:**
+**Drizzle doesn't support automatic rollbacks:**
 
 1. **Create reverse migration:**
 ```bash
-npx prisma migrate dev --name remove_products
+pnpm db:generate && pnpm db:migrate
 ```
 
 2. **Manual rollback:**
 ```sql
 -- In rollback migration
-DROP TABLE IF EXISTS "Product";
+DROP TABLE IF EXISTS "product";
 ```
 
 3. **Apply rollback:**
 ```bash
-npx prisma migrate deploy
+pnpm db:migrate
 ```
 
 ## Monitoring
@@ -382,7 +362,7 @@ npx prisma migrate deploy
 **Track migration time:**
 ```bash
 # Add timing to build
-time npx prisma migrate deploy
+time pnpm db:migrate
 ```
 
 **Monitor database size:**

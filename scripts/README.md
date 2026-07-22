@@ -43,7 +43,7 @@ pnpm run deploy
 
 **What it does**:
 1. Build del proyecto
-2. Genera Prisma client
+2. Genera Drizzle client
 3. Deploy a Vercel
 4. Valida health check de producción
 5. Muestra resultados
@@ -93,13 +93,13 @@ pnpm run db:health:prod
 ## 🚨 Important Notes
 
 ### Environment Variables
-- Los scripts usan URLs hardcodeadas de Prisma Postgres
+- Los scripts usan URLs hardcodeadas de PostgreSQL
 - Si cambias la base de datos, actualiza los scripts
 - Las variables se encriptan automáticamente en Vercel
 
-### Prisma Client
+### Drizzle Client
 - Siempre genera el client después de cambios en el schema
-- Usa `pnpm run db:generate` o `npx prisma generate`
+- Usa `pnpm run db:generate` o `npx drizzle-kit generate`
 - El client se genera en `./generated/`
 
 ### Health Checks
@@ -123,7 +123,7 @@ vercel env ls
 # Verificar build local
 pnpm run build
 
-# Verificar Prisma client
+# Verificar Drizzle client
 pnpm run db:generate
 
 # Re-deploy
@@ -146,14 +146,14 @@ pnpm run deploy
 - [Database Setup Guide](../docs/database-setup.md)
 - [Database Quick Reference](../docs/database-quick-reference.md)
 - [Database Specification](../specs/database.md)
-- [Prisma Documentation](https://www.prisma.io/docs)
+- [Drizzle ORM Documentation](https://orm.drizzle.team/docs/overview)
 
 ## 🛠️ Script Requirements
 
 ### Dependencies
 - Vercel CLI (`vercel`)
 - Docker & Docker Compose
-- Prisma CLI (`npx prisma`)
+- Drizzle Kit (`npx drizzle-kit`)
 - pnpm
 
 ### Permissions
@@ -163,4 +163,4 @@ pnpm run deploy
 ### Environment
 - Node.js 24+
 - PostgreSQL 15 (Docker)
-- Prisma v7
+- Drizzle ORM

@@ -4,7 +4,9 @@
  * Spec: /specs/spec-product-images.md
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
+import { product } from '@/db/schema';
+import { eq } from 'drizzle-orm';
 import { promisify } from 'util';
 import { exec } from 'child_process';
 import { revalidatePath } from 'next/cache';
@@ -297,15 +299,15 @@ export async function POST(request: NextRequest, { params }: Params) {
     console.log('Image uploaded to GitHub:', { imageUrl, commitSha });
 
     // Update product in database
-    await prisma.product.update({
-      where: { id },
-      data: {
+    await db
+      .update(product)
+      .set({
         imageUrl,
         imageCommit: commitSha,
         imageBranch: config.branch,
-      },
-    });
-    console.log('Product updated in database:', { id, imageUrl, imageCommit: commitSha });
+      })
+      .where(eq(product.id, id));
+    console.log('Product updated in database:', { id, imageUrl, commitSha });
 
     // Revalidate cache
     revalidatePath('/adm/products');
@@ -337,19 +339,20 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     const config = validateEnv();
 
     // Get product to check if it has an image
-    const product = await prisma.product.findUnique({
-      where: { id },
-      select: { imageUrl: true, imageCommit: true, imageBranch: true },
-    });
+    const productRecord = await db
+      .select({ imageUrl: product.imageUrl, imageCommit: product.imageCommit, imageBranch: product.imageBranch })
+      .from(product)
+      .where(eq(product.id, id))
+      .limit(1);
 
-    if (!product) {
+    if (!productRecord.length) {
       return NextResponse.json(
         { error: 'Producto no encontrado' },
         { status: 404 }
       );
     }
 
-    if (!product.imageUrl || !product.imageCommit || !product.imageBranch) {
+    if (!productRecord[0].imageUrl || !productRecord[0].imageCommit || !productRecord[0].imageBranch) {
       return NextResponse.json(
         { error: 'Producto no tiene imagen' },
         { status: 400 }
@@ -357,17 +360,17 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     }
 
     // Delete from GitHub (use the branch from database)
-    const { deletedCommit } = await deleteFromGitHub(id, config, product.imageBranch);
+    const { deletedCommit } = await deleteFromGitHub(id, config, productRecord[0].imageBranch);
 
     // Update product in database
-    await prisma.product.update({
-      where: { id },
-      data: {
+    await db
+      .update(product)
+      .set({
         imageUrl: null,
         imageCommit: null,
         imageBranch: null,
-      },
-    });
+      })
+      .where(eq(product.id, id));
 
     // Revalidate cache
     revalidatePath('/adm/products');
@@ -392,12 +395,13 @@ export async function GET(request: NextRequest, { params }: Params) {
     const { id } = await params;
 
     // Get product
-    const product = await prisma.product.findUnique({
-      where: { id },
-      select: { imageUrl: true },
-    });
+    const productRecord = await db
+      .select({ imageUrl: product.imageUrl })
+      .from(product)
+      .where(eq(product.id, id))
+      .limit(1);
 
-    if (!product) {
+    if (!productRecord.length) {
       return NextResponse.json(
         { error: 'Producto no encontrado' },
         { status: 404 }
@@ -405,8 +409,8 @@ export async function GET(request: NextRequest, { params }: Params) {
     }
 
     // If product has image, redirect to jsDelivr
-    if (product.imageUrl) {
-      return NextResponse.redirect(product.imageUrl, 307);
+    if (productRecord[0].imageUrl) {
+      return NextResponse.redirect(productRecord[0].imageUrl, 307);
     }
 
     // Fallback: Generate SVG placeholder

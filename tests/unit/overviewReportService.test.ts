@@ -1,32 +1,34 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { getOverviewReport } from '../../lib/services/overviewReportService';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
 
-vi.mock('@/lib/prisma', () => ({
-  prisma: {
-    work_order: {
-      aggregate: vi.fn(),
-      count: vi.fn(),
-    },
-    direct_sale: {
-      aggregate: vi.fn(),
-    },
-    work_order_item: {
-      findMany: vi.fn(),
-    },
-    direct_sale_item: {
-      findMany: vi.fn(),
-    },
-    customer: {
-      count: vi.fn(),
-    },
-    product: {
-      findMany: vi.fn(),
-      count: vi.fn(),
-      fields: {
-        minStock: 'minStock',
+// Helper to create a chainable that resolves to a specific value
+const { createChainable } = vi.hoisted(() => {
+  function createChainable(resolveValue: unknown = []): any {
+    const target = () => {};
+    return new Proxy(target, {
+      get(_t: any, prop: string) {
+        if (prop === 'then') {
+          return (resolve: any, reject: any) =>
+            Promise.resolve(resolveValue).then(resolve, reject);
+        }
+        if (prop === 'catch') {
+          return (onRejected: any) =>
+            Promise.resolve(resolveValue).catch(onRejected);
+        }
+        return vi.fn(() => createChainable(resolveValue));
       },
-    },
+      apply() {
+        return createChainable(resolveValue);
+      },
+    });
+  }
+  return { createChainable };
+});
+
+vi.mock('@/lib/db', () => ({
+  db: {
+    select: vi.fn(() => createChainable()),
   },
 }));
 
@@ -36,57 +38,77 @@ describe('overviewReportService', () => {
   });
 
   it('should correctly calculate current and previous period metrics and stock status', async () => {
-    // 1. Mock aggregations for current period (aggregate of work_order and direct_sale)
-    vi.mocked(prisma.work_order.aggregate)
-      .mockResolvedValueOnce({ _sum: { total: 5000 } } as any) // current work order total
-      .mockResolvedValueOnce({ _sum: { total: 2500 } } as any); // previous work order total
+    // Current period metrics (6 db.select calls in order):
+    // 1. WO revenue: db.select({ totalSum: sum(workOrder.total) }).from(workOrder).where(...)
+    vi.mocked(db.select).mockReturnValueOnce(
+      createChainable([{ totalSum: 5000 }]) as any,
+    );
+    // 2. DS revenue: db.select({ totalSum: sum(directSale.total) }).from(directSale).where(...)
+    vi.mocked(db.select).mockReturnValueOnce(
+      createChainable([{ totalSum: 1500 }]) as any,
+    );
+    // 3. WO items for cost: db.select({...}).from(workOrderItem).innerJoin().leftJoin().where(...)
+    vi.mocked(db.select).mockReturnValueOnce(
+      createChainable([
+        { productId: 'p1', quantity: 2, productCostPrice: 1000, serviceBaseCost: null },
+        { productId: null, quantity: 1, productCostPrice: null, serviceBaseCost: 500 },
+      ]) as any,
+    );
+    // 4. DS items for cost: db.select({...}).from(directSaleItem).innerJoin().leftJoin().where(...)
+    vi.mocked(db.select).mockReturnValueOnce(
+      createChainable([
+        { productId: 'p2', quantity: 3, productCostPrice: 500, serviceBaseCost: null },
+      ]) as any,
+    );
+    // 5. Completed orders count: db.select({ count: count(workOrder.id) }).from(workOrder).where(...)
+    vi.mocked(db.select).mockReturnValueOnce(
+      createChainable([{ count: 10 }]) as any,
+    );
+    // 6. New customers count: db.select({ count: count(customer.id) }).from(customer).where(...)
+    vi.mocked(db.select).mockReturnValueOnce(
+      createChainable([{ count: 4 }]) as any,
+    );
 
-    vi.mocked(prisma.direct_sale.aggregate)
-      .mockResolvedValueOnce({ _sum: { total: 1500 } } as any) // current direct sale total
-      .mockResolvedValueOnce({ _sum: { total: 500 } } as any); // previous direct sale total
+    // Previous period metrics (6 db.select calls in same order):
+    // 7. WO revenue (previous)
+    vi.mocked(db.select).mockReturnValueOnce(
+      createChainable([{ totalSum: 2500 }]) as any,
+    );
+    // 8. DS revenue (previous)
+    vi.mocked(db.select).mockReturnValueOnce(
+      createChainable([{ totalSum: 500 }]) as any,
+    );
+    // 9. WO items (previous)
+    vi.mocked(db.select).mockReturnValueOnce(
+      createChainable([
+        { productId: 'p1', quantity: 1, productCostPrice: 1000, serviceBaseCost: null },
+      ]) as any,
+    );
+    // 10. DS items (previous)
+    vi.mocked(db.select).mockReturnValueOnce(
+      createChainable([]) as any,
+    );
+    // 11. Completed orders (previous)
+    vi.mocked(db.select).mockReturnValueOnce(
+      createChainable([{ count: 5 }]) as any,
+    );
+    // 12. New customers (previous)
+    vi.mocked(db.select).mockReturnValueOnce(
+      createChainable([{ count: 2 }]) as any,
+    );
 
-    // 2. Mock item lists for cost calculations (current vs previous)
-    vi.mocked(prisma.work_order_item.findMany)
-      .mockResolvedValueOnce([
-        { productId: 'p1', quantity: 2, product: { costPrice: 1000 }, service: null },
-        { productId: null, serviceId: 's1', quantity: 1, product: null, service: { baseCost: 500 } },
-      ] as any) // current WO items (cost = 2*1000 + 1*500 = 2500)
-      .mockResolvedValueOnce([
-        { productId: 'p1', quantity: 1, product: { costPrice: 1000 }, service: null },
-      ] as any); // previous WO items (cost = 1*1000 = 1000)
-
-    vi.mocked(prisma.direct_sale_item.findMany)
-      .mockResolvedValueOnce([
-        { productId: 'p2', quantity: 3, product: { costPrice: 500 }, service: null },
-      ] as any) // current DS items (cost = 3*500 = 1500)
-      .mockResolvedValueOnce([]); // previous DS items (cost = 0)
-
-    // Current metrics summary:
-    // Revenue = 5000 (WO) + 1500 (DS) = 6500
-    // Cost = 2500 (WO items) + 1500 (DS items) = 4000
-    // Profit = 6500 - 4000 = 2500
-
-    // Previous metrics summary:
-    // Revenue = 2500 (WO) + 500 (DS) = 3000
-    // Cost = 1000 (WO items) + 0 (DS items) = 1000
-    // Profit = 3000 - 1000 = 2000
-
-    // 3. Mock counts
-    vi.mocked(prisma.work_order.count)
-      .mockResolvedValueOnce(10) // current completed orders
-      .mockResolvedValueOnce(5); // previous completed orders
-
-    vi.mocked(prisma.customer.count)
-      .mockResolvedValueOnce(4) // current new customers
-      .mockResolvedValueOnce(2); // previous new customers
-
-    // 4. Mock current stock status queries (only called once, current state only)
-    vi.mocked(prisma.product.findMany).mockResolvedValue([
-      { stock: 10, costPrice: 100 },
-      { stock: 5, costPrice: 200 },
-    ] as any); // total stock value = 10*100 + 5*200 = 2000
-
-    vi.mocked(prisma.product.count).mockResolvedValue(3); // low stock count
+    // Stock status (2 db.select calls via Promise.all):
+    // 13. Stock products: db.select({ stock, costPrice }).from(product).where(...)
+    vi.mocked(db.select).mockReturnValueOnce(
+      createChainable([
+        { stock: 10, costPrice: 100 },
+        { stock: 5, costPrice: 200 },
+      ]) as any,
+    );
+    // 14. Low stock count: db.select({ count }).from(product).where(...)
+    vi.mocked(db.select).mockReturnValueOnce(
+      createChainable([{ count: 3 }]) as any,
+    );
 
     const report = await getOverviewReport({
       startDate: new Date('2024-01-15T00:00:00Z'),
@@ -122,24 +144,52 @@ describe('overviewReportService', () => {
 
   it('should handle zero previous period metrics cleanly without dividing by zero', async () => {
     // Current period metrics
-    vi.mocked(prisma.work_order.aggregate).mockResolvedValueOnce({ _sum: { total: 100 } } as any);
-    vi.mocked(prisma.direct_sale.aggregate).mockResolvedValueOnce({ _sum: { total: 50 } } as any);
-    vi.mocked(prisma.work_order_item.findMany).mockResolvedValueOnce([]);
-    vi.mocked(prisma.direct_sale_item.findMany).mockResolvedValueOnce([]);
-    vi.mocked(prisma.work_order.count).mockResolvedValueOnce(3);
-    vi.mocked(prisma.customer.count).mockResolvedValueOnce(1);
+    vi.mocked(db.select).mockReturnValueOnce(
+      createChainable([{ totalSum: 100 }]) as any,
+    );
+    vi.mocked(db.select).mockReturnValueOnce(
+      createChainable([{ totalSum: 50 }]) as any,
+    );
+    vi.mocked(db.select).mockReturnValueOnce(
+      createChainable([]) as any,
+    );
+    vi.mocked(db.select).mockReturnValueOnce(
+      createChainable([]) as any,
+    );
+    vi.mocked(db.select).mockReturnValueOnce(
+      createChainable([{ count: 3 }]) as any,
+    );
+    vi.mocked(db.select).mockReturnValueOnce(
+      createChainable([{ count: 1 }]) as any,
+    );
 
     // Previous period metrics (all zero/null)
-    vi.mocked(prisma.work_order.aggregate).mockResolvedValueOnce({ _sum: { total: null } } as any);
-    vi.mocked(prisma.direct_sale.aggregate).mockResolvedValueOnce({ _sum: { total: null } } as any);
-    vi.mocked(prisma.work_order_item.findMany).mockResolvedValueOnce([]);
-    vi.mocked(prisma.direct_sale_item.findMany).mockResolvedValueOnce([]);
-    vi.mocked(prisma.work_order.count).mockResolvedValueOnce(0);
-    vi.mocked(prisma.customer.count).mockResolvedValueOnce(0);
+    vi.mocked(db.select).mockReturnValueOnce(
+      createChainable([{ totalSum: null }]) as any,
+    );
+    vi.mocked(db.select).mockReturnValueOnce(
+      createChainable([{ totalSum: null }]) as any,
+    );
+    vi.mocked(db.select).mockReturnValueOnce(
+      createChainable([]) as any,
+    );
+    vi.mocked(db.select).mockReturnValueOnce(
+      createChainable([]) as any,
+    );
+    vi.mocked(db.select).mockReturnValueOnce(
+      createChainable([{ count: 0 }]) as any,
+    );
+    vi.mocked(db.select).mockReturnValueOnce(
+      createChainable([{ count: 0 }]) as any,
+    );
 
     // Stock Status
-    vi.mocked(prisma.product.findMany).mockResolvedValue([]);
-    vi.mocked(prisma.product.count).mockResolvedValue(0);
+    vi.mocked(db.select).mockReturnValueOnce(
+      createChainable([]) as any,
+    );
+    vi.mocked(db.select).mockReturnValueOnce(
+      createChainable([{ count: 0 }]) as any,
+    );
 
     const report = await getOverviewReport({
       startDate: new Date('2024-01-15T00:00:00Z'),

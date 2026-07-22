@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { auth } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
+import { user } from '@/db/schema';
+import { eq } from 'drizzle-orm';
 
 export async function proxy(request: NextRequest) {
   // Skip sync for static files and API routes that don't need it
@@ -28,10 +30,10 @@ export async function proxy(request: NextRequest) {
         
         // Update role in database if not already ADMIN
         if (currentRole !== 'ADMIN') {
-          await prisma.user.update({
-            where: { id: session.user.id },
-            data: { role: 'ADMIN' },
-          });
+          await db
+            .update(user)
+            .set({ role: 'ADMIN' })
+            .where(eq(user.id, session.user.id));
         }
       }
     }

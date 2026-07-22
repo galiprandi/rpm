@@ -1,5 +1,6 @@
-import { prisma } from '@/lib/prisma';
-import { Prisma } from '@prisma/client';
+import { db } from '@/lib/db';
+import { product } from '@/db/schema';
+import { eq } from 'drizzle-orm';
 import type { CreateProductInput } from './schema';
 
 /**
@@ -13,25 +14,28 @@ import type { CreateProductInput } from './schema';
  * @returns Created product object
  */
 export async function createProductService(input: CreateProductInput) {
-  const product = await prisma.product.create({
-    data: {
-      id: `prod-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      sku: input.sku,
-      name: input.name,
-      description: input.description || null,
-      barcode: input.barcode || null,
-      categoryId: input.categoryId,
-      costPrice: Prisma?.Decimal ? new Prisma.Decimal(input.costPrice) : input.costPrice,
-      replacementCost: Prisma?.Decimal ? new Prisma.Decimal(input.replacementCost) : input.replacementCost,
-      stock: input.stock,
-      minStock: input.minStock,
-      supplierId: input.supplierId || null,
-      location: input.location || null,
-      isActive: true,
-      updatedAt: new Date(),
-    },
-    include: { category: true },
+  const [created] = await db.insert(product).values({
+    id: `prod-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    sku: input.sku || null,
+    name: input.name,
+    description: input.description || null,
+    barcode: input.barcode || null,
+    categoryId: input.categoryId,
+    costPrice: input.costPrice.toString(),
+    replacementCost: input.replacementCost.toString(),
+    stock: input.stock,
+    minStock: input.minStock,
+    supplierId: input.supplierId || null,
+    location: input.location || null,
+    isActive: true,
+    updatedAt: new Date().toISOString(),
+  }).returning();
+
+  // Fetch with category relation
+  const p = await db.query.product.findFirst({
+    where: eq(product.id, created.id),
+    with: { category: true },
   });
 
-  return product;
+  return p;
 }

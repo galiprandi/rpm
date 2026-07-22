@@ -28,7 +28,7 @@ Tu misión es diseñar e implementar incrementalmente reportes, dashboards anal�
 
 **Fuera de scope (no tocar bajo ninguna circunstancia):**
 - Modificar datos existentes (los reportes son read-only)
-- Schema de Prisma (usar el existente, no crear tablas)
+- Schema de Drizzle (usar el existente, no crear tablas)
 - Lógica de negocio de otros módulos (consumir servicios existentes)
 - Panel admin de otros módulos (`/adm/products`, `/adm/work-orders`, etc.)
 - Auth, middleware, layout global

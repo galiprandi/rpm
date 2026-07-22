@@ -23,24 +23,17 @@
  * - Performance: <100ms por query
  */
 
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
+import { priceList, priceListItem, product, category } from '@/db/schema';
+import { eq, and, isNotNull, desc, asc } from 'drizzle-orm';
 import { applyRounding, RoundingRule } from '@/lib/utils/rounding';
 
 /**
- * Coerce a Prisma Decimal (or number/string primitive) into a number.
- * Handles Decimal.js-like objects exposing `toNumber()` and `valueOf()`.
+ * Coerce a Drizzle numeric (string/number/null) into a number.
  */
 function toNumber(value: unknown, fallback = 0): number {
   if (value === null || value === undefined) return fallback;
   if (typeof value === 'number') return value;
-  if (typeof value === 'object' && value !== null) {
-    const v = value as { toNumber?: () => number; valueOf?: () => string | number };
-    if (typeof v.toNumber === 'function') return v.toNumber();
-    if (typeof v.valueOf === 'function') {
-      const n = Number(v.valueOf());
-      return Number.isFinite(n) ? n : fallback;
-    }
-  }
   const n = Number(value);
   return Number.isFinite(n) ? n : fallback;
 }
@@ -95,10 +88,13 @@ interface PublicPriceListContext {
  * exceptions. Returns null when no public price list is active.
  */
 async function loadPublicPriceListContext(): Promise<PublicPriceListContext | null> {
-  const publicPriceList = await prisma.price_list.findFirst({
-    where: { isPublic: true, isActive: true },
-    orderBy: { createdAt: 'desc' },
-    select: {
+  const publicPriceList = await db.query.priceList.findFirst({
+    where: and(
+      eq(priceList.isPublic, true),
+      eq(priceList.isActive, true),
+    ),
+    orderBy: desc(priceList.createdAt),
+    columns: {
       id: true,
       baseMarginPercentage: true,
       roundingRule: true,
@@ -107,9 +103,12 @@ async function loadPublicPriceListContext(): Promise<PublicPriceListContext | nu
 
   if (!publicPriceList) return null;
 
-  const exceptions = await prisma.price_list_item.findMany({
-    where: { priceListId: publicPriceList.id, productId: { not: null } },
-    select: {
+  const exceptions = await db.query.priceListItem.findMany({
+    where: and(
+      eq(priceListItem.priceListId, publicPriceList.id),
+      isNotNull(priceListItem.productId),
+    ),
+    columns: {
       productId: true,
       overrideMarginPercentage: true,
       fixedPrice: true,
@@ -150,7 +149,7 @@ async function loadPublicPriceListContext(): Promise<PublicPriceListContext | nu
  * Base cost prefers replacementCost when > 0, otherwise costPrice.
  */
 function computePublicPrice(
-  product: {
+  productRec: {
     id: string;
     costPrice: unknown;
     replacementCost: unknown;
@@ -158,12 +157,12 @@ function computePublicPrice(
   },
   ctx: PublicPriceListContext | null,
 ): number {
-  const costPrice = toNumber(product.costPrice, 0);
-  const replacementCost = toNumber(product.replacementCost, 0);
+  const costPrice = toNumber(productRec.costPrice, 0);
+  const replacementCost = toNumber(productRec.replacementCost, 0);
   const baseCost = replacementCost > 0 ? replacementCost : costPrice;
 
   if (ctx) {
-    const exc = ctx.exceptions.get(product.id);
+    const exc = ctx.exceptions.get(productRec.id);
     if (exc && exc.fixedPrice !== null) {
       return exc.fixedPrice;
     }
@@ -175,7 +174,7 @@ function computePublicPrice(
     return applyRounding(rawPrice, ctx.roundingRule);
   }
 
-  const categoryMargin = toNumber(product.category?.defaultMarginPercent ?? null, 40);
+  const categoryMargin = toNumber(productRec.category?.defaultMarginPercent ?? null, 40);
   const rawPrice = baseCost * (1 + categoryMargin / 100);
   return applyRounding(rawPrice, 'SMART_HUNDREDS');
 }
@@ -191,9 +190,9 @@ function computePublicPrice(
 export async function getPublicCatalog(): Promise<PublicCatalogResult> {
   const [priceListCtx, dbProducts, dbCategories] = await Promise.all([
     loadPublicPriceListContext(),
-    prisma.product.findMany({
-      where: { isActive: true },
-      select: {
+    db.query.product.findMany({
+      where: eq(product.isActive, true),
+      columns: {
         id: true,
         sku: true,
         name: true,
@@ -201,41 +200,47 @@ export async function getPublicCatalog(): Promise<PublicCatalogResult> {
         imageUrl: true,
         costPrice: true,
         replacementCost: true,
+      },
+      with: {
         category: {
-          select: {
+          columns: {
             id: true,
             name: true,
             defaultMarginPercent: true,
           },
         },
       },
-      orderBy: { name: 'asc' },
+      orderBy: asc(product.name),
     }),
-    prisma.category.findMany({
-      where: { isActive: true },
-      select: { id: true, name: true, sortOrder: true },
-      orderBy: { sortOrder: 'asc' },
+    db.query.category.findMany({
+      where: eq(category.isActive, true),
+      columns: { id: true, name: true, sortOrder: true },
+      orderBy: asc(category.sortOrder),
     }),
   ]);
 
-  const products: PublicCatalogProduct[] = dbProducts.map((product) => {
-    const price = computePublicPrice(product, priceListCtx);
-    const imageFallback = product.name ? product.name.charAt(0).toUpperCase() : 'P';
+  const products: PublicCatalogProduct[] = dbProducts.map((productRec) => {
+    const price = computePublicPrice(productRec, priceListCtx);
+    const imageFallback = productRec.name ? productRec.name.charAt(0).toUpperCase() : 'P';
     return {
-      id: product.id,
-      sku: product.sku || '',
-      name: product.name,
-      category: product.category?.name || 'Varios',
+      id: productRec.id,
+      sku: productRec.sku || '',
+      name: productRec.name,
+      category: productRec.category?.name || 'Varios',
       price,
       image: imageFallback,
-      imageUrl: product.imageUrl || null,
-      description: product.description || '',
+      imageUrl: productRec.imageUrl || null,
+      description: productRec.description || '',
       features: [],
     };
   });
 
   return {
     products,
-    categories: dbCategories as PublicCatalogCategory[],
+    categories: dbCategories.map((c) => ({
+      id: c.id,
+      name: c.name,
+      sortOrder: c.sortOrder,
+    })),
   };
 }

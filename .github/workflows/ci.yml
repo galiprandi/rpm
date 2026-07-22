@@ -42,14 +42,8 @@ jobs:
     - name: Install dependencies
       run: pnpm install --frozen-lockfile
 
-    - name: Generate Prisma Client
-      run: npx prisma generate
-
-    - name: Validate Prisma migrations (idempotent DDL)
+    - name: Validate Drizzle migrations (idempotent DDL)
       run: npx tsx scripts/validate-migrations.ts --ci
-
-    - name: Generate Prisma Client
-      run: npx prisma generate
 
     - name: Lint & Type Check
       run: |

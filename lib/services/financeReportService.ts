@@ -1,4 +1,6 @@
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { cashMovement } from "@/db/schema";
+import { and, inArray, gte, lte } from "drizzle-orm";
 import { ARGENTINA_TIMEZONE } from "@/lib/utils/date";
 
 export type FinanceGroupBy = "hour" | "day" | "month";
@@ -41,27 +43,20 @@ export interface FinanceReportData {
   generatedAt: string;
 }
 
-function decimalToNumber(decimal: unknown): number {
-  if (decimal === null || decimal === undefined) return 0;
-  if (typeof decimal === "number") return decimal;
-  if (
-    typeof decimal === "object" &&
-    decimal !== null &&
-    "toNumber" in decimal &&
-    typeof (decimal as { toNumber: unknown }).toNumber === "function"
-  ) {
-    return (decimal as { toNumber: () => number }).toNumber();
-  }
-  return Number(decimal);
+function decimalToNumber(value: unknown): number {
+  if (value === null || value === undefined) return 0;
+  if (typeof value === "number") return value;
+  return Number(value) || 0;
 }
 
 async function getFinancePeriodMetrics(start: Date, end: Date) {
-  const movements = await prisma.cash_movement.findMany({
-    where: {
-      createdAt: { gte: start, lte: end },
-      type: { in: ["INCOME", "EXPENSE", "PURCHASE_VOUCHER", "ADJUSTMENT"] },
-    },
-    select: {
+  const movements = await db.query.cashMovement.findMany({
+    where: and(
+      gte(cashMovement.createdAt, start.toISOString()),
+      lte(cashMovement.createdAt, end.toISOString()),
+      inArray(cashMovement.type, ["INCOME", "EXPENSE", "PURCHASE_VOUCHER", "ADJUSTMENT"]),
+    ),
+    columns: {
       type: true,
       amount: true,
       reason: true,
@@ -208,12 +203,13 @@ export async function getFinanceReport(params: FinanceReportParams): Promise<Fin
     previous = await getFinancePeriodMetrics(comparisonStartDate, comparisonEndDate);
   }
 
-  const movements = await prisma.cash_movement.findMany({
-    where: {
-      createdAt: { gte: startDate, lte: endDate },
-      type: { in: ["INCOME", "EXPENSE", "PURCHASE_VOUCHER", "ADJUSTMENT"] },
-    },
-    select: {
+  const movements = await db.query.cashMovement.findMany({
+    where: and(
+      gte(cashMovement.createdAt, startDate.toISOString()),
+      lte(cashMovement.createdAt, endDate.toISOString()),
+      inArray(cashMovement.type, ["INCOME", "EXPENSE", "PURCHASE_VOUCHER", "ADJUSTMENT"]),
+    ),
+    columns: {
       type: true,
       amount: true,
       method: true,
@@ -233,7 +229,7 @@ export async function getFinanceReport(params: FinanceReportParams): Promise<Fin
       methodMap[method] = { method, income: 0, expense: 0, net: 0 };
     }
 
-    const { key } = getBucketKeyAndLabel(m.createdAt, groupBy);
+    const { key } = getBucketKeyAndLabel(new Date(m.createdAt), groupBy);
 
     let isIncome = false;
     let isExpense = false;

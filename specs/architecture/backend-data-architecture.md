@@ -8,9 +8,9 @@ El backend de RPM tiene como meta una arquitectura basada en **Servicios como fu
 
 ## 2. Base de Datos y ORM
 - **Motor**: PostgreSQL.
-- **ORM**: Prisma (v6.19.3).
-- **Esquema Único**: El modelo de datos completo vive en `prisma/schema.prisma`. Los nombres de las tablas en la BD son en minúscula con guiones bajos (ej: `work_order`, `direct_sale`).
-- **Migraciones Automáticas**: `npx prisma migrate deploy` se ejecuta en cada build de Vercel.
+- **ORM**: Drizzle ORM (0.45.2 + Drizzle Kit 0.31.10).
+- **Esquema Único**: El modelo de datos completo vive en `db/schema/schema.ts`. Los nombres de las tablas en la BD son en minúscula con guiones bajos (ej: `work_order`, `direct_sale`).
+- **Migraciones Automáticas**: `pnpm db:migrate` se ejecuta en cada build de Vercel.
 
 ## 3. Modelo de Datos Principal (Resumen)
 - `user` / `user_role`: Autenticación y jerarquía.
@@ -26,4 +26,4 @@ El backend de RPM tiene como meta una arquitectura basada en **Servicios como fu
 - **Estrategia Obligatoria**: Usar `revalidate: 60` e invalidación selectiva (`revalidatePath`) al realizar mutaciones críticas (Ventas, OT, Stock).
 
 ## 5. Manejo de Errores y Transacciones
-- Las mutaciones que afectan múltiples tablas DEBEN utilizar transacciones de Prisma (`prisma.$transaction`) para garantizar la atomicidad (ej: creación de OT + actualización de balance de cliente).
+- Las mutaciones que afectan múltiples tablas DEBEN utilizar transacciones de Drizzle ORM (`db.transaction`) para garantizar la atomicidad (ej: creación de OT + actualización de balance de cliente).

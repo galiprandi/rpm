@@ -9,7 +9,9 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { withAdminDynamic } from '@/lib/api-middleware';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
+import { priceList, priceListItem, product } from '@/db/schema';
+import { eq, inArray } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 
 interface Params {
@@ -48,11 +50,11 @@ export const POST = withAdminDynamic(async (request: NextRequest, { params }: Pa
     }
 
     // Validate price list exists
-    const priceList = await prisma.price_list.findUnique({
-      where: { id: priceListId },
+    const priceListRecord = await db.query.priceList.findFirst({
+      where: eq(priceList.id, priceListId),
     });
 
-    if (!priceList) {
+    if (!priceListRecord) {
       return NextResponse.json(
         { error: 'Price list not found' },
         { status: 404 }
@@ -63,13 +65,13 @@ export const POST = withAdminDynamic(async (request: NextRequest, { params }: Pa
     const skus = updates.map(u => u.sku);
 
     // Find products by SKU
-    const products = await prisma.product.findMany({
-      where: { sku: { in: skus } },
-      select: { id: true, sku: true, name: true },
+    const products = await db.query.product.findMany({
+      where: inArray(product.sku, skus),
+      columns: { id: true, sku: true, name: true },
     });
 
     // Create SKU -> product map
-    const productMap = new Map(products.map((p: any) => [p.sku, p]));
+    const productMap = new Map(products.map((p) => [p.sku, p]));
 
     // Track results
     const updated: BulkUpdateResponse['updated'] = [];
@@ -77,40 +79,37 @@ export const POST = withAdminDynamic(async (request: NextRequest, { params }: Pa
 
     // Process each update
     for (const update of updates) {
-      const product = productMap.get(update.sku);
+      const productRecord = productMap.get(update.sku);
 
-      if (!product) {
+      if (!productRecord) {
         // Product not found in DB - ignore
         ignored.push({ sku: update.sku, reason: 'Product not found in database' });
         continue;
       }
 
       // Upsert price_list_item
-      const priceListItem = await prisma.price_list_item.upsert({
-        where: {
-          priceListId_productId: {
-            priceListId,
-            productId: product.id,
-          },
-        },
-        update: {
-          fixedPrice: update.fixedPrice,
-          updatedAt: new Date(),
-        },
-        create: {
+      const [upserted] = await db.insert(priceListItem)
+        .values({
           id: randomUUID(),
           priceListId,
-          productId: product.id,
-          fixedPrice: update.fixedPrice,
+          productId: productRecord.id,
+          fixedPrice: String(update.fixedPrice),
           overrideMarginPercentage: null,
-          updatedAt: new Date(),
-        },
-      });
+          updatedAt: new Date().toISOString(),
+        })
+        .onConflictDoUpdate({
+          target: [priceListItem.priceListId, priceListItem.productId],
+          set: {
+            fixedPrice: String(update.fixedPrice),
+            updatedAt: new Date().toISOString(),
+          },
+        })
+        .returning();
 
       updated.push({
-        sku: product.sku,
-        productId: product.id,
-        fixedPrice: Number(priceListItem.fixedPrice),
+        sku: productRecord.sku,
+        productId: productRecord.id,
+        fixedPrice: Number(upserted.fixedPrice),
       });
     }
 
