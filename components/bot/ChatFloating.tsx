@@ -18,6 +18,8 @@ import {
   Wrench,
   Check,
   Trash2,
+  Mic,
+  MicOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -63,11 +65,88 @@ export function ChatFloating({
   const [localInput, setLocalInput] = useState("");
   const [isConfirmingClear, setIsConfirmingClear] = useState(false);
   const confirmClearTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
     return () => {
       if (confirmClearTimerRef.current) {
         clearTimeout(confirmClearTimerRef.current);
+      }
+    };
+  }, []);
+
+  // Check if speech recognition is supported in the current environment/browser
+  const isSpeechSupported = useMemo(() => {
+    if (typeof window === "undefined") return false;
+    return !!((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition);
+  }, []);
+
+  const toggleListening = useCallback(() => {
+    if (!isSpeechSupported) return;
+
+    if (isListening) {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      setIsListening(false);
+      return;
+    }
+
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false; // Stop automatically when user finishes speaking
+      recognition.lang = "es-AR"; // Spanish Argentina
+      recognition.interimResults = false;
+
+      recognition.onstart = () => {
+        setIsListening(true);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognition.onerror = (event: any) => {
+        console.error("Speech recognition error", event);
+        setIsListening(false);
+      };
+
+      recognition.onresult = (event: any) => {
+        const transcript = event.results[0]?.[0]?.transcript;
+        if (transcript) {
+          setLocalInput((prev) => {
+            const trimmed = prev.trim();
+            return trimmed ? `${trimmed} ${transcript}` : transcript;
+          });
+        }
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
+    } catch (e) {
+      console.error("Failed to start speech recognition", e);
+      setIsListening(false);
+    }
+  }, [isListening, isSpeechSupported]);
+
+  // Clean up speech recognition on unmount or close
+  useEffect(() => {
+    if (!isOpen && isListening) {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      setIsListening(false);
+    }
+  }, [isOpen, isListening]);
+
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
       }
     };
   }, []);
@@ -247,6 +326,9 @@ export function ChatFloating({
 
   const handleSuggestionClick = useCallback(async (text: string) => {
     if (isSubmitting) return;
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+    }
     setLocalInput("");
     await sendMessage({ text });
   }, [isSubmitting, sendMessage]);
@@ -275,6 +357,9 @@ export function ChatFloating({
     }
     setIsConfirmingClear(false);
     stop();
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+    }
     setMessages([]);
     setAttachedFile(null);
     setLocalInput("");
@@ -287,6 +372,9 @@ export function ChatFloating({
     e.preventDefault();
     const messageText = localInput?.trim();
     if (!messageText && !attachedFile) return;
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+    }
     setLocalInput("");
 
     if (attachedFile) {
@@ -831,10 +919,51 @@ export function ChatFloating({
                 ref={inputRef}
                 value={localInput}
                 onChange={(e) => setLocalInput(e.target.value)}
-                placeholder={`Escribe tu mensaje... (${shortcutLabel} para cerrar)`}
-                className="flex-1"
+                placeholder={
+                  isListening
+                    ? "Escuchando... Hablá ahora"
+                    : `Escribe tu mensaje... (${shortcutLabel} para cerrar)`
+                }
+                className={`flex-1 transition-all ${
+                  isListening
+                    ? "border-red-500 focus-visible:ring-red-500 bg-red-50/10 focus-visible:ring-offset-0 placeholder:text-red-400"
+                    : ""
+                }`}
                 disabled={isSubmitting}
               />
+              {isSpeechSupported && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={toggleListening}
+                      disabled={isSubmitting}
+                      className={`h-10 w-10 p-0 transition-colors ${
+                        isListening
+                          ? "text-red-700 hover:text-red-800 hover:bg-red-100 bg-red-50 border border-red-200 animate-pulse"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                      aria-label={
+                        isListening ? "Detener dictado por voz" : "Dictar por voz"
+                      }
+                    >
+                      {isListening ? (
+                        <MicOff className="h-4 w-4" />
+                      ) : (
+                        <Mic className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="top"
+                    className="bg-slate-900 text-white border-slate-800"
+                  >
+                    {isListening ? "Detener dictado" : "Dictar por voz"}
+                  </TooltipContent>
+                </Tooltip>
+              )}
               {isSubmitting ? (
                 <Tooltip>
                   <TooltipTrigger asChild>
