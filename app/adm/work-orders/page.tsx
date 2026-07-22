@@ -10,7 +10,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
@@ -271,18 +270,16 @@ function KanbanCard({
       <CardContent className="p-2.5 space-y-1.5">
         {/* Line 1: Category icon + Plate/SN */}
         <div className="flex items-center gap-1.5">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className="text-muted-foreground shrink-0">
-                  {categoryIcon}
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{categoryLabel}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="text-muted-foreground shrink-0">
+                {categoryIcon}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{categoryLabel}</p>
+            </TooltipContent>
+          </Tooltip>
           <span className="font-mono text-sm font-semibold tracking-tighter truncate">
             {wo.vehicle.identifier}
           </span>
@@ -1150,18 +1147,16 @@ export default function WorkOrdersPage() {
                         <div className="flex items-center gap-4">
                           {/* Standardized List Row Entity Pattern */}
                           <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0">
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <span className="text-primary">
-                                    {categoryIcon}
-                                  </span>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>{categoryLabel}</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="text-primary">
+                                  {categoryIcon}
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{categoryLabel}</p>
+                              </TooltipContent>
+                            </Tooltip>
                           </div>
                           <div>
                             <div className="font-semibold tracking-tight font-mono">

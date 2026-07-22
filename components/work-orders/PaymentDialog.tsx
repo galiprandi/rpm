@@ -20,7 +20,6 @@ import { toTitleCase } from "@/lib/utils/format";
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
@@ -383,53 +382,51 @@ export function PaymentDialog({
           <div className="space-y-3">
             <h4 className="font-medium text-sm">Historial de Pagos</h4>
             <div className="space-y-2 max-h-48 overflow-y-auto">
-              <TooltipProvider>
-                {payments.map((payment) => (
-                  <div
-                    key={payment.id}
-                    className="flex items-center justify-between p-3 bg-muted rounded-md"
-                  >
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium font-mono">
-                          $
-                          {Number(payment.amount).toLocaleString("es-AR", {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {toTitleCase(payment.paymentMethod.name)}
-                        </span>
-                      </div>
-                      {payment.notes && (
-                        <p className="text-xs text-muted-foreground">
-                          {payment.notes}
-                        </p>
-                      )}
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(payment.createdAt).toLocaleDateString(
-                          "es-AR",
-                        )}
-                      </p>
+              {payments.map((payment) => (
+                <div
+                  key={payment.id}
+                  className="flex items-center justify-between p-3 bg-muted rounded-md"
+                >
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium font-mono">
+                        $
+                        {Number(payment.amount).toLocaleString("es-AR", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {toTitleCase(payment.paymentMethod.name)}
+                      </span>
                     </div>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeletePayment(payment)}
-                          className="text-destructive hover:text-destructive"
-                          aria-label="Eliminar pago"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Eliminar pago</TooltipContent>
-                    </Tooltip>
+                    {payment.notes && (
+                      <p className="text-xs text-muted-foreground">
+                        {payment.notes}
+                      </p>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(payment.createdAt).toLocaleDateString(
+                        "es-AR",
+                      )}
+                    </p>
                   </div>
-                ))}
-              </TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeletePayment(payment)}
+                        className="text-destructive hover:text-destructive"
+                        aria-label="Eliminar pago"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Eliminar pago</TooltipContent>
+                  </Tooltip>
+                </div>
+              ))}
             </div>
           </div>
         )}

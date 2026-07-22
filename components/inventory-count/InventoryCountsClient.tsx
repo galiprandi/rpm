@@ -10,7 +10,7 @@ import { Eye, Plus, ClipboardCheck, History, CheckCircle2, Clock } from 'lucide-
 import { CrudAdmin } from '@/components/adm/CrudAdmin';
 import { CrudStats } from '@/components/adm/CrudStats';
 import { ColumnDef } from '@tanstack/react-table';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface InventoryCountItem {
   id: string;
@@ -147,18 +147,16 @@ export function InventoryCountsClient({ counts }: InventoryCountsClientProps) {
           emptyMessage="No hay operativos registrados. Crea uno nuevo para comenzar."
           tableTitle="Operativos Recientes"
           rowActions={(count) => (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Link href={`/adm/inventory-counts/${count.id}`}>
-                    <Button size="icon" variant="ghost" aria-label="Ver Detalle">
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                  </Link>
-                </TooltipTrigger>
-                <TooltipContent>Ver Detalle</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link href={`/adm/inventory-counts/${count.id}`}>
+                  <Button size="icon" variant="ghost" aria-label="Ver Detalle">
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent>Ver Detalle</TooltipContent>
+            </Tooltip>
           )}
         />
       </div>

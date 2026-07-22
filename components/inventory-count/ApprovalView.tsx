@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface EnhancedItem {
   id: string;
@@ -230,19 +230,22 @@ export function ApprovalView({ operativeId }: { operativeId: string }) {
                   </TableCell>
                   <TableCell className="py-4">
                     {hasAlert ? (
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Badge variant="outline" className="cursor-help bg-amber-50 text-amber-700 border-amber-200 text-[10px] h-5 font-bold">
-                              <AlertTriangle className="h-3 w-3 mr-1" /> {item.concurrentMovement > 0 ? '+' : ''}{item.concurrentMovement}
-                            </Badge>
-                          </TooltipTrigger>
-                          <TooltipContent className="max-w-xs">
-                            Se registraron {item.salesDuringCount} ventas durante el proceso.
-                            El stock teórico actual es {item.currentTheoreticalStock}.
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Badge
+                            variant="outline"
+                            className="cursor-help bg-amber-50 text-amber-700 border-amber-200 text-[10px] h-5 font-bold outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
+                            tabIndex={0}
+                            aria-label={`Movimiento simultáneo: ${item.concurrentMovement > 0 ? '+' : ''}${item.concurrentMovement}. Se registraron ${item.salesDuringCount} ventas durante el proceso.`}
+                          >
+                            <AlertTriangle className="h-3 w-3 mr-1" /> {item.concurrentMovement > 0 ? '+' : ''}{item.concurrentMovement}
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs">
+                          Se registraron {item.salesDuringCount} ventas durante el proceso.
+                          El stock teórico actual es {item.currentTheoreticalStock}.
+                        </TooltipContent>
+                      </Tooltip>
                     ) : (
                       <span className="text-[10px] text-muted-foreground/50">-</span>
                     )}
