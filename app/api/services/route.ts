@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { service } from "@/db/schema";
 import { eq, ilike, and, asc } from "drizzle-orm";
 import { randomUUID } from "crypto";
+import { toISODate } from "@/lib/utils/date";
 
 // GET /api/services - List all services (requiere ADMIN)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -28,7 +29,15 @@ export const GET = withAdmin(async (request: NextRequest, _session) => {
       orderBy: asc(service.name),
     });
 
-    return NextResponse.json({ services });
+    const transformedServices = services.map((item) => ({
+      ...item,
+      baseCost: Number(item.baseCost),
+      vehicleFactor: Number(item.vehicleFactor),
+      createdAt: toISODate(item.createdAt),
+      updatedAt: toISODate(item.updatedAt),
+    }));
+
+    return NextResponse.json({ services: transformedServices });
   } catch (error) {
     console.error("Error fetching services:", error);
     return NextResponse.json(
@@ -81,7 +90,15 @@ export const POST = withAdmin(async (request: NextRequest, _session) => {
       updatedAt: new Date().toISOString(),
     }).returning();
 
-    return NextResponse.json({ service: created }, { status: 201 });
+    const transformedCreated = {
+      ...created,
+      baseCost: Number(created.baseCost),
+      vehicleFactor: Number(created.vehicleFactor),
+      createdAt: toISODate(created.createdAt),
+      updatedAt: toISODate(created.updatedAt),
+    };
+
+    return NextResponse.json({ service: transformedCreated }, { status: 201 });
   } catch (error) {
     console.error("Error creating service:", error);
     return NextResponse.json(

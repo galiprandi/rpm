@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { paymentMethod, payment } from "@/db/schema";
 import { eq, count } from "drizzle-orm";
 import { hasRole, UserRole } from "@/lib/auth/roles";
+import { toISODate } from "@/lib/utils/date";
 
 // GET /api/payment-methods/[id] - Get single payment method
 export async function GET(
@@ -36,7 +37,14 @@ export async function GET(
       .where(eq(payment.paymentMethodId, id));
     const paymentsCount = paymentsCountResult[0]?.value || 0;
 
-    return NextResponse.json({ paymentMethod: { ...pm, _count: { payments: paymentsCount } } });
+    return NextResponse.json({
+      paymentMethod: {
+        ...pm,
+        createdAt: toISODate(pm.createdAt),
+        updatedAt: toISODate(pm.updatedAt),
+        _count: { payments: paymentsCount },
+      },
+    });
   } catch (error) {
     console.error("Error fetching payment method:", error);
     return NextResponse.json(
@@ -92,7 +100,13 @@ export async function PUT(
       .where(eq(paymentMethod.id, id))
       .returning();
 
-    return NextResponse.json({ paymentMethod: updated });
+    return NextResponse.json({
+      paymentMethod: {
+        ...updated,
+        createdAt: toISODate(updated.createdAt),
+        updatedAt: toISODate(updated.updatedAt),
+      },
+    });
   } catch (error) {
     console.error("Error updating payment method:", error);
     return NextResponse.json(

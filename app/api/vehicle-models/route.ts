@@ -5,6 +5,7 @@ import { eq, ilike, and, asc, sql } from "drizzle-orm";
 import { randomUUID } from "crypto";
 
 import { capitalizeText, normalizeText } from "@/lib/utils/format";
+import { toISODate } from "@/lib/utils/date";
 
 // GET /api/vehicle-models - List models (optionally filtered by makeId)
 export async function GET(request: NextRequest) {
@@ -27,7 +28,12 @@ export async function GET(request: NextRequest) {
       orderBy: asc(vehicleModel.name),
     });
 
-    return NextResponse.json({ models });
+    const modelsWithDates = models.map((model) => ({
+      ...model,
+      createdAt: toISODate(model.createdAt),
+    }));
+
+    return NextResponse.json({ models: modelsWithDates });
   } catch (error) {
     console.error("Error fetching vehicle models:", error);
     return NextResponse.json(
@@ -84,7 +90,10 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json(model, { status: model ? 200 : 201 });
+    return NextResponse.json(
+      model ? { ...model, createdAt: toISODate(model.createdAt) } : model,
+      { status: model ? 200 : 201 },
+    );
   } catch (error) {
     console.error("Error creating vehicle model:", error);
     return NextResponse.json(

@@ -4,6 +4,7 @@ import { vehicle, workOrder } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { capitalizeText } from "@/lib/utils/format";
 import { resolveMakeModel } from "@/lib/utils/vehicle-helpers";
+import { toISODate } from "@/lib/utils/date";
 
 // GET /api/vehicles/[id] - Get vehicle by ID
 export async function GET(
@@ -35,6 +36,8 @@ export async function GET(
     // Drizzle returns camelCase relation names (vehicleMake, vehicleModel)
     const transformedVehicle = {
       ...vehicleRecord,
+      createdAt: toISODate(vehicleRecord.createdAt),
+      updatedAt: toISODate(vehicleRecord.updatedAt),
       workOrders: vehicleRecord.workOrders || [],
     };
 
@@ -99,7 +102,15 @@ export async function PUT(
       },
     });
 
-    return NextResponse.json(vehicleWithRelations);
+    return NextResponse.json(
+      vehicleWithRelations
+        ? {
+            ...vehicleWithRelations,
+            createdAt: toISODate(vehicleWithRelations.createdAt),
+            updatedAt: toISODate(vehicleWithRelations.updatedAt),
+          }
+        : vehicleWithRelations,
+    );
   } catch (error) {
     console.error("Error updating vehicle:", error);
     return NextResponse.json(

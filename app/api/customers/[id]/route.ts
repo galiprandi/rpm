@@ -87,6 +87,9 @@ export const GET = withAdminDynamic(async (request: NextRequest, { params }: Par
       })),
       workOrders: (cust.workOrders || []).map((wo) => ({
         ...wo,
+        total: decimalToNumber(wo.total),
+        totalProducts: decimalToNumber(wo.totalProducts),
+        totalServices: decimalToNumber(wo.totalServices),
         createdAt: toISODate(wo.createdAt),
         updatedAt: toISODate(wo.updatedAt),
         scheduledDate: toISODate(wo.scheduledDate),
@@ -96,14 +99,19 @@ export const GET = withAdminDynamic(async (request: NextRequest, { params }: Par
       })),
       directSales: (cust.directSales || []).map((ds) => ({
         ...ds,
+        total: decimalToNumber(ds.total),
         createdAt: toISODate(ds.createdAt),
       })),
       creditNotes: (cust.creditNotes || []).map((cn) => ({
         ...cn,
+        total: decimalToNumber(cn.total),
+        cashAmount: cn.cashAmount ? decimalToNumber(cn.cashAmount) : null,
+        accountCreditAmount: cn.accountCreditAmount ? decimalToNumber(cn.accountCreditAmount) : null,
         createdAt: toISODate(cn.createdAt),
       })),
       payments: (payments || []).map((p) => ({
         ...p,
+        amount: decimalToNumber(p.amount),
         createdAt: toISODate(p.createdAt),
       })),
     };

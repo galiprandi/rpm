@@ -54,6 +54,10 @@ export async function GET(
       // Normalize nullable arrays to empty arrays (Prisma returned [] by default)
       entryPhotos: workOrderRecord.entryPhotos || [],
       exitPhotos: workOrderRecord.exitPhotos || [],
+      // Convert decimals to numbers
+      total: Number(workOrderRecord.total),
+      totalProducts: Number(workOrderRecord.totalProducts),
+      totalServices: Number(workOrderRecord.totalServices),
       // Convert timestamps from PG raw format to ISO 8601
       createdAt: toISODate(workOrderRecord.createdAt),
       updatedAt: toISODate(workOrderRecord.updatedAt),
@@ -95,6 +99,9 @@ export async function PUT(
 
     return NextResponse.json({
       ...workOrderResult,
+      total: Number((workOrderResult as any).total) || (workOrderResult as any).total,
+      totalProducts: Number((workOrderResult as any).totalProducts) || (workOrderResult as any).totalProducts,
+      totalServices: Number((workOrderResult as any).totalServices) || (workOrderResult as any).totalServices,
       createdAt: toISODate((workOrderResult as any).createdAt),
       updatedAt: toISODate((workOrderResult as any).updatedAt),
       scheduledDate: toISODate((workOrderResult as any).scheduledDate),

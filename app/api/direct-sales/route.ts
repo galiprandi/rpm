@@ -5,6 +5,7 @@ import { isCashRegisterOpen } from '@/lib/services/cashMovementService';
 import { db } from '@/lib/db';
 import { directSale } from '@/db/schema';
 import { eq, desc, count } from 'drizzle-orm';
+import { toISODate } from '@/lib/utils/date';
 
 // GET /api/direct-sales - List direct sales with filters
 export async function GET(request: NextRequest) {
@@ -38,7 +39,24 @@ export async function GET(request: NextRequest) {
       .where(customerId ? eq(directSale.customerId, customerId) : undefined);
     const total = totalResult[0]?.value || 0;
 
-    return NextResponse.json({ directSales, total, limit, offset });
+    // Convert Drizzle raw PG timestamps to ISO 8601 and string decimals to numbers
+    const directSalesSerialized = directSales.map((sale) => ({
+      ...sale,
+      total: Number(sale.total),
+      createdAt: toISODate(sale.createdAt),
+      directSaleItems: sale.directSaleItems.map((item) => ({
+        ...item,
+        unitPrice: Number(item.unitPrice),
+        totalPrice: Number(item.totalPrice),
+      })),
+      directSalePayments: sale.directSalePayments.map((payment) => ({
+        ...payment,
+        amount: Number(payment.amount),
+        createdAt: toISODate(payment.createdAt),
+      })),
+    }));
+
+    return NextResponse.json({ directSales: directSalesSerialized, total, limit, offset });
   } catch (error) {
     console.error('Error fetching direct sales:', error);
     return NextResponse.json(
@@ -132,7 +150,14 @@ export const POST = withAdmin(async (request: NextRequest, session) => {
       createdBy: session.user.id,
     });
 
-    return NextResponse.json(directSale, { status: 201 });
+    return NextResponse.json(
+      {
+        ...directSale,
+        total: Number(directSale.total),
+        createdAt: toISODate(directSale.createdAt),
+      },
+      { status: 201 }
+    );
   } catch (error) {
     console.error('Error creating direct sale:', error);
     

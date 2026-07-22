@@ -3,8 +3,36 @@ import { getSessionWithAuth } from "@/lib/api-middleware";
 import { getInvoiceById, markInvoiceAsOfficial, updateInvoiceStatus, type InvoiceType } from "@/lib/services/invoiceService";
 import { requestCAE, mapInternalToAFIPType, validateCUIT } from "@/lib/services/afipService";
 import { getSetting } from "@/lib/services/settingsService";
+import { toISODate } from "@/lib/utils/date";
 
 export const dynamic = 'force-dynamic';
+
+/**
+ * Normalizes an invoice row returned by Drizzle (mode: 'string') so that
+ * API consumers receive ISO 8601 timestamps and numeric decimals instead of
+ * raw PG timestamp strings and stringified numerics.
+ */
+function serializeInvoice<T extends Record<string, unknown>>(invoice: T) {
+  return {
+    ...invoice,
+    subtotal: Number(invoice.subtotal),
+    tax: invoice.tax != null ? Number(invoice.tax) : invoice.tax,
+    total: Number(invoice.total),
+    iva21: invoice.iva21 != null ? Number(invoice.iva21) : invoice.iva21,
+    iva105: invoice.iva105 != null ? Number(invoice.iva105) : invoice.iva105,
+    // perceptions/exemptions are jsonb — only coerce when they hold a primitive
+    perceptions:
+      typeof invoice.perceptions === "string" || typeof invoice.perceptions === "number"
+        ? Number(invoice.perceptions)
+        : invoice.perceptions,
+    exemptions:
+      typeof invoice.exemptions === "string" || typeof invoice.exemptions === "number"
+        ? Number(invoice.exemptions)
+        : invoice.exemptions,
+    createdAt: toISODate(invoice.createdAt),
+    issuedAt: toISODate(invoice.issuedAt),
+  };
+}
 
 export async function POST(
   request: NextRequest,
@@ -108,7 +136,7 @@ export async function POST(
       }
     });
 
-    return NextResponse.json(updatedInvoice);
+    return NextResponse.json(serializeInvoice(updatedInvoice));
   } catch (error) {
     console.error("Error in officialize invoice:", error);
     return NextResponse.json(

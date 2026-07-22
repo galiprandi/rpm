@@ -42,6 +42,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       movements: movements.map((m) => ({
         ...m,
+        amount: Number(m.amount),
         createdAt: toISODate(m.createdAt),
       })),
     });
@@ -100,6 +101,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       movement: {
         ...movement,
+        amount: Number(movement.amount),
         createdAt: toISODate(movement.createdAt),
       },
     }, { status: 201 });

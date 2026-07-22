@@ -5,6 +5,7 @@ import { vehicle } from "@/db/schema";
 import { eq, ilike, and, desc, count } from "drizzle-orm";
 import { capitalizeText } from "@/lib/utils/format";
 import { resolveMakeModel } from "@/lib/utils/vehicle-helpers";
+import { toISODate } from "@/lib/utils/date";
 
 interface CreateVehicleInput {
   identifier: string;
@@ -74,6 +75,8 @@ export async function GET(request: NextRequest) {
     // Transform to include _count equivalent
     const vehiclesWithCount = vehicles.map((v) => ({
       ...v,
+      createdAt: toISODate(v.createdAt),
+      updatedAt: toISODate(v.updatedAt),
       _count: {
         workOrders: v.workOrders.length,
       },
@@ -174,7 +177,16 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return NextResponse.json(vehicleWithRelations, { status: 201 });
+    return NextResponse.json(
+      vehicleWithRelations
+        ? {
+            ...vehicleWithRelations,
+            createdAt: toISODate(vehicleWithRelations.createdAt),
+            updatedAt: toISODate(vehicleWithRelations.updatedAt),
+          }
+        : vehicleWithRelations,
+      { status: 201 },
+    );
   } catch (error) {
     console.error("Error creating vehicle:", error);
     return NextResponse.json(

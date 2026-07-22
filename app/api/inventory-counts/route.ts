@@ -5,6 +5,18 @@ import { getSuggestedProductsForCount, createCountOperative } from '@/lib/servic
 import { db } from '@/lib/db';
 import { inventoryCountOperative } from '@/db/schema';
 import { desc } from 'drizzle-orm';
+import { toISODate } from '@/lib/utils/date';
+
+/** Convert an inventory count operative's timestamp fields for API output. */
+function formatOperative(op: Record<string, unknown>) {
+  return {
+    ...op,
+    createdAt: toISODate(op.createdAt),
+    updatedAt: toISODate(op.updatedAt),
+    finishedAt: toISODate(op.finishedAt),
+    approvedAt: toISODate(op.approvedAt),
+  };
+}
 
 /**
  * GET /api/inventory-counts
@@ -17,7 +29,7 @@ export async function GET() {
       orderBy: desc(inventoryCountOperative.createdAt),
       limit: 20
     });
-    return NextResponse.json(counts);
+    return NextResponse.json(counts.map((c) => formatOperative(c as unknown as Record<string, unknown>)));
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: error.message === 'Unauthorized' ? 401 : 403 });
   }
@@ -38,7 +50,7 @@ export async function POST(request: NextRequest) {
     }
 
     const operative = await createCountOperative(session.user.id, productIds);
-    return NextResponse.json(operative);
+    return NextResponse.json(formatOperative(operative as unknown as Record<string, unknown>));
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

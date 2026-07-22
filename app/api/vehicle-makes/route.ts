@@ -5,6 +5,7 @@ import { vehicleMake } from "@/db/schema";
 import { eq, ilike, and, asc, sql } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { capitalizeText, normalizeText } from "@/lib/utils/format";
+import { toISODate } from "@/lib/utils/date";
 
 // GET /api/vehicle-makes - List all makes
 export async function GET(request: NextRequest) {
@@ -32,6 +33,7 @@ export async function GET(request: NextRequest) {
     // Transform to include _count equivalent
     const makesWithCount = makes.map((make) => ({
       ...make,
+      createdAt: toISODate(make.createdAt),
       _count: {
         vehicleModels: make.vehicleModels.length,
       },
@@ -84,7 +86,10 @@ export async function POST(request: NextRequest) {
       make = created;
     }
 
-    return NextResponse.json(make, { status: make ? 200 : 201 });
+    return NextResponse.json(
+      make ? { ...make, createdAt: toISODate(make.createdAt) } : make,
+      { status: make ? 200 : 201 },
+    );
   } catch (error) {
     console.error("Error creating vehicle make:", error);
     return NextResponse.json(

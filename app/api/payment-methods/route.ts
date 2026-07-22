@@ -3,6 +3,7 @@ import { withStaff, withAdmin } from "@/lib/api-middleware";
 import { db } from "@/lib/db";
 import { paymentMethod } from "@/db/schema";
 import { desc, asc } from "drizzle-orm";
+import { toISODate } from "@/lib/utils/date";
 
 // GET /api/payment-methods - List all payment methods
 export const GET = withStaff(async () => {
@@ -11,7 +12,13 @@ export const GET = withStaff(async () => {
       orderBy: [desc(paymentMethod.isActive), asc(paymentMethod.sortOrder), asc(paymentMethod.name)],
     });
 
-    return NextResponse.json({ paymentMethods });
+    const formatted = paymentMethods.map((pm) => ({
+      ...pm,
+      createdAt: toISODate(pm.createdAt),
+      updatedAt: toISODate(pm.updatedAt),
+    }));
+
+    return NextResponse.json({ paymentMethods: formatted });
   } catch (error) {
     console.error("Error fetching payment methods:", error);
     return NextResponse.json(
@@ -55,7 +62,13 @@ export const POST = withAdmin(async (request: NextRequest) => {
       })
       .returning();
 
-    return NextResponse.json({ paymentMethod: paymentMethodRecord }, { status: 201 });
+    return NextResponse.json({
+      paymentMethod: {
+        ...paymentMethodRecord,
+        createdAt: toISODate(paymentMethodRecord.createdAt),
+        updatedAt: toISODate(paymentMethodRecord.updatedAt),
+      },
+    }, { status: 201 });
   } catch (error: unknown) {
     console.error("Error creating payment method:", error);
     

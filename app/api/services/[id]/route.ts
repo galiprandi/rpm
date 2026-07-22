@@ -2,6 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { service } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { toISODate } from "@/lib/utils/date";
+
+// Helper to transform service record for API response
+function transformService(item: typeof service.$inferSelect) {
+  return {
+    ...item,
+    baseCost: Number(item.baseCost),
+    vehicleFactor: Number(item.vehicleFactor),
+    createdAt: toISODate(item.createdAt),
+    updatedAt: toISODate(item.updatedAt),
+  };
+}
 
 // GET /api/services/[id] - Get service by ID
 export async function GET(
@@ -22,7 +34,7 @@ export async function GET(
       );
     }
 
-    return NextResponse.json({ service: serviceRecord });
+    return NextResponse.json({ service: transformService(serviceRecord) });
   } catch (error) {
     console.error("Error fetching service:", error);
     return NextResponse.json(
@@ -77,7 +89,7 @@ export async function PUT(
 
     const [updated] = await db.update(service).set(updateData).where(eq(service.id, id)).returning();
 
-    return NextResponse.json({ service: updated });
+    return NextResponse.json({ service: transformService(updated) });
   } catch (error) {
     console.error("Error updating service:", error);
     return NextResponse.json(
@@ -110,7 +122,7 @@ export async function DELETE(
     // Soft delete - set isActive to false
     const [updated] = await db.update(service).set({ isActive: false }).where(eq(service.id, id)).returning();
 
-    return NextResponse.json({ service: updated });
+    return NextResponse.json({ service: transformService(updated) });
   } catch (error) {
     console.error("Error deleting service:", error);
     return NextResponse.json(

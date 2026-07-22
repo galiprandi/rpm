@@ -2,6 +2,34 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withStaffDynamic } from '@/lib/api-middleware';
 import { getVoucherById, addItemToVoucher, deleteVoucher, updateVoucherHeader } from '@/lib/services/purchaseVoucherService';
+import { toISODate } from '@/lib/utils/date';
+
+/** Convert a purchase voucher item's numeric/timestamp fields for API output. */
+function formatVoucherItem(item: Record<string, unknown>) {
+  return {
+    ...item,
+    unitCost: Number(item.unitCost),
+    subtotal: Number(item.subtotal),
+    createdAt: toISODate(item.createdAt),
+    updatedAt: toISODate(item.updatedAt),
+  };
+}
+
+/** Convert a purchase voucher's numeric/timestamp fields for API output. */
+function formatVoucher(voucher: Record<string, unknown>) {
+  const items = Array.isArray(voucher.items)
+    ? voucher.items.map(formatVoucherItem)
+    : voucher.items;
+  return {
+    ...voucher,
+    date: toISODate(voucher.date),
+    totalAmount: Number(voucher.totalAmount),
+    createdAt: toISODate(voucher.createdAt),
+    updatedAt: toISODate(voucher.updatedAt),
+    finalizedAt: toISODate(voucher.finalizedAt),
+    items,
+  };
+}
 
 interface Params {
   params: Promise<{ id: string }>;
@@ -17,7 +45,7 @@ export const GET = withStaffDynamic(async (request: NextRequest, { params }: Par
   if (!voucher) {
     return NextResponse.json({ error: 'Voucher not found' }, { status: 404 });
   }
-  return NextResponse.json(voucher);
+  return NextResponse.json(formatVoucher(voucher as unknown as Record<string, unknown>));
 });
 
 /** PUT /api/purchase-vouchers/:id
@@ -42,7 +70,7 @@ export const PUT = withStaffDynamic(async (request: NextRequest, { params }: Par
       paymentMethodId: paymentMethodId || null,
       notes,
     });
-    return NextResponse.json(updated);
+    return NextResponse.json(formatVoucher(updated as unknown as Record<string, unknown>));
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : 'Error al actualizar comprobante';
     return NextResponse.json({ error: message }, { status: 400 });
@@ -67,7 +95,7 @@ export const PATCH = withStaffDynamic(async (request: NextRequest, { params }: P
       quantity,
       unitCost: Number(unitCost),
     });
-    return NextResponse.json(item, { status: 201 });
+    return NextResponse.json(formatVoucherItem(item as unknown as Record<string, unknown>), { status: 201 });
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : 'Error al agregar ítem';
     return NextResponse.json({ error: message }, { status: 400 });
