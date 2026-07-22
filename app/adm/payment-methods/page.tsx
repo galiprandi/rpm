@@ -4,6 +4,7 @@ import { paymentMethod } from '@/db/schema';
 import { desc, asc } from 'drizzle-orm';
 import { requireAuth } from '@/lib/auth-server';
 import { UserRole } from '@/lib/auth/roles';
+import { toISODate } from '@/lib/utils/date';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 60;
@@ -20,5 +21,11 @@ export default async function PaymentMethodsPage() {
     orderBy: [desc(paymentMethod.isActive), asc(paymentMethod.sortOrder), asc(paymentMethod.name)],
   });
 
-  return <PaymentMethodsClient initialPaymentMethods={paymentMethods as any} />;
+  const formatted = paymentMethods.map((pm) => ({
+    ...pm,
+    createdAt: toISODate(pm.createdAt),
+    updatedAt: toISODate(pm.updatedAt),
+  }));
+
+  return <PaymentMethodsClient initialPaymentMethods={formatted as any} />;
 }

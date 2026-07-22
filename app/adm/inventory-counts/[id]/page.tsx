@@ -89,7 +89,7 @@ export default async function InventoryCountDetailPage({
                 className="h-3.5 w-3.5 text-primary pointer-events-none"
                 aria-hidden="true"
               />
-              <span className="font-mono">{operative.inventoryCountItems.length}</span>{' '}
+              <span className="font-mono">{(operative.inventoryCountItems || []).length}</span>{' '}
               Artículos
             </div>
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted/50 border text-xs font-medium text-muted-foreground">

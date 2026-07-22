@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { db } from '@/lib/db';
 import { vehicle } from '@/db/schema';
 import { desc, count } from 'drizzle-orm';
+import { toISODate } from '@/lib/utils/date';
 import VehiclesClient from './VehiclesClient';
 
 export const dynamic = 'force-dynamic';
@@ -37,8 +38,10 @@ export default async function VehiclesPage() {
 
   const vehiclesFormatted = vehicles.map((v) => ({
     ...v,
+    createdAt: toISODate(v.createdAt),
+    updatedAt: toISODate(v.updatedAt),
     _count: {
-      workOrder: v.workOrders.length,
+      workOrders: (v.workOrders || []).length,
     },
   }));
 

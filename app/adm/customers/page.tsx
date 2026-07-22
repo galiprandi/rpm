@@ -4,6 +4,7 @@ import { customer } from '@/db/schema';
 import { asc } from 'drizzle-orm';
 import { requireAuth } from '@/lib/auth-server';
 import { UserRole } from '@/lib/auth/roles';
+import { toISODate } from '@/lib/utils/date';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 60;
@@ -28,9 +29,11 @@ export default async function CustomersPage() {
   const customersWithVehicles = customers.map((c) => ({
     ...c,
     balance: Number(c.balance),
-    vehicles: c.vehicles,
+    createdAt: toISODate(c.createdAt),
+    updatedAt: toISODate(c.updatedAt),
+    vehicles: c.vehicles || [],
     _count: {
-      workOrders: c.workOrders.length,
+      workOrders: (c.workOrders || []).length,
     },
   }));
 

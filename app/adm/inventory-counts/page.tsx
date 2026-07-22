@@ -15,7 +15,7 @@ export default async function InventoryCountsPage() {
   const serializedCounts = counts.map(count => ({
     ...count,
     createdAt: new Date(count.createdAt).toISOString(),
-    items: count.inventoryCountItems.map(item => ({
+    items: (count.inventoryCountItems || []).map(item => ({
       reportedAt: item.reportedAt ? new Date(item.reportedAt).toISOString() : null,
     })),
   }));

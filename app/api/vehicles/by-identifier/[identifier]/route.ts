@@ -29,7 +29,7 @@ export async function GET(
       createdAt: toISODate(v.createdAt),
       updatedAt: toISODate(v.updatedAt),
       _count: {
-        work_order: v.workOrders.length,
+        workOrders: (v.workOrders || []).length,
       },
     }));
 

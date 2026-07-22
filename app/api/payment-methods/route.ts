@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withStaff, withAdmin } from "@/lib/api-middleware";
 import { db } from "@/lib/db";
-import { paymentMethod } from "@/db/schema";
-import { desc, asc } from "drizzle-orm";
+import { paymentMethod, payment } from "@/db/schema";
+import { desc, asc, eq, count } from "drizzle-orm";
 import { toISODate } from "@/lib/utils/date";
 
 // GET /api/payment-methods - List all payment methods
@@ -12,10 +12,18 @@ export const GET = withStaff(async () => {
       orderBy: [desc(paymentMethod.isActive), asc(paymentMethod.sortOrder), asc(paymentMethod.name)],
     });
 
+    // Count payments per payment method in a single query
+    const paymentCounts = await db
+      .select({ paymentMethodId: payment.paymentMethodId, value: count() })
+      .from(payment)
+      .groupBy(payment.paymentMethodId);
+    const countMap = new Map(paymentCounts.map((r) => [r.paymentMethodId, r.value]));
+
     const formatted = paymentMethods.map((pm) => ({
       ...pm,
       createdAt: toISODate(pm.createdAt),
       updatedAt: toISODate(pm.updatedAt),
+      _count: { payments: countMap.get(pm.id) || 0 },
     }));
 
     return NextResponse.json({ paymentMethods: formatted });

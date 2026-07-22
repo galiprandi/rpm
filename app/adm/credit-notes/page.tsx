@@ -28,7 +28,7 @@ export default async function CreditNotesPage() {
   const creditNotesFormatted = creditNotes.map((cn) => ({
     ...cn,
     total: Number(cn.total),
-    itemCount: cn.creditNoteItems.length,
+    itemCount: (cn.creditNoteItems || []).length,
     createdAt: new Date(cn.createdAt).toISOString(),
   }));
 
