@@ -23,7 +23,7 @@ RPM_DEV_BYPASS_AUTH=true pnpm dev
 - **Servicios**: `/lib/services/*.test.ts`
   - ProductService: CRUD, búsqueda, filtros
   - CategoryService: CRUD básico
-- **Mocks**: Prisma client con `vi.hoisted()`
+- **Mocks**: Drizzle client con `vi.hoisted()`
 - **Cobertura esperada**: ≥80%
 
 ### 2. E2E Tests (Puppeteer MCP)

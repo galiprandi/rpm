@@ -113,8 +113,8 @@ export function CustomerCreditNoteDialog({ open, onOpenChange, customerId, custo
           createdAt: String(wo.createdAt),
           status: String(wo.status),
           vehicle: wo.vehicle as Sale['vehicle'],
-          itemsCount: (wo.work_order_item as unknown[])?.length || 0,
-          items: (wo.work_order_item as Sale['items']) || [],
+          itemsCount: (wo.workOrderItems as unknown[])?.length || 0,
+          items: (wo.workOrderItems as Sale['items']) || [],
           payments: (wo.payments as Sale['payments']) || [],
         })),
       ];

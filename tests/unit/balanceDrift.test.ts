@@ -12,6 +12,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Track a virtual customer balance that adjustBalanceAtomically mutates
 let virtualBalance = 0;
+let pendingDelta = 0;
 const adjustments: Array<{ delta: number; source: string }> = [];
 
 // Track virtual DB state that recalculateCustomerBalance reads
@@ -24,54 +25,70 @@ let virtualWorkOrders: Array<{
 let virtualDirectSales: Array<{
   id: string;
   total: number;
-  payments: Array<{ amount: number }>;
+  directSalePayments: Array<{ amount: number }>;
 }> = [];
 let virtualCreditNotes: Array<{ id: string; total: number; status: string }> =
   [];
 
-vi.mock("@/lib/prisma", () => ({
-  prisma: {
-    $transaction: vi.fn((fn: (tx: unknown) => unknown) => fn({})),
-    work_order: {
-      findMany: vi.fn(
-        (args?: { where?: { status?: { notIn?: string[] } } }) => {
-          const notIn = args?.where?.status?.notIn;
-          if (notIn) {
-            return virtualWorkOrders.filter((w) => !notIn.includes(w.status));
-          }
-          return virtualWorkOrders;
-        },
-      ),
+const { mockDb } = vi.hoisted(() => {
+  const mockDb = {
+    query: {
+      workOrder: {
+        findMany: vi.fn(() => {
+          // Filter out CANCELLED (service uses notInArray(workOrder.status, ["CANCELLED"]))
+          return virtualWorkOrders.filter((w) => w.status !== "CANCELLED");
+        }),
+      },
+      directSale: {
+        findMany: vi.fn(() => virtualDirectSales),
+      },
+      creditNote: {
+        findMany: vi.fn(() => {
+          // Filter to ISSUED + ACCOUNT_CREDIT (service uses inArray(creditNote.status, ["ISSUED", "ACCOUNT_CREDIT"]))
+          return virtualCreditNotes.filter((c) =>
+            ["ISSUED", "ACCOUNT_CREDIT"].includes(c.status),
+          );
+        }),
+      },
+      customer: {
+        findFirst: vi.fn(() => ({ balance: virtualBalance })),
+      },
     },
-    direct_sale: {
-      findMany: vi.fn(() => virtualDirectSales),
-    },
-    credit_note: {
-      findMany: vi.fn((args?: { where?: { status?: { in?: string[] } } }) => {
-        const inFilter = args?.where?.status?.in;
-        if (inFilter) {
-          return virtualCreditNotes.filter((c) => inFilter.includes(c.status));
+    update: vi.fn(() => ({
+      set: vi.fn((setArg: { balance: unknown }) => {
+        const isDirectSet = typeof setArg.balance === "string";
+        if (isDirectSet) {
+          // recalculateCustomerBalance: set balance to calculated value
+          virtualBalance = Number(setArg.balance);
         }
-        return virtualCreditNotes;
+        return {
+          where: vi.fn(() => {
+            if (isDirectSet) {
+              // recalculateCustomerBalance: no .returning() called
+              return Promise.resolve();
+            }
+            // adjustBalanceAtomically: .returning() will be called
+            return {
+              returning: vi.fn(() => {
+                // Apply the pending delta (SQL increment)
+                virtualBalance += pendingDelta;
+                return Promise.resolve([{ balance: virtualBalance }]);
+              }),
+            };
+          }),
+        };
       }),
-    },
-    customer: {
-      findUnique: vi.fn(() => ({ balance: virtualBalance })),
-      update: vi.fn(
-        ({ data }: { data: { balance: number | { increment: number } } }) => {
-          if (typeof data.balance === "number") {
-            virtualBalance = data.balance;
-          } else {
-            virtualBalance += data.balance.increment;
-          }
-          return { balance: virtualBalance };
-        },
-      ),
-    },
-    balance_audit: {
-      create: vi.fn(),
-    },
-  },
+    })),
+    insert: vi.fn(() => ({
+      values: vi.fn(() => Promise.resolve()),
+    })),
+    transaction: vi.fn((fn: (tx: unknown) => unknown) => fn(mockDb)),
+  };
+  return { mockDb };
+});
+
+vi.mock("@/lib/db", () => ({
+  db: mockDb,
 }));
 
 import {
@@ -81,6 +98,7 @@ import {
 
 function resetState() {
   virtualBalance = 0;
+  pendingDelta = 0;
   adjustments.length = 0;
   virtualWorkOrders = [];
   virtualDirectSales = [];
@@ -102,12 +120,12 @@ function cancelWorkOrder(woId: string) {
 }
 
 function addDirectSale(id: string, total: number) {
-  virtualDirectSales.push({ id, total, payments: [] });
+  virtualDirectSales.push({ id, total, directSalePayments: [] });
 }
 
 function addPaymentToDirectSale(dsId: string, amount: number) {
   const ds = virtualDirectSales.find((d) => d.id === dsId);
-  if (ds) ds.payments.push({ amount });
+  if (ds) ds.directSalePayments.push({ amount });
 }
 
 function addCreditNote(id: string, total: number) {
@@ -120,6 +138,7 @@ function cancelCreditNote(cnId: string) {
 }
 
 async function applyDelta(delta: number, source: string) {
+  pendingDelta = delta;
   adjustments.push({ delta, source });
   await adjustBalanceAtomically("cust1", delta, source);
 }

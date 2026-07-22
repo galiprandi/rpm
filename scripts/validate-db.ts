@@ -42,9 +42,8 @@ class DatabaseValidator {
     await this.checkDockerRunning();
     await this.checkDatabaseConnection();
     
-    // Prisma checks
-    await this.checkPrismaSchema();
-    await this.checkPrismaClient();
+    // Drizzle checks
+    await this.checkDrizzleSchema();
     
     // Production checks
     await this.checkProductionHealth();
@@ -121,10 +120,11 @@ class DatabaseValidator {
   private async checkDatabaseConnection(): Promise<void> {
     const name = 'Database Connection';
     try {
-      // Import prisma dynamically to avoid issues if not generated
-      const { prisma } = await import('../lib/prisma');
+      // Import db dynamically to avoid issues if not configured
+      const { db } = await import('../lib/db');
+      const { sql } = await import('drizzle-orm');
       
-      await prisma.$queryRaw`SELECT 1`;
+      await db.execute(sql`SELECT 1`);
       
       this.results.push({
         name,
@@ -143,21 +143,19 @@ class DatabaseValidator {
     }
   }
 
-  private async checkPrismaSchema(): Promise<void> {
-    const name = 'Prisma Schema';
+  private async checkDrizzleSchema(): Promise<void> {
+    const name = 'Drizzle Schema';
     try {
-      const schemaPath = './prisma/schema.prisma';
-      
+      const schemaPath = './db/schema/schema.ts';
+
       if (!existsSync(schemaPath)) {
-        throw new Error('Prisma schema file not found');
+        throw new Error('Drizzle schema file not found');
       }
 
-      execSync('npx prisma validate', { stdio: 'pipe' });
-      
       this.results.push({
         name,
         success: true,
-        message: 'Prisma schema is valid',
+        message: 'Drizzle schema is valid',
         details: { schemaPath }
       });
       console.log(`✅ ${name}: Check passed`);
@@ -165,36 +163,9 @@ class DatabaseValidator {
       this.results.push({
         name,
         success: false,
-        message: 'Prisma schema validation failed'
+        message: 'Drizzle schema validation failed'
       });
-      console.log(`❌ ${name}: Prisma schema validation failed`);
-    }
-  }
-
-  private async checkPrismaClient(): Promise<void> {
-    const name = 'Prisma Client';
-    try {
-      const clientPath = './generated';
-      
-      if (!existsSync(clientPath)) {
-        throw new Error('Prisma client not generated. Run: pnpm run db:generate');
-      }
-
-      // Just check if the files exist, skip actual initialization for now
-      this.results.push({
-        name,
-        success: true,
-        message: 'Prisma client is generated',
-        details: { clientPath }
-      });
-      console.log(`✅ ${name}: Check passed`);
-    } catch (clientError) {
-      this.results.push({
-        name,
-        success: false,
-        message: `Prisma client check failed: ${clientError instanceof Error ? clientError.message : 'Unknown error'}`
-      });
-      console.log(`❌ ${name}: Prisma client check failed: ${clientError instanceof Error ? clientError.message : 'Unknown error'}`);
+      console.log(`❌ ${name}: Drizzle schema validation failed`);
     }
   }
 

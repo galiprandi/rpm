@@ -2,6 +2,36 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withStaffDynamic } from '@/lib/api-middleware';
 import { getVoucherById, addItemToVoucher, deleteVoucher, updateVoucherHeader } from '@/lib/services/purchaseVoucherService';
+import { toISODate } from '@/lib/utils/date';
+import { serializeDrizzleResult } from '@/lib/utils/serialization';
+
+/** Convert a purchase voucher item's numeric/timestamp fields for API output. */
+function formatVoucherItem(item: Record<string, unknown>) {
+  return {
+    ...item,
+    unitCost: Number(item.unitCost),
+    subtotal: Number(item.subtotal),
+    createdAt: toISODate(item.createdAt),
+    updatedAt: toISODate(item.updatedAt),
+  };
+}
+
+/** Convert a purchase voucher's numeric/timestamp fields for API output. */
+function formatVoucher(voucher: Record<string, unknown>) {
+  const items = Array.isArray(voucher.items)
+    ? voucher.items.map(formatVoucherItem)
+    : voucher.items;
+  const { purchaseVoucherItems: _raw, ...rest } = voucher;
+  return {
+    ...rest,
+    date: toISODate(voucher.date),
+    totalAmount: Number(voucher.totalAmount),
+    createdAt: toISODate(voucher.createdAt),
+    updatedAt: toISODate(voucher.updatedAt),
+    finalizedAt: toISODate(voucher.finalizedAt),
+    items,
+  };
+}
 
 interface Params {
   params: Promise<{ id: string }>;
@@ -17,7 +47,7 @@ export const GET = withStaffDynamic(async (request: NextRequest, { params }: Par
   if (!voucher) {
     return NextResponse.json({ error: 'Voucher not found' }, { status: 404 });
   }
-  return NextResponse.json(voucher);
+  return NextResponse.json(serializeDrizzleResult(formatVoucher(voucher as unknown as Record<string, unknown>)));
 });
 
 /** PUT /api/purchase-vouchers/:id
@@ -32,18 +62,17 @@ export const PUT = withStaffDynamic(async (request: NextRequest, { params }: Par
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
   try {
-    const { Decimal } = await import('@prisma/client/runtime/library');
     const updated = await updateVoucherHeader({
       voucherId: id,
       supplierId,
       letter,
       number,
       date: new Date(date),
-      totalAmount: new Decimal(totalAmount),
+      totalAmount: Number(totalAmount),
       paymentMethodId: paymentMethodId || null,
       notes,
     });
-    return NextResponse.json(updated);
+    return NextResponse.json(formatVoucher(updated as unknown as Record<string, unknown>));
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : 'Error al actualizar comprobante';
     return NextResponse.json({ error: message }, { status: 400 });
@@ -62,14 +91,13 @@ export const PATCH = withStaffDynamic(async (request: NextRequest, { params }: P
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
   try {
-    const { Decimal } = await import('@prisma/client/runtime/library');
     const item = await addItemToVoucher({
       voucherId: id,
       productId,
       quantity,
-      unitCost: new Decimal(unitCost),
+      unitCost: Number(unitCost),
     });
-    return NextResponse.json(item, { status: 201 });
+    return NextResponse.json(formatVoucherItem(item as unknown as Record<string, unknown>), { status: 201 });
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : 'Error al agregar ítem';
     return NextResponse.json({ error: message }, { status: 400 });

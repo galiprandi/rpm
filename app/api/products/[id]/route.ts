@@ -5,7 +5,9 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { withAdminDynamic } from '@/lib/api-middleware';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
+import { product } from '@/db/schema';
+import { eq } from 'drizzle-orm';
 import { adjustStock, updateProduct, deactivateProduct, getProductById } from '@/lib/services/productService';
 import { revalidatePath } from 'next/cache';
 
@@ -45,8 +47,8 @@ export const PUT = withAdminDynamic(async (request: NextRequest, { params }: Par
     const body = await request.json();
 
     // Verificar que el producto existe
-    const existing = await prisma.product.findUnique({
-      where: { id },
+    const existing = await db.query.product.findFirst({
+      where: eq(product.id, id),
     });
 
     if (!existing) {
@@ -58,8 +60,8 @@ export const PUT = withAdminDynamic(async (request: NextRequest, { params }: Par
 
     // Validaciones
     if (body.sku && body.sku !== existing.sku) {
-      const skuExists = await prisma.product.findUnique({
-        where: { sku: body.sku },
+      const skuExists = await db.query.product.findFirst({
+        where: eq(product.sku, body.sku),
       });
       if (skuExists) {
         return NextResponse.json(
@@ -86,10 +88,10 @@ export const PUT = withAdminDynamic(async (request: NextRequest, { params }: Par
     // Check if stock is being modified
     const stockChanged = body.stock !== undefined && Number(body.stock) !== existing.stock;
 
-    let product;
+    let updatedProduct;
     if (stockChanged) {
       // Use adjustStock for stock changes (includes audit trail)
-      product = await adjustStock(
+      updatedProduct = await adjustStock(
         id,
         'set',
         body.stock,
@@ -103,18 +105,18 @@ export const PUT = withAdminDynamic(async (request: NextRequest, { params }: Par
       const otherFields = { ...body };
       delete otherFields.stock;
       if (Object.keys(otherFields).length > 0) {
-        product = await updateProduct(id, otherFields);
+        updatedProduct = await updateProduct(id, otherFields);
       }
     } else {
       // No stock change - just update other fields
-      product = await updateProduct(id, body);
+      updatedProduct = await updateProduct(id, body);
     }
 
     // Revalidate cache on-demand
     revalidatePath('/adm/products');
     revalidatePath('/adm/dashboard');
 
-    return NextResponse.json({ product });
+    return NextResponse.json({ product: updatedProduct });
   } catch (error) {
     console.error('Error updating product:', error);
     return NextResponse.json(
@@ -131,8 +133,8 @@ export const DELETE = withAdminDynamic(async (request: NextRequest, { params }: 
     const { id } = await params;
 
     // Verificar que el producto existe
-    const existing = await prisma.product.findUnique({
-      where: { id },
+    const existing = await db.query.product.findFirst({
+      where: eq(product.id, id),
     });
 
     if (!existing) {

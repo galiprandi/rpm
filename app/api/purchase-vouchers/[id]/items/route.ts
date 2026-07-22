@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withStaffDynamic } from '@/lib/api-middleware';
 import { addItemToVoucher } from '@/lib/services/purchaseVoucherService';
+import { toISODate } from '@/lib/utils/date';
 
 /** POST /api/purchase-vouchers/:id/items
  *  Add an item to a draft voucher.
@@ -17,16 +18,21 @@ export const POST = withStaffDynamic(async (request: NextRequest, { params }: Pa
   if (!productId || quantity === undefined || !unitCost) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
-  const { Decimal } = await import('@prisma/client/runtime/library');
   try {
     const item = await addItemToVoucher({
       voucherId: id,
       productId,
       quantity: parseInt(quantity),
-      unitCost: new Decimal(unitCost),
+      unitCost: Number(unitCost),
       priceListData: priceListData || undefined,
     });
-    return NextResponse.json(item, { status: 201 });
+    return NextResponse.json({
+      ...item,
+      unitCost: Number(item.unitCost),
+      subtotal: Number(item.subtotal),
+      createdAt: toISODate(item.createdAt),
+      updatedAt: toISODate(item.updatedAt),
+    }, { status: 201 });
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : 'Error al agregar ítem';
     return NextResponse.json({ error: message }, { status: 400 });

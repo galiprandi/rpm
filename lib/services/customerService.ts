@@ -14,7 +14,9 @@
  * - Performance: <100ms por query
  */
 
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
+import { customer, vehicle } from '@/db/schema';
+import { eq, and, or, ilike, inArray, sql, desc, type SQL } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { capitalizeText } from '@/lib/utils/format';
 
@@ -62,30 +64,14 @@ export interface CustomerListResult {
   offset: number;
 }
 
-// Helper: Transform Prisma customer to Customer type
-function transformCustomer(customer: {
-  id: string;
-  name: string;
-  phone: string | null;
-  phoneAlt: string | null;
-  email: string | null;
-  address: string | null;
-  notes: string | null;
-  billingData: unknown;
-  balance: number | { toNumber: () => number };
-  createdAt: Date;
-  updatedAt: Date;
-  vehicle?: unknown;
-  _count?: unknown;
-}): Customer {
-  const balance = typeof customer.balance === 'number' 
-    ? customer.balance 
-    : customer.balance?.toNumber?.() || 0;
-  
-  // Handle billingData - it might be JsonValue from Prisma
+// Helper: Transform Drizzle customer to Customer type
+function transformCustomer(c: typeof customer.$inferSelect): Customer {
+  const balance = Number(c.balance) || 0;
+
+  // Handle billingData - it's unknown from jsonb
   let billingData: Customer['billingData'] = null;
-  if (customer.billingData && typeof customer.billingData === 'object' && !Array.isArray(customer.billingData)) {
-    const bd = customer.billingData as Record<string, unknown>;
+  if (c.billingData && typeof c.billingData === 'object' && !Array.isArray(c.billingData)) {
+    const bd = c.billingData as Record<string, unknown>;
     if (bd.cuit || bd.invoiceType) {
       billingData = {
         cuit: (bd.cuit as string) || null,
@@ -93,19 +79,19 @@ function transformCustomer(customer: {
       };
     }
   }
-  
+
   return {
-    id: customer.id,
-    name: customer.name,
-    phone: customer.phone,
-    phoneAlt: customer.phoneAlt,
-    email: customer.email,
-    address: customer.address,
-    notes: customer.notes,
+    id: c.id,
+    name: c.name,
+    phone: c.phone,
+    phoneAlt: c.phoneAlt,
+    email: c.email,
+    address: c.address,
+    notes: c.notes,
     billingData,
     balance,
-    createdAt: customer.createdAt,
-    updatedAt: customer.updatedAt,
+    createdAt: new Date(c.createdAt),
+    updatedAt: new Date(c.updatedAt),
   };
 }
 
@@ -115,53 +101,54 @@ function transformCustomer(customer: {
 export async function getCustomers(filters: CustomerFilters = {}): Promise<CustomerListResult> {
   const { search, limit = 50, offset = 0 } = filters;
 
-  // Build where clause
-  const where = search
-    ? {
-        OR: [
-          { name: { contains: search, mode: 'insensitive' as const } },
-          { phone: { contains: search, mode: 'insensitive' as const } },
-          { phoneAlt: { contains: search, mode: 'insensitive' as const } },
-          { email: { contains: search, mode: 'insensitive' as const } },
-          { address: { contains: search, mode: 'insensitive' as const } },
-          {
-            vehicle: {
-              some: {
-                identifier: { contains: search, mode: 'insensitive' as const },
-              },
-            },
-          },
-        ],
-      }
-    : {};
+  // Build where conditions
+  const conditions: SQL[] = [];
 
-  const [customers, total] = await Promise.all([
-    prisma.customer.findMany({
+  if (search) {
+    // Search across customer fields
+    const customerSearch = or(
+      ilike(customer.name, `%${search}%`),
+      ilike(customer.phone, `%${search}%`),
+      ilike(customer.phoneAlt, `%${search}%`),
+      ilike(customer.email, `%${search}%`),
+      ilike(customer.address, `%${search}%`),
+    );
+
+    // Search across vehicle identifiers (subquery for customer IDs with matching vehicles)
+    const vehicleMatch = inArray(
+      customer.id,
+      db.select({ id: vehicle.customerId }).from(vehicle).where(ilike(vehicle.identifier, `%${search.toUpperCase()}%`))
+    );
+
+    conditions.push(or(customerSearch, vehicleMatch)!);
+  }
+
+  const where = conditions.length > 0 ? and(...conditions) : undefined;
+
+  const [customers, totalRows] = await Promise.all([
+    db.query.customer.findMany({
       where,
-      include: {
-        vehicle: {
-          select: {
+      with: {
+        vehicles: {
+          columns: {
             id: true,
             identifier: true,
             category: true,
           },
         },
-        _count: {
-          select: {
-            work_order: true,
-          },
-        },
       },
-      orderBy: { createdAt: 'desc' },
-      take: limit,
-      skip: offset,
+      orderBy: desc(customer.createdAt),
+      limit,
+      offset,
     }),
-    prisma.customer.count({ where }),
+    db.select({ count: sql<number>`count(*)::int` })
+      .from(customer)
+      .where(where),
   ]);
 
   return {
     customers: customers.map(transformCustomer),
-    total,
+    total: totalRows[0]?.count ?? 0,
     limit,
     offset,
   };
@@ -171,11 +158,11 @@ export async function getCustomers(filters: CustomerFilters = {}): Promise<Custo
  * Get a single customer by ID
  */
 export async function getCustomerById(id: string): Promise<Customer | null> {
-  const customer = await prisma.customer.findUnique({
-    where: { id },
-    include: {
-      vehicle: {
-        select: {
+  const c = await db.query.customer.findFirst({
+    where: eq(customer.id, id),
+    with: {
+      vehicles: {
+        columns: {
           id: true,
           identifier: true,
           category: true,
@@ -184,8 +171,8 @@ export async function getCustomerById(id: string): Promise<Customer | null> {
     },
   });
 
-  if (!customer) return null;
-  return transformCustomer(customer);
+  if (!c) return null;
+  return transformCustomer(c);
 }
 
 /**
@@ -210,21 +197,19 @@ export async function createCustomer(input: CreateCustomerInput): Promise<Custom
     }
   }
 
-  const customer = await prisma.customer.create({
-    data: {
-      id: randomUUID(),
-      name: capitalizeText(name) || name,
-      phone,
-      phoneAlt,
-      email,
-      address,
-      notes,
-      billingData: billingData as any || null,
-      updatedAt: new Date(),
-    },
-  });
+  const [created] = await db.insert(customer).values({
+    id: randomUUID(),
+    name: capitalizeText(name) || name,
+    phone: phone || null,
+    phoneAlt: phoneAlt || null,
+    email: email || null,
+    address: address || null,
+    notes: notes || null,
+    billingData: billingData as any || null,
+    updatedAt: new Date().toISOString(),
+  }).returning();
 
-  return transformCustomer(customer);
+  return transformCustomer(created);
 }
 
 /**
@@ -244,21 +229,21 @@ export async function updateCustomer(id: string, input: Partial<CreateCustomerIn
     }
   }
 
-  const customer = await prisma.customer.update({
-    where: { id },
-    data: {
-      ...(name !== undefined && { name: capitalizeText(name) || name }),
-      ...(phone !== undefined && { phone }),
-      ...(phoneAlt !== undefined && { phoneAlt }),
-      ...(email !== undefined && { email }),
-      ...(address !== undefined && { address }),
-      ...(notes !== undefined && { notes }),
-      ...(billingData !== undefined && { billingData }),
-      updatedAt: new Date(),
-    },
-  });
+  const data: Partial<typeof customer.$inferInsert> = {};
+  if (name !== undefined) data.name = capitalizeText(name) || name;
+  if (phone !== undefined) data.phone = phone;
+  if (phoneAlt !== undefined) data.phoneAlt = phoneAlt;
+  if (email !== undefined) data.email = email;
+  if (address !== undefined) data.address = address;
+  if (notes !== undefined) data.notes = notes;
+  if (billingData !== undefined) data.billingData = billingData as any;
+  data.updatedAt = new Date().toISOString();
 
-  return transformCustomer(customer);
+  const [updated] = await db.update(customer).set(data).where(eq(customer.id, id)).returning();
+
+  if (!updated) throw new Error('Customer not found');
+
+  return transformCustomer(updated);
 }
 
 /**

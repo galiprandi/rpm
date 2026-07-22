@@ -5,7 +5,9 @@
  * Spec: /specs/spec-price-lists.md
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
+import { priceList, product, priceListItem } from '@/db/schema';
+import { eq, inArray, and } from 'drizzle-orm';
 import { getProductBaseCost } from '@/lib/services/priceListService';
 import { calculateFinalPrice, type RoundingRule } from '@/lib/utils/rounding';
 import { getMinimumMargin } from '@/lib/services/settingsService';
@@ -32,11 +34,11 @@ export async function POST(request: NextRequest, { params }: Params) {
     }
 
     // Get price list
-    const priceList = await prisma.price_list.findUnique({
-      where: { id },
+    const priceListRecord = await db.query.priceList.findFirst({
+      where: eq(priceList.id, id),
     });
 
-    if (!priceList) {
+    if (!priceListRecord) {
       return NextResponse.json(
         { error: 'Price list not found' },
         { status: 404 }
@@ -44,11 +46,9 @@ export async function POST(request: NextRequest, { params }: Params) {
     }
 
     // Get all products
-    const products = await prisma.product.findMany({
-      where: {
-        id: { in: productIds },
-      },
-      select: {
+    const products = await db.query.product.findMany({
+      where: inArray(product.id, productIds),
+      columns: {
         id: true,
         name: true,
         replacementCost: true,
@@ -57,11 +57,11 @@ export async function POST(request: NextRequest, { params }: Params) {
     });
 
     // Get price list items (exceptions)
-    const exceptions = await prisma.price_list_item.findMany({
-      where: {
-        priceListId: id,
-        productId: { in: productIds },
-      },
+    const exceptions = await db.query.priceListItem.findMany({
+      where: and(
+        eq(priceListItem.priceListId, id),
+        inArray(priceListItem.productId, productIds),
+      ),
     });
 
     const minimumMargin = await getMinimumMargin();
@@ -72,16 +72,16 @@ export async function POST(request: NextRequest, { params }: Params) {
     );
 
     // Calculate prices for all products
-    const results = products.map((product) => {
-      const exception = exceptionMap.get(product.id);
-      const replacementCost = getProductBaseCost(product.replacementCost, product.costPrice);
+    const results = products.map((productRecord) => {
+      const exception = exceptionMap.get(productRecord.id);
+      const replacementCost = getProductBaseCost(productRecord.replacementCost, productRecord.costPrice);
 
       const finalPrice = exception?.fixedPrice !== null && exception?.fixedPrice !== undefined
         ? Number(exception.fixedPrice)
         : calculateFinalPrice(
             replacementCost,
-            Number(priceList.baseMarginPercentage),
-            priceList.roundingRule as RoundingRule,
+            Number(priceListRecord.baseMarginPercentage),
+            priceListRecord.roundingRule as RoundingRule,
             exception?.overrideMarginPercentage !== null && exception?.overrideMarginPercentage !== undefined
               ? { overrideMarginPercentage: Number(exception.overrideMarginPercentage) }
               : undefined
@@ -89,13 +89,13 @@ export async function POST(request: NextRequest, { params }: Params) {
 
       const appliedMargin = exception?.overrideMarginPercentage !== null && exception?.overrideMarginPercentage !== undefined
         ? Number(exception.overrideMarginPercentage)
-        : Number(priceList.baseMarginPercentage);
+        : Number(priceListRecord.baseMarginPercentage);
 
       const actualMargin = ((finalPrice - replacementCost) / replacementCost) * 100;
 
       return {
-        productId: product.id,
-        name: product.name,
+        productId: productRecord.id,
+        name: productRecord.name,
         priceListId: id,
         price: finalPrice,
         appliedMargin,

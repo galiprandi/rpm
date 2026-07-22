@@ -316,7 +316,11 @@ export default function CustomersClient({
           return (
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className="font-mono font-semibold text-emerald-700 cursor-help">
+                <span
+                  className="font-mono font-semibold text-emerald-700 cursor-help outline-none focus-visible:underline decoration-dotted rounded-sm"
+                  tabIndex={0}
+                  aria-label={`Saldo a favor: ${formatARS(balance, 2)}`}
+                >
                   {formatARS(balance, 2)}
                 </span>
               </TooltipTrigger>

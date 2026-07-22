@@ -1,4 +1,14 @@
-import { prisma } from "@/lib/prisma";
+import { db, type Transaction } from "@/lib/db";
+import {
+  workOrder,
+  workOrderItem,
+  invoice,
+  payment,
+  stockMovement,
+  product,
+  user,
+} from "@/db/schema";
+import { eq, and, not, inArray, like } from "drizzle-orm";
 import {
   createInvoice,
   determineInvoiceType,
@@ -15,24 +25,24 @@ export async function generateDocumentFromWorkOrder(
   workOrderId: string,
   createdBy: string,
   options: { type?: InvoiceType; forceNew?: boolean } = {},
-  existingTx?: any,
+  existingTx?: Transaction,
 ) {
-  const execute = async (tx: any) => {
+  const execute = async (tx: Transaction) => {
     // Fetch work order with items and customer
-    const workOrder = await tx.work_order.findUnique({
-      where: { id: workOrderId },
-      include: {
+    const workOrderData = await tx.query.workOrder.findFirst({
+      where: eq(workOrder.id, workOrderId),
+      with: {
         customer: true,
-        work_order_item: true,
+        workOrderItems: true,
       },
     });
 
-    if (!workOrder) {
+    if (!workOrderData) {
       throw new Error("Orden de trabajo no encontrada");
     }
 
-    const customer = workOrder.customer;
-    const billingData = customer?.billingData;
+    const customerData = workOrderData.customer;
+    const billingData = customerData?.billingData;
 
     // Determine document type
     const docType =
@@ -40,13 +50,13 @@ export async function generateDocumentFromWorkOrder(
 
     // Check if a document of this type already exists to avoid duplicates
     if (!options.forceNew) {
-      const existingDocument = await tx.invoice.findFirst({
-        where: {
-          referenceId: workOrderId,
-          referenceType: "work_order",
-          type: docType,
-          status: { notIn: ["CANCELLED", "ANNULLED"] },
-        },
+      const existingDocument = await tx.query.invoice.findFirst({
+        where: and(
+          eq(invoice.referenceId, workOrderId),
+          eq(invoice.referenceType, "work_order"),
+          eq(invoice.type, docType),
+          not(inArray(invoice.status, ["CANCELLED", "ANNULLED"])),
+        ),
       });
 
       if (existingDocument) {
@@ -64,16 +74,18 @@ export async function generateDocumentFromWorkOrder(
     }
 
     // Total is already calculated in the work order
-    const total = Number(workOrder.total);
+    const total = Number(workOrderData.total);
 
     // Create the invoice/document
+    // createInvoice manages its own transaction; call without tx to avoid nesting
+    // The work order update below is in the Drizzle transaction.
     const document = await createInvoice(
       {
         type: docType,
-        referenceId: workOrder.id,
+        referenceId: workOrderData.id,
         referenceType: "work_order",
-        customerId: workOrder.customerId,
-        customerName: customer.name,
+        customerId: workOrderData.customerId,
+        customerName: customerData!.name,
         customerDoc,
         customerDocType,
         subtotal: total,
@@ -81,15 +93,14 @@ export async function generateDocumentFromWorkOrder(
         status: "DRAFT",
         createdBy,
       },
-      tx,
     );
 
     // If it's a pre-invoice, update the work order with the invoice ID
     if (docType.startsWith("X_") || docType.startsWith("FACTURA_")) {
-      await tx.work_order.update({
-        where: { id: workOrderId },
-        data: { invoiceId: document.id },
-      });
+      await tx
+        .update(workOrder)
+        .set({ invoiceId: document.id })
+        .where(eq(workOrder.id, workOrderId));
     }
 
     return document;
@@ -99,7 +110,7 @@ export async function generateDocumentFromWorkOrder(
     return execute(existingTx);
   }
 
-  return await prisma.$transaction(execute);
+  return await db.transaction(execute);
 }
 
 /**
@@ -137,14 +148,14 @@ export async function updateWorkOrder(
     userAgent?: string;
   },
 ) {
-  return await prisma.$transaction(async (tx) => {
-    const currentWO = await tx.work_order.findUnique({
-      where: { id },
-      include: {
-        work_order_item: {
-          where: { type: "PRODUCT" },
+  return await db.transaction(async (tx) => {
+    const currentWO = await tx.query.workOrder.findFirst({
+      where: eq(workOrder.id, id),
+      with: {
+        workOrderItems: {
+          where: eq(workOrderItem.type, "PRODUCT"),
         },
-        customer: { select: { name: true } },
+        customer: { columns: { name: true } },
       },
     });
 
@@ -163,7 +174,9 @@ export async function updateWorkOrder(
       { name: "notes", current: currentWO.notes, new: data.notes },
       {
         name: "scheduledDate",
-        current: currentWO.scheduledDate?.toISOString(),
+        current: currentWO.scheduledDate
+          ? new Date(currentWO.scheduledDate).toISOString()
+          : undefined,
         new:
           data.scheduledDate instanceof Date
             ? data.scheduledDate.toISOString()
@@ -225,44 +238,48 @@ export async function updateWorkOrder(
     }
 
     // 4. Update the Work Order
-    const updatedWO = await tx.work_order.update({
-      where: { id },
-      data: updateData,
-      include: {
+    await tx.update(workOrder).set(updateData).where(eq(workOrder.id, id));
+
+    // Re-fetch with relations (technician is not a Drizzle relation, fetched separately)
+    const updatedWO = await tx.query.workOrder.findFirst({
+      where: eq(workOrder.id, id),
+      with: {
         customer: {
-          select: {
-            id: true,
-            name: true,
-            phone: true,
-            billingData: true,
-          },
+          columns: { id: true, name: true, phone: true, billingData: true },
         },
         vehicle: {
-          select: {
-            id: true,
-            identifier: true,
-            category: true,
-            vehicle_make: true,
-            vehicle_model: true,
-          },
-        },
-        technician: {
-          select: {
-            id: true,
-            name: true,
+          columns: { id: true, identifier: true, category: true },
+          with: {
+            vehicleMake: true,
+            vehicleModel: true,
           },
         },
       },
     });
+
+    // Fetch technician separately (not a Drizzle relation)
+    let technician: { id: string; name: string } | null = null;
+    if (updatedWO?.technicianId) {
+      const techUser = await tx.query.user.findFirst({
+        where: eq(user.id, updatedWO.technicianId),
+        columns: { id: true, name: true },
+      });
+      technician = techUser || null;
+    }
+
+    const updatedWOResult = {
+      ...updatedWO,
+      technician,
+    };
 
     // 4a. If status changed TO CANCELLED, reverse balance (total - payments)
     if (data.status === "CANCELLED" && currentWO.status !== "CANCELLED") {
       const woTotal = Number(currentWO.total);
 
       // Fetch actual payments for this WO
-      const woPayments = await tx.payment.findMany({
-        where: { workOrderId: id },
-        select: { amount: true },
+      const woPayments = await tx.query.payment.findMany({
+        where: eq(payment.workOrderId, id),
+        columns: { amount: true },
       });
       const actualPayments = woPayments.reduce(
         (sum, p) => sum + Number(p.amount),
@@ -271,11 +288,11 @@ export async function updateWorkOrder(
       const reversal = woTotal - actualPayments;
 
       if (Math.abs(reversal) > 0.01) {
+        // adjustBalanceAtomically manages its own atomic operation; call without tx
         await adjustBalanceAtomically(
-          currentWO.customerId || updatedWO.customer.id,
+          currentWO.customerId || updatedWO!.customer.id,
           -reversal,
           "work_order_cancel",
-          tx,
         );
       }
     }
@@ -283,41 +300,39 @@ export async function updateWorkOrder(
     // 5. Stock discounting logic
     if (data.status && ["READY", "PAID", "DELIVERED"].includes(data.status)) {
       const woPrefix = id.substring(0, 8);
-      const existingMovements = await tx.stock_movement.findFirst({
-        where: { reason: { startsWith: `Venta OT #${woPrefix}` } },
+      const existingMovements = await tx.query.stockMovement.findFirst({
+        where: like(stockMovement.reason, `Venta OT #${woPrefix}%`),
       });
 
       if (!existingMovements) {
-        for (const item of currentWO.work_order_item) {
+        for (const item of currentWO.workOrderItems) {
           if (item.productId) {
-            const product = await tx.product.findUnique({
-              where: { id: item.productId },
-              select: { stock: true, name: true },
+            const productData = await tx.query.product.findFirst({
+              where: eq(product.id, item.productId),
+              columns: { stock: true, name: true },
             });
 
-            if (product) {
-              const previousStock = Number(product.stock);
+            if (productData) {
+              const previousStock = Number(productData.stock);
               const newStock = previousStock - item.quantity;
 
-              await tx.product.update({
-                where: { id: item.productId },
-                data: {
+              await tx
+                .update(product)
+                .set({
                   stock: newStock,
-                  lastMovementAt: new Date(),
-                },
-              });
+                  lastMovementAt: new Date().toISOString(),
+                })
+                .where(eq(product.id, item.productId));
 
-              await tx.stock_movement.create({
-                data: {
-                  id: randomUUID(),
-                  productId: item.productId,
-                  quantity: -item.quantity,
-                  type: "OUT",
-                  previousStock,
-                  newStock,
-                  reason: `Venta OT #${woPrefix} - ${currentWO.customer.name}`,
-                  userName: context.userEmail,
-                },
+              await tx.insert(stockMovement).values({
+                id: randomUUID(),
+                productId: item.productId,
+                quantity: -item.quantity,
+                type: "OUT",
+                previousStock,
+                newStock,
+                reason: `Venta OT #${woPrefix} - ${currentWO.customer?.name}`,
+                userName: context.userEmail,
               });
             }
           }
@@ -342,6 +357,6 @@ export async function updateWorkOrder(
       }
     }
 
-    return updatedWO;
+    return updatedWOResult;
   });
 }

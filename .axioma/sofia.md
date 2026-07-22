@@ -3,6 +3,7 @@
 ## 📋 BACKLOG
 
 ## ✅ DONE
+- [x] 2026-07-20 — Optimización de LCP con Next.js Image y mejora del hito 2011 en Nosotros (PR #sofia/public/lcp-image-optimization)
 - [x] 2026-07-19 — Integración de imágenes optimizadas para servicios y estandarización de animaciones en testimonios (PR #sofia/public/services-images-and-testimonials-animation)
 - [x] 2026-07-16 — Galería de Excelencia interactiva con soporte para Deep-Linking y Lightbox (PR #sofia/public/nosotros-gallery-improvement)
 - [x] 2026-07-15 — Refinado de animaciones, accesibilidad y estabilidad de SEO (PR #sofia/public/polish-and-accessibility)
@@ -19,6 +20,10 @@
 - [x] 2026-07-07 — Vista rápida de productos con modal y conversión contextual (PR #sofia/public/product-quick-view)
 
 ## 🧠 LEARNINGS
+
+## 2026-07-20 - Optimización LCP de Imágenes y Configuración de Host Remoto
+**Learning:** Al optimizar imágenes de fondo en secciones complejas como hitos/milestones en la página Nosotros, usar el componente `<Image>` de Next.js con `fill`, responsive `sizes` y un contenedor relativo con opacidad controlada (`opacity-10`) permite una lectura impecable del texto sobre fondos oscuros. Asimismo, si la base de datos contiene URLs externas (como `cdn.jsdelivr.net`), es indispensable registrarlas en `next.config.ts` bajo `remotePatterns` para evitar que la compilación de desarrollo o producción de Next.js falle en tiempo de ejecución.
+**Action:** Asegurar que todo host externo de recursos de imagen esté declarado en el archivo de configuración de Next.js y validar la visualización mediante emulación móvil y desktop en Playwright.
 
 ## 2026-07-19 - Next.js Public Services Image Integration & Staggered Entrance Standard
 **Learning:** El uso de imágenes optimizadas de fondo mediante Next.js `<Image />` con propiedades LCP (como `fill`, `sizes` y `priority` condicional) en las páginas públicas y modales de vista rápida proporciona una experiencia visual extremadamente premium. Asimismo, la estandarización de animaciones de entrada usando variantes escalonadas de Framer Motion (`containerVariants` y `cardVariants`) a lo largo de todas las secciones principales de la Home (`Services`, `FeaturedProducts` y `Testimonials`) aporta una gran consistencia de marca y un flujo de navegación muy fluido.

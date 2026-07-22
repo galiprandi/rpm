@@ -1,4 +1,14 @@
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import {
+  workOrder,
+  directSale,
+  workOrderItem,
+  directSaleItem,
+  product,
+  service,
+  category,
+} from "@/db/schema";
+import { and, inArray, gte, lte, eq, sum, count } from "drizzle-orm";
 import { ARGENTINA_TIMEZONE } from "@/lib/utils/date";
 
 export type GroupBy = "hour" | "day" | "month";
@@ -70,31 +80,34 @@ function decimalToNumber(decimal: unknown): number {
  * Gets sales metrics for a specific period
  */
 async function getSalesPeriodMetrics(start: Date, end: Date) {
+  const saleStatuses = ["DELIVERED", "READY", "PAID"];
+  const startStr = start.toISOString();
+  const endStr = end.toISOString();
   const [workOrders, directSales] = await Promise.all([
-    prisma.work_order.aggregate({
-      where: {
-        status: { in: ["DELIVERED", "READY", "PAID"] },
-        completedAt: { gte: start, lte: end },
-      },
-      _sum: { total: true },
-      _count: { id: true },
-    }),
-    prisma.direct_sale.aggregate({
-      where: {
-        createdAt: { gte: start, lte: end },
-      },
-      _sum: { total: true },
-      _count: { id: true },
-    }),
+    db.select({
+      totalSum: sum(workOrder.total),
+      idCount: count(workOrder.id),
+    }).from(workOrder).where(and(
+      inArray(workOrder.status, saleStatuses),
+      gte(workOrder.completedAt, startStr),
+      lte(workOrder.completedAt, endStr),
+    )),
+    db.select({
+      totalSum: sum(directSale.total),
+      idCount: count(directSale.id),
+    }).from(directSale).where(and(
+      gte(directSale.createdAt, startStr),
+      lte(directSale.createdAt, endStr),
+    )),
   ]);
 
   const total =
-    decimalToNumber(workOrders._sum.total) +
-    decimalToNumber(directSales._sum.total);
-  const count = workOrders._count.id + directSales._count.id;
-  const average = count > 0 ? total / count : 0;
+    decimalToNumber(workOrders[0]?.totalSum) +
+    decimalToNumber(directSales[0]?.totalSum);
+  const countVal = Number(workOrders[0]?.idCount ?? 0) + Number(directSales[0]?.idCount ?? 0);
+  const average = countVal > 0 ? total / countVal : 0;
 
-  return { total, count, average };
+  return { total, count: countVal, average };
 }
 
 function determineGroupBy(startDate: Date, endDate: Date): GroupBy {
@@ -268,32 +281,31 @@ export async function getSalesReport(
   }
 
   // 3. Calculate evolution with adaptive grouping
+  const saleStatuses = ["DELIVERED", "READY", "PAID"];
+  const startDateStr = startDate.toISOString();
+  const endDateStr = endDate.toISOString();
   const [workOrders, directSales] = await Promise.all([
-    prisma.work_order.findMany({
-      where: {
-        status: { in: ["DELIVERED", "READY", "PAID"] },
-        completedAt: { gte: startDate, lte: endDate },
-      },
-      select: {
-        total: true,
-        completedAt: true,
-      },
-    }),
-    prisma.direct_sale.findMany({
-      where: {
-        createdAt: { gte: startDate, lte: endDate },
-      },
-      select: {
-        total: true,
-        createdAt: true,
-      },
-    }),
+    db.select({
+      total: workOrder.total,
+      completedAt: workOrder.completedAt,
+    }).from(workOrder).where(and(
+      inArray(workOrder.status, saleStatuses),
+      gte(workOrder.completedAt, startDateStr),
+      lte(workOrder.completedAt, endDateStr),
+    )),
+    db.select({
+      total: directSale.total,
+      createdAt: directSale.createdAt,
+    }).from(directSale).where(and(
+      gte(directSale.createdAt, startDateStr),
+      lte(directSale.createdAt, endDateStr),
+    )),
   ]);
 
   const buckets = initializeBuckets(startDate, endDate, groupBy);
 
   workOrders.forEach((wo) => {
-    const date = wo.completedAt || new Date();
+    const date = wo.completedAt ? new Date(wo.completedAt) : new Date();
     const { key } = getBucketKeyAndLabel(date, groupBy);
     if (buckets[key]) {
       buckets[key].total += decimalToNumber(wo.total);
@@ -302,7 +314,7 @@ export async function getSalesReport(
   });
 
   directSales.forEach((ds) => {
-    const { key } = getBucketKeyAndLabel(ds.createdAt, groupBy);
+    const { key } = getBucketKeyAndLabel(new Date(ds.createdAt), groupBy);
     if (buckets[key]) {
       buckets[key].total += decimalToNumber(ds.total);
       buckets[key].count += 1;
@@ -320,29 +332,51 @@ export async function getSalesReport(
 
   // 4. Calculate Top Products and Category Distribution
   const [woItems, dsItems] = await Promise.all([
-    prisma.work_order_item.findMany({
-      where: {
-        work_order: {
-          status: { in: ["DELIVERED", "READY", "PAID"] },
-          completedAt: { gte: startDate, lte: endDate },
-        },
-      },
-      include: {
-        product: { include: { category: true } },
-        service: true,
-      },
-    }),
-    prisma.direct_sale_item.findMany({
-      where: {
-        directSale: {
-          createdAt: { gte: startDate, lte: endDate },
-        },
-      },
-      include: {
-        product: { include: { category: true } },
-        service: true,
-      },
-    }),
+    db.select({
+      subtotal: workOrderItem.subtotal,
+      productId: workOrderItem.productId,
+      serviceId: workOrderItem.serviceId,
+      quantity: workOrderItem.quantity,
+      productName: product.name,
+      productCategoryId: product.categoryId,
+      categoryName: category.name,
+      categoryColor: category.color,
+      serviceName: service.name,
+    }).from(workOrderItem).innerJoin(
+      workOrder, eq(workOrderItem.workOrderId, workOrder.id),
+    ).leftJoin(
+      product, eq(workOrderItem.productId, product.id),
+    ).leftJoin(
+      category, eq(product.categoryId, category.id),
+    ).leftJoin(
+      service, eq(workOrderItem.serviceId, service.id),
+    ).where(and(
+      inArray(workOrder.status, saleStatuses),
+      gte(workOrder.completedAt, startDateStr),
+      lte(workOrder.completedAt, endDateStr),
+    )),
+    db.select({
+      totalPrice: directSaleItem.totalPrice,
+      productId: directSaleItem.productId,
+      serviceId: directSaleItem.serviceId,
+      quantity: directSaleItem.quantity,
+      productName: product.name,
+      productCategoryId: product.categoryId,
+      categoryName: category.name,
+      categoryColor: category.color,
+      serviceName: service.name,
+    }).from(directSaleItem).innerJoin(
+      directSale, eq(directSaleItem.directSaleId, directSale.id),
+    ).leftJoin(
+      product, eq(directSaleItem.productId, product.id),
+    ).leftJoin(
+      category, eq(product.categoryId, category.id),
+    ).leftJoin(
+      service, eq(directSaleItem.serviceId, service.id),
+    ).where(and(
+      gte(directSale.createdAt, startDateStr),
+      lte(directSale.createdAt, endDateStr),
+    )),
   ]);
 
   const productMap: Record<string, TopProductItem> = {};
@@ -378,19 +412,19 @@ export async function getSalesReport(
 
   woItems.forEach((item) => {
     const total = decimalToNumber(item.subtotal);
-    if (item.productId && item.product) {
+    if (item.productId && item.productName) {
       processItem(
-        item.product.name,
+        item.productName,
         item.productId,
         total,
         item.quantity,
-        item.product.category.name,
-        item.product.categoryId,
-        item.product.category.color,
+        item.categoryName || "Sin categoría",
+        item.productCategoryId || "uncat",
+        item.categoryColor,
       );
-    } else if (item.serviceId && item.service) {
+    } else if (item.serviceId && item.serviceName) {
       processItem(
-        item.service.name,
+        item.serviceName,
         item.serviceId,
         total,
         item.quantity,
@@ -403,19 +437,19 @@ export async function getSalesReport(
 
   dsItems.forEach((item) => {
     const total = decimalToNumber(item.totalPrice);
-    if (item.productId && item.product) {
+    if (item.productId && item.productName) {
       processItem(
-        item.product.name,
+        item.productName,
         item.productId,
         total,
         item.quantity,
-        item.product.category.name,
-        item.product.categoryId,
-        item.product.category.color,
+        item.categoryName || "Sin categoría",
+        item.productCategoryId || "uncat",
+        item.categoryColor,
       );
-    } else if (item.serviceId && item.service) {
+    } else if (item.serviceId && item.serviceName) {
       processItem(
-        item.service.name,
+        item.serviceName,
         item.serviceId,
         total,
         item.quantity,

@@ -1,14 +1,42 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { getSuggestedProductsForCount } from './inventoryCountService';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
 
-vi.mock('@/lib/prisma', () => ({
-  prisma: {
-    product: {
-      findMany: vi.fn(),
+// vi.hoisted runs before vi.mock factory
+const { createChainable, mockFns } = vi.hoisted(() => {
+  function createChainable(resolveValue: unknown = []): any {
+    const target = () => {};
+    return new Proxy(target, {
+      get(_t: any, prop: string) {
+        if (prop === 'then') {
+          return (resolve: any, reject: any) =>
+            Promise.resolve(resolveValue).then(resolve, reject);
+        }
+        if (prop === 'catch') {
+          return (onRejected: any) =>
+            Promise.resolve(resolveValue).catch(onRejected);
+        }
+        return vi.fn(() => createChainable(resolveValue));
+      },
+      apply() {
+        return createChainable(resolveValue);
+      },
+    });
+  }
+
+  return {
+    createChainable,
+    mockFns: {
+      productFindMany: vi.fn(),
     },
-    stock_movement: {
-      groupBy: vi.fn(),
+  };
+});
+
+vi.mock('@/lib/db', () => ({
+  db: {
+    select: vi.fn(() => createChainable([])),
+    query: {
+      product: { findMany: mockFns.productFindMany },
     },
   },
 }));
@@ -25,10 +53,11 @@ describe('InventoryCountService - Algorithm', () => {
       { id: 'p3', name: 'Product 3', stock: 5, location: '', lastCountedAt: null }, // 100 (never) + 30 (no loc) = 130
     ];
 
-    (prisma.product.findMany as any).mockResolvedValue(mockProducts);
-    (prisma.stock_movement.groupBy as any).mockResolvedValue([
-      { productId: 'p2', _count: { id: 15 } } // High rotation for p2 (+40)
-    ]);
+    mockFns.productFindMany.mockResolvedValue(mockProducts);
+    // db.select for sales movements returns [{ productId: 'p2', count: 15 }]
+    vi.mocked(db.select).mockReturnValue(
+      createChainable([{ productId: 'p2', count: 15 }]),
+    );
 
     const suggested = await getSuggestedProductsForCount(3);
 
@@ -46,8 +75,9 @@ describe('InventoryCountService - Algorithm', () => {
       lastCountedAt: new Date(),
     }));
 
-    (prisma.product.findMany as any).mockResolvedValue(mockProducts);
-    (prisma.stock_movement.groupBy as any).mockResolvedValue([]);
+    mockFns.productFindMany.mockResolvedValue(mockProducts);
+    // db.select returns empty array (no high rotation)
+    vi.mocked(db.select).mockReturnValue(createChainable([]));
 
     const suggested = await getSuggestedProductsForCount(5);
     expect(suggested).toHaveLength(5);

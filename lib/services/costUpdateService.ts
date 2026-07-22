@@ -5,8 +5,9 @@
  * - /specs/spec-mass-cost-update.md
  */
 
-import { prisma } from '@/lib/prisma';
-import { Prisma } from '@prisma/client';
+import { db } from '@/lib/db';
+import { product, priceList, priceListItem, costUpdateBatch, category, supplier } from '@/db/schema';
+import { eq, and, or, ilike, inArray, asc, desc, sql, type SQL } from 'drizzle-orm';
 import { getProductBaseCost } from './priceListService';
 import { parseSearchQuery } from '@/lib/utils/searchQueryParser';
 import { calculateFinalPrice } from '@/lib/utils/rounding';
@@ -112,64 +113,69 @@ export function isWarningVariation(variationPercent: number): boolean {
 }
 
 /**
- * Build Prisma where clause from filters
+ * Build Drizzle where clause from filters
  */
-function buildWhereClause(filters: CostUpdateFilters): Prisma.productWhereInput {
-  const where: Prisma.productWhereInput = { isActive: true };
+function buildWhereClause(filters: CostUpdateFilters): SQL | undefined {
+  const conditions: SQL[] = [eq(product.isActive, true)];
 
   if (filters.productIds && filters.productIds.length > 0) {
-    where.id = { in: filters.productIds };
+    conditions.push(inArray(product.id, filters.productIds));
   }
 
   if (filters.categoryId) {
-    where.categoryId = filters.categoryId;
+    conditions.push(eq(product.categoryId, filters.categoryId));
   }
 
   if (filters.supplierId) {
-    where.supplierId = filters.supplierId;
+    conditions.push(eq(product.supplierId, filters.supplierId));
   }
 
   if (filters.search) {
     const terms = parseSearchQuery(filters.search);
 
     // Group required conditions - all must match
-    const requiredAndPhrases = [
-      ...terms.phrases.map(phrase => ({
-        OR: [
-          { name: { contains: phrase, mode: 'insensitive' as const } },
-          { sku: { contains: phrase, mode: 'insensitive' as const } },
-          { barcode: { contains: phrase, mode: 'insensitive' as const } },
-        ],
-      })),
-      ...terms.required.map(term => ({
-        OR: [
-          { name: { contains: term, mode: 'insensitive' as const } },
-          { sku: { contains: term, mode: 'insensitive' as const } },
-          { barcode: { contains: term, mode: 'insensitive' as const } },
-        ],
-      })),
+    const requiredAndPhrases: SQL[] = [
+      ...terms.phrases.map(phrase =>
+        or(
+          ilike(product.name, `%${phrase}%`),
+          ilike(product.sku, `%${phrase}%`),
+          ilike(product.barcode, `%${phrase}%`),
+        )!
+      ),
+      ...terms.required.map(term =>
+        or(
+          ilike(product.name, `%${term}%`),
+          ilike(product.sku, `%${term}%`),
+          ilike(product.barcode, `%${term}%`),
+        )!
+      ),
     ];
 
     if (requiredAndPhrases.length > 0) {
-      where.AND = requiredAndPhrases;
+      conditions.push(...requiredAndPhrases);
 
       if (terms.optional.length > 0) {
-        where.OR = [
-          { name: { contains: terms.optional.join(' '), mode: 'insensitive' as const } },
-          { sku: { contains: terms.optional.join(' '), mode: 'insensitive' as const } },
-          { barcode: { contains: terms.optional.join(' '), mode: 'insensitive' as const } },
-        ];
+        const optionalStr = terms.optional.join(' ');
+        conditions.push(
+          or(
+            ilike(product.name, `%${optionalStr}%`),
+            ilike(product.sku, `%${optionalStr}%`),
+            ilike(product.barcode, `%${optionalStr}%`),
+          )!
+        );
       }
     } else if (terms.optional.length > 0) {
-      where.OR = [
-        { name: { contains: filters.search, mode: 'insensitive' as const } },
-        { sku: { contains: filters.search, mode: 'insensitive' as const } },
-        { barcode: { contains: filters.search, mode: 'insensitive' as const } },
-      ];
+      conditions.push(
+        or(
+          ilike(product.name, `%${filters.search}%`),
+          ilike(product.sku, `%${filters.search}%`),
+          ilike(product.barcode, `%${filters.search}%`),
+        )!
+      );
     }
   }
 
-  return where;
+  return and(...conditions);
 }
 
 // ============================================================================
@@ -189,44 +195,50 @@ export async function previewCostUpdate(
   const where = buildWhereClause(filters);
 
   // Get total count for pagination
-  const totalItems = await prisma.product.count({ where });
+  const totalItemsResult = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(product)
+    .where(where);
+  const totalItems = totalItemsResult[0]?.count ?? 0;
 
   // Get target price list if specified
-  let targetPriceList = null;
+  let targetPriceList: typeof priceList.$inferSelect | null = null;
   if (filters.priceListId) {
-    targetPriceList = await prisma.price_list.findUnique({
-      where: { id: filters.priceListId }
-    });
+    targetPriceList = await db.query.priceList.findFirst({
+      where: eq(priceList.id, filters.priceListId),
+    }) ?? null;
   }
 
   // Get paginated products
-  const products = await prisma.product.findMany({
+  const products = await db.query.product.findMany({
     where,
-    select: {
+    columns: {
       id: true,
       sku: true,
       name: true,
       replacementCost: true,
       costPrice: true,
-      price_list_item: filters.priceListId ? {
-        where: { priceListId: filters.priceListId }
-      } : false,
     },
-    orderBy: { name: 'asc' },
-    skip: (page - 1) * pageSize,
-    take: pageSize,
+    with: filters.priceListId ? {
+      priceListItems: {
+        where: eq(priceListItem.priceListId, filters.priceListId),
+      },
+    } : undefined,
+    orderBy: asc(product.name),
+    offset: (page - 1) * pageSize,
+    limit: pageSize,
   });
 
   let hasNegativeCosts = false;
   let negativeCount = 0;
 
-  const items: CostUpdatePreviewItem[] = products.map((product: any) => {
+  const items: CostUpdatePreviewItem[] = products.map((p: any) => {
     let currentValue: number;
 
     if (targetPriceList) {
       // If updating a price list, the "current value" is the current price in that list
-      const baseCost = getProductBaseCost(product.replacementCost, product.costPrice);
-      const exception = product.price_list_item?.[0];
+      const baseCost = getProductBaseCost(p.replacementCost, p.costPrice);
+      const exception = p.priceListItems?.[0];
 
       if (exception?.fixedPrice) {
         currentValue = Number(exception.fixedPrice);
@@ -243,7 +255,7 @@ export async function previewCostUpdate(
       }
     } else {
       // Updating replacement cost
-      currentValue = getProductBaseCost(product.replacementCost, product.costPrice);
+      currentValue = getProductBaseCost(p.replacementCost, p.costPrice);
     }
 
     const newValue = calculateNewCost(currentValue, adjustment);
@@ -257,9 +269,9 @@ export async function previewCostUpdate(
     }
 
     return {
-      id: product.id,
-      sku: product.sku || '',
-      name: product.name,
+      id: p.id,
+      sku: p.sku || '',
+      name: p.name,
       currentCost: currentValue, // We keep the name currentCost but it might be currentPrice
       newCost: Number(newValue.toFixed(2)),
       variationPercent,
@@ -293,25 +305,27 @@ export async function applyCostUpdate(
   const where = buildWhereClause(filters);
 
   // Get target price list if specified
-  let targetPriceList = null;
+  let targetPriceList: typeof priceList.$inferSelect | null = null;
   if (filters.priceListId) {
-    targetPriceList = await prisma.price_list.findUnique({
-      where: { id: filters.priceListId }
-    });
+    targetPriceList = await db.query.priceList.findFirst({
+      where: eq(priceList.id, filters.priceListId),
+    }) ?? null;
     if (!targetPriceList) throw new Error('Target price list not found');
   }
 
   // Get all product IDs that will be affected (for count)
-  const productsToUpdate = await prisma.product.findMany({
+  const productsToUpdate = await db.query.product.findMany({
     where,
-    select: {
+    columns: {
       id: true,
       replacementCost: true,
       costPrice: true,
-      price_list_item: filters.priceListId ? {
-        where: { priceListId: filters.priceListId }
-      } : false,
     },
+    with: filters.priceListId ? {
+      priceListItems: {
+        where: eq(priceListItem.priceListId, filters.priceListId),
+      },
+    } : undefined,
   });
 
   if (productsToUpdate.length === 0) {
@@ -324,21 +338,21 @@ export async function applyCostUpdate(
     // Updating replacement cost - old behavior
     const costGroups = new Map<number, string[]>();
 
-    for (const product of productsToUpdate) {
-      const currentCost = getProductBaseCost(product.replacementCost, product.costPrice);
+    for (const p of productsToUpdate) {
+      const currentCost = getProductBaseCost(p.replacementCost, p.costPrice);
       const newCost = Number(calculateNewCost(currentCost, adjustment).toFixed(2));
 
       const group = costGroups.get(newCost) || [];
-      group.push(product.id);
+      group.push(p.id);
       costGroups.set(newCost, group);
     }
 
-    await prisma.$transaction(async (tx) => {
+    await db.transaction(async (tx) => {
       const updatePromises = Array.from(costGroups.entries()).map(([newCost, productIds]) =>
-        tx.product.updateMany({
-          where: { id: { in: productIds } },
-          data: { replacementCost: newCost },
-        })
+        tx
+          .update(product)
+          .set({ replacementCost: newCost.toString() })
+          .where(inArray(product.id, productIds))
       );
       await Promise.all(updatePromises);
     });
@@ -348,10 +362,10 @@ export async function applyCostUpdate(
     const roundingRule = targetPriceList.roundingRule as any;
     const baseMargin = Number(targetPriceList.baseMarginPercentage);
 
-    await prisma.$transaction(async (tx) => {
-      for (const product of productsToUpdate) {
-        const baseCost = getProductBaseCost(product.replacementCost, product.costPrice);
-        const exception = (product as any).price_list_item?.[0];
+    await db.transaction(async (tx) => {
+      for (const p of productsToUpdate) {
+        const baseCost = getProductBaseCost(p.replacementCost, p.costPrice);
+        const exception = (p as any).priceListItems?.[0];
 
         let currentValue: number;
         if (exception?.fixedPrice) {
@@ -367,46 +381,42 @@ export async function applyCostUpdate(
         const newValue = Number(calculateNewCost(currentValue, adjustment).toFixed(2));
 
         // Upsert price_list_item with fixedPrice
-        await tx.price_list_item.upsert({
-          where: {
-            priceListId_productId: {
-              priceListId,
-              productId: product.id,
-            },
-          },
-          create: {
+        await tx
+          .insert(priceListItem)
+          .values({
             id: crypto.randomUUID(),
             priceListId,
-            productId: product.id,
-            fixedPrice: newValue,
-            updatedAt: new Date(),
-          },
-          update: {
-            fixedPrice: newValue,
-            overrideMarginPercentage: null, // If we set a fixed price, we should probably clear the override margin
-            updatedAt: new Date(),
-          },
-        });
+            productId: p.id,
+            fixedPrice: newValue.toString(),
+            updatedAt: new Date().toISOString(),
+          })
+          .onConflictDoUpdate({
+            target: [priceListItem.priceListId, priceListItem.productId],
+            set: {
+              fixedPrice: newValue.toString(),
+              overrideMarginPercentage: null, // If we set a fixed price, we should probably clear the override margin
+              updatedAt: new Date().toISOString(),
+            },
+          });
       }
     });
   }
 
-  // Create audit record outside transaction (using main prisma client)
-  await prisma.cost_update_batch.create({
-    data: {
-      userId,
-      userName,
-      filtersApplied: filters as unknown as Prisma.InputJsonValue,
-      adjustmentType: adjustment.type,
-      adjustmentValue: adjustment.value,
-      itemsAffected,
-    },
+  // Create audit record outside transaction (using main db client)
+  await db.insert(costUpdateBatch).values({
+    id: crypto.randomUUID(),
+    userId,
+    userName,
+    filtersApplied: filters as any,
+    adjustmentType: adjustment.type,
+    adjustmentValue: adjustment.value.toString(),
+    itemsAffected,
   });
 
   // Return the created batch (most recent for this user)
-  const batch = await prisma.cost_update_batch.findFirst({
-    where: { userId },
-    orderBy: { createdAt: 'desc' },
+  const batch = await db.query.costUpdateBatch.findFirst({
+    where: eq(costUpdateBatch.userId, userId),
+    orderBy: desc(costUpdateBatch.createdAt),
   });
 
   if (!batch) {
@@ -421,7 +431,7 @@ export async function applyCostUpdate(
     adjustmentType: batch.adjustmentType,
     adjustmentValue: Number(batch.adjustmentValue),
     itemsAffected: batch.itemsAffected,
-    createdAt: batch.createdAt,
+    createdAt: new Date(batch.createdAt),
   };
 }
 
@@ -436,22 +446,25 @@ export async function getCostUpdateHistory(
   page: number = 1,
   pageSize: number = 20
 ): Promise<{ batches: CostUpdateBatch[]; total: number }> {
-  const [batches, total] = await Promise.all([
-    prisma.cost_update_batch.findMany({
-      orderBy: { createdAt: 'desc' },
-      skip: (page - 1) * pageSize,
-      take: pageSize,
+  const [batches, totalResult] = await Promise.all([
+    db.query.costUpdateBatch.findMany({
+      orderBy: desc(costUpdateBatch.createdAt),
+      offset: (page - 1) * pageSize,
+      limit: pageSize,
     }),
-    prisma.cost_update_batch.count(),
+    db.select({ count: sql<number>`count(*)::int` })
+      .from(costUpdateBatch),
   ]);
+
+  const total = totalResult[0]?.count ?? 0;
 
   // Get all categories and suppliers for name resolution
   const [categories, suppliers] = await Promise.all([
-    prisma.category.findMany({
-      select: { id: true, name: true }
+    db.query.category.findMany({
+      columns: { id: true, name: true }
     }),
-    prisma.supplier.findMany({
-      select: { id: true, name: true }
+    db.query.supplier.findMany({
+      columns: { id: true, name: true }
     })
   ]);
 
@@ -483,7 +496,7 @@ export async function getCostUpdateHistory(
       adjustmentType: batch.adjustmentType,
       adjustmentValue: Number(batch.adjustmentValue),
       itemsAffected: batch.itemsAffected,
-      createdAt: batch.createdAt,
+      createdAt: new Date(batch.createdAt),
     })),
     total,
   };

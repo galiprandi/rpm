@@ -247,7 +247,11 @@ export default function UsersClient({ initialUsers }: UsersClientProps) {
           return (
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="max-w-[150px] truncate cursor-help text-sm text-muted-foreground">
+                <div
+                  className="max-w-[150px] truncate cursor-help text-sm text-muted-foreground outline-none focus-visible:underline decoration-dotted focus-visible:text-foreground rounded-sm"
+                  tabIndex={0}
+                  aria-label={`Nota de usuario: ${notes}`}
+                >
                   {notes}
                 </div>
               </TooltipTrigger>

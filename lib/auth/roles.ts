@@ -1,11 +1,13 @@
 /**
  * Role management system for RPM Accesorios
  * 
- * SERVER-ONLY: This file uses Prisma and can only be used in server components or API routes.
+ * SERVER-ONLY: This file uses Drizzle and can only be used in server components or API routes.
  * For client-side role logic, use roles-client.ts instead.
  */
 
-import { prisma } from '../prisma';
+import { db } from '../db';
+import { userRole, user } from '@/db/schema';
+import { eq, and, inArray } from 'drizzle-orm';
 
 export enum UserRole {
   USER = 'USER',        // Clientes finales - Acceso a /
@@ -31,8 +33,8 @@ export const getUserRole = async (email: string): Promise<UserRole> => {
   const normalizedEmail = email.toLowerCase().trim();
 
   // Check database for explicit role
-  const user_roleRecord = await prisma.user_role.findUnique({
-    where: { email: normalizedEmail },
+  const user_roleRecord = await db.query.userRole.findFirst({
+    where: eq(userRole.email, normalizedEmail),
   });
 
   console.log('[getUserRole] Email:', normalizedEmail, 'DB Record:', user_roleRecord);
@@ -66,14 +68,13 @@ export const getUserRole = async (email: string): Promise<UserRole> => {
  * @returns Array of admin email addresses
  */
 export const getAdminEmails = async (): Promise<string[]> => {
-  const admins = await prisma.user_role.findMany({
-    where: {
-      role: { in: ['ADMIN', 'SELLER', 'TECHNICIAN', 'CASHIER'] },
-      isActive: true,
-    },
-    select: { email: true },
+  const admins = await db.query.userRole.findMany({
+    where: and(
+      inArray(userRole.role, ['ADMIN', 'SELLER', 'TECHNICIAN', 'CASHIER']),
+      eq(userRole.isActive, true),
+    ),
   });
-  return admins.map((a: any) => a.email);
+  return admins.map((a) => a.email);
 };
 
 /**
@@ -99,24 +100,32 @@ export const setUserRole = async (
   name?: string,
   notes?: string
 ): Promise<void> => {
-  await prisma.user_role.upsert({
-    where: { email },
-    update: {
-      role,
-      name: name ?? null,
-      notes: notes ?? null,
-      isActive: true,
-    },
-    create: {
+  const existing = await db.query.userRole.findFirst({
+    where: eq(userRole.email, email),
+  });
+
+  if (existing) {
+    await db
+      .update(userRole)
+      .set({
+        role,
+        name: name ?? null,
+        notes: notes ?? null,
+        isActive: true,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(userRole.email, email));
+  } else {
+    await db.insert(userRole).values({
       id: crypto.randomUUID(),
       email,
       role,
       name: name ?? null,
       notes: notes ?? null,
       isActive: true,
-      updatedAt: new Date(),
-    },
-  });
+      updatedAt: new Date().toISOString(),
+    });
+  }
 };
 
 /**
@@ -127,18 +136,17 @@ export const setUserRole = async (
  * @returns boolean indicating if user has the role
  */
 export const hasRole = async (userId: string, role: UserRole): Promise<boolean> => {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { email: true },
+  const userRecord = await db.query.user.findFirst({
+    where: eq(user.id, userId),
   });
 
-  if (!user?.email) {
+  if (!userRecord?.email) {
     console.log('[hasRole] User not found or no email:', userId);
     return false;
   }
 
-  const user_role = await getUserRole(user.email);
-  console.log('[hasRole] Email:', user.email, 'Role:', user_role, 'Expected:', role);
+  const user_role = await getUserRole(userRecord.email);
+  console.log('[hasRole] Email:', userRecord.email, 'Role:', user_role, 'Expected:', role);
   return user_role === role;
 };
 

@@ -1,7 +1,9 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { requireRole } from "@/lib/auth-server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { customer, workOrder, directSale } from "@/db/schema";
+import { gt, notInArray, asc, desc } from "drizzle-orm";
 import { UserRole } from "@/lib/auth/roles";
 import { getBalanceBreakdown } from "@/lib/services/balanceService";
 
@@ -9,6 +11,7 @@ import { getBalanceBreakdown } from "@/lib/services/balanceService";
 function decimalToNumber(decimal: unknown): number {
   if (decimal === null || decimal === undefined) return 0;
   if (typeof decimal === "number") return decimal;
+  if (typeof decimal === "string") return Number(decimal);
   if (
     typeof decimal === "object" &&
     "toNumber" in decimal &&
@@ -30,104 +33,95 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "50", 10);
 
     // Build orderBy based on sort parameter
-
-    let orderBy: Record<string, string> = {};
+    let orderBy;
     switch (sortBy) {
       case "amount":
-        orderBy = { balance: "desc" };
+        orderBy = desc(customer.balance);
         break;
       case "oldest":
-        orderBy = { createdAt: "asc" };
+        orderBy = asc(customer.createdAt);
         break;
       case "newest":
-        orderBy = { createdAt: "desc" };
+        orderBy = desc(customer.createdAt);
         break;
       default:
-        orderBy = { balance: "desc" };
+        orderBy = desc(customer.balance);
     }
 
     // Get customers with outstanding balance
-    const debtors = await prisma.customer.findMany({
-      where: {
-        balance: {
-          gt: 0,
-        },
-      },
+    const debtors = await db.query.customer.findMany({
+      where: gt(customer.balance, '0'),
       orderBy,
-      take: limit,
-      include: {
-        work_order: {
-          where: {
-            status: {
-              notIn: ["CANCELLED", "PAID"],
-            },
-          },
-          select: {
+      limit,
+      with: {
+        workOrders: {
+          where: notInArray(workOrder.status, ["CANCELLED", "PAID"]),
+          columns: {
             id: true,
             createdAt: true,
             total: true,
             status: true,
           },
-          orderBy: {
-            createdAt: "asc",
-          },
+          orderBy: asc(workOrder.createdAt),
         },
-        direct_sales: {
-          select: {
+        directSales: {
+          columns: {
             id: true,
             createdAt: true,
             total: true,
-            payments: { select: { amount: true } },
           },
-          orderBy: {
-            createdAt: "asc",
+          with: {
+            directSalePayments: {
+              columns: { amount: true },
+            },
           },
+          orderBy: asc(directSale.createdAt),
         },
-        vehicle: {
-          select: {
+        vehicles: {
+          columns: {
             identifier: true,
           },
-          take: 1,
+          limit: 1,
         },
       },
     });
 
     // Calculate oldest debt date and total work orders for each debtor
     const formattedDebtors = await Promise.all(
-      debtors.map(async (customer) => {
-        const balance = decimalToNumber(customer.balance);
+      debtors.map(async (customerRecord) => {
+        const balance = decimalToNumber(customerRecord.balance);
 
         // Get full breakdown from balanceService
-        const breakdown = await getBalanceBreakdown(customer.id);
+        const breakdown = await getBalanceBreakdown(customerRecord.id);
 
-        const workOrderCount = customer.work_order.length;
-        const directSaleCount = customer.direct_sales.length;
+        const workOrderCount = customerRecord.workOrders.length;
+        const directSaleCount = customerRecord.directSales.length;
 
         // Find oldest pending work order or direct sale
         let oldestDebtDate: string | null = null;
-        const allDates: Date[] = [
-          ...customer.work_order.map((wo) => wo.createdAt),
-          ...customer.direct_sales.map((ds) => ds.createdAt),
+        const allDates: string[] = [
+          ...customerRecord.workOrders.map((wo) => wo.createdAt),
+          ...customerRecord.directSales.map((ds) => ds.createdAt),
         ];
         if (allDates.length > 0) {
           oldestDebtDate = new Date(
-            Math.min(...allDates.map((d) => d.getTime())),
+            Math.min(...allDates.map((d) => new Date(d).getTime())),
           ).toISOString();
         }
 
         // Calculate total from pending work orders
-        const pendingWorkOrdersTotal = customer.work_order.reduce(
+        const pendingWorkOrdersTotal = customerRecord.workOrders.reduce(
           (sum: number, wo: { total: unknown }) =>
             sum + decimalToNumber(wo.total),
           0,
         );
 
         return {
-          customerId: customer.id,
-          customerName: customer.name,
-          phone: customer.phone,
-          phoneAlt: customer.phoneAlt,
-          email: customer.email,
+          customerId: customerRecord.id,
+          customerName: customerRecord.name,
+          phone: customerRecord.phone,
+          phoneAlt: customerRecord.phoneAlt,
+          email: customerRecord.email,
           balance,
           workOrderDebt: breakdown.workOrderDebt,
           directSaleDebt: breakdown.directSaleDebt,
@@ -136,20 +130,20 @@ export async function GET(request: NextRequest) {
           directSaleCount,
           oldestDebtDate,
           pendingWorkOrdersTotal,
-          vehicles: customer.vehicle.map(
+          vehicles: customerRecord.vehicles.map(
             (v: { identifier: string }) => v.identifier,
           ),
-          recentWorkOrders: customer.work_order
+          recentWorkOrders: customerRecord.workOrders
             .slice(0, 3)
             .map(
               (wo: {
                 id: string;
-                createdAt: Date;
+                createdAt: string;
                 total: unknown;
                 status: string;
               }) => ({
                 id: wo.id,
-                createdAt: wo.createdAt.toISOString(),
+                createdAt: new Date(wo.createdAt).toISOString(),
                 total: decimalToNumber(wo.total),
                 status: wo.status,
               }),

@@ -1,18 +1,34 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { getInventoryReport } from "../../lib/services/stockReportService";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 
-vi.mock("@/lib/prisma", () => ({
-  prisma: {
-    product: {
-      findMany: vi.fn(),
-    },
-    work_order_item: {
-      findMany: vi.fn(),
-    },
-    direct_sale_item: {
-      findMany: vi.fn(),
-    },
+// Helper to create a chainable that resolves to a specific value
+const { createChainable } = vi.hoisted(() => {
+  function createChainable(resolveValue: unknown = []): any {
+    const target = () => {};
+    return new Proxy(target, {
+      get(_t: any, prop: string) {
+        if (prop === "then") {
+          return (resolve: any, reject: any) =>
+            Promise.resolve(resolveValue).then(resolve, reject);
+        }
+        if (prop === "catch") {
+          return (onRejected: any) =>
+            Promise.resolve(resolveValue).catch(onRejected);
+        }
+        return vi.fn(() => createChainable(resolveValue));
+      },
+      apply() {
+        return createChainable(resolveValue);
+      },
+    });
+  }
+  return { createChainable };
+});
+
+vi.mock("@/lib/db", () => ({
+  db: {
+    select: vi.fn(() => createChainable()),
   },
 }));
 
@@ -22,56 +38,66 @@ describe("stockReportService", () => {
   });
 
   it("should correctly calculate inventory metrics, dead stock, and turnover", async () => {
-    const recentDate = new Date();
+    const recentDate = new Date().toISOString();
     const oldDate = new Date();
     oldDate.setDate(oldDate.getDate() - 100);
+    const oldDateStr = oldDate.toISOString();
 
-    vi.mocked(prisma.product.findMany).mockResolvedValue([
-      {
-        id: "p1",
-        name: "Product 1",
-        stock: 10,
-        costPrice: 100,
-        minStock: 5,
-        categoryId: "cat-a",
-        isActive: true,
-        category: { id: "cat-a", name: "Category A" },
-        createdAt: recentDate,
-        lastMovementAt: recentDate,
-      },
-      {
-        id: "p2",
-        name: "Product 2",
-        stock: 2,
-        costPrice: 50,
-        minStock: 5,
-        categoryId: "cat-a",
-        isActive: true,
-        category: { id: "cat-a", name: "Category A" },
-        createdAt: recentDate,
-        lastMovementAt: recentDate,
-      },
-      {
-        id: "p3",
-        name: "Product 3",
-        stock: 5,
-        costPrice: 200,
-        minStock: 1,
-        categoryId: "cat-b",
-        isActive: true,
-        category: { id: "cat-b", name: "Category B" },
-        createdAt: oldDate,
-        lastMovementAt: oldDate,
-      },
-    ] as any);
+    // 1. Products query: db.select().from(product).leftJoin(category).where()
+    vi.mocked(db.select).mockReturnValueOnce(
+      createChainable([
+        {
+          id: "p1",
+          name: "Product 1",
+          stock: 10,
+          costPrice: 100,
+          minStock: 5,
+          categoryId: "cat-a",
+          isActive: true,
+          categoryName: "Category A",
+          createdAt: recentDate,
+          lastMovementAt: recentDate,
+        },
+        {
+          id: "p2",
+          name: "Product 2",
+          stock: 2,
+          costPrice: 50,
+          minStock: 5,
+          categoryId: "cat-a",
+          isActive: true,
+          categoryName: "Category A",
+          createdAt: recentDate,
+          lastMovementAt: recentDate,
+        },
+        {
+          id: "p3",
+          name: "Product 3",
+          stock: 5,
+          costPrice: 200,
+          minStock: 1,
+          categoryId: "cat-b",
+          isActive: true,
+          categoryName: "Category B",
+          createdAt: oldDateStr,
+          lastMovementAt: oldDateStr,
+        },
+      ]) as any,
+    );
 
-    vi.mocked(prisma.work_order_item.findMany).mockResolvedValue([
-      { productId: "p1", quantity: 5, product: { costPrice: 100 } },
-    ] as any);
+    // 2. WO items query: db.select().from(workOrderItem).innerJoin(workOrder).leftJoin(product).where()
+    vi.mocked(db.select).mockReturnValueOnce(
+      createChainable([
+        { quantity: 5, productCostPrice: 100 },
+      ]) as any,
+    );
 
-    vi.mocked(prisma.direct_sale_item.findMany).mockResolvedValue([
-      { productId: "p2", quantity: 2, product: { costPrice: 50 } },
-    ] as any);
+    // 3. DS items query: db.select().from(directSaleItem).innerJoin(directSale).leftJoin(product).where()
+    vi.mocked(db.select).mockReturnValueOnce(
+      createChainable([
+        { quantity: 2, productCostPrice: 50 },
+      ]) as any,
+    );
 
     const report = await getInventoryReport();
 
@@ -118,9 +144,9 @@ describe("stockReportService", () => {
   });
 
   it("should handle empty product list cleanly", async () => {
-    vi.mocked(prisma.product.findMany).mockResolvedValue([]);
-    vi.mocked(prisma.work_order_item.findMany).mockResolvedValue([]);
-    vi.mocked(prisma.direct_sale_item.findMany).mockResolvedValue([]);
+    vi.mocked(db.select).mockReturnValueOnce(createChainable([]) as any);
+    vi.mocked(db.select).mockReturnValueOnce(createChainable([]) as any);
+    vi.mocked(db.select).mockReturnValueOnce(createChainable([]) as any);
 
     const report = await getInventoryReport();
 

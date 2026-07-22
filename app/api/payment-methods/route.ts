@@ -1,19 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withStaff, withAdmin } from "@/lib/api-middleware";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { paymentMethod, payment } from "@/db/schema";
+import { desc, asc, eq, count } from "drizzle-orm";
+import { toISODate } from "@/lib/utils/date";
 
 // GET /api/payment-methods - List all payment methods
 export const GET = withStaff(async () => {
   try {
-    const paymentMethods = await prisma.payment_method.findMany({
-      orderBy: [
-        { isActive: "desc" },
-        { sortOrder: "asc" },
-        { name: "asc" },
-      ],
+    const paymentMethods = await db.query.paymentMethod.findMany({
+      orderBy: [desc(paymentMethod.isActive), asc(paymentMethod.sortOrder), asc(paymentMethod.name)],
     });
 
-    return NextResponse.json({ paymentMethods });
+    // Count payments per payment method in a single query
+    const paymentCounts = await db
+      .select({ paymentMethodId: payment.paymentMethodId, value: count() })
+      .from(payment)
+      .groupBy(payment.paymentMethodId);
+    const countMap = new Map(paymentCounts.map((r) => [r.paymentMethodId, r.value]));
+
+    const formatted = paymentMethods.map((pm) => ({
+      ...pm,
+      createdAt: toISODate(pm.createdAt),
+      updatedAt: toISODate(pm.updatedAt),
+      _count: { payments: countMap.get(pm.id) || 0 },
+    }));
+
+    return NextResponse.json({ paymentMethods: formatted });
   } catch (error) {
     console.error("Error fetching payment methods:", error);
     return NextResponse.json(
@@ -45,25 +58,32 @@ export const POST = withAdmin(async (request: NextRequest) => {
       );
     }
 
-    const paymentMethod = await prisma.payment_method.create({
-      data: {
+    const [paymentMethodRecord] = await db
+      .insert(paymentMethod)
+      .values({
         name,
         code,
         description,
         sortOrder: sortOrder ?? 0,
         isActive: true,
-        updatedAt: new Date(),
-      },
-    });
+        updatedAt: new Date().toISOString(),
+      })
+      .returning();
 
-    return NextResponse.json({ paymentMethod }, { status: 201 });
+    return NextResponse.json({
+      paymentMethod: {
+        ...paymentMethodRecord,
+        createdAt: toISODate(paymentMethodRecord.createdAt),
+        updatedAt: toISODate(paymentMethodRecord.updatedAt),
+      },
+    }, { status: 201 });
   } catch (error: unknown) {
     console.error("Error creating payment method:", error);
     
     // Handle unique constraint violations
-    if (error && typeof error === "object" && "code" in error && error.code === "P2002") {
-      const meta = (error as { meta?: { target?: string[] } }).meta;
-      const field = meta?.target?.[0];
+    if (error && typeof error === "object" && "code" in error && error.code === "23505") {
+      const detail = (error as { detail?: string }).detail;
+      const field = detail?.match(/Key \((\w+)\)=/)?.[1];
       return NextResponse.json(
         { error: `${field} already exists` },
         { status: 409 }

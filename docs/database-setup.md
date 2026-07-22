@@ -14,7 +14,7 @@ pnpm run db:start
 # Esperar 15 segundos para que la base de datos esté lista
 sleep 15
 
-# Generar Prisma client
+# Generar Drizzle client
 pnpm run db:generate
 
 # Probar conexión
@@ -27,8 +27,8 @@ pnpm run db:start      # Iniciar PostgreSQL
 pnpm run db:stop       # Detener PostgreSQL
 pnpm run db:reset      # Resetear base de datos
 pnpm run db:logs       # Ver logs de PostgreSQL
-pnpm run db:studio     # Abrir Prisma Studio
-pnpm run db:generate   # Generar Prisma client
+pnpm run db:studio     # Abrir Drizzle Studio
+pnpm run db:generate   # Generar Drizzle client
 pnpm run db:migrate    # Ejecutar migrations
 pnpm run db:seed       # Ejecutar seed scripts
 ```
@@ -46,7 +46,6 @@ Las siguientes variables ya están configuradas en Vercel:
 
 - `DATABASE_URL` - Conexión principal a PostgreSQL
 - `POSTGRES_URL` - URL de conexión con pooling
-- `POSTGRES_PRISMA_URL` - URL específica para Prisma
 - `POSTGRES_URL_NON_POOLING` - URL sin pooling
 
 ### 2. Verificar Configuración
@@ -95,27 +94,27 @@ curl https://rpm-wheat.vercel.app/api/health/db
 }
 ```
 
-## Prisma Studio
+## Drizzle Studio
 
 ### Development
 ```bash
-# Abrir Prisma Studio
+# Abrir Drizzle Studio
 pnpm run db:studio
 # Acceder a http://localhost:5555
 ```
 
 ### Production
-Prisma Studio no está disponible en producción por seguridad. Usa el dashboard de Vercel para gestionar la base de datos.
+Drizzle Studio no está disponible en producción por seguridad. Usa el dashboard de Vercel para gestionar la base de datos.
 
 ## Migration Strategy
 
 ### Development
 ```bash
 # Crear nueva migration
-npx prisma migrate dev --name add_users_table
+pnpm db:generate && pnpm db:migrate
 
 # Resetear base de datos (development only)
-npx prisma migrate reset
+# ⚠️ Prohibido reset de la base de datos en este proyecto
 
 # Generar client después de cambios
 pnpm run db:generate
@@ -124,7 +123,7 @@ pnpm run db:generate
 ### Production
 ```bash
 # Deploy migrations a producción
-npx prisma migrate deploy
+pnpm db:migrate
 
 # Generar client para producción
 pnpm run db:generate
@@ -165,9 +164,9 @@ vercel --prod
 - Asegurar que Docker está corriendo (development)
 - Verificar variables de entorno en Vercel (production)
 
-**"Prisma client not generated"**
+**"Drizzle client not generated"**
 - Ejecutar `pnpm run db:generate`
-- Verificar que schema.prisma es válido
+- Verificar que `db/schema/schema.ts` es válido
 
 **"Migration failed"**
 - Asegurar que la base de datos está accesible
@@ -182,7 +181,7 @@ vercel --prod
 
 ### Monitoring
 - Health checks automáticos via `/api/health/db`
-- Logs de Prisma en development
+- Logs de Drizzle en development
 - Métricas de Vercel en producción
 
 ## Security

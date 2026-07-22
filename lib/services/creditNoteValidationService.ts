@@ -2,10 +2,12 @@
  * Credit Note Validation Service
  * Pure validation functions for credit notes
  */
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
+import { directSale, workOrder, paymentMethod, creditNote } from '@/db/schema';
+import { eq, and } from 'drizzle-orm';
 import { isCashRegisterOpen } from './cashMovementService';
 
-// Using 'any' for Prisma types because Prisma generates complex types with many fields
+// Using 'any' for Drizzle types to avoid complex inferred types
 // that don't match simple interfaces. This is acceptable for validation logic.
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -77,20 +79,20 @@ export async function validateOriginalSaleExists(
 ): Promise<{ exists: boolean; customerId?: string;  
 sale?: any }> {
   if (originalSaleType === 'direct_sale') {
-    const sale = await prisma.direct_sale.findUnique({
-      where: { id: originalSaleId },
-      include: {
-        items: { include: { product: { select: { name: true } }, service: { select: { name: true } } } },
+    const sale = await db.query.directSale.findFirst({
+      where: eq(directSale.id, originalSaleId),
+      with: {
+        directSaleItems: { with: { product: { columns: { name: true } }, service: { columns: { name: true } } } },
         customer: true,
       },
     });
     return { exists: !!sale, customerId: sale?.customerId ?? undefined, sale: sale ?? undefined };
   }
 
-  const sale = await prisma.work_order.findUnique({
-    where: { id: originalSaleId },
-    include: {
-      work_order_item: { include: { product: { select: { name: true } }, service: { select: { name: true } } } },
+  const sale = await db.query.workOrder.findFirst({
+    where: eq(workOrder.id, originalSaleId),
+    with: {
+      workOrderItems: { with: { product: { columns: { name: true } }, service: { columns: { name: true } } } },
       customer: true,
     },
   });
@@ -110,11 +112,11 @@ export async function validatePaymentMethodForCash(paymentMethodId?: string): Pr
     return { valid: false, errors: ['Debe especificar el método de pago para reintegro en efectivo'] };
   }
 
-  const paymentMethod = await prisma.payment_method.findUnique({
-    where: { id: paymentMethodId },
+  const foundPaymentMethod = await db.query.paymentMethod.findFirst({
+    where: eq(paymentMethod.id, paymentMethodId),
   });
 
-  if (!paymentMethod) {
+  if (!foundPaymentMethod) {
     return { valid: false, errors: ['Método de pago no encontrado'] };
   }
 
@@ -131,14 +133,14 @@ export async function validateItemsInOriginalSale(
 
   const originalItems = originalSaleType === 'direct_sale'
      
-    ? sale.items.map((item: any) => ({
+    ? sale.directSaleItems.map((item: any) => ({
         productId: item.productId ?? undefined,
         serviceId: item.serviceId ?? undefined,
         quantity: item.quantity,
         name: item.name || item.product?.name || item.service?.name || 'Sin nombre',
       }))
      
-    : sale.work_order_item.map((item: any) => ({
+    : sale.workOrderItems.map((item: any) => ({
         productId: item.productId ?? undefined,
         serviceId: item.serviceId ?? undefined,
         quantity: item.quantity,
@@ -164,18 +166,18 @@ export async function getAlreadyReturnedQuantities(
   originalSaleId: string,
   originalSaleType: 'direct_sale' | 'work_order'
 ): Promise<Record<string, number>> {
-  const creditNotes = await prisma.credit_note.findMany({
-    where: {
-      originalSaleId,
-      originalSaleType,
-      status: 'ISSUED',
-    },
-    include: { items: true },
+  const creditNotes = await db.query.creditNote.findMany({
+    where: and(
+      eq(creditNote.originalSaleId, originalSaleId),
+      eq(creditNote.originalSaleType, originalSaleType),
+      eq(creditNote.status, 'ISSUED'),
+    ),
+    with: { creditNoteItems: true },
   });
 
   const returned: Record<string, number> = {};
   for (const cn of creditNotes) {
-    for (const item of cn.items) {
+    for (const item of cn.creditNoteItems) {
       const key = item.productId || item.serviceId || item.id;
       if (!key) {
         console.warn('[CreditNoteValidation] Item without productId, serviceId or id - skipping quantity tracking', item);
@@ -197,7 +199,7 @@ export async function validateReturnQuantities(
 
   const originalItems = originalSaleType === 'direct_sale'
      
-    ? sale.items.map((item: any) => ({
+    ? sale.directSaleItems.map((item: any) => ({
         id: item.id,
         productId: item.productId ?? undefined,
         serviceId: item.serviceId ?? undefined,
@@ -205,7 +207,7 @@ export async function validateReturnQuantities(
         name: item.product?.name || item.service?.name || 'Sin nombre',
       }))
      
-    : sale.work_order_item.map((item: any) => ({
+    : sale.workOrderItems.map((item: any) => ({
         id: item.id,
         productId: item.productId ?? undefined,
         serviceId: item.serviceId ?? undefined,

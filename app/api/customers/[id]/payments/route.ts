@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionWithAuth } from "@/lib/api-middleware";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { customer, cashMovement, workOrder, payment, directSale, directSalePayment } from "@/db/schema";
+import { eq, notInArray, sql, inArray, and } from "drizzle-orm";
 import { UserRole } from "@/lib/auth/roles";
 import { revalidatePath } from "next/cache";
 import { invalidateCashStatus } from "@/lib/cache";
@@ -68,12 +70,13 @@ export async function POST(
     }
 
     // Check if customer exists
-    const customer = await prisma.customer.findUnique({
-      where: { id },
-      select: { id: true, name: true, balance: true },
-    });
+    const cust = await db
+      .select({ id: customer.id, name: customer.name, balance: customer.balance })
+      .from(customer)
+      .where(eq(customer.id, id))
+      .limit(1);
 
-    if (!customer) {
+    if (!cust.length) {
       return NextResponse.json(
         { error: "Customer not found" },
         { status: 404 },
@@ -81,7 +84,7 @@ export async function POST(
     }
 
     // Start transaction: adjust balance atomically and mark individual OTs/direct sales as PAID
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await db.transaction(async (tx) => {
       // Adjust customer balance atomically
       const newBalance = await adjustBalanceAtomically(
         id,
@@ -91,29 +94,25 @@ export async function POST(
       );
 
       // Create a cash movement record for this payment
-      const paymentMovement = await tx.cash_movement.create({
-        data: {
+      const [paymentMovement] = await tx
+        .insert(cashMovement)
+        .values({
           type: "INCOME",
-          amount,
+          amount: amount.toString(),
           method,
           referenceType: "customer_payment",
           referenceId: id,
           reason: "Pago de cuenta corriente",
           notes: notes || undefined,
           createdBy: session.user.id,
-        },
-      });
+        })
+        .returning();
 
       // Mark individual work orders as PAID if their total - payments <= 0
-      const customerWorkOrders = await tx.work_order.findMany({
-        where: {
-          customerId: id,
-          status: { notIn: ["CANCELLED", "PAID"] },
-        },
-        select: {
-          id: true,
-          total: true,
-          payments: { select: { amount: true } },
+      const customerWorkOrders = await tx.query.workOrder.findMany({
+        where: and(eq(workOrder.customerId, id), notInArray(workOrder.status, ["CANCELLED", "PAID"])),
+        with: {
+          payments: { columns: { amount: true } },
         },
       });
 
@@ -124,26 +123,24 @@ export async function POST(
           0,
         );
         if (woTotal - woPaid <= 0.01) {
-          await tx.work_order.update({
-            where: { id: wo.id },
-            data: { status: "PAID" },
-          });
+          await tx
+            .update(workOrder)
+            .set({ status: "PAID" })
+            .where(eq(workOrder.id, wo.id));
         }
       }
 
       // Mark individual direct sales as fully paid if applicable
-      const customerDirectSales = await tx.direct_sale.findMany({
-        where: { customerId: id },
-        select: {
-          id: true,
-          total: true,
-          payments: { select: { amount: true } },
+      const customerDirectSales = await tx.query.directSale.findMany({
+        where: eq(directSale.customerId, id),
+        with: {
+          directSalePayments: { columns: { amount: true } },
         },
       });
 
       for (const ds of customerDirectSales) {
         const dsTotal = decimalToNumber(ds.total);
-        const dsPaid = ds.payments.reduce(
+        const dsPaid = ds.directSalePayments.reduce(
           (s, p) => s + decimalToNumber(p.amount),
           0,
         );
@@ -177,7 +174,7 @@ export async function POST(
         },
         customer: {
           id: id,
-          name: customer.name,
+          name: cust[0].name,
           previousBalance: previousBalance,
           newBalance: finalNewBalance,
           hasCredit: finalNewBalance < 0,

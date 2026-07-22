@@ -55,7 +55,7 @@ if [ -n "$DB_INFO" ]; then
         echo "   3. Add these variables:"
         echo "      - POSTGRES_URL"
         echo "      - DATABASE_URL"
-        echo "      - POSTGRES_PRISMA_URL"
+        echo "      - POSTGRES_URL"
         echo "      - POSTGRES_URL_NON_POOLING"
     }
 else

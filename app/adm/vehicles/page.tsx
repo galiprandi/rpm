@@ -1,7 +1,10 @@
 import { getSession, hasRole } from '@/lib/auth-server';
 import { UserRole } from '@/lib/auth/roles';
 import { redirect } from 'next/navigation';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
+import { vehicle } from '@/db/schema';
+import { desc, count } from 'drizzle-orm';
+import { toISODate } from '@/lib/utils/date';
 import VehiclesClient from './VehiclesClient';
 
 export const dynamic = 'force-dynamic';
@@ -19,34 +22,33 @@ export default async function VehiclesPage() {
   }
 
   // Fetch initial data
-  const [vehicles, total] = await Promise.all([
-    prisma.vehicle.findMany({
-      take: 200, // Fetch more for initial client-side filtering/search
-      include: {
-        customer: {
-          select: {
-            id: true,
-            name: true,
-            phone: true,
-          },
-        },
-        vehicle_make: true,
-        vehicle_model: true,
-        _count: {
-          select: {
-            work_order: true,
-          },
-        },
+  const [vehicles, totalResult] = await Promise.all([
+    db.query.vehicle.findMany({
+      limit: 200, // Fetch more for initial client-side filtering/search
+      with: {
+        customer: true,
+        vehicleMake: true,
+        vehicleModel: true,
+        workOrders: true,
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: desc(vehicle.createdAt),
     }),
-    prisma.vehicle.count(),
+    db.select({ count: count() }).from(vehicle),
   ]);
+
+  const vehiclesFormatted = vehicles.map((v) => ({
+    ...v,
+    createdAt: toISODate(v.createdAt),
+    updatedAt: toISODate(v.updatedAt),
+    _count: {
+      workOrders: (v.workOrders || []).length,
+    },
+  }));
 
   return (
     <VehiclesClient
-      initialVehicles={vehicles as any}
-      totalVehicles={total}
+      initialVehicles={vehiclesFormatted as any}
+      totalVehicles={totalResult[0].count}
     />
   );
 }

@@ -1,6 +1,35 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionWithAuth } from "@/lib/api-middleware";
 import { getInvoices, createInvoice } from "@/lib/services/invoiceService";
+import { toISODate } from "@/lib/utils/date";
+import { serializeDrizzleResult } from "@/lib/utils/serialization";
+
+/**
+ * Normalizes an invoice row returned by Drizzle (mode: 'string') so that
+ * API consumers receive ISO 8601 timestamps and numeric decimals instead of
+ * raw PG timestamp strings and stringified numerics.
+ */
+function serializeInvoice<T extends Record<string, unknown>>(invoice: T) {
+  return {
+    ...invoice,
+    subtotal: Number(invoice.subtotal),
+    tax: invoice.tax != null ? Number(invoice.tax) : invoice.tax,
+    total: Number(invoice.total),
+    iva21: invoice.iva21 != null ? Number(invoice.iva21) : invoice.iva21,
+    iva105: invoice.iva105 != null ? Number(invoice.iva105) : invoice.iva105,
+    // perceptions/exemptions are jsonb — only coerce when they hold a primitive
+    perceptions:
+      typeof invoice.perceptions === "string" || typeof invoice.perceptions === "number"
+        ? Number(invoice.perceptions)
+        : invoice.perceptions,
+    exemptions:
+      typeof invoice.exemptions === "string" || typeof invoice.exemptions === "number"
+        ? Number(invoice.exemptions)
+        : invoice.exemptions,
+    createdAt: toISODate(invoice.createdAt),
+    issuedAt: toISODate(invoice.issuedAt),
+  };
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -25,7 +54,7 @@ export async function GET(request: NextRequest) {
     };
 
     const invoices = await getInvoices(filters);
-    return NextResponse.json(invoices);
+    return NextResponse.json(serializeDrizzleResult(invoices.map(serializeInvoice)));
   } catch (error) {
     console.error("Error in GET /api/invoices:", error);
     return NextResponse.json(
@@ -49,7 +78,7 @@ export async function POST(request: NextRequest) {
       createdBy: session.user.id,
     });
 
-    return NextResponse.json(invoice, { status: 201 });
+    return NextResponse.json(serializeInvoice(invoice), { status: 201 });
   } catch (error) {
     console.error("Error in POST /api/invoices:", error);
     return NextResponse.json(

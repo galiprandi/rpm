@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withAdmin } from "@/lib/api-middleware";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { service } from "@/db/schema";
+import { eq, ilike, and, asc } from "drizzle-orm";
 import { randomUUID } from "crypto";
+import { toISODate } from "@/lib/utils/date";
 
 // GET /api/services - List all services (requiere ADMIN)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -13,20 +16,28 @@ export const GET = withAdmin(async (request: NextRequest, _session) => {
     const isActive = searchParams.get("isActive");
     const search = searchParams.get("search");
 
-    const where: Record<string, unknown> = {};
-    if (isActive !== null) where.isActive = isActive === "true";
+    const conditions = [];
+    if (isActive !== null) conditions.push(eq(service.isActive, isActive === "true"));
     
     // Search by name
     if (search) {
-      where.name = { contains: search, mode: "insensitive" };
+      conditions.push(ilike(service.name, `%${search}%`));
     }
 
-    const services = await prisma.service.findMany({
-      where,
-      orderBy: { name: "asc" },
+    const services = await db.query.service.findMany({
+      where: conditions.length > 0 ? and(...conditions) : undefined,
+      orderBy: asc(service.name),
     });
 
-    return NextResponse.json({ services });
+    const transformedServices = services.map((item) => ({
+      ...item,
+      baseCost: Number(item.baseCost),
+      vehicleFactor: Number(item.vehicleFactor),
+      createdAt: toISODate(item.createdAt),
+      updatedAt: toISODate(item.updatedAt),
+    }));
+
+    return NextResponse.json({ services: transformedServices });
   } catch (error) {
     console.error("Error fetching services:", error);
     return NextResponse.json(
@@ -58,8 +69,8 @@ export const POST = withAdmin(async (request: NextRequest, _session) => {
     }
 
     // Check for duplicate name
-    const existing = await prisma.service.findUnique({
-      where: { name },
+    const existing = await db.query.service.findFirst({
+      where: eq(service.name, name),
     });
 
     if (existing) {
@@ -69,19 +80,25 @@ export const POST = withAdmin(async (request: NextRequest, _session) => {
       );
     }
 
-    const service = await prisma.service.create({
-      data: {
-        id: randomUUID(),
-        name,
-        description,
-        baseCost,
-        timeMinutes: timeMinutes || 60,
-        vehicleFactor: vehicleFactor || 1.0,
-        updatedAt: new Date(),
-      },
-    });
+    const [created] = await db.insert(service).values({
+      id: randomUUID(),
+      name,
+      description,
+      baseCost: String(baseCost),
+      timeMinutes: timeMinutes || 60,
+      vehicleFactor: String(vehicleFactor || 1.0),
+      updatedAt: new Date().toISOString(),
+    }).returning();
 
-    return NextResponse.json({ service }, { status: 201 });
+    const transformedCreated = {
+      ...created,
+      baseCost: Number(created.baseCost),
+      vehicleFactor: Number(created.vehicleFactor),
+      createdAt: toISODate(created.createdAt),
+      updatedAt: toISODate(created.updatedAt),
+    };
+
+    return NextResponse.json({ service: transformedCreated }, { status: 201 });
   } catch (error) {
     console.error("Error creating service:", error);
     return NextResponse.json(

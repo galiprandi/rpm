@@ -97,10 +97,10 @@ interface VehicleDetail {
     phone: string;
     email?: string;
   };
-  make?: {
+  vehicleMake?: {
     name: string;
   };
-  model?: {
+  vehicleModel?: {
     name: string;
   };
   workOrders: WorkOrder[];
@@ -504,8 +504,8 @@ export default function VehicleDetailPage() {
         titleClassName="font-mono tracking-tight"
         description={buildVehicleDescription({
           category: vehicle.category,
-          make: vehicle.make?.name,
-          model: vehicle.model?.name,
+          make: vehicle.vehicleMake?.name,
+          model: vehicle.vehicleModel?.name,
           color: vehicle.color,
           year: vehicle.year,
         })}
@@ -1013,8 +1013,8 @@ export default function VehicleDetailPage() {
             initialData={{
               identifier: vehicle.identifier,
               category: vehicle.category,
-              makeName: vehicle.make?.name,
-              modelName: vehicle.model?.name,
+              makeName: vehicle.vehicleMake?.name,
+              modelName: vehicle.vehicleModel?.name,
               year: vehicle.year,
               color: vehicle.color,
               equipmentName: vehicle.equipmentName,
@@ -1333,11 +1333,11 @@ export default function VehicleDetailPage() {
               <span className="text-zinc-500 font-medium">Categoría:</span>
               <span className="col-span-2 font-medium">{getVehicleCategoryLabel(vehicle.category)}</span>
 
-              {(vehicle.make?.name || vehicle.model?.name) && (
+              {(vehicle.vehicleMake?.name || vehicle.vehicleModel?.name) && (
                 <>
                   <span className="text-zinc-500 font-medium">Marca/Mod:</span>
                   <span className="col-span-2 font-medium">
-                    {vehicle.make?.name} {vehicle.model?.name}
+                    {vehicle.vehicleMake?.name} {vehicle.vehicleModel?.name}
                   </span>
                 </>
               )}

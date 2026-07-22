@@ -1,4 +1,6 @@
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { workOrderAuditLog } from "@/db/schema";
+import { eq, desc } from "drizzle-orm";
 
 interface AuditLogEntry {
   workOrderId: string;
@@ -15,16 +17,14 @@ interface AuditLogEntry {
  */
 export async function logWorkOrderChange(entry: AuditLogEntry) {
   try {
-    await prisma.work_order_audit_log.create({
-      data: {
-        workOrderId: entry.workOrderId,
-        fieldName: entry.fieldName,
-        oldValue: entry.oldValue !== undefined ? String(entry.oldValue) : null,
-        newValue: entry.newValue !== undefined ? String(entry.newValue) : null,
-        changedBy: entry.changedBy,
-        ipAddress: entry.ipAddress,
-        userAgent: entry.userAgent,
-      },
+    await db.insert(workOrderAuditLog).values({
+      workOrderId: entry.workOrderId,
+      fieldName: entry.fieldName,
+      oldValue: entry.oldValue !== undefined ? String(entry.oldValue) : null,
+      newValue: entry.newValue !== undefined ? String(entry.newValue) : null,
+      changedBy: entry.changedBy,
+      ipAddress: entry.ipAddress,
+      userAgent: entry.userAgent,
     });
   } catch (error) {
     console.error("Error logging audit entry:", error);
@@ -37,10 +37,10 @@ export async function logWorkOrderChange(entry: AuditLogEntry) {
  */
 export async function getWorkOrderAuditLogs(workOrderId: string) {
   try {
-    const logs = await prisma.work_order_audit_log.findMany({
-      where: { workOrderId },
-      orderBy: { changedAt: "desc" },
-      take: 100, // Últimos 100 cambios
+    const logs = await db.query.workOrderAuditLog.findMany({
+      where: eq(workOrderAuditLog.workOrderId, workOrderId),
+      orderBy: desc(workOrderAuditLog.changedAt),
+      limit: 100, // Últimos 100 cambios
     });
     return logs;
   } catch (error) {

@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { cashMovement, user as userTable } from "@/db/schema";
+import { eq, desc, gte, and } from "drizzle-orm";
 import { UserRole } from "@/lib/auth/roles";
 import { invalidateCashStatus } from "@/lib/cache";
 import { getSessionWithAuth } from "@/lib/api-middleware";
+import { toISODate } from "@/lib/utils/date";
 
 // POST /api/cash/open - Open cash register
 export async function POST(request: NextRequest) {
@@ -43,12 +46,13 @@ export async function POST(request: NextRequest) {
     let finalResponsibleId = responsibleId;
     if (responsibleId && responsibleId !== session.user.id) {
       // Verify the responsible user exists and has STAFF/ADMIN role
-      const responsibleUser = await prisma.user.findUnique({
-        where: { id: responsibleId },
-        select: { role: true, name: true },
-      });
+      const responsibleUser = await db
+        .select({ role: userTable.role, name: userTable.name })
+        .from(userTable)
+        .where(eq(userTable.id, responsibleId))
+        .limit(1);
 
-      if (!responsibleUser) {
+      if (!responsibleUser.length) {
         return NextResponse.json(
           { error: "Responsible user not found" },
           { status: 400 },
@@ -56,7 +60,7 @@ export async function POST(request: NextRequest) {
       }
 
       const responsibleRole =
-        (responsibleUser.role as UserRole) || UserRole.USER;
+        (responsibleUser[0].role as UserRole) || UserRole.USER;
       if (roleHierarchy[responsibleRole] < roleHierarchy[UserRole.STAFF]) {
         return NextResponse.json(
           { error: "Responsible user must be STAFF or ADMIN" },
@@ -69,18 +73,18 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if ANY cash register is currently open (global validation)
-    const lastOpening = await prisma.cash_movement.findFirst({
-      where: { type: "OPENING" },
-      orderBy: { createdAt: "desc" },
+    const lastOpening = await db.query.cashMovement.findFirst({
+      where: eq(cashMovement.type, "OPENING"),
+      orderBy: desc(cashMovement.createdAt),
     });
 
     if (lastOpening) {
-      const lastClosing = await prisma.cash_movement.findFirst({
-        where: {
-          type: "CLOSING",
-          createdAt: { gte: lastOpening.createdAt },
-        },
-        orderBy: { createdAt: "desc" },
+      const lastClosing = await db.query.cashMovement.findFirst({
+        where: and(
+          eq(cashMovement.type, "CLOSING"),
+          gte(cashMovement.createdAt, lastOpening.createdAt),
+        ),
+        orderBy: desc(cashMovement.createdAt),
       });
 
       if (!lastClosing) {
@@ -88,7 +92,7 @@ export async function POST(request: NextRequest) {
           {
             error:
               "Cash register is already open (opened on " +
-              lastOpening.createdAt.toISOString().split("T")[0] +
+              new Date(lastOpening.createdAt).toISOString().split("T")[0] +
               ")",
           },
           { status: 400 },
@@ -97,17 +101,18 @@ export async function POST(request: NextRequest) {
     }
 
     // Create opening movement
-    const opening = await prisma.cash_movement.create({
-      data: {
+    const [opening] = await db
+      .insert(cashMovement)
+      .values({
         type: "OPENING",
-        amount,
+        amount: amount.toString(),
         method: "CASH",
         referenceType: "manual",
         reason: "Apertura de caja",
         createdBy: session.user.id,
         responsibleId: finalResponsibleId,
-      },
-    });
+      })
+      .returning();
 
     // Invalidate cash status cache so next request gets fresh data
     invalidateCashStatus();
@@ -117,9 +122,9 @@ export async function POST(request: NextRequest) {
         success: true,
         opening: {
           id: opening.id,
-          amount: opening.amount,
+          amount: Number(opening.amount),
           method: opening.method,
-          createdAt: opening.createdAt,
+          createdAt: toISODate(opening.createdAt),
         },
       },
       { status: 201 },

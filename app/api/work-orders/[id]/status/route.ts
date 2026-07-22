@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionWithAuth } from "@/lib/api-middleware";
 import { updateWorkOrder } from "@/lib/services/workOrderService";
+import { toISODate } from "@/lib/utils/date";
 
 export const dynamic = 'force-dynamic';
 
@@ -45,7 +46,18 @@ export async function PUT(
       userAgent
     });
 
-    return NextResponse.json(updatedWO);
+    return NextResponse.json({
+      ...updatedWO,
+      total: (updatedWO as any).total != null ? Number((updatedWO as any).total) : undefined,
+      totalProducts: (updatedWO as any).totalProducts != null ? Number((updatedWO as any).totalProducts) : undefined,
+      totalServices: (updatedWO as any).totalServices != null ? Number((updatedWO as any).totalServices) : undefined,
+      createdAt: toISODate((updatedWO as any).createdAt),
+      updatedAt: toISODate((updatedWO as any).updatedAt),
+      scheduledDate: toISODate((updatedWO as any).scheduledDate),
+      startedAt: toISODate((updatedWO as any).startedAt),
+      completedAt: toISODate((updatedWO as any).completedAt),
+      deliveredAt: toISODate((updatedWO as any).deliveredAt),
+    });
   } catch (error) {
     console.error("Error updating work order status:", error);
     return NextResponse.json(

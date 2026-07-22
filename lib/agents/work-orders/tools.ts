@@ -1,6 +1,8 @@
 import { tool } from "ai";
 import { z } from "zod";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { workOrder, customer, vehicle, workOrderItem, product, service, payment, user } from "@/db/schema";
+import { eq, and, ilike, desc, or, type SQL } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { updateWorkOrder } from "@/lib/services/workOrderService";
 import logger from "../utils/logger";
@@ -28,24 +30,20 @@ export const searchWorkOrdersTool = tool({
   execute: async ({ status, customerName, customerId, limit }) => {
     logger.debug({ status, customerName, customerId }, "Search work orders");
 
-    const where: Record<string, unknown> = {};
-    if (status) where.status = status;
-    if (customerId) where.customerId = customerId;
-    if (customerName) {
-      where.customer = {
-        name: { contains: customerName, mode: "insensitive" },
-      };
-    }
+    const conditions: SQL[] = [];
+    if (status) conditions.push(eq(workOrder.status, status));
+    if (customerId) conditions.push(eq(workOrder.customerId, customerId));
+    if (customerName) conditions.push(ilike(customer.name, `%${customerName}%`));
 
-    const orders = await prisma.work_order.findMany({
-      where,
-      include: {
-        customer: { select: { id: true, name: true, phone: true } },
-        vehicle: { select: { id: true, identifier: true, category: true } },
-        work_order_item: { select: { quantity: true, unitPrice: true } },
+    const orders = await db.query.workOrder.findMany({
+      where: conditions.length > 0 ? and(...conditions) : undefined,
+      with: {
+        customer: true,
+        vehicle: true,
+        workOrderItems: true,
       },
-      orderBy: { createdAt: "desc" },
-      take: limit ?? 10,
+      orderBy: desc(workOrder.createdAt),
+      limit: limit ?? 10,
     });
 
     if (orders.length === 0) return "No se encontraron órdenes de trabajo.";
@@ -53,7 +51,7 @@ export const searchWorkOrdersTool = tool({
     return (
       orders
         .map((o) => {
-          const itemCount = o.work_order_item?.length || 0;
+          const itemCount = o.workOrderItems?.length || 0;
           return `🔹 OT #${o.id.slice(0, 8)} - ${o.status} - ${o.customer?.name || "?"} - ${o.vehicle?.identifier || "?"} - $${Number(o.total)}${itemCount > 0 ? ` (${itemCount} items)` : ""}`;
         })
         .join("\n") + `\n\n${orders.length} OT(s) encontrada(s).`
@@ -79,28 +77,32 @@ export const createWorkOrderTool = tool({
       "Create work order",
     );
 
-    const workOrder = await prisma.work_order.create({
-      data: {
+    const [workOrderRecord] = await db
+      .insert(workOrder)
+      .values({
         id: randomUUID(),
         customerId: input.customerId,
         vehicleId: input.vehicleId,
         status: input.scheduledDate ? "CONFIRMED" : "WAITING",
         notes: input.notes || "",
-        total: 0,
-        totalProducts: 0,
-        totalServices: 0,
+        total: "0",
+        totalProducts: "0",
+        totalServices: "0",
         scheduledDate: input.scheduledDate
-          ? new Date(input.scheduledDate)
+          ? new Date(input.scheduledDate).toISOString()
           : null,
-        updatedAt: new Date(),
-      },
-      include: {
-        customer: { select: { name: true } },
-        vehicle: { select: { identifier: true, category: true } },
-      },
+        updatedAt: new Date().toISOString(),
+      })
+      .returning();
+
+    const customerRecord = await db.query.customer.findFirst({
+      where: eq(customer.id, input.customerId),
+    });
+    const vehicleRecord = await db.query.vehicle.findFirst({
+      where: eq(vehicle.id, input.vehicleId),
     });
 
-    return `✅ OT creada:\n- ID: ${workOrder.id.slice(0, 8)}\n- Cliente: ${(workOrder as any).customer?.name}\n- Vehículo: ${(workOrder as any).vehicle?.identifier}\n- Estado: ${workOrder.status}\n- Total: $0 (sin items aún)`;
+    return `✅ OT creada:\n- ID: ${workOrderRecord.id.slice(0, 8)}\n- Cliente: ${customerRecord?.name}\n- Vehículo: ${vehicleRecord?.identifier}\n- Estado: ${workOrderRecord.status}\n- Total: $0 (sin items aún)`;
   },
 });
 
@@ -159,40 +161,46 @@ export const getWorkOrderDetailTool = tool({
   execute: async ({ workOrderId }) => {
     logger.debug({ workOrderId }, "Get work order detail");
 
-    const wo = await prisma.work_order.findUnique({
-      where: { id: workOrderId },
-      include: {
-        customer: { select: { name: true, phone: true } },
+    const wo = await db.query.workOrder.findFirst({
+      where: eq(workOrder.id, workOrderId),
+      with: {
+        customer: true,
         vehicle: {
-          select: {
-            identifier: true,
-            category: true,
-            vehicle_make: { select: { name: true } },
-            vehicle_model: { select: { name: true } },
+          with: {
+            vehicleMake: true,
+            vehicleModel: true,
           },
         },
-        work_order_item: {
-          include: {
-            product: { select: { name: true } },
-            service: { select: { name: true } },
+        workOrderItems: {
+          with: {
+            product: true,
+            service: true,
           },
         },
-        payments: { select: { amount: true } },
-        technician: { select: { name: true } },
+        payments: true,
       },
     });
 
     if (!wo) return "OT no encontrada.";
 
+    // technician is a userId reference - fetch user if technicianId is set
+    let technicianName: string | null = null;
+    if (wo.technicianId) {
+      const technician = await db.query.user.findFirst({
+        where: eq(user.id, wo.technicianId),
+      });
+      technicianName = technician?.name ?? null;
+    }
+
     const totalPaid = wo.payments.reduce((s, p) => s + Number(p.amount), 0);
-    const itemsStr = wo.work_order_item
+    const itemsStr = wo.workOrderItems
       .map(
         (i) =>
           `  ${i.type === "PRODUCT" ? i.product?.name || "?" : i.service?.name || "?"} x${i.quantity} = $${Number(i.subtotal)}`,
       )
       .join("\n");
 
-    return `📋 OT #${wo.id.slice(0, 8)}\n- Cliente: ${wo.customer.name}\n- Vehículo: ${wo.vehicle.identifier} (${wo.vehicle.category})\n- Estado: ${wo.status}\n- Técnico: ${wo.technician?.name || "Sin asignar"}\n- Total: $${Number(wo.total)}\n- Pagado: $${totalPaid}\n- Saldo: $${Number(wo.total) - totalPaid}\n${itemsStr ? `\nItems:\n${itemsStr}` : "\nSin items"}`;
+    return `📋 OT #${wo.id.slice(0, 8)}\n- Cliente: ${wo.customer.name}\n- Vehículo: ${wo.vehicle.identifier} (${wo.vehicle.category})\n- Estado: ${wo.status}\n- Técnico: ${technicianName || "Sin asignar"}\n- Total: $${Number(wo.total)}\n- Pagado: $${totalPaid}\n- Saldo: $${Number(wo.total) - totalPaid}\n${itemsStr ? `\nItems:\n${itemsStr}` : "\nSin items"}`;
   },
 });
 

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { workOrder } from "@/db/schema";
+import { eq } from "drizzle-orm";
 import { getWorkOrderAuditLogs } from "@/lib/services/auditService";
 
 // GET /api/work-orders/[id]/audit-logs - Get audit logs for a work order
@@ -11,12 +13,12 @@ export async function GET(
     const { id } = await params;
 
     // Verify work order exists
-    const workOrder = await prisma.work_order.findUnique({
-      where: { id },
-      select: { id: true },
+    const workOrderRecord = await db.query.workOrder.findFirst({
+      where: eq(workOrder.id, id),
+      columns: { id: true },
     });
 
-    if (!workOrder) {
+    if (!workOrderRecord) {
       return NextResponse.json(
         { error: "Work order not found" },
         { status: 404 }

@@ -1,4 +1,6 @@
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
+import { product } from '@/db/schema';
+import { or, ilike, asc, type SQL } from 'drizzle-orm';
 import type { SearchProductsInput } from './schema';
 
 /**
@@ -15,24 +17,23 @@ export async function searchProductsService(input: SearchProductsInput) {
   const { search, limit = 10 } = input;
 
   // Build where clause
-  const where = search
-    ? {
-        OR: [
-          { name: { contains: search, mode: 'insensitive' as const } },
-          { sku: { contains: search, mode: 'insensitive' as const } },
-          { barcode: { contains: search, mode: 'insensitive' as const } },
-        ],
-      }
-    : {};
+  let where: SQL | undefined;
+  if (search) {
+    where = or(
+      ilike(product.name, `%${search}%`),
+      ilike(product.sku, `%${search}%`),
+      ilike(product.barcode, `%${search}%`),
+    )!;
+  }
 
-  const products = await prisma.product.findMany({
+  const products = await db.query.product.findMany({
     where,
-    include: { 
+    with: {
       category: true,
-      supplier: { select: { id: true, name: true } },
+      supplier: { columns: { id: true, name: true } },
     },
-    orderBy: { name: 'asc' },
-    take: limit,
+    orderBy: asc(product.name),
+    limit,
   });
 
   return products;

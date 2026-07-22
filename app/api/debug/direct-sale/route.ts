@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAdmin } from '@/lib/api-middleware';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
+import { directSale } from '@/db/schema';
+import { eq } from 'drizzle-orm';
 
 export const GET = withAdmin(async (request: NextRequest) => {
   try {
@@ -11,10 +13,10 @@ export const GET = withAdmin(async (request: NextRequest) => {
       return NextResponse.json({ error: 'saleId is required' }, { status: 400 });
     }
 
-    const sale = await prisma.direct_sale.findUnique({
-      where: { id: saleId },
-      include: {
-        items: true,
+    const sale = await db.query.directSale.findFirst({
+      where: eq(directSale.id, saleId),
+      with: {
+        directSaleItems: true,
       },
     });
 

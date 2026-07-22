@@ -1,4 +1,6 @@
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
+import { vehicle, customer } from '@/db/schema';
+import { eq, and, ilike, inArray, desc, type SQL } from 'drizzle-orm';
 import type { SearchVehiclesInput } from './schema';
 
 /**
@@ -12,33 +14,43 @@ import type { SearchVehiclesInput } from './schema';
 export async function searchVehiclesService(input: SearchVehiclesInput) {
   const { identifier, customerName, customerId, limit = 10 } = input;
 
-  const where: Record<string, unknown> = {};
+  const conditions: SQL[] = [];
 
   if (identifier) {
-    where.identifier = { contains: identifier.toUpperCase(), mode: 'insensitive' };
+    conditions.push(ilike(vehicle.identifier, `%${identifier.toUpperCase()}%`));
   }
 
   if (customerId) {
-    where.customerId = customerId;
+    conditions.push(eq(vehicle.customerId, customerId));
   }
 
+  // For customerName, we need to filter on the related customer's name
   if (customerName) {
-    where.customer = {
-      name: { contains: customerName, mode: 'insensitive' },
-    };
+    // Fetch matching customer IDs first
+    const matchingCustomers = await db.query.customer.findMany({
+      where: ilike(customer.name, `%${customerName}%`),
+      columns: { id: true },
+    });
+    const customerIds = matchingCustomers.map(c => c.id);
+    if (customerIds.length > 0) {
+      conditions.push(inArray(vehicle.customerId, customerIds));
+    } else {
+      // No matching customers, return empty
+      return [];
+    }
   }
 
-  const vehicles = await prisma.vehicle.findMany({
+  const where = conditions.length > 0 ? and(...conditions) : undefined;
+
+  const vehicles = await db.query.vehicle.findMany({
     where,
-    include: {
-      customer: {
-        select: { id: true, name: true, phone: true },
-      },
-      vehicle_make: { select: { name: true } },
-      vehicle_model: { select: { name: true } },
+    with: {
+      customer: { columns: { id: true, name: true, phone: true } },
+      vehicleMake: { columns: { name: true } },
+      vehicleModel: { columns: { name: true } },
     },
-    orderBy: { updatedAt: 'desc' },
-    take: limit,
+    orderBy: desc(vehicle.updatedAt),
+    limit,
   });
 
   return vehicles;

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionWithAuth } from "@/lib/api-middleware";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { workOrder, payment, paymentMethod } from "@/db/schema";
+import { eq, desc } from "drizzle-orm";
 import { hasRole, UserRole } from "@/lib/auth/roles";
 import {
   isCashRegisterOpen,
@@ -8,6 +10,7 @@ import {
 } from "@/lib/services/cashMovementService";
 import { invalidateCashStatus } from "@/lib/cache";
 import { adjustBalanceAtomically } from "@/lib/services/balanceService";
+import { toISODate } from "@/lib/utils/date";
 
 // GET /api/work-orders/[id]/payments - List payments with totals
 export async function GET(
@@ -23,12 +26,12 @@ export async function GET(
     const { id: workOrderId } = await params;
 
     // Verify work order exists
-    const workOrder = await prisma.work_order.findUnique({
-      where: { id: workOrderId },
-      select: { total: true },
+    const workOrderRecord = await db.query.workOrder.findFirst({
+      where: eq(workOrder.id, workOrderId),
+      columns: { total: true },
     });
 
-    if (!workOrder) {
+    if (!workOrderRecord) {
       return NextResponse.json(
         { error: "Work order not found" },
         { status: 404 },
@@ -36,31 +39,35 @@ export async function GET(
     }
 
     // Fetch payments with payment method details
-    const payments = await prisma.payment.findMany({
-      where: { workOrderId },
-      include: {
+    const payments = await db.query.payment.findMany({
+      where: eq(payment.workOrderId, workOrderId),
+      with: {
         paymentMethod: {
-          select: {
+          columns: {
             id: true,
             name: true,
             code: true,
           },
         },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: desc(payment.createdAt),
     });
 
     // Calculate totals
     const totalPaid = payments.reduce(
-      (sum, payment) => sum + Number(payment.amount),
+      (sum, p) => sum + Number(p.amount),
       0,
     );
-    const workOrderTotal = Number(workOrder.total);
+    const workOrderTotal = Number(workOrderRecord.total);
     const pendingAmount = Math.max(0, workOrderTotal - totalPaid);
     const isFullyPaid = totalPaid >= workOrderTotal;
 
     return NextResponse.json({
-      payments,
+      payments: payments.map((p) => ({
+        ...p,
+        amount: Number(p.amount),
+        createdAt: toISODate(p.createdAt),
+      })),
       totalPaid,
       pendingAmount,
       isFullyPaid,
@@ -122,12 +129,12 @@ export async function POST(
     }
 
     // Verify work order exists
-    const workOrder = await prisma.work_order.findUnique({
-      where: { id: workOrderId },
-      select: { total: true, customerId: true },
+    const workOrderRecord = await db.query.workOrder.findFirst({
+      where: eq(workOrder.id, workOrderId),
+      columns: { total: true, customerId: true },
     });
 
-    if (!workOrder) {
+    if (!workOrderRecord) {
       return NextResponse.json(
         { error: "Work order not found" },
         { status: 404 },
@@ -135,18 +142,18 @@ export async function POST(
     }
 
     // Verify payment method exists and is active
-    const paymentMethod = await prisma.payment_method.findUnique({
-      where: { id: paymentMethodId },
+    const paymentMethodRecord = await db.query.paymentMethod.findFirst({
+      where: eq(paymentMethod.id, paymentMethodId),
     });
 
-    if (!paymentMethod) {
+    if (!paymentMethodRecord) {
       return NextResponse.json(
         { error: "Payment method not found" },
         { status: 404 },
       );
     }
 
-    if (!paymentMethod.isActive) {
+    if (!paymentMethodRecord.isActive) {
       return NextResponse.json(
         { error: "Payment method is not active" },
         { status: 400 },
@@ -154,33 +161,24 @@ export async function POST(
     }
 
     // Create payment and cash movement in a transaction
-    const payment = await prisma.$transaction(async (tx) => {
-      const newPayment = await tx.payment.create({
-        data: {
-          workOrderId,
-          paymentMethodId,
-          amount,
-          notes,
-          createdBy: session.user.id,
-        },
-        include: {
-          paymentMethod: {
-            select: {
-              id: true,
-              name: true,
-              code: true,
-            },
-          },
-        },
-      });
+    const newPaymentId = crypto.randomUUID();
+    const newPayment = await db.transaction(async (tx) => {
+      const [created] = await tx.insert(payment).values({
+        id: newPaymentId,
+        workOrderId,
+        paymentMethodId,
+        amount: String(amount),
+        notes,
+        createdBy: session.user.id,
+      }).returning();
 
       // Create cash movement
       await createCashMovement(
         {
           type: "INCOME",
           amount,
-          method: paymentMethod.code,
-          referenceId: newPayment.id,
+          method: paymentMethodRecord.code,
+          referenceId: created.id,
           referenceType: "work_order_payment",
           reason: `Pago OT #${workOrderId.substring(0, 8)}`,
           createdBy: session.user.id,
@@ -189,42 +187,61 @@ export async function POST(
       );
 
       // Update customer balance atomically
-      if (workOrder.customerId) {
+      if (workOrderRecord.customerId) {
         await adjustBalanceAtomically(
-          workOrder.customerId,
+          workOrderRecord.customerId,
           -amount,
           "payment",
           tx,
         );
       }
 
-      return newPayment;
+      return created;
+    });
+
+    // Fetch the payment with payment method details
+    const paymentWithRelations = await db.query.payment.findFirst({
+      where: eq(payment.id, newPaymentId),
+      with: {
+        paymentMethod: {
+          columns: {
+            id: true,
+            name: true,
+            code: true,
+          },
+        },
+      },
     });
 
     // Calculate updated totals
-    const allPayments = await prisma.payment.findMany({
-      where: { workOrderId },
-      select: { amount: true },
+    const allPayments = await db.query.payment.findMany({
+      where: eq(payment.workOrderId, workOrderId),
+      columns: { amount: true },
     });
 
     const totalPaid = allPayments.reduce((sum, p) => sum + Number(p.amount), 0);
-    const workOrderTotal = Number(workOrder.total);
+    const workOrderTotal = Number(workOrderRecord.total);
     const pendingAmount = Math.max(0, workOrderTotal - totalPaid);
     const isFullyPaid = totalPaid >= workOrderTotal;
 
     // Update work order status to PAID if fully paid
     if (isFullyPaid) {
-      await prisma.work_order.update({
-        where: { id: workOrderId },
-        data: { status: "PAID" },
-      });
+      await db.update(workOrder)
+        .set({ status: "PAID" })
+        .where(eq(workOrder.id, workOrderId));
     }
 
     invalidateCashStatus();
 
     return NextResponse.json(
       {
-        payment,
+        payment: paymentWithRelations
+          ? {
+              ...paymentWithRelations,
+              amount: Number(paymentWithRelations.amount),
+              createdAt: toISODate(paymentWithRelations.createdAt),
+            }
+          : null,
         totalPaid,
         pendingAmount,
         isFullyPaid,

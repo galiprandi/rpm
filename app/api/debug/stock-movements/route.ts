@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAdmin } from '@/lib/api-middleware';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
+import { stockMovement } from '@/db/schema';
+import { eq, desc, and, type SQL } from 'drizzle-orm';
 
 export const GET = withAdmin(async (request: NextRequest) => {
   try {
@@ -8,13 +10,13 @@ export const GET = withAdmin(async (request: NextRequest) => {
     const productId = searchParams.get('productId');
     const limit = parseInt(searchParams.get('limit') || '10');
 
-    const where: Record<string, unknown> = {};
-    if (productId) where.productId = productId;
+    const conditions: SQL[] = [];
+    if (productId) conditions.push(eq(stockMovement.productId, productId));
 
-    const movements = await prisma.stock_movement.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      take: limit,
+    const movements = await db.query.stockMovement.findMany({
+      where: conditions.length > 0 ? and(...conditions) : undefined,
+      orderBy: desc(stockMovement.createdAt),
+      limit,
     });
 
     return NextResponse.json({ movements, count: movements.length });

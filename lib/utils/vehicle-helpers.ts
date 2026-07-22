@@ -1,4 +1,6 @@
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { vehicleMake, vehicleModel } from "@/db/schema";
+import { eq, and } from "drizzle-orm";
 import { capitalizeText } from "@/lib/utils/format";
 
 /**
@@ -11,34 +13,60 @@ export async function resolveMakeModel(makeName?: string, modelName?: string) {
 
   if (makeName?.trim()) {
     const normalizedName = makeName.trim().toLowerCase();
-    const make = await prisma.vehicle_make.upsert({
-      where: { normalizedName },
-      update: { name: capitalizeText(makeName.trim()) },
-      create: {
+    // Try to find existing make
+    let make = await db.query.vehicleMake.findFirst({
+      where: eq(vehicleMake.normalizedName, normalizedName),
+    });
+
+    if (make) {
+      // Update name if needed
+      const updatedName = capitalizeText(makeName.trim());
+      if (make.name !== updatedName) {
+        await db.update(vehicleMake)
+          .set({ name: updatedName })
+          .where(eq(vehicleMake.id, make.id));
+        make = { ...make, name: updatedName };
+      }
+    } else {
+      // Create new make
+      const [created] = await db.insert(vehicleMake).values({
         id: crypto.randomUUID(),
         name: capitalizeText(makeName.trim()),
         normalizedName,
-      },
-    });
+      }).returning();
+      make = created;
+    }
     makeId = make.id;
 
     if (modelName?.trim()) {
       const normalizedModel = modelName.trim().toLowerCase();
-      const model = await prisma.vehicle_model.upsert({
-        where: {
-          makeId_normalizedName: {
-            makeId: make.id,
-            normalizedName: normalizedModel,
-          },
-        },
-        update: { name: capitalizeText(modelName.trim()) },
-        create: {
+      // Try to find existing model
+      let model = await db.query.vehicleModel.findFirst({
+        where: and(
+          eq(vehicleModel.makeId, make.id),
+          eq(vehicleModel.normalizedName, normalizedModel),
+        ),
+      });
+
+      if (model) {
+        // Update name if needed
+        const updatedModelName = capitalizeText(modelName.trim());
+        if (model.name !== updatedModelName) {
+          await db.update(vehicleModel)
+            .set({ name: updatedModelName })
+            .where(eq(vehicleModel.id, model.id));
+          model = { ...model, name: updatedModelName };
+        }
+      } else {
+        // Create new model
+        const [createdModel] = await db.insert(vehicleModel).values({
           id: crypto.randomUUID(),
           makeId: make.id,
           name: capitalizeText(modelName.trim()),
           normalizedName: normalizedModel,
-        },
-      });
+        }).returning();
+        model = createdModel;
+      }
       modelId = model.id;
     }
   }

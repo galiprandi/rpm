@@ -58,12 +58,13 @@
 ## 🛠️ PROPUESTA DE CAMBIO DE SCHEMA
 Para un desglose preciso de IVA por item, se propone agregar `taxRate` a los items de venta:
 
-```prisma
+```typescript
 // En work_order_item, direct_sale_item, credit_note_item
-model ..._item {
+// db/schema/schema.ts
+export const workOrderItem = pgTable('work_order_item', {
   // ...
-  taxRate Decimal @db.Decimal(5, 2) @default(21.00) // Alicuota de IVA (21, 10.5, 0)
-}
+  taxRate: decimal('tax_rate', { precision: 5, scale: 2 }).default('21.00').notNull(), // Alicuota de IVA (21, 10.5, 0)
+});
 ```
 
 **Justificación:** Actualmente el sistema asume 21% de forma global para pre-facturas. AFIP requiere el desglose por alicuota real en el comprobante oficial. Tenerlo por item permite ventas mixtas y mayor precisión.

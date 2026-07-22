@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Validates that Prisma migration SQL files use idempotent DDL.
+ * Validates that Drizzle migration SQL files use idempotent DDL.
  *
  * Rules:
  * - In CI (--ci): Only validates migrations that were ADDED or MODIFIED in this PR/push.
@@ -14,7 +14,7 @@ import fs from 'fs';
 import path from 'path';
 import { execSync } from 'child_process';
 
-const MIGRATIONS_DIR = path.join(process.cwd(), 'prisma', 'migrations');
+const MIGRATIONS_DIR = path.join(process.cwd(), 'db', 'migrations');
 
 // DDL operations that must use IF EXISTS / IF NOT EXISTS
 const DESTRUCTIVE_PATTERNS = [
@@ -56,28 +56,26 @@ function findViolations(sqlContent: string, fileName: string): Violation[] {
 
 function getChangedMigrations(): string[] {
   try {
-    // Get changed files in prisma/migrations/ since origin/main
+    // Get changed files in db/migrations/ since origin/main
     const output = execSync(
-      'git diff --name-only --diff-filter=ACMRT origin/main HEAD -- prisma/migrations/',
+      'git diff --name-only --diff-filter=ACMRT origin/main HEAD -- db/migrations/',
       { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'ignore'] }
     );
     return output
       .split('\n')
       .map(f => f.trim())
-      .filter(f => f.endsWith('migration.sql'))
-      .map(f => path.dirname(f)) // get the folder name
-      .map(f => path.basename(f)); // extract migration name
+      .filter(f => f.endsWith('.sql'))
+      .map(f => path.basename(f));
   } catch {
     return [];
   }
 }
 
 function getAllMigrations(): string[] {
+  if (!fs.existsSync(MIGRATIONS_DIR)) return [];
   return fs.readdirSync(MIGRATIONS_DIR)
-    .filter(name => name !== 'migration_lock.toml')
-    .map(name => path.join(MIGRATIONS_DIR, name))
-    .filter(fullPath => fs.statSync(fullPath).isDirectory())
-    .map(f => path.basename(f));
+    .filter(name => name.endsWith('.sql'))
+    .map(name => path.basename(name));
 }
 
 function main() {
@@ -94,7 +92,7 @@ function main() {
   const allViolations: Violation[] = [];
 
   for (const migrationName of migrationsToCheck) {
-    const sqlPath = path.join(MIGRATIONS_DIR, migrationName, 'migration.sql');
+    const sqlPath = path.join(MIGRATIONS_DIR, migrationName);
     if (!fs.existsSync(sqlPath)) continue;
 
     const sqlContent = fs.readFileSync(sqlPath, 'utf-8');

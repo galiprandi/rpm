@@ -17,7 +17,6 @@ export default defineConfig({
       // Database integration tests - use `pnpm test:db` or `pnpm test:all`
       '**/lib/services/*Service.test.ts',
       '**/tests/db.test.ts',
-      '**/tests/prisma.test.ts',
       '**/tests/regression/**',
     ],
     coverage: {

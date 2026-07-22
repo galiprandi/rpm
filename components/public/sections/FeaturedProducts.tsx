@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { ProductQuickView } from '@/components/public/ProductQuickView';
 import { formatARS } from '@/lib/utils/format';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 import {
   Tooltip,
   TooltipContent,
@@ -74,7 +75,7 @@ export function FeaturedProducts({ initialProducts }: FeaturedProductsProps) {
           viewport={{ once: true, margin: "-100px" }}
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
         >
-          {displayedProducts.map((product) => (
+          {displayedProducts.map((product, index) => (
             <motion.div
               key={product.id}
               variants={cardVariants}
@@ -85,12 +86,16 @@ export function FeaturedProducts({ initialProducts }: FeaturedProductsProps) {
               className="group relative aspect-[3/4] bg-zinc-900 overflow-hidden rounded-3xl border border-white/5 hover:border-brand/20 transition-all duration-700"
             >
               {product.imageUrl ? (
-                <img
-                  src={product.imageUrl}
-                  alt={product.name}
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                  loading="lazy"
-                />
+                <div className="absolute inset-0 w-full h-full overflow-hidden">
+                  <Image
+                    src={product.imageUrl}
+                    alt={product.name}
+                    fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                    className="object-cover transition-transform duration-700 group-hover:scale-110"
+                    priority={index < 2}
+                  />
+                </div>
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center text-[180px] font-black text-white/5 select-none transition-transform duration-700 group-hover:scale-110">
                   {product.image}

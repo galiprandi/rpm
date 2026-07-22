@@ -137,7 +137,17 @@ export function AboutClient() {
             </p>
           </div>
           <div className="aspect-square bg-zinc-900 rounded-[40px] flex items-center justify-center text-white/5 font-black text-9xl italic select-none animate-reveal opacity-0 relative overflow-hidden group" style={{ animationDelay: '0.5s' }}>
-            <div className="absolute inset-0 bg-gradient-to-br from-brand/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+            <div className="absolute inset-0 z-0">
+              <Image
+                src="https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=1200&q=80"
+                alt="RPM Accesorios taller de origen 2011"
+                fill
+                sizes="(max-width: 768px) 100vw, 50vw"
+                className="object-cover opacity-10 group-hover:opacity-25 transition-opacity duration-1000"
+                priority
+              />
+            </div>
+            <div className="absolute inset-0 bg-gradient-to-br from-brand/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000 z-1" />
             <span className="relative z-10 group-hover:text-white/10 transition-colors duration-700">2011</span>
           </div>
         </div>

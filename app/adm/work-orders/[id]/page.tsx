@@ -202,13 +202,13 @@ interface WorkOrderDetail {
     id: string;
     identifier: string;
     category: string;
-    vehicle_make?: { name: string };
-    vehicle_model?: { name: string };
+    vehicleMake?: { name: string };
+    vehicleModel?: { name: string };
     year?: number;
     color?: string;
   };
   technicianId?: string;
-  work_order_item: Array<{
+  workOrderItems: Array<{
     id: string;
     type: string;
     name: string | null;
@@ -724,8 +724,8 @@ export default function WorkOrderDetailPage() {
   const startEditingItems = () => {
     if (!workOrder) return;
 
-    // Map work_order_item to SelectedItem format
-    const mappedItems = workOrder.work_order_item.map((item) => ({
+    // Map workOrderItems to SelectedItem format
+    const mappedItems = workOrder.workOrderItems.map((item) => ({
       id: item.type === "PRODUCT" ? item.productId! : item.serviceId!,
       type: item.type.toLowerCase() as "product" | "service",
       name: item.name || item.product?.name || item.service?.name || "Item",
@@ -1091,8 +1091,8 @@ export default function WorkOrderDetailPage() {
         title={workOrder.vehicle.identifier}
         description={buildVehicleDescription({
           category: workOrder.vehicle.category,
-          make: workOrder.vehicle.vehicle_make?.name,
-          model: workOrder.vehicle.vehicle_model?.name,
+          make: workOrder.vehicle.vehicleMake?.name,
+          model: workOrder.vehicle.vehicleModel?.name,
           color: workOrder.vehicle.color,
           year: workOrder.vehicle.year,
         })}
@@ -1303,8 +1303,8 @@ export default function WorkOrderDetailPage() {
             <p className="text-muted-foreground">
               {buildVehicleDescription({
                 category: workOrder.vehicle.category,
-                make: workOrder.vehicle.vehicle_make?.name,
-                model: workOrder.vehicle.vehicle_model?.name,
+                make: workOrder.vehicle.vehicleMake?.name,
+                model: workOrder.vehicle.vehicleModel?.name,
                 color: workOrder.vehicle.color,
                 year: workOrder.vehicle.year,
               })}
@@ -1374,7 +1374,7 @@ export default function WorkOrderDetailPage() {
                     showPriceListSelector
                     priceLists={priceLists}
                     defaultPriceListId={
-                      workOrder.work_order_item[0]?.priceListId
+                      workOrder.workOrderItems[0]?.priceListId
                     }
                     initialItems={editableItems}
                     onSelectionChange={setEditableItems}
@@ -1409,7 +1409,7 @@ export default function WorkOrderDetailPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {workOrder.work_order_item.length === 0 ? (
+                      {workOrder.workOrderItems.length === 0 ? (
                         <TableRow>
                           <TableCell
                             colSpan={5}
@@ -1419,7 +1419,7 @@ export default function WorkOrderDetailPage() {
                           </TableCell>
                         </TableRow>
                       ) : (
-                        workOrder.work_order_item.map((item) => (
+                        workOrder.workOrderItems.map((item) => (
                           <TableRow key={item.id}>
                             <TableCell className="font-medium">
                               <div className="flex items-center gap-3">
@@ -1477,7 +1477,7 @@ export default function WorkOrderDetailPage() {
                     </TableBody>
                   </Table>
 
-                  {workOrder.work_order_item.length > 0 && (
+                  {workOrder.workOrderItems.length > 0 && (
                     <div className="mt-4 flex justify-end pt-4 border-t">
                       <div className="text-right space-y-1">
                         <div className="text-sm text-muted-foreground">

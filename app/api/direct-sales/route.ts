@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAdmin } from '@/lib/api-middleware';
 import { createDirectSale } from '@/lib/services/directSaleService';
 import { isCashRegisterOpen } from '@/lib/services/cashMovementService';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
+import { directSale } from '@/db/schema';
+import { eq, desc, count } from 'drizzle-orm';
+import { toISODate } from '@/lib/utils/date';
 
 // GET /api/direct-sales - List direct sales with filters
 export async function GET(request: NextRequest) {
@@ -12,30 +15,48 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50');
     const offset = parseInt(searchParams.get('offset') || '0');
 
-    const where: Record<string, unknown> = {};
-    if (customerId) where.customerId = customerId;
-
-    const directSales = await prisma.direct_sale.findMany({
-      where,
-      include: {
+    const directSales = await db.query.directSale.findMany({
+      where: customerId ? eq(directSale.customerId, customerId) : undefined,
+      with: {
         customer: {
-          select: {
+          columns: {
             id: true,
             name: true,
             phone: true,
           },
         },
-        items: true,
-        payments: true,
+        directSaleItems: true,
+        directSalePayments: true,
       },
-      orderBy: { createdAt: 'desc' },
-      take: limit,
-      skip: offset,
+      orderBy: desc(directSale.createdAt),
+      limit,
+      offset,
     });
 
-    const total = await prisma.direct_sale.count({ where });
+    const totalResult = await db
+      .select({ value: count() })
+      .from(directSale)
+      .where(customerId ? eq(directSale.customerId, customerId) : undefined);
+    const total = totalResult[0]?.value || 0;
 
-    return NextResponse.json({ directSales, total, limit, offset });
+    // Convert Drizzle raw PG timestamps to ISO 8601 and string decimals to numbers
+    const directSalesSerialized = directSales.map((sale) => ({
+      ...sale,
+      total: Number(sale.total),
+      createdAt: toISODate(sale.createdAt),
+      directSaleItems: sale.directSaleItems.map((item) => ({
+        ...item,
+        unitPrice: Number(item.unitPrice),
+        totalPrice: Number(item.totalPrice),
+      })),
+      directSalePayments: sale.directSalePayments.map((payment) => ({
+        ...payment,
+        amount: Number(payment.amount),
+        createdAt: toISODate(payment.createdAt),
+      })),
+    }));
+
+    return NextResponse.json({ directSales: directSalesSerialized, total, limit, offset });
   } catch (error) {
     console.error('Error fetching direct sales:', error);
     return NextResponse.json(
@@ -106,6 +127,11 @@ export const POST = withAdmin(async (request: NextRequest, session) => {
           { status: 400 }
         );
       }
+
+      // Compute totalPrice if not provided
+      if (item.totalPrice === undefined) {
+        item.totalPrice = item.unitPrice * item.quantity;
+      }
     }
 
     // Validate payments
@@ -129,7 +155,14 @@ export const POST = withAdmin(async (request: NextRequest, session) => {
       createdBy: session.user.id,
     });
 
-    return NextResponse.json(directSale, { status: 201 });
+    return NextResponse.json(
+      {
+        ...directSale,
+        total: Number(directSale.total),
+        createdAt: toISODate(directSale.createdAt),
+      },
+      { status: 201 }
+    );
   } catch (error) {
     console.error('Error creating direct sale:', error);
     

@@ -33,7 +33,7 @@ Mover la lógica de `app/api/work-orders` y `app/api/customers` a archivos dedic
 3. **Mantenibilidad**: Reducir el tamaño de las rutas API.
 
 ### 🧪 Fortalecimiento de Transacciones
-Asegurar que todas las operaciones multi-tabla (como el alta de una OT que modifica el balance del cliente) estén envueltas en un `prisma.$transaction`. Actualmente, algunas operaciones se realizan de forma secuencial pero no atómica.
+Asegurar que todas las operaciones multi-tabla (como el alta de una OT que modifica el balance del cliente) estén envueltas en un `db.transaction`. Actualmente, algunas operaciones se realizan de forma secuencial pero no atómica.
 
 ---
 

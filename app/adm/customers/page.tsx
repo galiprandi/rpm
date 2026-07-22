@@ -1,7 +1,10 @@
 import CustomersClient from './CustomersClient';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
+import { customer } from '@/db/schema';
+import { asc } from 'drizzle-orm';
 import { requireAuth } from '@/lib/auth-server';
 import { UserRole } from '@/lib/auth/roles';
+import { toISODate } from '@/lib/utils/date';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 60;
@@ -14,41 +17,25 @@ export default async function CustomersPage() {
     throw new Error('Acceso denegado');
   }
 
-  const customers = await prisma.customer.findMany({
-    take: 50,
-    include: {
-      vehicle: {
-        select: {
-          id: true,
-          identifier: true,
-          category: true,
-        },
-      },
-      _count: {
-        select: { work_order: true },
-      },
+  const customers = await db.query.customer.findMany({
+    limit: 50,
+    with: {
+      vehicles: true,
+      workOrders: true,
     },
-    orderBy: { name: 'asc' },
+    orderBy: asc(customer.name),
   });
 
-  // Helper para convertir Decimal a number
-  const decimalToNumber = (decimal: unknown): number => {
-    if (decimal === null || decimal === undefined) return 0;
-    if (typeof decimal === 'number') return decimal;
-    if (typeof decimal === 'object' && 'toNumber' in decimal && typeof (decimal as { toNumber: () => number }).toNumber === 'function') {
-      return (decimal as { toNumber: () => number }).toNumber();
-    }
-    return 0;
-  };
-
-  const customersWithVehicles = customers.map((c: any) => ({
+  const customersWithVehicles = customers.map((c) => ({
     ...c,
-    balance: decimalToNumber(c.balance),
-    vehicles: c.vehicle,
+    balance: Number(c.balance),
+    createdAt: toISODate(c.createdAt),
+    updatedAt: toISODate(c.updatedAt),
+    vehicles: c.vehicles || [],
     _count: {
-      workOrders: c._count.work_order,
+      workOrders: (c.workOrders || []).length,
     },
   }));
 
-  return <CustomersClient initialCustomers={customersWithVehicles} />;
+  return <CustomersClient initialCustomers={customersWithVehicles as any} />;
 }

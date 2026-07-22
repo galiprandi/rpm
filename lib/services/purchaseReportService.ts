@@ -1,4 +1,6 @@
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { purchaseVoucher, supplier } from "@/db/schema";
+import { and, eq, gte, lte, sum, count } from "drizzle-orm";
 import { ARGENTINA_TIMEZONE } from "@/lib/utils/date";
 
 export type PurchaseGroupBy = "hour" | "day" | "month";
@@ -62,20 +64,22 @@ function decimalToNumber(decimal: unknown): number {
  * Gets purchase metrics for a specific period
  */
 async function getPurchasePeriodMetrics(start: Date, end: Date) {
-  const aggregate = await prisma.purchase_voucher.aggregate({
-    where: {
-      status: "FINALIZED",
-      date: { gte: start, lte: end },
-    },
-    _sum: { totalAmount: true },
-    _count: { id: true },
-  });
+  const startStr = start.toISOString();
+  const endStr = end.toISOString();
+  const result = await db.select({
+    totalSum: sum(purchaseVoucher.totalAmount),
+    idCount: count(purchaseVoucher.id),
+  }).from(purchaseVoucher).where(and(
+    eq(purchaseVoucher.status, "FINALIZED"),
+    gte(purchaseVoucher.date, startStr),
+    lte(purchaseVoucher.date, endStr),
+  ));
 
-  const total = decimalToNumber(aggregate._sum.totalAmount);
-  const count = aggregate._count.id;
-  const average = count > 0 ? total / count : 0;
+  const total = decimalToNumber(result[0]?.totalSum);
+  const countVal = Number(result[0]?.idCount ?? 0);
+  const average = countVal > 0 ? total / countVal : 0;
 
-  return { total, count, average };
+  return { total, count: countVal, average };
 }
 
 function determineGroupBy(startDate: Date, endDate: Date): PurchaseGroupBy {
@@ -249,15 +253,21 @@ export async function getPurchaseReport(
   }
 
   // 3. Get vouchers for evolution and supplier distribution
-  const vouchers = await prisma.purchase_voucher.findMany({
-    where: {
-      status: "FINALIZED",
-      date: { gte: startDate, lte: endDate },
-    },
-    include: {
-      supplier: true,
-    },
-  });
+  const startDateStr = startDate.toISOString();
+  const endDateStr = endDate.toISOString();
+  const vouchers = await db.select({
+    id: purchaseVoucher.id,
+    supplierId: purchaseVoucher.supplierId,
+    totalAmount: purchaseVoucher.totalAmount,
+    date: purchaseVoucher.date,
+    supplierName: supplier.name,
+  }).from(purchaseVoucher).innerJoin(
+    supplier, eq(purchaseVoucher.supplierId, supplier.id),
+  ).where(and(
+    eq(purchaseVoucher.status, "FINALIZED"),
+    gte(purchaseVoucher.date, startDateStr),
+    lte(purchaseVoucher.date, endDateStr),
+  ));
 
   const buckets = initializeBuckets(startDate, endDate, groupBy);
   const supplierMap: Record<string, SupplierPurchaseItem> = {};
@@ -266,7 +276,7 @@ export async function getPurchaseReport(
     const amount = decimalToNumber(v.totalAmount);
 
     // Evolution
-    const { key } = getBucketKeyAndLabel(v.date, groupBy);
+    const { key } = getBucketKeyAndLabel(new Date(v.date), groupBy);
     if (buckets[key]) {
       buckets[key].total += amount;
       buckets[key].count += 1;
@@ -276,7 +286,7 @@ export async function getPurchaseReport(
     if (!supplierMap[v.supplierId]) {
       supplierMap[v.supplierId] = {
         supplierId: v.supplierId,
-        supplierName: v.supplier.name,
+        supplierName: v.supplierName,
         total: 0,
         count: 0,
       };

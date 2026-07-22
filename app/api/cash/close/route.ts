@@ -1,14 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { cashMovement } from "@/db/schema";
+import { eq, gte, desc, and } from "drizzle-orm";
 import { UserRole } from "@/lib/auth/roles";
 import { invalidateCashStatus } from "@/lib/cache";
 import { isCashRegisterOpen } from "@/lib/services/cashMovementService";
 import { getSessionWithAuth } from "@/lib/api-middleware";
+import { toISODate } from "@/lib/utils/date";
 
-// Helper para convertir Decimal a number
+// Helper para convertir Decimal/string a number
 function decimalToNumber(decimal: unknown): number {
   if (decimal === null || decimal === undefined) return 0;
   if (typeof decimal === "number") return decimal;
+  if (typeof decimal === "string") return Number(decimal);
   if (
     typeof decimal === "object" &&
     "toNumber" in decimal &&
@@ -65,9 +69,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Get the current opening movement
-    const currentOpening = await prisma.cash_movement.findFirst({
-      where: { type: "OPENING" },
-      orderBy: { createdAt: "desc" },
+    const currentOpening = await db.query.cashMovement.findFirst({
+      where: eq(cashMovement.type, "OPENING"),
+      orderBy: desc(cashMovement.createdAt),
     });
 
     if (!currentOpening) {
@@ -78,13 +82,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if already closed
-    const closingAfterOpening = await prisma.cash_movement.findFirst({
-      where: {
-        type: "CLOSING",
-        createdAt: {
-          gte: currentOpening.createdAt,
-        },
-      },
+    const closingAfterOpening = await db.query.cashMovement.findFirst({
+      where: and(
+        eq(cashMovement.type, "CLOSING"),
+        gte(cashMovement.createdAt, currentOpening.createdAt),
+      ),
     });
 
     if (closingAfterOpening) {
@@ -95,12 +97,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Get all movements since opening to calculate expected amounts
-    const movements = await prisma.cash_movement.findMany({
-      where: {
-        createdAt: {
-          gte: currentOpening.createdAt,
-        },
-      },
+    const movements = await db.query.cashMovement.findMany({
+      where: gte(cashMovement.createdAt, currentOpening.createdAt),
     });
 
     // Calculate expected amounts per method
@@ -158,10 +156,11 @@ export async function POST(request: NextRequest) {
 
     // Create closing movement for CASH
     const cashCounted = Number(counts.CASH) || Number(counts.EFECTIVO) || 0;
-    const closing = await prisma.cash_movement.create({
-      data: {
+    const [closing] = await db
+      .insert(cashMovement)
+      .values({
         type: "CLOSING",
-        amount: cashCounted,
+        amount: cashCounted.toString(),
         method: "CASH",
         referenceType: "manual",
         reason: "Cierre de caja",
@@ -169,23 +168,21 @@ export async function POST(request: NextRequest) {
           ? `Diferencias: ${JSON.stringify(differences)}. Motivo: ${differenceReason}`
           : undefined,
         createdBy: session.user.id,
-      },
-    });
+      })
+      .returning();
 
     // Create adjustment movements for any differences
     if (hasDifference) {
       for (const [method, diff] of Object.entries(differences)) {
         if (Math.abs(diff) > 0.01) {
-          await prisma.cash_movement.create({
-            data: {
-              type: "ADJUSTMENT",
-              amount: Math.abs(diff),
-              method,
-              referenceType: "manual",
-              reason: diff > 0 ? "Sobrante en arqueo" : "Faltante en arqueo",
-              notes: differenceReason,
-              createdBy: session.user.id,
-            },
+          await db.insert(cashMovement).values({
+            type: "ADJUSTMENT",
+            amount: Math.abs(diff).toString(),
+            method,
+            referenceType: "manual",
+            reason: diff > 0 ? "Sobrante en arqueo" : "Faltante en arqueo",
+            notes: differenceReason,
+            createdBy: session.user.id,
           });
         }
       }
@@ -199,9 +196,9 @@ export async function POST(request: NextRequest) {
         success: true,
         closing: {
           id: closing.id,
-          amount: closing.amount,
+          amount: Number(closing.amount),
           method: closing.method,
-          createdAt: closing.createdAt,
+          createdAt: toISODate(closing.createdAt),
         },
         differences,
         expected: expectedByMethod,

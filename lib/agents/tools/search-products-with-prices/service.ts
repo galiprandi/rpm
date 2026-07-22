@@ -1,4 +1,6 @@
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { product, priceList, priceListItem } from "@/db/schema";
+import { eq, and, or, ilike, asc, inArray } from "drizzle-orm";
 import { getProductBaseCost } from "@/lib/services/priceListService";
 import { calculateFinalPrice, type RoundingRule } from "@/lib/utils/rounding";
 
@@ -18,24 +20,26 @@ export async function searchProductsWithPricesService(
   search: string,
   limit: number = 10,
 ): Promise<ProductWithPrices[]> {
-  const products = await prisma.product.findMany({
-    where: {
-      isActive: true,
-      OR: [
-        { name: { contains: search, mode: "insensitive" } },
-        { sku: { contains: search, mode: "insensitive" } },
-        { barcode: { contains: search, mode: "insensitive" } },
-      ],
+  const products = await db.query.product.findMany({
+    where: and(
+      eq(product.isActive, true),
+      or(
+        ilike(product.name, `%${search}%`),
+        ilike(product.sku, `%${search}%`),
+        ilike(product.barcode, `%${search}%`),
+      ),
+    ),
+    with: {
+      category: true,
     },
-    include: { category: true },
-    orderBy: { name: "asc" },
-    take: limit,
+    orderBy: asc(product.name),
+    limit,
   });
 
   if (products.length === 0) return [];
 
-  const priceLists = await prisma.price_list.findMany({
-    where: { isActive: true },
+  const priceLists = await db.query.priceList.findMany({
+    where: eq(priceList.isActive, true),
   });
 
   const contadoList = priceLists.find(
@@ -46,11 +50,11 @@ export async function searchProductsWithPricesService(
   );
 
   const productIds = products.map((p) => p.id);
-  const exceptions = await prisma.price_list_item.findMany({
-    where: {
-      productId: { in: productIds },
-      priceListId: { in: priceLists.map((pl) => pl.id) },
-    },
+  const exceptions = await db.query.priceListItem.findMany({
+    where: and(
+      inArray(priceListItem.productId, productIds),
+      inArray(priceListItem.priceListId, priceLists.map((pl) => pl.id)),
+    ),
   });
 
   const exceptionMap = new Map<

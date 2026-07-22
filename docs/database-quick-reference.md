@@ -10,13 +10,13 @@ pnpm run db:start
 # Esperar a que esté lista
 sleep 15
 
-# Generar Prisma client
+# Generar Drizzle client
 pnpm run db:generate
 
 # Probar conexión
 pnpm run test tests/db.test.ts
 
-# Abrir Prisma Studio
+# Abrir Drizzle Studio
 pnpm run db:studio
 
 # Detener base de datos
@@ -46,7 +46,6 @@ DATABASE_URL="postgresql://rpm_user:rpm_password@localhost:5432/rpm_dev?schema=p
 ```bash
 POSTGRES_URL="postgres://[user]:[password]@db.prisma.io:5432/postgres?sslmode=require"
 DATABASE_URL="postgres://[user]:[password]@db.prisma.io:5432/postgres?sslmode=require"
-POSTGRES_PRISMA_URL="postgres://[user]:[password]@db.prisma.io:5432/postgres?sslmode=require"
 POSTGRES_URL_NON_POOLING="postgres://[user]:[password]@db.prisma.io:5432/postgres?sslmode=require"
 ```
 
@@ -55,23 +54,17 @@ POSTGRES_URL_NON_POOLING="postgres://[user]:[password]@db.prisma.io:5432/postgre
 ### Migrations (cuando agregues tablas)
 ```bash
 # Crear nueva migration
-npx prisma migrate dev --name add_users_table
+pnpm db:generate && pnpm db:migrate
 
 # Deploy migrations a producción
-npx prisma migrate deploy
+pnpm db:migrate
 
 # Resetear base de datos (development only)
-npx prisma migrate reset
+# ⚠️ Prohibido reset de la base de datos en este proyecto
 ```
 
 ### Schema Management
 ```bash
-# Verificar schema
-npx prisma validate
-
-# Formatear schema
-npx prisma format
-
 # Generar client (después de cambios)
 pnpm run db:generate
 ```
@@ -117,19 +110,15 @@ vercel env ls
 pnpm run deploy
 ```
 
-#### "Prisma client not generated"
+#### "Drizzle client not generated"
 ```bash
 pnpm run db:generate
-npx prisma validate
 ```
 
 #### "Migration failed"
 ```bash
 # Verificar conexión
 pnpm run test tests/db.test.ts
-
-# Resetear en development
-npx prisma migrate reset
 
 # Re-deploy en producción
 pnpm run deploy
@@ -161,7 +150,7 @@ curl http://localhost:3000/api/health/db | jq '.connections'
 ### Query Debugging
 ```bash
 # Habilitar query logs (development)
-# Edit lib/prisma.ts y asegurar que 'query' esté en el array log
+# Edit lib/db.ts y asegurar que 'query' esté en el array log
 
 # Ver queries en tiempo real
 pnpm run db:logs
@@ -202,26 +191,26 @@ pnpm run test tests/db.test.ts
 Cuando implementes una nueva especificación (auth.md, products.md, etc.):
 
 ### 1. Update Schema
-```prisma
-// prisma/schema.prisma
-model NewModel {
-  id    String @id @default(cuid())
-  name  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
+```typescript
+// db/schema/schema.ts
+export const newModel = pgTable('new_model', {
+  id: text('id').primaryKey().$defaultFn(() => cuid()),
+  name: text('name').notNull(),
+  createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'string' }).defaultNow().notNull(),
+});
 ```
 
 ### 2. Create Migration
 ```bash
-npx prisma migrate dev --name add_new_model
+pnpm db:generate && pnpm db:migrate
 ```
 
 ### 3. Update Tests
 ```typescript
 // tests/db.test.ts
 it('should query new model', async () => {
-  const result = await prisma.newModel.findMany();
+  const result = await db.select().from(newModel);
   expect(Array.isArray(result)).toBe(true);
 });
 ```
@@ -257,7 +246,7 @@ curl https://rpm-wheat.vercel.app/api/health/db
 # 2. Storage → Postgres → rpm-db
 # 3. Connect with provided tools
 
-# Via Prisma Studio (development only)
+# Via Drizzle Studio (development only)
 pnpm run db:studio
 ```
 
@@ -266,7 +255,7 @@ pnpm run db:studio
 - **Vercel Dashboard**: https://vercel.com/rpmsysadim-5965s-projects/rpm
 - **Production App**: https://rpm-wheat.vercel.app
 - **Health Check**: https://rpm-wheat.vercel.app/api/health/db
-- **Prisma Docs**: https://www.prisma.io/docs
+- **Drizzle ORM Docs**: https://orm.drizzle.team/docs/overview
 - **PostgreSQL Docs**: https://www.postgresql.org/docs/
 
 ## 🔄 Scripts Reference
@@ -275,8 +264,8 @@ pnpm run db:studio
 |--------|-------------|-------------|
 | `pnpm run db:start` | Iniciar PostgreSQL local | Development |
 | `pnpm run db:stop` | Detener PostgreSQL local | Development |
-| `pnpm run db:studio` | Abrir Prisma Studio | Development |
-| `pnpm run db:generate` | Generar Prisma client | Both |
+| `pnpm run db:studio` | Abrir Drizzle Studio | Development |
+| `pnpm run db:generate` | Generar Drizzle client | Both |
 | `pnpm run db:migrate` | Crear migration | Development |
 | `pnpm run db:deploy` | Deploy migrations | Production |
 | `pnpm run deploy` | Deploy completo | Production |

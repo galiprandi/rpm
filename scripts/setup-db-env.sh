@@ -8,7 +8,6 @@ echo "🔧 Setting up database environment variables..."
 # Get credentials from environment variables (NEVER hardcode!)
 POSTGRES_URL="${POSTGRES_URL:-$DATABASE_URL}"
 DATABASE_URL="${DATABASE_URL}"
-POSTGRES_PRISMA_URL="${POSTGRES_PRISMA_URL:-$POSTGRES_URL}"
 POSTGRES_URL_NON_POOLING="${POSTGRES_URL_NON_POOLING:-$POSTGRES_URL}"
 
 # Validate required variables
@@ -22,7 +21,6 @@ fi
 # Create temporary files with environment variables
 echo "$POSTGRES_URL" > /tmp/postgres_url.txt
 echo "$DATABASE_URL" > /tmp/database_url.txt
-echo "$POSTGRES_PRISMA_URL" > /tmp/postgres_prisma_url.txt
 echo "$POSTGRES_URL_NON_POOLING" > /tmp/postgres_url_non_pooling.txt
 
 # Add environment variables to Vercel (using correct format)
@@ -32,14 +30,11 @@ vercel env add POSTGRES_URL production < /tmp/postgres_url.txt
 echo "📝 Adding DATABASE_URL..."
 vercel env add DATABASE_URL production < /tmp/database_url.txt
 
-echo "📝 Adding POSTGRES_PRISMA_URL..."
-vercel env add POSTGRES_PRISMA_URL production < /tmp/postgres_prisma_url.txt
-
 echo "📝 Adding POSTGRES_URL_NON_POOLING..."
 vercel env add POSTGRES_URL_NON_POOLING production < /tmp/postgres_url_non_pooling.txt
 
 # Clean up temporary files
-rm -f /tmp/postgres_url.txt /tmp/database_url.txt /tmp/postgres_prisma_url.txt /tmp/postgres_url_non_pooling.txt
+rm -f /tmp/postgres_url.txt /tmp/database_url.txt /tmp/postgres_url_non_pooling.txt
 
 echo "✅ Environment variables configured!"
 

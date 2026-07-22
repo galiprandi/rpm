@@ -1,5 +1,7 @@
 import SettingsClient from './SettingsClient';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
+import { setting } from '@/db/schema';
+import { inArray } from 'drizzle-orm';
 import { requireAuth } from '@/lib/auth-server';
 import { UserRole } from '@/lib/auth/roles';
 
@@ -14,19 +16,15 @@ export default async function SettingsPage() {
     throw new Error('Acceso denegado');
   }
 
-  const settings = await prisma.setting.findMany({
-    where: {
-      key: {
-        in: [
-          'MINIMUM_MARGIN_PERCENTAGE',
-          'AFIP_CUIT',
-          'AFIP_PUNTO_VENTA',
-          'AFIP_RESPONSABLE',
-          'AFIP_PRODUCTION',
-          'AFIP_CERT_PATH',
-        ],
-      },
-    },
+  const settings = await db.query.setting.findMany({
+    where: inArray(setting.key, [
+      'MINIMUM_MARGIN_PERCENTAGE',
+      'AFIP_CUIT',
+      'AFIP_PUNTO_VENTA',
+      'AFIP_RESPONSABLE',
+      'AFIP_PRODUCTION',
+      'AFIP_CERT_PATH',
+    ]),
   });
 
   const settingsMap = settings.reduce((acc, s) => {

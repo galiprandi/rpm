@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { cashMovement } from "@/db/schema";
 import { UserRole } from "@/lib/auth/roles";
 import { invalidateCashStatus } from "@/lib/cache";
 import { isCashRegisterOpen } from "@/lib/services/cashMovementService";
 import { getSessionWithAuth } from "@/lib/api-middleware";
+import { toISODate } from "@/lib/utils/date";
 
 // POST /api/cash/income - Register a manual cash income (capital injection, refunds, etc.)
 export async function POST(request: NextRequest) {
@@ -65,17 +67,18 @@ export async function POST(request: NextRequest) {
     }
 
     // Create income movement
-    const income = await prisma.cash_movement.create({
-      data: {
+    const [income] = await db
+      .insert(cashMovement)
+      .values({
         type: "INCOME",
-        amount,
+        amount: amount.toString(),
         method,
         referenceType: "manual",
         reason,
         notes,
         createdBy: session.user.id,
-      },
-    });
+      })
+      .returning();
 
     // Invalidate cash status cache so next request gets fresh data
     invalidateCashStatus();
@@ -85,10 +88,10 @@ export async function POST(request: NextRequest) {
         success: true,
         income: {
           id: income.id,
-          amount: income.amount,
+          amount: Number(income.amount),
           method: income.method,
           reason: income.reason,
-          createdAt: income.createdAt,
+          createdAt: toISODate(income.createdAt),
         },
       },
       { status: 201 },

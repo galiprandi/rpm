@@ -1,0 +1,19 @@
+ALTER TABLE "account" ALTER COLUMN "updatedAt" SET DEFAULT now();--> statement-breakpoint
+ALTER TABLE "category" ALTER COLUMN "updatedAt" SET DEFAULT now();--> statement-breakpoint
+ALTER TABLE "customer" ALTER COLUMN "updatedAt" SET DEFAULT now();--> statement-breakpoint
+ALTER TABLE "inventory_count_operative" ALTER COLUMN "updatedAt" SET DEFAULT now();--> statement-breakpoint
+ALTER TABLE "payment_method" ALTER COLUMN "updatedAt" SET DEFAULT now();--> statement-breakpoint
+ALTER TABLE "price_list" ALTER COLUMN "updatedAt" SET DEFAULT now();--> statement-breakpoint
+ALTER TABLE "price_list_item" ALTER COLUMN "updatedAt" SET DEFAULT now();--> statement-breakpoint
+ALTER TABLE "product" ALTER COLUMN "updatedAt" SET DEFAULT now();--> statement-breakpoint
+ALTER TABLE "purchase_voucher" ALTER COLUMN "updatedAt" SET DEFAULT now();--> statement-breakpoint
+ALTER TABLE "purchase_voucher_item" ALTER COLUMN "updatedAt" SET DEFAULT now();--> statement-breakpoint
+ALTER TABLE "service" ALTER COLUMN "updatedAt" SET DEFAULT now();--> statement-breakpoint
+ALTER TABLE "session" ALTER COLUMN "updatedAt" SET DEFAULT now();--> statement-breakpoint
+ALTER TABLE "setting" ALTER COLUMN "updatedAt" SET DEFAULT now();--> statement-breakpoint
+ALTER TABLE "supplier" ALTER COLUMN "updatedAt" SET DEFAULT now();--> statement-breakpoint
+ALTER TABLE "user" ALTER COLUMN "updatedAt" SET DEFAULT now();--> statement-breakpoint
+ALTER TABLE "user_role" ALTER COLUMN "updatedAt" SET DEFAULT now();--> statement-breakpoint
+ALTER TABLE "vehicle" ALTER COLUMN "updatedAt" SET DEFAULT now();--> statement-breakpoint
+ALTER TABLE "verification" ALTER COLUMN "updatedAt" SET DEFAULT now();--> statement-breakpoint
+ALTER TABLE "work_order" ALTER COLUMN "updatedAt" SET DEFAULT now();

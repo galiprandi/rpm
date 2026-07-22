@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withAdminDynamic } from "@/lib/api-middleware";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { customer, cashMovement, workOrder, directSale, creditNote } from "@/db/schema";
+import { eq, desc, and } from "drizzle-orm";
 import { capitalizeText } from "@/lib/utils/format";
+import { toISODate } from "@/lib/utils/date";
+import { serializeDrizzleResult } from "@/lib/utils/serialization";
 
 interface Params {
   params: Promise<{ id: string }>;
@@ -12,81 +16,108 @@ interface Params {
 export const GET = withAdminDynamic(async (request: NextRequest, { params }: Params, _session) => {
   try {
     const { id } = await params;
-    const customer = await prisma.customer.findUnique({
-      where: { id },
-      include: {
-        vehicle: {
-          include: {
-            vehicle_make: true,
-            vehicle_model: true,
+    const cust = await db.query.customer.findFirst({
+      where: eq(customer.id, id),
+      with: {
+        vehicles: {
+          with: {
+            vehicleMake: true,
+            vehicleModel: true,
           },
         },
-        work_order: {
-          orderBy: { createdAt: "desc" },
-          take: 50,
-          include: {
+        workOrders: {
+          orderBy: desc(workOrder.createdAt),
+          limit: 50,
+          with: {
             vehicle: true,
           },
         },
-        direct_sales: {
-          orderBy: { createdAt: "desc" },
-          take: 50,
-          include: {
-            items: true,
+        directSales: {
+          orderBy: desc(directSale.createdAt),
+          limit: 50,
+          with: {
+            directSaleItems: true,
           },
         },
-        credit_notes: {
-          orderBy: { createdAt: "desc" },
-          take: 50,
-          include: {
-            items: true,
+        creditNotes: {
+          orderBy: desc(creditNote.createdAt),
+          limit: 50,
+          with: {
+            creditNoteItems: true,
           },
         },
       },
     });
 
-    const payments = await prisma.cash_movement.findMany({
-      where: {
-        referenceType: "customer_payment",
-        referenceId: id,
-      },
-      orderBy: { createdAt: "desc" },
-      take: 50,
+    const payments = await db.query.cashMovement.findMany({
+      where: and(
+        eq(cashMovement.referenceType, "customer_payment"),
+        eq(cashMovement.referenceId, id),
+      ),
+      orderBy: desc(cashMovement.createdAt),
+      limit: 50,
     });
 
-    if (!customer) {
+    if (!cust) {
       return NextResponse.json(
         { error: "Customer not found" },
         { status: 404 }
       );
     }
 
-    // Helper to convert Decimal to number
+    // Helper to convert numeric string to number
     const decimalToNumber = (decimal: unknown): number => {
       if (decimal === null || decimal === undefined) return 0;
       if (typeof decimal === 'number') return decimal;
-      if (typeof decimal === 'object' && 'toNumber' in decimal && typeof (decimal as { toNumber: () => number }).toNumber === 'function') {
-        return (decimal as { toNumber: () => number }).toNumber();
-      }
+      if (typeof decimal === 'string') return Number(decimal);
       return 0;
     };
 
-    // Transform Prisma field names to match frontend interface
+    // Transform to match frontend interface
+    // Drizzle mode:'string' timestamps return raw PG format ("2026-07-21 21:32:23.162")
+    // Convert to ISO 8601 for API consistency
     const transformedCustomer = {
-      ...customer,
-      balance: decimalToNumber(customer.balance),
-      vehicles: customer.vehicle || [],
-      workOrders: customer.work_order || [],
-      directSales: customer.direct_sales || [],
-      creditNotes: customer.credit_notes || [],
-      payments: payments || [],
-      vehicle: undefined,
-      work_order: undefined,
-      direct_sales: undefined,
-      credit_notes: undefined,
+      ...cust,
+      createdAt: toISODate(cust.createdAt),
+      updatedAt: toISODate(cust.updatedAt),
+      balance: decimalToNumber(cust.balance),
+      vehicles: (cust.vehicles || []).map((v) => ({
+        ...v,
+        createdAt: toISODate(v.createdAt),
+        updatedAt: toISODate(v.updatedAt),
+      })),
+      workOrders: (cust.workOrders || []).map((wo) => ({
+        ...wo,
+        total: decimalToNumber(wo.total),
+        totalProducts: decimalToNumber(wo.totalProducts),
+        totalServices: decimalToNumber(wo.totalServices),
+        createdAt: toISODate(wo.createdAt),
+        updatedAt: toISODate(wo.updatedAt),
+        scheduledDate: toISODate(wo.scheduledDate),
+        startedAt: toISODate(wo.startedAt),
+        completedAt: toISODate(wo.completedAt),
+        deliveredAt: toISODate(wo.deliveredAt),
+      })),
+      directSales: (cust.directSales || []).map((ds) => ({
+        ...ds,
+        total: decimalToNumber(ds.total),
+        createdAt: toISODate(ds.createdAt),
+      })),
+      creditNotes: (cust.creditNotes || []).map((cn) => ({
+        ...cn,
+        total: decimalToNumber(cn.total),
+        cashAmount: cn.cashAmount ? decimalToNumber(cn.cashAmount) : null,
+        accountCreditAmount: cn.accountCreditAmount ? decimalToNumber(cn.accountCreditAmount) : null,
+        createdAt: toISODate(cn.createdAt),
+      })),
+      payments: (payments || []).map((p) => ({
+        ...p,
+        amount: decimalToNumber(p.amount),
+        createdAt: toISODate(p.createdAt),
+      })),
     };
 
-    return NextResponse.json(transformedCustomer);
+    return NextResponse.json(serializeDrizzleResult(transformedCustomer));
   } catch (error) {
     console.error("Error fetching customer:", error);
     return NextResponse.json(
@@ -121,9 +152,9 @@ export const PUT = withAdminDynamic(async (request: NextRequest, { params }: Par
       }
     }
 
-    const customer = await prisma.customer.update({
-      where: { id },
-      data: {
+    const [updated] = await db
+      .update(customer)
+      .set({
         name: capitalizeText(name) || name,
         phone,
         phoneAlt,
@@ -131,10 +162,16 @@ export const PUT = withAdminDynamic(async (request: NextRequest, { params }: Par
         address,
         notes,
         billingData: billingData || null,
-      },
-    });
+      })
+      .where(eq(customer.id, id))
+      .returning();
 
-    return NextResponse.json(customer);
+    return NextResponse.json({
+      ...updated,
+      balance: Number(updated.balance),
+      createdAt: toISODate(updated.createdAt),
+      updatedAt: toISODate(updated.updatedAt),
+    });
   } catch (error) {
     console.error("Error updating customer:", error);
     return NextResponse.json(
@@ -149,9 +186,7 @@ export const PUT = withAdminDynamic(async (request: NextRequest, { params }: Par
 export const DELETE = withAdminDynamic(async (request: NextRequest, { params }: Params, _session) => {
   try {
     const { id } = await params;
-    await prisma.customer.delete({
-      where: { id },
-    });
+    await db.delete(customer).where(eq(customer.id, id));
 
     return NextResponse.json({ success: true });
   } catch (error) {

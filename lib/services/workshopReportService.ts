@@ -1,4 +1,6 @@
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { workOrder, user } from "@/db/schema";
+import { and, inArray, gte, lte, isNotNull, count } from "drizzle-orm";
 import { ARGENTINA_TIMEZONE } from "@/lib/utils/date";
 
 export type WorkshopGroupBy = "hour" | "day" | "month";
@@ -61,35 +63,37 @@ const STATUS_LABELS: Record<string, string> = {
  * Gets workshop metrics for a specific period
  */
 async function getWorkshopPeriodMetrics(start: Date, end: Date) {
-  const [totalOrders, completedOrders, resolutionTimes] = await Promise.all([
-    prisma.work_order.count({
-      where: {
-        createdAt: { gte: start, lte: end },
-      },
-    }),
-    prisma.work_order.count({
-      where: {
-        completedAt: { gte: start, lte: end },
-        status: { in: ["READY", "DELIVERED", "PAID"] },
-      },
-    }),
-    prisma.work_order.findMany({
-      where: {
-        completedAt: { gte: start, lte: end },
-        status: { in: ["READY", "DELIVERED", "PAID"] },
-      },
-      select: {
-        createdAt: true,
-        completedAt: true,
-      },
-    }),
+  const saleStatuses = ["READY", "DELIVERED", "PAID"];
+  const startStr = start.toISOString();
+  const endStr = end.toISOString();
+  const [totalOrdersResult, completedOrdersResult, resolutionTimes] = await Promise.all([
+    db.select({ idCount: count(workOrder.id) }).from(workOrder).where(and(
+      gte(workOrder.createdAt, startStr),
+      lte(workOrder.createdAt, endStr),
+    )),
+    db.select({ idCount: count(workOrder.id) }).from(workOrder).where(and(
+      gte(workOrder.completedAt, startStr),
+      lte(workOrder.completedAt, endStr),
+      inArray(workOrder.status, saleStatuses),
+    )),
+    db.select({
+      createdAt: workOrder.createdAt,
+      completedAt: workOrder.completedAt,
+    }).from(workOrder).where(and(
+      gte(workOrder.completedAt, startStr),
+      lte(workOrder.completedAt, endStr),
+      inArray(workOrder.status, saleStatuses),
+    )),
   ]);
+
+  const totalOrders = Number(totalOrdersResult[0]?.idCount ?? 0);
+  const completedOrders = Number(completedOrdersResult[0]?.idCount ?? 0);
 
   let avgResolutionTime = 0;
   if (resolutionTimes.length > 0) {
     const totalTimeMs = resolutionTimes.reduce((acc, curr) => {
-      const completed = curr.completedAt?.getTime() || 0;
-      const created = curr.createdAt.getTime();
+      const completed = curr.completedAt ? new Date(curr.completedAt).getTime() : 0;
+      const created = new Date(curr.createdAt).getTime();
       return acc + (completed - created);
     }, 0);
     avgResolutionTime = totalTimeMs / resolutionTimes.length / (1000 * 60 * 60); // Convert to hours
@@ -222,95 +226,91 @@ export async function getWorkshopReport(params: WorkshopReportParams): Promise<W
 
   // 3. Status Distribution (all time current status for OTs created in period? Or all active OTs?)
   // Usually, status distribution is about CURRENT state of OTs within the filtered period.
-  const statusCounts = await prisma.work_order.groupBy({
-    by: ['status'],
-    where: {
-      createdAt: { gte: startDate, lte: endDate },
-    },
-    _count: {
-      id: true,
-    },
-  });
+  const startDateStr = startDate.toISOString();
+  const endDateStr = endDate.toISOString();
+  const statusCounts = await db.select({
+    status: workOrder.status,
+    idCount: count(workOrder.id),
+  }).from(workOrder).where(and(
+    gte(workOrder.createdAt, startDateStr),
+    lte(workOrder.createdAt, endDateStr),
+  )).groupBy(workOrder.status);
 
   const statusDistribution: WorkshopStatusDistribution[] = statusCounts.map((sc) => ({
     status: sc.status,
-    count: sc._count.id,
+    count: Number(sc.idCount),
     label: STATUS_LABELS[sc.status] || sc.status,
   })).sort((a, b) => b.count - a.count);
 
   // 4. Technician Performance
-  const technicians = await prisma.user.findMany({
-    where: {
-      role: { in: ['ADMIN', 'STAFF'] },
-      work_orders: {
-        some: {
-          createdAt: { gte: startDate, lte: endDate },
-        },
-      },
-    },
-    select: {
-      id: true,
-      name: true,
-      _count: {
-        select: {
-          work_orders: {
-            where: {
-              createdAt: { gte: startDate, lte: endDate },
-            },
-          },
-        },
-      },
-    },
-  });
+  // Get technicians with work orders in the period, along with assigned counts
+  const technicianAssignedCounts = await db.select({
+    technicianId: workOrder.technicianId,
+    idCount: count(workOrder.id),
+  }).from(workOrder).where(and(
+    gte(workOrder.createdAt, startDateStr),
+    lte(workOrder.createdAt, endDateStr),
+    isNotNull(workOrder.technicianId),
+  )).groupBy(workOrder.technicianId);
+
+  const technicianIds = technicianAssignedCounts
+    .map((t) => t.technicianId)
+    .filter((id): id is string => id !== null);
+
+  const technicians = technicianIds.length > 0
+    ? await db.select({ id: user.id, name: user.name, role: user.role })
+        .from(user).where(and(
+          inArray(user.id, technicianIds),
+          inArray(user.role, ['ADMIN', 'STAFF']),
+        ))
+    : [];
 
   // Get completed counts per technician
-  const completedCounts = await prisma.work_order.groupBy({
-    by: ['technicianId'],
-    where: {
-      technicianId: { not: null },
-      completedAt: { gte: startDate, lte: endDate },
-      status: { in: ["READY", "DELIVERED", "PAID"] },
-    },
-    _count: {
-      id: true,
-    },
-  });
+  const saleStatuses = ["READY", "DELIVERED", "PAID"];
+  const completedCounts = await db.select({
+    technicianId: workOrder.technicianId,
+    idCount: count(workOrder.id),
+  }).from(workOrder).where(and(
+    isNotNull(workOrder.technicianId),
+    gte(workOrder.completedAt, startDateStr),
+    lte(workOrder.completedAt, endDateStr),
+    inArray(workOrder.status, saleStatuses),
+  )).groupBy(workOrder.technicianId);
 
   const technicianPerformance: TechnicianPerformance[] = technicians.map((t) => {
-    const completed = completedCounts.find((cc) => cc.technicianId === t.id)?._count.id || 0;
+    const assigned = technicianAssignedCounts.find((ac) => ac.technicianId === t.id);
+    const completed = completedCounts.find((cc) => cc.technicianId === t.id);
     return {
       technicianId: t.id,
       technicianName: t.name,
-      assignedCount: t._count.work_orders,
-      completedCount: completed,
+      assignedCount: Number(assigned?.idCount ?? 0),
+      completedCount: Number(completed?.idCount ?? 0),
     };
   }).sort((a, b) => b.completedCount - a.completedCount);
 
   // 5. Evolution
   const [createdEvolution, completedEvolution] = await Promise.all([
-    prisma.work_order.findMany({
-      where: { createdAt: { gte: startDate, lte: endDate } },
-      select: { createdAt: true },
-    }),
-    prisma.work_order.findMany({
-      where: {
-        completedAt: { gte: startDate, lte: endDate },
-        status: { in: ["READY", "DELIVERED", "PAID"] },
-      },
-      select: { completedAt: true },
-    }),
+    db.select({ createdAt: workOrder.createdAt }).from(workOrder).where(and(
+      gte(workOrder.createdAt, startDateStr),
+      lte(workOrder.createdAt, endDateStr),
+    )),
+    db.select({ completedAt: workOrder.completedAt }).from(workOrder).where(and(
+      gte(workOrder.completedAt, startDateStr),
+      lte(workOrder.completedAt, endDateStr),
+      inArray(workOrder.status, saleStatuses),
+    )),
   ]);
 
   const buckets = initializeBuckets(startDate, endDate, groupBy);
 
   createdEvolution.forEach((wo) => {
-    const { key } = getBucketKeyAndLabel(wo.createdAt, groupBy);
+    const { key } = getBucketKeyAndLabel(new Date(wo.createdAt), groupBy);
     if (buckets[key]) buckets[key].created += 1;
   });
 
   completedEvolution.forEach((wo) => {
     if (wo.completedAt) {
-      const { key } = getBucketKeyAndLabel(wo.completedAt, groupBy);
+      const { key } = getBucketKeyAndLabel(new Date(wo.completedAt), groupBy);
       if (buckets[key]) buckets[key].completed += 1;
     }
   });

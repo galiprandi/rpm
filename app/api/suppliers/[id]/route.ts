@@ -4,7 +4,9 @@
  * Spec: /specs/suppliers.md
  */
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { supplier } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
 interface Params {
   params: Promise<{ id: string }>;
@@ -17,8 +19,8 @@ export async function PUT(request: NextRequest, { params }: Params) {
     const body = await request.json();
 
     // Verificar que el proveedor existe
-    const existing = await prisma.supplier.findUnique({
-      where: { id },
+    const existing = await db.query.supplier.findFirst({
+      where: eq(supplier.id, id),
     });
 
     if (!existing) {
@@ -30,8 +32,8 @@ export async function PUT(request: NextRequest, { params }: Params) {
 
     // Si cambia el nombre, verificar que no exista otro con ese nombre
     if (body.name && body.name !== existing.name) {
-      const nameExists = await prisma.supplier.findUnique({
-        where: { name: body.name },
+      const nameExists = await db.query.supplier.findFirst({
+        where: eq(supplier.name, body.name),
       });
 
       if (nameExists) {
@@ -42,20 +44,17 @@ export async function PUT(request: NextRequest, { params }: Params) {
       }
     }
 
-    const supplier = await prisma.supplier.update({
-      where: { id },
-      data: {
-        name: body.name,
-        contactName: body.contactName,
-        phone: body.phone,
-        email: body.email,
-        address: body.address,
-        notes: body.notes,
-        isActive: body.isActive,
-      },
-    });
+    const [updated] = await db.update(supplier).set({
+      name: body.name,
+      contactName: body.contactName,
+      phone: body.phone,
+      email: body.email,
+      address: body.address,
+      notes: body.notes,
+      isActive: body.isActive,
+    }).where(eq(supplier.id, id)).returning();
 
-    return NextResponse.json({ supplier });
+    return NextResponse.json({ supplier: updated });
   } catch (error) {
     console.error("Error updating supplier:", error);
     return NextResponse.json(
@@ -70,13 +69,11 @@ export async function DELETE(request: NextRequest, { params }: Params) {
   try {
     const { id } = await params;
 
-    // Verificar que el proveedor existe
-    const existing = await prisma.supplier.findUnique({
-      where: { id },
-      include: {
-        _count: {
-          select: { product: true },
-        },
+    // Verificar que el proveedor existe y contar productos asociados
+    const existing = await db.query.supplier.findFirst({
+      where: eq(supplier.id, id),
+      with: {
+        products: true,
       },
     });
 
@@ -88,7 +85,7 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     }
 
     // No permitir eliminar si tiene productos asociados
-    if (existing._count.product > 0) {
+    if (existing.products.length > 0) {
       return NextResponse.json(
         { error: "No se puede eliminar un proveedor con productos asociados" },
         { status: 409 },
@@ -96,12 +93,9 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     }
 
     // Soft delete: cambiar isActive a false
-    const supplier = await prisma.supplier.update({
-      where: { id },
-      data: { isActive: false },
-    });
+    const [updated] = await db.update(supplier).set({ isActive: false }).where(eq(supplier.id, id)).returning();
 
-    return NextResponse.json({ supplier });
+    return NextResponse.json({ supplier: updated });
   } catch (error) {
     console.error("Error deleting supplier:", error);
     return NextResponse.json(

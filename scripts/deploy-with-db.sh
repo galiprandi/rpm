@@ -20,12 +20,12 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# Generate Prisma client for production
-echo "🔧 Generating Prisma client..."
+# Generate Drizzle client for production
+echo "🔧 Generating Drizzle client..."
 pnpm run db:generate
 
 if [ $? -ne 0 ]; then
-    echo "❌ Prisma client generation failed"
+    echo "❌ Drizzle client generation failed"
     exit 1
 fi
 

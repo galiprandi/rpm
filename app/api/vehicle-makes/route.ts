@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth-server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { vehicleMake } from "@/db/schema";
+import { eq, ilike, and, asc, sql } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { capitalizeText, normalizeText } from "@/lib/utils/format";
+import { toISODate } from "@/lib/utils/date";
 
 // GET /api/vehicle-makes - List all makes
 export async function GET(request: NextRequest) {
@@ -11,27 +14,32 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get("search");
     const category = searchParams.get("category");
 
-    const where: Record<string, unknown> = { isActive: true };
+    const conditions = [eq(vehicleMake.isActive, true)];
     if (search) {
-      where.normalizedName = { contains: normalizeText(search), mode: "insensitive" };
+      conditions.push(ilike(vehicleMake.normalizedName, `%${normalizeText(search)}%`));
     }
     if (category) {
-      where.category = { has: category };
+      conditions.push(sql`${vehicleMake.category} @> ARRAY[${category}]::text[]`);
     }
 
-    const makes = await prisma.vehicle_make.findMany({
-      where,
-      include: {
-        _count: {
-          select: {
-            vehicle_model: true,
-          },
-        },
+    const makes = await db.query.vehicleMake.findMany({
+      where: and(...conditions),
+      with: {
+        vehicleModels: true,
       },
-      orderBy: { name: "asc" },
+      orderBy: asc(vehicleMake.name),
     });
 
-    return NextResponse.json({ makes });
+    // Transform to include _count equivalent
+    const makesWithCount = makes.map((make) => ({
+      ...make,
+      createdAt: toISODate(make.createdAt),
+      _count: {
+        vehicleModels: make.vehicleModels.length,
+      },
+    }));
+
+    return NextResponse.json({ makes: makesWithCount });
   } catch (error) {
     console.error("Error fetching vehicle makes:", error);
     return NextResponse.json(
@@ -63,23 +71,25 @@ export async function POST(request: NextRequest) {
     const capitalizedName = capitalizeText(name);
 
     // Try to find existing make
-    let make = await prisma.vehicle_make.findUnique({
-      where: { normalizedName },
+    let make = await db.query.vehicleMake.findFirst({
+      where: eq(vehicleMake.normalizedName, normalizedName),
     });
 
     if (!make) {
       // Create new make
-      make = await prisma.vehicle_make.create({
-        data: {
-          id: randomUUID(),
-          name: capitalizedName,
-          normalizedName,
-          category: Array.isArray(category) ? category : [category],
-        },
-      });
+      const [created] = await db.insert(vehicleMake).values({
+        id: randomUUID(),
+        name: capitalizedName,
+        normalizedName,
+        category: Array.isArray(category) ? category : [category],
+      }).returning();
+      make = created;
     }
 
-    return NextResponse.json(make, { status: make ? 200 : 201 });
+    return NextResponse.json(
+      make ? { ...make, createdAt: toISODate(make.createdAt) } : make,
+      { status: make ? 200 : 201 },
+    );
   } catch (error) {
     console.error("Error creating vehicle make:", error);
     return NextResponse.json(

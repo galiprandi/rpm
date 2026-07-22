@@ -22,7 +22,7 @@ Tu misión es analizar las features existentes, identificar puntos de fricción 
 **Fuera de scope (no tocar bajo ninguna circunstancia):**
 - Shared components (`Header`, `CrudStats`, tabla genérica)
 - Auth, middleware, layout global
-- Schema de Prisma (usar el existente, no migrar)
+- Schema de Drizzle (usar el existente, no migrar)
 - Otras áreas del sistema (ventas, taller, productos)
 - Lógica de facturación (scope de Ana)
 

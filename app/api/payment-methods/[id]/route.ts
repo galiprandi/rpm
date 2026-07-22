@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionWithAuth } from "@/lib/api-middleware";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { paymentMethod, payment } from "@/db/schema";
+import { eq, count } from "drizzle-orm";
 import { hasRole, UserRole } from "@/lib/auth/roles";
+import { toISODate } from "@/lib/utils/date";
 
 // GET /api/payment-methods/[id] - Get single payment method
 export async function GET(
@@ -16,23 +19,32 @@ export async function GET(
 
     const { id } = await params;
 
-    const paymentMethod = await prisma.payment_method.findUnique({
-      where: { id },
-      include: {
-        _count: {
-          select: { payments: true },
-        },
-      },
+    const pm = await db.query.paymentMethod.findFirst({
+      where: eq(paymentMethod.id, id),
     });
 
-    if (!paymentMethod) {
+    if (!pm) {
       return NextResponse.json(
         { error: "Payment method not found" },
         { status: 404 },
       );
     }
 
-    return NextResponse.json({ paymentMethod });
+    // Count associated payments
+    const paymentsCountResult = await db
+      .select({ value: count() })
+      .from(payment)
+      .where(eq(payment.paymentMethodId, id));
+    const paymentsCount = paymentsCountResult[0]?.value || 0;
+
+    return NextResponse.json({
+      paymentMethod: {
+        ...pm,
+        createdAt: toISODate(pm.createdAt),
+        updatedAt: toISODate(pm.updatedAt),
+        _count: { payments: paymentsCount },
+      },
+    });
   } catch (error) {
     console.error("Error fetching payment method:", error);
     return NextResponse.json(
@@ -66,8 +78,8 @@ export async function PUT(
     const { name, description, isActive, sortOrder } = body;
 
     // Check if payment method exists
-    const existing = await prisma.payment_method.findUnique({
-      where: { id },
+    const existing = await db.query.paymentMethod.findFirst({
+      where: eq(paymentMethod.id, id),
     });
 
     if (!existing) {
@@ -77,17 +89,24 @@ export async function PUT(
       );
     }
 
-    const paymentMethod = await prisma.payment_method.update({
-      where: { id },
-      data: {
+    const [updated] = await db
+      .update(paymentMethod)
+      .set({
         name,
         description,
         isActive,
         sortOrder,
+      })
+      .where(eq(paymentMethod.id, id))
+      .returning();
+
+    return NextResponse.json({
+      paymentMethod: {
+        ...updated,
+        createdAt: toISODate(updated.createdAt),
+        updatedAt: toISODate(updated.updatedAt),
       },
     });
-
-    return NextResponse.json({ paymentMethod });
   } catch (error) {
     console.error("Error updating payment method:", error);
     return NextResponse.json(
@@ -119,13 +138,8 @@ export async function DELETE(
     const { id } = await params;
 
     // Check if payment method exists
-    const existing = await prisma.payment_method.findUnique({
-      where: { id },
-      include: {
-        _count: {
-          select: { payments: true },
-        },
-      },
+    const existing = await db.query.paymentMethod.findFirst({
+      where: eq(paymentMethod.id, id),
     });
 
     if (!existing) {
@@ -136,19 +150,23 @@ export async function DELETE(
     }
 
     // Check if payment method has associated payments
-    if (existing._count.payments > 0) {
+    const paymentsCountResult = await db
+      .select({ value: count() })
+      .from(payment)
+      .where(eq(payment.paymentMethodId, id));
+    const paymentsCount = paymentsCountResult[0]?.value || 0;
+
+    if (paymentsCount > 0) {
       return NextResponse.json(
         {
           error: "Cannot delete payment method with associated payments",
-          paymentsCount: existing._count.payments,
+          paymentsCount,
         },
         { status: 409 },
       );
     }
 
-    await prisma.payment_method.delete({
-      where: { id },
-    });
+    await db.delete(paymentMethod).where(eq(paymentMethod.id, id));
 
     return NextResponse.json({ success: true });
   } catch (error) {

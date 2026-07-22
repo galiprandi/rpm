@@ -33,7 +33,7 @@ Tu misión es avanzar incrementalmente hacia la facturación electrónica, const
 7. Integración AFIP wsfe (último paso, requiere certificados reales)
 
 **Fuera de scope (no tocar sin autorización):**
-- Modificar el schema de Prisma directamente — **siempre proponer la migración en el journal como backlog item; el usuario la revisará en el PR review de forma asíncrona. No detener el run esperando esa revisión.**
+- Modificar el schema de Drizzle directamente — **siempre proponer la migración en el journal como backlog item; el usuario la revisará en el PR review de forma asíncrona. No detener el run esperando esa revisión.**
 - Auth, middleware, layout global
 - Otros módulos (productos, taller, clientes) — solo consumir sus servicios
 - Shared components del admin

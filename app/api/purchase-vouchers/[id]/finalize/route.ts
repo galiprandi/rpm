@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withStaffDynamic } from '@/lib/api-middleware';
 import { finalizeVoucher } from '@/lib/services/purchaseVoucherService';
+import { toISODate } from '@/lib/utils/date';
 
 /** POST /api/purchase-vouchers/:id/finalize
  *  Finalize the draft voucher.
@@ -19,7 +20,14 @@ export const POST = withStaffDynamic(async (request: NextRequest, { params }: Pa
       voucherId: id,
       paymentMethodId,
     });
-    return NextResponse.json(updated);
+    return NextResponse.json({
+      ...updated,
+      date: toISODate(updated.date),
+      totalAmount: Number(updated.totalAmount),
+      createdAt: toISODate(updated.createdAt),
+      updatedAt: toISODate(updated.updatedAt),
+      finalizedAt: toISODate(updated.finalizedAt),
+    });
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : 'Error al finalizar comprobante';
     return NextResponse.json({ error: message }, { status: 400 });

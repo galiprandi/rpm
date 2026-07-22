@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { vehicleModel } from "@/db/schema";
+import { eq, ilike, and, asc, sql } from "drizzle-orm";
 import { randomUUID } from "crypto";
 
 import { capitalizeText, normalizeText } from "@/lib/utils/format";
+import { toISODate } from "@/lib/utils/date";
 
 // GET /api/vehicle-models - List models (optionally filtered by makeId)
 export async function GET(request: NextRequest) {
@@ -11,21 +14,26 @@ export async function GET(request: NextRequest) {
     const makeId = searchParams.get("makeId");
     const search = searchParams.get("search");
 
-    const where: Record<string, unknown> = { isActive: true };
-    if (makeId) where.makeId = makeId;
+    const conditions = [eq(vehicleModel.isActive, true)];
+    if (makeId) conditions.push(eq(vehicleModel.makeId, makeId));
     if (search) {
-      where.normalizedName = { contains: normalizeText(search), mode: "insensitive" };
+      conditions.push(ilike(vehicleModel.normalizedName, `%${normalizeText(search)}%`));
     }
 
-    const models = await prisma.vehicle_model.findMany({
-      where,
-      include: {
-        vehicle_make: true,
+    const models = await db.query.vehicleModel.findMany({
+      where: and(...conditions),
+      with: {
+        vehicleMake: true,
       },
-      orderBy: { name: "asc" },
+      orderBy: asc(vehicleModel.name),
     });
 
-    return NextResponse.json({ models });
+    const modelsWithDates = models.map((model) => ({
+      ...model,
+      createdAt: toISODate(model.createdAt),
+    }));
+
+    return NextResponse.json({ models: modelsWithDates });
   } catch (error) {
     console.error("Error fetching vehicle models:", error);
     return NextResponse.json(
@@ -52,37 +60,40 @@ export async function POST(request: NextRequest) {
     const capitalizedName = capitalizeText(name);
 
     // Try to find existing model
-    let model = await prisma.vehicle_model.findFirst({
-      where: {
-        makeId,
-        normalizedName,
-      },
+    let model = await db.query.vehicleModel.findFirst({
+      where: and(
+        eq(vehicleModel.makeId, makeId),
+        eq(vehicleModel.normalizedName, normalizedName),
+      ),
     });
 
     if (!model) {
       // Create new model
-      model = await prisma.vehicle_model.create({
-        data: {
-          id: randomUUID(),
-          name: capitalizedName,
-          normalizedName,
-          makeId,
-          years: years || [],
-        },
-      });
+      const [created] = await db.insert(vehicleModel).values({
+        id: randomUUID(),
+        name: capitalizedName,
+        normalizedName,
+        makeId,
+        years: years || [],
+      }).returning();
+      model = created;
     } else if (years && years.length > 0) {
       // Update years if new ones provided
       const existingYears = model.years || [];
       const newYears = [...new Set([...existingYears, ...years])];
       if (newYears.length > existingYears.length) {
-        model = await prisma.vehicle_model.update({
-          where: { id: model.id },
-          data: { years: newYears },
-        });
+        const [updated] = await db.update(vehicleModel)
+          .set({ years: newYears })
+          .where(eq(vehicleModel.id, model.id))
+          .returning();
+        model = updated;
       }
     }
 
-    return NextResponse.json(model, { status: model ? 200 : 201 });
+    return NextResponse.json(
+      model ? { ...model, createdAt: toISODate(model.createdAt) } : model,
+      { status: model ? 200 : 201 },
+    );
   } catch (error) {
     console.error("Error creating vehicle model:", error);
     return NextResponse.json(

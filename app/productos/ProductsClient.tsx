@@ -6,6 +6,7 @@ import { PublicLayout } from '@/components/public/layout/PublicLayout';
 import { Button } from '@/components/ui/button';
 import { Search, ArrowRight, X, Eye, MessageCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import Image from 'next/image';
 import { ProductQuickView } from '@/components/public/ProductQuickView';
 import { formatARS } from '@/lib/utils/format';
 import {
@@ -122,12 +123,16 @@ export default function ProductsClient({ initialProducts, initialCategories }: P
                   style={{ animationDelay: `${0.1 * (index % 4)}s` }}
                 >
                 {product.imageUrl ? (
-                  <img
-                    src={product.imageUrl}
-                    alt={product.name}
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                    loading="lazy"
-                  />
+                  <div className="absolute inset-0 w-full h-full overflow-hidden">
+                    <Image
+                      src={product.imageUrl}
+                      alt={product.name}
+                      fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                      className="object-cover transition-transform duration-700 group-hover:scale-110"
+                      priority={index < 2}
+                    />
+                  </div>
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center text-[180px] font-black text-white/5 select-none transition-transform duration-700 group-hover:scale-110">
                     {product.image}

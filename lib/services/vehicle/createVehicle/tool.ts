@@ -11,6 +11,9 @@ export const registerVehicleTool = tool({
 
     try {
       const vehicle = await createVehicleService(input as any);
+      if (!vehicle) {
+        return 'Error al registrar vehículo: no se pudo crear el registro';
+      }
       return `✅ Vehículo registrado:\n- ID: ${vehicle.id}\n- Patente: ${vehicle.identifier}\n- Categoría: ${vehicle.category}\n- Cliente: ${(vehicle as any).customer?.name || input.customerId}`;
     } catch (error) {
       logger.error({ error }, 'Error registering vehicle');

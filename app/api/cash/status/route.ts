@@ -1,18 +1,14 @@
 import { NextResponse } from "next/server";
 import { withStaff } from "@/lib/api-middleware";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { cashMovement, paymentMethod } from "@/db/schema";
+import { eq, desc, gte, inArray, and } from "drizzle-orm";
 
 // Helper para convertir Decimal a number
 function decimalToNumber(decimal: unknown): number {
   if (decimal === null || decimal === undefined) return 0;
   if (typeof decimal === "number") return decimal;
-  if (
-    typeof decimal === "object" &&
-    "toNumber" in decimal &&
-    typeof decimal.toNumber === "function"
-  ) {
-    return (decimal as { toNumber: () => number }).toNumber();
-  }
+  if (typeof decimal === "string") return Number(decimal);
   return 0;
 }
 
@@ -24,49 +20,41 @@ interface PaymentMethod {
 interface CashMovement {
   type: string;
   method: string;
-  amount: { toNumber: () => number };
-  createdAt: Date;
+  amount: string;
+  createdAt: string;
 }
 
 // Direct DB query - no cache to avoid stale data issues after cash movements
 async function getCashStatus() {
   // Find the absolute latest OPENING or CLOSING movement
-  const lastMovement = await prisma.cash_movement.findFirst({
-    where: {
-      type: {
-        in: ["OPENING", "CLOSING"],
-      },
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
+  const lastMovement = await db.query.cashMovement.findFirst({
+    where: inArray(cashMovement.type, ["OPENING", "CLOSING"]),
+    orderBy: desc(cashMovement.createdAt),
   });
 
   const isOpen = lastMovement?.type === "OPENING";
   const lastOpening = isOpen
     ? lastMovement
-    : await prisma.cash_movement.findFirst({
-        where: { type: "OPENING" },
-        orderBy: { createdAt: "desc" },
+    : await db.query.cashMovement.findFirst({
+        where: eq(cashMovement.type, "OPENING"),
+        orderBy: desc(cashMovement.createdAt),
       });
 
   const lastClosingAtOpening = lastOpening
-    ? await prisma.cash_movement.findFirst({
-        where: {
-          type: "CLOSING",
-          createdAt: {
-            gte: lastOpening.createdAt,
-          },
-        },
-        orderBy: { createdAt: "desc" },
+    ? await db.query.cashMovement.findFirst({
+        where: and(
+          eq(cashMovement.type, "CLOSING"),
+          gte(cashMovement.createdAt, lastOpening.createdAt),
+        ),
+        orderBy: desc(cashMovement.createdAt),
       })
     : null;
 
   // Get all payment methods for the summary
-  const paymentMethods = await prisma.payment_method.findMany({
-    select: { code: true, name: true },
-    where: { isActive: true },
-  });
+  const paymentMethods = await db
+    .select({ code: paymentMethod.code, name: paymentMethod.name })
+    .from(paymentMethod)
+    .where(eq(paymentMethod.isActive, true));
 
   // Build summary by method
   const summary: Record<
@@ -90,12 +78,8 @@ async function getCashStatus() {
 
   if (isOpen && lastOpening) {
     // Get all movements since opening
-    const movements = await prisma.cash_movement.findMany({
-      where: {
-        createdAt: {
-          gte: lastOpening.createdAt,
-        },
-      },
+    const movements = await db.query.cashMovement.findMany({
+      where: gte(cashMovement.createdAt, lastOpening.createdAt),
     });
 
     movements.forEach((movement: CashMovement) => {
@@ -130,19 +114,19 @@ async function getCashStatus() {
   }
 
   // Get last closing amount for suggestion
-  const lastClosing = await prisma.cash_movement.findFirst({
-    where: {
-      type: "CLOSING",
-      method: "CASH",
-    },
-    orderBy: { createdAt: "desc" },
+  const lastClosing = await db.query.cashMovement.findFirst({
+    where: and(
+      eq(cashMovement.type, "CLOSING"),
+      eq(cashMovement.method, "CASH"),
+    ),
+    orderBy: desc(cashMovement.createdAt),
   });
 
   return {
     status: isOpen ? "OPEN" : "CLOSED",
-    openedAt: lastOpening?.createdAt?.toISOString() || null,
+    openedAt: lastOpening?.createdAt ? new Date(lastOpening.createdAt).toISOString() : null,
     openedBy: lastOpening?.createdBy || null,
-    closedAt: lastClosingAtOpening?.createdAt?.toISOString() || null,
+    closedAt: lastClosingAtOpening?.createdAt ? new Date(lastClosingAtOpening.createdAt).toISOString() : null,
     summary,
     suggestedOpeningAmount: lastClosing
       ? decimalToNumber(lastClosing.amount)

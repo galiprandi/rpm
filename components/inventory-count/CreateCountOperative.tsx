@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface SuggestedProduct {
   id: string;
@@ -182,29 +182,27 @@ export function CreateCountOperative({ open, onOpenChange }: CreateCountOperativ
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  className={cn(
-                                    "h-8 w-8 rounded-full transition-all",
-                                    selectedIds.has(product.id)
-                                      ? "text-destructive hover:bg-destructive/10 hover:text-destructive"
-                                      : "text-muted-foreground hover:bg-primary/10 hover:text-primary"
-                                  )}
-                                  onClick={() => handleToggleProduct(product.id)}
-                                  aria-label={selectedIds.has(product.id) ? "Quitar del operativo" : "Incluir en operativo"}
-                                >
-                                  {selectedIds.has(product.id) ? <Trash2 className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                {selectedIds.has(product.id) ? "Quitar del operativo" : "Incluir en operativo"}
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className={cn(
+                                  "h-8 w-8 rounded-full transition-all",
+                                  selectedIds.has(product.id)
+                                    ? "text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                    : "text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                                )}
+                                onClick={() => handleToggleProduct(product.id)}
+                                aria-label={selectedIds.has(product.id) ? "Quitar del operativo" : "Incluir en operativo"}
+                              >
+                                {selectedIds.has(product.id) ? <Trash2 className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {selectedIds.has(product.id) ? "Quitar del operativo" : "Incluir en operativo"}
+                            </TooltipContent>
+                          </Tooltip>
                         </TableCell>
                       </TableRow>
                     ))}

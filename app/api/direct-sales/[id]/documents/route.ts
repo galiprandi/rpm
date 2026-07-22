@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionWithAuth } from "@/lib/api-middleware";
 import { generateDocumentFromDirectSale } from "@/lib/services/directSaleService";
 import { InvoiceType } from "@/lib/services/invoiceService";
+import { toISODate } from "@/lib/utils/date";
 
 export async function POST(
   request: NextRequest,
@@ -22,7 +23,19 @@ export async function POST(
       forceNew: !!forceNew,
     });
 
-    return NextResponse.json(document, { status: 201 });
+    // Convert Drizzle raw PG timestamps to ISO 8601 and string decimals to numbers
+    const documentSerialized = {
+      ...document,
+      subtotal: Number(document.subtotal),
+      tax: document.tax !== null ? Number(document.tax) : null,
+      total: Number(document.total),
+      iva21: document.iva21 !== null ? Number(document.iva21) : null,
+      iva105: document.iva105 !== null ? Number(document.iva105) : null,
+      issuedAt: toISODate(document.issuedAt),
+      createdAt: toISODate(document.createdAt),
+    };
+
+    return NextResponse.json(documentSerialized, { status: 201 });
   } catch (error) {
     console.error("Error in POST /api/direct-sales/[id]/documents:", error);
     return NextResponse.json(

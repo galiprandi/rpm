@@ -1,8 +1,21 @@
 import { config } from 'dotenv';
 import { vi } from 'vitest';
 
-// Load environment variables from .env.local
+// Load environment variables from .env.local, then .env as fallback
 config({ path: '.env.local' });
+config({ path: '.env' });
+
+// Mock Next.js cache revalidation functions (not available in test env)
+vi.mock("next/cache", () => ({
+  revalidatePath: vi.fn(),
+  revalidateTag: vi.fn(),
+  revalidate: vi.fn(),
+}));
+
+vi.mock("@/lib/cache", () => ({
+  invalidateCashStatus: vi.fn(),
+  getCachedCashStatus: vi.fn(),
+}));
 
 // Setup for Vitest tests
 import '@testing-library/jest-dom/vitest';

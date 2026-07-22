@@ -3,7 +3,9 @@
  * This is an initial implementation that prepares the structure for real integration.
  */
 
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
+import { invoice } from '@/db/schema';
+import { eq, and, inArray, like, desc } from 'drizzle-orm';
 import { getSetting } from './settingsService';
 
 export interface AFIPComprobanteInput {
@@ -102,14 +104,14 @@ export async function getLastAuthorizedNumber(tipo: number, pv: number): Promise
   else if (tipo === AFIP_CBTE_TIPOS.NOTA_CREDITO_B) internalTypes.push('NOTA_CREDITO_B');
   else if (tipo === AFIP_CBTE_TIPOS.NOTA_CREDITO_C) internalTypes.push('NOTA_CREDITO_C');
 
-  const lastInvoice = await prisma.invoice.findFirst({
-    where: {
-      status: 'ISSUED',
-      type: { in: internalTypes },
-      number: { startsWith: pvPrefix },
-    },
-    orderBy: { number: 'desc' },
-    select: { number: true },
+  const lastInvoice = await db.query.invoice.findFirst({
+    where: and(
+      eq(invoice.status, 'ISSUED'),
+      inArray(invoice.type, internalTypes),
+      like(invoice.number, `${pvPrefix}%`),
+    ),
+    orderBy: desc(invoice.number),
+    columns: { number: true },
   });
 
   if (!lastInvoice) {

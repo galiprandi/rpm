@@ -1,7 +1,7 @@
 /**
  * Product Import Schemas
  * Shared between UI and API for type-safe validation
- * Used with Zod for runtime validation that matches Prisma schema
+ * Used with Zod for runtime validation that matches Drizzle schema
  */
 
 import { z } from 'zod';
@@ -50,11 +50,11 @@ export const ImportOptionsSchema = z.object({
 });
 
 // ============================================================================
-// Schema de Producto (Compatible con Prisma ProductCreateInput)
+// Schema de Producto (Compatible con Drizzle Product insert)
 // ============================================================================
 
 /**
- * Schema para crear producto - valida 100% contra modelo Prisma
+ * Schema para crear producto - valida 100% contra modelo Drizzle
  * Omite campos auto-generados: id, createdAt, updatedAt, lastMovementAt
  */
 export const ProductCreateSchema = z.object({

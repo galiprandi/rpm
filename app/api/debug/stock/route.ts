@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAdmin } from '@/lib/api-middleware';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
+import { product } from '@/db/schema';
+import { eq, ilike, asc } from 'drizzle-orm';
 
 export const GET = withAdmin(async (request: NextRequest) => {
   try {
@@ -10,20 +12,21 @@ export const GET = withAdmin(async (request: NextRequest) => {
 
     let products;
     if (productId) {
-      products = await prisma.product.findMany({
-        where: { id: productId },
-        select: { id: true, name: true, stock: true, sku: true },
-      });
+      products = await db
+        .select({ id: product.id, name: product.name, stock: product.stock, sku: product.sku })
+        .from(product)
+        .where(eq(product.id, productId));
     } else if (productName) {
-      products = await prisma.product.findMany({
-        where: { name: { contains: productName, mode: 'insensitive' } },
-        select: { id: true, name: true, stock: true, sku: true },
-      });
+      products = await db
+        .select({ id: product.id, name: product.name, stock: product.stock, sku: product.sku })
+        .from(product)
+        .where(ilike(product.name, `%${productName}%`));
     } else {
-      products = await prisma.product.findMany({
-        select: { id: true, name: true, stock: true, sku: true },
-        take: 10,
-      });
+      products = await db
+        .select({ id: product.id, name: product.name, stock: product.stock, sku: product.sku })
+        .from(product)
+        .orderBy(asc(product.name))
+        .limit(10);
     }
 
     return NextResponse.json({ products });

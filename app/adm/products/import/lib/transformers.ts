@@ -80,7 +80,7 @@ function transformString(value: string, transform: StringTransform): string {
 /**
  * Transform decimal values
  * Handles both Spanish (1.234,56) and English (1,234.56) formats
- * Returns number (will be converted to Prisma Decimal by schema)
+ * Returns number (will be converted to numeric by schema)
  */
 function transformDecimal(value: string, format: DecimalTransform): number {
   const cleaned = value.trim().replace(/^["']|["']$/g, '');

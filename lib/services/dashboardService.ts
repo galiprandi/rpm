@@ -1,25 +1,29 @@
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import {
+  workOrder,
+  directSale,
+  directSaleItem,
+  workOrderItem,
+  customer,
+  cashMovement,
+  paymentMethod,
+  payment,
+  directSalePayment,
+  product,
+} from "@/db/schema";
+import { eq, and, inArray, gte, lt, lte, isNotNull, sql, desc, asc, count, sum } from "drizzle-orm";
 import {
   getArgentinaStartOfDay,
   getArgentinaEndOfDay,
   getArgentinaStartOfYesterday,
 } from "@/lib/utils/date";
 
-// Helper para formatear Decimal a number
-function decimalToNumber(decimal: unknown): number {
-  if (decimal === null || decimal === undefined) return 0;
-  if (typeof decimal === "number") return decimal;
-  // Prisma Decimal type
-  if (
-    typeof decimal === "object" &&
-    "toNumber" in decimal &&
-    typeof (decimal as any).toNumber === "function"
-  ) {
-    return (decimal as { toNumber: () => number }).toNumber();
-  }
-  // Handle string values (often returned from raw queries or certain DB adapters)
-  if (typeof decimal === "string") {
-    return Number(decimal) || 0;
+// Helper para formatear numeric (string from Drizzle) a number
+function decimalToNumber(value: unknown): number {
+  if (value === null || value === undefined) return 0;
+  if (typeof value === "number") return value;
+  if (typeof value === "string") {
+    return Number(value) || 0;
   }
   return 0;
 }
@@ -167,11 +171,14 @@ export interface DailyOperationsData {
  */
 export async function getDashboardData(): Promise<DashboardData> {
   // Obtener fecha de hoy y ayer en zona horaria de Argentina
-  const today = getArgentinaStartOfDay();
-  const yesterday = getArgentinaStartOfYesterday();
+  // Drizzle timestamp columns use mode: 'string', so we pass ISO strings
+  const today = getArgentinaStartOfDay().toISOString();
+  const yesterday = getArgentinaStartOfYesterday().toISOString();
+
+  const saleStatuses = ["DELIVERED", "READY", "PAID"];
+  const activeStatuses = ["CONFIRMED", "WAITING", "IN_PROGRESS", "CONTROL_QC", "READY"];
 
   // Optimized: Use aggregate queries instead of findMany + reduce
-  // Reduces from 5 queries to 4 more efficient ones
   const [
     todaySalesAgg,
     yesterdaySalesAgg,
@@ -180,121 +187,110 @@ export async function getDashboardData(): Promise<DashboardData> {
     yesterdayDirectSalesAgg,
   ] = await Promise.all([
     // 1. Ventas del día (aggregate)
-    prisma.work_order.aggregate({
-      where: {
-        status: { in: ["DELIVERED", "READY", "PAID"] },
-        completedAt: { gte: today },
-      },
-      _sum: { total: true },
-      _count: { id: true },
-    }),
+    db.select({
+      totalSum: sum(workOrder.total),
+      idCount: count(workOrder.id),
+    }).from(workOrder).where(and(
+      inArray(workOrder.status, saleStatuses),
+      gte(workOrder.completedAt, today),
+    )),
     // 2. Ventas de ayer (aggregate)
-    prisma.work_order.aggregate({
-      where: {
-        status: { in: ["DELIVERED", "READY", "PAID"] },
-        completedAt: { gte: yesterday, lt: today },
-      },
-      _sum: { total: true },
-    }),
-    // 3. OTs Activas - solo conteos por status
-    prisma.work_order.groupBy({
-      by: ["status"],
-      where: {
-        status: {
-          in: ["CONFIRMED", "WAITING", "IN_PROGRESS", "CONTROL_QC", "READY"],
-        },
-      },
-      _count: { id: true },
-    }),
+    db.select({
+      totalSum: sum(workOrder.total),
+    }).from(workOrder).where(and(
+      inArray(workOrder.status, saleStatuses),
+      gte(workOrder.completedAt, yesterday),
+      lt(workOrder.completedAt, today),
+    )),
+    // 3. OTs Activas - solo conteos por status (groupBy)
+    db.select({
+      status: workOrder.status,
+      count: count(workOrder.id),
+    }).from(workOrder).where(
+      inArray(workOrder.status, activeStatuses),
+    ).groupBy(workOrder.status),
     // 4. Ventas directas del día (aggregate)
-    prisma.direct_sale.aggregate({
-      where: { createdAt: { gte: today } },
-      _sum: { total: true },
-      _count: { id: true },
-    }),
-    // 5. Ventas directas de ayer (aggregate) — fix vsYesterday comparison
-    prisma.direct_sale.aggregate({
-      where: { createdAt: { gte: yesterday, lt: today } },
-      _sum: { total: true },
-    }),
+    db.select({
+      totalSum: sum(directSale.total),
+      idCount: count(directSale.id),
+    }).from(directSale).where(gte(directSale.createdAt, today)),
+    // 5. Ventas directas de ayer (aggregate)
+    db.select({
+      totalSum: sum(directSale.total),
+    }).from(directSale).where(and(
+      gte(directSale.createdAt, yesterday),
+      lt(directSale.createdAt, today),
+    )),
   ]);
 
   // Ejecutar queries restantes secuencialmente para reducir carga de conexiones
-  const lowStockProducts = await prisma.product.findMany({
-    where: {
-      isActive: true,
-      stock: { lte: prisma.product.fields.minStock },
-    },
-    select: {
-      id: true,
-      name: true,
-      stock: true,
-      minStock: true,
-    },
-    take: 5,
-    orderBy: { stock: "asc" },
-  });
+  const lowStockProducts = await db.select({
+    id: product.id,
+    name: product.name,
+    stock: product.stock,
+    minStock: product.minStock,
+  }).from(product).where(and(
+    eq(product.isActive, true),
+    sql`${product.stock} <= ${product.minStock}`,
+  )).orderBy(asc(product.stock)).limit(5);
 
-  const readyWorkOrders = await prisma.work_order.findMany({
-    where: {
-      status: "READY",
-    },
-    include: {
+  const readyWorkOrders = await db.query.workOrder.findMany({
+    where: eq(workOrder.status, "READY"),
+    with: {
       customer: {
-        select: { name: true, phone: true },
+        columns: { name: true, phone: true },
       },
       vehicle: {
-        select: { category: true, description: true, identifier: true },
+        columns: { category: true, description: true, identifier: true },
       },
       payments: {
-        select: { amount: true },
+        columns: { amount: true },
       },
     },
-    take: 5,
-    orderBy: { completedAt: "desc" },
+    orderBy: desc(workOrder.completedAt),
+    limit: 5,
   });
 
   // Oldest pending work orders (CONFIRMED / WAITING) for prioritization
-  const oldestPendingWorkOrders = await prisma.work_order.findMany({
-    where: {
-      status: { in: ["CONFIRMED", "WAITING"] },
+  const oldestPendingWorkOrders = await db.query.workOrder.findMany({
+    where: inArray(workOrder.status, ["CONFIRMED", "WAITING"]),
+    with: {
+      customer: { columns: { name: true } },
+      vehicle: { columns: { identifier: true } },
     },
-    include: {
-      customer: { select: { name: true } },
-      vehicle: { select: { identifier: true } },
-    },
-    take: 2,
-    orderBy: { createdAt: "asc" },
+    orderBy: asc(workOrder.createdAt),
+    limit: 2,
   });
 
   // Top products sold today (from direct_sale_item + work_order_item)
   const [todayDirectSaleItems, todayWorkOrderItems] = await Promise.all([
-    prisma.direct_sale_item.findMany({
-      where: {
-        directSale: { createdAt: { gte: today } },
-        productId: { not: null },
-      },
-      select: {
-        name: true,
-        quantity: true,
-        totalPrice: true,
-        productId: true,
-      },
-    }),
-    prisma.work_order_item.findMany({
-      where: {
-        work_order: {
-          completedAt: { gte: today },
-          status: { in: ["DELIVERED", "READY", "PAID"] },
-        },
-        productId: { not: null },
-      },
-      select: {
-        quantity: true,
-        subtotal: true,
-        product: { select: { name: true } },
-      },
-    }),
+    db.select({
+      name: directSaleItem.name,
+      quantity: directSaleItem.quantity,
+      totalPrice: directSaleItem.totalPrice,
+      productId: directSaleItem.productId,
+    }).from(directSaleItem).innerJoin(
+      directSale,
+      eq(directSaleItem.directSaleId, directSale.id),
+    ).where(and(
+      gte(directSale.createdAt, today),
+      isNotNull(directSaleItem.productId),
+    )),
+    db.select({
+      quantity: workOrderItem.quantity,
+      subtotal: workOrderItem.subtotal,
+      productName: product.name,
+    }).from(workOrderItem).innerJoin(
+      workOrder,
+      eq(workOrderItem.workOrderId, workOrder.id),
+    ).leftJoin(
+      product,
+      eq(workOrderItem.productId, product.id),
+    ).where(and(
+      gte(workOrder.completedAt, today),
+      inArray(workOrder.status, saleStatuses),
+      isNotNull(workOrderItem.productId),
+    )),
   ]);
 
   // Aggregate top products by name
@@ -307,7 +303,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     productMap.set(key, existing);
   }
   for (const item of todayWorkOrderItems) {
-    const key = item.product?.name || "Producto";
+    const key = item.productName || "Producto";
     const existing = productMap.get(key) || { quantity: 0, revenue: 0 };
     existing.quantity += item.quantity;
     existing.revenue += decimalToNumber(item.subtotal);
@@ -323,70 +319,61 @@ export async function getDashboardData(): Promise<DashboardData> {
     .slice(0, 5);
 
   // Deudores summary
-  const debtorsAgg = await prisma.customer.aggregate({
-    where: { balance: { gt: 0 } },
-    _sum: { balance: true },
-    _count: { id: true },
-  });
-  const topDebtors = await prisma.customer.findMany({
-    where: { balance: { gt: 0 } },
-    select: { name: true, balance: true },
-    orderBy: { balance: "desc" },
-    take: 3,
-  });
+  const debtorsAgg = await db.select({
+    balanceSum: sum(customer.balance),
+    idCount: count(customer.id),
+  }).from(customer).where(sql`${customer.balance} > 0`);
+
+  const topDebtors = await db.select({
+    name: customer.name,
+    balance: customer.balance,
+  }).from(customer).where(sql`${customer.balance} > 0`)
+    .orderBy(desc(customer.balance)).limit(3);
 
   // Cash register status
-  const lastCashMovement = await prisma.cash_movement.findFirst({
-    where: { type: { in: ["OPENING", "CLOSING"] } },
-    orderBy: { createdAt: "desc" },
+  const lastCashMovement = await db.query.cashMovement.findFirst({
+    where: inArray(cashMovement.type, ["OPENING", "CLOSING"]),
+    orderBy: desc(cashMovement.createdAt),
   });
   const isCashOpen = lastCashMovement?.type === "OPENING";
   let cashBalance = 0;
   if (isCashOpen && lastCashMovement) {
-    const movementsSinceOpening = await prisma.cash_movement.findMany({
-      where: { createdAt: { gte: lastCashMovement.createdAt } },
+    const movementsSinceOpening = await db.query.cashMovement.findMany({
+      where: gte(cashMovement.createdAt, lastCashMovement.createdAt),
     });
-    cashBalance = movementsSinceOpening.reduce((sum, m) => {
+    cashBalance = movementsSinceOpening.reduce((sumVal, m) => {
       const amount = decimalToNumber(m.amount);
-      if (m.type === "OPENING" || m.type === "INCOME") return sum + amount;
+      if (m.type === "OPENING" || m.type === "INCOME") return sumVal + amount;
       if (m.type === "EXPENSE" || m.type === "PURCHASE_VOUCHER")
-        return sum - amount;
-      return sum;
+        return sumVal - amount;
+      return sumVal;
     }, 0);
   }
 
-  const todayCashMovements = await prisma.cash_movement.findMany({
-    where: {
-      createdAt: { gte: today },
-      type: { in: ["INCOME", "EXPENSE"] },
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
+  const todayCashMovements = await db.query.cashMovement.findMany({
+    where: and(
+      gte(cashMovement.createdAt, today),
+      inArray(cashMovement.type, ["INCOME", "EXPENSE"]),
+    ),
+    orderBy: desc(cashMovement.createdAt),
   });
 
-  const paymentMethods = await prisma.payment_method.findMany({
-    select: {
-      code: true,
-      name: true,
-    },
-  });
+  const paymentMethods = await db.select({
+    code: paymentMethod.code,
+    name: paymentMethod.name,
+  }).from(paymentMethod);
 
-  const allCashMovements = await prisma.cash_movement.findMany({
-    where: {
-      createdAt: { gte: today },
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-    take: 20,
+  const allCashMovements = await db.query.cashMovement.findMany({
+    where: gte(cashMovement.createdAt, today),
+    orderBy: desc(cashMovement.createdAt),
+    limit: 20,
   });
 
   // Calcular métricas de ventas desde aggregates (más eficiente)
-  const todayWorkOrderTotal = decimalToNumber(todaySalesAgg._sum.total) || 0;
-  const todayWorkOrderCount = todaySalesAgg._count.id;
-  const todayDirectTotal = decimalToNumber(todayDirectSalesAgg._sum.total) || 0;
-  const todayDirectCount = todayDirectSalesAgg._count.id;
+  const todayWorkOrderTotal = decimalToNumber(todaySalesAgg[0]?.totalSum) || 0;
+  const todayWorkOrderCount = todaySalesAgg[0]?.idCount ?? 0;
+  const todayDirectTotal = decimalToNumber(todayDirectSalesAgg[0]?.totalSum) || 0;
+  const todayDirectCount = todayDirectSalesAgg[0]?.idCount ?? 0;
 
   const todayTotal = todayWorkOrderTotal + todayDirectTotal;
   const todayCount = todayWorkOrderCount + todayDirectCount;
@@ -394,9 +381,9 @@ export async function getDashboardData(): Promise<DashboardData> {
 
   // Ventas de ayer para comparación (incluye OTs + ventas directas)
   const yesterdayWorkOrderTotal =
-    decimalToNumber(yesterdaySalesAgg._sum.total) || 0;
+    decimalToNumber(yesterdaySalesAgg[0]?.totalSum) || 0;
   const yesterdayDirectTotal =
-    decimalToNumber(yesterdayDirectSalesAgg._sum.total) || 0;
+    decimalToNumber(yesterdayDirectSalesAgg[0]?.totalSum) || 0;
   const yesterdayTotal = yesterdayWorkOrderTotal + yesterdayDirectTotal;
   const vsYesterday =
     yesterdayTotal > 0
@@ -405,10 +392,7 @@ export async function getDashboardData(): Promise<DashboardData> {
 
   // Calcular conteos por status desde groupBy
   const statusCounts = new Map<string, number>(
-    activeWorkOrdersAgg.map((g: { status: string; _count: { id: number } }) => [
-      g.status,
-      g._count.id,
-    ]),
+    activeWorkOrdersAgg.map((g) => [g.status, Number(g.count)]),
   );
   const byStatus = {
     pending:
@@ -418,13 +402,13 @@ export async function getDashboardData(): Promise<DashboardData> {
   };
 
   // Contar OTs creadas hoy (necesita query adicional optimizada)
-  const newToday = await prisma.work_order.count({
-    where: { createdAt: { gte: today } },
-  });
+  const newTodayResult = await db.select({ count: count(workOrder.id) })
+    .from(workOrder).where(gte(workOrder.createdAt, today));
+  const newToday = Number(newTodayResult[0]?.count ?? 0);
 
-  const readyForDelivery = readyWorkOrders.map((wo: any) => {
+  const readyForDelivery = readyWorkOrders.map((wo) => {
     const totalPaid = wo.payments.reduce(
-      (sum: number, p: any) => sum + decimalToNumber(p.amount),
+      (sumVal, p) => sumVal + decimalToNumber(p.amount),
       0,
     );
     return {
@@ -445,7 +429,7 @@ export async function getDashboardData(): Promise<DashboardData> {
       },
       total: decimalToNumber(wo.total),
       totalPaid,
-      completedAt: wo.completedAt?.toISOString() || wo.createdAt.toISOString(),
+      completedAt: wo.completedAt ? new Date(wo.completedAt).toISOString() : new Date(wo.createdAt).toISOString(),
       invoiceStatus: wo.invoiceId ? ("ISSUED" as const) : ("PENDING" as const),
     };
   });
@@ -494,7 +478,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     }))
     .sort((a, b) => b.total - a.total);
 
-  const cashMovementsFormatted = allCashMovements.map((m: any) => ({
+  const cashMovementsFormatted = allCashMovements.map((m) => ({
     id: m.id,
     type: m.type as "INCOME" | "EXPENSE" | "OPENING" | "CLOSING",
     amount: decimalToNumber(m.amount),
@@ -503,13 +487,13 @@ export async function getDashboardData(): Promise<DashboardData> {
     referenceId: m.referenceId ?? undefined,
     referenceType: m.referenceType ?? undefined,
     reason: m.reason ?? undefined,
-    createdAt: m.createdAt.toISOString(),
+    createdAt: new Date(m.createdAt).toISOString(),
     createdBy: m.createdBy,
   }));
 
   // Calcular total activo desde el groupBy
   const activeTotal = activeWorkOrdersAgg.reduce(
-    (sum, g) => sum + g._count.id,
+    (sumVal, g) => sumVal + Number(g.count),
     0,
   );
 
@@ -531,13 +515,13 @@ export async function getDashboardData(): Promise<DashboardData> {
           workOrderId: wo.id,
           vehicleIdentifier: wo.vehicle?.identifier || "N/A",
           customerName: wo.customer?.name || "Sin cliente",
-          createdAt: wo.createdAt.toISOString(),
+          createdAt: new Date(wo.createdAt).toISOString(),
         })),
       },
     },
     stock: {
       lowStockCount: lowStockProducts.length,
-      lowStockItems: lowStockProducts.map((p: any) => ({
+      lowStockItems: lowStockProducts.map((p) => ({
         id: p.id,
         name: p.name,
         stock: p.stock,
@@ -547,8 +531,8 @@ export async function getDashboardData(): Promise<DashboardData> {
     readyForDelivery,
     topProducts,
     debtors: {
-      totalDebt: decimalToNumber(debtorsAgg._sum.balance) || 0,
-      count: debtorsAgg._count.id,
+      totalDebt: decimalToNumber(debtorsAgg[0]?.balanceSum) || 0,
+      count: Number(debtorsAgg[0]?.idCount ?? 0),
       topDebtors: topDebtors.map((d) => ({
         name: d.name,
         balance: decimalToNumber(d.balance),
@@ -556,7 +540,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     },
     cashStatus: {
       isOpen: isCashOpen,
-      openedAt: lastCashMovement?.createdAt?.toISOString() || null,
+      openedAt: lastCashMovement?.createdAt ? new Date(lastCashMovement.createdAt).toISOString() : null,
       balance: cashBalance,
     },
     paymentsByMethod: paymentsByMethodArray,
@@ -571,24 +555,21 @@ export async function getDashboardData(): Promise<DashboardData> {
 export async function getDailyOperations(
   date: Date,
 ): Promise<DailyOperationsData> {
-  const startOfDay = getArgentinaStartOfDay(date);
-  const endOfDay = getArgentinaEndOfDay(date);
+  const startOfDay = getArgentinaStartOfDay(date).toISOString();
+  const endOfDay = getArgentinaEndOfDay(date).toISOString();
 
   const [movements, paymentMethods] = await Promise.all([
-    prisma.cash_movement.findMany({
-      where: {
-        createdAt: {
-          gte: startOfDay,
-          lte: endOfDay,
-        },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
+    db.query.cashMovement.findMany({
+      where: and(
+        gte(cashMovement.createdAt, startOfDay),
+        lte(cashMovement.createdAt, endOfDay),
+      ),
+      orderBy: desc(cashMovement.createdAt),
     }),
-    prisma.payment_method.findMany({
-      select: { code: true, name: true },
-    }),
+    db.select({
+      code: paymentMethod.code,
+      name: paymentMethod.name,
+    }).from(paymentMethod),
   ]);
 
   const methodMap = Object.fromEntries(
@@ -599,50 +580,50 @@ export async function getDailyOperations(
   // Enriquecer movimientos con información de cliente y referencias
   const enrichedMovements = await Promise.all(
     movements.map(async (m) => {
-      let customer = undefined;
+      let customerRec = undefined;
       let relatedId = undefined;
       let relatedType: "work_order" | "direct_sale" | undefined = undefined;
 
       try {
         if (m.referenceType === "work_order_payment" && m.referenceId) {
-          const payment = await prisma.payment.findUnique({
-            where: { id: m.referenceId },
-            include: {
+          const payRec = await db.query.payment.findFirst({
+            where: eq(payment.id, m.referenceId),
+            with: {
               workOrder: {
-                include: { customer: { select: { id: true, name: true } } },
+                with: { customer: { columns: { id: true, name: true } } },
               },
             },
           });
-          if (payment?.workOrder) {
-            customer = payment.workOrder.customer;
-            relatedId = payment.workOrder.id;
+          if (payRec?.workOrder) {
+            customerRec = payRec.workOrder.customer;
+            relatedId = payRec.workOrder.id;
             relatedType = "work_order";
           }
         } else if (m.referenceType === "direct_sale_payment" && m.referenceId) {
-          const dsPayment = await prisma.direct_sale_payment.findUnique({
-            where: { id: m.referenceId },
-            include: {
+          const dsPayment = await db.query.directSalePayment.findFirst({
+            where: eq(directSalePayment.id, m.referenceId),
+            with: {
               directSale: {
-                include: { customer: { select: { id: true, name: true } } },
+                with: { customer: { columns: { id: true, name: true } } },
               },
             },
           });
           if (dsPayment?.directSale) {
             if (dsPayment.directSale.customer) {
-              customer = dsPayment.directSale.customer;
+              customerRec = dsPayment.directSale.customer;
             } else {
-              customer = { id: "", name: dsPayment.directSale.customerName };
+              customerRec = { id: "", name: dsPayment.directSale.customerName };
             }
             relatedId = dsPayment.directSale.id;
             relatedType = "direct_sale";
           }
         } else if (m.referenceType === "customer_payment" && m.referenceId) {
-          const cust = await prisma.customer.findUnique({
-            where: { id: m.referenceId },
-            select: { id: true, name: true },
+          const cust = await db.query.customer.findFirst({
+            where: eq(customer.id, m.referenceId),
+            columns: { id: true, name: true },
           });
           if (cust) {
-            customer = cust;
+            customerRec = cust;
           }
         }
       } catch (err) {
@@ -659,9 +640,9 @@ export async function getDailyOperations(
         referenceType: m.referenceType ?? undefined,
         reason: m.reason ?? undefined,
         notes: m.notes ?? undefined,
-        createdAt: m.createdAt.toISOString(),
+        createdAt: new Date(m.createdAt).toISOString(),
         createdBy: m.createdBy,
-        customer,
+        customer: customerRec,
         relatedId,
         relatedType,
       };

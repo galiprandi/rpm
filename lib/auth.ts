@@ -6,23 +6,23 @@
  */
 
 import { betterAuth } from 'better-auth';
-import { prismaAdapter } from 'better-auth/adapters/prisma';
-import { prisma } from './prisma';
+import { drizzleAdapter } from 'better-auth/adapters/drizzle';
+import { db } from './db';
 
 /**
  * Better Auth configuration
  * 
  * Features:
  * - Google OAuth 2.0 authentication
- * - Prisma database adapter
+ * - Drizzle database adapter
  * - Role-based access control (via ADMIN_EMAILS env in auth-server.ts)
  * - Session management
  * - TypeScript-first approach
  */
 export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET,
-  database: prismaAdapter(prisma, {
-    provider: 'postgresql',
+  database: drizzleAdapter(db, {
+    provider: 'pg',
   }),
   
   user: {

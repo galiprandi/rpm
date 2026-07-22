@@ -6,7 +6,7 @@
  * 
  * Alcance del test:
  * - Validación de conexión a base de datos
- * - Configuración de Prisma client
+ * - Configuración de Drizzle client
  * - Health check endpoint
  * 
  * Métricas cubiertas:
@@ -15,34 +15,37 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
+import { sql } from 'drizzle-orm';
 
 describe('Database Configuration', () => {
   beforeAll(async () => {
-    // Setup: ensure database is available for tests
+    // Drizzle's Pool auto-connects; no explicit connect needed.
+    // We verify connectivity with a simple query.
     try {
-      await prisma.$connect();
+      await db.execute(sql`SELECT 1 as test`);
     } catch (error) {
       console.warn('Database not available for tests:', error);
     }
   });
 
   afterAll(async () => {
-    // Cleanup: disconnect from database
-    await prisma.$disconnect();
+    // Drizzle's Pool is managed globally; no explicit disconnect needed in tests.
+    // The pool is reused across tests via globalForDb.
   });
 
-  describe('Prisma Client Setup', () => {
-    it('should have prisma client configured', () => {
-      expect(prisma).toBeDefined();
-      expect(typeof prisma.$queryRaw).toBe('function');
+  describe('Drizzle Client Setup', () => {
+    it('should have db client configured', () => {
+      expect(db).toBeDefined();
+      expect(typeof db.execute).toBe('function');
     });
 
     it('should execute basic query successfully', async () => {
       try {
-        const result = await prisma.$queryRaw`SELECT 1 as test`;
+        const result = await db.execute(sql`SELECT 1 as test`);
         expect(result).toBeDefined();
-        expect(Array.isArray(result)).toBe(true);
+        expect(result.rows).toBeDefined();
+        expect(Array.isArray(result.rows)).toBe(true);
       } catch (queryError) {
         // If database is not running, test should be skipped
         expect(queryError).toBeInstanceOf(Error);
@@ -96,11 +99,11 @@ describe('Database Configuration', () => {
     });
   });
 
-  describe('Prisma Schema Validation', () => {
+  describe('Drizzle Schema Validation', () => {
     it('should have valid schema file', async () => {
       try {
         // This will throw if schema is invalid
-        await prisma.$queryRaw`SELECT current_database()`;
+        await db.execute(sql`SELECT current_database()`);
         expect(true).toBe(true); // If we get here, schema is valid
       } catch (schemaError) {
         // Schema validation failed

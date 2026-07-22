@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionWithAuth } from "@/lib/api-middleware";
 import { hasRole, UserRole } from "@/lib/auth/roles";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { cashMovement } from "@/db/schema";
+import { eq, gte, lte, and, desc } from "drizzle-orm";
+import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
 import { invalidateCashStatus } from "@/lib/cache";
+import { toISODate } from "@/lib/utils/date";
 
 // GET /api/cash-movements - List cash movements
 export async function GET(request: NextRequest) {
@@ -20,23 +24,28 @@ export async function GET(request: NextRequest) {
     const method = searchParams.get("method");
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const where: any = {};
+    const conditions: any[] = [];
 
     if (startDate || endDate) {
-      where.createdAt = {};
-      if (startDate) where.createdAt.gte = new Date(startDate);
-      if (endDate) where.createdAt.lte = new Date(endDate);
+      if (startDate) conditions.push(gte(cashMovement.createdAt, new Date(startDate).toISOString()));
+      if (endDate) conditions.push(lte(cashMovement.createdAt, new Date(endDate).toISOString()));
     }
 
-    if (type) where.type = type;
-    if (method) where.method = method;
+    if (type) conditions.push(eq(cashMovement.type, type));
+    if (method) conditions.push(eq(cashMovement.method, method));
 
-    const movements = await prisma.cash_movement.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
+    const movements = await db.query.cashMovement.findMany({
+      where: conditions.length > 0 ? and(...conditions) : undefined,
+      orderBy: desc(cashMovement.createdAt),
     });
 
-    return NextResponse.json({ movements });
+    return NextResponse.json({
+      movements: movements.map((m) => ({
+        ...m,
+        amount: Number(m.amount),
+        createdAt: toISODate(m.createdAt),
+      })),
+    });
   } catch (error) {
     console.error("Error fetching cash movements:", error);
     return NextResponse.json(
@@ -72,23 +81,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const movement = await prisma.cash_movement.create({
-      data: {
+    const [movement] = await db
+      .insert(cashMovement)
+      .values({
         type,
-        amount,
+        amount: amount.toString(),
         method,
         referenceType: "manual",
         reason,
         notes,
         createdBy: session.user.id,
-      },
-    });
+      })
+      .returning();
 
     // Invalidate dashboard cache to show fresh data
     revalidatePath("/adm");
     invalidateCashStatus();
 
-    return NextResponse.json({ movement }, { status: 201 });
+    return NextResponse.json({
+      movement: {
+        ...movement,
+        amount: Number(movement.amount),
+        createdAt: toISODate(movement.createdAt),
+      },
+    }, { status: 201 });
   } catch (error) {
     console.error("Error creating cash movement:", error);
     return NextResponse.json(

@@ -15,12 +15,11 @@ export const PATCH = withStaffDynamic(async (request: NextRequest, { params }: P
   const body = await request.json();
   const { quantity, unitCost, priceListData } = body;
 
-  const { Decimal } = await import('@prisma/client/runtime/library');
   try {
     const updated = await updateVoucherItem({
       itemId,
       quantity: quantity !== undefined ? parseInt(quantity) : undefined,
-      unitCost: unitCost !== undefined ? new Decimal(unitCost) : undefined,
+      unitCost: unitCost !== undefined ? Number(unitCost) : undefined,
       priceListData: priceListData || undefined,
     });
     return NextResponse.json(updated);

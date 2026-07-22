@@ -8,6 +8,35 @@ import {
   updateInvoiceBillingData,
 } from "@/lib/services/invoiceService";
 import { validateCUIT } from "@/lib/services/afipService";
+import { toISODate } from "@/lib/utils/date";
+import { serializeDrizzleResult } from "@/lib/utils/serialization";
+
+/**
+ * Normalizes an invoice row returned by Drizzle (mode: 'string') so that
+ * API consumers receive ISO 8601 timestamps and numeric decimals instead of
+ * raw PG timestamp strings and stringified numerics.
+ */
+function serializeInvoice<T extends Record<string, unknown>>(invoice: T) {
+  return {
+    ...invoice,
+    subtotal: Number(invoice.subtotal),
+    tax: invoice.tax != null ? Number(invoice.tax) : invoice.tax,
+    total: Number(invoice.total),
+    iva21: invoice.iva21 != null ? Number(invoice.iva21) : invoice.iva21,
+    iva105: invoice.iva105 != null ? Number(invoice.iva105) : invoice.iva105,
+    // perceptions/exemptions are jsonb — only coerce when they hold a primitive
+    perceptions:
+      typeof invoice.perceptions === "string" || typeof invoice.perceptions === "number"
+        ? Number(invoice.perceptions)
+        : invoice.perceptions,
+    exemptions:
+      typeof invoice.exemptions === "string" || typeof invoice.exemptions === "number"
+        ? Number(invoice.exemptions)
+        : invoice.exemptions,
+    createdAt: toISODate(invoice.createdAt),
+    issuedAt: toISODate(invoice.issuedAt),
+  };
+}
 
 // GET /api/invoices/[id] - Get invoice by ID
 export async function GET(
@@ -28,7 +57,7 @@ export async function GET(
       return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
     }
 
-    return NextResponse.json(invoice);
+    return NextResponse.json(serializeDrizzleResult(serializeInvoice(invoice)));
   } catch (error) {
     console.error("Error fetching invoice:", error);
     return NextResponse.json(
@@ -60,7 +89,7 @@ export async function PATCH(
       }
 
       const invoice = await updateInvoiceStatus(id, status, issuedAt);
-      return NextResponse.json({ invoice });
+      return NextResponse.json({ invoice: serializeInvoice(invoice) });
     }
 
     // Case 2: Billing data update
@@ -95,7 +124,7 @@ export async function PATCH(
         customerDocType,
       });
 
-      return NextResponse.json({ invoice });
+      return NextResponse.json({ invoice: serializeInvoice(invoice) });
     }
 
     return NextResponse.json({ error: "No se proporcionaron datos para actualizar" }, { status: 400 });

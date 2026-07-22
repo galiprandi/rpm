@@ -1,4 +1,6 @@
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { customer, workOrder, directSale } from "@/db/schema";
+import { eq, and, inArray, gte, lte, isNotNull, sql, count, sum, max } from "drizzle-orm";
 import { ARGENTINA_TIMEZONE } from "@/lib/utils/date";
 
 export type GroupBy = "hour" | "day" | "month";
@@ -45,44 +47,31 @@ export interface CustomerReportData {
   generatedAt: string;
 }
 
-function decimalToNumber(decimal: unknown): number {
-  if (decimal === null || decimal === undefined) return 0;
-  if (typeof decimal === "number") return decimal;
-  if (
-    typeof decimal === "object" &&
-    decimal !== null &&
-    "toNumber" in decimal &&
-    typeof (decimal as { toNumber: unknown }).toNumber === "function"
-  ) {
-    return (decimal as { toNumber: () => number }).toNumber();
-  }
-  return Number(decimal);
+function decimalToNumber(value: unknown): number {
+  if (value === null || value === undefined) return 0;
+  if (typeof value === "number") return value;
+  return Number(value) || 0;
 }
 
 async function getNewCustomersCount(start: Date, end: Date) {
-  return prisma.customer.count({
-    where: {
-      createdAt: { gte: start, lte: end },
-    },
-  });
+  const result = await db.select({ count: count(customer.id) })
+    .from(customer).where(and(gte(customer.createdAt, start.toISOString()), lte(customer.createdAt, end.toISOString())));
+  return Number(result[0]?.count ?? 0);
 }
 
 async function getActiveCustomersMetrics(start: Date, end: Date) {
+  const saleStatuses = ["DELIVERED", "READY", "PAID"];
   const [workOrders, directSales] = await Promise.all([
-    prisma.work_order.findMany({
-      where: {
-        completedAt: { gte: start, lte: end },
-        status: { in: ["DELIVERED", "READY", "PAID"] },
-      },
-      select: { customerId: true },
-    }),
-    prisma.direct_sale.findMany({
-      where: {
-        createdAt: { gte: start, lte: end },
-        customerId: { not: null },
-      },
-      select: { customerId: true },
-    }),
+    db.select({ customerId: workOrder.customerId }).from(workOrder).where(and(
+      gte(workOrder.completedAt, start.toISOString()),
+      lte(workOrder.completedAt, end.toISOString()),
+      inArray(workOrder.status, saleStatuses),
+    )),
+    db.select({ customerId: directSale.customerId }).from(directSale).where(and(
+      gte(directSale.createdAt, start.toISOString()),
+      lte(directSale.createdAt, end.toISOString()),
+      isNotNull(directSale.customerId),
+    )),
   ]);
 
   const customerIds = new Set([
@@ -94,22 +83,18 @@ async function getActiveCustomersMetrics(start: Date, end: Date) {
 }
 
 async function getRecurrenceMetrics(start: Date, end: Date) {
-  // Get all customers who had activity in the period
+  const saleStatuses = ["DELIVERED", "READY", "PAID"];
   const [workOrders, directSales] = await Promise.all([
-    prisma.work_order.findMany({
-      where: {
-        completedAt: { gte: start, lte: end },
-        status: { in: ["DELIVERED", "READY", "PAID"] },
-      },
-      select: { customerId: true },
-    }),
-    prisma.direct_sale.findMany({
-      where: {
-        createdAt: { gte: start, lte: end },
-        customerId: { not: null },
-      },
-      select: { customerId: true },
-    }),
+    db.select({ customerId: workOrder.customerId }).from(workOrder).where(and(
+      gte(workOrder.completedAt, start.toISOString()),
+      lte(workOrder.completedAt, end.toISOString()),
+      inArray(workOrder.status, saleStatuses),
+    )),
+    db.select({ customerId: directSale.customerId }).from(directSale).where(and(
+      gte(directSale.createdAt, start.toISOString()),
+      lte(directSale.createdAt, end.toISOString()),
+      isNotNull(directSale.customerId),
+    )),
   ]);
 
   const activeCustomerIds = Array.from(new Set([
@@ -120,31 +105,28 @@ async function getRecurrenceMetrics(start: Date, end: Date) {
   if (activeCustomerIds.length === 0) return 0;
 
   // For these active customers, check how many have > 1 total transactions (all time)
-  // To avoid N+1 queries, we aggregate for all active customers at once
   const [woCounts, dsCounts] = await Promise.all([
-    prisma.work_order.groupBy({
-      by: ['customerId'],
-      where: {
-        customerId: { in: activeCustomerIds },
-        status: { in: ["DELIVERED", "READY", "PAID"] }
-      },
-      _count: { id: true }
-    }),
-    prisma.direct_sale.groupBy({
-      by: ['customerId'],
-      where: {
-        customerId: { in: activeCustomerIds }
-      },
-      _count: { id: true }
-    })
+    db.select({
+      customerId: workOrder.customerId,
+      count: count(workOrder.id),
+    }).from(workOrder).where(and(
+      inArray(workOrder.customerId, activeCustomerIds),
+      inArray(workOrder.status, saleStatuses),
+    )).groupBy(workOrder.customerId),
+    db.select({
+      customerId: directSale.customerId,
+      count: count(directSale.id),
+    }).from(directSale).where(
+      inArray(directSale.customerId, activeCustomerIds),
+    ).groupBy(directSale.customerId),
   ]);
 
   const totalCounts: Record<string, number> = {};
   woCounts.forEach(c => {
-    if (c.customerId) totalCounts[c.customerId] = (totalCounts[c.customerId] || 0) + c._count.id;
+    if (c.customerId) totalCounts[c.customerId] = (totalCounts[c.customerId] || 0) + Number(c.count);
   });
   dsCounts.forEach(c => {
-    if (c.customerId) totalCounts[c.customerId] = (totalCounts[c.customerId] || 0) + c._count.id;
+    if (c.customerId) totalCounts[c.customerId] = (totalCounts[c.customerId] || 0) + Number(c.count);
   });
 
   const recurringCount = activeCustomerIds.filter(id => (totalCounts[id] || 0) > 1).length;
@@ -292,14 +274,12 @@ export async function getCustomerReport(params: CustomerReportParams): Promise<C
   };
 
   // 2. Evolution (New Customers)
-  const newCustomers = await prisma.customer.findMany({
-    where: { createdAt: { gte: startDate, lte: endDate } },
-    select: { createdAt: true },
-  });
+  const newCustomers = await db.select({ createdAt: customer.createdAt })
+    .from(customer).where(and(gte(customer.createdAt, startDate.toISOString()), lte(customer.createdAt, endDate.toISOString())));
 
   const buckets = initializeBuckets(startDate, endDate, groupBy);
   newCustomers.forEach((c) => {
-    const { key } = getBucketKeyAndLabel(c.createdAt, groupBy);
+    const { key } = getBucketKeyAndLabel(new Date(c.createdAt), groupBy);
     if (buckets[key]) buckets[key].count += 1;
   });
 
@@ -312,28 +292,28 @@ export async function getCustomerReport(params: CustomerReportParams): Promise<C
     .sort((a, b) => a.date.localeCompare(b.date));
 
   // 3. Top Customers by billing
-  // We need to aggregate totals from Work Orders and Direct Sales
+  const saleStatuses = ["DELIVERED", "READY", "PAID"];
   const [woBilling, dsBilling] = await Promise.all([
-    prisma.work_order.groupBy({
-      by: ['customerId'],
-      where: {
-        completedAt: { gte: startDate, lte: endDate },
-        status: { in: ["DELIVERED", "READY", "PAID"] }
-      },
-      _sum: { total: true },
-      _count: { id: true },
-      _max: { completedAt: true }
-    }),
-    prisma.direct_sale.groupBy({
-      by: ['customerId'],
-      where: {
-        createdAt: { gte: startDate, lte: endDate },
-        customerId: { not: null }
-      },
-      _sum: { total: true },
-      _count: { id: true },
-      _max: { createdAt: true }
-    })
+    db.select({
+      customerId: workOrder.customerId,
+      totalSum: sum(workOrder.total),
+      idCount: count(workOrder.id),
+      completedAtMax: max(workOrder.completedAt),
+    }).from(workOrder).where(and(
+      gte(workOrder.completedAt, startDate.toISOString()),
+      lte(workOrder.completedAt, endDate.toISOString()),
+      inArray(workOrder.status, saleStatuses),
+    )).groupBy(workOrder.customerId),
+    db.select({
+      customerId: directSale.customerId,
+      totalSum: sum(directSale.total),
+      idCount: count(directSale.id),
+      createdAtMax: max(directSale.createdAt),
+    }).from(directSale).where(and(
+      gte(directSale.createdAt, startDate.toISOString()),
+      lte(directSale.createdAt, endDate.toISOString()),
+      isNotNull(directSale.customerId),
+    )).groupBy(directSale.customerId),
   ]);
 
   const customerStats: Record<string, { total: number; count: number; lastDate: Date }> = {};
@@ -343,10 +323,10 @@ export async function getCustomerReport(params: CustomerReportParams): Promise<C
     if (!customerStats[item.customerId]) {
       customerStats[item.customerId] = { total: 0, count: 0, lastDate: new Date(0) };
     }
-    customerStats[item.customerId].total += decimalToNumber(item._sum.total);
-    customerStats[item.customerId].count += item._count.id;
-    if (item._max.completedAt && item._max.completedAt > customerStats[item.customerId].lastDate) {
-      customerStats[item.customerId].lastDate = item._max.completedAt;
+    customerStats[item.customerId].total += decimalToNumber(item.totalSum);
+    customerStats[item.customerId].count += Number(item.idCount);
+    if (item.completedAtMax && new Date(item.completedAtMax) > customerStats[item.customerId].lastDate) {
+      customerStats[item.customerId].lastDate = new Date(item.completedAtMax);
     }
   });
 
@@ -355,10 +335,10 @@ export async function getCustomerReport(params: CustomerReportParams): Promise<C
     if (!customerStats[item.customerId]) {
       customerStats[item.customerId] = { total: 0, count: 0, lastDate: new Date(0) };
     }
-    customerStats[item.customerId].total += decimalToNumber(item._sum.total);
-    customerStats[item.customerId].count += item._count.id;
-    if (item._max.createdAt && item._max.createdAt > customerStats[item.customerId].lastDate) {
-      customerStats[item.customerId].lastDate = item._max.createdAt;
+    customerStats[item.customerId].total += decimalToNumber(item.totalSum);
+    customerStats[item.customerId].count += Number(item.idCount);
+    if (item.createdAtMax && new Date(item.createdAtMax) > customerStats[item.customerId].lastDate) {
+      customerStats[item.customerId].lastDate = new Date(item.createdAtMax);
     }
   });
 
@@ -366,10 +346,10 @@ export async function getCustomerReport(params: CustomerReportParams): Promise<C
     .sort((a, b) => customerStats[b].total - customerStats[a].total)
     .slice(0, 10);
 
-  const topCustomerDetails = await prisma.customer.findMany({
-    where: { id: { in: sortedCustomerIds } },
-    select: { id: true, name: true }
-  });
+  const topCustomerDetails = sortedCustomerIds.length > 0
+    ? await db.select({ id: customer.id, name: customer.name })
+        .from(customer).where(inArray(customer.id, sortedCustomerIds))
+    : [];
 
   const topCustomers: TopCustomer[] = sortedCustomerIds.map(id => {
     const details = topCustomerDetails.find(d => d.id === id);

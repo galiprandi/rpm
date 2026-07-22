@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withStaff } from '@/lib/api-middleware';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
+import { cashMovement, user as userTable } from '@/db/schema';
+import { eq, desc, gte, lt, asc, and, count } from 'drizzle-orm';
 
 // Helper para convertir Decimal a number
 function decimalToNumber(decimal: unknown): number {
   if (decimal === null || decimal === undefined) return 0;
   if (typeof decimal === 'number') return decimal;
-  if (typeof decimal === 'object' && 'toNumber' in decimal && typeof decimal.toNumber === 'function') {
-    return (decimal as { toNumber: () => number }).toNumber();
-  }
+  if (typeof decimal === 'string') return Number(decimal);
   return 0;
 }
 
@@ -22,23 +22,19 @@ export const GET = withStaff(async (request: NextRequest) => {
     const skip = (page - 1) * limit;
 
     // Get all cash openings with their closings
-    const openings = await prisma.cash_movement.findMany({
-      where: {
-        type: 'OPENING',
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-      take: limit,
-      skip: skip,
+    const openings = await db.query.cashMovement.findMany({
+      where: eq(cashMovement.type, 'OPENING'),
+      orderBy: desc(cashMovement.createdAt),
+      limit,
+      offset: skip,
     });
 
     // Get total count for pagination
-    const totalCount = await prisma.cash_movement.count({
-      where: {
-        type: 'OPENING',
-      },
-    });
+    const totalCountResult = await db
+      .select({ value: count() })
+      .from(cashMovement)
+      .where(eq(cashMovement.type, 'OPENING'));
+    const totalCount = totalCountResult[0]?.value || 0;
 
     // For each opening, find the corresponding closing and calculate totals
     const history = await Promise.all(
@@ -48,26 +44,22 @@ export const GET = withStaff(async (request: NextRequest) => {
         nextDay.setDate(nextDay.getDate() + 1);
 
         // Find closing for this opening (no date restriction, just after opening)
-        const closing = await prisma.cash_movement.findFirst({
-          where: {
-            type: 'CLOSING',
-            createdAt: {
-              gte: openingDate,
-            },
-          },
-          orderBy: {
-            createdAt: 'asc',
-          },
+        const closing = await db.query.cashMovement.findFirst({
+          where: and(
+            eq(cashMovement.type, 'CLOSING'),
+            gte(cashMovement.createdAt, openingDate.toISOString()),
+          ),
+          orderBy: asc(cashMovement.createdAt),
         });
 
         // Get all movements between opening and closing (or end of day)
-        const movements = await prisma.cash_movement.findMany({
-          where: {
-            createdAt: {
-              gte: openingDate,
-              lt: closing ? closing.createdAt : nextDay,
-            },
-          },
+        const movements = await db.query.cashMovement.findMany({
+          where: and(
+            gte(cashMovement.createdAt, openingDate.toISOString()),
+            closing
+              ? lt(cashMovement.createdAt, closing.createdAt)
+              : lt(cashMovement.createdAt, nextDay.toISOString()),
+          ),
         });
 
         // Calculate totals
@@ -116,37 +108,42 @@ export const GET = withStaff(async (request: NextRequest) => {
         }
 
         // Get user names (executor and responsible)
-        const openedByUser = await prisma.user.findUnique({
-          where: { id: opening.createdBy },
-          select: { name: true },
-        });
+        const openedByUser = await db
+          .select({ name: userTable.name })
+          .from(userTable)
+          .where(eq(userTable.id, opening.createdBy))
+          .limit(1);
 
         // Get responsible user (cajero de turno)
-        let responsibleUser = null;
+        let responsibleUser: { name: string } | null = null;
         if (opening.responsibleId) {
-          responsibleUser = await prisma.user.findUnique({
-            where: { id: opening.responsibleId },
-            select: { name: true },
-          });
+          const respUser = await db
+            .select({ name: userTable.name })
+            .from(userTable)
+            .where(eq(userTable.id, opening.responsibleId))
+            .limit(1);
+          responsibleUser = respUser[0] || null;
         }
 
-        let closedByUser = null;
+        let closedByUser: { name: string } | null = null;
         if (closing) {
-          closedByUser = await prisma.user.findUnique({
-            where: { id: closing.createdBy },
-            select: { name: true },
-          });
+          const closedUser = await db
+            .select({ name: userTable.name })
+            .from(userTable)
+            .where(eq(userTable.id, closing.createdBy))
+            .limit(1);
+          closedByUser = closedUser[0] || null;
         }
 
         return {
           id: opening.id,
-          date: opening.createdAt.toISOString().split('T')[0],
-          openedAt: opening.createdAt.toISOString(),
-          openedBy: openedByUser?.name || 'Unknown',
+          date: new Date(opening.createdAt).toISOString().split('T')[0],
+          openedAt: new Date(opening.createdAt).toISOString(),
+          openedBy: openedByUser[0]?.name || 'Unknown',
           openedById: opening.createdBy,
-          responsibleBy: responsibleUser?.name || openedByUser?.name || 'Unknown',
+          responsibleBy: responsibleUser?.name || openedByUser[0]?.name || 'Unknown',
           responsibleById: opening.responsibleId || opening.createdBy,
-          closedAt: closing?.createdAt?.toISOString() || null,
+          closedAt: closing?.createdAt ? new Date(closing.createdAt).toISOString() : null,
           closedBy: closedByUser?.name || null,
           closedById: closing?.createdBy || null,
           openingAmount: decimalToNumber(opening.amount),

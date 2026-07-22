@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Database Reset Script - Production
- * 
+ *
  * ⚠️ WARNING: This will DELETE ALL DATA in the database
  * Only use when confirmed safe to do so
  */
@@ -11,23 +11,16 @@ import { execSync } from 'child_process';
 console.log('🗑️  Resetting database...');
 
 try {
-  // Step 1: Reset database (drop all tables)
-  console.log('Step 1: Dropping all tables...');
-  execSync('pnpm prisma migrate reset --force --skip-generate', {
+  // Step 1: Drop all tables and reapply schema
+  console.log('Step 1: Push schema (drop + recreate)...');
+  execSync('pnpm drizzle-kit push --force', {
     stdio: 'inherit',
     env: { ...process.env, NODE_ENV: 'production' }
   });
 
-  // Step 2: Apply all migrations fresh
-  console.log('Step 2: Applying migrations...');
-  execSync('pnpm prisma migrate deploy', {
-    stdio: 'inherit',
-    env: { ...process.env, NODE_ENV: 'production' }
-  });
-
-  // Step 3: Run seed
-  console.log('Step 3: Seeding database...');
-  execSync('pnpm prisma db seed', {
+  // Step 2: Run seed
+  console.log('Step 2: Seeding database...');
+  execSync('pnpm db:seed', {
     stdio: 'inherit',
     env: { ...process.env, NODE_ENV: 'production' }
   });
