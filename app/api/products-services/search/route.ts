@@ -36,6 +36,7 @@ interface SearchResult {
   sku?: string;
   ean?: string;
   stock?: number;
+  location?: string;
   categoryId?: string;
   categoryName?: string;
   replacementCost?: number;
@@ -379,7 +380,7 @@ export async function GET(request: NextRequest) {
     };
 
     // Transformar productos
-    const productResults: SearchResult[] = products.map((product: any) => {
+    const productResults: SearchResult[] = products.map((product) => {
       const baseCost = getProductBaseCost(
         product.replacementCost,
         product.costPrice,
@@ -438,6 +439,7 @@ export async function GET(request: NextRequest) {
         sku: product.sku || undefined,
         ean: product.barcode || undefined,
         stock: product.stock,
+        location: product.location || undefined,
         categoryId: product.categoryId || undefined,
         categoryName: product.category?.name || undefined,
         replacementCost: Number(product.replacementCost) || undefined,
