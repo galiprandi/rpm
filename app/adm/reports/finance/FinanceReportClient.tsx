@@ -362,7 +362,7 @@ export default function FinanceReportClient() {
               <Card className="lg:col-span-2">
                 <CardHeader>
                   <CardTitle className="text-lg font-medium flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5 text-primary" />
+                    <TrendingUp className="h-5 w-5 text-primary pointer-events-none" aria-hidden="true" />
                     Evolución de Caja
                   </CardTitle>
                 </CardHeader>
@@ -390,8 +390,8 @@ export default function FinanceReportClient() {
                                 />
                               </div>
                               <div className="opacity-0 group-hover:opacity-100 absolute -top-12 left-1/2 -translate-x-1/2 bg-popover text-popover-foreground text-[10px] px-2 py-1 rounded shadow-md z-10 whitespace-nowrap border">
-                                <div className="text-emerald-600 font-bold">Ingreso: {formatARS(item.income)}</div>
-                                <div className="text-red-600 font-bold">Egreso: {formatARS(item.expense)}</div>
+                                <div className="text-emerald-700 font-bold">Ingreso: {formatARS(item.income)}</div>
+                                <div className="text-red-700 font-bold">Egreso: {formatARS(item.expense)}</div>
                               </div>
                               <span className="text-[10px] text-muted-foreground mt-2 truncate w-full text-center">
                                 {item.label}
@@ -418,7 +418,7 @@ export default function FinanceReportClient() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg font-medium flex items-center gap-2">
-                    <CreditCard className="h-5 w-5 text-primary" />
+                    <CreditCard className="h-5 w-5 text-primary pointer-events-none" aria-hidden="true" />
                     Por Medio de Pago
                   </CardTitle>
                 </CardHeader>
@@ -441,8 +441,8 @@ export default function FinanceReportClient() {
                             </span>
                           </div>
                           <div className="flex items-center justify-between text-[10px] text-muted-foreground font-mono">
-                            <span className="text-emerald-600">+{formatARS(item.income)}</span>
-                            <span className="text-red-600">-{formatARS(item.expense)}</span>
+                            <span className="text-emerald-700">+{formatARS(item.income)}</span>
+                            <span className="text-red-700">-{formatARS(item.expense)}</span>
                           </div>
                           <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">
                             <div

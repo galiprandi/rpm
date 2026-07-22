@@ -31,7 +31,6 @@ import {
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
@@ -143,21 +142,20 @@ export default function StockReportClient() {
   if (!data) return null;
 
   return (
-    <TooltipProvider>
-      <div className="space-y-6">
-        <Header
-          title="Stock & Inventario"
-          description="Valorización de stock, rotación y alertas de reposición."
-          secondaryActions={[
-            {
-              label: "Exportar CSV",
-              onClick: exportToCSV,
-              disabled: loading || !data,
-              icon: Download,
-              variant: "outline",
-            },
-          ]}
-        />
+    <div className="space-y-6">
+      <Header
+        title="Stock & Inventario"
+        description="Valorización de stock, rotación y alertas de reposición."
+        secondaryActions={[
+          {
+            label: "Exportar CSV",
+            onClick: exportToCSV,
+            disabled: loading || !data,
+            icon: Download,
+            variant: "outline",
+          },
+        ]}
+      />
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <MetricCard
@@ -204,7 +202,7 @@ export default function StockReportClient() {
         <Card>
           <CardHeader>
             <CardTitle className="text-lg font-medium flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-primary" />
+              <TrendingUp className="h-5 w-5 text-primary pointer-events-none" aria-hidden="true" />
               Top 5 Inversión por Producto
             </CardTitle>
             <CardDescription>Productos con mayor capital inmovilizado</CardDescription>
@@ -231,7 +229,7 @@ export default function StockReportClient() {
         <Card>
           <CardHeader>
             <CardTitle className="text-lg font-medium flex items-center gap-2">
-              <Layers className="h-5 w-5 text-primary" />
+              <Layers className="h-5 w-5 text-primary pointer-events-none" aria-hidden="true" />
               Distribución por Categoría
             </CardTitle>
             <CardDescription>Valorización agrupada por categoría</CardDescription>
@@ -323,7 +321,7 @@ export default function StockReportClient() {
                                 <Link
                                   href={`/adm/products?search=${product.name}`}
                                 >
-                                  <ExternalLink className="h-4 w-4" />
+                                  <ExternalLink className="h-4 w-4 pointer-events-none" aria-hidden="true" />
                                 </Link>
                               </Button>
                             </TooltipTrigger>
@@ -402,7 +400,7 @@ export default function StockReportClient() {
                                 <Link
                                   href={`/adm/products?search=${product.name}`}
                                 >
-                                  <ExternalLink className="h-4 w-4" />
+                                  <ExternalLink className="h-4 w-4 pointer-events-none" aria-hidden="true" />
                                 </Link>
                               </Button>
                             </TooltipTrigger>
@@ -419,6 +417,5 @@ export default function StockReportClient() {
         </Card>
       </div>
     </div>
-    </TooltipProvider>
   );
 }

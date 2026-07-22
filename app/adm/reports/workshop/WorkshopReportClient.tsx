@@ -371,7 +371,7 @@ export default function WorkshopReportClient() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg font-medium flex items-center gap-2">
-                    <BarChart3 className="h-5 w-5 text-primary" />
+                    <BarChart3 className="h-5 w-5 text-primary pointer-events-none" aria-hidden="true" />
                     Distribución por Estado
                   </CardTitle>
                 </CardHeader>
@@ -413,7 +413,7 @@ export default function WorkshopReportClient() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg font-medium flex items-center gap-2">
-                    <Users className="h-5 w-5 text-primary" />
+                    <Users className="h-5 w-5 text-primary pointer-events-none" aria-hidden="true" />
                     Performance de Técnicos
                   </CardTitle>
                 </CardHeader>
@@ -431,7 +431,7 @@ export default function WorkshopReportClient() {
                         >
                           <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                              <User className="h-4 w-4 text-primary" />
+                              <User className="h-4 w-4 text-primary pointer-events-none" aria-hidden="true" />
                             </div>
                             <div>
                               <p className="font-medium text-sm">
@@ -443,7 +443,7 @@ export default function WorkshopReportClient() {
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="text-sm font-bold text-emerald-600">
+                            <p className="text-sm font-bold text-emerald-700">
                               {tech.completedCount}
                             </p>
                             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
@@ -461,7 +461,7 @@ export default function WorkshopReportClient() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg font-medium flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-primary" />
+                  <TrendingUp className="h-5 w-5 text-primary pointer-events-none" aria-hidden="true" />
                   Evolución de OTs
                 </CardTitle>
               </CardHeader>
@@ -507,7 +507,7 @@ export default function WorkshopReportClient() {
                                 <span className="text-blue-600">
                                   Creadas: {item.created}
                                 </span>
-                                <span className="text-emerald-600">
+                                <span className="text-emerald-700">
                                   Completadas: {item.completed}
                                 </span>
                               </div>

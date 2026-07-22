@@ -378,7 +378,7 @@ export default function ProfitabilityReportClient() {
               <Card className="lg:col-span-2">
                 <CardHeader>
                   <CardTitle className="text-lg font-medium flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5 text-primary" />
+                    <TrendingUp className="h-5 w-5 text-primary pointer-events-none" aria-hidden="true" />
                     Evolución de Rentabilidad
                   </CardTitle>
                 </CardHeader>
@@ -414,7 +414,7 @@ export default function ProfitabilityReportClient() {
                               <div className="opacity-0 group-hover:opacity-100 absolute -top-16 left-1/2 -translate-x-1/2 bg-popover text-popover-foreground text-[10px] px-2 py-1 rounded shadow-md z-20 whitespace-nowrap border font-mono">
                                 <div className="text-muted-foreground">Ingreso: {formatARS(item.revenue)}</div>
                                 <div className="text-red-500">Costo: {formatARS(item.cost)}</div>
-                                <div className="text-emerald-600 font-bold">Ganancia: {formatARS(item.profit)}</div>
+                                <div className="text-emerald-700 font-bold">Ganancia: {formatARS(item.profit)}</div>
                               </div>
                               <span className="text-[10px] text-muted-foreground mt-2 truncate w-full text-center">
                                 {item.label}
@@ -445,7 +445,7 @@ export default function ProfitabilityReportClient() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg font-medium flex items-center gap-2">
-                    <Target className="h-5 w-5 text-primary" />
+                    <Target className="h-5 w-5 text-primary pointer-events-none" aria-hidden="true" />
                     Margen por Categoría
                   </CardTitle>
                 </CardHeader>
@@ -533,7 +533,7 @@ export default function ProfitabilityReportClient() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg font-medium flex items-center gap-2">
-                    <Users className="h-5 w-5 text-primary" />
+                    <Users className="h-5 w-5 text-primary pointer-events-none" aria-hidden="true" />
                     Ganancia por Técnico
                   </CardTitle>
                   <CardDescription>Rentabilidad generada en taller</CardDescription>
@@ -552,7 +552,7 @@ export default function ProfitabilityReportClient() {
                         >
                           <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                              <Users className="h-4 w-4 text-primary" />
+                              <Users className="h-4 w-4 text-primary pointer-events-none" aria-hidden="true" />
                             </div>
                             <div>
                               <p className="text-sm font-medium leading-none">
@@ -564,7 +564,7 @@ export default function ProfitabilityReportClient() {
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="text-sm font-mono font-bold text-emerald-600">
+                            <p className="text-sm font-mono font-bold text-emerald-700">
                               {formatARS(tech.profit)}
                             </p>
                             <p className="text-[10px] text-muted-foreground uppercase tracking-tight">Ganancia</p>

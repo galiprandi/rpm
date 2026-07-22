@@ -352,7 +352,7 @@ export default function ServicesReportClient() {
               <Card className="lg:col-span-2">
                 <CardHeader>
                   <CardTitle className="text-lg font-medium flex items-center gap-2">
-                    <BarChart3 className="h-5 w-5 text-primary" />
+                    <BarChart3 className="h-5 w-5 text-primary pointer-events-none" aria-hidden="true" />
                     Evolución de Ingresos
                   </CardTitle>
                   <CardDescription>
@@ -400,7 +400,7 @@ export default function ServicesReportClient() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg font-medium flex items-center gap-2">
-                    <Car className="h-5 w-5 text-primary" />
+                    <Car className="h-5 w-5 text-primary pointer-events-none" aria-hidden="true" />
                     Por Tipo de Vehículo
                   </CardTitle>
                   <CardDescription>Distribución de ingresos por categoría</CardDescription>
@@ -448,7 +448,7 @@ export default function ServicesReportClient() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg font-medium flex items-center gap-2">
-                    <Users className="h-5 w-5 text-primary" />
+                    <Users className="h-5 w-5 text-primary pointer-events-none" aria-hidden="true" />
                     Performance de Técnicos
                   </CardTitle>
                   <CardDescription>Ingresos generados por técnico</CardDescription>
@@ -467,7 +467,7 @@ export default function ServicesReportClient() {
                         >
                           <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                              <Users className="h-4 w-4 text-primary" />
+                              <Users className="h-4 w-4 text-primary pointer-events-none" aria-hidden="true" />
                             </div>
                             <div>
                               <p className="text-sm font-medium leading-none">
@@ -479,7 +479,7 @@ export default function ServicesReportClient() {
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="text-sm font-mono font-bold text-emerald-600">
+                            <p className="text-sm font-mono font-bold text-emerald-700">
                               {formatARS(tech.totalRevenue)}
                             </p>
                           </div>
