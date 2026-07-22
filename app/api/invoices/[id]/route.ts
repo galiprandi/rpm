@@ -9,6 +9,7 @@ import {
 } from "@/lib/services/invoiceService";
 import { validateCUIT } from "@/lib/services/afipService";
 import { toISODate } from "@/lib/utils/date";
+import { serializeDrizzleResult } from "@/lib/utils/serialization";
 
 /**
  * Normalizes an invoice row returned by Drizzle (mode: 'string') so that
@@ -56,7 +57,7 @@ export async function GET(
       return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
     }
 
-    return NextResponse.json(serializeInvoice(invoice));
+    return NextResponse.json(serializeDrizzleResult(serializeInvoice(invoice)));
   } catch (error) {
     console.error("Error fetching invoice:", error);
     return NextResponse.json(

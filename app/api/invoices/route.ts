@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionWithAuth } from "@/lib/api-middleware";
 import { getInvoices, createInvoice } from "@/lib/services/invoiceService";
 import { toISODate } from "@/lib/utils/date";
+import { serializeDrizzleResult } from "@/lib/utils/serialization";
 
 /**
  * Normalizes an invoice row returned by Drizzle (mode: 'string') so that
@@ -53,7 +54,7 @@ export async function GET(request: NextRequest) {
     };
 
     const invoices = await getInvoices(filters);
-    return NextResponse.json(invoices.map(serializeInvoice));
+    return NextResponse.json(serializeDrizzleResult(invoices.map(serializeInvoice)));
   } catch (error) {
     console.error("Error in GET /api/invoices:", error);
     return NextResponse.json(

@@ -3,6 +3,7 @@ import { withAdmin } from '@/lib/api-middleware';
 import { createCreditNote, getCreditNotes } from '@/lib/services/creditNoteService';
 import { isCashRegisterOpen } from '@/lib/services/cashMovementService';
 import { toISODate } from '@/lib/utils/date';
+import { serializeDrizzleResult } from '@/lib/utils/serialization';
 
 export const POST = withAdmin(async (request: NextRequest, session) => {
   try {
@@ -111,7 +112,13 @@ export const GET = withAdmin(async (request: NextRequest) => {
 
     const creditNotes = await getCreditNotes(filters);
 
-    return NextResponse.json(creditNotes);
+    return NextResponse.json(serializeDrizzleResult(creditNotes.map((cn: any) => ({
+      ...cn,
+      total: cn.total != null ? Number(cn.total) : cn.total,
+      cashAmount: cn.cashAmount != null ? Number(cn.cashAmount) : cn.cashAmount,
+      accountCreditAmount: cn.accountCreditAmount != null ? Number(cn.accountCreditAmount) : cn.accountCreditAmount,
+      createdAt: toISODate(cn.createdAt),
+    }))));
   } catch (error) {
     console.error('Error fetching credit notes:', error);
 

@@ -5,6 +5,7 @@ import { customer, cashMovement, workOrder, directSale, creditNote } from "@/db/
 import { eq, desc, and } from "drizzle-orm";
 import { capitalizeText } from "@/lib/utils/format";
 import { toISODate } from "@/lib/utils/date";
+import { serializeDrizzleResult } from "@/lib/utils/serialization";
 
 interface Params {
   params: Promise<{ id: string }>;
@@ -116,7 +117,7 @@ export const GET = withAdminDynamic(async (request: NextRequest, { params }: Par
       })),
     };
 
-    return NextResponse.json(transformedCustomer);
+    return NextResponse.json(serializeDrizzleResult(transformedCustomer));
   } catch (error) {
     console.error("Error fetching customer:", error);
     return NextResponse.json(

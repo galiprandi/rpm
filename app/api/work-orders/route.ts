@@ -9,6 +9,7 @@ import {
 } from "@/db/schema";
 import { eq, and, desc, count } from "drizzle-orm";
 import { toISODate } from "@/lib/utils/date";
+import { serializeDrizzleResult } from "@/lib/utils/serialization";
 import { randomUUID } from "crypto";
 import { capitalizeText, normalizeText } from "@/lib/utils/format";
 import { adjustBalanceAtomically } from "@/lib/services/balanceService";
@@ -119,7 +120,7 @@ export async function GET(request: NextRequest) {
     });
 
     return NextResponse.json({
-      workOrders: workOrdersWithPaymentStatus,
+      workOrders: serializeDrizzleResult(workOrdersWithPaymentStatus),
       total,
       limit,
       offset,

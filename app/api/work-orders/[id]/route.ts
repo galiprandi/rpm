@@ -6,6 +6,7 @@ import { updateWorkOrder } from "@/lib/services/workOrderService";
 import { getSessionWithAuth } from "@/lib/api-middleware";
 import { adjustBalanceAtomically } from "@/lib/services/balanceService";
 import { toISODate } from "@/lib/utils/date";
+import { serializeDrizzleResult } from "@/lib/utils/serialization";
 
 export const dynamic = "force-dynamic";
 
@@ -54,7 +55,7 @@ export async function GET(
       );
     }
 
-    return NextResponse.json({
+    return NextResponse.json(serializeDrizzleResult({
       ...workOrderRecord,
       // Normalize nullable arrays to empty arrays (Prisma returned [] by default)
       entryPhotos: workOrderRecord.entryPhotos || [],
@@ -82,7 +83,7 @@ export async function GET(
       startedAt: toISODate(workOrderRecord.startedAt),
       completedAt: toISODate(workOrderRecord.completedAt),
       deliveredAt: toISODate(workOrderRecord.deliveredAt),
-    });
+    }));
   } catch (error) {
     console.error("Error fetching work order:", error);
     return NextResponse.json(

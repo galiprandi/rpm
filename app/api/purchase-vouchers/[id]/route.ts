@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withStaffDynamic } from '@/lib/api-middleware';
 import { getVoucherById, addItemToVoucher, deleteVoucher, updateVoucherHeader } from '@/lib/services/purchaseVoucherService';
 import { toISODate } from '@/lib/utils/date';
+import { serializeDrizzleResult } from '@/lib/utils/serialization';
 
 /** Convert a purchase voucher item's numeric/timestamp fields for API output. */
 function formatVoucherItem(item: Record<string, unknown>) {
@@ -46,7 +47,7 @@ export const GET = withStaffDynamic(async (request: NextRequest, { params }: Par
   if (!voucher) {
     return NextResponse.json({ error: 'Voucher not found' }, { status: 404 });
   }
-  return NextResponse.json(formatVoucher(voucher as unknown as Record<string, unknown>));
+  return NextResponse.json(serializeDrizzleResult(formatVoucher(voucher as unknown as Record<string, unknown>)));
 });
 
 /** PUT /api/purchase-vouchers/:id

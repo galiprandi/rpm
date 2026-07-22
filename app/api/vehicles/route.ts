@@ -6,6 +6,7 @@ import { eq, ilike, and, desc, count } from "drizzle-orm";
 import { capitalizeText } from "@/lib/utils/format";
 import { resolveMakeModel } from "@/lib/utils/vehicle-helpers";
 import { toISODate } from "@/lib/utils/date";
+import { serializeDrizzleResult } from "@/lib/utils/serialization";
 
 interface CreateVehicleInput {
   identifier: string;
@@ -82,7 +83,7 @@ export async function GET(request: NextRequest) {
       },
     }));
 
-    return NextResponse.json({ vehicles: vehiclesWithCount, total, limit, offset });
+    return NextResponse.json({ vehicles: serializeDrizzleResult(vehiclesWithCount), total, limit, offset });
   } catch (error) {
     console.error("Error fetching vehicles:", error);
     return NextResponse.json(

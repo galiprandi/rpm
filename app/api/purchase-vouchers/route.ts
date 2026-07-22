@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withStaff } from '@/lib/api-middleware';
 import { createDraftVoucher, listVouchers } from '@/lib/services/purchaseVoucherService';
 import { toISODate } from '@/lib/utils/date';
+import { serializeDrizzleResult } from '@/lib/utils/serialization';
 
 /** Convert a purchase voucher item's numeric/timestamp fields for API output. */
 function formatVoucherItem(item: Record<string, unknown>) {
@@ -39,7 +40,7 @@ export const GET = withStaff(async (request: NextRequest) => {
   const { searchParams } = request.nextUrl;
   const status = searchParams.get('status') ?? undefined;
   const vouchers = await listVouchers(status ? { status } : undefined);
-  return NextResponse.json(vouchers.map(formatVoucher));
+  return NextResponse.json(serializeDrizzleResult(vouchers.map(formatVoucher)));
 });
 
 /** POST /api/purchase-vouchers

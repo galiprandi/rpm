@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { vehicle } from "@/db/schema";
 import { ilike } from "drizzle-orm";
 import { toISODate } from "@/lib/utils/date";
+import { serializeDrizzleResult } from "@/lib/utils/serialization";
 
 // GET /api/vehicles/by-identifier/[identifier] - Find vehicle by identifier (patent/serial)
 export async function GET(
@@ -33,7 +34,7 @@ export async function GET(
       },
     }));
 
-    return NextResponse.json({ vehicles: vehiclesWithCount });
+    return NextResponse.json({ vehicles: serializeDrizzleResult(vehiclesWithCount) });
   } catch (error) {
     console.error("Error searching vehicles by identifier:", error);
     return NextResponse.json(
