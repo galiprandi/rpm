@@ -10,6 +10,7 @@ import {
   validateCreditNoteCreation,
   type CreateCreditNoteInput,
 } from "./creditNoteValidationService";
+import { adjustBalanceAtomically } from "./balanceService";
 
 function decimalToNumber(decimal: unknown): number {
   if (decimal === null || decimal === undefined) return 0;
@@ -273,19 +274,7 @@ export async function createCreditNote(input: CreateCreditNoteInput) {
 
     // Update customer balance if ACCOUNT_CREDIT
     if (refundMethod === "ACCOUNT_CREDIT") {
-      const customer = await tx.customer.findUnique({
-        where: { id: customerId },
-        select: { balance: true },
-      });
-      if (!customer) throw new Error("Cliente no encontrado");
-
-      const currentBalance = decimalToNumber(customer.balance);
-      const newBalance = currentBalance - total;
-
-      await tx.customer.update({
-        where: { id: customerId },
-        data: { balance: newBalance },
-      });
+      await adjustBalanceAtomically(customerId, -total, "credit_note", tx);
     }
 
     return creditNote;
@@ -412,18 +401,12 @@ export async function cancelCreditNote(id: string, reason?: string) {
 
     // Reverse customer balance if ACCOUNT_CREDIT
     if (creditNote.refundMethod === "ACCOUNT_CREDIT") {
-      const customer = await tx.customer.findUnique({
-        where: { id: creditNote.customerId },
-        select: { balance: true },
-      });
-      if (customer) {
-        const currentBalance = decimalToNumber(customer.balance);
-        const newBalance = currentBalance + Number(creditNote.total);
-        await tx.customer.update({
-          where: { id: creditNote.customerId },
-          data: { balance: newBalance },
-        });
-      }
+      await adjustBalanceAtomically(
+        creditNote.customerId,
+        Number(creditNote.total),
+        "credit_note_cancel",
+        tx,
+      );
     }
 
     const updated = await tx.credit_note.update({

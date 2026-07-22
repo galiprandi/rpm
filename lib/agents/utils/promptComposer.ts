@@ -197,6 +197,9 @@ El usuario se encuentra en la sección **Servicios** y posiblemente te haga cons
   "/adm/novedades": `## Contexto de Ruta
 El usuario se encuentra en la sección **Novedades** y posiblemente te haga consultas relacionadas con publicaciones del blog o novedades del negocio.`,
 
+  "/adm/maintenance": `## Contexto de Ruta
+El usuario se encuentra en la sección **Mantenimiento** (acceso restringido a ADMIN). Posiblemente esté ejecutando operaciones de mantenimiento del sistema como recálculo de balances.`,
+
   "/adm": `## Contexto de Ruta
 El usuario se encuentra en el **Panel Admin** (dashboard principal) y posiblemente te haga consultas generales o pida un resumen del día.`,
 

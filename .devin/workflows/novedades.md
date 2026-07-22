@@ -36,6 +36,13 @@ Los commits obtenidos pueden ser de distintas fechas (desde la última entrada e
 
 **Importante:** Agrupa SOLO los cambios relevantes por fecha. Cada fecha distinta debe tener su propia entrada en el archivo.
 
+**Consolidación de entradas 🎨:** Si un día tiene solo entradas de tipo `🎨` (refinamiento visual), considera fusionarlas en una sola línea: `**🎨 Sistema**: Refinamiento visual y de accesibilidad en [módulos].` Si varios días consecutivos tienen solo entradas `🎨`, agruparlos en una entrada semanal: `### 🗓️ Semana del X al Y de [Mes] de 2026`.
+
+**Compactación de entradas duplicadas/similares:** Dentro de una misma fecha, si hay múltiples entradas del mismo módulo o del mismo tipo, fusionarlas en una sola línea:
+- Mismo módulo, distintos cambios → `**✨ Facturación**: Oficialización en lote, acciones masivas y búsqueda dinámica de numeración.`
+- Mismo tipo (ej: `🐛`), distintos módulos → `**🐛 Sistema**: Correcciones en paginación de productos, botón de precio y contraste en configuración.`
+- Cambios de sistema genéricos (config, contraste, responsive) → agrupar bajo `**🎨 Sistema**` o `**🐛 Sistema**` en una sola línea.
+
 ### 3. Formatear para usuario final
 
 **Reglas de redacción:**
@@ -137,7 +144,8 @@ fix: resolve payment calculation rounding error
    - Si una fecha ya existe pero tiene novedades nuevas, agregarlas a esa fecha
    - Si una novedad ya existe (aunque sea en otra fecha), NO duplicarla
 5. **Preservar entradas anteriores** sin modificar
-6. **Guardar archivo** con el formato final
+6. **Retención de 6 meses:** Eliminar entradas con fecha mayor a 6 meses desde la entrada más reciente. Estas entradas ya no son visibles para el usuario.
+7. **Guardar archivo** con el formato final
 
 **Ejemplo de estructura final:**
 ```
@@ -168,3 +176,5 @@ Si no comprendes un commit o su impacto en el negocio:
 ---
 
 **Nota final:** El resultado usa formato Markdown visual con bold, headers y separadores horizontales para mejor legibilidad en el navegador.
+
+**Política de retención:** El archivo mantiene solo los últimos 6 meses de novedades. Entradas anteriores se eliminan automáticamente en cada actualización.

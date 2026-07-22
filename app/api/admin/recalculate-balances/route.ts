@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSessionWithAuth } from "@/lib/api-middleware";
 import { prisma } from "@/lib/prisma";
 import { UserRole } from "@/lib/auth/roles";
+import { recalculateCustomerBalance } from "@/lib/services/balanceService";
 
 // POST /api/admin/recalculate-balances - Recalculate all customer balances
 export async function POST() {
@@ -22,51 +23,37 @@ export async function POST() {
       );
     }
 
-    // Get all customers with their work orders
+    // Get all customers
     const customers = await prisma.customer.findMany({
-      include: {
-        work_order: {
-          where: {
-            status: {
-              notIn: ["CANCELLED", "PAID"],
-            },
-          },
-        },
-      },
+      select: { id: true, name: true, balance: true },
     });
 
     const results = [];
+    let totalDrift = 0;
 
     for (const customer of customers) {
-      // Calculate what the balance should be (sum of unpaid work orders)
-      const calculatedBalance = customer.work_order.reduce(
-        (sum: any, wo: any) => sum + Number(wo.total),
-        0,
-      );
+      const storedBalance = Number(customer.balance) || 0;
+      const calculatedBalance = await recalculateCustomerBalance(customer.id);
 
-      const currentBalance = Number(customer.balance) || 0;
+      const drift = storedBalance - calculatedBalance;
 
-      // Update if different
-      if (calculatedBalance !== currentBalance) {
-        await prisma.customer.update({
-          where: { id: customer.id },
-          data: { balance: calculatedBalance },
-        });
-
+      if (Math.abs(drift) > 0.01) {
+        totalDrift += drift;
         results.push({
           customerId: customer.id,
           name: customer.name,
-          previousBalance: currentBalance,
+          previousBalance: storedBalance,
           newBalance: calculatedBalance,
-          difference: calculatedBalance - currentBalance,
-          unpaidWorkOrders: customer.work_order.length,
+          difference: calculatedBalance - storedBalance,
         });
       }
     }
 
     return NextResponse.json({
       success: true,
-      updated: results.length,
+      customersProcessed: customers.length,
+      driftsFound: results.length,
+      totalDrift,
       customers: results,
     });
   } catch (error) {

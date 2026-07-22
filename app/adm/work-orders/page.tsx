@@ -31,6 +31,8 @@ import {
   PlayCircle,
   CheckCircle,
   Package,
+  Camera,
+  Download,
   type LucideIcon,
 } from "lucide-react";
 import { Header } from "@/components/adm/Header";
@@ -85,6 +87,8 @@ interface WorkOrder {
     category: string;
     make?: { name: string };
     model?: { name: string };
+    vehicle_make?: { name: string };
+    vehicle_model?: { name: string };
   };
   total: number;
   technicianId?: string;
@@ -94,6 +98,9 @@ interface WorkOrder {
   totalPaid?: number;
   isFullyPaid?: boolean;
   technician?: { id: string; name: string };
+  entryChecklist?: any;
+  exitChecklist?: any;
+  photo?: Array<{ id: string; url: string }>;
 }
 
 const STATUSES = [
@@ -288,8 +295,8 @@ function KanbanCard({
         <p className="text-xs font-medium truncate leading-tight">
           {wo.customer.name}
         </p>
-        {/* Line 3: Amount badge (full width row) */}
-        <div>
+        {/* Line 3: Amount badge + Checklist/Photo Indicators */}
+        <div className="flex items-center justify-between">
           <Badge
             variant="outline"
             className={cn(
@@ -303,6 +310,58 @@ function KanbanCard({
           >
             {formatARS(Number(wo.total))}
           </Badge>
+
+          {/* Micro indicators for checklists and photos */}
+          <div className="flex items-center gap-1.5 text-muted-foreground text-[10px]">
+            {/* Checklist Entry Indicator */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className={cn(
+                  "flex items-center shrink-0 cursor-help",
+                  wo.entryChecklist
+                    ? "text-blue-600 font-semibold"
+                    : "text-muted-foreground/30"
+                )}>
+                  📥
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{wo.entryChecklist ? "Checklist de Ingreso: COMPLETADO" : "Checklist de Ingreso: PENDIENTE"}</p>
+              </TooltipContent>
+            </Tooltip>
+
+            {/* Checklist Exit Indicator */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className={cn(
+                  "flex items-center shrink-0 cursor-help",
+                  wo.exitChecklist
+                    ? "text-emerald-600 font-semibold"
+                    : "text-muted-foreground/30"
+                )}>
+                  📤
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{wo.exitChecklist ? "Checklist de Salida: COMPLETADO" : "Checklist de Salida: PENDIENTE"}</p>
+              </TooltipContent>
+            </Tooltip>
+
+            {/* Photo count indicator */}
+            {wo.photo && wo.photo.length > 0 && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="flex items-center gap-0.5 text-slate-500 font-mono text-[9px] shrink-0 cursor-help">
+                    <Camera className="h-3 w-3" />
+                    {wo.photo.length}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{wo.photo.length} foto{wo.photo.length !== 1 ? "s" : ""} registrada{wo.photo.length !== 1 ? "s" : ""}</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
+          </div>
         </div>
         {/* Line 4: Technician (full width) */}
         <DropdownMenu>
@@ -507,6 +566,7 @@ export default function WorkOrdersPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [technicianFilter, setTechnicianFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
+
   const [technicians, setTechnicians] = useState<
     Array<{ id: string; name: string }>
   >([]);
@@ -638,6 +698,79 @@ export default function WorkOrdersPage() {
     delayedFilter,
     todayFilter,
   ]);
+
+  const exportToCSV = useCallback(() => {
+    if (!filteredWorkOrders || filteredWorkOrders.length === 0) return;
+
+    const headers = [
+      "ID OT",
+      "Estado",
+      "Cliente",
+      "Telefono",
+      "Patente",
+      "Categoria",
+      "Marca",
+      "Modelo",
+      "Responsable",
+      "Total",
+      "Pagado",
+      "Pendiente",
+      "Fecha Creacion",
+      "Fecha Programada",
+      "Checklist Ingreso",
+      "Checklist Salida",
+      "Cant Fotos",
+    ];
+
+    const rows = filteredWorkOrders.map((wo) => {
+      const balance = Math.max(0, Number(wo.total) - (wo.totalPaid || 0));
+      const makeName = wo.vehicle.vehicle_make?.name || wo.vehicle.make?.name || "";
+      const modelName = wo.vehicle.vehicle_model?.name || wo.vehicle.model?.name || "";
+      const technicianName = wo.technician?.name || "Sin asignar";
+      const entryChecklistStatus = wo.entryChecklist ? "Completado" : "Pendiente";
+      const exitChecklistStatus = wo.exitChecklist ? "Completado" : "Pendiente";
+      const photoCount = wo.photo ? wo.photo.length : 0;
+
+      return [
+        wo.id,
+        STATUSES.find((s) => s.id === wo.status)?.label || wo.status,
+        wo.customer.name,
+        wo.customer.phone || "",
+        wo.vehicle.identifier,
+        wo.vehicle.category,
+        makeName,
+        modelName,
+        technicianName,
+        Number(wo.total).toFixed(2),
+        (wo.totalPaid || 0).toFixed(2),
+        balance.toFixed(2),
+        new Date(wo.createdAt).toLocaleDateString("es-AR"),
+        wo.scheduledDate ? new Date(wo.scheduledDate).toLocaleDateString("es-AR") : "Sin agendar",
+        entryChecklistStatus,
+        exitChecklistStatus,
+        photoCount.toString(),
+      ];
+    });
+
+    const csvContent = "\ufeff" + [
+      headers.join(","),
+      ...rows.map((r) => r.map((field) => `"${String(field).replace(/"/g, '""')}"`).join(",")),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `reporte_ordenes_trabajo_${new Date().toISOString().split("T")[0]}.csv`,
+    );
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("CSV exportado correctamente");
+  }, [filteredWorkOrders]);
 
   const workOrdersByStatus = useMemo(
     () =>
@@ -878,6 +1011,14 @@ export default function WorkOrdersPage() {
           href: "/adm/work-orders/new",
           icon: Plus,
         }}
+        secondaryActions={[
+          {
+            label: "Exportar CSV",
+            onClick: exportToCSV,
+            variant: "outline",
+            icon: Download,
+          },
+        ]}
       >
         <div className="flex flex-wrap items-center gap-2 mt-2">
           <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-lg border">
@@ -1163,12 +1304,61 @@ export default function WorkOrdersPage() {
                               {wo.vehicle.identifier}
                             </div>
                             <div className="text-sm text-muted-foreground">
-                              {wo.customer.name} • {wo.vehicle.make?.name}{" "}
-                              {wo.vehicle.model?.name}
+                              {wo.customer.name} • {wo.vehicle.make?.name || wo.vehicle.vehicle_make?.name || ""}{" "}
+                              {wo.vehicle.model?.name || wo.vehicle.vehicle_model?.name || ""}
                             </div>
                           </div>
                         </div>
                         <div className="flex items-center gap-4">
+                          {/* Checklist & Photo Indicators */}
+                          <div className="flex items-center gap-3 text-muted-foreground mr-2">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className={cn(
+                                  "flex items-center text-xs shrink-0 cursor-help",
+                                  wo.entryChecklist
+                                    ? "text-blue-600 font-semibold"
+                                    : "text-muted-foreground/30"
+                                )}>
+                                  📥 Checklist Ingreso
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{wo.entryChecklist ? "Checklist de Ingreso: COMPLETADO" : "Checklist de Ingreso: PENDIENTE"}</p>
+                              </TooltipContent>
+                            </Tooltip>
+
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className={cn(
+                                  "flex items-center text-xs shrink-0 cursor-help",
+                                  wo.exitChecklist
+                                    ? "text-emerald-600 font-semibold"
+                                    : "text-muted-foreground/30"
+                                )}>
+                                  📤 Checklist Calidad
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{wo.exitChecklist ? "Checklist de Salida: COMPLETADO" : "Checklist de Salida: PENDIENTE"}</p>
+                              </TooltipContent>
+                            </Tooltip>
+
+                            {wo.photo && wo.photo.length > 0 && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="flex items-center gap-1 text-slate-500 font-mono text-xs shrink-0 cursor-help">
+                                    <Camera className="h-3.5 w-3.5" />
+                                    {wo.photo.length}
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>{wo.photo.length} foto{wo.photo.length !== 1 ? "s" : ""} registrada{wo.photo.length !== 1 ? "s" : ""}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            )}
+                          </div>
+
                           {wo.technician && (
                             <div className="flex items-center gap-1 text-[10px] bg-purple-50 text-purple-700 px-2 py-1 rounded border border-purple-100 font-medium">
                               <UserCog className="h-3 w-3" />
