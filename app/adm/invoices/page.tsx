@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { Header } from '@/components/adm/Header';
+import { Header, CrudStats } from '@/components/adm';
 import { DataTable } from '@/components/ui/data-table';
-import { FileText, Search, RefreshCw, Send, Download, Eye, XCircle, Calendar, X } from 'lucide-react';
+import { FileText, Search, RefreshCw, Send, Download, Eye, XCircle, Calendar, X, CheckCircle2, Clock, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
@@ -28,6 +28,55 @@ export default function InvoicesPage() {
     endDate: '',
   });
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
+
+  const stats = useMemo(() => {
+    const totalCount = invoices.length;
+
+    const issuedInvoices = invoices.filter((inv) => inv.status === 'ISSUED');
+    const totalIssuedAmount = issuedInvoices.reduce(
+      (sum, inv) => sum + Number(inv.total),
+      0,
+    );
+
+    const pendingInvoices = invoices.filter(
+      (inv) => inv.status === 'DRAFT' || inv.status === 'REJECTED',
+    );
+    const totalPendingAmount = pendingInvoices.reduce(
+      (sum, inv) => sum + Number(inv.total),
+      0,
+    );
+
+    const rejectedCount = invoices.filter(
+      (inv) => inv.status === 'REJECTED',
+    ).length;
+
+    return [
+      {
+        label: 'Total comprobantes',
+        value: totalCount,
+        icon: FileText,
+        iconColor: '#64748b', // slate-500
+      },
+      {
+        label: 'Oficializado',
+        value: formatARS(totalIssuedAmount),
+        icon: CheckCircle2,
+        iconColor: '#15803d', // green-700
+      },
+      {
+        label: 'Pendiente (X)',
+        value: formatARS(totalPendingAmount),
+        icon: Clock,
+        iconColor: '#b45309', // amber-700
+      },
+      {
+        label: 'Rechazado por AFIP',
+        value: rejectedCount,
+        icon: AlertTriangle,
+        iconColor: '#b91c1c', // red-700
+      },
+    ];
+  }, [invoices]);
 
   const fetchInvoices = async (searchOverride?: string) => {
     setLoading(true);
@@ -408,6 +457,8 @@ export default function InvoicesPage() {
         primaryAction={headerActions[0]}
         secondaryActions={secondaryActions}
       />
+
+      <CrudStats stats={stats} />
 
       <div className="bg-background border rounded-xl shadow-sm overflow-hidden">
         <div className="p-4 border-b flex flex-wrap items-center justify-between gap-4 bg-muted/5">
