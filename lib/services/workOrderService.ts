@@ -1,7 +1,12 @@
-import { prisma } from '@/lib/prisma';
-import { createInvoice, determineInvoiceType, type InvoiceType } from './invoiceService';
+import { prisma } from "@/lib/prisma";
+import {
+  createInvoice,
+  determineInvoiceType,
+  type InvoiceType,
+} from "./invoiceService";
 import { logWorkOrderChange } from "./auditService";
 import { randomUUID } from "crypto";
+import { adjustBalanceAtomically } from "./balanceService";
 
 /**
  * Generates a document (Pre-invoice, Presupuesto, Remito) from a Work Order.
@@ -10,7 +15,7 @@ export async function generateDocumentFromWorkOrder(
   workOrderId: string,
   createdBy: string,
   options: { type?: InvoiceType; forceNew?: boolean } = {},
-  existingTx?: any
+  existingTx?: any,
 ) {
   const execute = async (tx: any) => {
     // Fetch work order with items and customer
@@ -23,23 +28,24 @@ export async function generateDocumentFromWorkOrder(
     });
 
     if (!workOrder) {
-      throw new Error('Orden de trabajo no encontrada');
+      throw new Error("Orden de trabajo no encontrada");
     }
 
     const customer = workOrder.customer;
     const billingData = customer?.billingData;
 
     // Determine document type
-    const docType = options.type || determineInvoiceType(billingData, 'FACTURA', true);
+    const docType =
+      options.type || determineInvoiceType(billingData, "FACTURA", true);
 
     // Check if a document of this type already exists to avoid duplicates
     if (!options.forceNew) {
       const existingDocument = await tx.invoice.findFirst({
         where: {
           referenceId: workOrderId,
-          referenceType: 'work_order',
+          referenceType: "work_order",
           type: docType,
-          status: { notIn: ['CANCELLED', 'ANNULLED'] },
+          status: { notIn: ["CANCELLED", "ANNULLED"] },
         },
       });
 
@@ -51,32 +57,35 @@ export async function generateDocumentFromWorkOrder(
     let customerDoc: string | undefined = undefined;
     let customerDocType: string | undefined = undefined;
 
-    if (billingData && typeof billingData === 'object') {
+    if (billingData && typeof billingData === "object") {
       const bd = billingData as any;
       customerDoc = bd.cuit || bd.dni || undefined;
-      customerDocType = bd.cuit ? 'CUIT' : (bd.dni ? 'DNI' : undefined);
+      customerDocType = bd.cuit ? "CUIT" : bd.dni ? "DNI" : undefined;
     }
 
     // Total is already calculated in the work order
     const total = Number(workOrder.total);
 
     // Create the invoice/document
-    const document = await createInvoice({
-      type: docType,
-      referenceId: workOrder.id,
-      referenceType: 'work_order',
-      customerId: workOrder.customerId,
-      customerName: customer.name,
-      customerDoc,
-      customerDocType,
-      subtotal: total,
-      total: total,
-      status: 'DRAFT',
-      createdBy,
-    }, tx);
+    const document = await createInvoice(
+      {
+        type: docType,
+        referenceId: workOrder.id,
+        referenceType: "work_order",
+        customerId: workOrder.customerId,
+        customerName: customer.name,
+        customerDoc,
+        customerDocType,
+        subtotal: total,
+        total: total,
+        status: "DRAFT",
+        createdBy,
+      },
+      tx,
+    );
 
     // If it's a pre-invoice, update the work order with the invoice ID
-    if (docType.startsWith('X_') || docType.startsWith('FACTURA_')) {
+    if (docType.startsWith("X_") || docType.startsWith("FACTURA_")) {
       await tx.work_order.update({
         where: { id: workOrderId },
         data: { invoiceId: document.id },
@@ -96,7 +105,10 @@ export async function generateDocumentFromWorkOrder(
 /**
  * Backward compatibility wrapper for generateInvoiceFromWorkOrder.
  */
-export async function generateInvoiceFromWorkOrder(workOrderId: string, createdBy: string) {
+export async function generateInvoiceFromWorkOrder(
+  workOrderId: string,
+  createdBy: string,
+) {
   return generateDocumentFromWorkOrder(workOrderId, createdBy);
 }
 
@@ -123,7 +135,7 @@ export async function updateWorkOrder(
     userEmail: string;
     ipAddress?: string;
     userAgent?: string;
-  }
+  },
 ) {
   return await prisma.$transaction(async (tx) => {
     const currentWO = await tx.work_order.findUnique({
@@ -143,15 +155,39 @@ export async function updateWorkOrder(
     // 2. Track audit changes
     const trackedFields = [
       { name: "status", current: currentWO.status, new: data.status },
-      { name: "technicianId", current: currentWO.technicianId, new: data.technicianId },
+      {
+        name: "technicianId",
+        current: currentWO.technicianId,
+        new: data.technicianId,
+      },
       { name: "notes", current: currentWO.notes, new: data.notes },
-      { name: "scheduledDate", current: currentWO.scheduledDate?.toISOString(), new: data.scheduledDate instanceof Date ? data.scheduledDate.toISOString() : (data.scheduledDate ? new Date(data.scheduledDate).toISOString() : undefined) },
-      { name: "paymentMethod", current: currentWO.paymentMethod, new: data.paymentMethod },
-      { name: "paymentNotes", current: currentWO.paymentNotes, new: data.paymentNotes },
+      {
+        name: "scheduledDate",
+        current: currentWO.scheduledDate?.toISOString(),
+        new:
+          data.scheduledDate instanceof Date
+            ? data.scheduledDate.toISOString()
+            : data.scheduledDate
+              ? new Date(data.scheduledDate).toISOString()
+              : undefined,
+      },
+      {
+        name: "paymentMethod",
+        current: currentWO.paymentMethod,
+        new: data.paymentMethod,
+      },
+      {
+        name: "paymentNotes",
+        current: currentWO.paymentNotes,
+        new: data.paymentNotes,
+      },
     ];
 
     for (const field of trackedFields) {
-      if (field.new !== undefined && String(field.current) !== String(field.new)) {
+      if (
+        field.new !== undefined &&
+        String(field.current) !== String(field.new)
+      ) {
         await logWorkOrderChange({
           workOrderId: id,
           fieldName: field.name,
@@ -167,7 +203,8 @@ export async function updateWorkOrder(
     // 3. Status-based timestamp management
     const updateData: any = { ...data };
 
-    if (data.scheduledDate) updateData.scheduledDate = new Date(data.scheduledDate);
+    if (data.scheduledDate)
+      updateData.scheduledDate = new Date(data.scheduledDate);
     if (data.startedAt) updateData.startedAt = new Date(data.startedAt);
     if (data.completedAt) updateData.completedAt = new Date(data.completedAt);
     if (data.deliveredAt) updateData.deliveredAt = new Date(data.deliveredAt);
@@ -218,6 +255,31 @@ export async function updateWorkOrder(
       },
     });
 
+    // 4a. If status changed TO CANCELLED, reverse balance (total - payments)
+    if (data.status === "CANCELLED" && currentWO.status !== "CANCELLED") {
+      const woTotal = Number(currentWO.total);
+
+      // Fetch actual payments for this WO
+      const woPayments = await tx.payment.findMany({
+        where: { workOrderId: id },
+        select: { amount: true },
+      });
+      const actualPayments = woPayments.reduce(
+        (sum, p) => sum + Number(p.amount),
+        0,
+      );
+      const reversal = woTotal - actualPayments;
+
+      if (Math.abs(reversal) > 0.01) {
+        await adjustBalanceAtomically(
+          currentWO.customerId || updatedWO.customer.id,
+          -reversal,
+          "work_order_cancel",
+          tx,
+        );
+      }
+    }
+
     // 5. Stock discounting logic
     if (data.status && ["READY", "PAID", "DELIVERED"].includes(data.status)) {
       const woPrefix = id.substring(0, 8);
@@ -266,9 +328,17 @@ export async function updateWorkOrder(
     // 6. Auto-generate document on delivery
     if (data.status === "DELIVERED" && currentWO.status !== "DELIVERED") {
       try {
-        await generateDocumentFromWorkOrder(id, context.userId, { type: undefined }, tx);
+        await generateDocumentFromWorkOrder(
+          id,
+          context.userId,
+          { type: undefined },
+          tx,
+        );
       } catch (invoiceError) {
-        console.error("Error auto-generating invoice for work order:", invoiceError);
+        console.error(
+          "Error auto-generating invoice for work order:",
+          invoiceError,
+        );
       }
     }
 

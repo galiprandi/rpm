@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { adjustBalanceAtomically } from "@/lib/services/balanceService";
 
 // PUT /api/work-orders/[id]/items - Update work order items
 export async function PUT(
@@ -14,7 +15,7 @@ export async function PUT(
     // Check if work order is delivered
     const workOrder = await prisma.work_order.findUnique({
       where: { id },
-      select: { status: true },
+      select: { status: true, total: true, customerId: true },
     });
 
     if (!workOrder) {
@@ -31,60 +32,78 @@ export async function PUT(
       );
     }
 
-    // Delete existing items
-    await prisma.work_order_item.deleteMany({
-      where: { workOrderId: id },
-    });
+    const oldTotal = Number(workOrder.total);
 
-    // Create new items
-    let totalProducts = 0;
-    let totalServices = 0;
-    let total = 0;
+    // Delete existing items, update totals, and adjust balance in a transaction
+    const result = await prisma.$transaction(async (tx) => {
+      // Delete existing items
+      await tx.work_order_item.deleteMany({
+        where: { workOrderId: id },
+      });
 
-    for (const item of items) {
-      const isProduct = item.type === "product";
-      const subtotal = item.quantity * item.unitPrice;
+      // Create new items
+      let totalProducts = 0;
+      let totalServices = 0;
+      let total = 0;
 
-      await prisma.work_order_item.create({
+      for (const item of items) {
+        const isProduct = item.type === "product";
+        const subtotal = item.quantity * item.unitPrice;
+
+        await tx.work_order_item.create({
+          data: {
+            id: crypto.randomUUID(),
+            workOrderId: id,
+            type: isProduct ? "PRODUCT" : "SERVICE",
+            productId: isProduct ? item.id : null,
+            serviceId: !isProduct ? item.id : null,
+            name: item.isManualName ? item.name : null,
+            isManualName: item.isManualName || false,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            subtotal: subtotal,
+            priceListId: item.priceListId,
+            isManualPrice: item.isManualPrice,
+          },
+        });
+
+        if (isProduct) {
+          totalProducts += subtotal;
+        } else {
+          totalServices += subtotal;
+        }
+        total += subtotal;
+      }
+
+      // Update work order totals
+      await tx.work_order.update({
+        where: { id },
         data: {
-          id: crypto.randomUUID(),
-          workOrderId: id,
-          type: isProduct ? "PRODUCT" : "SERVICE",
-          productId: isProduct ? item.id : null,
-          serviceId: !isProduct ? item.id : null,
-          name: item.isManualName ? item.name : null,
-          isManualName: item.isManualName || false,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          subtotal: subtotal,
-          priceListId: item.priceListId,
-          isManualPrice: item.isManualPrice,
+          totalProducts,
+          totalServices,
+          total,
         },
       });
 
-      if (isProduct) {
-        totalProducts += subtotal;
-      } else {
-        totalServices += subtotal;
+      // Adjust customer balance by the delta
+      const delta = total - oldTotal;
+      if (Math.abs(delta) > 0.01) {
+        await adjustBalanceAtomically(
+          workOrder.customerId,
+          delta,
+          "work_order_items_update",
+          tx,
+        );
       }
-      total += subtotal;
-    }
 
-    // Update work order totals
-    await prisma.work_order.update({
-      where: { id },
-      data: {
-        totalProducts,
-        totalServices,
-        total,
-      },
+      return { totalProducts, totalServices, total };
     });
 
     return NextResponse.json({
       success: true,
-      totalProducts,
-      totalServices,
-      total,
+      totalProducts: result.totalProducts,
+      totalServices: result.totalServices,
+      total: result.total,
     });
   } catch (error) {
     console.error("Error updating work order items:", error);

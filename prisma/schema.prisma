@@ -53,12 +53,13 @@ model customer {
   updatedAt    DateTime
   billingData  Json?
   name         String
-  balance      Decimal       @default(0) @db.Decimal(10, 2)
-  credit_notes credit_note[]
-  direct_sales direct_sale[]
-  invoices     invoice[]
-  vehicle      vehicle[]
-  work_order   work_order[]
+  balance       Decimal        @default(0) @db.Decimal(10, 2)
+  balance_audits balance_audit[]
+  credit_notes  credit_note[]
+  direct_sales  direct_sale[]
+  invoices      invoice[]
+  vehicle       vehicle[]
+  work_order    work_order[]
 
   @@index([name])
   @@index([phone])
@@ -677,4 +678,19 @@ model purchase_voucher_item {
   @@unique([voucherId, productId])
   @@index([voucherId])
   @@index([productId])
+}
+
+model balance_audit {
+  id           String   @id @default(cuid())
+  customerId   String
+  oldBalance   Decimal  @db.Decimal(10, 2)
+  newBalance   Decimal  @db.Decimal(10, 2)
+  driftAmount  Decimal  @default(0) @db.Decimal(10, 2)
+  source       String
+  createdAt    DateTime @default(now())
+  customer     customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId])
+  @@index([createdAt])
+  @@map("balance_audit")
 }
