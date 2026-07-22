@@ -5,7 +5,6 @@ import Link from "next/link";
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
@@ -45,42 +44,44 @@ export function StockAlertCard({
         >
           {hasAlerts ? lowStockCount : "OK"}
         </div>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <p className="text-[11px] text-muted-foreground mt-1.5 truncate cursor-default">
-                {hasAlerts
-                  ? `${lowStockItems
-                      .slice(0, 2)
-                      .map((item) => item.name)
-                      .join(", ")}${lowStockCount > 2 ? "..." : ""}`
-                  : "Niveles normales"}
-              </p>
-            </TooltipTrigger>
-            {hasAlerts && lowStockCount > 0 && (
-              <TooltipContent side="bottom" className="max-w-[200px]">
-                <div className="space-y-0.5">
-                  {lowStockItems.slice(0, 5).map((item) => (
-                    <div
-                      key={item.id}
-                      className="flex justify-between gap-2 text-xs"
-                    >
-                      <span className="truncate">{item.name}</span>
-                      <span className="font-mono text-orange-700 shrink-0">
-                        {item.stock}/{item.minStock}
-                      </span>
-                    </div>
-                  ))}
-                  {lowStockCount > 5 && (
-                    <div className="text-xs text-muted-foreground pt-0.5">
-                      +{lowStockCount - 5} más...
-                    </div>
-                  )}
-                </div>
-              </TooltipContent>
-            )}
-          </Tooltip>
-        </TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <p
+              className="text-[11px] text-muted-foreground mt-1.5 truncate cursor-default outline-none focus-visible:underline decoration-dotted rounded-sm"
+              tabIndex={hasAlerts && lowStockItems.length > 0 ? 0 : undefined}
+              aria-label={hasAlerts ? `Stock bajo: ${lowStockCount} productos` : "Niveles normales de stock"}
+            >
+              {hasAlerts
+                ? `${lowStockItems
+                    .slice(0, 2)
+                    .map((item) => item.name)
+                    .join(", ")}${lowStockCount > 2 ? "..." : ""}`
+                : "Niveles normales"}
+            </p>
+          </TooltipTrigger>
+          {hasAlerts && lowStockCount > 0 && (
+            <TooltipContent side="bottom" className="max-w-[200px]">
+              <div className="space-y-0.5">
+                {lowStockItems.slice(0, 5).map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex justify-between gap-2 text-xs"
+                  >
+                    <span className="truncate">{item.name}</span>
+                    <span className="font-mono text-orange-700 shrink-0">
+                      {item.stock}/{item.minStock}
+                    </span>
+                  </div>
+                ))}
+                {lowStockCount > 5 && (
+                  <div className="text-xs text-muted-foreground pt-0.5">
+                    +{lowStockCount - 5} más...
+                  </div>
+                )}
+              </div>
+            </TooltipContent>
+          )}
+        </Tooltip>
         {hasAlerts && (
           <Link
             href="/adm/products?lowStock=true"
