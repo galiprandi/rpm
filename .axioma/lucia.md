@@ -1,6 +1,10 @@
 ## 📋 BACKLOG
 
 ## ✅ DONE
+- [x] 2026-07-22 — Visualización de Equipos y Alertas de Deuda por Vehículo en Ficha de Cliente
+  - Optimización de la tabla de "Vehículos y Equipos" en la ficha del cliente para renderizar el nombre (`equipmentName`) y tipo de equipo (`equipmentType`) de forma clara para categorías de no-vehículos (ej: `AUDIO_EQUIPMENT`, `TRAILER`, `ELECTRIC_SCOOTER`, `OTHER`), evitando celdas vacías.
+  - Implementación de alertas de deuda específicas por vehículo/equipo directamente en la tabla, calculando la deuda en base a órdenes de trabajo pendientes de pago (`vDebt`).
+  - Renderizado de badges semánticos contrastados indicando el saldo pendiente de cada activo, facilitando el diagnóstico rápido de deudores.
 - [x] 2026-07-21 — Registro de Pago Directo en Reporte de Deudores y Empty States Optimizados
   - Implementación de un modal de registro de pago rápido directamente desde el listado de deudores (`DebtorsClient.tsx`), permitiendo cobrar sin necesidad de salir del reporte.
   - Diseño de un botón con el icono `ArrowDownLeft` y tooltip "Registrar Pago" en la columna de acciones de la tabla de deudores.
@@ -44,6 +48,10 @@
   - Mejora de navegación con botón de "Volver" en el detalle del cliente.
 
 ## 🧠 LEARNINGS
+## 2026-07-22 - Visualización Contextual de Activos y Alertas Financieras
+**Learning:** En fichas de clientes complejos (como flotas de transporte, empresas o clientes con múltiples unidades y equipos), es común tener tanto automotores tradicionales como equipos especiales o remolques registrados en la misma cuenta. Si la interfaz solo muestra marca y modelo estándar, las celdas de equipos quedan vacías, forzando al operador a navegar a la ficha individual de cada equipo para saber qué es. Al renderizar dinámicamente `equipmentName` y `equipmentType` en la misma tabla según la categoría del activo, y añadir alertas de deuda individuales derivadas de las órdenes de trabajo activas, se proporciona una visualización contextual impecable que permite identificar deudores de un vistazo sin clics de navegación adicionales.
+**Action:** Utilizar siempre visualizaciones adaptativas basadas en la categoría del activo e inyectar métricas financieras agregadas en la tabla de listado de sub-entidades para reducir fricción.
+
 ## 2026-07-20 - Resumen de Cuenta Corriente del Cliente Impreso y Exportación CSV
 **Learning:** Ofrecer un resumen de cuenta corriente de cliente con soporte para impresión física o PDF permite una experiencia administrativa del taller sin fisuras. Mediante window.print() y estilos `@media print` scoped, se genera un documento elegante que reúne la deuda total y el detalle de OTs impagas. Asimismo, la exportación de listados de Clientes y Vehículos a formato CSV que respeta el filtrado y búsqueda del usuario actual con BOM UTF-8 y entrecomillado adecuado de campos simplifica enormemente la reportería en Excel.
 **Action:** Mantener la simetría de exportaciones PDF imprimibles y exportaciones de listados en formato CSV con BOM compatible con Excel en todo el sistema.

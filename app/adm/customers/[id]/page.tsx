@@ -55,7 +55,11 @@ interface Vehicle {
   category: string;
   make?: { name: string };
   model?: { name: string };
+  vehicleMake?: { name: string };
+  vehicleModel?: { name: string };
   year?: number;
+  equipmentName?: string;
+  equipmentType?: string;
 }
 
 interface WorkOrder {
@@ -64,6 +68,7 @@ interface WorkOrder {
   total: number;
   createdAt: string;
   vehicle: { identifier: string };
+  vehicleId: string;
 }
 
 interface DirectSale {
@@ -203,33 +208,78 @@ export default function CustomerDetailPage() {
       {
         accessorKey: "identifier",
         header: "Vehículo",
-        cell: ({ row }) => (
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0">
-              <Car
-                className="h-4 w-4 text-primary pointer-events-none"
-                aria-hidden="true"
-              />
+        cell: ({ row }) => {
+          const vDebt = customer?.workOrders
+            ?.filter(
+              (wo) =>
+                wo.vehicleId === row.original.id &&
+                wo.status !== "PAID" &&
+                wo.status !== "CANCELLED"
+            )
+            ?.reduce((sum, wo) => sum + Number(wo.total), 0) || 0;
+
+          return (
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0">
+                <Car
+                  className="h-4 w-4 text-primary pointer-events-none"
+                  aria-hidden="true"
+                />
+              </div>
+              <div className="flex flex-col">
+                <span className="font-semibold font-mono tracking-tight text-zinc-900">
+                  {row.original.identifier}
+                </span>
+                {vDebt > 0 && (
+                  <Badge variant="outline" className="text-[10px] font-semibold py-0 px-1 border-red-200 bg-red-50 text-red-700 mt-0.5 w-fit">
+                    Debe {formatARS(vDebt, 2)}
+                  </Badge>
+                )}
+              </div>
             </div>
-            <span className="font-semibold font-mono tracking-tight">
-              {row.original.identifier}
-            </span>
-          </div>
-        ),
+          );
+        },
       },
       {
         accessorKey: "make.name",
-        header: "Marca/Modelo",
-        cell: ({ row }) => (
-          <div className="flex flex-col">
-            <span className="font-medium">
-              {row.original.make?.name} {row.original.model?.name}
-            </span>
-            <span className="text-[10px] text-muted-foreground uppercase">
-              {row.original.category}
-            </span>
-          </div>
-        ),
+        header: "Marca/Modelo / Equipo",
+        cell: ({ row }) => {
+          const isEquipment = [
+            "AUDIO_EQUIPMENT",
+            "ELECTRIC_SCOOTER",
+            "OTHER",
+            "TRAILER",
+          ].includes(row.original.category);
+
+          if (isEquipment) {
+            return (
+              <div className="flex flex-col">
+                <span className="font-semibold text-zinc-900">
+                  {row.original.equipmentName || "Equipo sin nombre"}
+                </span>
+                {row.original.equipmentType && (
+                  <span className="text-[10px] text-muted-foreground uppercase">
+                    {row.original.equipmentType}
+                  </span>
+                )}
+              </div>
+            );
+          }
+
+          const makeName = row.original.vehicleMake?.name || row.original.make?.name || "";
+          const modelName = row.original.vehicleModel?.name || row.original.model?.name || "";
+
+          return (
+            <div className="flex flex-col">
+              <span className="font-medium text-zinc-900">
+                {makeName || modelName ? `${makeName} ${modelName}` : "Vehículo sin marca/modelo"}
+              </span>
+              <span className="text-[10px] text-muted-foreground uppercase">
+                {row.original.category}
+              </span>
+            </div>
+          );
+        },
       },
       {
         accessorKey: "year",
