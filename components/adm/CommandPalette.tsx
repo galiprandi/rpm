@@ -75,7 +75,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg p-0 gap-0 overflow-hidden">
         <DialogTitle className="sr-only">Buscar</DialogTitle>
-        <div className="flex items-center gap-2 px-4 py-3 border-b">
+        <div className="flex items-center gap-2 px-4 py-3 border-b focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary/50 transition-all">
           <Search className="size-4 text-muted-foreground shrink-0" />
           <div className="relative flex-1 flex items-center">
             <Input
