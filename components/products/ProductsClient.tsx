@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -103,11 +103,16 @@ export function ProductsClient({
     });
   }, []);
 
-  const filteredProducts = products.filter((p) => {
-    const matchesCategory = selectedCategory === "all" || p.categoryId === selectedCategory;
-    const matchesSearch = matchProduct(p, searchTerm);
-    return matchesCategory && matchesSearch;
-  });
+  const filteredProducts = useMemo(
+    () =>
+      products.filter((p) => {
+        const matchesCategory =
+          selectedCategory === "all" || p.categoryId === selectedCategory;
+        const matchesSearch = matchProduct(p, searchTerm);
+        return matchesCategory && matchesSearch;
+      }),
+    [products, selectedCategory, searchTerm, matchProduct],
+  );
 
   const lowStockCount = filteredProducts.filter((p) => p.isLowStock).length;
   const totalInventoryValue = filteredProducts.reduce(
