@@ -263,5 +263,28 @@ describe('Invoice Service', () => {
       expect(searchResult2.length).toBeGreaterThanOrEqual(1);
       expect(searchResult2.some(inv => inv.customerDoc === '11223344')).toBe(true);
     });
+
+    it('should successfully formulate queries with start and end date range filters', async () => {
+      mockFns.invoiceFindMany.mockResolvedValue([
+        {
+          id: 'inv-1',
+          customerDoc: '20456789012',
+          customerDocType: 'CUIT',
+          customerName: 'Test Customer',
+          type: 'X_B',
+          status: 'DRAFT',
+          total: '1210',
+          createdAt: '2026-07-20T10:00:00.000Z',
+          customer: { name: 'Test Customer', phone: '123' },
+        },
+      ]);
+
+      const startDate = new Date('2026-07-20T00:00:00.000Z');
+      const endDate = new Date('2026-07-20T23:59:59.999Z');
+
+      const result = await getInvoices({ startDate, endDate });
+      expect(result).toHaveLength(1);
+      expect(mockFns.invoiceFindMany).toHaveBeenCalled();
+    });
   });
 });

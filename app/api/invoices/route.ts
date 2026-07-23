@@ -40,17 +40,34 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
 
+    const startDateParam = searchParams.get("startDate");
+    const endDateParam = searchParams.get("endDate");
+
+    let startDate: Date | undefined = undefined;
+    if (startDateParam) {
+      if (/^\d{4}-\d{2}-\d{2}$/.test(startDateParam)) {
+        startDate = new Date(`${startDateParam}T00:00:00.000Z`);
+      } else {
+        startDate = new Date(startDateParam);
+      }
+    }
+
+    let endDate: Date | undefined = undefined;
+    if (endDateParam) {
+      if (/^\d{4}-\d{2}-\d{2}$/.test(endDateParam)) {
+        endDate = new Date(`${endDateParam}T23:59:59.999Z`);
+      } else {
+        endDate = new Date(endDateParam);
+      }
+    }
+
     const filters = {
       type: searchParams.get("type") || undefined,
       status: searchParams.get("status") || undefined,
       customerId: searchParams.get("customerId") || undefined,
       search: searchParams.get("search") || undefined,
-      startDate: searchParams.get("startDate")
-        ? new Date(searchParams.get("startDate")!)
-        : undefined,
-      endDate: searchParams.get("endDate")
-        ? new Date(searchParams.get("endDate")!)
-        : undefined,
+      startDate,
+      endDate,
     };
 
     const invoices = await getInvoices(filters);
