@@ -31,6 +31,7 @@
 - [x] 2026-07-20 — Filtro de rango de fechas y exportación a CSV de comprobantes en el listado de facturación (PR #X).
 - [x] 2026-07-21 — Búsqueda por documento (CUIT/DNI), validador preventivo de CUIT y buscador con borrado rápido (PR #X).
 - [x] 2026-07-22 — Indicadores estadísticos (Header Stats) en el panel de comprobantes y suite de pruebas para `InvoicesPage`.
+- [x] 2026-07-23 — Corrección de filtro de fechas para incluir comprobantes emitidos en el día de la fecha de fin (hasta las 23:59:59.999).
 
 ## 🧠 LEARNINGS
 - **Métricas e Indicadores en el Listado de Comprobantes:** Integrar `CrudStats` con cálculos reactivos basados en `useMemo` del listado de comprobantes (`invoices`) permite a los contadores y administradores tener un resumen visual instantáneo de los totales oficiales facturados (`ISSUED`), los montos que quedan en trámite de pre-facturas (`DRAFT` / `REJECTED`), y de los rechazos de AFIP que necesitan atención, incrementando drásticamente el control operativo del negocio sin tener que recurrir a herramientas externas o exportaciones manuales.
