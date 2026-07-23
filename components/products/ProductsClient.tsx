@@ -66,7 +66,7 @@ const productSearchFilter: FilterFn<Product> = (
   filterValue,
 ) => {
   if (!filterValue) return true;
-  const terms = String(filterValue).toLowerCase().split(/\s+/).filter(Boolean);
+  const terms = String(filterValue).toLowerCase().split(/[\s+]+/).filter(Boolean);
   const p = row.original;
   return terms.every((term) => {
     if (p.name?.toLowerCase().includes(term)) return true;
@@ -93,7 +93,7 @@ export function ProductsClient({
   // Helper matching logic consistent with productSearchFilter
   const matchProduct = useCallback((p: Product, term: string) => {
     if (!term) return true;
-    const terms = term.toLowerCase().split(/\s+/).filter(Boolean);
+    const terms = term.toLowerCase().split(/[\s+]+/).filter(Boolean);
     return terms.every((t) => {
       if (p.name?.toLowerCase().includes(t)) return true;
       if (p.sku?.toLowerCase().includes(t)) return true;
@@ -717,6 +717,7 @@ export function ProductsClient({
           filterFn={productSearchFilter}
           externalGlobalFilter={searchTerm}
           onExternalGlobalFilterChange={setSearchTerm}
+          hasActiveFilters={searchTerm !== "" || selectedCategory !== "all"}
           onExport={() => setIsExportDialogOpen(true)}
           headerFilter={
             <Select

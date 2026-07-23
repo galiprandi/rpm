@@ -151,15 +151,18 @@ export default function VehiclesClient({
 
   const vehicleFilterFn = useCallback<FilterFn<Vehicle>>((row, id, value) => {
     if (!value) return true;
-    const search = value.toLowerCase();
+    const terms = String(value).toLowerCase().split(/[\s+]+/).filter(Boolean);
+    if (terms.length === 0) return true;
     const vehicle = row.original;
-    return !!(
-      (vehicle.identifier?.toLowerCase() ?? "").includes(search) ||
-      (vehicle.customer?.name?.toLowerCase() ?? "").includes(search) ||
-      (vehicle.equipmentName?.toLowerCase() ?? "").includes(search) ||
-      (vehicle.vehicleMake?.name?.toLowerCase() ?? "").includes(search) ||
-      (vehicle.vehicleModel?.name?.toLowerCase() ?? "").includes(search)
-    );
+    return terms.every((search) => {
+      return !!(
+        (vehicle.identifier?.toLowerCase() ?? "").includes(search) ||
+        (vehicle.customer?.name?.toLowerCase() ?? "").includes(search) ||
+        (vehicle.equipmentName?.toLowerCase() ?? "").includes(search) ||
+        (vehicle.vehicleMake?.name?.toLowerCase() ?? "").includes(search) ||
+        (vehicle.vehicleModel?.name?.toLowerCase() ?? "").includes(search)
+      );
+    });
   }, []);
 
   const columns = useMemo<ColumnDef<Vehicle & { id: string }>[]>(
@@ -339,6 +342,7 @@ export default function VehiclesClient({
         loading={loading}
         columns={columns}
         filterFn={vehicleFilterFn as any}
+        hasActiveFilters={categoryFilter !== "all"}
         emptyIcon={
           <Car className="h-12 w-12 mx-auto text-muted-foreground/20 mb-4" />
         }
