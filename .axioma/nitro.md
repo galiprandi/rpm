@@ -1,11 +1,11 @@
 # Nitro 🤖 Journal
 
 ## 📋 BACKLOG
-- [ ] Voice-to-text integration for noisy workshop environment.
 - [ ] Contextual QR code scanning from within the chat panel.
 - [ ] Direct photo attachments for work order checklist items.
 
 ## ✅ DONE
+- [x] 2026-07-23 — Implement contextual attachment quick-action button ("Procesar como Factura de Compra") inside ChatFloating.tsx, featuring instant Base64 serialization, prompt submission integration, and automated preview cleanup with robust unit test coverage.
 - [x] 2026-07-22 — Implement voice-to-text dictation integration (es-AR locale) inside ChatFloating.tsx, featuring pulsing microphone animations, adaptive placeholders, graceful cleanup handlers, and full unit test coverage.
 - [x] 2026-07-21 — Implement dynamic context-aware suggestions, accidental-wipe protection (double click clear confirm), robust session persistence, friendly client-side error formatting, and Escape key stream cancellation.
 - [x] 2026-07-20 — Group adjacent confirmation actions inline, restrict interaction buttons to the latest assistant message, add Alt+1 to Alt+4 keyboard shortcuts for empty-state suggestion chips with visual badges, and author a comprehensive component unit test suite.
@@ -15,6 +15,10 @@
 - [x] 2026-03-28 — Initial audit of bot tools, removal of mock tools, fixing conversation history unit tests, and implementing major UI/UX improvements (smart scrolling, success states for tool execution, empty-state quick start suggestion chips, and full WCAG accessibility).
 
 ## 🧠 LEARNINGS
+### 2026-07-23 — Contextual File Actions & Automation Shortcuts
+**Learning:** For workflows requiring multi-step interactions (such as uploading an invoice and typing an instruction like "process this invoice"), offering context-aware quick-action buttons inside the file upload preview greatly optimizes the user experience. The user can perform complex file operations with a single click, completely removing phrasing friction.
+**Action:** Always inspect user attachment states and render contextually appropriate shortcut chips/buttons right next to the file preview elements.
+
 ### 2026-07-22 — Speech Recognition & JSDOM Testing Hooks
 **Learning:** Standard browser event triggers inside custom API handlers (such as SpeechRecognition's `onstart`/`onend`) often require explicit wrapping inside React's `act()` in test files to sync component states correctly and update the simulated DOM. Furthermore, mocking `window.matchMedia` and `HTMLElement.prototype.scrollIntoView` is essential to prevent DOM-level runtime crashes under JSDOM tests.
 **Action:** Always wrap stateful web API event triggers within `act()` inside Vitest files and pre-mock browser layout utilities globally.

@@ -368,6 +368,34 @@ export function ChatFloating({
     if (cameraInputRef.current) cameraInputRef.current.value = "";
   };
 
+  const handleProcessInvoiceShortcut = async () => {
+    if (!attachedFile || isSubmitting) return;
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+    }
+    setLocalInput("");
+
+    try {
+      const arrayBuffer = await attachedFile.arrayBuffer();
+      const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+      const dataUrl = `data:${attachedFile.type || "application/octet-stream"};base64,${base64}`;
+      const filePart: FileUIPart = {
+        type: "file",
+        mediaType: attachedFile.type || "application/octet-stream",
+        url: dataUrl,
+      };
+      await sendMessage({
+        text: "Procesar factura de compra",
+        files: [filePart],
+      });
+    } catch (e) {
+      console.error("Error processing attachment shortcut:", e);
+    }
+
+    setAttachedFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const messageText = localInput?.trim();
@@ -838,29 +866,45 @@ export function ChatFloating({
           {/* Input */}
           <form onSubmit={onSubmit} className="p-4 border-t">
             {attachedFile && (
-              <div className="mb-2 p-2 bg-muted rounded-md flex items-center justify-between">
-                <span className="text-sm truncate flex-1">
-                  {attachedFile.name}
-                </span>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      className="h-7 w-7 p-0"
-                      onClick={handleRemoveFile}
-                      aria-label="Quitar archivo adjunto"
+              <div className="mb-2 flex flex-col gap-1.5 p-2 bg-muted rounded-md">
+                <div className="flex items-center justify-between w-full">
+                  <span className="text-sm truncate flex-1 font-medium text-foreground">
+                    📎 {attachedFile.name}
+                  </span>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="h-7 w-7 p-0 hover:bg-background/50"
+                        onClick={handleRemoveFile}
+                        aria-label="Quitar archivo adjunto"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side="top"
+                      className="bg-slate-900 text-white border-slate-800"
                     >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent
-                    side="top"
-                    className="bg-slate-900 text-white border-slate-800"
+                      Quitar archivo adjunto
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                {/* Contextual Action Button */}
+                <div className="flex justify-start">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={handleProcessInvoiceShortcut}
+                    disabled={isSubmitting}
+                    className="text-xs bg-background hover:bg-background/80 border text-primary font-medium h-7 px-2.5 flex items-center gap-1.5 transition-all shadow-xs"
                   >
-                    Quitar archivo adjunto
-                  </TooltipContent>
-                </Tooltip>
+                    <Check className="h-3.5 w-3.5" />
+                    Procesar como Factura de Compra
+                  </Button>
+                </div>
               </div>
             )}
             <div className="flex gap-2">
