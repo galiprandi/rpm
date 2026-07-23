@@ -3,6 +3,7 @@
 ## 📋 BACKLOG
 
 ## ✅ DONE
+- [x] 2026-07-23 — Multi-step success/pending flow en el formulario de contacto para evitar bloqueadores de popups (PR #sofia/public/contact-flow-ux)
 - [x] 2026-07-22 — Widget interactivo de WhatsApp en la web pública con Sofi como asistente virtual (PR #sofia/public/whatsapp-widget)
 - [x] 2026-07-20 — Optimización de LCP con Next.js Image y mejora del hito 2011 en Nosotros (PR #sofia/public/lcp-image-optimization)
 - [x] 2026-07-19 — Integración de imágenes optimizadas para servicios y estandarización de animaciones en testimonios (PR #sofia/public/services-images-and-testimonials-animation)
@@ -22,34 +23,14 @@
 
 ## 🧠 LEARNINGS
 
+## 2026-07-23 - Redirección Asíncrona y Bloqueadores de Ventanas Emergentes (Popup Blockers)
+**Learning:** El uso de `window.open` dentro de callbacks asíncronos (como promesas o temporizadores) suele ser bloqueado por los navegadores modernos para prevenir popups no solicitados. Para asegurar una experiencia de redirección infalible a servicios externos como WhatsApp sin fricciones ni bloqueos, el patrón óptimo consiste en implementar un flujo con estado intermedio (ej: "Mensaje Preparado") que ofrezca al usuario un botón de acción directa (disparador síncrono). Esto elimina por completo el riesgo de bloqueo del navegador, proporciona feedback de carga elegante, y permite un reset sencillo para enviar nuevos mensajes.
+**Action:** Aplicar este patrón de flujo de redirección manual/asistido en todos los formularios públicos que enlacen de forma externa tras procesamiento o carga local.
+
 ## 2026-07-22 - Conversión Contextual y Chat de WhatsApp
 **Learning:** Reemplazar el botón flotante estático de WhatsApp por un widget de chat interactivo que personifica una asistente de atención al cliente ("Sofi") eleva de forma extraordinaria la conversión y la cercanía de la marca. Ofrecer chips interactivos con consultas pre-escritas (como coordinar turnos, cotizar iluminación LED, detailing/PPF o equipamiento off-road) elimina la "fricción de la hoja en blanco", incentivando al usuario a iniciar la interacción de forma lúdica. Además, asegurar accesibilidad total (tecla ESC para cerrar, enfoque inteligente y clic fuera) garantiza que el widget no obstaculice la navegación.
 **Action:** Mantener un estándar de micro-UX humanizado y accesible en todas las integraciones flotantes y de contacto del sitio web público.
 
 ## 2026-07-20 - Optimización LCP de Imágenes y Configuración de Host Remoto
-**Learning:** Al optimizar imágenes de fondo en secciones complejas como hitos/milestones en la página Nosotros, usar el componente `<Image>` de Next.js con `fill`, responsive `sizes` y un contenedor relativo con opacidad controlada (`opacity-10`) permite una lectura impecable del texto sobre fondos oscuros. Asimismo, si la base de datos contiene URLs externas (como `cdn.jsdelivr.net`), es indispensable registrarlas en `next.config.ts` bajo `remotePatterns` para evitar que la compilación de desarrollo o producción de Next.js falle en tiempo de ejecución.
+**Learning:** Al optimizar imágenes de fondo en secciones complejas como hitos/milestones en la página Nosotros, usar el componente `<Image>` de Next.js con `fill`, responsive `sizes` and un contenedor relativo con opacidad controlada (`opacity-10`) permite una lectura impecable del texto sobre fondos oscuros. Asimismo, si la base de datos contiene URLs externas (como `cdn.jsdelivr.net`), es indispensable registrarlas en `next.config.ts` bajo `remotePatterns` para evitar que la compilación de desarrollo o producción de Next.js falle en tiempo de ejecución.
 **Action:** Asegurar que todo host externo de recursos de imagen esté declarado en el archivo de configuración de Next.js y validar la visualización mediante emulación móvil y desktop en Playwright.
-
-## 2026-07-19 - Next.js Public Services Image Integration & Staggered Entrance Standard
-**Learning:** El uso de imágenes optimizadas de fondo mediante Next.js `<Image />` con propiedades LCP (como `fill`, `sizes` y `priority` condicional) en las páginas públicas y modales de vista rápida proporciona una experiencia visual extremadamente premium. Asimismo, la estandarización de animaciones de entrada usando variantes escalonadas de Framer Motion (`containerVariants` y `cardVariants`) a lo largo de todas las secciones principales de la Home (`Services`, `FeaturedProducts` y `Testimonials`) aporta una gran consistencia de marca y un flujo de navegación muy fluido.
-**Action:** Utilizar consistentemente imágenes optimizadas y animaciones escalonadas de Framer Motion en todas las páginas públicas del sitio para asegurar un estándar visual superior.
-
-## 2026-07-16 - Next.js Public Page Architecture Standard
-**Learning:** En Next.js, utilizar `useSearchParams` in páginas estáticas de forma desprotegida provoca de-optimización en el build e hidrataciones fallidas en producción. El estándar robusto de arquitectura de páginas públicas consiste en definir un archivo de página de servidor (como `app/nosotros/page.tsx`) que define los metadatos estáticos estables para motores de búsqueda (SEO) y renderiza el cliente interactivo real (como `AboutClient.tsx`) envuelto en un boundary de `<Suspense>`. Esto permite un excelente rendimiento de LCP y total compatibilidad con deep-linking (ej: `?project=iluminacion-2012`).
-**Action:** Seguir sistemáticamente la estructura de página de servidor + `<Suspense>` + Client Component para todas las rutas con interacciones dinámicas.
-
-## 2026-07-15 - Accesibilidad Proactiva y Estabilidad de Builds
-**Learning:** Mantener la accesibilidad (A11y) no es solo agregar labels, sino asegurar que elementos interactivos que no tienen texto (icon-only buttons) sean identificables por lectores de pantalla y proporcionen feedback visual claro mediante tooltips. Descubrimos que el build de Next.js genera advertencias si no se define `metadataBase` en el layout raíz cuando se usan imágenes sociales, lo cual es crítico para la resolución de URLs absolutas. Además, para evitar advertencias de renderizado en React (setState en el cuerpo de un effect), el patrón de usar un flag `cancelled` y envolver el update en una microtarea (`Promise.resolve()`) asegura una hidratación limpia de estados derivados de la URL.
-**Action:** Implementar sistemáticamente tooltips en icon-buttons y asegurar que `metadataBase` esté siempre configurado en el layout principal.
-
-## 2026-07-14 - Micro-interacciones y Tactilidad con Framer Motion
-**Learning:** Incorporar `framer-motion` permite elevar la percepción de calidad del sitio mediante micro-interacciones que responden al toque (`whileTap`) y al cursor (`whileHover`). Las animaciones de entrada escalonadas (`staggerChildren`) guían el ojo del usuario y hacen que la carga de contenido se sienta deliberada y fluida. Es importante usar `as const` en configuraciones de `ease` personalizadas (como curvas de Bezier) para que TypeScript las reconozca correctamente dentro de las variantes de Motion. Además, reforzamos la importancia del patrón `asChild` para mantener la validez semántica del HTML al anidar elementos interactivos.
-**Action:** Utilizar `framer-motion` para componentes de catálogo y landing pages donde la "experiencia de marca" sea prioritaria.
-
-## 2026-07-13 - SEO, Semántica HTML y Estandarización Visual
-**Learning:** Mejorar el SEO no solo implica meta-tags básicos, sino configurar correctamente `openGraph` y `twitter` en el layout raíz para asegurar previews atractivas en redes sociales. Al usar componentes UI complejos (como Shadcn Buttons) dentro de links, es imperativo usar la prop `asChild` para evitar anidamiento de botones dentro de anchors, lo cual es inválido en HTML y causa advertencias de hidratación en Next.js. La consistencia en la tipografía financiera (`font-mono`) ayuda a separar visualmente los datos técnicos de la narrativa de marketing.
-**Action:** Aplicar `asChild` sistemáticamente en botones que actúen como links y mantener `metadataBase` configurado para resolver rutas de imágenes sociales.
-
-## 2026-07-12 - Deep-Linking de Servicios y Estabilidad de Componentes Shared
-**Learning:** Extender el patrón de "Deep-Linking" a los servicios permite una navegación mucho más fluida desde el buscador global y la Home. Al implementar esto, descubrimos que componentes críticos compartidos como `DataTable` tenían errores de redeclaración de variables que bloqueaban el build de producción. Es vital mantener la pureza de los componentes UI y evitar shadowing de variables de estado (como `rowSelection`) para asegurar la estabilidad del sistema completo, no solo del área pública.
-**Action:** Aplicar siempre el patrón de sufijo (ej: `rowSelectionValue`) when handling controlled vs internal states and verify production builds (`pnpm build`) for any changes in components under `components/ui/*`.
