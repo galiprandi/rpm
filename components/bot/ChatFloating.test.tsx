@@ -189,4 +189,45 @@ describe("ChatFloating Component", () => {
     render(<ChatFloating isOpen={true} />);
     expect(screen.queryByRole("button", { name: /dictar por voz/i })).not.toBeInTheDocument();
   });
+
+  it("shows the 'Procesar como Factura de Compra' button and triggers shortcut when a file is uploaded", async () => {
+    const { container } = render(<ChatFloating isOpen={true} />);
+
+    // Find the file input element (the first file input is for regular attachments)
+    const fileInput = container.querySelector('input[type="file"]');
+    expect(fileInput).toBeInTheDocument();
+
+    const file = new File(["dummy content"], "invoice.pdf", { type: "application/pdf" });
+
+    // Simulate uploading a file
+    await act(async () => {
+      fireEvent.change(fileInput!, { target: { files: [file] } });
+    });
+
+    // Check if the file name is rendered and the shortcut button is visible
+    expect(screen.getByText(/invoice.pdf/i)).toBeInTheDocument();
+    const shortcutBtn = screen.getByRole("button", { name: /Procesar como Factura de Compra/i });
+    expect(shortcutBtn).toBeInTheDocument();
+
+    // Click the shortcut button
+    await act(async () => {
+      fireEvent.click(shortcutBtn);
+    });
+
+    // It should call sendMessage with the correct structure
+    expect(mockSendMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        text: "Procesar factura de compra",
+        files: expect.arrayContaining([
+          expect.objectContaining({
+            type: "file",
+            mediaType: "application/pdf",
+          })
+        ])
+      })
+    );
+
+    // The file preview should be cleared after clicking the shortcut
+    expect(screen.queryByText(/invoice.pdf/i)).not.toBeInTheDocument();
+  });
 });
