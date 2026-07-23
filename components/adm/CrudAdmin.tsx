@@ -39,6 +39,13 @@ interface CrudAdminProps<T extends { id: string }> {
   onExport?: () => void;
   externalGlobalFilter?: string;
   onExternalGlobalFilterChange?: (value: string) => void;
+  /**
+   * When true, indicates the parent is actively filtering items (search term,
+   * category, etc.) so the empty state with CTA is suppressed in favor of
+   * rendering the DataTable (which keeps the search input visible and shows
+   * its own "no results" row). Defaults to false.
+   */
+  hasActiveFilters?: boolean;
 }
 
 export function CrudAdmin<T extends { id: string }>({
@@ -67,6 +74,7 @@ export function CrudAdmin<T extends { id: string }>({
   onExport,
   externalGlobalFilter,
   onExternalGlobalFilterChange,
+  hasActiveFilters = false,
 }: CrudAdminProps<T>) {
   const handleExport = () => {
     if (onExport) {
@@ -212,7 +220,7 @@ export function CrudAdmin<T extends { id: string }>({
 
       {/* Items Table */}
       <div className={hasHeader ? "mt-10" : ""}>
-        {items.length > 0 ? (
+        {items.length > 0 || hasActiveFilters ? (
           <div className="overflow-x-auto -mx-6 px-6">
             <DataTable
               data={items}

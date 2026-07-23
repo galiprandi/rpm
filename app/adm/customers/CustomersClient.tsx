@@ -153,19 +153,22 @@ export default function CustomersClient({
 
   const customerFilterFn = useCallback<FilterFn<Customer>>((row, id, value) => {
     if (!value) return true;
-    const search = value.toLowerCase();
+    const terms = String(value).toLowerCase().split(/[\s+]+/).filter(Boolean);
+    if (terms.length === 0) return true;
     const customer = row.original;
-    return !!(
-      (customer.name?.toLowerCase() ?? "").includes(search) ||
-      (customer.phone?.toLowerCase() ?? "").includes(search) ||
-      (customer.phoneAlt?.toLowerCase() ?? "").includes(search) ||
-      (customer.email?.toLowerCase() ?? "").includes(search) ||
-      customer.vehicles?.some((v) =>
-        (v.identifier?.toLowerCase() ?? "").includes(search),
-      ) ||
-      (isBillingData(customer.billingData) &&
-        (customer.billingData.cuit ?? "").includes(search))
-    );
+    return terms.every((search) => {
+      return !!(
+        (customer.name?.toLowerCase() ?? "").includes(search) ||
+        (customer.phone?.toLowerCase() ?? "").includes(search) ||
+        (customer.phoneAlt?.toLowerCase() ?? "").includes(search) ||
+        (customer.email?.toLowerCase() ?? "").includes(search) ||
+        customer.vehicles?.some((v) =>
+          (v.identifier?.toLowerCase() ?? "").includes(search),
+        ) ||
+        (isBillingData(customer.billingData) &&
+          (customer.billingData.cuit ?? "").includes(search))
+      );
+    });
   }, []);
 
   const columns = useMemo<ColumnDef<Customer>[]>(
@@ -447,6 +450,7 @@ export default function CustomersClient({
         hideCreateAction
         columns={columns}
         filterFn={customerFilterFn}
+        hasActiveFilters={showOnlyWithBalance}
         emptyIcon={
           <User className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
         }
