@@ -125,6 +125,7 @@ export default function NewWorkOrderPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const vehicleIdFromUrl = searchParams.get("vehicleId");
+  const customerIdFromUrl = searchParams.get("customerId");
 
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
@@ -141,6 +142,14 @@ export default function NewWorkOrderPage() {
   const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
   const [selectedCustomerForNewVehicle, setSelectedCustomerForNewVehicle] =
     useState<string | null>(null);
+
+  // Pre-loaded/selected customer & tabs for Step 1
+  const [selectedCustomer, setSelectedCustomer] = useState<any | null>(null);
+  const [loadingCustomer, setLoadingCustomer] = useState(false);
+  const [activeSearchTab, setActiveSearchTab] = useState<"plate" | "customer">("plate");
+  const [customerSearchQuery, setCustomerSearchQuery] = useState("");
+  const [customerSearchResults, setCustomerSearchResults] = useState<any[]>([]);
+  const [searchingCustomers, setSearchingCustomers] = useState(false);
 
   // Step 1b: Create new vehicle (if not found)
   const [newVehicleData, setNewVehicleData] = useState({
@@ -297,6 +306,45 @@ export default function NewWorkOrderPage() {
     };
     fetchVehicleById();
   }, [vehicleIdFromUrl]);
+
+  // Auto-fetch customer if customerId is in URL
+  useEffect(() => {
+    const fetchCustomerById = async () => {
+      if (!customerIdFromUrl) return;
+      setLoadingCustomer(true);
+      try {
+        const res = await fetch(`/api/customers/${customerIdFromUrl}`);
+        if (res.ok) {
+          const data = await res.json();
+          setSelectedCustomer(data);
+          setActiveSearchTab("customer");
+        }
+      } catch (error) {
+        console.error("Error fetching customer by ID:", error);
+      } finally {
+        setLoadingCustomer(false);
+      }
+    };
+    fetchCustomerById();
+  }, [customerIdFromUrl]);
+
+  // Search customers by name/phone
+  const searchCustomers = async () => {
+    if (!customerSearchQuery.trim()) return;
+    setSearchingCustomers(true);
+    setCustomerSearchResults([]);
+    try {
+      const res = await fetch(`/api/customers?search=${encodeURIComponent(customerSearchQuery)}`);
+      if (res.ok) {
+        const data = await res.json();
+        setCustomerSearchResults(data.customers || []);
+      }
+    } catch (error) {
+      console.error("Error searching customers:", error);
+    } finally {
+      setSearchingCustomers(false);
+    }
+  };
 
   // Search vehicle by identifier (patent or serial number)
   const searchVehicle = async () => {
@@ -490,6 +538,9 @@ export default function NewWorkOrderPage() {
     setPlateSearch("");
     setPlateError(null);
     setSelectedCustomerId(null);
+    setSelectedCustomer(null);
+    setCustomerSearchResults([]);
+    setCustomerSearchQuery("");
   };
 
   const handleStepClick = (targetStep: number) => {
@@ -522,85 +573,365 @@ export default function NewWorkOrderPage() {
           {/* Step 1: Search Vehicle by License Plate */}
           {step === 1 && (
             <div className="space-y-6">
-              {!foundVehicle &&
+              {!selectedCustomer &&
+                !foundVehicle &&
                 !showCreateVehicle &&
                 searchResults.length === 0 && (
-                  <Card className="max-w-lg mx-auto">
+                  <Card className="max-w-lg mx-auto shadow-md border-zinc-200">
                     <CardContent className="pt-6">
-                      <div className="text-center space-y-3 mb-6">
-                        <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-primary/10">
-                          <Search
-                            className="h-7 w-7 text-primary"
-                            aria-hidden="true"
-                          />
-                        </div>
-                        <div>
-                          <h3 className="text-lg font-semibold">
-                            Buscar vehículo
-                          </h3>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            Ingrese patente o número de serie para buscar el
-                            vehículo y su dueño
-                          </p>
+                      {/* Search Tabs */}
+                      <div className="flex justify-center mb-6">
+                        <div className="flex items-center gap-1 bg-muted p-1 rounded-lg border">
+                          <Button
+                            type="button"
+                            variant={activeSearchTab === "plate" ? "secondary" : "ghost"}
+                            size="sm"
+                            onClick={() => setActiveSearchTab("plate")}
+                            className="h-8 px-3 text-xs"
+                          >
+                            <Car className="h-3.5 w-3.5 mr-1.5" />
+                            Buscar por Patente
+                          </Button>
+                          <Button
+                            type="button"
+                            variant={activeSearchTab === "customer" ? "secondary" : "ghost"}
+                            size="sm"
+                            onClick={() => setActiveSearchTab("customer")}
+                            className="h-8 px-3 text-xs"
+                          >
+                            <User className="h-3.5 w-3.5 mr-1.5" />
+                            Buscar por Cliente
+                          </Button>
                         </div>
                       </div>
 
-                      <div className="space-y-3">
-                        <div className="relative">
-                          <Search
-                            className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none"
-                            aria-hidden="true"
-                          />
-                          <Input
-                            autoFocus
-                            placeholder="Ej: ABC123, AB123CD o N° de serie"
-                            value={plateSearch}
-                            onChange={(e) => {
-                              setPlateSearch(e.target.value.toUpperCase());
-                              if (plateError) setPlateError(null);
-                            }}
-                            onKeyDown={(e) =>
-                              e.key === "Enter" && searchVehicle()
-                            }
-                            className="text-lg uppercase pl-10 font-mono tracking-widest h-12"
-                          />
-                        </div>
-                        <Button
-                          onClick={searchVehicle}
-                          disabled={searching || !plateSearch.trim()}
-                          className="w-full h-11"
-                        >
-                          {searching ? (
-                            <>
-                              <RotateCcw
-                                className="h-4 w-4 mr-2 animate-spin"
-                                aria-hidden="true"
-                              />
-                              Buscando...
-                            </>
-                          ) : (
-                            <>
+                      {activeSearchTab === "plate" ? (
+                        <>
+                          <div className="text-center space-y-3 mb-6">
+                            <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-primary/10">
                               <Search
-                                className="h-4 w-4 mr-2"
+                                className="h-7 w-7 text-primary"
                                 aria-hidden="true"
                               />
-                              Buscar vehículo
-                            </>
-                          )}
-                        </Button>
-                        {plateError && (
-                          <p className="text-sm text-destructive text-center flex items-center justify-center gap-1.5">
-                            <AlertCircle
-                              className="h-4 w-4"
-                              aria-hidden="true"
-                            />
-                            {plateError}
-                          </p>
+                            </div>
+                            <div>
+                              <h3 className="text-lg font-semibold">
+                                Buscar vehículo
+                              </h3>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                Ingrese patente o número de serie para buscar el
+                                vehículo y su dueño
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="space-y-3">
+                            <div className="relative">
+                              <Search
+                                className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none"
+                                aria-hidden="true"
+                              />
+                              <Input
+                                autoFocus
+                                placeholder="Ej: ABC123, AB123CD o N° de serie"
+                                value={plateSearch}
+                                onChange={(e) => {
+                                  setPlateSearch(e.target.value.toUpperCase());
+                                  if (plateError) setPlateError(null);
+                                }}
+                                onKeyDown={(e) =>
+                                  e.key === "Enter" && searchVehicle()
+                                }
+                                className="text-lg uppercase pl-10 font-mono tracking-widest h-12"
+                              />
+                            </div>
+                            <Button
+                              onClick={searchVehicle}
+                              disabled={searching || !plateSearch.trim()}
+                              className="w-full h-11"
+                            >
+                              {searching ? (
+                                <>
+                                  <RotateCcw
+                                    className="h-4 w-4 mr-2 animate-spin"
+                                    aria-hidden="true"
+                                  />
+                                  Buscando...
+                                </>
+                              ) : (
+                                <>
+                                  <Search
+                                    className="h-4 w-4 mr-2"
+                                    aria-hidden="true"
+                                  />
+                                  Buscar vehículo
+                                </>
+                              )}
+                            </Button>
+                            {plateError && (
+                              <p className="text-sm text-destructive text-center flex items-center justify-center gap-1.5">
+                                <AlertCircle
+                                  className="h-4 w-4"
+                                  aria-hidden="true"
+                                />
+                                {plateError}
+                              </p>
+                            )}
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="text-center space-y-3 mb-6">
+                            <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-primary/10">
+                              <User
+                                className="h-7 w-7 text-primary"
+                                aria-hidden="true"
+                              />
+                            </div>
+                            <div>
+                              <h3 className="text-lg font-semibold">
+                                Buscar por Cliente
+                              </h3>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                Ingrese nombre o teléfono para buscar un cliente
+                                registrado
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="space-y-3">
+                            <div className="relative">
+                              <Search
+                                className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none"
+                                aria-hidden="true"
+                              />
+                              <Input
+                                autoFocus
+                                placeholder="Nombre o teléfono del cliente"
+                                value={customerSearchQuery}
+                                onChange={(e) => setCustomerSearchQuery(e.target.value)}
+                                onKeyDown={(e) =>
+                                  e.key === "Enter" && searchCustomers()
+                                }
+                                className="text-sm pl-10 h-12"
+                              />
+                            </div>
+                            <Button
+                              onClick={searchCustomers}
+                              disabled={searchingCustomers || !customerSearchQuery.trim()}
+                              className="w-full h-11"
+                            >
+                              {searchingCustomers ? (
+                                <>
+                                  <RotateCcw
+                                    className="h-4 w-4 mr-2 animate-spin"
+                                    aria-hidden="true"
+                                  />
+                                  Buscando...
+                                </>
+                              ) : (
+                                <>
+                                  <Search
+                                    className="h-4 w-4 mr-2"
+                                    aria-hidden="true"
+                                  />
+                                  Buscar cliente
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        </>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+
+              {/* Customer Search Results */}
+              {activeSearchTab === "customer" && !selectedCustomer && !foundVehicle && customerSearchResults.length > 0 && (
+                <div className="max-w-md mx-auto space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider text-center">
+                    Clientes Encontrados ({customerSearchResults.length})
+                  </h4>
+                  <div className="space-y-2">
+                    {customerSearchResults.map((customer) => (
+                      <button
+                        key={customer.id}
+                        type="button"
+                        onClick={async () => {
+                          setLoadingCustomer(true);
+                          try {
+                            const res = await fetch(`/api/customers/${customer.id}`);
+                            if (res.ok) {
+                              const data = await res.json();
+                              setSelectedCustomer(data);
+                            }
+                          } catch (error) {
+                            console.error("Error fetching selected customer details:", error);
+                          } finally {
+                            setLoadingCustomer(false);
+                          }
+                        }}
+                        className="w-full text-left border rounded-xl p-3.5 bg-background hover:bg-primary/5 hover:border-primary/30 transition-all flex items-center gap-3 group shadow-sm"
+                      >
+                        <div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/20 shrink-0 flex items-center justify-center">
+                          <User className="h-4 w-4 text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="font-bold text-zinc-900 text-sm">
+                            {customer.name}
+                          </span>
+                          <div className="flex gap-2 text-xs text-muted-foreground mt-0.5 font-mono">
+                            {customer.phone && <span>📞 {customer.phone}</span>}
+                            {customer.email && <span className="truncate">✉️ {customer.email}</span>}
+                          </div>
+                        </div>
+                        <CheckCircle
+                          className="h-4 w-4 text-muted-foreground/30 group-hover:text-primary transition-colors shrink-0"
+                          aria-hidden="true"
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Selected Customer View */}
+              {selectedCustomer && !foundVehicle && (
+                <div className="max-w-2xl mx-auto space-y-4 animate-in fade-in zoom-in-95 duration-200">
+                  <Card className="overflow-hidden shadow-md border-zinc-200">
+                    <div className="bg-emerald-500/5 border-b border-emerald-500/10 px-6 py-4 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle
+                          className="h-5 w-5 text-emerald-600"
+                          aria-hidden="true"
+                        />
+                        <span className="text-sm font-semibold text-emerald-700">
+                          Cliente seleccionado
+                        </span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={resetSearch}
+                        className="text-muted-foreground hover:text-destructive h-8 px-2 text-xs"
+                      >
+                        Cambiar cliente
+                      </Button>
+                    </div>
+                    <CardContent className="pt-6 space-y-4">
+                      {/* Customer Info */}
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-xl bg-primary/10 border border-primary/20 shrink-0 flex items-center justify-center text-2xl">
+                          <User className="h-6 w-6 text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-lg font-bold text-zinc-900 leading-tight">
+                            {selectedCustomer.name}
+                          </h3>
+                          <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-xs text-muted-foreground">
+                            {selectedCustomer.phone && (
+                              <span className="font-mono">📞 {selectedCustomer.phone}</span>
+                            )}
+                            {selectedCustomer.email && (
+                              <span className="font-mono">✉️ {selectedCustomer.email}</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Vehicles List */}
+                      <div className="space-y-3 pt-2">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider">
+                            Vehículos Registrados
+                          </h4>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedCustomerForNewVehicle(selectedCustomer.id);
+                              setIsVehicleModalOpen(true);
+                            }}
+                            className="h-8 text-xs border-primary/30 text-primary hover:bg-primary/5"
+                          >
+                            <Plus className="h-3.5 w-3.5 mr-1" />
+                            Agregar Vehículo
+                          </Button>
+                        </div>
+
+                        {selectedCustomer.vehicles && selectedCustomer.vehicles.length > 0 ? (
+                          <div className="grid gap-2">
+                            {selectedCustomer.vehicles.map((v: any) => (
+                              <button
+                                key={v.id}
+                                type="button"
+                                onClick={() => {
+                                  setFoundVehicle({
+                                    ...v,
+                                    customer: {
+                                      id: selectedCustomer.id,
+                                      name: selectedCustomer.name,
+                                      phone: selectedCustomer.phone,
+                                      email: selectedCustomer.email,
+                                    },
+                                  });
+                                }}
+                                className="w-full text-left border rounded-xl p-3 bg-background hover:bg-primary/5 hover:border-primary/30 transition-all flex items-center gap-3 group shadow-sm"
+                              >
+                                <div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/20 shrink-0 flex items-center justify-center text-lg">
+                                  {getVehicleCategoryIcon(v.category)}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-mono font-bold text-sm tracking-tight">
+                                      {v.identifier}
+                                    </span>
+                                    <Badge variant="secondary" className="text-[10px] py-0 px-1.5 h-4">
+                                      {getVehicleCategoryLabel(v.category)}
+                                    </Badge>
+                                  </div>
+                                  <p className="text-xs text-muted-foreground truncate mt-0.5">
+                                    {buildVehicleDescription({
+                                      category: v.category,
+                                      make: v.vehicleMake?.name,
+                                      model: v.vehicleModel?.name,
+                                      year: v.year,
+                                    })
+                                      .split(" · ")
+                                      .slice(1)
+                                      .join(" · ") || "Sin detalles"}
+                                  </p>
+                                </div>
+                                <CheckCircle
+                                  className="h-4 w-4 text-muted-foreground/30 group-hover:text-primary transition-colors shrink-0"
+                                  aria-hidden="true"
+                                />
+                              </button>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-center py-6 border border-dashed rounded-xl bg-muted/20">
+                            <Car className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2 pointer-events-none" />
+                            <p className="text-xs text-muted-foreground mb-3">El cliente no tiene vehículos registrados.</p>
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedCustomerForNewVehicle(selectedCustomer.id);
+                                setIsVehicleModalOpen(true);
+                              }}
+                            >
+                              <Plus className="h-3.5 w-3.5 mr-1" />
+                              Registrar primer vehículo
+                            </Button>
+                          </div>
                         )}
                       </div>
                     </CardContent>
                   </Card>
-                )}
+                </div>
+              )}
 
               {/* Search Results List */}
               {searchResults.length > 0 && !foundVehicle && (

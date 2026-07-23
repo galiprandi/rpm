@@ -2,6 +2,7 @@
 - [ ] Idea pendiente — breve descripción
 
 ## ✅ COMPLETADO
+- [x] 2026-07-23 — Búsqueda por Cliente y Pre-carga de Cuenta en Alta de OT (PR #jorge/work-orders/preloaded-customer-search)
 - [x] 2026-07-22 — Indicadores Visuales de Checklist/Fotos y Exportación CSV en Taller (PR #jorge/work-orders/enhanced-metadata-csv-export)
 - [x] 2026-07-21 — Botones de Filtro Rápido en Taller: Demoradas y Turnos de Hoy (PR #jorge/work-orders/quick-filters)
 - [x] 2026-07-20 — Gestión de Fotos — Carga y eliminación masiva de fotos de órdenes de trabajo (PR jorge/work-orders/photo-management)
@@ -12,6 +13,10 @@
 - [x] 2025-07-08 — Servicio Centralizado de OT y Timeline Unificado (PR #jorge/work-orders/centralized-updates)
 
 ## 🧠 APRENDIZAJES
+## 2026-07-23 - Búsqueda por Cliente y Pre-carga de Cuenta en Alta de OT
+**Aprendizaje:** Al iniciar el alta de un servicio en el taller, es común que el recepcionista no conozca de inmediato la patente del vehículo, o que el cliente sea recurrente y tenga múltiples unidades. Permitir buscar directamente por cliente (nombre o teléfono) e integrar la pre-carga desde la URL (para redirecciones fluidas desde la ficha del cliente) reduce sustancialmente el tiempo de carga administrativa y elimina la fricción de duplicar búsquedas de cuentas existentes.
+**Acción:** Siempre proveer múltiples caminos de búsqueda en flujos de creación (por entidad técnica y por entidad de cliente) y pre-cargar el contexto de forma transparente si proviene de una vista relacional previa.
+
 ## 2026-07-22 - Indicadores Visuales de Metadatos y Exportación CSV en Taller
 **Aprendizaje:** En la gestión diaria del taller mecánico, tener visibilidad inmediata sobre si los checklists (de ingreso y de salida) han sido completados y la cantidad de fotos cargadas en las tarjetas del Kanban y de la Lista evita que se dejen vehículos sin inspección previa o posterior. Además, poder exportar en un solo click (respetando filtros activos, codificación Excel UTF-8 BOM, escape de caracteres y relaciones de vehículos/responsables de manera defensiva) eleva considerablemente la productividad administrativa del taller.
 **Acción:** Siempre incluir micro-indicadores visuales con tooltips informativos para estados de procesos secuenciales (checklists, fotos) y habilitar exportación a CSV segura y amigable para Excel.
@@ -37,7 +42,7 @@
 **Acción:** Al duplicar funcionalidades de filtrado/búsqueda en dos vistas de un mismo módulo, extraer la lógica de ordenamiento y filtrado a funciones puras reusables o memos unificados.
 
 ## 2025-07-12 - Acciones Rápidas en Kanban
-**Learning:** Las acciones rápidas en tarjetas Kanban (hover buttons) reducen drásticamente la fricción para flujos lineales de trabajo, evitando la necesidad de drag-and-drop para transiciones comunes.
+**Learning:** Las acciones rápidas en tarjetas Kanban (hover buttons) reducen drácticamente la fricción para flujos lineales de trabajo, evitando la necesidad de drag-and-drop para transiciones comunes.
 **Acción:** Implementar el patrón `NEXT_STATUS_MAP` para guiar al usuario hacia la siguiente acción lógica en el flujo de negocio.
 
 ## 2025-07-08 - UX Kanban y Propagación de Eventos
