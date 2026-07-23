@@ -193,6 +193,12 @@ export function DataTable<TData>({
       pagination,
       rowSelection: rowSelectionValue,
     },
+    // Prevent pagination from resetting to page 0 when the data array
+    // reference changes (e.g. parent re-renders, modal open/close, state
+    // updates after CRUD operations). Without this, opening/closing a dialog
+    // causes the parent to re-render, producing a new `data` reference and
+    // triggering TanStack's default auto-reset behavior.
+    autoResetPageIndex: false,
     enableRowSelection,
     getRowId,
     onSortingChange: setSorting,
@@ -206,6 +212,16 @@ export function DataTable<TData>({
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
   });
+
+  // Clamp pageIndex when filtered data shrinks below the current page
+  // (e.g. search filters reduce results). Without autoResetPageIndex, the
+  // user could remain on a non-existent page showing an empty table.
+  const pageCount = table.getPageCount();
+  React.useEffect(() => {
+    if (pageCount > 0 && pagination.pageIndex >= pageCount) {
+      setPagination((prev) => ({ ...prev, pageIndex: pageCount - 1 }));
+    }
+  }, [pageCount, pagination.pageIndex]);
 
   // Notify parent of selection changes (TData[])
   // We use a stable selection string to avoid re-triggering if content hasn't changed
