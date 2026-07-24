@@ -1,6 +1,11 @@
 ## 📋 BACKLOG
 
 ## ✅ DONE
+- [x] 2026-07-29 — Acción de Recalcular Saldos para Administradores en Listado de Clientes
+  - Implementación de un botón de acción "Recalcular Saldos" en la cabecera del listado de clientes (`CustomersClient.tsx`), visible únicamente para usuarios con rol de Administrador (`isAdmin={userRole === UserRole.ADMIN}`).
+  - Integración asíncrona robusta que invoca al endpoint `/api/admin/recalculate-balances` con estados de carga animados (`isRecalculating` con animación pulse) y re-fetching automático tras un cálculo exitoso.
+  - Diseño de feedback estructurado sin alert nativo usando el contexto de `useUI().alert` para notificar al operador los resultados precisos del proceso de optimización de saldos.
+  - Suite de pruebas exhaustiva con Vitest (`CustomersClient.test.tsx`) que valida la visualización basada en roles, las llamadas asíncronas y el control de alertas.
 - [x] 2026-07-22 — Visualización de Equipos y Alertas de Deuda por Vehículo en Ficha de Cliente
   - Optimización de la tabla de "Vehículos y Equipos" en la ficha del cliente para renderizar el nombre (`equipmentName`) y tipo de equipo (`equipmentType`) de forma clara para categorías de no-vehículos (ej: `AUDIO_EQUIPMENT`, `TRAILER`, `ELECTRIC_SCOOTER`, `OTHER`), evitando celdas vacías.
   - Implementación de alertas de deuda específicas por vehículo/equipo directamente en la tabla, calculando la deuda en base a órdenes de trabajo pendientes de pago (`vDebt`).
@@ -48,6 +53,10 @@
   - Mejora de navegación con botón de "Volver" en el detalle del cliente.
 
 ## 🧠 LEARNINGS
+## 2026-07-29 - Acción de Recalcular Saldos y Control de Acceso por Roles
+**Learning:** En flujos administrativos donde existen roles con diferentes permisos (como Admin vs Staff), es sumamente importante restringir la visualización y ejecución de acciones críticas (como la optimización y recálculo de saldos de cuenta corriente de los clientes) a nivel de la interfaz de usuario. Al pasar explícitamente la propiedad `isAdmin` a componentes de cliente desde una página de servidor segura y condicionar la renderización de las acciones de cabecera, evitamos la exposición de controles avanzados a usuarios con menos privilegios. Además, la interacción con la API de procesamiento pesado debe incorporar estados de carga visibles y avisos no intrusivos mediante contextos UI (`useUI().alert`) en lugar de alerts globales del navegador para mantener la fluidez de la interfaz.
+**Action:** Propagar siempre variables seguras de rol desde el servidor a componentes de cliente, aplicar feedback de carga con animaciones y notificaciones de UI controladas.
+
 ## 2026-07-22 - Visualización Contextual de Activos y Alertas Financieras
 **Learning:** En fichas de clientes complejos (como flotas de transporte, empresas o clientes con múltiples unidades y equipos), es común tener tanto automotores tradicionales como equipos especiales o remolques registrados en la misma cuenta. Si la interfaz solo muestra marca y modelo estándar, las celdas de equipos quedan vacías, forzando al operador a navegar a la ficha individual de cada equipo para saber qué es. Al renderizar dinámicamente `equipmentName` y `equipmentType` en la misma tabla según la categoría del activo, y añadir alertas de deuda individuales derivadas de las órdenes de trabajo activas, se proporciona una visualización contextual impecable que permite identificar deudores de un vistazo sin clics de navegación adicionales.
 **Action:** Utilizar siempre visualizaciones adaptativas basadas en la categoría del activo e inyectar métricas financieras agregadas en la tabla de listado de sub-entidades para reducir fricción.
