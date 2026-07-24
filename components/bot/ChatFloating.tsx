@@ -540,7 +540,7 @@ export function ChatFloating({
         <div
           className={`${
             isMobile
-              ? "fixed inset-0 w-full h-full rounded-none"
+              ? "fixed inset-0 w-full h-[100dvh] rounded-none"
               : `fixed bottom-24 right-6 bg-background border rounded-lg shadow-xl z-50 flex flex-col transition-all duration-300 ${
                   isExpanded ? "w-[600px] h-[700px]" : "w-[500px] h-[600px]"
                 }`

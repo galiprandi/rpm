@@ -14,6 +14,7 @@ import {
   PinOff,
   Sparkles,
   ShieldCheck,
+  MessageSquare,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -58,6 +59,7 @@ interface AppSidebarProps {
   };
   onSignOut: () => void;
   onOpenPalette?: () => void;
+  onOpenChat?: () => void;
 }
 
 /** Resolve the active group label based on the current pathname */
@@ -70,9 +72,13 @@ function getActiveGroupLabel(path: string): string | undefined {
   )?.label;
 }
 
-export function AppSidebar({ user, onSignOut, onOpenPalette }: AppSidebarProps) {
+export function AppSidebar({ user, onSignOut, onOpenPalette, onOpenChat }: AppSidebarProps) {
   const pathname = usePathname();
   const { isMobile, toggleSidebar, state } = useSidebar();
+  const isMac =
+    typeof navigator !== 'undefined' &&
+    navigator.platform?.toUpperCase().includes('MAC');
+  const chatShortcutLabel = isMac ? '⌘⇧M' : 'Ctrl+⇧M';
   const isCollapsed = state === 'collapsed';
   const { isPinned, togglePin } = usePinnedNav();
   const { hasUnread } = useNovedadesRead();
@@ -190,6 +196,19 @@ export function AppSidebar({ user, onSignOut, onOpenPalette }: AppSidebarProps) 
               <kbd className="ml-auto rounded-md border border-sidebar-border bg-sidebar-foreground/5 px-1.5 py-0.5 text-[10px] font-mono text-sidebar-foreground/58 group-data-[collapsible=icon]:hidden">⌘K</kbd>
             </SidebarMenuButton>
           </SidebarMenuItem>
+          {onOpenChat && (
+            <SidebarMenuItem className="mt-1.5">
+              <SidebarMenuButton
+                onClick={onOpenChat}
+                tooltip={`Asistente Nitro (${chatShortcutLabel})`}
+                className="h-11 rounded-lg border border-sidebar-border/70 bg-background/55 px-3 text-sidebar-foreground/68 shadow-sm transition-[background,color,box-shadow] hover:bg-sidebar-accent hover:text-sidebar-foreground hover:shadow-md group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-2"
+              >
+                <MessageSquare className="size-4.5" />
+                <span className="text-sm font-medium">Preguntar a Nitro</span>
+                <kbd className="ml-auto rounded-md border border-sidebar-border bg-sidebar-foreground/5 px-1.5 py-0.5 text-[10px] font-mono text-sidebar-foreground/58 group-data-[collapsible=icon]:hidden">{chatShortcutLabel}</kbd>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
         </SidebarMenu>
 
         {canAccess(userRole, homeNavItem.roles) && (
