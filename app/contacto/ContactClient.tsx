@@ -2,9 +2,10 @@
 
 import { useState } from 'react';
 import { PublicLayout } from '@/components/public/layout/PublicLayout';
-import { MapPin, MessageCircle, Send } from 'lucide-react';
+import { MapPin, MessageCircle, Send, CheckCircle2, ExternalLink, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PUBLIC_SITE_CONFIG, DEFAULT_WHATSAPP_MESSAGE } from '@/lib/config/public-site';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function ContactClient() {
   const [formData, setFormData] = useState({
@@ -13,10 +14,33 @@ export default function ContactClient() {
     message: ''
   });
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [whatsappUrl, setWhatsappUrl] = useState('');
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
+
     const whatsappMessage = `Hola RPM Accesorios! Mi nombre es ${formData.name} (${formData.email}).\n\nMensaje: ${formData.message}`;
-    window.open(PUBLIC_SITE_CONFIG.links.whatsapp(whatsappMessage), '_blank');
+    const generatedUrl = PUBLIC_SITE_CONFIG.links.whatsapp(whatsappMessage);
+    setWhatsappUrl(generatedUrl);
+
+    // Simulate premium visual load feedback before showing success/launch state
+    setTimeout(() => {
+      setIsSubmitting(false);
+      setIsSubmitted(true);
+      // Attempt window.open but keep backup in UI in case of blocker
+      window.open(generatedUrl, '_blank');
+    }, 1200);
+  };
+
+  const handleReset = () => {
+    setFormData({ name: '', email: '', message: '' });
+    setIsSubmitted(false);
+    setWhatsappUrl('');
   };
 
   return (
@@ -67,49 +91,116 @@ export default function ContactClient() {
               </div>
             </div>
 
-            <div className="bg-zinc-900/30 border border-white/5 rounded-[40px] p-12 space-y-8 animate-fade-up opacity-0" style={{ animationDelay: '0.6s' }}>
-              <h3 className="text-2xl font-bold text-white tracking-tight">Enviar Mensaje</h3>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="space-y-2">
-                  <label htmlFor="name" className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Nombre Completo</label>
-                  <input
-                    id="name"
-                    type="text"
-                    required
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full bg-black/50 border border-white/10 rounded-2xl h-14 px-6 text-white focus:outline-none focus:border-brand/50 transition-all"
-                    placeholder="Juan Pérez"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label htmlFor="email" className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Email</label>
-                  <input
-                    id="email"
-                    type="email"
-                    required
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full bg-black/50 border border-white/10 rounded-2xl h-14 px-6 text-white focus:outline-none focus:border-brand/50 transition-all"
-                    placeholder="juan@ejemplo.com"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label htmlFor="message" className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Mensaje / Consulta</label>
-                  <textarea
-                    id="message"
-                    required
-                    value={formData.message}
-                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                    className="w-full bg-black/50 border border-white/10 rounded-2xl p-6 text-white focus:outline-none focus:border-brand/50 transition-all min-h-[150px]"
-                    placeholder="¿En qué podemos ayudarte?"
-                  ></textarea>
-                </div>
-                <Button type="submit" className="w-full h-16 bg-brand text-white font-bold text-lg rounded-2xl hover:bg-brand/90 transition-all active:scale-95 gap-2">
-                  <Send className="h-5 w-5" />
-                  Enviar a WhatsApp
-                </Button>
-              </form>
+            <div className="bg-zinc-900/30 border border-white/5 rounded-[40px] p-12 relative min-h-[500px] flex flex-col justify-center animate-fade-up overflow-hidden opacity-0" style={{ animationDelay: '0.6s' }}>
+              <AnimatePresence mode="wait">
+                {!isSubmitted ? (
+                  <motion.div
+                    key="form"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 20 }}
+                    transition={{ duration: 0.4 }}
+                    className="space-y-8"
+                  >
+                    <h3 className="text-2xl font-bold text-white tracking-tight">Enviar Mensaje</h3>
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                      <div className="space-y-2">
+                        <label htmlFor="name" className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Nombre Completo</label>
+                        <input
+                          id="name"
+                          type="text"
+                          required
+                          disabled={isSubmitting}
+                          value={formData.name}
+                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                          className="w-full bg-black/50 border border-white/10 rounded-2xl h-14 px-6 text-white focus:outline-none focus:border-brand/50 transition-all disabled:opacity-50"
+                          placeholder="Juan Pérez"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label htmlFor="email" className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Email</label>
+                        <input
+                          id="email"
+                          type="email"
+                          required
+                          disabled={isSubmitting}
+                          value={formData.email}
+                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                          className="w-full bg-black/50 border border-white/10 rounded-2xl h-14 px-6 text-white focus:outline-none focus:border-brand/50 transition-all disabled:opacity-50"
+                          placeholder="juan@ejemplo.com"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label htmlFor="message" className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Mensaje / Consulta</label>
+                        <textarea
+                          id="message"
+                          required
+                          disabled={isSubmitting}
+                          value={formData.message}
+                          onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                          className="w-full bg-black/50 border border-white/10 rounded-2xl p-6 text-white focus:outline-none focus:border-brand/50 transition-all min-h-[150px] disabled:opacity-50"
+                          placeholder="¿En qué podemos ayudarte?"
+                        ></textarea>
+                      </div>
+                      <Button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="w-full h-16 bg-brand text-white font-bold text-lg rounded-2xl hover:bg-brand/90 transition-all active:scale-95 gap-2"
+                      >
+                        {isSubmitting ? (
+                          <>
+                            <span className="h-5 w-5 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                            Procesando...
+                          </>
+                        ) : (
+                          <>
+                            <Send className="h-5 w-5" />
+                            Enviar a WhatsApp
+                          </>
+                        )}
+                      </Button>
+                    </form>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="success"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ duration: 0.4 }}
+                    className="text-center space-y-8 flex flex-col items-center justify-center py-8"
+                  >
+                    <div className="w-20 h-20 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 mb-2 border border-emerald-500/20 shadow-[0_0_40px_rgba(16,185,129,0.1)]">
+                      <CheckCircle2 className="h-10 w-10 animate-bounce" />
+                    </div>
+
+                    <div className="space-y-4 max-w-md">
+                      <h3 className="text-3xl font-bold text-white tracking-tight">¡Mensaje Preparado!</h3>
+                      <p className="text-zinc-400 text-sm leading-relaxed">
+                        Si tu navegador bloqueó la redirección automática, podés usar el botón de abajo para abrir WhatsApp de forma directa y enviar tu consulta.
+                      </p>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md pt-4">
+                      <Button
+                        onClick={() => window.open(whatsappUrl, '_blank')}
+                        className="flex-1 h-14 bg-[#25D366] hover:bg-[#20ba56] text-white font-bold rounded-2xl transition-all duration-300 hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2 shadow-[0_4px_20px_rgba(37,211,102,0.3)] border-none"
+                      >
+                        <ExternalLink className="h-5 w-5" />
+                        Abrir WhatsApp
+                      </Button>
+                      <Button
+                        onClick={handleReset}
+                        variant="outline"
+                        className="h-14 border-white/10 text-zinc-400 hover:text-white hover:bg-white/5 rounded-2xl px-6 transition-all duration-300 flex items-center justify-center gap-2"
+                      >
+                        <RotateCcw className="h-4 w-4" />
+                        Nuevo Mensaje
+                      </Button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </div>
