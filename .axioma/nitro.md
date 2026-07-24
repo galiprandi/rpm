@@ -5,6 +5,7 @@
 - [ ] Direct photo attachments for work order checklist items.
 
 ## ✅ DONE
+- [x] 2026-07-24 — Integrate the virtual assistant "Preguntar a Nitro" trigger directly in the AppSidebar and AdminClientLayout for seamless mobile and desktop accessibility, and upgrade ChatFloating mobile fullscreen layout to use dynamic h-[100dvh].
 - [x] 2026-07-23 — Implement contextual attachment quick-action button ("Procesar como Factura de Compra") inside ChatFloating.tsx, featuring instant Base64 serialization, prompt submission integration, and automated preview cleanup with robust unit test coverage.
 - [x] 2026-07-22 — Implement voice-to-text dictation integration (es-AR locale) inside ChatFloating.tsx, featuring pulsing microphone animations, adaptive placeholders, graceful cleanup handlers, and full unit test coverage.
 - [x] 2026-07-21 — Implement dynamic context-aware suggestions, accidental-wipe protection (double click clear confirm), robust session persistence, friendly client-side error formatting, and Escape key stream cancellation.
@@ -15,6 +16,10 @@
 - [x] 2026-03-28 — Initial audit of bot tools, removal of mock tools, fixing conversation history unit tests, and implementing major UI/UX improvements (smart scrolling, success states for tool execution, empty-state quick start suggestion chips, and full WCAG accessibility).
 
 ## 🧠 LEARNINGS
+### 2026-07-24 — Mobile Layouts and Sidebar Accessibility Integration
+**Learning:** For floating or overlay-based companion widgets (like virtual assistant chat windows), a floating action toggle button is often not enough because on mobile devices they are hidden to prevent UI clutter, locking out mobile users entirely. Integrating the trigger seamlessly inside the native administrative layout sidebar is a beautiful design pattern that unifies the desktop and mobile accessibility story while preserving identical design system visuals and shortcuts.
+**Action:** Always provide secondary sidebar entryways for companion widgets to ensure 100% accessibility across all form factors.
+
 ### 2026-07-23 — Contextual File Actions & Automation Shortcuts
 **Learning:** For workflows requiring multi-step interactions (such as uploading an invoice and typing an instruction like "process this invoice"), offering context-aware quick-action buttons inside the file upload preview greatly optimizes the user experience. The user can perform complex file operations with a single click, completely removing phrasing friction.
 **Action:** Always inspect user attachment states and render contextually appropriate shortcut chips/buttons right next to the file preview elements.
