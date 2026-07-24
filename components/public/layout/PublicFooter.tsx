@@ -16,11 +16,25 @@ export function PublicFooter() {
               {PUBLIC_SITE_CONFIG.description}
             </p>
             <div className="flex space-x-4">
-              <a href={PUBLIC_SITE_CONFIG.instagramUrl} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors" title="Instagram">
-                <Camera className="h-5 w-5" />
+              <a
+                href={PUBLIC_SITE_CONFIG.instagramUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none rounded"
+                title="Instagram"
+                aria-label="Instagram de RPM Accesorios"
+              >
+                <Camera className="h-5 w-5 pointer-events-none" aria-hidden="true" />
               </a>
-              <a href={PUBLIC_SITE_CONFIG.links.whatsapp(DEFAULT_WHATSAPP_MESSAGE)} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors" title="WhatsApp">
-                <MessageCircle className="h-5 w-5" />
+              <a
+                href={PUBLIC_SITE_CONFIG.links.whatsapp(DEFAULT_WHATSAPP_MESSAGE)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none rounded"
+                title="WhatsApp"
+                aria-label="WhatsApp de RPM Accesorios"
+              >
+                <MessageCircle className="h-5 w-5 pointer-events-none" aria-hidden="true" />
               </a>
             </div>
           </div>
@@ -41,17 +55,23 @@ export function PublicFooter() {
             <h4 className="text-white font-semibold mb-6 uppercase tracking-wider text-sm">Contacto</h4>
             <ul className="space-y-4 text-sm">
               <li className="flex items-start space-x-3">
-                <MapPin className="h-5 w-5 text-[#FF4B00] shrink-0" />
+                <MapPin className="h-5 w-5 text-[#FF4B00] shrink-0 pointer-events-none" aria-hidden="true" />
                 <span>{PUBLIC_SITE_CONFIG.address}</span>
               </li>
               <li className="flex items-center space-x-3">
-                <a href={PUBLIC_SITE_CONFIG.links.whatsapp(DEFAULT_WHATSAPP_MESSAGE)} target="_blank" rel="noopener noreferrer" className="flex items-center space-x-3 hover:text-white transition-colors">
-                  <Phone className="h-5 w-5 text-[#FF4B00] shrink-0" />
+                <a
+                  href={PUBLIC_SITE_CONFIG.links.whatsapp(DEFAULT_WHATSAPP_MESSAGE)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center space-x-3 hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none rounded-lg px-2 py-1"
+                  aria-label={`Llamar o enviar WhatsApp al ${PUBLIC_SITE_CONFIG.phone}`}
+                >
+                  <Phone className="h-5 w-5 text-[#FF4B00] shrink-0 pointer-events-none" aria-hidden="true" />
                   <span>{PUBLIC_SITE_CONFIG.phone}</span>
                 </a>
               </li>
               <li className="flex items-center space-x-3">
-                <Mail className="h-5 w-5 text-[#FF4B00] shrink-0" />
+                <Mail className="h-5 w-5 text-[#FF4B00] shrink-0 pointer-events-none" aria-hidden="true" />
                 <span>{PUBLIC_SITE_CONFIG.email}</span>
               </li>
             </ul>
