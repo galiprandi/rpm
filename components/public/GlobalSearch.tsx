@@ -152,7 +152,7 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
             {query && (
               <button
                 onClick={() => setQuery('')}
-                className="absolute right-4 top-1/2 -translate-y-1/2 h-6 w-6 flex items-center justify-center rounded-full bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
+                className="absolute right-4 top-1/2 -translate-y-1/2 h-6 w-6 flex items-center justify-center rounded-full bg-zinc-800 text-zinc-400 hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none focus-visible:ring-offset-1"
                 aria-label="Limpiar búsqueda"
               >
                 <X className="h-4 w-4" />

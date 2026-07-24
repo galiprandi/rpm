@@ -511,7 +511,7 @@ export function ProductServiceSelector({
                 setShowResults(false);
                 inputRef.current?.focus();
               }}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1 rounded-full p-0.5"
               aria-label="Limpiar búsqueda"
             >
               <X className="h-4 w-4" />
@@ -794,7 +794,7 @@ export function ProductServiceSelector({
                             <button
                               type="button"
                               onClick={() => setEditingNameIndex(index)}
-                              className="text-muted-foreground hover:text-primary transition-colors flex-shrink-0"
+                              className="text-muted-foreground hover:text-primary transition-colors flex-shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1 rounded-sm p-0.5"
                               aria-label="Editar descripción"
                             >
                               <Pencil className="h-3 w-3" />
@@ -890,7 +890,7 @@ export function ProductServiceSelector({
                     )}
                   />
                   {item.minimumPrice && item.unitPrice < item.minimumPrice && (
-                    <span className="text-[10px] text-red-600 font-medium leading-none text-right">
+                    <span className="text-[10px] text-red-700 font-medium leading-none text-right">
                       Bajo margen mín.
                     </span>
                   )}
