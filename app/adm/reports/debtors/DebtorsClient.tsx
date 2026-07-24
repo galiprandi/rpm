@@ -96,7 +96,6 @@ export default function DebtorsClient() {
   const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
 
   const fetchDebtors = useCallback(async () => {
-    setLoading(true);
     try {
       const res = await fetch(`/api/reports/debtors?sortBy=${sortBy}&limit=50`);
       if (res.ok) {
@@ -160,6 +159,7 @@ export default function DebtorsClient() {
         setPaymentAmount("");
         setPaymentNotes("");
         setSelectedDebtor(null);
+        setLoading(true);
         await fetchDebtors(); // Refresh report data
         await alert({
           title: "Pago registrado",
@@ -588,9 +588,10 @@ export default function DebtorsClient() {
             <span className="text-sm text-muted-foreground">Ordenar por:</span>
             <Select
               value={sortBy}
-              onValueChange={(v) =>
-                setSortBy(v as "amount" | "oldest" | "newest")
-              }
+              onValueChange={(v) => {
+                setSortBy(v as "amount" | "oldest" | "newest");
+                setLoading(true);
+              }}
             >
               <SelectTrigger className="w-44 h-9">
                 <SelectValue />

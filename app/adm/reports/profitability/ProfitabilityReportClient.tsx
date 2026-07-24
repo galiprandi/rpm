@@ -48,18 +48,15 @@ export default function ProfitabilityReportClient() {
   const [period, setPeriod] = useState<Period>("last30days");
   const [data, setData] = useState<ProfitabilityReportData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [customStartDate, setCustomStartDate] = useState<string>("");
-  const [customEndDate, setCustomEndDate] = useState<string>("");
-
-  useEffect(() => {
-    if (!customStartDate || !customEndDate) {
-      const end = new Date();
-      const start = new Date();
-      start.setDate(end.getDate() - 30);
-      setCustomStartDate(start.toISOString().split("T")[0]);
-      setCustomEndDate(end.toISOString().split("T")[0]);
-    }
-  }, []);
+  const [customStartDate, setCustomStartDate] = useState<string>(() => {
+    const start = new Date();
+    start.setDate(start.getDate() - 30);
+    return start.toISOString().split("T")[0];
+  });
+  const [customEndDate, setCustomEndDate] = useState<string>(() => {
+    const end = new Date();
+    return end.toISOString().split("T")[0];
+  });
 
   const getGroupByForPeriod = (p: Period): ProfitabilityGroupBy => {
     if (p === "today") return "hour";
@@ -172,7 +169,6 @@ export default function ProfitabilityReportClient() {
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
     fetchReport()
       .then((result) => {
         if (!cancelled) setData(result);
@@ -259,7 +255,10 @@ export default function ProfitabilityReportClient() {
               <Calendar className="h-4 w-4 text-muted-foreground" />
               <Select
                 value={period}
-                onValueChange={(v) => setPeriod(v as Period)}
+                onValueChange={(v) => {
+                  setPeriod(v as Period);
+                  setLoading(true);
+                }}
               >
                 <SelectTrigger className="w-[180px] h-8">
                   <SelectValue placeholder="Seleccionar período" />
@@ -284,14 +283,20 @@ export default function ProfitabilityReportClient() {
                   type="date"
                   className="px-2 py-1 text-xs bg-background border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 h-8"
                   value={customStartDate}
-                  onChange={(e) => setCustomStartDate(e.target.value)}
+                  onChange={(e) => {
+                    setCustomStartDate(e.target.value);
+                    setLoading(true);
+                  }}
                 />
                 <span className="text-xs text-muted-foreground font-medium">Hasta:</span>
                 <input
                   type="date"
                   className="px-2 py-1 text-xs bg-background border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 h-8"
                   value={customEndDate}
-                  onChange={(e) => setCustomEndDate(e.target.value)}
+                  onChange={(e) => {
+                    setCustomEndDate(e.target.value);
+                    setLoading(true);
+                  }}
                 />
               </div>
             )}
