@@ -1,6 +1,13 @@
 ## 📋 BACKLOG
+- [ ] Implementación de autocompletado y validación de prefijos regionales para teléfonos en CustomerForm.
 
 ## ✅ DONE
+- [x] 2026-07-24 — Validación de Patentes en Tiempo Real con Interfaz Híbrida en Ficha de Vehículo
+  - Implementación del patrón de validación híbrido de patentes argentinas en tiempo real en `VehicleForm.tsx`.
+  - Validación algorítmica inmediata cuando la patente sanitizada (sin espacios ni guiones) alcanza la longitud esperada por categoría (6-7 caracteres para autos/motos, 9-10 para trailers).
+  - Alerta de longitud corta y mensajes descriptivos en eventos `onBlur` y de envío, previniendo guardar identificadores truncados o inválidos en la base de datos.
+  - Diseño de feedback visual semántico con borde verde esmeralda (`border-emerald-500`) y punto pulsante junto al texto "Patente válida" de forma simétrica a la validación de CUIT.
+  - Expansión de la suite de pruebas unitarias en `VehicleForm.test.tsx` con 4 nuevos casos de prueba robustos logrando cobertura total de estados de validación y de bloqueo de formularios.
 - [x] 2026-07-22 — Visualización de Equipos y Alertas de Deuda por Vehículo en Ficha de Cliente
   - Optimización de la tabla de "Vehículos y Equipos" en la ficha del cliente para renderizar el nombre (`equipmentName`) y tipo de equipo (`equipmentType`) de forma clara para categorías de no-vehículos (ej: `AUDIO_EQUIPMENT`, `TRAILER`, `ELECTRIC_SCOOTER`, `OTHER`), evitando celdas vacías.
   - Implementación de alertas de deuda específicas por vehículo/equipo directamente en la tabla, calculando la deuda en base a órdenes de trabajo pendientes de pago (`vDebt`).

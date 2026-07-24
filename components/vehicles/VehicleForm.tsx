@@ -65,6 +65,20 @@ export function VehicleForm({
   });
 
   const [plateError, setPlateError] = useState<string | null>(null);
+  const [plateSuccess, setPlateSuccess] = useState<boolean>(() => {
+    const isVehicleInit = [
+      "CAR",
+      "TRUCK",
+      "SUV",
+      "PICKUP",
+      "MOTORCYCLE",
+      "TRAILER",
+    ].includes(initialData?.category || "CAR");
+    if (initialData?.identifier && isVehicleInit) {
+      return validatePlate(initialData.identifier);
+    }
+    return false;
+  });
 
   const isVehicle = [
     "CAR",
@@ -76,8 +90,89 @@ export function VehicleForm({
   ].includes(formData.category);
 
   const handleChange = (field: keyof VehicleFormData, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    let finalValue = value;
     if (field === "identifier") {
+      finalValue = value.toUpperCase();
+    }
+
+    setFormData((prev) => ({ ...prev, [field]: finalValue }));
+
+    if (field === "identifier") {
+      setPlateError(null);
+      if (isVehicle) {
+        const clean = finalValue.replace(/[\s-]/g, "").toUpperCase();
+        const isExpectedLength =
+          formData.category === "TRAILER"
+            ? [9, 10].includes(clean.length)
+            : [6, 7].includes(clean.length);
+
+        if (isExpectedLength) {
+          if (validatePlate(clean)) {
+            setPlateSuccess(true);
+            setPlateError(null);
+          } else {
+            setPlateSuccess(false);
+          }
+        } else {
+          setPlateSuccess(false);
+        }
+      } else {
+        setPlateSuccess(false);
+      }
+    } else if (field === "category") {
+      const willBeVehicle = [
+        "CAR",
+        "TRUCK",
+        "SUV",
+        "PICKUP",
+        "MOTORCYCLE",
+        "TRAILER",
+      ].includes(finalValue);
+
+      if (willBeVehicle) {
+        const clean = formData.identifier.replace(/[\s-]/g, "").toUpperCase();
+        const isExpectedLength =
+          finalValue === "TRAILER"
+            ? [9, 10].includes(clean.length)
+            : [6, 7].includes(clean.length);
+
+        if (isExpectedLength && validatePlate(clean)) {
+          setPlateSuccess(true);
+          setPlateError(null);
+        } else {
+          setPlateSuccess(false);
+          setPlateError(null);
+        }
+      } else {
+        setPlateSuccess(false);
+        setPlateError(null);
+      }
+    }
+  };
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    if (!isVehicle) return;
+    const value = e.target.value;
+    const clean = value.replace(/[\s-]/g, "").toUpperCase();
+
+    if (clean) {
+      const isValid = validatePlate(clean);
+      if (isValid) {
+        setPlateSuccess(true);
+        setPlateError(null);
+      } else {
+        setPlateSuccess(false);
+        const minLength = formData.category === "TRAILER" ? 9 : 6;
+        if (clean.length < minLength) {
+          setPlateError("La patente es demasiado corta");
+        } else {
+          setPlateError(
+            `Formato de patente inválido para Argentina. ${getPlateFormatHint(formData.category)}`
+          );
+        }
+      }
+    } else {
+      setPlateSuccess(false);
       setPlateError(null);
     }
   };
@@ -87,11 +182,18 @@ export function VehicleForm({
     if (isSubmitting) return;
 
     if (isVehicle) {
-      const isValid = validatePlate(formData.identifier);
+      const clean = formData.identifier.replace(/[\s-]/g, "").toUpperCase();
+      const isValid = validatePlate(clean);
       if (!isValid) {
-        setPlateError(
-          `Formato de patente inválido para Argentina. ${getPlateFormatHint(formData.category)}`,
-        );
+        setPlateSuccess(false);
+        const minLength = formData.category === "TRAILER" ? 9 : 6;
+        if (clean.length < minLength) {
+          setPlateError("La patente es demasiado corta");
+        } else {
+          setPlateError(
+            `Formato de patente inválido para Argentina. ${getPlateFormatHint(formData.category)}`
+          );
+        }
         return;
       }
     }
@@ -149,13 +251,16 @@ export function VehicleForm({
             id="vehicle-identifier"
             value={formData.identifier}
             onChange={(e) =>
-              handleChange("identifier", e.target.value.toUpperCase())
+              handleChange("identifier", e.target.value)
             }
+            onBlur={handleBlur}
             placeholder={isVehicle ? "Ej: AB123CD" : "Ej: SN123456"}
             required
             className={`pl-9 font-mono uppercase tracking-wider ${
               plateError
-                ? "border-destructive focus-visible:ring-destructive"
+                ? "border-destructive ring-destructive/20 focus-visible:ring-destructive"
+                : plateSuccess
+                ? "border-emerald-500 focus-visible:ring-emerald-500"
                 : ""
             }`}
             aria-required="true"
@@ -165,6 +270,12 @@ export function VehicleForm({
         {plateError && (
           <p className="text-[0.8rem] font-medium text-destructive animate-in fade-in slide-in-from-top-1 duration-200">
             {plateError}
+          </p>
+        )}
+        {plateSuccess && (
+          <p className="text-[0.8rem] font-medium text-emerald-700 mt-1 flex items-center gap-1 animate-in fade-in slide-in-from-top-1 duration-200">
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            Patente válida
           </p>
         )}
       </div>

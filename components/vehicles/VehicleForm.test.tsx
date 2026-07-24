@@ -16,10 +16,13 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { VehicleForm } from "@/components/vehicles/VehicleForm";
 import type { VehicleFormData } from "@/lib/types/vehicle";
 
-// Mock plate-validation to always pass (we test form fields, not plate format)
+const mockValidatePlate = vi.fn(() => true);
+const mockGetPlateFormatHint = vi.fn((cat: string) => "Ej: ABC123");
+
+// Mock plate-validation
 vi.mock("@/lib/utils/plate-validation", () => ({
-  validatePlate: () => true,
-  getPlateFormatHint: () => "",
+  validatePlate: (plate: string) => mockValidatePlate(plate),
+  getPlateFormatHint: (category: string) => mockGetPlateFormatHint(category),
 }));
 
 // Mock next/navigation
@@ -30,6 +33,8 @@ vi.mock("next/navigation", () => ({
 describe("VehicleForm", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockValidatePlate.mockReturnValue(true);
+    mockGetPlateFormatHint.mockReturnValue("Ej: ABC123");
   });
 
   it("should submit with all correct VehicleFormData fields for a car", async () => {
@@ -185,5 +190,78 @@ describe("VehicleForm", () => {
 
     const submitted = onSubmit.mock.calls[0][0] as VehicleFormData;
     expect(submitted.notes).toBe("Nota de prueba");
+  });
+
+  it("should validate plate in real-time when expected length is reached", async () => {
+    const onSubmit = vi.fn();
+    mockValidatePlate.mockReturnValue(true);
+    render(<VehicleForm onSubmit={onSubmit} />);
+
+    const identifierInput = screen.getByLabelText(/patente/i);
+
+    // Try a partial length plate
+    fireEvent.change(identifierInput, { target: { value: "ab123" } });
+    expect(screen.queryByText(/patente válida/i)).not.toBeInTheDocument();
+
+    // Fill to expected length (7 characters for CAR category)
+    fireEvent.change(identifierInput, { target: { value: "ab123cd" } });
+    expect(screen.getByText(/patente válida/i)).toBeInTheDocument();
+    expect(identifierInput).toHaveClass("border-emerald-500");
+  });
+
+  it("should validate onBlur and show error if plate is too short", async () => {
+    const onSubmit = vi.fn();
+    mockValidatePlate.mockReturnValue(false);
+    render(<VehicleForm onSubmit={onSubmit} />);
+
+    const identifierInput = screen.getByLabelText(/patente/i);
+    fireEvent.change(identifierInput, { target: { value: "ab123" } });
+
+    // Trigger blur
+    fireEvent.blur(identifierInput);
+
+    expect(screen.getByText(/la patente es demasiado corta/i)).toBeInTheDocument();
+    expect(identifierInput).toHaveClass("border-destructive");
+    expect(screen.queryByText(/patente válida/i)).not.toBeInTheDocument();
+  });
+
+  it("should validate onBlur and show custom error format description if invalid length is met", async () => {
+    const onSubmit = vi.fn();
+    mockValidatePlate.mockReturnValue(false);
+    mockGetPlateFormatHint.mockReturnValue("Ej: ABC123");
+    render(<VehicleForm onSubmit={onSubmit} />);
+
+    const identifierInput = screen.getByLabelText(/patente/i);
+    fireEvent.change(identifierInput, { target: { value: "ab12345" } });
+
+    // Trigger blur
+    fireEvent.blur(identifierInput);
+
+    expect(
+      screen.getByText(/formato de patente inválido para argentina\. ej: abc123/i)
+    ).toBeInTheDocument();
+    expect(identifierInput).toHaveClass("border-destructive");
+  });
+
+  it("should block form submission and show error if plate is invalid", async () => {
+    const onSubmit = vi.fn();
+    mockValidatePlate.mockReturnValue(false);
+    render(<VehicleForm onSubmit={onSubmit} />);
+
+    const identifierInput = screen.getByLabelText(/patente/i);
+    fireEvent.change(identifierInput, { target: { value: "invalid-plate" } });
+
+    const submitButton = screen.getByRole("button", {
+      name: /guardar vehículo/i,
+    });
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(onSubmit).not.toHaveBeenCalled();
+    });
+
+    expect(
+      screen.getByText(/formato de patente inválido para argentina/i)
+    ).toBeInTheDocument();
   });
 });
