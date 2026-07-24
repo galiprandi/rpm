@@ -33,6 +33,7 @@ import {
   Download,
   ArrowDownLeft,
   ShoppingCart,
+  Printer,
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -384,7 +385,7 @@ export default function DebtorsClient() {
           if (debt === 0)
             return <span className="text-muted-foreground">-</span>;
           return (
-            <span className="font-mono text-sm text-red-600">
+            <span className="font-mono text-sm text-red-700">
               {formatARS(debt)}
             </span>
           );
@@ -398,7 +399,7 @@ export default function DebtorsClient() {
           if (debt === 0)
             return <span className="text-muted-foreground">-</span>;
           return (
-            <span className="font-mono text-sm text-red-600">
+            <span className="font-mono text-sm text-red-700">
               {formatARS(debt)}
             </span>
           );
@@ -412,7 +413,7 @@ export default function DebtorsClient() {
           if (credit === 0)
             return <span className="text-muted-foreground">-</span>;
           return (
-            <span className="font-mono text-sm text-emerald-600">
+            <span className="font-mono text-sm text-emerald-700">
               -{formatARS(credit)}
             </span>
           );
@@ -432,7 +433,7 @@ export default function DebtorsClient() {
                 "font-mono font-semibold px-2 py-1 rounded-md inline-block",
                 isVeryOld
                   ? "text-red-700 bg-red-50 border border-red-100"
-                  : "text-red-600",
+                  : "text-red-700",
               )}
             >
               {formatARS(row.original.balance)}
@@ -459,7 +460,7 @@ export default function DebtorsClient() {
                 <div
                   className={cn(
                     "text-xs font-medium",
-                    daysSince > 30 ? "text-red-600" : "text-muted-foreground",
+                    daysSince > 30 ? "text-red-700" : "text-muted-foreground",
                   )}
                 >
                   {formatDate(date)} ({daysSince} días)
@@ -513,7 +514,7 @@ export default function DebtorsClient() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                    className="h-8 w-8 text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50"
                     onClick={() => {
                       setSelectedDebtor(debtor);
                       setPaymentAmount(debtor.balance.toString());
@@ -570,19 +571,27 @@ export default function DebtorsClient() {
   );
 
   return (
-    <div className="space-y-6">
-      <Header
-        title="Reporte de Deudores"
-        description="Clientes con saldo pendiente de pago"
-        secondaryActions={[
-          {
-            label: "Exportar CSV",
-            onClick: exportToCSV,
-            disabled: loading || debtors.length === 0,
-            icon: Download,
-            variant: "outline" as const,
-          },
-        ]}
+    <>
+      <div className="space-y-6 print:hidden">
+        <Header
+          title="Reporte de Deudores"
+          description="Clientes con saldo pendiente de pago"
+          secondaryActions={[
+            {
+              label: "Imprimir",
+              onClick: () => window.print(),
+              disabled: loading || debtors.length === 0,
+              icon: Printer,
+              variant: "outline" as const,
+            },
+            {
+              label: "Exportar CSV",
+              onClick: exportToCSV,
+              disabled: loading || debtors.length === 0,
+              icon: Download,
+              variant: "outline" as const,
+            },
+          ]}
         leftActions={
           <div key="sort-select" className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">Ordenar por:</span>
@@ -716,6 +725,179 @@ export default function DebtorsClient() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+
+      {/* Sección de Impresión (Solo visible al imprimir) */}
+      <div className="hidden print:block font-sans p-6 text-black bg-white" id="print-section">
+        {/* Header de la Empresa */}
+        <div className="flex justify-between items-start border-b-2 border-zinc-900 pb-4 mb-6">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-zinc-900">RPM ACCESORIOS</h1>
+            <p className="text-xs text-zinc-500 uppercase font-medium mt-0.5">Taller de Equipamiento y Estética Vehicular</p>
+            <p className="text-[11px] text-zinc-400 font-mono mt-1">Sarmiento 1234, Rosario, Santa Fe | Tel: 341-5556789</p>
+          </div>
+          <div className="text-right">
+            <div className="border border-zinc-900 text-zinc-900 font-bold text-xs py-1 px-3 uppercase tracking-wider inline-block rounded">
+              Reporte de Clientes Deudores
+            </div>
+            <p className="text-xs text-zinc-500 font-mono mt-2">
+              Fecha: {new Date().toLocaleDateString("es-AR")}
+            </p>
+            <p className="text-[10px] text-zinc-500 font-mono">
+              Ordenado por: {sortBy === "amount" ? "Mayor Deuda" : sortBy === "oldest" ? "Deuda Más Antigua" : "Deuda Más Reciente"}
+            </p>
+          </div>
+        </div>
+
+        {/* Resumen de Cuentas (KPIs para impresión) */}
+        {summary && (
+          <div className="grid grid-cols-5 gap-4 border border-zinc-300 rounded-lg p-4 mb-6 bg-zinc-50/50">
+            <div className="space-y-1">
+              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Deuda Total</span>
+              <p className="text-sm font-bold font-mono text-red-700">{formatARS(summary.totalDebt)}</p>
+            </div>
+            <div className="space-y-1">
+              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Clientes Deudores</span>
+              <p className="text-sm font-bold font-mono text-zinc-900">{summary.totalCustomers}</p>
+            </div>
+            <div className="space-y-1">
+              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">OTs Impagas</span>
+              <p className="text-sm font-bold font-mono text-zinc-900">{summary.totalWorkOrders}</p>
+            </div>
+            <div className="space-y-1">
+              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Ventas Dir. Impagas</span>
+              <p className="text-sm font-bold font-mono text-zinc-900">{summary.totalDirectSales || 0}</p>
+            </div>
+            <div className="space-y-1">
+              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Deuda Promedio</span>
+              <p className="text-sm font-bold font-mono text-zinc-900">{formatARS(summary.averageDebt)}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Tabla de Clientes Deudores para Impresión */}
+        <div className="border border-zinc-300 rounded-lg overflow-hidden mb-8">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-zinc-100 border-b border-zinc-300 text-[10px] font-bold text-zinc-700 uppercase">
+                <th className="p-2">Cliente</th>
+                <th className="p-2">Vehículos</th>
+                <th className="p-2 text-center">Cant. OTs/VD</th>
+                <th className="p-2 text-right">Deuda OT</th>
+                <th className="p-2 text-right">Deuda VD</th>
+                <th className="p-2 text-right">NC Crédito</th>
+                <th className="p-2 text-right">Deuda Total</th>
+                <th className="p-2 text-right">M. Antigua</th>
+              </tr>
+            </thead>
+            <tbody>
+              {debtors.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="p-4 text-center text-xs text-zinc-500 italic">
+                    No hay clientes con deuda pendiente
+                  </td>
+                </tr>
+              ) : (
+                debtors.map((debtor, idx) => {
+                  const daysSince = getDaysSince(debtor.oldestDebtDate);
+                  return (
+                    <tr key={idx} className="border-b border-zinc-200 text-[10px] hover:bg-zinc-50 transition-colors">
+                      <td className="p-2">
+                        <div className="font-bold text-zinc-900 text-xs">{debtor.customerName}</div>
+                        {(debtor.phone || debtor.phoneAlt) && (
+                          <div className="text-[9px] text-zinc-500 font-mono mt-0.5">
+                            {debtor.phone || debtor.phoneAlt}
+                          </div>
+                        )}
+                      </td>
+                      <td className="p-2 max-w-[120px] truncate font-mono text-[9px]">
+                        {debtor.vehicles.join(", ") || "-"}
+                      </td>
+                      <td className="p-2 text-center font-mono text-[9px]">
+                        {debtor.workOrderCount} / {debtor.directSaleCount || 0}
+                      </td>
+                      <td className="p-2 text-right font-mono text-red-700">
+                        {debtor.workOrderDebt > 0 ? formatARS(debtor.workOrderDebt) : "-"}
+                      </td>
+                      <td className="p-2 text-right font-mono text-red-700">
+                        {debtor.directSaleDebt > 0 ? formatARS(debtor.directSaleDebt) : "-"}
+                      </td>
+                      <td className="p-2 text-right font-mono text-emerald-700">
+                        {debtor.creditNoteCredit > 0 ? `-${formatARS(debtor.creditNoteCredit)}` : "-"}
+                      </td>
+                      <td className="p-2 text-right font-mono font-bold text-red-700">
+                        {formatARS(debtor.balance)}
+                      </td>
+                      <td className="p-2 text-right font-mono">
+                        {debtor.oldestDebtDate ? (
+                          <div>
+                            <div>{formatDate(debtor.oldestDebtDate)}</div>
+                            {daysSince && <div className="text-[9px] text-zinc-500">({daysSince} días)</div>}
+                          </div>
+                        ) : "-"}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Firmas de Control */}
+        <div className="grid grid-cols-2 gap-12 mt-12 mb-8 print:break-inside-avoid">
+          <div className="flex flex-col items-center">
+            <div className="w-48 border-b border-zinc-400 h-10" />
+            <span className="text-[10px] text-zinc-500 font-semibold uppercase tracking-wider mt-2">
+              Auditor / Responsable de Finanzas
+            </span>
+          </div>
+          <div className="flex flex-col items-center">
+            <div className="w-48 border-b border-zinc-400 h-10" />
+            <span className="text-[10px] text-zinc-500 font-semibold uppercase tracking-wider mt-2">
+              Firma Autorizada RPM
+            </span>
+          </div>
+        </div>
+
+        {/* Pie de Página */}
+        <div className="text-center border-t border-zinc-200 pt-4 text-[10px] text-zinc-400 font-mono">
+          RPM Accesorios © {new Date().getFullYear()} - Reporte de cuentas corrientes y control de deudores interno.
+        </div>
+      </div>
+
+      {/* Estilos para impresión (Oculta sidebar, botones, widgets, etc.) */}
+      <style media="print">
+        {`
+          @media print {
+            aside,
+            [data-sidebar="sidebar"],
+            .print\\:hidden,
+            button,
+            header,
+            footer,
+            nav,
+            .web-mcp-tools,
+            #chat-floating-button,
+            [role="dialog"],
+            .DialogOverlay {
+              display: none !important;
+            }
+
+            main, .container, body {
+              padding: 0 !important;
+              margin: 0 !important;
+              max-width: none !important;
+              background: white !important;
+              color: black !important;
+            }
+
+            .container {
+              width: 100% !important;
+            }
+          }
+        `}
+      </style>
+    </>
   );
 }
