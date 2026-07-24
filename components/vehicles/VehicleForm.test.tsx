@@ -16,8 +16,8 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { VehicleForm } from "@/components/vehicles/VehicleForm";
 import type { VehicleFormData } from "@/lib/types/vehicle";
 
-const mockValidatePlate = vi.fn(() => true);
-const mockGetPlateFormatHint = vi.fn((cat: string) => "Ej: ABC123");
+const mockValidatePlate = vi.fn<(plate: string) => boolean>(() => true);
+const mockGetPlateFormatHint = vi.fn<(category: string) => string>(() => "Ej: ABC123");
 
 // Mock plate-validation
 vi.mock("@/lib/utils/plate-validation", () => ({
