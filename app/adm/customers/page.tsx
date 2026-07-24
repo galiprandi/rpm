@@ -37,5 +37,5 @@ export default async function CustomersPage() {
     },
   }));
 
-  return <CustomersClient initialCustomers={customersWithVehicles as any} />;
+  return <CustomersClient initialCustomers={customersWithVehicles as any} isAdmin={userRole === UserRole.ADMIN} />;
 }

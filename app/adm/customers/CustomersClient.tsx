@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { Header, CrudAdmin, CrudStats, type StatItem } from "@/components/adm";
+import { Header, CrudAdmin, CrudStats, type StatItem, type HeaderAction } from "@/components/adm";
 import {
   Phone,
   User,
@@ -13,8 +13,10 @@ import {
   Plus,
   MessageSquare,
   Download,
+  RefreshCw,
 } from "lucide-react";
 import Link from "next/link";
+import { useUI } from "@/components/ui/UIProvider";
 import { type ColumnDef, type FilterFn } from "@tanstack/react-table";
 import { formatARS } from "@/lib/utils/format";
 import { CustomerDialog } from "@/components/customers/CustomerDialog";
@@ -49,6 +51,7 @@ interface Customer {
 
 interface CustomersClientProps {
   initialCustomers: Customer[];
+  isAdmin?: boolean;
 }
 
 function isBillingData(
@@ -66,13 +69,74 @@ function isBillingData(
 
 export default function CustomersClient({
   initialCustomers,
+  isAdmin = false,
 }: CustomersClientProps) {
   const router = useRouter();
+  const { alert } = useUI();
   const [customers, setCustomers] = useState<Customer[]>(initialCustomers);
   const [loading, setLoading] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [showOnlyWithBalance, setShowOnlyWithBalance] = useState(false);
+  const [isRecalculating, setIsRecalculating] = useState(false);
+
+  const fetchCustomers = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      params.set("limit", "50");
+
+      const response = await fetch(`/api/customers?${params}`);
+      if (!response.ok) throw new Error("Failed to fetch");
+
+      const data = await response.json();
+      setCustomers(data.customers);
+    } catch (error) {
+      console.error("Error fetching customers:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const handleRecalculateBalances = useCallback(async () => {
+    if (isRecalculating) return;
+    setIsRecalculating(true);
+    try {
+      const response = await fetch("/api/admin/recalculate-balances", {
+        method: "POST",
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Error al recalcular saldos");
+      }
+
+      const result = await response.json();
+      await fetchCustomers(); // Refresh the customers list
+
+      let msg = `Cuentas procesadas: ${result.customersProcessed}.`;
+      if (result.driftsFound > 0) {
+        msg += ` Se encontraron y corrigieron desvíos en ${result.driftsFound} clientes por un total de ${formatARS(result.totalDrift, 2)}.`;
+      } else {
+        msg += " No se encontraron desvíos; todos los saldos están al día.";
+      }
+
+      await alert({
+        title: "Saldos Recalculados",
+        description: msg,
+        variant: "success",
+      });
+    } catch (error: any) {
+      console.error("Error recalculating balances:", error);
+      await alert({
+        title: "Error",
+        description: error.message || "Error al recalcular saldos",
+        variant: "error",
+      });
+    } finally {
+      setIsRecalculating(false);
+    }
+  }, [isRecalculating, fetchCustomers, alert]);
 
   // Filter customers based on balance
   const filteredCustomers = useMemo(() => {
@@ -132,24 +196,6 @@ export default function CustomersClient({
     link.click();
     document.body.removeChild(link);
   }, [filteredCustomers]);
-
-  const fetchCustomers = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      params.set("limit", "50");
-
-      const response = await fetch(`/api/customers?${params}`);
-      if (!response.ok) throw new Error("Failed to fetch");
-
-      const data = await response.json();
-      setCustomers(data.customers);
-    } catch (error) {
-      console.error("Error fetching customers:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
 
   const customerFilterFn = useCallback<FilterFn<Customer>>((row, id, value) => {
     if (!value) return true;
@@ -404,11 +450,45 @@ export default function CustomersClient({
       fetchCustomers();
     } catch (error) {
       console.error("Error creating customer:", error);
-      alert("Error al crear cliente");
+      await alert({
+        title: "Error",
+        description: "Error al crear cliente",
+        variant: "error",
+      });
     } finally {
       setIsCreating(false);
     }
   };
+
+  const headerSecondaryActions = useMemo(() => {
+    const actions: HeaderAction[] = [
+      {
+        label: showOnlyWithBalance ? "Ver Todos" : "Filtrar con Saldo",
+        onClick: () => setShowOnlyWithBalance(!showOnlyWithBalance),
+        variant: "outline" as const,
+        icon: TrendingDown,
+      },
+      {
+        label: "Exportar CSV",
+        onClick: exportToCSV,
+        variant: "outline" as const,
+        icon: Download,
+      },
+    ];
+
+    if (isAdmin) {
+      actions.push({
+        label: isRecalculating ? "Recalculando..." : "Recalcular Saldos",
+        onClick: handleRecalculateBalances,
+        variant: "outline" as const,
+        icon: RefreshCw,
+        disabled: isRecalculating,
+        className: isRecalculating ? "animate-pulse" : "",
+      });
+    }
+
+    return actions;
+  }, [showOnlyWithBalance, exportToCSV, isAdmin, isRecalculating, handleRecalculateBalances]);
 
   return (
     <div className="space-y-6">
@@ -423,20 +503,7 @@ export default function CustomersClient({
           className:
             "bg-slate-900 text-white hover:bg-slate-800 border border-slate-900 shadow-lg hover:shadow-xl transition-all font-semibold px-4 py-2 h-8 whitespace-nowrap",
         }}
-        secondaryActions={[
-          {
-            label: showOnlyWithBalance ? "Ver Todos" : "Filtrar con Saldo",
-            onClick: () => setShowOnlyWithBalance(!showOnlyWithBalance),
-            variant: "outline",
-            icon: TrendingDown,
-          },
-          {
-            label: "Exportar CSV",
-            onClick: exportToCSV,
-            variant: "outline",
-            icon: Download,
-          },
-        ]}
+        secondaryActions={headerSecondaryActions}
       />
 
       <div className="mt-4">
