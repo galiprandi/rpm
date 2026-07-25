@@ -24,12 +24,13 @@ Object.defineProperty(window, "matchMedia", {
 // Mock next/navigation
 const mockPush = vi.fn();
 const mockRefresh = vi.fn();
+let mockPathname = "/adm/dashboard";
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
     push: mockPush,
     refresh: mockRefresh,
   }),
-  usePathname: () => "/adm/dashboard",
+  usePathname: () => mockPathname,
 }));
 
 // Mock @ai-sdk/react useChat hook dynamically
@@ -74,10 +75,12 @@ describe("ChatFloating Component", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockMessages = [];
+    mockPathname = "/adm/dashboard";
     // Clear global speech recognition mocks
     if (typeof window !== "undefined") {
       delete (window as any).SpeechRecognition;
       delete (window as any).webkitSpeechRecognition;
+      delete (window as any).BarcodeDetector;
     }
   });
 
@@ -229,5 +232,89 @@ describe("ChatFloating Component", () => {
 
     // The file preview should be cleared after clicking the shortcut
     expect(screen.queryByText(/invoice.pdf/i)).not.toBeInTheDocument();
+  });
+
+  it("detects barcode/QR code on attached image and shows/triggers search action button", async () => {
+    const mockDetect = vi.fn().mockResolvedValue([{ rawValue: "7791234567890", format: "ean_13" }]);
+    const MockBarcodeDetector = vi.fn().mockImplementation(function() {
+      return { detect: mockDetect };
+    });
+    (window as any).BarcodeDetector = MockBarcodeDetector;
+
+    // Mock Image object to trigger load automatically in tests
+    const originalImage = window.Image;
+    const MockImage = vi.fn().mockImplementation(function() {
+      const img = {
+        src: "",
+        onload: null as any,
+        onerror: null as any,
+      };
+      // Automatically call onload when src is set
+      setTimeout(() => {
+        if (img.onload) img.onload();
+      }, 0);
+      return img;
+    });
+    window.Image = MockImage as any;
+
+    const { container } = render(<ChatFloating isOpen={true} />);
+
+    // Find the first file input
+    const fileInput = container.querySelector('input[type="file"]');
+    const file = new File(["dummy"], "barcode.png", { type: "image/png" });
+
+    await act(async () => {
+      fireEvent.change(fileInput!, { target: { files: [file] } });
+    });
+
+    // Wait for the barcode detection to trigger and render the button
+    const searchBtn = await screen.findByRole("button", { name: /Buscar "7791234567890"/i });
+    expect(searchBtn).toBeInTheDocument();
+
+    // Click search button
+    await act(async () => {
+      fireEvent.click(searchBtn);
+    });
+
+    // It should call sendMessage with "Buscar 7791234567890"
+    expect(mockSendMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        text: "Buscar 7791234567890",
+      })
+    );
+
+    // It should clear the file preview and barcode state
+    expect(screen.queryByText(/barcode.png/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Buscar "7791234567890"/i })).not.toBeInTheDocument();
+
+    // Restore Image
+    window.Image = originalImage;
+  });
+
+  it("renders contextual suggestion chips for different admin routes", () => {
+    // 1. Cash route
+    mockPathname = "/adm/cash";
+    const { rerender } = render(<ChatFloating isOpen={true} />);
+    expect(screen.getByRole("button", { name: /💸 Movimiento Caja/i })).toBeInTheDocument();
+
+    // 2. Purchase Vouchers route
+    mockPathname = "/adm/purchase-vouchers";
+    rerender(<ChatFloating isOpen={true} />);
+    expect(screen.getByRole("button", { name: /🧾 Procesar Factura/i })).toBeInTheDocument();
+
+    // 3. Suppliers route
+    mockPathname = "/adm/suppliers";
+    rerender(<ChatFloating isOpen={true} />);
+    expect(screen.getByRole("button", { name: /👥 Buscar Proveedores/i })).toBeInTheDocument();
+
+    // 4. Settings route
+    mockPathname = "/adm/settings";
+    rerender(<ChatFloating isOpen={true} />);
+    expect(screen.getByRole("button", { name: /⚙️ Roles y Permisos/i })).toBeInTheDocument();
+
+    // 5. Reports route
+    mockPathname = "/adm/reports";
+    rerender(<ChatFloating isOpen={true} />);
+    expect(screen.getByRole("button", { name: /📊 Resumen diario/i })).toBeInTheDocument();
   });
 });
