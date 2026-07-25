@@ -102,25 +102,30 @@ interface WorkOrder {
   photo?: Array<{ id: string; url: string }>;
 }
 
-const STATUSES = [
-  { id: "CONFIRMED", label: "Confirmada", color: "bg-blue-50 border-blue-200" },
+const KANBAN_STATUSES = [
+  { id: "CONFIRMED", label: "Confirmada", color: "bg-blue-50 border-blue-200 text-blue-700" },
   {
     id: "WAITING",
     label: "En Espera",
-    color: "bg-yellow-50 border-yellow-200",
+    color: "bg-yellow-50 border-yellow-200 text-yellow-700",
   },
   {
     id: "IN_PROGRESS",
     label: "En Proceso",
-    color: "bg-orange-50 border-orange-200",
+    color: "bg-orange-50 border-orange-200 text-orange-700",
   },
   {
     id: "QC_CHECK",
     label: "Control QC",
-    color: "bg-purple-50 border-purple-200",
+    color: "bg-purple-50 border-purple-200 text-purple-700",
   },
-  { id: "READY", label: "Listo", color: "bg-emerald-50 border-emerald-200" },
-  { id: "DELIVERED", label: "Entregada", color: "bg-gray-50 border-gray-200" },
+  { id: "READY", label: "Listo", color: "bg-emerald-50 border-emerald-200 text-emerald-700" },
+  { id: "DELIVERED", label: "Entregada", color: "bg-gray-50 border-gray-200 text-gray-700" },
+];
+
+const STATUSES = [
+  ...KANBAN_STATUSES,
+  { id: "CANCELLED", label: "Cancelada", color: "bg-red-50 border-red-200 text-red-700" },
 ];
 
 const NEXT_STATUS_MAP: Record<
@@ -781,7 +786,7 @@ export default function WorkOrdersPage() {
 
   const workOrdersByStatus = useMemo(
     () =>
-      STATUSES.map((status) => {
+      KANBAN_STATUSES.map((status) => {
         const items = filteredWorkOrders.filter(
           (wo) => wo.status === status.id,
         );

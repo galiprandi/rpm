@@ -14,6 +14,7 @@ const VALID_STATUSES = [
   "READY",
   "PAID",
   "DELIVERED",
+  "CANCELLED",
 ];
 
 // PUT /api/work-orders/[id]/status - Update work order status
