@@ -69,7 +69,7 @@ export default function ProductsClient({ initialProducts, initialCategories }: P
 
             <div className="w-full lg:w-auto space-y-8 animate-fade-up opacity-0" style={{ animationDelay: '0.3s' }}>
               <div className="relative group">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500 group-focus-within:text-brand transition-colors" />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500 group-focus-within:text-brand transition-colors pointer-events-none" aria-hidden="true" />
                 <input
                   type="text"
                   placeholder="Buscar producto..."
@@ -85,7 +85,7 @@ export default function ProductsClient({ initialProducts, initialCategories }: P
                         className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 flex items-center justify-center rounded-full bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
                         aria-label="Limpiar búsqueda"
                       >
-                        <X className="h-3 w-3" />
+                        <X className="h-3 w-3 pointer-events-none" aria-hidden="true" />
                       </button>
                     </TooltipTrigger>
                     <TooltipContent className="bg-zinc-900 border-white/10 text-white text-xs font-bold uppercase tracking-widest">
@@ -151,7 +151,7 @@ export default function ProductsClient({ initialProducts, initialCategories }: P
                         }}
                         aria-label={`Vista rápida de ${product.name}`}
                       >
-                        <Eye className="h-4 w-4" />
+                        <Eye className="h-4 w-4 pointer-events-none" aria-hidden="true" />
                       </button>
                     </TooltipTrigger>
                     <TooltipContent side="left" className="bg-zinc-900 border-white/10 text-white text-xs font-bold uppercase tracking-widest">
@@ -172,8 +172,9 @@ export default function ProductsClient({ initialProducts, initialCategories }: P
                     <button
                       onClick={() => setSelectedProduct(product)}
                       className="flex items-center text-xs font-bold text-brand hover:text-white transition-colors"
+                      aria-label={`Ver detalles del producto ${product.name}`}
                     >
-                      DETALLES <ArrowRight className="ml-2 h-3 w-3" />
+                      DETALLES <ArrowRight className="ml-2 h-3 w-3 pointer-events-none" aria-hidden="true" />
                     </button>
                   </div>
                 </div>
@@ -185,7 +186,7 @@ export default function ProductsClient({ initialProducts, initialCategories }: P
           {filteredProducts.length === 0 && (
             <div className="py-40 text-center animate-fade-up">
               <div className="w-20 h-20 bg-zinc-900 rounded-full flex items-center justify-center mx-auto mb-8 border border-white/5">
-                <Search className="h-8 w-8 text-zinc-700" />
+                <Search className="h-8 w-8 text-zinc-700 pointer-events-none" aria-hidden="true" />
               </div>
               <h3 className="text-2xl font-bold text-white mb-2">No se encontraron productos</h3>
               <p className="text-zinc-500">Probá con otros filtros o términos de búsqueda.</p>
@@ -215,8 +216,8 @@ export default function ProductsClient({ initialProducts, initialCategories }: P
             </p>
             <div className="flex justify-center">
                <Button asChild className="bg-brand text-white hover:bg-brand/90 font-bold px-16 h-20 text-xl rounded-full transition-all hover:scale-105 active:scale-95 border-none shadow-[0_0_40px_rgba(255,75,0,0.3)] gap-3">
-                 <a href={PUBLIC_SITE_CONFIG.links.whatsapp(DEFAULT_WHATSAPP_MESSAGE)} target="_blank" rel="noopener noreferrer">
-                    <MessageCircle className="h-6 w-6 fill-current" />
+                 <a href={PUBLIC_SITE_CONFIG.links.whatsapp(DEFAULT_WHATSAPP_MESSAGE)} target="_blank" rel="noopener noreferrer" aria-label="Consultar por WhatsApp a medida">
+                    <MessageCircle className="h-6 w-6 fill-current pointer-events-none" aria-hidden="true" />
                     Consultar a Medida
                  </a>
                </Button>

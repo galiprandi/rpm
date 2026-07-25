@@ -209,7 +209,7 @@ export function AboutClient() {
                         }}
                         aria-label={`Ver detalles del hito ${project.title}`}
                       >
-                        <Eye className="h-4 w-4" />
+                        <Eye className="h-4 w-4 pointer-events-none" aria-hidden="true" />
                       </button>
                     </TooltipTrigger>
                     <TooltipContent side="left" className="bg-zinc-900 border-white/10 text-white text-xs font-bold uppercase tracking-widest">
@@ -235,8 +235,9 @@ export function AboutClient() {
                     <button
                       onClick={() => setSelectedProject(project)}
                       className="flex items-center text-xs font-bold text-brand hover:text-white transition-colors gap-1"
+                      aria-label={`Detalles de hito ${project.title}`}
                     >
-                      DETALLES <ArrowRight className="h-3 w-3" />
+                      DETALLES <ArrowRight className="h-3 w-3 pointer-events-none" aria-hidden="true" />
                     </button>
                   </div>
                 </div>
@@ -258,7 +259,7 @@ export function AboutClient() {
               className="p-8 bg-zinc-900/30 border border-white/5 rounded-3xl space-y-6 hover:border-brand/30 transition-all duration-500 group animate-fade-up opacity-0"
               style={{ animationDelay: `${0.6 + (i * 0.1)}s` }}
             >
-              <item.icon className="h-8 w-8 text-brand group-hover:scale-110 transition-transform duration-500" />
+              <item.icon className="h-8 w-8 text-brand group-hover:scale-110 transition-transform duration-500 pointer-events-none" aria-hidden="true" />
               <h4 className="text-xl font-bold text-white">{item.title}</h4>
               <p className="text-zinc-500 text-sm leading-relaxed">{item.desc}</p>
             </div>

@@ -78,10 +78,10 @@ export function PublicHeader() {
               <TooltipTrigger asChild>
                 <button
                   onClick={() => setIsSearchOpen(true)}
-                  className="p-2 text-gray-400 hover:text-brand transition-colors duration-300"
+                  className="p-2 text-gray-400 hover:text-brand transition-colors duration-300 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none rounded-lg"
                   aria-label="Buscar"
                 >
-                  <Search className="h-5 w-5" />
+                  <Search className="h-5 w-5 pointer-events-none" aria-hidden="true" />
                 </button>
               </TooltipTrigger>
               <TooltipContent className="bg-zinc-900 border-white/10 text-white text-xs font-bold uppercase tracking-widest">
@@ -107,13 +107,23 @@ export function PublicHeader() {
           <div className="md:hidden flex items-center space-x-2">
             <button
               onClick={() => setIsSearchOpen(true)}
-              className="p-2 text-white hover:text-brand transition-colors"
+              className="p-2 text-white hover:text-brand transition-colors focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none rounded-lg"
               aria-label="Buscar"
             >
-              <Search className="h-5 w-5" />
+              <Search className="h-5 w-5 pointer-events-none" aria-hidden="true" />
             </button>
-            <Button variant="ghost" size="icon" className="text-white" onClick={() => setIsOpen(!isOpen)}>
-              {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-white"
+              onClick={() => setIsOpen(!isOpen)}
+              aria-label={isOpen ? "Cerrar menú de navegación" : "Abrir menú de navegación"}
+            >
+              {isOpen ? (
+                <X className="h-5 w-5 pointer-events-none" aria-hidden="true" />
+              ) : (
+                <Menu className="h-5 w-5 pointer-events-none" aria-hidden="true" />
+              )}
             </Button>
           </div>
         </div>
@@ -128,9 +138,10 @@ export function PublicHeader() {
       >
         <button
           onClick={() => { setIsOpen(false); setIsSearchOpen(true); }}
-          className="flex items-center space-x-3 text-white/60 hover:text-brand transition-colors mb-4"
+          className="flex items-center space-x-3 text-white/60 hover:text-brand transition-colors mb-4 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none rounded-lg px-2 py-1"
+          aria-label="Buscar en el catálogo"
         >
-          <Search className="h-6 w-6" />
+          <Search className="h-6 w-6 pointer-events-none" aria-hidden="true" />
           <span className="text-xl font-bold uppercase tracking-widest">Buscar</span>
         </button>
 

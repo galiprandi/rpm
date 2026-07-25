@@ -66,7 +66,7 @@ export function ProjectQuickView({ project, onClose }: ProjectQuickViewProps) {
                 <ul className="grid grid-cols-1 gap-3">
                   {project.details.map((detail, i) => (
                     <li key={i} className="flex items-center text-sm text-zinc-300">
-                      <Check className="h-4 w-4 text-brand mr-3 flex-shrink-0" />
+                      <Check className="h-4 w-4 text-brand mr-3 flex-shrink-0 pointer-events-none" aria-hidden="true" />
                       {detail}
                     </li>
                   ))}
@@ -79,7 +79,7 @@ export function ProjectQuickView({ project, onClose }: ProjectQuickViewProps) {
                   onClick={() => window.open(PUBLIC_SITE_CONFIG.links.whatsapp(`Hola RPM! Me interesa conocer más sobre su especialización en ${project.title} (${project.year}). ¿Qué servicios similares ofrecen actualmente?`), '_blank')}
                   aria-label={`Consultar por WhatsApp sobre ${project.title}`}
                 >
-                  <MessageCircle className="h-5 w-5 fill-current transition-transform group-hover:scale-110" />
+                  <MessageCircle className="h-5 w-5 fill-current transition-transform group-hover:scale-110 pointer-events-none" aria-hidden="true" />
                   CONSULTAR DETALLES
                 </Button>
               </div>

@@ -64,7 +64,7 @@ export function ProductQuickView({ product, onClose }: ProductQuickViewProps) {
                 <ul className="grid grid-cols-1 gap-3">
                   {product.features.map((feature, i) => (
                     <li key={i} className="flex items-center text-sm text-zinc-300">
-                      <Check className="h-4 w-4 text-brand mr-3 flex-shrink-0" />
+                      <Check className="h-4 w-4 text-brand mr-3 flex-shrink-0 pointer-events-none" aria-hidden="true" />
                       {feature}
                     </li>
                   ))}
@@ -77,7 +77,7 @@ export function ProductQuickView({ product, onClose }: ProductQuickViewProps) {
                   onClick={() => window.open(PUBLIC_SITE_CONFIG.links.whatsapp(`Hola RPM! Me interesa el producto: ${product.name}. ¿Tienen stock disponible?`), '_blank')}
                   aria-label={`Consultar por WhatsApp sobre ${product.name}`}
                 >
-                  <MessageCircle className="h-5 w-5 fill-current transition-transform group-hover:scale-110" />
+                  <MessageCircle className="h-5 w-5 fill-current transition-transform group-hover:scale-110 pointer-events-none" aria-hidden="true" />
                   CONSULTAR POR WHATSAPP
                 </Button>
               </div>

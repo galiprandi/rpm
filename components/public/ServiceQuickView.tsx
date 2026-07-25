@@ -39,7 +39,7 @@ export function ServiceQuickView({ service, onClose }: ServiceQuickViewProps) {
               )}
               <div className="absolute inset-0 bg-brand/5" />
               <div className="relative z-10 w-20 h-20 rounded-3xl bg-brand/10 flex items-center justify-center text-brand border border-brand/20 backdrop-blur-sm">
-                <service.icon className="h-10 w-10" />
+                <service.icon className="h-10 w-10 pointer-events-none" aria-hidden="true" />
               </div>
               <div className="absolute top-6 left-6">
                 <span className="px-3 py-1 bg-brand text-white text-[10px] font-bold uppercase tracking-widest rounded-full">
@@ -67,7 +67,7 @@ export function ServiceQuickView({ service, onClose }: ServiceQuickViewProps) {
                   <ul className="grid grid-cols-1 gap-3">
                     {service.benefits.map((benefit, i) => (
                       <li key={i} className="flex items-center text-sm text-zinc-300">
-                        <Check className="h-4 w-4 text-brand mr-3 flex-shrink-0" />
+                        <Check className="h-4 w-4 text-brand mr-3 flex-shrink-0 pointer-events-none" aria-hidden="true" />
                         {benefit}
                       </li>
                     ))}
@@ -79,8 +79,9 @@ export function ServiceQuickView({ service, onClose }: ServiceQuickViewProps) {
                 <Button
                   className="w-full bg-brand text-white hover:bg-brand/90 font-bold h-14 rounded-2xl transition-all duration-300 gap-3 group"
                   onClick={() => window.open(PUBLIC_SITE_CONFIG.links.whatsapp(`Hola RPM! Me interesa el servicio: ${service.title}. ¿Me podrían dar más información?`), '_blank')}
+                  aria-label={`Consultar por WhatsApp sobre ${service.title}`}
                 >
-                  <MessageCircle className="h-5 w-5 fill-current transition-transform group-hover:scale-110" />
+                  <MessageCircle className="h-5 w-5 fill-current transition-transform group-hover:scale-110 pointer-events-none" aria-hidden="true" />
                   CONSULTAR POR WHATSAPP
                 </Button>
 
@@ -91,8 +92,9 @@ export function ServiceQuickView({ service, onClose }: ServiceQuickViewProps) {
                     onClose();
                     window.location.href = '/servicios';
                   }}
+                  aria-label={`Ver proceso completo del servicio ${service.title}`}
                 >
-                  VER PROCESO COMPLETO <ArrowRight className="h-4 w-4" />
+                  VER PROCESO COMPLETO <ArrowRight className="h-4 w-4 pointer-events-none" aria-hidden="true" />
                 </Button>
               </div>
             </div>

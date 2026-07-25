@@ -128,7 +128,7 @@ export function FloatingWhatsApp() {
                 className="p-1.5 rounded-full hover:bg-white/5 text-zinc-400 hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-brand/50"
                 aria-label="Cerrar chat"
               >
-                <X className="h-5 w-5" />
+                <X className="h-5 w-5 pointer-events-none" aria-hidden="true" />
               </button>
             </div>
 
@@ -177,7 +177,7 @@ export function FloatingWhatsApp() {
                 className="w-full h-12 bg-[#25D366] hover:bg-[#20ba56] text-white font-bold rounded-2xl transition-all duration-300 hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2 shadow-[0_4px_20px_rgba(37,211,102,0.3)] outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
                 aria-label="Enviar consulta por WhatsApp"
               >
-                <Send className="h-4 w-4" />
+                <Send className="h-4 w-4 pointer-events-none" aria-hidden="true" />
                 Iniciar Conversación
               </button>
             </div>
@@ -202,9 +202,9 @@ export function FloatingWhatsApp() {
             )}
 
             {isOpen ? (
-              <X className="relative h-7 w-7 transition-transform duration-500 rotate-0 group-hover:scale-110" />
+              <X className="relative h-7 w-7 transition-transform duration-500 rotate-0 group-hover:scale-110 pointer-events-none" aria-hidden="true" />
             ) : (
-              <MessageCircle className="relative h-8 w-8 transition-transform duration-500 group-hover:rotate-12" />
+              <MessageCircle className="relative h-8 w-8 transition-transform duration-500 group-hover:rotate-12 pointer-events-none" aria-hidden="true" />
             )}
           </button>
         </TooltipTrigger>
