@@ -3,6 +3,7 @@
 ## 📋 BACKLOG
 
 ## ✅ DONE
+- [x] 2026-07-24 — Refinamiento integral de accesibilidad (ARIA), navegación por teclado y ocultación de íconos decorativos en toda la web pública (PR #sofia/public/accessibility-refinement)
 - [x] 2026-07-23 — Multi-step success/pending flow en el formulario de contacto para evitar bloqueadores de popups (PR #sofia/public/contact-flow-ux)
 - [x] 2026-07-22 — Widget interactivo de WhatsApp en la web pública con Sofi como asistente virtual (PR #sofia/public/whatsapp-widget)
 - [x] 2026-07-20 — Optimización de LCP con Next.js Image y mejora del hito 2011 en Nosotros (PR #sofia/public/lcp-image-optimization)
@@ -22,6 +23,10 @@
 - [x] 2026-07-07 — Vista rápida de productos con modal y conversión contextual (PR #sofia/public/product-quick-view)
 
 ## 🧠 LEARNINGS
+
+## 2026-07-24 - Accesibilidad y Cumplimiento de Normas ARIA en la Web Pública
+**Learning:** Ocultar sistemáticamente todos los íconos Lucide decorativos mediante `aria-hidden="true"` y `pointer-events-none`, junto con la adición de etiquetas `aria-label` descriptivas para enlaces e íconos interactivos sin texto visible, reduce drásticamente el ruido para los lectores de pantalla. Además, dar soporte de teclado completo (`tabIndex={0}`, enfoque visual y manejadores de eventos como `Enter` o `Space` en componentes de tipo botón o tarjeta interactiva) eleva la experiencia de usuario de la web pública a estándares de excelencia internacional WCAG AA.
+**Action:** Asegurar que todo elemento visual que requiera interacción táctil posea marcado semántico interactivo, foco por teclado y compatibilidad total con lectores de pantalla.
 
 ## 2026-07-23 - Redirección Asíncrona y Bloqueadores de Ventanas Emergentes (Popup Blockers)
 **Learning:** El uso de `window.open` dentro de callbacks asíncronos (como promesas o temporizadores) suele ser bloqueado por los navegadores modernos para prevenir popups no solicitados. Para asegurar una experiencia de redirección infalible a servicios externos como WhatsApp sin fricciones ni bloqueos, el patrón óptimo consiste en implementar un flujo con estado intermedio (ej: "Mensaje Preparado") que ofrezca al usuario un botón de acción directa (disparador síncrono). Esto elimina por completo el riesgo de bloqueo del navegador, proporciona feedback de carga elegante, y permite un reset sencillo para enviar nuevos mensajes.

@@ -138,9 +138,9 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
         <div className="p-6 border-b border-white/5">
           <div className="relative group">
             {isLoading ? (
-              <Loader2 className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-500 animate-spin" />
+              <Loader2 className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-500 animate-spin pointer-events-none" aria-hidden="true" />
             ) : (
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-500 group-focus-within:text-brand transition-colors" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-500 group-focus-within:text-brand transition-colors pointer-events-none" aria-hidden="true" />
             )}
             <Input
               autoFocus
@@ -148,6 +148,7 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="h-14 bg-zinc-900 border-none pl-12 pr-12 text-lg text-white focus-visible:ring-1 focus-visible:ring-brand/50 rounded-2xl"
+              aria-label="Término de búsqueda global"
             />
             {query && (
               <button
@@ -155,7 +156,7 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
                 className="absolute right-4 top-1/2 -translate-y-1/2 h-6 w-6 flex items-center justify-center rounded-full bg-zinc-800 text-zinc-400 hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none focus-visible:ring-offset-1"
                 aria-label="Limpiar búsqueda"
               >
-                <X className="h-4 w-4" />
+                <X className="h-4 w-4 pointer-events-none" aria-hidden="true" />
               </button>
             )}
           </div>
@@ -165,7 +166,7 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
           {!query && (
             <div className="p-12 text-center">
               <div className="w-16 h-16 bg-zinc-900 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-white/5">
-                <Search className="h-8 w-8 text-zinc-700" />
+                <Search className="h-8 w-8 text-zinc-700 pointer-events-none" aria-hidden="true" />
               </div>
               <p className="text-zinc-500 font-medium italic">¿Qué estás buscando hoy?</p>
             </div>
@@ -189,15 +190,16 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
                         key={service.id}
                         onClick={() => handleSelectService(service.id)}
                         className="flex items-center p-3 rounded-2xl bg-white/0 hover:bg-white/5 border border-transparent hover:border-white/10 transition-all group text-left w-full"
+                        aria-label={`Ver servicio ${service.title}`}
                       >
-                        <div className="w-10 h-10 rounded-xl bg-brand/10 flex items-center justify-center text-brand mr-4 shrink-0 group-hover:scale-110 transition-transform">
+                        <div className="w-10 h-10 rounded-xl bg-brand/10 flex items-center justify-center text-brand mr-4 shrink-0 group-hover:scale-110 transition-transform pointer-events-none" aria-hidden="true">
                           <service.icon className="h-5 w-5" />
                         </div>
                         <div className="flex-grow min-w-0">
                           <h4 className="text-white font-bold text-sm truncate">{service.title}</h4>
                           <p className="text-zinc-500 text-xs truncate">{service.shortDescription}</p>
                         </div>
-                        <ArrowRight className="h-4 w-4 text-zinc-700 group-hover:text-brand transition-colors ml-4 shrink-0" />
+                        <ArrowRight className="h-4 w-4 text-zinc-700 group-hover:text-brand transition-colors ml-4 shrink-0 pointer-events-none" aria-hidden="true" />
                       </button>
                     ))}
                   </div>
@@ -214,6 +216,7 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
                         key={product.id}
                         onClick={() => handleSelectProduct(product.id)}
                         className="flex items-center p-3 rounded-2xl bg-white/0 hover:bg-white/5 border border-transparent hover:border-white/10 transition-all group text-left w-full"
+                        aria-label={`Ver producto ${product.name}`}
                       >
                         <div className="w-10 h-10 rounded-xl bg-zinc-900 flex items-center justify-center relative overflow-hidden mr-4 shrink-0 group-hover:scale-110 transition-transform border border-white/5">
                           {product.imageUrl ? (

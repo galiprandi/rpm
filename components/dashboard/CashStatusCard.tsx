@@ -1,5 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { formatARS } from "@/lib/utils/format";
+import Link from "next/link";
 
 interface CashStatusCardProps {
   isOpen: boolean;
@@ -53,6 +54,13 @@ export function CashStatusCard({
             <>Sin abrir hoy</>
           )}
         </p>
+        <Link
+          href="/adm/cash"
+          className="text-[10px] text-primary hover:underline mt-1.5 inline-block font-medium focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1 rounded"
+          aria-label="Ir a la gestión de caja"
+        >
+          Ver movimientos →
+        </Link>
       </CardContent>
     </Card>
   );

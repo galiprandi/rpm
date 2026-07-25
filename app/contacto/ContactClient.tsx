@@ -64,11 +64,12 @@ export default function ContactClient() {
                   href={PUBLIC_SITE_CONFIG.links.whatsapp(DEFAULT_WHATSAPP_MESSAGE)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center p-8 bg-zinc-900/50 border border-white/5 rounded-3xl hover:border-brand/50 transition-all group animate-fade-up opacity-0"
+                  className="flex items-center p-8 bg-zinc-900/50 border border-white/5 rounded-3xl hover:border-brand/50 transition-all group animate-fade-up opacity-0 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
                   style={{ animationDelay: '0.4s' }}
+                  aria-label="Abrir chat directo de WhatsApp de RPM Accesorios"
                 >
                   <div className="w-12 h-12 rounded-full bg-green-600/10 flex items-center justify-center text-green-500 mr-6 group-hover:scale-110 transition-transform">
-                    <MessageCircle className="h-6 w-6" />
+                    <MessageCircle className="h-6 w-6 pointer-events-none" aria-hidden="true" />
                   </div>
                   <div>
                     <h4 className="text-white font-bold">WhatsApp</h4>
@@ -81,7 +82,7 @@ export default function ContactClient() {
                   style={{ animationDelay: '0.5s' }}
                 >
                   <div className="w-12 h-12 rounded-full bg-brand/10 flex items-center justify-center text-brand mr-6">
-                    <MapPin className="h-6 w-6" />
+                    <MapPin className="h-6 w-6 pointer-events-none" aria-hidden="true" />
                   </div>
                   <div>
                     <h4 className="text-white font-bold">Local Tucumán</h4>
@@ -146,6 +147,7 @@ export default function ContactClient() {
                         type="submit"
                         disabled={isSubmitting}
                         className="w-full h-16 bg-brand text-white font-bold text-lg rounded-2xl hover:bg-brand/90 transition-all active:scale-95 gap-2"
+                        aria-label="Enviar formulario de contacto a WhatsApp"
                       >
                         {isSubmitting ? (
                           <>
@@ -154,7 +156,7 @@ export default function ContactClient() {
                           </>
                         ) : (
                           <>
-                            <Send className="h-5 w-5" />
+                            <Send className="h-5 w-5 pointer-events-none" aria-hidden="true" />
                             Enviar a WhatsApp
                           </>
                         )}
@@ -171,7 +173,7 @@ export default function ContactClient() {
                     className="text-center space-y-8 flex flex-col items-center justify-center py-8"
                   >
                     <div className="w-20 h-20 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 mb-2 border border-emerald-500/20 shadow-[0_0_40px_rgba(16,185,129,0.1)]">
-                      <CheckCircle2 className="h-10 w-10 animate-bounce" />
+                      <CheckCircle2 className="h-10 w-10 animate-bounce pointer-events-none" aria-hidden="true" />
                     </div>
 
                     <div className="space-y-4 max-w-md">
@@ -185,16 +187,18 @@ export default function ContactClient() {
                       <Button
                         onClick={() => window.open(whatsappUrl, '_blank')}
                         className="flex-1 h-14 bg-[#25D366] hover:bg-[#20ba56] text-white font-bold rounded-2xl transition-all duration-300 hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2 shadow-[0_4px_20px_rgba(37,211,102,0.3)] border-none"
+                        aria-label="Abrir chat de WhatsApp para enviar mensaje"
                       >
-                        <ExternalLink className="h-5 w-5" />
+                        <ExternalLink className="h-5 w-5 pointer-events-none" aria-hidden="true" />
                         Abrir WhatsApp
                       </Button>
                       <Button
                         onClick={handleReset}
                         variant="outline"
                         className="h-14 border-white/10 text-zinc-400 hover:text-white hover:bg-white/5 rounded-2xl px-6 transition-all duration-300 flex items-center justify-center gap-2"
+                        aria-label="Comenzar a escribir un nuevo mensaje"
                       >
-                        <RotateCcw className="h-4 w-4" />
+                        <RotateCcw className="h-4 w-4 pointer-events-none" aria-hidden="true" />
                         Nuevo Mensaje
                       </Button>
                     </div>
