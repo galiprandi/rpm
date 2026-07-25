@@ -56,6 +56,7 @@ export function ChatFloating({
     controlledIsOpen !== undefined ? controlledIsOpen : internalIsOpen;
   const setIsOpen = onOpenChange || setInternalIsOpen;
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
+  const [detectedBarcode, setDetectedBarcode] = useState<{ value: string; format: string } | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -319,6 +320,16 @@ export function ChatFloating({
       base[0] = { label: "📦 Crear Producto", text: "Quiero crear un nuevo producto en catálogo" };
     } else if (pathname.includes("/invoices")) {
       base[3] = { label: "🧾 Facturas del día", text: "Ver estado de las facturas de hoy" };
+    } else if (pathname.includes("/cash")) {
+      base[3] = { label: "💸 Movimiento Caja", text: "Quiero registrar un movimiento de caja" };
+    } else if (pathname.includes("/purchase-vouchers")) {
+      base[1] = { label: "🧾 Procesar Factura", text: "Quiero procesar una factura de compra" };
+    } else if (pathname.includes("/suppliers")) {
+      base[1] = { label: "👥 Buscar Proveedores", text: "Buscar proveedores" };
+    } else if (pathname.includes("/settings")) {
+      base[1] = { label: "⚙️ Roles y Permisos", text: "Ver los roles y permisos de los usuarios" };
+    } else if (pathname.includes("/reports")) {
+      base[1] = { label: "📊 Resumen diario", text: "Ver resumen del día" };
     }
 
     return base;
@@ -362,11 +373,75 @@ export function ChatFloating({
     }
     setMessages([]);
     setAttachedFile(null);
+    setDetectedBarcode(null);
     setLocalInput("");
     clearError();
     if (fileInputRef.current) fileInputRef.current.value = "";
     if (cameraInputRef.current) cameraInputRef.current.value = "";
   };
+
+  // Automatically run native BarcodeDetector on image files
+  useEffect(() => {
+    if (!attachedFile || !attachedFile.type.startsWith("image/")) {
+      setDetectedBarcode(null);
+      return;
+    }
+
+    if (typeof window === "undefined" || !("BarcodeDetector" in window)) {
+      setDetectedBarcode(null);
+      return;
+    }
+
+    let active = true;
+
+    const detectBarcode = async () => {
+      try {
+        const BarcodeDetectorClass = (window as any).BarcodeDetector;
+        const detector = new BarcodeDetectorClass({
+          formats: ["qr_code", "ean_13", "ean_8", "code_128", "code_39", "upc_a", "upc_e"],
+        });
+
+        const url = URL.createObjectURL(attachedFile);
+        const img = new Image();
+        img.src = url;
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = reject;
+        });
+
+        if (!active) {
+          URL.revokeObjectURL(url);
+          return;
+        }
+
+        const results = await detector.detect(img);
+        URL.revokeObjectURL(url);
+
+        if (!active) return;
+
+        if (results && results.length > 0) {
+          const first = results[0];
+          setDetectedBarcode({
+            value: first.rawValue,
+            format: first.format,
+          });
+        } else {
+          setDetectedBarcode(null);
+        }
+      } catch (e) {
+        console.error("Barcode detection failed:", e);
+        if (active) {
+          setDetectedBarcode(null);
+        }
+      }
+    };
+
+    detectBarcode();
+
+    return () => {
+      active = false;
+    };
+  }, [attachedFile]);
 
   const handleProcessInvoiceShortcut = async () => {
     if (!attachedFile || isSubmitting) return;
@@ -393,6 +468,23 @@ export function ChatFloating({
     }
 
     setAttachedFile(null);
+    setDetectedBarcode(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleBarcodeSearchShortcut = async () => {
+    if (!detectedBarcode || isSubmitting) return;
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+    }
+    setLocalInput("");
+
+    await sendMessage({
+      text: `Buscar ${detectedBarcode.value}`,
+    });
+
+    setAttachedFile(null);
+    setDetectedBarcode(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -500,6 +592,7 @@ export function ChatFloating({
 
   const handleRemoveFile = () => {
     setAttachedFile(null);
+    setDetectedBarcode(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -540,7 +633,7 @@ export function ChatFloating({
         <div
           className={`${
             isMobile
-              ? "fixed inset-0 w-full h-full rounded-none"
+              ? "fixed inset-0 w-full h-[100dvh] rounded-none"
               : `fixed bottom-24 right-6 bg-background border rounded-lg shadow-xl z-50 flex flex-col transition-all duration-300 ${
                   isExpanded ? "w-[600px] h-[700px]" : "w-[500px] h-[600px]"
                 }`
@@ -891,8 +984,8 @@ export function ChatFloating({
                     </TooltipContent>
                   </Tooltip>
                 </div>
-                {/* Contextual Action Button */}
-                <div className="flex justify-start">
+                {/* Contextual Action Buttons */}
+                <div className="flex flex-wrap gap-1.5 justify-start">
                   <Button
                     type="button"
                     variant="secondary"
@@ -904,6 +997,19 @@ export function ChatFloating({
                     <Check className="h-3.5 w-3.5" />
                     Procesar como Factura de Compra
                   </Button>
+                  {detectedBarcode && (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={handleBarcodeSearchShortcut}
+                      disabled={isSubmitting}
+                      className="text-xs bg-background hover:bg-background/80 border text-primary font-medium h-7 px-2.5 flex items-center gap-1.5 transition-all shadow-xs"
+                    >
+                      <Check className="h-3.5 w-3.5 text-emerald-700" />
+                      Buscar &quot;{detectedBarcode.value}&quot;
+                    </Button>
+                  )}
                 </div>
               </div>
             )}

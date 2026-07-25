@@ -94,7 +94,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
               <button
                 type="button"
                 onClick={() => handleQueryChange('')}
-                className="absolute right-0 text-muted-foreground hover:text-foreground transition-colors"
+                className="absolute right-0 text-muted-foreground hover:text-foreground transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1 rounded-full p-0.5"
                 aria-label="Limpiar búsqueda"
               >
                 <X className="h-4 w-4" />

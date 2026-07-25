@@ -72,6 +72,7 @@ export function AdminClientLayout({ children, user }: AdminClientLayoutProps) {
             user={user}
             onSignOut={handleSignOut}
             onOpenPalette={() => setPaletteOpen(true)}
+            onOpenChat={() => setChatOpen(true)}
           />
           <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
           <SidebarInset>
