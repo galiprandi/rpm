@@ -77,12 +77,13 @@ export function Testimonials() {
               }}
               whileTap={{ scale: 0.96 }}
               className="bg-zinc-900/50 border border-white/5 p-10 rounded-[32px] flex flex-col justify-between group hover:border-brand/20 transition-all duration-500 cursor-pointer"
+              aria-label={`Testimonio de ${t.name} sobre su ${t.vehicle}`}
             >
               <div>
-                <Quote className="h-10 w-10 text-brand/20 group-hover:text-brand/40 transition-colors mb-6" />
-                <div className="flex gap-1 mb-6">
-                  {[...Array(t.rating)].map((_, i) => (
-                    <Star key={i} className="h-4 w-4 fill-brand text-brand" />
+                <Quote className="h-10 w-10 text-brand/20 group-hover:text-brand/40 transition-colors mb-6 pointer-events-none" aria-hidden="true" />
+                <div className="flex gap-1 mb-6" aria-label={`Calificación de ${t.rating} estrellas`}>
+                  {[...Array(t.rating)].map((_, idx) => (
+                    <Star key={idx} className="h-4 w-4 fill-brand text-brand pointer-events-none" aria-hidden="true" />
                   ))}
                 </div>
                 <p className="text-lg text-zinc-300 leading-relaxed mb-8 italic">

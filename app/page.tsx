@@ -64,14 +64,14 @@ export default async function HomePage() {
               </div>
 
               <div className="flex flex-wrap gap-6">
-                <a href={PUBLIC_SITE_CONFIG.links.whatsapp(DEFAULT_WHATSAPP_MESSAGE)} target="_blank" rel="noopener noreferrer">
+                <a href={PUBLIC_SITE_CONFIG.links.whatsapp(DEFAULT_WHATSAPP_MESSAGE)} target="_blank" rel="noopener noreferrer" aria-label="Agendar instalación por WhatsApp">
                   <Button className="bg-white text-black hover:bg-zinc-200 font-bold px-10 h-14 rounded-full transition-all">
                     Agendar Instalación
                   </Button>
                 </a>
-                <a href={PUBLIC_SITE_CONFIG.instagramUrl} target="_blank" rel="noopener noreferrer">
+                <a href={PUBLIC_SITE_CONFIG.instagramUrl} target="_blank" rel="noopener noreferrer" aria-label="Ver fotos de nuestros trabajos en Instagram">
                   <Button variant="outline" className="border-white/10 text-white hover:bg-white/5 font-bold px-10 h-14 rounded-full gap-2">
-                    <Camera className="h-5 w-5" />
+                    <Camera className="h-5 w-5 pointer-events-none" aria-hidden="true" />
                     Ver Trabajos
                   </Button>
                 </a>
@@ -90,9 +90,10 @@ export default async function HomePage() {
                   href={PUBLIC_SITE_CONFIG.instagramUrl}
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="flex items-center text-sm font-bold text-white/60 hover:text-white transition-colors group/btn"
+                  className="flex items-center text-sm font-bold text-white/60 hover:text-white transition-colors group/btn focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none rounded-lg px-2 py-1"
+                  aria-label="Ver galería completa de trabajos en Instagram"
                 >
-                  VER GALERÍA COMPLETA <ArrowRight className="ml-2 h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
+                  VER GALERÍA COMPLETA <ArrowRight className="ml-2 h-4 w-4 group-hover/btn:translate-x-1 transition-transform pointer-events-none" aria-hidden="true" />
                 </a>
               </div>
             </div>

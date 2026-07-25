@@ -73,14 +73,14 @@ export default function ServicesClient() {
               >
                 <div className="flex-1 space-y-8">
                   <div className="w-16 h-16 rounded-full bg-brand/10 flex items-center justify-center text-brand">
-                    <service.icon className="h-8 w-8" />
+                    <service.icon className="h-8 w-8 pointer-events-none" aria-hidden="true" />
                   </div>
                   <h3 className="text-4xl font-bold text-white tracking-tight">{service.title}</h3>
                   <p className="text-lg text-zinc-400 leading-relaxed">{service.fullDescription}</p>
                   <ul className="space-y-4">
                     {service.benefits?.map(benefit => (
                       <li key={benefit} className="flex items-center text-zinc-300 group">
-                        <div className="w-1.5 h-1.5 rounded-full bg-brand mr-4 group-hover:scale-150 transition-transform" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-brand mr-4 group-hover:scale-150 transition-transform pointer-events-none" aria-hidden="true" />
                         {benefit}
                       </li>
                     ))}
@@ -89,11 +89,24 @@ export default function ServicesClient() {
                     variant="outline"
                     className="border-white/10 text-white hover:bg-white hover:text-black rounded-full px-8 transition-all"
                     onClick={() => setSelectedService(service)}
+                    aria-label={`Ver detalles rápidos del servicio ${service.title}`}
                   >
                     Ver detalles rápidos
                   </Button>
                 </div>
-                <div className="flex-1 w-full aspect-video bg-zinc-900 rounded-3xl overflow-hidden relative group cursor-pointer" onClick={() => setSelectedService(service)}>
+                <div
+                  className="flex-1 w-full aspect-video bg-zinc-900 rounded-3xl overflow-hidden relative group cursor-pointer"
+                  onClick={() => setSelectedService(service)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setSelectedService(service);
+                    }
+                  }}
+                  aria-label={`Ver demostración visual del servicio ${service.title}`}
+                >
                    {service.imageUrl ? (
                      <Image
                        src={service.imageUrl}
@@ -132,9 +145,9 @@ export default function ServicesClient() {
                 style={{ animationDelay: `${0.1 * index}s` }}
               >
                 <div className="mb-6 w-12 h-12 rounded-2xl bg-brand/10 flex items-center justify-center text-brand group-hover:scale-110 transition-transform duration-500">
-                  <step.icon className="h-6 w-6" />
+                  <step.icon className="h-6 w-6 pointer-events-none" aria-hidden="true" />
                 </div>
-                <div className="absolute top-8 right-8 text-white/5 font-black text-4xl italic group-hover:text-brand/10 transition-colors">
+                <div className="absolute top-8 right-8 text-white/5 font-black text-4xl italic group-hover:text-brand/10 transition-colors pointer-events-none" aria-hidden="true">
                   0{index + 1}
                 </div>
                 <h4 className="text-xl font-bold text-white mb-3">{step.title}</h4>
@@ -157,9 +170,9 @@ export default function ServicesClient() {
               Agendá una consulta técnica hoy mismo y descubrí el verdadero potencial de tu vehículo.
             </p>
             <div className="flex justify-center">
-               <a href={PUBLIC_SITE_CONFIG.links.whatsapp(DEFAULT_WHATSAPP_MESSAGE)} target="_blank" rel="noopener noreferrer">
+               <a href={PUBLIC_SITE_CONFIG.links.whatsapp(DEFAULT_WHATSAPP_MESSAGE)} target="_blank" rel="noopener noreferrer" aria-label="Solicitar turno por WhatsApp">
                  <Button className="bg-brand text-white hover:bg-brand/90 font-bold px-16 h-20 text-xl rounded-full transition-all hover:scale-105 active:scale-95 border-none shadow-[0_0_40px_rgba(255,75,0,0.3)] gap-3">
-                    <MessageCircle className="h-6 w-6 fill-current" />
+                    <MessageCircle className="h-6 w-6 fill-current pointer-events-none" aria-hidden="true" />
                     Solicitar Turno
                  </Button>
                </a>

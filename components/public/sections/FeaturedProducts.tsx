@@ -60,9 +60,9 @@ export function FeaturedProducts({ initialProducts }: FeaturedProductsProps) {
               Una curaduría exclusiva de los mejores accesorios para elevar el estándar de tu vehículo.
             </p>
             <Link href="/productos">
-              <Button variant="link" className="text-brand font-bold p-0 h-auto hover:text-white transition-colors group">
+              <Button variant="link" className="text-brand font-bold p-0 h-auto hover:text-white transition-colors group" aria-label="Ver todo el catálogo de productos">
                 VER CATÁLOGO COMPLETO
-                <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform pointer-events-none" aria-hidden="true" />
               </Button>
             </Link>
           </div>
@@ -114,7 +114,7 @@ export function FeaturedProducts({ initialProducts }: FeaturedProductsProps) {
                       }}
                       aria-label={`Vista rápida de ${product.name}`}
                     >
-                      <Eye className="h-4 w-4" />
+                      <Eye className="h-4 w-4 pointer-events-none" aria-hidden="true" />
                     </button>
                   </TooltipTrigger>
                   <TooltipContent side="left" className="bg-zinc-900 border-white/10 text-white text-xs font-bold uppercase tracking-widest">
@@ -135,8 +135,9 @@ export function FeaturedProducts({ initialProducts }: FeaturedProductsProps) {
                   <button
                     onClick={() => setSelectedProduct(product)}
                     className="flex items-center text-xs font-bold text-brand hover:text-white transition-colors"
+                    aria-label={`Ver detalles de ${product.name}`}
                   >
-                    DETALLES <ArrowRight className="ml-2 h-3 w-3" />
+                    DETALLES <ArrowRight className="ml-2 h-3 w-3 pointer-events-none" aria-hidden="true" />
                   </button>
                 </div>
               </div>

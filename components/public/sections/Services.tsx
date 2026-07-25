@@ -64,16 +64,25 @@ export function Services() {
               whileTap={{ scale: 0.96 }}
               onClick={() => setSelectedService(service)}
               className={`group relative overflow-hidden rounded-3xl p-8 cursor-pointer ${service.bg} border border-white/5 hover:border-brand/20 ${service.gridClassName}`}
+              aria-label={`Ver detalles del servicio ${service.title}`}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setSelectedService(service);
+                }
+              }}
             >
               {/* Hover effect */}
               <div className="absolute inset-0 bg-gradient-to-br from-brand/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
               
-              <div className="relative z-10 h-full flex flex-col justify-between">
+              <div className="relative z-10 h-full flex flex-col justify-between pointer-events-none">
                 <div className="flex justify-between items-start">
                   <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-white group-hover:text-brand transition-colors duration-500">
-                    <service.icon className="h-6 w-6" />
+                    <service.icon className="h-6 w-6 pointer-events-none" aria-hidden="true" />
                   </div>
-                  <ArrowUpRight className="h-6 w-6 text-white/20 group-hover:text-brand transition-all duration-500 group-hover:translate-x-1 group-hover:-translate-y-1" />
+                  <ArrowUpRight className="h-6 w-6 text-white/20 group-hover:text-brand transition-all duration-500 group-hover:translate-x-1 group-hover:-translate-y-1 pointer-events-none" aria-hidden="true" />
                 </div>
                 
                 <div>
