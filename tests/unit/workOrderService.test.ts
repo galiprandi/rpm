@@ -3,7 +3,7 @@ import { updateWorkOrder } from '../../lib/services/workOrderService';
 import { db } from '@/lib/db';
 
 // Mock db with Drizzle-style chainable methods and transaction support
-const { mockDb } = vi.hoisted(() => {
+const { mockDb, mockAdjustBalanceAtomically } = vi.hoisted(() => {
   const query = {
     workOrder: { findFirst: vi.fn() },
     workOrderItem: { findFirst: vi.fn() },
@@ -37,7 +37,8 @@ const { mockDb } = vi.hoisted(() => {
       return callback(tx);
     }),
   };
-  return { mockDb };
+  const mockAdjustBalanceAtomically = vi.fn();
+  return { mockDb, mockAdjustBalanceAtomically };
 });
 
 vi.mock('@/lib/db', () => ({
@@ -51,6 +52,10 @@ vi.mock('../../lib/services/auditService', () => ({
 vi.mock('../../lib/services/invoiceService', () => ({
   createInvoice: vi.fn(),
   determineInvoiceType: vi.fn(() => 'X_A'),
+}));
+
+vi.mock('../../lib/services/balanceService', () => ({
+  adjustBalanceAtomically: mockAdjustBalanceAtomically,
 }));
 
 describe('workOrderService', () => {
@@ -92,6 +97,50 @@ describe('workOrderService', () => {
       // Verify set was called with status IN_PROGRESS
       expect(setFn).toHaveBeenCalledWith(
         expect.objectContaining({ status: 'IN_PROGRESS' }),
+      );
+    });
+
+    it('should reverse customer balance when status is set to CANCELLED', async () => {
+      const mockWO = {
+        id: mockId,
+        status: 'CONFIRMED',
+        customerId: 'customer_999',
+        total: '1000.00',
+        workOrderItems: [],
+        customer: { id: 'customer_999', name: 'Test Customer' },
+        notes: '',
+      };
+
+      const mockQuery = (db as any).query;
+      // First findFirst: get current WO
+      mockQuery.workOrder.findFirst.mockResolvedValueOnce(mockWO);
+      // findMany: get payments for this WO
+      mockQuery.payment.findMany.mockResolvedValueOnce([
+        { amount: '300.00' },
+      ]);
+      // Second findFirst: re-fetch with relations after update
+      mockQuery.workOrder.findFirst.mockResolvedValueOnce({ ...mockWO, status: 'CANCELLED' });
+
+      // Track the update chain
+      const whereFn = vi.fn(() => Promise.resolve());
+      const setFn = vi.fn(() => ({ where: whereFn }));
+      (db.update as any).mockReturnValue({ set: setFn });
+
+      await updateWorkOrder(mockId, { status: 'CANCELLED' }, mockContext);
+
+      // Verify update was called (Drizzle chain: update().set().where())
+      expect(db.update).toHaveBeenCalled();
+      // Verify set was called with status CANCELLED
+      expect(setFn).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 'CANCELLED' }),
+      );
+
+      // Verify balance adjustment: total (1000) - payments (300) = 700.
+      // Reversal should adjust by -700.
+      expect(mockAdjustBalanceAtomically).toHaveBeenCalledWith(
+        'customer_999',
+        -700,
+        'work_order_cancel',
       );
     });
   });

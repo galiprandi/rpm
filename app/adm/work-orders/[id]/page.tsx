@@ -54,6 +54,7 @@ import {
   Loader2,
   FileText,
   Send,
+  XCircle,
 } from "lucide-react";
 import {
   ProductServiceSelector,
@@ -162,12 +163,13 @@ function TimelineItem({
 }
 
 const STATUSES = [
-  { id: "CONFIRMED", label: "Confirmada", color: "bg-blue-100" },
-  { id: "WAITING", label: "En Espera", color: "bg-yellow-100" },
-  { id: "IN_PROGRESS", label: "En Proceso", color: "bg-orange-100" },
-  { id: "QC_CHECK", label: "Control QC", color: "bg-purple-100" },
-  { id: "READY", label: "Listo", color: "bg-green-100" },
-  { id: "DELIVERED", label: "Entregada", color: "bg-gray-100" },
+  { id: "CONFIRMED", label: "Confirmada", color: "bg-blue-50 text-blue-700 border-blue-200" },
+  { id: "WAITING", label: "En Espera", color: "bg-yellow-50 text-yellow-700 border-yellow-200" },
+  { id: "IN_PROGRESS", label: "En Proceso", color: "bg-orange-50 text-orange-700 border-orange-200" },
+  { id: "QC_CHECK", label: "Control QC", color: "bg-purple-50 text-purple-700 border-purple-200" },
+  { id: "READY", label: "Listo", color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  { id: "DELIVERED", label: "Entregada", color: "bg-gray-50 text-gray-700 border-gray-200" },
+  { id: "CANCELLED", label: "Cancelada", color: "bg-red-50 text-red-700 border-red-200" },
 ];
 
 const NEXT_STATUS_MAP: Record<
@@ -253,6 +255,7 @@ interface WorkOrderDetail {
   totalServices: number;
   notes: string;
   createdAt: string;
+  updatedAt?: string;
 }
 
 interface AuditLog {
@@ -265,7 +268,7 @@ interface AuditLog {
 }
 
 export default function WorkOrderDetailPage() {
-  const { alert } = useUI();
+  const { alert, confirm: confirmAction } = useUI();
   const params = useParams();
   const router = useRouter();
   const workOrderId = params.id as string;
@@ -488,6 +491,21 @@ export default function WorkOrderDetailPage() {
       });
     } finally {
       setUpdatingStatus(false);
+    }
+  };
+
+  const handleCancelOrder = async () => {
+    if (!workOrder) return;
+    const isConfirmed = await confirmAction({
+      title: "¿Cancelar Orden de Trabajo?",
+      description: "Esta acción es irreversible, cambiará el estado de la OT a 'Cancelada' y anulará/restará el saldo correspondiente en la cuenta corriente del cliente (si aplica). ¿Deseas continuar?",
+      confirmText: "Sí, cancelar orden",
+      cancelText: "No, volver",
+      variant: "destructive",
+    });
+
+    if (isConfirmed) {
+      await handleStatusChange("CANCELLED");
     }
   };
 
@@ -1029,6 +1047,16 @@ export default function WorkOrderDetailPage() {
       });
     }
 
+    if (workOrder.status === "CANCELLED") {
+      items.push({
+        type: "milestone",
+        title: "OT Cancelada",
+        date: workOrder.updatedAt || new Date().toISOString(),
+        status: "completed",
+        icon: XCircle,
+      });
+    }
+
     // Add granular audit logs
     auditLogs.forEach((log) => {
       let title = `Cambio en ${getFieldLabel(log.fieldName)}`;
@@ -1129,6 +1157,20 @@ export default function WorkOrderDetailPage() {
             title: "Crear nota de crédito por devolución",
             ariaLabel: "Crear nota de crédito por devolución",
           },
+          ...(workOrder.status !== "CANCELLED" && workOrder.status !== "DELIVERED"
+            ? [
+                {
+                  label: "Cancelar Orden",
+                  onClick: handleCancelOrder,
+                  icon: XCircle,
+                  variant: "ghost" as const,
+                  iconOnly: true,
+                  title: "Cancelar orden de trabajo",
+                  ariaLabel: "Cancelar orden de trabajo",
+                  className: "text-red-600 hover:text-red-700 hover:bg-red-50",
+                },
+              ]
+            : []),
           ...(workOrder.customer?.phone
             ? [
                 {
@@ -1235,7 +1277,13 @@ export default function WorkOrderDetailPage() {
             ) : (
               <button
                 onClick={() => startEditingScheduledDate()}
-                className="text-sm font-mono text-left hover:text-primary transition-colors"
+                className={cn(
+                  "text-sm font-mono text-left transition-colors",
+                  workOrder.status === "DELIVERED" || workOrder.status === "CANCELLED"
+                    ? "text-muted-foreground cursor-not-allowed"
+                    : "hover:text-primary"
+                )}
+                disabled={workOrder.status === "DELIVERED" || workOrder.status === "CANCELLED"}
               >
                 {workOrder.scheduledDate ? (
                   new Date(workOrder.scheduledDate).toLocaleString("es-AR", {
@@ -1267,7 +1315,7 @@ export default function WorkOrderDetailPage() {
                 value={workOrder.technicianId || "unassigned"}
                 onValueChange={handleTechnicianChange}
                 disabled={
-                  updatingTechnician || workOrder.status === "DELIVERED"
+                  updatingTechnician || workOrder.status === "DELIVERED" || workOrder.status === "CANCELLED"
                 }
               >
                 <SelectTrigger className="h-7 border-none bg-transparent hover:bg-purple-100/50 shadow-none focus:ring-0 px-1.5 min-w-[100px] text-xs">
@@ -1326,13 +1374,33 @@ export default function WorkOrderDetailPage() {
             </p>
           </div>
           <div>
-            <p className="font-bold uppercase text-muted-foreground">Estado</p>
-            <p className="font-semibold">
-              {STATUSES.find((s) => s.id === workOrder.status)?.label}
-            </p>
+            <p className="font-bold uppercase text-muted-foreground mb-1">Estado</p>
+            {(() => {
+              const statusConfig = STATUSES.find((s) => s.id === workOrder.status);
+              return (
+                <Badge
+                  variant="outline"
+                  className={statusConfig?.color || "bg-gray-50 text-gray-700 border-gray-200 text-xs font-semibold"}
+                >
+                  {statusConfig?.label || workOrder.status}
+                </Badge>
+              );
+            })()}
           </div>
         </div>
       </div>
+
+      {workOrder.status === "CANCELLED" && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3 text-red-700 print:hidden shadow-sm">
+          <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
+          <div>
+            <h3 className="font-semibold tracking-tight">Orden de Trabajo Cancelada</h3>
+            <p className="text-sm mt-0.5 opacity-90">
+              Esta orden de trabajo ha sido cancelada. Las ediciones y los registros de pagos o checklists están bloqueados de forma permanente.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Main grid: Work (left 2/3) + Payments+Notes (right 1/3) */}
       <div className="grid lg:grid-cols-3 gap-4 print:grid-cols-1 print:gap-2 lg:items-stretch">
@@ -1346,7 +1414,7 @@ export default function WorkOrderDetailPage() {
                   <Package className="h-5 w-5" />
                   Servicios y Productos
                 </CardTitle>
-                {!isEditingItems && workOrder.status !== "DELIVERED" && (
+                {!isEditingItems && workOrder.status !== "DELIVERED" && workOrder.status !== "CANCELLED" && (
                   <Button
                     variant="outline"
                     size="sm"
@@ -1544,11 +1612,13 @@ export default function WorkOrderDetailPage() {
                 <Button
                   className="w-full print:hidden"
                   onClick={() => setIsPaymentDialogOpen(true)}
-                  disabled={isCashOpen === false}
+                  disabled={isCashOpen === false || workOrder.status === "CANCELLED"}
                   title={
-                    isCashOpen === false
-                      ? "Debe abrir la caja para registrar pagos"
-                      : undefined
+                    workOrder.status === "CANCELLED"
+                      ? "No se pueden registrar pagos en una orden cancelada"
+                      : isCashOpen === false
+                        ? "Debe abrir la caja para registrar pagos"
+                        : undefined
                   }
                 >
                   <DollarSign className="h-4 w-4 mr-2" />
@@ -1608,7 +1678,7 @@ export default function WorkOrderDetailPage() {
                   <FileText className="h-5 w-5" />
                   Notas de Taller
                 </CardTitle>
-                {!editingNotes && workOrder.status !== "DELIVERED" && (
+                {!editingNotes && workOrder.status !== "DELIVERED" && workOrder.status !== "CANCELLED" && (
                   <Button
                     variant="outline"
                     size="sm"
@@ -1738,6 +1808,7 @@ export default function WorkOrderDetailPage() {
                       variant="ghost"
                       size="sm"
                       onClick={() => startEditingChecklist("entry")}
+                      disabled={workOrder.status === "DELIVERED" || workOrder.status === "CANCELLED"}
                     >
                       Editar
                     </Button>
@@ -1912,6 +1983,7 @@ export default function WorkOrderDetailPage() {
                     <Button
                       size="sm"
                       onClick={() => handleCompleteChecklist("ENTRY")}
+                      disabled={workOrder.status === "DELIVERED" || workOrder.status === "CANCELLED"}
                     >
                       <Plus className="h-4 w-4 mr-2" />
                       Completar Checklist
@@ -1933,6 +2005,7 @@ export default function WorkOrderDetailPage() {
                       variant="ghost"
                       size="sm"
                       onClick={() => startEditingChecklist("exit")}
+                      disabled={workOrder.status === "DELIVERED" || workOrder.status === "CANCELLED"}
                     >
                       Editar
                     </Button>
@@ -2107,6 +2180,7 @@ export default function WorkOrderDetailPage() {
                     <Button
                       size="sm"
                       onClick={() => handleCompleteChecklist("EXIT")}
+                      disabled={workOrder.status === "DELIVERED" || workOrder.status === "CANCELLED"}
                     >
                       <Plus className="h-4 w-4 mr-2" />
                       Completar Checklist
@@ -2128,7 +2202,7 @@ export default function WorkOrderDetailPage() {
                     <Camera className="h-4 w-4 text-blue-500" />
                     Fotos de Ingreso
                   </CardTitle>
-                  {workOrder.status !== "DELIVERED" && (
+                  {workOrder.status !== "DELIVERED" && workOrder.status !== "CANCELLED" && (
                     <div className="flex items-center gap-2">
                       <input
                         type="file"
@@ -2174,7 +2248,7 @@ export default function WorkOrderDetailPage() {
                           height={160}
                           className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
                         />
-                        {workOrder.status !== "DELIVERED" && (
+                        {workOrder.status !== "DELIVERED" && workOrder.status !== "CANCELLED" && (
                           <Button
                             variant="destructive"
                             size="icon"
@@ -2204,7 +2278,7 @@ export default function WorkOrderDetailPage() {
                     <Camera className="h-4 w-4 text-green-500" />
                     Fotos de Egreso
                   </CardTitle>
-                  {workOrder.status !== "DELIVERED" && (
+                  {workOrder.status !== "DELIVERED" && workOrder.status !== "CANCELLED" && (
                     <div className="flex items-center gap-2">
                       <input
                         type="file"
@@ -2250,7 +2324,7 @@ export default function WorkOrderDetailPage() {
                           height={160}
                           className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
                         />
-                        {workOrder.status !== "DELIVERED" && (
+                        {workOrder.status !== "DELIVERED" && workOrder.status !== "CANCELLED" && (
                           <Button
                             variant="destructive"
                             size="icon"

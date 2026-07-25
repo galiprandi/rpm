@@ -2,7 +2,7 @@
 - [ ] Idea pendiente — breve descripción
 
 ## ✅ COMPLETADO
-- [x] 2026-07-25 — Persistencia y Descarte de Borradores en el Alta de OT (PR #jorge/work-orders/wizard-draft-persistence-and-discard)
+- [x] 2026-07-24 — Bloqueo de Estados Terminales y Reversión de Saldos por Cancelación de OT (PR #jorge/work-orders/cancelled-terminal-states)
 - [x] 2026-07-23 — Búsqueda por Cliente y Pre-carga de Cuenta en Alta de OT (PR #jorge/work-orders/preloaded-customer-search)
 - [x] 2026-07-22 — Indicadores Visuales de Checklist/Fotos y Exportación CSV en Taller (PR #jorge/work-orders/enhanced-metadata-csv-export)
 - [x] 2026-07-21 — Botones de Filtro Rápido en Taller: Demoradas y Turnos de Hoy (PR #jorge/work-orders/quick-filters)
@@ -14,9 +14,9 @@
 - [x] 2025-07-08 — Servicio Centralizado de OT y Timeline Unificado (PR #jorge/work-orders/centralized-updates)
 
 ## 🧠 APRENDIZAJES
-## 2026-07-25 - Persistencia y Descarte de Borradores en el Alta de OT
-**Learning:** El almacenamiento local de formularios de múltiples pasos (wizards) es sumamente valorado por los usuarios del taller ya que evita la pérdida accidental de datos por recargas, fallos de red o interrupciones telefónicas. Sin embargo, persistir el estado de forma incompleta (ej: guardar el paso pero perder los productos seleccionados, el vehículo o el cliente) genera confusión. Además, es indispensable proveer un botón de descarte explícito y accesible ("Descartar Borrador") que permita borrar el cache y comenzar desde cero de manera simple y segura.
-**Action:** Al persistir formularios complejos o wizards en localStorage, asegurar la persistencia integral de todo el grafo de estados relacionados y proveer un botón contextual con doble confirmación para limpiar el borrador.
+## 2026-07-24 - Bloqueo de Estados Terminales y Reversión de Saldos por Cancelación de OT
+**Aprendizaje:** Una orden de trabajo cancelada representa un estado terminal irreversible de la operación. Dejar el resto de los controles (items, notas, asignaciones, checklists, fotos, pagos) editables tras la cancelación crea riesgos de manipulación de datos, descuadres financieros en cajas cerradas o inconsistencias de stock. El bloqueo integral de todas las entradas (acompañado de banners de advertencia de alto contraste y explicaciones explícitas de por qué las acciones están bloqueadas) provee una UI transparente y segura.
+**Acción:** Siempre acoplar los estados terminales de negocio con el bloqueo estricto de todas las funciones mutables, informando claramente al usuario la razón de la inhabilitación.
 
 ## 2026-07-23 - Búsqueda por Cliente y Pre-carga de Cuenta en Alta de OT
 **Aprendizaje:** Al iniciar el alta de un servicio en el taller, es común que el recepcionista no conozca de inmediato la patente del vehículo, o que el cliente sea recurrente y tenga múltiples unidades. Permitir buscar directamente por cliente (nombre o teléfono) e integrar la pre-carga desde la URL (para redirecciones fluidas desde la ficha del cliente) reduce sustancialmente el tiempo de carga administrativa y elimina la fricción de duplicar búsquedas de cuentas existentes.
