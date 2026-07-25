@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -121,7 +122,7 @@ interface WorkOrderItem {
 }
 
 export default function NewWorkOrderPage() {
-  const { alert } = useUI();
+  const { alert, confirm } = useUI();
   const router = useRouter();
   const searchParams = useSearchParams();
   const vehicleIdFromUrl = searchParams.get("vehicleId");
@@ -193,6 +194,40 @@ export default function NewWorkOrderPage() {
   const [selectedTechnicianId, setSelectedTechnicianId] =
     useState<string>("unassigned");
 
+  const handleDiscardDraft = async () => {
+    const confirmed = await confirm({
+      title: "Descartar Borrador",
+      description:
+        "¿Estás seguro de que deseas descartar este borrador? Se perderán todos los datos ingresados hasta el momento.",
+      confirmText: "Descartar",
+      cancelText: "Cancelar",
+      variant: "destructive",
+    });
+
+    if (!confirmed) return;
+
+    localStorage.removeItem(WIZARD_STORAGE_KEY);
+    setStep(1);
+    setFoundVehicle(null);
+    setSearchResults([]);
+    setShowCreateVehicle(false);
+    setPlateSearch("");
+    setPlateError(null);
+    setSelectedCustomerId(null);
+    setSelectedCustomer(null);
+    setCustomerSearchResults([]);
+    setCustomerSearchQuery("");
+    setItems([]);
+    setChecklist({});
+    setOdometerValue("");
+    setFuelLevel(50);
+    setNotes("");
+    setScheduledDate("");
+    setSelectedTechnicianId("unassigned");
+
+    toast.success("Borrador descartado correctamente");
+  };
+
   // Load wizard state from localStorage on mount
   useEffect(() => {
     let cancelled = false;
@@ -210,6 +245,9 @@ export default function NewWorkOrderPage() {
           if (parsed.fuelLevel !== undefined) setFuelLevel(parsed.fuelLevel);
           if (parsed.notes) setNotes(parsed.notes);
           if (parsed.scheduledDate) setScheduledDate(parsed.scheduledDate);
+          if (parsed.items) setItems(parsed.items);
+          if (parsed.foundVehicle) setFoundVehicle(parsed.foundVehicle);
+          if (parsed.selectedCustomer) setSelectedCustomer(parsed.selectedCustomer);
         }
       } catch {
         // Ignore parse errors
@@ -231,9 +269,11 @@ export default function NewWorkOrderPage() {
       notes,
       scheduledDate,
       items,
+      foundVehicle,
+      selectedCustomer,
     };
     localStorage.setItem(WIZARD_STORAGE_KEY, JSON.stringify(state));
-  }, [step, checklist, odometerValue, fuelLevel, notes, scheduledDate, items]);
+  }, [step, checklist, odometerValue, fuelLevel, notes, scheduledDate, items, foundVehicle, selectedCustomer]);
 
   // Warn before leaving if wizard has data
   useEffect(() => {
@@ -553,6 +593,15 @@ export default function NewWorkOrderPage() {
     }
   };
 
+  const hasDraft =
+    step > 1 ||
+    items.length > 0 ||
+    plateSearch ||
+    customerSearchQuery ||
+    selectedCustomerId ||
+    foundVehicle !== null ||
+    selectedCustomer !== null;
+
   return (
     <TooltipProvider>
       <div className="container mx-auto py-6 max-w-4xl space-y-6">
@@ -561,6 +610,21 @@ export default function NewWorkOrderPage() {
           description="Crear una nueva orden de trabajo para un vehículo"
           showBackButton
           onBack={() => router.push("/adm/work-orders")}
+          secondaryActions={
+            hasDraft
+              ? [
+                  {
+                    label: "Descartar Borrador",
+                    onClick: handleDiscardDraft,
+                    icon: RotateCcw,
+                    variant: "outline" as const,
+                    className:
+                      "text-red-700 border-red-200 hover:bg-red-50 hover:text-red-800",
+                    title: "Descartar borrador y comenzar de nuevo",
+                  },
+                ]
+              : []
+          }
         />
 
         <WorkOrderStepper
