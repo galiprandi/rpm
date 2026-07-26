@@ -17,10 +17,10 @@ describe("CustomerForm", () => {
     fireEvent.change(nameInput, { target: { value: "Juan Pérez" } });
     expect(nameInput).toHaveValue("Juan Pérez");
 
-    // Phone field
+    // Phone field - typing a valid AMBA phone
     const phoneInput = screen.getByLabelText("Teléfono Principal");
-    fireEvent.change(phoneInput, { target: { value: "+54 11 1234-5678" } });
-    expect(phoneInput).toHaveValue("+54 11 1234-5678");
+    fireEvent.change(phoneInput, { target: { value: "1112345678" } });
+    expect(phoneInput).toHaveValue("+54 9 11 1234-5678");
 
     // Email field
     const emailInput = screen.getByLabelText("Correo electrónico");
@@ -42,7 +42,7 @@ describe("CustomerForm", () => {
 
     const submittedData = onSubmit.mock.calls[0][0] as CustomerFormData;
     expect(submittedData.name).toBe("Juan Pérez");
-    expect(submittedData.phone).toBe("+54 11 1234-5678");
+    expect(submittedData.phone).toBe("+54 9 11 1234-5678");
     expect(submittedData.email).toBe("juan@perez.com");
     expect(submittedData.address).toBe("Calle Falsa 123");
   });
@@ -53,7 +53,7 @@ describe("CustomerForm", () => {
         onSubmit={vi.fn()}
         initialData={{
           name: "Carlos Gómez",
-          phone: "11223344",
+          phone: "+54 9 11 2233-4455",
           email: "carlos@gomez.com",
           address: "Av. Corrientes 1000",
           notes: "Alguna nota",
@@ -62,7 +62,7 @@ describe("CustomerForm", () => {
     );
 
     expect(screen.getByLabelText(/Nombre o Razón Social/i)).toHaveValue("Carlos Gómez");
-    expect(screen.getByLabelText("Teléfono Principal")).toHaveValue("11223344");
+    expect(screen.getByLabelText("Teléfono Principal")).toHaveValue("+54 9 11 2233-4455");
     expect(screen.getByLabelText("Correo electrónico")).toHaveValue("carlos@gomez.com");
     expect(screen.getByLabelText("Dirección de domicilio")).toHaveValue("Av. Corrientes 1000");
     expect(screen.getByLabelText("Notas u observaciones adicionales")).toHaveValue("Alguna nota");
@@ -129,5 +129,40 @@ describe("CustomerForm", () => {
     // Trigger blur
     fireEvent.blur(cuitInput);
     expect(screen.getByText(/El CUIT debe tener 11 dígitos/i)).toBeInTheDocument();
+  });
+
+  it("should perform real-time phone validation and detect region", () => {
+    render(<CustomerForm onSubmit={vi.fn()} />);
+
+    const phoneInput = screen.getByLabelText("Teléfono Principal");
+
+    // Type exactly 10 digits for Córdoba area code (351)
+    fireEvent.change(phoneInput, { target: { value: "3511234567" } });
+    expect(phoneInput).toHaveValue("+54 9 351 1234-567");
+
+    expect(screen.getByText(/Teléfono válido \(Córdoba\)/i)).toBeInTheDocument();
+  });
+
+  it("should show phone validation error on blur when format is invalid", () => {
+    render(<CustomerForm onSubmit={vi.fn()} />);
+
+    const phoneInput = screen.getByLabelText("Teléfono Principal");
+
+    // Enter a very short/invalid number
+    fireEvent.change(phoneInput, { target: { value: "123" } });
+    fireEvent.blur(phoneInput);
+
+    expect(screen.getByText(/Formato incorrecto. Debe tener 10 dígitos/i)).toBeInTheDocument();
+  });
+
+  it("should apply regional prefix template on autocomplete chip click", async () => {
+    render(<CustomerForm onSubmit={vi.fn()} />);
+
+    // Click AMBA (11) prefix button for the primary phone input
+    const ambaButton = screen.getByLabelText(/Aplicar prefijo AMBA \(11\) al teléfono principal/i);
+    fireEvent.click(ambaButton);
+
+    const phoneInput = screen.getByLabelText("Teléfono Principal");
+    expect(phoneInput).toHaveValue("+54 9 11 ");
   });
 });

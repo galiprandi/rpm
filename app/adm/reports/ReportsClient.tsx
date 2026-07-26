@@ -61,10 +61,10 @@ function ReportCard({ title, description, href, icon: Icon, isAvailable = true }
       <CardHeader>
         <div className="flex items-center justify-between mb-2">
           <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-            <Icon className="h-5 w-5 text-primary" />
+            <Icon className="h-5 w-5 text-primary pointer-events-none" aria-hidden="true" />
           </div>
           {isAvailable && (
-            <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+            <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all pointer-events-none" aria-hidden="true" />
           )}
         </div>
         <CardTitle className="text-xl group-hover:text-primary transition-colors">{title}</CardTitle>
@@ -292,7 +292,7 @@ export default function ReportsClient() {
         leftActions={
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <Calendar className="h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
               <Select
                 value={period}
                 onValueChange={(v) => {
@@ -401,7 +401,7 @@ export default function ReportsClient() {
         <Card className="lg:col-span-1">
           <CardHeader>
             <CardTitle className="text-lg font-medium flex items-center gap-2">
-              <Package className="h-5 w-5 text-primary" />
+              <Package className="h-5 w-5 text-primary pointer-events-none" aria-hidden="true" />
               Estado de Inventario
             </CardTitle>
           </CardHeader>
@@ -418,14 +418,14 @@ export default function ReportsClient() {
                   <span className="text-sm text-muted-foreground">Alertas de Stock:</span>
                   <span className={cn(
                     "text-lg font-bold font-mono",
-                    data.stockStatus.lowStockCount > 0 ? "text-red-600" : "text-emerald-600"
+                    data.stockStatus.lowStockCount > 0 ? "text-red-700" : "text-emerald-700"
                   )}>
                     {data.stockStatus.lowStockCount}
                   </span>
                 </div>
                 <Link href="/adm/reports/stock">
                   <button className="w-full mt-2 text-xs text-primary font-medium flex items-center justify-center gap-1 hover:underline">
-                    Ver reporte detallado <ArrowRight className="h-3 w-3" />
+                    Ver reporte detallado <ArrowRight className="h-3 w-3 pointer-events-none" aria-hidden="true" />
                   </button>
                 </Link>
               </div>
@@ -438,7 +438,7 @@ export default function ReportsClient() {
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="text-lg font-medium flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5 text-primary" />
+                  <BarChart3 className="h-5 w-5 text-primary pointer-events-none" aria-hidden="true" />
                   Comparativo de Rendimiento
                 </CardTitle>
                 <CardDescription>

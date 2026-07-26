@@ -245,7 +245,7 @@ export default function CustomersReportClient() {
         leftActions={
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <Calendar className="h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
               <Select
                 value={period}
                 onValueChange={(v) => {
@@ -301,7 +301,7 @@ export default function CustomersReportClient() {
               disabled={!data || data.topCustomers.length === 0}
               className="h-8 gap-2"
             >
-              <Download className="h-4 w-4" />
+              <Download className="h-4 w-4 pointer-events-none" aria-hidden="true" />
               Exportar CSV
             </Button>
           </div>
@@ -434,7 +434,7 @@ export default function CustomersReportClient() {
                       <TableCell className="p-3 text-right">
                         <Button variant="ghost" size="icon" asChild className="h-8 w-8">
                           <Link href={`/adm/customers/${customer.id}`}>
-                            <Eye className="h-4 w-4" />
+                            <Eye className="h-4 w-4 pointer-events-none" aria-hidden="true" />
                           </Link>
                         </Button>
                       </TableCell>

@@ -2,6 +2,7 @@
 - [ ] Idea pendiente — breve descripción
 
 ## ✅ COMPLETADO
+- [x] 2026-07-26 — Historial de Órdenes de Trabajo del Vehículo en Detalle de OT (PR #jorge/work-orders/vehicle-history-tab)
 - [x] 2026-07-24 — Bloqueo de Estados Terminales y Reversión de Saldos por Cancelación de OT (PR #jorge/work-orders/cancelled-terminal-states)
 - [x] 2026-07-23 — Búsqueda por Cliente y Pre-carga de Cuenta en Alta de OT (PR #jorge/work-orders/preloaded-customer-search)
 - [x] 2026-07-22 — Indicadores Visuales de Checklist/Fotos y Exportación CSV en Taller (PR #jorge/work-orders/enhanced-metadata-csv-export)
@@ -14,6 +15,10 @@
 - [x] 2025-07-08 — Servicio Centralizado de OT y Timeline Unificado (PR #jorge/work-orders/centralized-updates)
 
 ## 🧠 APRENDIZAJES
+## 2026-07-26 - Historial de Órdenes de Trabajo del Vehículo en Detalle de OT
+**Aprendizaje:** En talleres mecánicos, los vehículos suelen ser recurrentes. Contar con visibilidad instantánea sobre el historial técnico completo (OTs pasadas, responsables, notas, checklists y productos/servicios específicos realizados) directamente desde la pantalla de la OT en curso disminuye drásticamente la fricción administrativa y de diagnóstico, eliminando la necesidad de abandonar el flujo principal para ir a buscar la ficha del vehículo por separado. Además, al trabajar con Next.js 15 y el nuevo React Compiler, las dependencias complejas (como optional chaining en arrays `[workOrder?.vehicle?.id]`) pueden impedir que se preserve la memoización manual, arrojando errores de compilación (`Compilation Skipped: Existing memoization could not be preserved`). Desestructurar y aplanar estas referencias en variables simples de tipo string o undefined (`const vehicleId = workOrder?.vehicle?.id`) antes de pasarlas a los hooks de React garantiza compatibilidad completa con el compilador de React y optimizaciones robustas.
+**Acción:** Siempre proveer pestañas de historial contextual técnico y asegurar de aplanar propiedades anidadas o con optional chaining al incluirlas en dependencias de hooks con React Compiler.
+
 ## 2026-07-24 - Bloqueo de Estados Terminales y Reversión de Saldos por Cancelación de OT
 **Aprendizaje:** Una orden de trabajo cancelada representa un estado terminal irreversible de la operación. Dejar el resto de los controles (items, notas, asignaciones, checklists, fotos, pagos) editables tras la cancelación crea riesgos de manipulación de datos, descuadres financieros en cajas cerradas o inconsistencias de stock. El bloqueo integral de todas las entradas (acompañado de banners de advertencia de alto contraste y explicaciones explícitas de por qué las acciones están bloqueadas) provee una UI transparente y segura.
 **Acción:** Siempre acoplar los estados terminales de negocio con el bloqueo estricto de todas las funciones mutables, informando claramente al usuario la razón de la inhabilitación.
