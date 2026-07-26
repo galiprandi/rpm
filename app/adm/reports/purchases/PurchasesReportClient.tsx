@@ -250,7 +250,7 @@ export default function PurchasesReportClient() {
         leftActions={
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <Calendar className="h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
               <Select
                 value={period}
                 onValueChange={(v) => {
@@ -301,7 +301,7 @@ export default function PurchasesReportClient() {
 
             {data && period === "today" && (
               <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                <Clock className="h-3 w-3" />
+                <Clock className="h-3 w-3 pointer-events-none" aria-hidden="true" />
                 <span>Actualizado en tiempo real</span>
               </div>
             )}
@@ -428,7 +428,7 @@ export default function PurchasesReportClient() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg font-medium flex items-center gap-2">
-                    <Users className="h-5 w-5 text-primary" />
+                    <Users className="h-5 w-5 text-primary pointer-events-none" aria-hidden="true" />
                     Top Proveedores
                   </CardTitle>
                   <CardDescription>Principales orígenes de compra</CardDescription>
