@@ -606,7 +606,7 @@ export function ChatFloating({
           <TooltipTrigger asChild>
             <Button
               onClick={() => setIsOpen(!isOpen)}
-              className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50 hover:scale-105 active:scale-95 transition-transform duration-200"
+              className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50 hover:scale-105 active:scale-95 transition-transform duration-200 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-2"
               size="icon"
               aria-label={
                 isOpen ? "Cerrar asistente virtual" : "Abrir asistente virtual"
@@ -660,11 +660,11 @@ export function ChatFloating({
                         ? "Haz clic de nuevo para confirmar"
                         : "Limpiar conversación"
                     }
-                    className={
+                    className={`focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1 rounded-full p-0.5 ${
                       isConfirmingClear
                         ? "text-red-600 hover:text-red-700 hover:bg-red-50"
                         : ""
-                    }
+                    }`}
                   >
                     {isConfirmingClear ? (
                       <Check className="h-4 w-4 animate-pulse" />
@@ -694,6 +694,7 @@ export function ChatFloating({
                           ? "Reducir tamaño del chat"
                           : "Expandir tamaño del chat"
                       }
+                      className="focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1 rounded-full p-0.5"
                     >
                       {isExpanded ? (
                         <Minimize2 className="h-4 w-4" />
@@ -715,6 +716,7 @@ export function ChatFloating({
                   <Button
                     variant="ghost"
                     size="icon"
+                    className="focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1 rounded-full p-0.5"
                     onClick={() => setIsOpen(false)}
                     aria-label="Cerrar chat"
                   >
@@ -969,7 +971,7 @@ export function ChatFloating({
                       <Button
                         type="button"
                         variant="ghost"
-                        className="h-7 w-7 p-0 hover:bg-background/50"
+                        className="h-7 w-7 hover:bg-background/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1 rounded-full p-0.5"
                         onClick={handleRemoveFile}
                         aria-label="Quitar archivo adjunto"
                       >
@@ -1121,6 +1123,7 @@ export function ChatFloating({
                       type="button"
                       variant="ghost"
                       size="icon"
+                      className="focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1 rounded-full p-0.5"
                       onClick={() => stop()}
                       aria-label="Detener respuesta de Nitro"
                     >
