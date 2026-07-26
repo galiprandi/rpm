@@ -4,6 +4,7 @@
 - [ ] Direct photo attachments for work order checklist items.
 
 ## ✅ DONE
+- [x] 2026-07-26 — Enhance chatbot keyboard accessibility and navigation by adding focus-visible offset ring/outline styling to all close, clear, toggle, and secondary controls inside ChatFloating.tsx (PR #276).
 - [x] 2026-07-26 — Implement contextual client-side barcode and QR code detection for uploaded image attachments using the native browser BarcodeDetector API, and expand dynamic context-aware suggestion chips for admin pages (/cash, /purchase-vouchers, /suppliers, /settings, /reports) (PR #263).
 - [x] 2026-07-24 — Integrate the virtual assistant "Preguntar a Nitro" trigger directly in the AppSidebar and AdminClientLayout for seamless mobile and desktop accessibility, and upgrade ChatFloating mobile fullscreen layout to use dynamic h-[100dvh].
 - [x] 2026-07-23 — Implement contextual attachment quick-action button ("Procesar como Factura de Compra") inside ChatFloating.tsx, featuring instant Base64 serialization, prompt submission integration, and automated preview cleanup with robust unit test coverage.
@@ -16,6 +17,10 @@
 - [x] 2026-03-28 — Initial audit of bot tools, removal of mock tools, fixing conversation history unit tests, and implementing major UI/UX improvements (smart scrolling, success states for tool execution, empty-state quick start suggestion chips, and full WCAG accessibility).
 
 ## 🧠 LEARNINGS
+### 2026-07-26 — Chatbot Keyboard Accessibility and Focus Ring Standard
+**Learning:** Icon-only control buttons inside floating widgets (like close buttons, file attachment removal controls, and clear conversation triggers) must use explicit high-visibility focus rings and offsets (e.g., `focus-visible:ring-2` with `focus-visible:ring-primary` and offsets) to ensure keyboard-only and assistive-technology users can navigate and interact with the chatbot panel safely and with confidence.
+**Action:** Always verify that all icon-only buttons in dialog headers, absolute overlay containers, or assistant tools are focus-visible with standard focus outlines and rounded click-targets.
+
 ### 2026-07-26 — Native Barcode/QR Code Detection with Browser API and Graceful Fallback
 **Learning:** Utilizing modern browser-native APIs (like `BarcodeDetector`) for features like barcode or QR code scanning on uploaded attachments completely eliminates heavy external JavaScript libraries (like `jsqr` or `html5-qrcode`). This maintains a super lightweight and fast frontend bundle. By pairing it with a simple, dynamic React state effect and safe feature-checking (`"BarcodeDetector" in window`), the app achieves high-performance capability on supported devices with zero runtime or bundle size overhead.
 **Action:** Always prioritize modern native web standards with feature detection checks over heavy NPM packages, and provide beautiful, responsive UX shortcuts whenever structured data is detected in file previews.
