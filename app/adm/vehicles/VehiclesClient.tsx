@@ -13,6 +13,8 @@ import {
   Filter,
   MessageSquare,
   Download,
+  Wallet,
+  TrendingDown,
 } from "lucide-react";
 import Link from "next/link";
 import { type ColumnDef, type FilterFn } from "@tanstack/react-table";
@@ -33,6 +35,13 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { getWhatsAppLink } from "@/lib/utils/whatsapp";
+import { formatARS } from "@/lib/utils/format";
+
+interface WorkOrder {
+  id: string;
+  status: string;
+  total: number | string;
+}
 
 interface Vehicle {
   id: string;
@@ -50,6 +59,7 @@ interface Vehicle {
     name: string;
   } | null;
   equipmentName: string | null;
+  workOrders?: WorkOrder[];
   _count: {
     workOrders: number;
   };
@@ -68,11 +78,25 @@ export default function VehiclesClient({
   const [total, setTotal] = useState(totalVehicles);
   const [loading, setLoading] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [showOnlyWithDebt, setShowOnlyWithDebt] = useState<boolean>(false);
+
+  const getVehicleDebt = (v: Vehicle) => {
+    if (!v.workOrders) return 0;
+    return v.workOrders
+      .filter((wo) => wo.status !== "PAID" && wo.status !== "CANCELLED")
+      .reduce((sum, wo) => sum + Number(wo.total), 0);
+  };
 
   const filteredVehicles = useMemo(() => {
-    if (categoryFilter === "all") return vehicles;
-    return vehicles.filter((v) => v.category === categoryFilter);
-  }, [vehicles, categoryFilter]);
+    let result = vehicles;
+    if (categoryFilter !== "all") {
+      result = result.filter((v) => v.category === categoryFilter);
+    }
+    if (showOnlyWithDebt) {
+      result = result.filter((v) => getVehicleDebt(v) > 0);
+    }
+    return result;
+  }, [vehicles, categoryFilter, showOnlyWithDebt]);
 
   const exportToCSV = useCallback(() => {
     if (!filteredVehicles || filteredVehicles.length === 0) return;
@@ -84,6 +108,7 @@ export default function VehiclesClient({
       "Modelo",
       "Nombre de Equipo",
       "Propietario",
+      "Deuda",
       "Cantidad de OTs",
     ];
 
@@ -98,6 +123,7 @@ export default function VehiclesClient({
       const makeName = !isEquipment && v.vehicleMake ? v.vehicleMake.name : "";
       const modelName = !isEquipment && v.vehicleModel ? v.vehicleModel.name : "";
       const equipmentName = isEquipment ? (v.equipmentName || "") : "";
+      const debt = getVehicleDebt(v);
 
       return [
         v.identifier,
@@ -106,6 +132,7 @@ export default function VehiclesClient({
         modelName,
         equipmentName,
         v.customer?.name || "",
+        debt.toString(),
         v._count.workOrders.toString(),
       ];
     });
@@ -132,7 +159,6 @@ export default function VehiclesClient({
   const fetchVehicles = useCallback(async () => {
     setLoading(true);
     try {
-      // Fetch more data if needed or refresh
       const params = new URLSearchParams();
       params.set("limit", "100");
 
@@ -172,7 +198,6 @@ export default function VehiclesClient({
         header: "Identificador",
         cell: ({ row }) => (
           <div className="flex items-center gap-3">
-            {/* Standardized List Row Entity Pattern */}
             <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0">
               <Car
                 className="h-4 w-4 text-primary pointer-events-none"
@@ -254,6 +279,21 @@ export default function VehiclesClient({
         ),
       },
       {
+        id: "debt",
+        header: "Deuda",
+        cell: ({ row }) => {
+          const debt = getVehicleDebt(row.original);
+          if (debt === 0) {
+            return <span className="text-muted-foreground">-</span>;
+          }
+          return (
+            <span className="font-mono font-semibold text-red-700">
+              {formatARS(debt, 2)}
+            </span>
+          );
+        },
+      },
+      {
         accessorKey: "_count.workOrders",
         header: "OTs",
         cell: ({ row }) => (
@@ -267,36 +307,64 @@ export default function VehiclesClient({
   );
 
   const stats: StatItem[] = useMemo(
-    () => [
-      {
-        label: "Total Vehículos",
-        value: total,
-        icon: Car,
-        iconColor: "#3b82f6", // blue-500
-      },
-      {
-        label: "Categorías Activas",
-        value: new Set(vehicles.map((v) => v.category)).size,
-        icon: Tag,
-        iconColor: "#10b981", // emerald-500
-      },
-    ],
+    () => {
+      const vehiclesWithDebt = vehicles.filter((v) => getVehicleDebt(v) > 0);
+      const totalDebtValue = vehicles.reduce((acc, v) => acc + getVehicleDebt(v), 0);
+
+      return [
+        {
+          label: "Total Vehículos",
+          value: total,
+          icon: Car,
+          iconColor: "#3b82f6", // blue-500
+        },
+        {
+          label: "Categorías Activas",
+          value: new Set(vehicles.map((v) => v.category)).size,
+          icon: Tag,
+          iconColor: "#10b981", // emerald-500
+        },
+        {
+          label: "Con Deuda",
+          value: vehiclesWithDebt.length,
+          icon: Wallet,
+          iconColor: vehiclesWithDebt.length > 0 ? "#f97316" : undefined, // orange-500 if someone owes
+        },
+        {
+          label: "Deuda Total",
+          value: formatARS(totalDebtValue, 2),
+          icon: TrendingDown,
+          iconColor: "#ef4444", // red-500
+        },
+      ];
+    },
     [total, vehicles],
   );
+
+  const headerSecondaryActions = useMemo(() => {
+    const actions: any[] = [
+      {
+        label: showOnlyWithDebt ? "Ver Todos" : "Filtrar con Deuda",
+        onClick: () => setShowOnlyWithDebt(!showOnlyWithDebt),
+        variant: "outline" as const,
+        icon: TrendingDown,
+      },
+      {
+        label: "Exportar CSV",
+        onClick: exportToCSV,
+        variant: "outline" as const,
+        icon: Download,
+      },
+    ];
+    return actions;
+  }, [showOnlyWithDebt, exportToCSV]);
 
   return (
     <div className="space-y-6">
       <Header
         title="Vehículos y Equipos"
         description="Gestión centralizada de vehículos de clientes y equipamiento técnico"
-        secondaryActions={[
-          {
-            label: "Exportar CSV",
-            onClick: exportToCSV,
-            variant: "outline",
-            icon: Download,
-          },
-        ]}
+        secondaryActions={headerSecondaryActions}
       >
         <div className="flex items-center gap-2 mt-4">
           <div className="relative group">
@@ -319,15 +387,18 @@ export default function VehiclesClient({
             </Select>
           </div>
 
-          {categoryFilter !== "all" && (
+          {(categoryFilter !== "all" || showOnlyWithDebt) && (
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setCategoryFilter("all")}
+              onClick={() => {
+                setCategoryFilter("all");
+                setShowOnlyWithDebt(false);
+              }}
               className="h-9 px-2 text-muted-foreground hover:text-foreground"
             >
               <X className="h-4 w-4 mr-2" />
-              Limpiar filtro
+              Limpiar filtros
             </Button>
           )}
         </div>
@@ -342,7 +413,7 @@ export default function VehiclesClient({
         loading={loading}
         columns={columns}
         filterFn={vehicleFilterFn as any}
-        hasActiveFilters={categoryFilter !== "all"}
+        hasActiveFilters={categoryFilter !== "all" || showOnlyWithDebt}
         emptyIcon={
           <Car className="h-12 w-12 mx-auto text-muted-foreground/20 mb-4" />
         }
