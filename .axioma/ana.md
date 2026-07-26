@@ -15,6 +15,7 @@
 - [ ] Integración con AFIP (WSFE - Conexión real).
 
 ## ✅ DONE
+- [x] 2026-07-25 — Implementación de auto-anulación de facturas originales al oficializar Notas de Crédito e integración de Diálogo contextual "Anulación (NC)" en el detalle de comprobante.
 - [x] 2025-05-21 — Estructura inicial de comprobantes y enlace con ventas directas.
 - [x] 2025-05-22 — Integración de pre-facturas en OTs y Notas de Crédito, y visualización de advertencia fiscal.
 - [x] 2025-05-24 — Configuración fiscal (AFIP) en el panel de administración (PR #X).
