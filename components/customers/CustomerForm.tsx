@@ -4,6 +4,10 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { validateCUIT, formatCUIT } from "@/lib/utils/cuit-validation";
+import {
+  validateArgentinePhone,
+  formatArgentinePhone,
+} from "@/lib/utils/phone-validation";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -27,6 +31,14 @@ import {
 import { cn } from "@/lib/utils";
 
 const INVOICE_TYPES = ["A", "B", "C", "M"];
+
+const POPULAR_PREFIXES = [
+  { code: "11", label: "AMBA (11)" },
+  { code: "351", label: "Córdoba (351)" },
+  { code: "341", label: "Rosario (341)" },
+  { code: "261", label: "Mendoza (261)" },
+  { code: "381", label: "Tucumán (381)" },
+];
 
 export interface CustomerFormData {
   name: string;
@@ -71,6 +83,23 @@ export function CustomerForm({
     );
   });
 
+  // Validation States for Phones
+  const [phoneError, setPhoneError] = useState<string | null>(null);
+  const [phoneSuccess, setPhoneSuccess] = useState<boolean>(() => {
+    return !!(initialData?.phone && validateArgentinePhone(initialData.phone).isValid);
+  });
+  const [phoneRegion, setPhoneRegion] = useState<string | null>(() => {
+    return initialData?.phone ? validateArgentinePhone(initialData.phone).region || null : null;
+  });
+
+  const [phoneAltError, setPhoneAltError] = useState<string | null>(null);
+  const [phoneAltSuccess, setPhoneAltSuccess] = useState<boolean>(() => {
+    return !!(initialData?.phoneAlt && validateArgentinePhone(initialData.phoneAlt).isValid);
+  });
+  const [phoneAltRegion, setPhoneAltRegion] = useState<string | null>(() => {
+    return initialData?.phoneAlt ? validateArgentinePhone(initialData.phoneAlt).region || null : null;
+  });
+
   const [formData, setFormData] = useState<CustomerFormData>({
     name: initialData?.name || "",
     phone: initialData?.phone || "",
@@ -97,11 +126,193 @@ export function CustomerForm({
       }
     }
 
+    // Validar teléfonos si están presentes
+    if (formData.phone) {
+      const res = validateArgentinePhone(formData.phone);
+      if (!res.isValid) {
+        setPhoneError(res.error || "Teléfono principal inválido");
+        setPhoneSuccess(false);
+        return;
+      }
+    }
+    if (formData.phoneAlt) {
+      const res = validateArgentinePhone(formData.phoneAlt);
+      if (!res.isValid) {
+        setPhoneAltError(res.error || "Teléfono alternativo inválido");
+        setPhoneAltSuccess(false);
+        return;
+      }
+    }
+
     await onSubmit(formData);
   };
 
   const handleChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handlePhoneChange = (val: string) => {
+    setFormData((prev) => ({ ...prev, phone: val }));
+
+    const digits = val.replace(/\D/g, "");
+    if (digits.length >= 10) {
+      const res = validateArgentinePhone(val);
+      if (res.isValid) {
+        setPhoneError(null);
+        setPhoneSuccess(true);
+        setPhoneRegion(res.region || null);
+        if (res.normalized) {
+          const formatted = formatArgentinePhone(res.normalized);
+          setFormData((prev) => ({ ...prev, phone: formatted }));
+        }
+      } else {
+        setPhoneSuccess(false);
+        setPhoneRegion(null);
+      }
+    } else {
+      setPhoneSuccess(false);
+      setPhoneRegion(null);
+      setPhoneError(null);
+    }
+  };
+
+  const handlePhoneBlur = (val: string) => {
+    if (!val) {
+      setPhoneError(null);
+      setPhoneSuccess(false);
+      setPhoneRegion(null);
+      return;
+    }
+    const res = validateArgentinePhone(val);
+    if (res.isValid) {
+      setPhoneError(null);
+      setPhoneSuccess(true);
+      setPhoneRegion(res.region || null);
+      if (res.normalized) {
+        const formatted = formatArgentinePhone(res.normalized);
+        setFormData((prev) => ({ ...prev, phone: formatted }));
+      }
+    } else {
+      setPhoneError(res.error || "Número no válido");
+      setPhoneSuccess(false);
+      setPhoneRegion(null);
+    }
+  };
+
+  const handlePhoneAltChange = (val: string) => {
+    setFormData((prev) => ({ ...prev, phoneAlt: val }));
+
+    const digits = val.replace(/\D/g, "");
+    if (digits.length >= 10) {
+      const res = validateArgentinePhone(val);
+      if (res.isValid) {
+        setPhoneAltError(null);
+        setPhoneAltSuccess(true);
+        setPhoneAltRegion(res.region || null);
+        if (res.normalized) {
+          const formatted = formatArgentinePhone(res.normalized);
+          setFormData((prev) => ({ ...prev, phoneAlt: formatted }));
+        }
+      } else {
+        setPhoneAltSuccess(false);
+        setPhoneAltRegion(null);
+      }
+    } else {
+      setPhoneAltSuccess(false);
+      setPhoneAltRegion(null);
+      setPhoneAltError(null);
+    }
+  };
+
+  const handlePhoneAltBlur = (val: string) => {
+    if (!val) {
+      setPhoneAltError(null);
+      setPhoneAltSuccess(false);
+      setPhoneAltRegion(null);
+      return;
+    }
+    const res = validateArgentinePhone(val);
+    if (res.isValid) {
+      setPhoneAltError(null);
+      setPhoneAltSuccess(true);
+      setPhoneAltRegion(res.region || null);
+      if (res.normalized) {
+        const formatted = formatArgentinePhone(res.normalized);
+        setFormData((prev) => ({ ...prev, phoneAlt: formatted }));
+      }
+    } else {
+      setPhoneAltError(res.error || "Número no válido");
+      setPhoneAltSuccess(false);
+      setPhoneAltRegion(null);
+    }
+  };
+
+  const applyPrefix = (field: "phone" | "phoneAlt", code: string) => {
+    setFormData((prev) => {
+      const currentVal = prev[field];
+      let localDigits = "";
+      if (currentVal) {
+        const digits = currentVal.replace(/\D/g, "");
+        if (digits.length > 0) {
+          let cleanDigits = digits;
+          if (cleanDigits.startsWith("549")) {
+            cleanDigits = cleanDigits.substring(3);
+          } else if (cleanDigits.startsWith("54")) {
+            cleanDigits = cleanDigits.substring(2);
+          }
+          if (cleanDigits.startsWith("9")) {
+            cleanDigits = cleanDigits.substring(1);
+          }
+          if (cleanDigits.startsWith("0")) {
+            cleanDigits = cleanDigits.substring(1);
+          }
+          localDigits = cleanDigits.slice(-Math.min(cleanDigits.length, 8));
+        }
+      }
+
+      const newRaw = `549${code}${localDigits}`;
+      const formatted = localDigits ? formatArgentinePhone(newRaw) : `+54 9 ${code} `;
+
+      const isAlt = field === "phoneAlt";
+      if (isAlt) {
+        const res = validateArgentinePhone(formatted);
+        if (res.isValid) {
+          setPhoneAltError(null);
+          setPhoneAltSuccess(true);
+          setPhoneAltRegion(res.region || null);
+        } else {
+          setPhoneAltError(null);
+          setPhoneAltSuccess(false);
+          setPhoneAltRegion(null);
+        }
+      } else {
+        const res = validateArgentinePhone(formatted);
+        if (res.isValid) {
+          setPhoneError(null);
+          setPhoneSuccess(true);
+          setPhoneRegion(res.region || null);
+        } else {
+          setPhoneError(null);
+          setPhoneSuccess(false);
+          setPhoneRegion(null);
+        }
+      }
+
+      return {
+        ...prev,
+        [field]: formatted,
+      };
+    });
+
+    setTimeout(() => {
+      const inputId = field === "phone" ? "customer-phone" : "customer-phone-alt";
+      const el = document.getElementById(inputId) as HTMLInputElement;
+      if (el) {
+        el.focus();
+        const len = el.value.length;
+        el.setSelectionRange(len, len);
+      }
+    }, 50);
   };
 
   return (
@@ -140,13 +351,47 @@ export function CustomerForm({
             <Input
               id="customer-phone"
               value={formData.phone}
-              onChange={(e) => handleChange("phone", e.target.value)}
-              placeholder="+54 11 1234-5678"
-              className="pl-9 font-mono"
+              onChange={(e) => handlePhoneChange(e.target.value)}
+              onBlur={(e) => handlePhoneBlur(e.target.value)}
+              placeholder="+54 9 11 1234-5678"
+              className={cn(
+                "pl-9 font-mono",
+                phoneError && "border-destructive ring-destructive/20 focus-visible:ring-destructive",
+                phoneSuccess && "border-emerald-500 focus-visible:ring-emerald-500"
+              )}
               aria-label="Teléfono Principal"
             />
           </div>
+
+          {/* Quick Prefixes Autocomplete Chips */}
+          <div className="mt-1 flex flex-wrap gap-1 items-center">
+            <span className="text-[0.7rem] text-muted-foreground mr-0.5">Prefijos:</span>
+            {POPULAR_PREFIXES.map((prefix) => (
+              <button
+                key={prefix.code}
+                type="button"
+                onClick={() => applyPrefix("phone", prefix.code)}
+                className="inline-flex items-center justify-center rounded-md border border-input bg-background px-1.5 py-0.5 text-[0.7rem] font-medium hover:bg-accent hover:text-accent-foreground transition-all duration-200 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 cursor-pointer"
+                aria-label={`Aplicar prefijo AMBA (${prefix.code}) al teléfono principal`}
+              >
+                {prefix.code}
+              </button>
+            ))}
+          </div>
+
+          {phoneError && (
+            <p className="text-[0.8rem] font-medium text-destructive mt-1">
+              {phoneError}
+            </p>
+          )}
+          {phoneSuccess && (
+            <p className="text-[0.8rem] font-medium text-emerald-700 mt-1 flex items-center gap-1">
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Teléfono válido ({phoneRegion})
+            </p>
+          )}
         </div>
+
         <div className="space-y-2">
           <Label htmlFor="customer-phone-alt">Teléfono Alternativo (WhatsApp)</Label>
           <div className="relative">
@@ -157,12 +402,45 @@ export function CustomerForm({
             <Input
               id="customer-phone-alt"
               value={formData.phoneAlt}
-              onChange={(e) => handleChange("phoneAlt", e.target.value)}
-              placeholder="+54 11 9876-5432"
-              className="pl-9 font-mono"
+              onChange={(e) => handlePhoneAltChange(e.target.value)}
+              onBlur={(e) => handlePhoneAltBlur(e.target.value)}
+              placeholder="+54 9 11 9876-5432"
+              className={cn(
+                "pl-9 font-mono",
+                phoneAltError && "border-destructive ring-destructive/20 focus-visible:ring-destructive",
+                phoneAltSuccess && "border-emerald-500 focus-visible:ring-emerald-500"
+              )}
               aria-label="Teléfono Alternativo (WhatsApp)"
             />
           </div>
+
+          {/* Quick Prefixes Autocomplete Chips */}
+          <div className="mt-1 flex flex-wrap gap-1 items-center">
+            <span className="text-[0.7rem] text-muted-foreground mr-0.5">Prefijos:</span>
+            {POPULAR_PREFIXES.map((prefix) => (
+              <button
+                key={prefix.code}
+                type="button"
+                onClick={() => applyPrefix("phoneAlt", prefix.code)}
+                className="inline-flex items-center justify-center rounded-md border border-input bg-background px-1.5 py-0.5 text-[0.7rem] font-medium hover:bg-accent hover:text-accent-foreground transition-all duration-200 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 cursor-pointer"
+                aria-label={`Aplicar prefijo AMBA (${prefix.code}) al teléfono de WhatsApp`}
+              >
+                {prefix.code}
+              </button>
+            ))}
+          </div>
+
+          {phoneAltError && (
+            <p className="text-[0.8rem] font-medium text-destructive mt-1">
+              {phoneAltError}
+            </p>
+          )}
+          {phoneAltSuccess && (
+            <p className="text-[0.8rem] font-medium text-emerald-700 mt-1 flex items-center gap-1">
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              WhatsApp válido ({phoneAltRegion})
+            </p>
+          )}
         </div>
       </div>
 

@@ -2,6 +2,12 @@
 - [ ] Implementación de autocompletado y validación de prefijos regionales para teléfonos en CustomerForm.
 
 ## ✅ DONE
+- [x] 2026-07-25 — Autocompletado y Validación de Prefijos de Teléfonos en CustomerForm
+  - Creación de un conjunto completo de utilidades de validación y normalización específicas para teléfonos argentinos en `lib/utils/phone-validation.ts`. Soporta eliminación automática de prefijos internacionales `+54`/`54`, el dígito móvil `9` en cadenas cortas, ceros iniciales de códigos de área, y el prefijo interno `15` para celulares.
+  - Implementación de un selector de prefijos rápidos (chips interactivos) en `CustomerForm.tsx` para AMBA (11), Córdoba (351), Rosario (341), Mendoza (261) y Tucumán (381). Al hacer clic en un prefijo, se precarga la plantilla `+54 9 [Prefijo] ` manteniendo dígitos locales existentes y enfocando el campo con el cursor posicionado de forma óptima al final.
+  - Diseño de visualización de errores y estados válidos en tiempo real alineados con los estándares de validación de CUIT, inyectando un borde verde esmeralda y un indicador dot pulsante verde con la región geográfica detectada (ej. `● Teléfono válido (Córdoba)` o `● WhatsApp válido (AMBA)`).
+  - Desarrollo de una suite de pruebas unitarias robustas en `tests/unit/phone-validation.test.ts` con cobertura del 100% de normalizaciones, formato y detección de región.
+  - Adición de pruebas de integración frontend en `components/customers/CustomerForm.test.tsx` garantizando el comportamiento de las acciones de clics de autocompletado, formateo interactivo y flujos de eventos de pérdida de foco (`onBlur`).
 - [x] 2026-07-24 — Validación de Patentes en Tiempo Real con Interfaz Híbrida en Ficha de Vehículo
   - Implementación del patrón de validación híbrido de patentes argentinas en tiempo real en `VehicleForm.tsx`.
   - Validación algorítmica inmediata cuando la patente sanitizada (sin espacios ni guiones) alcanza la longitud esperada por categoría (6-7 caracteres para autos/motos, 9-10 para trailers).
@@ -15,7 +21,7 @@
 - [x] 2026-07-21 — Registro de Pago Directo en Reporte de Deudores y Empty States Optimizados
   - Implementación de un modal de registro de pago rápido directamente desde el listado de deudores (`DebtorsClient.tsx`), permitiendo cobrar sin necesidad de salir del reporte.
   - Diseño de un botón con el icono `ArrowDownLeft` y tooltip "Registrar Pago" en la columna de acciones de la tabla de deudores.
-  - Rediseño de los empty states del detalle del cliente (`page.tsx`) para vehículos y órdenes de trabajo, reemplazando el texto estático con tarjetas informales elegantes y botones directos de llamada a la acción ("+ Agregar Vehículo" y "+ Crear Nueva OT").
+  - Rediseño de los empty states del detalle del cliente (`page.tsx`) para vehículos y órdenes de trabajo, reemplasando el texto estático con tarjetas informales elegantes y botones directos de llamada a la acción ("+ Agregar Vehículo" y "+ Crear Nueva OT").
 - [x] 2026-07-20 — Exportación de Datos en CSV y Resumen de Cuenta Corriente de Cliente
   - Implementación de exportación client-side de CSV en el listado de clientes (`CustomersClient.tsx`) y vehículos (`VehiclesClient.tsx`) con codificación UTF-8 BOM (`\ufeff`) y escaping de campos.
   - Integración del botón de "Exportar PDF" en la tarjeta "Cuenta Corriente" de la ficha detallada del cliente (`app/adm/customers/[id]/page.tsx`).
@@ -32,7 +38,7 @@
   - Diseño de tarjetas interactivas de fotos con efecto de zoom al pasar el cursor (`hover:scale-105`), etiquetas de colores de semántica de estado y enlaces directos a la OT de procedencia.
   - Creación de un visualizador / Lightbox inmersivo a pantalla completa con navegación mediante flechas de teclado (`ArrowLeft` / `ArrowRight` / `Escape`), indicador de metadatos, enlace a la OT y botón de descarga directa de imágenes.
 - [x] 2026-07-17 — Cuenta Corriente y Cobranza Rápida en la Ficha de Vehículos
-  - Implementación del cálculo dinámico de deuda acumulada del vehículo a partir de sus OTs pendientes de cobro (estado distinto de `PAID` y `CANCELLED`).
+  - Implementación del cálculo dinámico de deuda acumulada del vehículo a partir de sus OTs pendientes de cobro (estado distinto de `PAID` and `CANCELLED`).
   - Creación de la tarjeta "Cuenta Corriente del Vehículo" destacando el saldo pendiente y permitiendo notificar la deuda por WhatsApp y saldar la deuda total.
   - Adición de un listado interactivo de OTs impagas con botones para registrarlas individualmente.
   - Integración de botones de cobro rápido (`ArrowDownLeft`) en cada fila correspondiente de la tabla general del historial de OTs del vehículo.
@@ -55,6 +61,10 @@
   - Mejora de navegación con botón de "Volver" en el detalle del cliente.
 
 ## 🧠 LEARNINGS
+## 2026-07-25 - Validación Dinámica de Teléfonos Argentinos Libre de Falsos Positivos
+**Learning:** Al normalizar y validar números telefónicos argentinos en tiempo real, es muy común tener colisiones durante la digitación carácter por carácter (por ejemplo, cuando un número de 10 dígitos que contiene el prefijo `9` pero aún no ha sido completado es interpretado incorrectamente como un número local de 10 dígitos sin código de país, lo que resulta en un formato deformado mid-typing). Limitar los códigos de área de Argentina para que siempre inicien de forma estricta con `1`, `2` o `3` en `validateArgentinePhone` evita este tipo de colisiones y garantiza una auto-corrección totalmente fluida y libre de saltos visuales.
+**Action:** Aplicar validación estricta de primer dígito para area codes al programar máscaras de formateo en tiempo real.
+
 ## 2026-07-22 - Visualización Contextual de Activos y Alertas Financieras
 **Learning:** En fichas de clientes complejos (como flotas de transporte, empresas o clientes con múltiples unidades y equipos), es común tener tanto automotores tradicionales como equipos especiales o remolques registrados en la misma cuenta. Si la interfaz solo muestra marca y modelo estándar, las celdas de equipos quedan vacías, forzando al operador a navegar a la ficha individual de cada equipo para saber qué es. Al renderizar dinámicamente `equipmentName` y `equipmentType` en la misma tabla según la categoría del activo, y añadir alertas de deuda individuales derivadas de las órdenes de trabajo activas, se proporciona una visualización contextual impecable que permite identificar deudores de un vistazo sin clics de navegación adicionales.
 **Action:** Utilizar siempre visualizaciones adaptativas basadas en la categoría del activo e inyectar métricas financieras agregadas en la tabla de listado de sub-entidades para reducir fricción.
@@ -64,7 +74,7 @@
 **Action:** Mantener la simetría de exportaciones PDF imprimibles y exportaciones de listados en formato CSV con BOM compatible con Excel en todo el sistema.
 
 ## 2026-07-19 - Resúmenes de Cuenta Autocontenidos y Listos para Imprimir
-**Learning:** Ofrecer capacidades de exportación rápida a PDF sin añadir dependencias de backend o pesadas librerías de renderizado se puede lograr elegantemente combinando `window.print()` nativo con un bloque `<style media="print">` localizado. De esta manera, el navegador hace todo el trabajo pesado garantizando el renderizado exacto de fuentes y colores. Además, diseñar el documento impreso como un recibo formal o resumen estructurado (con firmas y disclaimers legales) añade un inmenso valor profesional para los operadores del taller.
+**Learning:** Ofrecer capacidades de exportación rápida a PDF sin añadir dependencias de backend o pesadas librerías de renderizado se puede lograr elegantemente combinando `window.print()` nativo con un bloque `<style media="print">` localizado. De esta manera, el navegador hace todo el trabajo pesado garantizando el renderizado exacto de fuentes y colores. Además, diseñar el documento impreso como un recibo formal o resumen prestigioso (con firmas y disclaimers legales) añade un inmenso valor profesional para los operadores del taller.
 **Action:** Usar estilos autocontenidos `@media print` y contenedores semánticos listos para impresión en módulos de informes u hojas de detalles.
 
 ## 2026-07-18 - Consolidación de Historial Visual de Entidades Relacionadas
