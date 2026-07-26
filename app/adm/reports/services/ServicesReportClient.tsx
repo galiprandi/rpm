@@ -234,7 +234,7 @@ export default function ServicesReportClient() {
         leftActions={
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <Calendar className="h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
               <Select
                 value={period}
                 onValueChange={(v) => {
@@ -290,7 +290,7 @@ export default function ServicesReportClient() {
               disabled={!data || loading}
               className="h-8 gap-2"
             >
-              <Download className="h-4 w-4" />
+              <Download className="h-4 w-4 pointer-events-none" aria-hidden="true" />
               Exportar CSV
             </Button>
           </div>
@@ -502,7 +502,7 @@ export default function ServicesReportClient() {
                       className="text-xs text-primary hover:underline flex items-center gap-1"
                     >
                       Ver todos
-                      <ChevronRight className="h-3 w-3" />
+                      <ChevronRight className="h-3 w-3 pointer-events-none" aria-hidden="true" />
                     </Link>
                   </div>
                   <CardDescription>Ranking por facturación total</CardDescription>
