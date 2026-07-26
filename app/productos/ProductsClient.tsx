@@ -82,7 +82,7 @@ export default function ProductsClient({ initialProducts, initialCategories }: P
                     <TooltipTrigger asChild>
                       <button
                         onClick={() => setSearchQuery('')}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 flex items-center justify-center rounded-full bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
+                        className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 flex items-center justify-center rounded-full bg-zinc-800 text-zinc-400 hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none focus-visible:ring-offset-1"
                         aria-label="Limpiar búsqueda"
                       >
                         <X className="h-3 w-3 pointer-events-none" aria-hidden="true" />
@@ -140,7 +140,7 @@ export default function ProductsClient({ initialProducts, initialCategories }: P
                 )}
 
                 {/* Quick View Icon Overlay */}
-                <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-x-4 group-hover:translate-x-0 z-20">
+                <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-all duration-500 translate-x-4 group-hover:translate-x-0 group-focus-within:translate-x-0 z-20">
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <button
@@ -167,11 +167,11 @@ export default function ProductsClient({ initialProducts, initialCategories }: P
                     <p className="text-brand text-[10px] font-bold uppercase tracking-widest mb-1">{product.category}</p>
                     <h3 className="text-xl font-bold text-white tracking-tight">{product.name}</h3>
                   </div>
-                  <div className="flex items-center justify-between opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500">
+                  <div className="flex items-center justify-between opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 group-focus-within:opacity-100 group-focus-within:translate-y-0 transition-all duration-500">
                     <span className="text-white font-mono font-semibold">{formatARS(product.price)}</span>
                     <button
                       onClick={() => setSelectedProduct(product)}
-                      className="flex items-center text-xs font-bold text-brand hover:text-white transition-colors"
+                      className="flex items-center text-xs font-bold text-brand hover:text-white transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-lg"
                       aria-label={`Ver detalles del producto ${product.name}`}
                     >
                       DETALLES <ArrowRight className="ml-2 h-3 w-3 pointer-events-none" aria-hidden="true" />

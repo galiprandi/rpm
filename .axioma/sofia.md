@@ -3,6 +3,7 @@
 ## 📋 BACKLOG
 
 ## ✅ DONE
+- [x] 2026-07-25 — Visibilidad de enfoque por teclado para overlays con transiciones de hover en el catálogo de productos y hitos (PR #sofia/public/keyboard-focus-visibility)
 - [x] 2026-07-24 — Refinamiento integral de accesibilidad (ARIA), navegación por teclado y ocultación de íconos decorativos en toda la web pública (PR #sofia/public/accessibility-refinement)
 - [x] 2026-07-23 — Multi-step success/pending flow en el formulario de contacto para evitar bloqueadores de popups (PR #sofia/public/contact-flow-ux)
 - [x] 2026-07-22 — Widget interactivo de WhatsApp en la web pública con Sofi como asistente virtual (PR #sofia/public/whatsapp-widget)
@@ -23,6 +24,10 @@
 - [x] 2026-07-07 — Vista rápida de productos con modal y conversión contextual (PR #sofia/public/product-quick-view)
 
 ## 🧠 LEARNINGS
+
+## 2026-07-25 - Visibilidad de Enfoque por Teclado para Overlays de Transición en Hover
+**Learning:** En interfaces de alta gama con efectos de hover elegantes (como revelar botones de "Vista Rápida" o "DETALLES" deslizando/escalando la tarjeta), los usuarios de navegación por teclado y lectores de pantalla se encuentran con un problema de invisibilidad de enfoque. Al tabbing por la página, el foco se asocia a elementos que permanecen invisibles (`opacity-0`) debido a que la animación de visibilidad solo escucha el evento `:hover` del contenedor principal. Para solucionar esto con Tailwind de forma robusta y nativa, se debe aplicar `group-focus-within:opacity-100` y restaurar los offsets de animación (`group-focus-within:translate-y-0`, `group-focus-within:translate-x-0`). Esto revela de forma inmediata y automática las acciones del elemento tan pronto como cualquier sub-botón interactivo recibe el foco por teclado.
+**Action:** Usar sistemáticamente las clases `group-focus-within` en todos los overlays, menús deslizables o bloques interactivos de transición para garantizar visibilidad al enfocar con el teclado.
 
 ## 2026-07-24 - Accesibilidad y Cumplimiento de Normas ARIA en la Web Pública
 **Learning:** Ocultar sistemáticamente todos los íconos Lucide decorativos mediante `aria-hidden="true"` y `pointer-events-none`, junto con la adición de etiquetas `aria-label` descriptivas para enlaces e íconos interactivos sin texto visible, reduce drásticamente el ruido para los lectores de pantalla. Además, dar soporte de teclado completo (`tabIndex={0}`, enfoque visual y manejadores de eventos como `Enter` o `Space` en componentes de tipo botón o tarjeta interactiva) eleva la experiencia de usuario de la web pública a estándares de excelencia internacional WCAG AA.

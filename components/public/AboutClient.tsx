@@ -198,7 +198,7 @@ export function AboutClient() {
                 </div>
 
                 {/* Quick View Icon Overlay */}
-                <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-x-4 group-hover:translate-x-0 z-20">
+                <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-all duration-500 translate-x-4 group-hover:translate-x-0 group-focus-within:translate-x-0 z-20">
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <button
@@ -230,11 +230,11 @@ export function AboutClient() {
                     <h5 className="text-2xl font-bold text-white tracking-tight mt-3">{project.title}</h5>
                     <p className="text-xs text-zinc-500 font-bold uppercase tracking-widest mt-1">{project.category}</p>
                   </div>
-                  <div className="flex items-center justify-between opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500">
+                  <div className="flex items-center justify-between opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 group-focus-within:opacity-100 group-focus-within:translate-y-0 transition-all duration-500">
                     <p className="text-zinc-400 text-sm line-clamp-1 max-w-[70%]">{project.description}</p>
                     <button
                       onClick={() => setSelectedProject(project)}
-                      className="flex items-center text-xs font-bold text-brand hover:text-white transition-colors gap-1"
+                      className="flex items-center text-xs font-bold text-brand hover:text-white transition-colors gap-1 outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-lg"
                       aria-label={`Detalles de hito ${project.title}`}
                     >
                       DETALLES <ArrowRight className="h-3 w-3 pointer-events-none" aria-hidden="true" />
