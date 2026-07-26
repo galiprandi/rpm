@@ -50,6 +50,124 @@ export interface InvoiceInput {
 const DEFAULT_IVA_RATE = 21;
 
 /**
+ * Calculates detailed tax breakdown by querying the items associated with a Work Order, Direct Sale, or Credit Note.
+ * Assumes:
+ * - Products have 21% IVA rate (divisor 1.21).
+ * - Services have 10.5% IVA rate (divisor 1.105).
+ * Fits the exact total of the invoice by applying proportional scaling if there is any cent/rounding discrepancy.
+ */
+export async function calculateDetailedTaxesFromItems(
+  referenceId: string,
+  referenceType: "work_order" | "direct_sale" | "credit_note",
+  total: number,
+  tx: DbOrTx = db,
+): Promise<{
+  subtotal: number;
+  tax: number;
+  iva21: number;
+  iva105: number;
+}> {
+  try {
+    let iva21Sum = 0;
+    let iva105Sum = 0;
+    let net21Sum = 0;
+    let net105Sum = 0;
+
+    if (referenceType === "work_order") {
+      const woItems = await tx.query.workOrderItem.findMany({
+        where: eq(workOrderItem.workOrderId, referenceId),
+      });
+      if (Array.isArray(woItems)) {
+        for (const item of woItems) {
+          const itemTotal = Number(item.subtotal);
+          if (item.type === "service") {
+            const net = itemTotal / 1.105;
+            net105Sum += net;
+            iva105Sum += (itemTotal - net);
+          } else {
+            const net = itemTotal / 1.21;
+            net21Sum += net;
+            iva21Sum += (itemTotal - net);
+          }
+        }
+      }
+    } else if (referenceType === "direct_sale") {
+      const saleItems = await tx.query.directSaleItem.findMany({
+        where: eq(directSaleItem.directSaleId, referenceId),
+      });
+      if (Array.isArray(saleItems)) {
+        for (const item of saleItems) {
+          const itemTotal = Number(item.totalPrice);
+          if (item.serviceId) {
+            const net = itemTotal / 1.105;
+            net105Sum += net;
+            iva105Sum += (itemTotal - net);
+          } else {
+            const net = itemTotal / 1.21;
+            net21Sum += net;
+            iva21Sum += (itemTotal - net);
+          }
+        }
+      }
+    } else if (referenceType === "credit_note") {
+      const cnItems = await tx.query.creditNoteItem.findMany({
+        where: eq(creditNoteItem.creditNoteId, referenceId),
+      });
+      if (Array.isArray(cnItems)) {
+        for (const item of cnItems) {
+          const itemTotal = Number(item.totalPrice);
+          if (item.serviceId) {
+            const net = itemTotal / 1.105;
+            net105Sum += net;
+            iva105Sum += (itemTotal - net);
+          } else {
+            const net = itemTotal / 1.21;
+            net21Sum += net;
+            iva21Sum += (itemTotal - net);
+          }
+        }
+      }
+    }
+
+    const calculatedSubtotal = net21Sum + net105Sum;
+    const calculatedTax = iva21Sum + iva105Sum;
+    const calculatedTotal = calculatedSubtotal + calculatedTax;
+
+    if (calculatedTotal > 0) {
+      // Proportional scaling to match the exact input total (avoids float/cent differences)
+      const scale = total / calculatedTotal;
+      const subtotal = Number((calculatedSubtotal * scale).toFixed(2));
+      const iva21 = Number((iva21Sum * scale).toFixed(2));
+      const iva105 = Number((iva105Sum * scale).toFixed(2));
+      const tax = Number((iva21 + iva105).toFixed(2));
+
+      // Let's adjust subtotal slightly if there's a 0.01 discrepancy between subtotal + tax and total
+      const totalDifference = Number((total - (subtotal + tax)).toFixed(2));
+      const adjustedSubtotal = Number((subtotal + totalDifference).toFixed(2));
+
+      return {
+        subtotal: adjustedSubtotal,
+        tax,
+        iva21,
+        iva105,
+      };
+    }
+  } catch (error) {
+    console.error("Error calculating detailed taxes from items, falling back to flat rate:", error);
+  }
+
+  // Fallback to flat rate calculation
+  const subtotal = total / (1 + DEFAULT_IVA_RATE / 100);
+  const tax = total - subtotal;
+  return {
+    subtotal: Number(subtotal.toFixed(2)),
+    tax: Number(tax.toFixed(2)),
+    iva21: Number(tax.toFixed(2)),
+    iva105: 0,
+  };
+}
+
+/**
  * Creates a new invoice and automatically assigns the next number.
  * If a transaction client is provided, it uses it. Otherwise, it creates a new transaction.
  */
@@ -69,7 +187,12 @@ export async function createInvoice(
     };
 
     if (data.tax === undefined || data.tax === null) {
-      taxes = calculateInvoiceTaxes(data.total, data.type);
+      taxes = await calculateDetailedTaxesFromItems(
+        data.referenceId,
+        data.referenceType,
+        data.total,
+        transaction,
+      );
     }
 
     const [created] = await transaction
@@ -426,7 +549,12 @@ export async function updateInvoiceBillingData(
           updatedData.number = await getNextInvoiceNumber(newType, tx);
 
           // Re-calculate taxes as changing type A <-> B might affect display
-          const taxes = calculateInvoiceTaxes(Number(foundInvoice.total), newType);
+          const taxes = await calculateDetailedTaxesFromItems(
+            foundInvoice.referenceId,
+            foundInvoice.referenceType as "work_order" | "direct_sale" | "credit_note",
+            Number(foundInvoice.total),
+            tx,
+          );
           updatedData.subtotal = taxes.subtotal.toString();
           updatedData.tax = taxes.tax.toString();
           updatedData.iva21 = taxes.iva21.toString();

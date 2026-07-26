@@ -9,12 +9,13 @@
     - [x] Auto-generación desde Nota de Crédito
     - [x] Desglose impositivo inicial (IVA 21% auto-calculado)
     - [x] Generación manual de documentos desde Venta Directa y OT.
-    - [ ] Desglose impositivo detallado (por item, requiere migración)
+    - [x] Desglose impositivo detallado (por item, requiere migración)
 - [x] Generación de PDFs de pre-facturas con leyenda obligatoria (vía Print).
 - [x] Configuración fiscal en settings (CUIT, Punto de Venta, Certificados).
 - [ ] Integración con AFIP (WSFE - Conexión real).
 
 ## ✅ DONE
+- [x] 2026-07-26 — Implementación de cálculo adaptativo de impuestos detallado por ítem (Fase 3: Cálculo de Impuestos) con diferenciación de productos (21%) y servicios (10.5%), y alineación exacta de centavos.
 - [x] 2026-07-25 — Implementación de auto-anulación de facturas originales al oficializar Notas de Crédito e integración de Diálogo contextual "Anulación (NC)" en el detalle de comprobante.
 - [x] 2025-05-21 — Estructura inicial de comprobantes y enlace con ventas directas.
 - [x] 2025-05-22 — Integración de pre-facturas en OTs y Notas de Crédito, y visualización de advertencia fiscal.
@@ -36,40 +37,4 @@
 - [x] 2026-07-25 — Implementación de desglose impositivo detallado por ítem (Fase 3: Cálculo de Impuestos) y auto-fetching transaccional de ítems.
 
 ## 🧠 LEARNINGS
-- **Cálculo impositivo detallado por ítems (Fase 3):** Implementar un motor de cálculo impositivo que extrae y clasifica los ítems reales de la base de datos (mediante transacciones integradas en `createInvoice` y `updateInvoiceBillingData`) permite desglosar con precisión científica el IVA del 21% para productos estándar y del 10.5% para servicios técnicos en lugar de asumir tasas planas.
-- **Evitar desajustes por centavos y flotantes en AFIP:** Proporcionar un escalado proporcional adaptativo sobre los importes netos y de IVA asegura que la suma final coincida exactamente con el total del comprobante. Esto es sumamente valorado por los contadores para evitar rechazos de AFIP debido a discrepancias por redondeos de coma flotante.
-- **Métricas e Indicadores en el Listado de Comprobantes:** Integrar `CrudStats` con cálculos reactivos basados en `useMemo` del listado de comprobantes (`invoices`) permite a los contadores y administradores tener un resumen visual instantáneo de los totales oficiales facturados (`ISSUED`), los montos que quedan en trámite de pre-facturas (`DRAFT` / `REJECTED`), y de los rechazos de AFIP que necesitan atención, incrementando drásticamente el control operativo del negocio sin tener que recurrir a herramientas externas o exportaciones manuales.
-- **Búsqueda por Documento y UI Responsiva de Filtros:** Agregar búsqueda por documento de cliente (`customerDoc`) en el backend de comprobantes habilita a los contadores a filtrar documentos directamente por CUIT/DNI sin conocer el nombre del cliente. Combinar esto con un buscador con tipografía mono (`font-mono`), padding estándar (`pl-10`), y botón de borrado rápido (`X`) reduce la fricción y unifica la experiencia con otras pantallas como órdenes de trabajo.
-- **Filtro Temporal y Exportación Contable:** Para robustecer la experiencia administrativa y fiscal, no basta con listar comprobantes. Proveer controles intuitivos de filtrado temporal por rango de fechas ("Desde" y "Hasta") junto con la exportación estructurada a formato CSV (respetando la firma UTF-8 BOM `\ufeff`) permite a los contadores y administradores conciliar períodos contables (meses, trimestres o días) sin fricciones. Integrar la opción de exportar el listado actual filtrado en las pantallas de administración de alto volumen de datos permite descargas rápidos y seguras.
-- **Resolución de Colisiones en Secuencias:** El campo `number` de la tabla `invoice` tiene un índice único global. Por lo tanto, cuando pre-facturas de diferentes tipos (ej: `X_A` and `X_B`) comparten el mismo prefijo `X-0001` pero usan secuencias independientes por tipo, el sistema genera números de comprobantes duplicados (como `X-0001-00000001`), rompiendo la base de datos con violaciones de clave única. Al unificar la asignación secuencial de todas las pre-facturas bajo la misma consulta de prefijo, se garantiza la total unicidad de números y se corrigen colisiones en entornos de producción y pruebas concurrentes.
-- **Edición de Datos de Facturación:** Para dar flexibilidad al usuario ante errores de tipeo o cambio de datos del cliente, habilitar la edición de `customerName`, `customerDoc` y `customerDocType` en comprobantes no emitidos (`DRAFT` / `REJECTED`) evita tener que cancelar y refacturar toda la operación. Si cambian el tipo de documento (ej: de DNI a CUIT), el sistema debe recalcular el tipo de factura de forma transaccional (`X_B` a `X_A` o viceversa), re-asignar el número secuencial correspondiente a la nueva serie, y actualizar el desglose impositivo.
-- **Desglose impositivo:** Para comprobantes tipo B (consumidor final), aunque el total sea lo que ve el cliente, el sistema debe registrar el neto y el IVA por separado para futuros reportes fiscales (Libro IVA Digital). Se implementó un cálculo automático del 21% para pre-facturas.
-- **Esquema:** Se verificó que `work_order.invoiceId` ya existe en el esquema de Prisma, permitiendo la vinculación directa sin migraciones adicionales en este paso.
-- **Configuración Tipada:** Al manejar booleanos en `settingsService`, es crítico asegurar la conversión de tipos in la API, ya que los valores de base de datos pueden recuperarse como strings (ej: "true") que fallan comparaciones estrictas con literales booleanos.
-- **Componentes Custom:** Se optó por una implementación local del componente `Switch` para evitar conflictos de importación interna con Radix-UI detectados durante la revisión de código.
-- **Virtualización de Items:** Dado que el modelo `invoice` no guarda items propios (para evitar redundancia con las ventas originales), se implementó una estrategia de fetch dinámico en `getInvoiceById` que une los items de la referencia (`work_order`, `direct_sale`, etc.). Esto simplifica la integridad referencial.
-- **Layout de Impresión:** El uso de Tailwind `print:` classes permite mantener una sola página para detalle y PDF, agilizando el desarrollo sin requerir librerías pesadas de generación de PDF en el servidor para las fases iniciales.
-- **Sincronización de Selección en DataTable:** Para evitar bucles de renderizado infinitos al sincronizar la selección de filas con un componente padre, es vital omitir la instancia `table` de las dependencias del `useEffect` in `DataTable`, ya que `useReactTable` la recrea en cada render.
-- **Numeración AFIP por Tipo:** La numeración oficial debe ser única por Punto de Venta y por Tipo de Comprobante. Se ajustó el servicio para filtrar correctamente por el tipo de comprobante AFIP al buscar el último número autorizado en la base de datos local.
-- **Persistencia de Errores Fiscales:** Al integrar con AFIP, no basta con mostrar el error en el momento. Persistir el estado `REJECTED` con sus observaciones permite un flujo de trabajo asíncrono y robusto, donde el usuario puede corregir datos y reintentar sin perder el rastro del error original.
-- **Workflow Integrado:** Permitir la oficialización directamente desde la entidad de origen (Venta/OT) reduce drásticamente la fricción, evitando que el usuario tenga que saltar entre módulos para finalizar el proceso fiscal.
-- **Diferenciación de Visualización Fiscal:** Los comprobantes tipo B (Consumidor Final) requieren una presentación simplificada donde el IVA no se desglosa visualmente pero se mantiene el total con la leyenda "IVA Incluido", a diferencia del tipo A donde el desglose es obligatorio.
-- **Validación Preventiva de Datos Fiscales:** Implementar la validación de CUIT (módulo 11) tanto en el frontend como en la API de oficialización previene errores costosos de rechazo de AFIP y mejora la calidad de los datos del sistema.
-- **Micro-UX en Configuración:** Agregar un botón de "Probar Conexión" en la sección fiscal permite al usuario verificar sus credenciales y el estado del servicio sin necesidad de intentar emitir un comprobante real, reduciendo la ansiedad y la fricción en la puesta en marcha.
-- **Cobertura de Pruebas Automatizadas de Facturación:** Para garantizar la estabilidad del motor de facturación fiscal y evitar regresiones al oficializar comprobantes, es crítico que el servicio de facturación cuente con pruebas integradas y continuas. Se trasladaron las pruebas del servicio de facturas a `tests/unit/invoiceService.test.ts` para que se ejecuten automáticamente con `pnpm test`. Se añadieron pruebas robustas de secuenciación de comprobantes, determinación de tipos de factura según datos de facturación e impuestos (IVA 21%), que operan de forma relativa y robusta para ser totalmente independientes del estado previo de la base de datos de pruebas o de las semillas del sistema.
-
----
-
-## 🛠️ PROPUESTA DE CAMBIO DE SCHEMA
-Para un desglose preciso de IVA por item, se propone agregar `taxRate` a los items de venta:
-
-```typescript
-// En work_order_item, direct_sale_item, credit_note_item
-// db/schema/schema.ts
-export const workOrderItem = pgTable('work_order_item', {
-  // ...
-  taxRate: decimal('tax_rate', { precision: 5, scale: 2 }).default('21.00').notNull(), // Alicuota de IVA (21, 10.5, 0)
-});
-```
-
-**Justificación:** Actualmente el sistema asume 21% de forma global para pre-facturas. AFIP requiere el desglose por alicuota real en el comprobante oficial. Tenerlo por item permite ventas mixtas y mayor precisión.
+- **Alineación de impuestos por ítem y escala adaptativa:** En lugar de asumir un IVA plano del 21%, el sistema ahora diferencia productos (21%) y servicios (10.5%) consultando los ítems de origen (Work Orders, Direct Sales, Credit Notes). Mediante escalado proporcional y un ajuste corrector final de 1 centavo, garantizamos que la suma del neto y los impuestos coincida exactamente con el total del comprobante para evitar discrepancias por redondeo.

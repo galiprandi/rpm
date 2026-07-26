@@ -10,6 +10,7 @@ import {
   calculateInvoiceTaxes,
   getNextInvoiceNumber,
   getInvoices,
+  calculateDetailedTaxesFromItems,
 } from './invoiceService';
 
 // vi.hoisted runs before vi.mock factory
@@ -19,6 +20,9 @@ const { mockFns } = vi.hoisted(() => ({
     invoiceFindMany: vi.fn(),
     insertReturning: vi.fn(),
     updateReturning: vi.fn(),
+    workOrderItemFindMany: vi.fn(),
+    directSaleItemFindMany: vi.fn(),
+    creditNoteItemFindMany: vi.fn(),
   },
 }));
 
@@ -27,6 +31,15 @@ vi.mock('@/lib/db', () => {
     invoice: {
       findFirst: mockFns.invoiceFindFirst,
       findMany: mockFns.invoiceFindMany,
+    },
+    workOrderItem: {
+      findMany: mockFns.workOrderItemFindMany,
+    },
+    directSaleItem: {
+      findMany: mockFns.directSaleItemFindMany,
+    },
+    creditNoteItem: {
+      findMany: mockFns.creditNoteItemFindMany,
     },
   };
   const insertBuilder = vi.fn(() => ({
@@ -285,6 +298,85 @@ describe('Invoice Service', () => {
       const result = await getInvoices({ startDate, endDate });
       expect(result).toHaveLength(1);
       expect(mockFns.invoiceFindMany).toHaveBeenCalled();
+    });
+  });
+
+  describe('Detailed Tax Calculation', () => {
+    it('should calculate correct mixed tax rates for work order items (products 21%, services 10.5%)', async () => {
+      mockFns.workOrderItemFindMany.mockResolvedValue([
+        {
+          type: 'product',
+          subtotal: '1210', // net 1000, iva21 210
+        },
+        {
+          type: 'service',
+          subtotal: '1105', // net 1000, iva105 105
+        },
+      ]);
+
+      const breakdown = await calculateDetailedTaxesFromItems('wo-123', 'work_order', 2315);
+
+      expect(breakdown.subtotal).toBeCloseTo(2000, 2);
+      expect(breakdown.tax).toBeCloseTo(315, 2);
+      expect(breakdown.iva21).toBeCloseTo(210, 2);
+      expect(breakdown.iva105).toBeCloseTo(105, 2);
+      expect(Number((breakdown.subtotal + breakdown.tax).toFixed(2))).toBe(2315);
+    });
+
+    it('should calculate correct mixed tax rates for direct sale items', async () => {
+      mockFns.directSaleItemFindMany.mockResolvedValue([
+        {
+          productId: 'prod-1',
+          serviceId: null,
+          totalPrice: '1210', // net 1000, iva21 210
+        },
+        {
+          productId: null,
+          serviceId: 'srv-1',
+          totalPrice: '1105', // net 1000, iva105 105
+        },
+      ]);
+
+      const breakdown = await calculateDetailedTaxesFromItems('sale-123', 'direct_sale', 2315);
+
+      expect(breakdown.subtotal).toBeCloseTo(2000, 2);
+      expect(breakdown.tax).toBeCloseTo(315, 2);
+      expect(breakdown.iva21).toBeCloseTo(210, 2);
+      expect(breakdown.iva105).toBeCloseTo(105, 2);
+      expect(Number((breakdown.subtotal + breakdown.tax).toFixed(2))).toBe(2315);
+    });
+
+    it('should apply adaptive proportional scaling when sum of items does not exactly match total', async () => {
+      mockFns.directSaleItemFindMany.mockResolvedValue([
+        {
+          productId: 'prod-1',
+          serviceId: null,
+          totalPrice: '1210', // net 1000, iva21 210
+        },
+        {
+          productId: null,
+          serviceId: 'srv-1',
+          totalPrice: '1105', // net 1000, iva105 105
+        },
+      ]);
+
+      // Inputs a higher total (2316 instead of 2315)
+      const breakdown = await calculateDetailedTaxesFromItems('sale-123', 'direct_sale', 2316);
+
+      // Verify scaling
+      expect(breakdown.iva21 + breakdown.iva105).toBe(breakdown.tax);
+      expect(Number((breakdown.subtotal + breakdown.tax).toFixed(2))).toBe(2316);
+    });
+
+    it('should fallback to 21% flat rate if no items are found', async () => {
+      mockFns.directSaleItemFindMany.mockResolvedValue([]);
+
+      const breakdown = await calculateDetailedTaxesFromItems('sale-empty', 'direct_sale', 1210);
+
+      expect(breakdown.subtotal).toBeCloseTo(1000, 2);
+      expect(breakdown.tax).toBeCloseTo(210, 2);
+      expect(breakdown.iva21).toBeCloseTo(210, 2);
+      expect(breakdown.iva105).toBe(0);
     });
   });
 });
