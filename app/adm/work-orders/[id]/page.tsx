@@ -55,6 +55,7 @@ import {
   FileText,
   Send,
   XCircle,
+  Car,
 } from "lucide-react";
 import {
   ProductServiceSelector,
@@ -312,6 +313,40 @@ export default function WorkOrderDetailPage() {
   const [savingNotes, setSavingNotes] = useState(false);
   const [newScheduledDate, setNewScheduledDate] = useState<string>("");
   const [newNotes, setNewNotes] = useState<string>("");
+
+  // Vehicle History State
+  const [vehicleHistory, setVehicleHistory] = useState<any[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+
+  const vehicleId = workOrder?.vehicle?.id;
+
+  const fetchVehicleHistory = useCallback(() => {
+    if (!vehicleId) return;
+    setLoadingHistory(true);
+    fetch(`/api/work-orders?vehicleId=${vehicleId}`)
+      .then((response) => {
+        if (response.ok) {
+          return response.json();
+        }
+        throw new Error("Failed to fetch vehicle history");
+      })
+      .then((data) => {
+        const filtered = (data.workOrders || []).filter((wo: any) => wo.id !== workOrderId);
+        setVehicleHistory(filtered);
+      })
+      .catch((error) => {
+        console.error("Error fetching vehicle history:", error);
+      })
+      .finally(() => {
+        setLoadingHistory(false);
+      });
+  }, [vehicleId, workOrderId]);
+
+  useEffect(() => {
+    if (vehicleId) {
+      void fetchVehicleHistory();
+    }
+  }, [vehicleId, fetchVehicleHistory]);
 
   const lightboxPhotos = useMemo(() => {
     const list: Array<{ url: string; type: "ENTRY" | "EXIT"; label: string }> = [];
@@ -1785,6 +1820,13 @@ export default function WorkOrderDetailPage() {
             <span className="hidden sm:inline">Documentos</span>
           </TabsTrigger>
           <TabsTrigger
+            value="vehicle-history"
+            className="flex items-center gap-2 px-4 py-2 data-[state=active]:after:bg-primary"
+          >
+            <Car className="h-4 w-4" />
+            <span className="hidden sm:inline">Historial de Vehículo</span>
+          </TabsTrigger>
+          <TabsTrigger
             value="timeline"
             className="flex items-center gap-2 px-4 py-2 data-[state=active]:after:bg-primary"
           >
@@ -2490,6 +2532,172 @@ export default function WorkOrderDetailPage() {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        {/* Tab: Vehicle History */}
+        <TabsContent value="vehicle-history" className="pt-4 outline-none">
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Car className="h-5 w-5 text-primary animate-pulse" />
+                  Historial de Órdenes de Trabajo del Vehículo
+                </CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={fetchVehicleHistory}
+                  disabled={loadingHistory}
+                >
+                  <RefreshCw
+                    className={cn(
+                      "h-4 w-4",
+                      loadingHistory && "animate-spin",
+                    )}
+                  />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {loadingHistory ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : vehicleHistory.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground flex flex-col items-center gap-2 border-2 border-dashed rounded-lg bg-muted/20">
+                  <Car className="h-8 w-8 text-muted-foreground/30" />
+                  <p className="text-sm font-medium">Esta es la única orden de trabajo registrada para este vehículo</p>
+                  <p className="text-xs text-muted-foreground/70">No se encontraron otras órdenes anteriores o paralelas.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {vehicleHistory.map((pastWo) => {
+                    const totalCost = Number(pastWo.total);
+                    const isPaid = pastWo.isFullyPaid;
+                    const itemsList = pastWo.workOrderItems || [];
+
+                    return (
+                      <div
+                        key={pastWo.id}
+                        className="p-4 bg-muted/40 rounded-xl border border-zinc-200 shadow-sm space-y-3 transition-colors hover:bg-muted/60"
+                      >
+                        {/* Header of the past OT */}
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b pb-2">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-mono font-bold text-sm text-foreground">
+                              OT-{pastWo.id.substring(0, 8).toUpperCase()}
+                            </span>
+                            {/* Status badge */}
+                            {(() => {
+                              const config = STATUSES.find((s) => s.id === pastWo.status);
+                              return (
+                                <Badge
+                                  variant="outline"
+                                  className={cn("text-[10px] px-2 py-0.5", config?.color)}
+                                >
+                                  {config?.label || pastWo.status}
+                                </Badge>
+                              );
+                            })()}
+                            {/* Paid Badge */}
+                            <Badge
+                              variant={isPaid ? "outline" : "secondary"}
+                              className={cn(
+                                "text-[10px] px-2 py-0.5 font-mono",
+                                isPaid
+                                  ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                                  : (pastWo.totalPaid || 0) > 0
+                                    ? "border-amber-200 bg-amber-50 text-amber-700"
+                                    : "border-slate-200 bg-slate-50 text-slate-600",
+                              )}
+                            >
+                              {formatARS(totalCost)}
+                            </Badge>
+                          </div>
+                          {/* Date and direct link */}
+                          <div className="flex items-center gap-3">
+                            <span className="text-xs text-muted-foreground font-mono" title={new Date(pastWo.createdAt).toLocaleString("es-AR")}>
+                              {new Date(pastWo.createdAt).toLocaleDateString("es-AR", {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric",
+                              })}
+                            </span>
+                            <Link href={`/adm/work-orders/${pastWo.id}`} target="_blank">
+                              <Button variant="outline" size="sm" className="h-7 px-2.5 text-xs flex items-center gap-1 bg-background hover:bg-muted">
+                                <Eye className="h-3.5 w-3.5" />
+                                Ver OT
+                              </Button>
+                            </Link>
+                          </div>
+                        </div>
+
+                        {/* Middle body section: responsible + checklist summaries */}
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                          {pastWo.technician?.name && (
+                            <div className="flex items-center gap-1.5 text-purple-700 font-medium bg-purple-50 px-2 py-1 rounded border border-purple-100">
+                              <UserCog className="h-3.5 w-3.5 shrink-0" />
+                              <span>{pastWo.technician.name}</span>
+                            </div>
+                          )}
+                          <div className="flex items-center gap-1.5 text-slate-600 bg-slate-100/50 px-2 py-1 rounded border">
+                            <span className="text-xs shrink-0">📥 Checklist Ingreso:</span>
+                            <span className={cn("font-medium", pastWo.entryChecklist ? "text-blue-600" : "text-muted-foreground/50")}>
+                              {pastWo.entryChecklist ? "Completado" : "Pendiente"}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-slate-600 bg-slate-100/50 px-2 py-1 rounded border">
+                            <span className="text-xs shrink-0">📤 Checklist Calidad:</span>
+                            <span className={cn("font-medium", pastWo.exitChecklist ? "text-emerald-600" : "text-muted-foreground/50")}>
+                              {pastWo.exitChecklist ? "Completado" : "Pendiente"}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Notes of that past work order if any */}
+                        {pastWo.notes && (
+                          <div className="bg-background/80 border border-dashed rounded-lg p-3 text-xs text-muted-foreground italic relative">
+                            <p className="line-clamp-3">&ldquo;{pastWo.notes}&rdquo;</p>
+                          </div>
+                        )}
+
+                        {/* Items subtable/list inside past OT */}
+                        {itemsList.length > 0 && (
+                          <div className="space-y-1.5 bg-background/50 border rounded-lg p-3">
+                            <p className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1">
+                              Productos y Servicios Realizados ({itemsList.length})
+                            </p>
+                            <div className="grid gap-1.5 max-h-32 overflow-y-auto">
+                              {itemsList.map((item: any) => (
+                                <div key={item.id} className="flex justify-between items-center text-xs">
+                                  <div className="flex items-center gap-1.5 truncate">
+                                    {item.type === "PRODUCT" ? (
+                                      <Package className="h-3 w-3 text-muted-foreground shrink-0" />
+                                    ) : (
+                                      <Wrench className="h-3 w-3 text-muted-foreground shrink-0" />
+                                    )}
+                                    <span className="font-semibold text-zinc-800 truncate">
+                                      {item.name || item.product?.name || item.service?.name || "Item"}
+                                    </span>
+                                    <span className="text-muted-foreground font-mono text-[10px]">
+                                      x{item.quantity}
+                                    </span>
+                                  </div>
+                                  <span className="font-mono text-zinc-600 text-xs font-medium shrink-0">
+                                    {formatARS(Number(item.subtotal))}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Tab: Timeline */}
