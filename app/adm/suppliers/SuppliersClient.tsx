@@ -46,7 +46,7 @@ interface SuppliersClientProps {
 export default function SuppliersClient({
   initialSuppliers,
 }: SuppliersClientProps) {
-  const { alert } = useUI();
+  const { alert, confirm } = useUI();
   const [suppliers, setSuppliers] = useState<Supplier[]>(initialSuppliers);
   const [loading, setLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -117,6 +117,16 @@ export default function SuppliersClient({
   };
 
   const handleDeleteSupplier = async (supplier: Supplier) => {
+    const confirmed = await confirm({
+      title: "Desactivar proveedor",
+      description: `¿Está seguro de desactivar "${supplier.name}"? Puede reactivarlo desde la acción de deshacer.`,
+      confirmText: "Desactivar",
+      cancelText: "Cancelar",
+      variant: "destructive",
+    });
+
+    if (!confirmed) return;
+
     try {
       const response = await fetch(`/api/suppliers/${supplier.id}`, {
         method: "DELETE",

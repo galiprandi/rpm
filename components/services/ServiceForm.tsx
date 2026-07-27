@@ -130,7 +130,7 @@ export function ServiceForm({ formData, onChange, disabled }: ServiceFormProps) 
               disabled={disabled}
             />
           </div>
-          <p className="text-[10px] text-muted-foreground leading-tight">
+          <p className="text-[11px] text-muted-foreground leading-tight">
             Multiplicador por tipo de vehículo
           </p>
         </div>

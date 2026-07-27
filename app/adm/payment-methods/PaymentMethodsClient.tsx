@@ -6,6 +6,7 @@ import { CrudAdmin } from '@/components/adm/CrudAdmin';
 import { PaymentMethodForm, PaymentMethodFormData } from '@/components/payment-methods/PaymentMethodForm';
 import { ModalBase, ModalBaseFooter } from '@/components/ui/ModalBase';
 import { useUI } from '@/components/ui/UIProvider';
+import { toast } from 'sonner';
 import { Pencil, Trash2, Plus, CreditCard, CheckCircle2 } from 'lucide-react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { Header, CrudStats, type StatItem } from '@/components/adm';
@@ -90,7 +91,7 @@ export default function PaymentMethodsClient({ initialPaymentMethods }: PaymentM
 
   const handleDelete = async (method: PaymentMethod) => {
     const hasPayments = method._count?.payments && method._count.payments > 0;
-    
+
     if (hasPayments) {
       await alert({
         title: 'No se puede eliminar',
@@ -110,18 +111,46 @@ export default function PaymentMethodsClient({ initialPaymentMethods }: PaymentM
 
     if (!confirmed) return;
 
+    // Capture previous data for undo
+    const previousData: PaymentMethodFormData = {
+      name: method.name,
+      code: method.code,
+      description: method.description || '',
+      sortOrder: method.sortOrder,
+      isActive: method.isActive,
+    };
+
     try {
       const res = await fetch(`/api/payment-methods/${method.id}`, {
         method: 'DELETE',
       });
 
       if (res.ok) {
-        await alert({
-          title: 'Eliminado',
-          description: 'Método de pago eliminado correctamente',
-          variant: 'success',
+        // Optimistically remove from list
+        setPaymentMethods((prev) => prev.filter((m) => m.id !== method.id));
+        toast.success(`Método de pago "${method.name}" eliminado`, {
+          action: {
+            label: 'Deshacer',
+            onClick: async () => {
+              try {
+                const restoreRes = await fetch('/api/payment-methods', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(previousData),
+                });
+                if (restoreRes.ok) {
+                  fetchPaymentMethods();
+                  toast.success('Método de pago restaurado');
+                } else {
+                  toast.error('Error al restaurar método de pago');
+                }
+              } catch {
+                toast.error('Error al restaurar método de pago');
+              }
+            },
+          },
+          duration: 8000,
         });
-        fetchPaymentMethods();
       } else {
         const error = await res.json();
         await alert({
@@ -155,13 +184,11 @@ export default function PaymentMethodsClient({ initialPaymentMethods }: PaymentM
       });
 
       if (res.ok) {
-        await alert({
-          title: editingMethod ? 'Actualizado' : 'Creado',
-          description: editingMethod 
+        toast.success(
+          editingMethod
             ? 'Método de pago actualizado correctamente'
             : 'Método de pago creado correctamente',
-          variant: 'success',
-        });
+        );
         setIsDialogOpen(false);
         fetchPaymentMethods();
       } else {

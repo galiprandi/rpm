@@ -43,7 +43,7 @@ interface ServicesClientProps {
 export default function ServicesClient({
   initialServices,
 }: ServicesClientProps) {
-  const { alert } = useUI();
+  const { alert, confirm } = useUI();
   const [services, setServices] = useState<Service[]>(initialServices);
   const [loading, setLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -176,6 +176,16 @@ export default function ServicesClient({
 
   const handleDelete = useCallback(
     async (service: Service) => {
+      const confirmed = await confirm({
+        title: "Desactivar servicio",
+        description: `¿Está seguro de desactivar "${service.name}"? El servicio no estará disponible para nuevas órdenes, pero se puede reactivar con "Deshacer".`,
+        confirmText: "Desactivar",
+        cancelText: "Cancelar",
+        variant: "destructive",
+      });
+
+      if (!confirmed) return;
+
       try {
         const response = await fetch(`/api/services/${service.id}`, {
           method: "DELETE",
@@ -200,6 +210,7 @@ export default function ServicesClient({
                 }
               },
             },
+            duration: 8000,
           });
         } else {
           const error = await response.json();
@@ -218,7 +229,7 @@ export default function ServicesClient({
         });
       }
     },
-    [alert],
+    [alert, confirm],
   );
 
   const activeServices = services.filter((s) => s.isActive).length;

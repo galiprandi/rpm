@@ -47,7 +47,7 @@ export default function CategoriesClient({
   initialCategories,
   inactiveMode = false,
 }: CategoriesClientProps) {
-  const { alert } = useUI();
+  const { alert, confirm } = useUI();
   const [categories, setCategories] = useState<Category[]>(initialCategories);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -129,6 +129,16 @@ export default function CategoriesClient({
   };
 
   const handleDeleteCategory = async (category: Category) => {
+    const confirmed = await confirm({
+      title: "Desactivar Categoría",
+      description: `¿Desactivar "${category.name}"? La categoría dejará de estar disponible para nuevos productos, pero conservará su historial.`,
+      confirmText: "Desactivar",
+      cancelText: "Cancelar",
+      variant: "destructive",
+    });
+
+    if (!confirmed) return;
+
     try {
       const response = await fetch(`/api/categories/${category.id}`, {
         method: "DELETE",
