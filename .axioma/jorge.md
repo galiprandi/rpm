@@ -2,6 +2,7 @@
 - [ ] Idea pendiente — breve descripción
 
 ## ✅ COMPLETADO
+- [x] 2026-07-27 — Selector de Estado Interactivo en Detalle de OT (PR #jorge/work-orders/status-select-header)
 - [x] 2026-07-26 — Historial de Órdenes de Trabajo del Vehículo en Detalle de OT (PR #jorge/work-orders/vehicle-history-tab)
 - [x] 2026-07-24 — Bloqueo de Estados Terminales y Reversión de Saldos por Cancelación de OT (PR #jorge/work-orders/cancelled-terminal-states)
 - [x] 2026-07-23 — Búsqueda por Cliente y Pre-carga de Cuenta en Alta de OT (PR #jorge/work-orders/preloaded-customer-search)
@@ -15,9 +16,13 @@
 - [x] 2025-07-08 — Servicio Centralizado de OT y Timeline Unificado (PR #jorge/work-orders/centralized-updates)
 
 ## 🧠 APRENDIZAJES
+## 2026-07-27 - Selector de Estado Interactivo en Detalle de OT
+**Aprendizaje:** En pantallas de gestión detalladas de taller, la visibilidad e interactividad sobre el estado de la operación (OT) es crucial. Si el usuario está en móvil (donde no hay Kanban de arrastre) o desea corregir o cambiar de estado rápidamente, verse forzado a volver a la vista general o usar solo la acción lineal por defecto crea una fricción innecesaria. Integrar un dropdown select nativo con colores semánticos por estado en la cabecera misma soluciona de forma elegante la falta de visualización clara del estado actual y proporciona control total inmediato desde cualquier dispositivo.
+**Acción:** Siempre proveer selectores de estado interactivos y coloreados en cabeceras de detalle técnico para mejorar accesibilidad y velocidad operativa.
+
 ## 2026-07-26 - Historial de Órdenes de Trabajo del Vehículo en Detalle de OT
 **Aprendizaje:** En talleres mecánicos, los vehículos suelen ser recurrentes. Contar con visibilidad instantánea sobre el historial técnico completo (OTs pasadas, responsables, notas, checklists y productos/servicios específicos realizados) directamente desde la pantalla de la OT en curso disminuye drásticamente la fricción administrativa y de diagnóstico, eliminando la necesidad de abandonar el flujo principal para ir a buscar la ficha del vehículo por separado. Además, al trabajar con Next.js 15 y el nuevo React Compiler, las dependencias complejas (como optional chaining en arrays `[workOrder?.vehicle?.id]`) pueden impedir que se preserve la memoización manual, arrojando errores de compilación (`Compilation Skipped: Existing memoization could not be preserved`). Desestructurar y aplanar estas referencias en variables simples de tipo string o undefined (`const vehicleId = workOrder?.vehicle?.id`) antes de pasarlas a los hooks de React garantiza compatibilidad completa con el compilador de React y optimizaciones robustas.
-**Acción:** Siempre proveer pestañas de historial contextual técnico y asegurar de aplanar propiedades anidadas o con optional chaining al incluirlas en dependencias de hooks con React Compiler.
+**Acción:** Siempre proveer pestañas de historial contextual técnico y asegurar de aplanar propiedades anidadas o con optional chaining al incluirlas en dependencias de cookies o hooks con React Compiler.
 
 ## 2026-07-24 - Bloqueo de Estados Terminales y Reversión de Saldos por Cancelación de OT
 **Aprendizaje:** Una orden de trabajo cancelada representa un estado terminal irreversible de la operación. Dejar el resto de los controles (items, notas, asignaciones, checklists, fotos, pagos) editables tras la cancelación crea riesgos de manipulación de datos, descuadres financieros en cajas cerradas o inconsistencias de stock. El bloqueo integral de todas las entradas (acompañado de banners de advertencia de alto contraste y explicaciones explícitas de por qué las acciones están bloqueadas) provee una UI transparente y segura.
@@ -29,21 +34,21 @@
 
 ## 2026-07-22 - Indicadores Visuales de Metadatos y Exportación CSV en Taller
 **Aprendizaje:** En la gestión diaria del taller mecánico, tener visibilidad inmediata sobre si los checklists (de ingreso y de salida) han sido completados y la cantidad de fotos cargadas en las tarjetas del Kanban y de la Lista evita que se dejen vehículos sin inspección previa o posterior. Además, poder exportar en un solo click (respetando filtros activos, codificación Excel UTF-8 BOM, escape de caracteres y relaciones de vehículos/responsables de manera defensiva) eleva considerablemente la productividad administrativa del taller.
-**Acción:** Siempre incluir micro-indicadores visuales con tooltips informativos para estados de procesos secuenciales (checklists, fotos) y habilitar exportación a CSV segura y amigable para Excel.
+**Acción:** Siempre include micro-indicadores visuales con tooltips informativos para estados de procesos secuenciales (checklists, fotos) y habilitar exportación a CSV segura y amigable para Excel.
 
 ## 2026-07-21 - Botones de Filtro Rápido para Eficiencia en Taller
 **Learning:** En flujos con alta carga de trabajo (como talleres mecánicos), disponer de contadores globales dinámicos en los botones de filtro rápido ("Demoradas", "Turnos de Hoy", etc.) le da al usuario visibilidad inmediata del estado de su operación sin tener que aplicar cada filtro. Esto acelera drásticamente la toma de decisiones.
 **Acción:** Siempre incluir recuentos informativos y badges dinámicos con contrastes WCAG AA adecuados en todos los componentes de filtro principal.
 
 ## 2026-07-20 - Gestión de Fotos con Carga Masiva y Lightbox Immersivo
-**Learning:** La implementación de flujos de carga masivos que realizan llamadas secuenciales a los endpoints de carga y de registro de fotos evita las complejidades y el riesgo de timeouts asociados a las cargas de bloques grandes (multipart uploads) de una sola vez. Además, para los componentes de lightbox, el uso de memos robustos que unifican las fotos de ingreso y egreso en un solo carrusel, junto con controles de navegación con el teclado (flechas y Esc) y de descarga, proporciona una navegación sumamente fluida.
-**Acción:** Siempre unificar arrays de archivos dispersos en un solo carrusel indexado cuando se implementen lightboxes interactivos.
+**Learning:** La implementación de flujos de carga masivos que realizan llamadas secuenciales a los endpoints de carga y de registro de fotos evita las complejidades y el riesgo de timeouts asociados a las cargas de bloques grandes (multipart uploads) de una sola vez. Además, para los componentes de lightbox, el uso de memos unificados que unifican las fotos de ingreso y egreso en un solo carrusel, junto con controles de navegación con el teclado (flechas y Esc) y de descarga, proporciona una navegación sumamente fluida.
+**Acción:** Siempre unificar arrays de archivos de fotos en un solo carrusel indexado cuando se implementen lightboxes interactivos.
 
 ## 2026-07-18 - Emulación de Impresión y Contenido de Documentos
 **Learning:** El uso de emulación de medios de impresión (`page.emulate_media(media="print")`) en Playwright facilita enormemente la auditoría y validación visual automatizada de layouts que de otra manera no son fácilmente verificables en pantalla normal. Asimismo, estructurar secciones de despacho (origen/destino) para remitos y cláusulas de validez/precio para presupuestos entrega un nivel de profesionalismo indispensable en documentos de taller y ventas.
 **Acción:** Siempre usar emulación de impresión y validación con capturas de pantalla para todos los comprobantes y reportes imprimibles.
 
-## 2026-07-16 - Checklists Interactivos y Resilientes
+## 2026-07-16 - Checklist Interactivos y Resilientes
 **Learning:** Almacenar checklists como datos serializados es flexible, pero requiere que las operaciones de actualización (PUT/POST) realicen merges seguros (preservando marcas de tiempo como `completedAt`) para evitar regresiones de datos. La inicialización con plantillas unificadas directamente en la interfaz de detalle elimina la necesidad de re-crear OTs completas para agregar protocolos faltantes.
 **Acción:** Siempre fusionar campos de forma granular en APIs que operen sobre documentos JSON embebidos.
 
