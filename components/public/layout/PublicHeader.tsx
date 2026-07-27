@@ -138,6 +138,7 @@ export function PublicHeader() {
       >
         <button
           onClick={() => { setIsOpen(false); setIsSearchOpen(true); }}
+          tabIndex={isOpen ? 0 : -1}
           className="flex items-center space-x-3 text-white/60 hover:text-brand transition-colors mb-4 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none rounded-lg px-2 py-1"
           aria-label="Buscar en el catálogo"
         >
@@ -151,6 +152,7 @@ export function PublicHeader() {
             <Link
               key={item.name}
               href={item.href}
+              tabIndex={isOpen ? 0 : -1}
               className={cn(
                 "text-4xl font-bold transition-colors",
                 isActive ? "text-brand" : "text-white hover:text-brand"
@@ -163,16 +165,26 @@ export function PublicHeader() {
         })}
         <Link
           href="/login"
+          tabIndex={isOpen ? 0 : -1}
           className="text-2xl font-bold text-gray-400 hover:text-white transition-colors"
           onClick={() => setIsOpen(false)}
         >
           Ingresar
         </Link>
-        <a href={PUBLIC_SITE_CONFIG.links.whatsapp(DEFAULT_WHATSAPP_MESSAGE)} target="_blank" rel="noopener noreferrer" onClick={() => setIsOpen(false)}>
-          <Button className="bg-brand text-white text-lg font-bold rounded-full px-12 py-6">
+        <Button
+          asChild
+          className="bg-brand text-white text-lg font-bold rounded-full px-12 py-6"
+        >
+          <a
+            href={PUBLIC_SITE_CONFIG.links.whatsapp(DEFAULT_WHATSAPP_MESSAGE)}
+            target="_blank"
+            rel="noopener noreferrer"
+            tabIndex={isOpen ? 0 : -1}
+            onClick={() => setIsOpen(false)}
+          >
             Contactar ahora
-          </Button>
-        </a>
+          </a>
+        </Button>
       </div>
 
       <GlobalSearch isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
