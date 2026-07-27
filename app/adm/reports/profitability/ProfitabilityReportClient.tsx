@@ -435,12 +435,12 @@ export default function ProfitabilityReportClient() {
                                   style={{ height: `${Math.max(profitHeight, 1)}%` }}
                                 />
                               </div>
-                              <div className="opacity-0 group-hover:opacity-100 absolute -top-16 left-1/2 -translate-x-1/2 bg-popover text-popover-foreground text-[10px] px-2 py-1 rounded shadow-md z-20 whitespace-nowrap border font-mono">
+                              <div className="opacity-0 group-hover:opacity-100 absolute -top-16 left-1/2 -translate-x-1/2 bg-popover text-popover-foreground text-[11px] px-2 py-1 rounded shadow-md z-20 whitespace-nowrap border font-mono">
                                 <div className="text-muted-foreground">Ingreso: {formatARS(item.revenue)}</div>
                                 <div className="text-red-700">Costo: {formatARS(item.cost)}</div>
                                 <div className="text-emerald-700 font-bold">Ganancia: {formatARS(item.profit)}</div>
                               </div>
-                              <span className="text-[10px] text-muted-foreground mt-2 truncate w-full text-center">
+                              <span className="text-[11px] text-muted-foreground mt-2 truncate w-full text-center">
                                 {item.label}
                               </span>
                             </div>
@@ -488,7 +488,7 @@ export default function ProfitabilityReportClient() {
                               {item.margin.toFixed(1)}%
                             </span>
                           </div>
-                          <div className="flex items-center justify-between text-[10px] text-muted-foreground font-mono">
+                          <div className="flex items-center justify-between text-[11px] text-muted-foreground font-mono">
                             <span>{formatARS(item.profit)} ganancia</span>
                             <span>{formatARS(item.revenue)} vta.</span>
                           </div>
@@ -537,7 +537,7 @@ export default function ProfitabilityReportClient() {
                             <TableRow key={idx} className="hover:bg-muted/30 transition-colors">
                               <TableCell className="p-3">
                                 <div className="font-medium truncate max-w-[200px]">{item.name}</div>
-                                <div className="text-[10px] text-muted-foreground">{item.quantity} unidades</div>
+                                <div className="text-[11px] text-muted-foreground">{item.quantity} unidades</div>
                               </TableCell>
                               <TableCell className="p-3 text-right font-mono font-bold text-emerald-700">
                                 {formatARS(item.profit)}
@@ -591,7 +591,7 @@ export default function ProfitabilityReportClient() {
                             <p className="text-sm font-mono font-bold text-emerald-700">
                               {formatARS(tech.profit)}
                             </p>
-                            <p className="text-[10px] text-muted-foreground uppercase tracking-tight">Ganancia</p>
+                            <p className="text-[11px] text-muted-foreground uppercase tracking-tight">Ganancia</p>
                           </div>
                         </div>
                       ))
@@ -621,7 +621,7 @@ export default function ProfitabilityReportClient() {
               <p className="text-xs text-zinc-500 font-mono mt-2">
                 Fecha de Emisión: {new Date().toLocaleDateString("es-AR")}
               </p>
-              <p className="text-[10px] text-zinc-500 font-mono mt-1">
+              <p className="text-[11px] text-zinc-500 font-mono mt-1">
                 Período: {periodLabels[period]} ({getDatesForPeriod(period).startDate.toLocaleDateString("es-AR")} - {getDatesForPeriod(period).endDate.toLocaleDateString("es-AR")})
               </p>
             </div>
@@ -630,19 +630,19 @@ export default function ProfitabilityReportClient() {
           {/* Resumen de KPIs */}
           <div className="grid grid-cols-4 gap-4 border border-zinc-300 rounded-lg p-4 mb-6 bg-zinc-50/50">
             <div className="space-y-1">
-              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Ganancia Bruta</span>
+              <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">Ganancia Bruta</span>
               <p className="text-sm font-bold font-mono text-emerald-700">{formatARS(data.grossProfit.current)}</p>
             </div>
             <div className="space-y-1">
-              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Margen Bruto</span>
+              <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">Margen Bruto</span>
               <p className="text-sm font-bold font-mono text-zinc-900">{data.grossMargin.current.toFixed(1)}%</p>
             </div>
             <div className="space-y-1">
-              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Ingresos Totales</span>
+              <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">Ingresos Totales</span>
               <p className="text-sm font-bold font-mono text-zinc-900">{formatARS(data.revenue.current)}</p>
             </div>
             <div className="space-y-1">
-              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Costos Totales (Est.)</span>
+              <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">Costos Totales (Est.)</span>
               <p className="text-sm font-bold font-mono text-zinc-900">{formatARS(data.totalCost.current)}</p>
             </div>
           </div>
@@ -653,7 +653,7 @@ export default function ProfitabilityReportClient() {
             <div className="border border-zinc-300 rounded-lg overflow-hidden">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-zinc-100 border-b border-zinc-300 text-[10px] font-bold text-zinc-700 uppercase">
+                  <tr className="bg-zinc-100 border-b border-zinc-300 text-[11px] font-bold text-zinc-700 uppercase">
                     <th className="p-2">{data.groupBy === "hour" ? "Hora" : data.groupBy === "month" ? "Mes" : "Fecha"}</th>
                     <th className="p-2 text-right">Ingresos</th>
                     <th className="p-2 text-right">Costos</th>
@@ -670,7 +670,7 @@ export default function ProfitabilityReportClient() {
                     </tr>
                   ) : (
                     data.evolution.map((item, idx) => (
-                      <tr key={idx} className="border-b border-zinc-200 text-[10px]">
+                      <tr key={idx} className="border-b border-zinc-200 text-[11px]">
                         <td className="p-2 font-medium">{item.label}</td>
                         <td className="p-2 text-right font-mono">{formatARS(item.revenue)}</td>
                         <td className="p-2 text-right font-mono text-red-700">{formatARS(item.cost)}</td>
@@ -694,7 +694,7 @@ export default function ProfitabilityReportClient() {
               <div className="border border-zinc-300 rounded-lg overflow-hidden">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="bg-zinc-100 border-b border-zinc-300 text-[10px] font-bold text-zinc-700 uppercase">
+                    <tr className="bg-zinc-100 border-b border-zinc-300 text-[11px] font-bold text-zinc-700 uppercase">
                       <th className="p-2">Categoría</th>
                       <th className="p-2 text-right">Ingresos</th>
                       <th className="p-2 text-right">Ganancia</th>
@@ -710,7 +710,7 @@ export default function ProfitabilityReportClient() {
                       </tr>
                     ) : (
                       data.categoryProfitability.map((item) => (
-                        <tr key={item.id} className="border-b border-zinc-200 text-[10px]">
+                        <tr key={item.id} className="border-b border-zinc-200 text-[11px]">
                           <td className="p-2 font-medium uppercase">{item.name}</td>
                           <td className="p-2 text-right font-mono">{formatARS(item.revenue)}</td>
                           <td className="p-2 text-right font-mono text-emerald-700">{formatARS(item.profit)}</td>
@@ -729,7 +729,7 @@ export default function ProfitabilityReportClient() {
               <div className="border border-zinc-300 rounded-lg overflow-hidden">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="bg-zinc-100 border-b border-zinc-300 text-[10px] font-bold text-zinc-700 uppercase">
+                    <tr className="bg-zinc-100 border-b border-zinc-300 text-[11px] font-bold text-zinc-700 uppercase">
                       <th className="p-2">Técnico</th>
                       <th className="p-2 text-right">Ganancia</th>
                       <th className="p-2 text-right">Margen</th>
@@ -744,7 +744,7 @@ export default function ProfitabilityReportClient() {
                       </tr>
                     ) : (
                       data.technicianProfitability.map((tech) => (
-                        <tr key={tech.technicianId} className="border-b border-zinc-200 text-[10px]">
+                        <tr key={tech.technicianId} className="border-b border-zinc-200 text-[11px]">
                           <td className="p-2 font-medium">{tech.technicianName}</td>
                           <td className="p-2 text-right font-mono text-emerald-700 font-bold">{formatARS(tech.profit)}</td>
                           <td className="p-2 text-right font-mono">{tech.margin.toFixed(1)}%</td>
@@ -763,7 +763,7 @@ export default function ProfitabilityReportClient() {
             <div className="border border-zinc-300 rounded-lg overflow-hidden">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-zinc-100 border-b border-zinc-300 text-[10px] font-bold text-zinc-700 uppercase">
+                  <tr className="bg-zinc-100 border-b border-zinc-300 text-[11px] font-bold text-zinc-700 uppercase">
                     <th className="p-2">Producto / Servicio</th>
                     <th className="p-2 text-center">Unidades</th>
                     <th className="p-2 text-right">Ganancia Bruta</th>
@@ -779,7 +779,7 @@ export default function ProfitabilityReportClient() {
                     </tr>
                   ) : (
                     data.topProfitableItems.map((item, idx) => (
-                      <tr key={idx} className="border-b border-zinc-200 text-[10px]">
+                      <tr key={idx} className="border-b border-zinc-200 text-[11px]">
                         <td className="p-2 font-medium">{item.name}</td>
                         <td className="p-2 text-center font-mono">{item.quantity}</td>
                         <td className="p-2 text-right font-mono text-emerald-700 font-bold">{formatARS(item.profit)}</td>
@@ -796,20 +796,20 @@ export default function ProfitabilityReportClient() {
           <div className="grid grid-cols-2 gap-12 mt-12 mb-8 print:break-inside-avoid">
             <div className="flex flex-col items-center">
               <div className="w-48 border-b border-zinc-400 h-10" />
-              <span className="text-[10px] text-zinc-500 font-semibold uppercase tracking-wider mt-2">
+              <span className="text-[11px] text-zinc-500 font-semibold uppercase tracking-wider mt-2">
                 Responsable de Administración
               </span>
             </div>
             <div className="flex flex-col items-center">
               <div className="w-48 border-b border-zinc-400 h-10" />
-              <span className="text-[10px] text-zinc-500 font-semibold uppercase tracking-wider mt-2">
+              <span className="text-[11px] text-zinc-500 font-semibold uppercase tracking-wider mt-2">
                 Firma Autorizada Gerencia
               </span>
             </div>
           </div>
 
           {/* Pie de Página */}
-          <div className="text-center border-t border-zinc-200 pt-4 text-[10px] text-zinc-400 font-mono">
+          <div className="text-center border-t border-zinc-200 pt-4 text-[11px] text-zinc-400 font-mono">
             RPM Accesorios © {new Date().getFullYear()} - Reporte de Control de Rentabilidad y Auditoría de Costos Interna.
           </div>
         </div>

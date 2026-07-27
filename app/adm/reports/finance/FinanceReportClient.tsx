@@ -393,11 +393,11 @@ export default function FinanceReportClient() {
                                   style={{ height: `${Math.max(expenseHeight, 1)}%` }}
                                 />
                               </div>
-                              <div className="opacity-0 group-hover:opacity-100 absolute -top-12 left-1/2 -translate-x-1/2 bg-popover text-popover-foreground text-[10px] px-2 py-1 rounded shadow-md z-10 whitespace-nowrap border">
+                              <div className="opacity-0 group-hover:opacity-100 absolute -top-12 left-1/2 -translate-x-1/2 bg-popover text-popover-foreground text-[11px] px-2 py-1 rounded shadow-md z-10 whitespace-nowrap border">
                                 <div className="text-emerald-700 font-bold">Ingreso: {formatARS(item.income)}</div>
                                 <div className="text-red-700 font-bold">Egreso: {formatARS(item.expense)}</div>
                               </div>
-                              <span className="text-[10px] text-muted-foreground mt-2 truncate w-full text-center">
+                              <span className="text-[11px] text-muted-foreground mt-2 truncate w-full text-center">
                                 {item.label}
                               </span>
                             </div>
@@ -444,7 +444,7 @@ export default function FinanceReportClient() {
                               {formatARS(item.net)}
                             </span>
                           </div>
-                          <div className="flex items-center justify-between text-[10px] text-muted-foreground font-mono">
+                          <div className="flex items-center justify-between text-[11px] text-muted-foreground font-mono">
                             <span className="text-emerald-700">+{formatARS(item.income)}</span>
                             <span className="text-red-700">-{formatARS(item.expense)}</span>
                           </div>

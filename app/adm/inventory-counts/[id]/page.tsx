@@ -132,7 +132,7 @@ export default async function InventoryCountDetailPage({
                   El operario debe escanear esto con su celular para iniciar la tarea de conteo ciego.
                 </p>
               </div>
-              <div className="w-full pt-2 border-t text-[10px] break-all text-muted-foreground font-mono">
+              <div className="w-full pt-2 border-t text-[11px] break-all text-muted-foreground font-mono">
                 {mobileUrl}
               </div>
             </CardContent>

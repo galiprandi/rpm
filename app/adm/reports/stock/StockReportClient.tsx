@@ -304,7 +304,7 @@ export default function StockReportClient() {
                           <span className="font-mono font-bold text-red-700">
                             {product.stock}
                           </span>
-                          <span className="text-[10px] text-muted-foreground ml-1">
+                          <span className="text-[11px] text-muted-foreground ml-1">
                             / {product.minStock}
                           </span>
                         </TableCell>

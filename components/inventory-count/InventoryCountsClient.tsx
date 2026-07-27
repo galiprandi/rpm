@@ -76,7 +76,7 @@ export function InventoryCountsClient({ counts }: InventoryCountsClientProps) {
               <span className="font-semibold tracking-tight text-sm">
                 #{row.original.id.slice(-6).toUpperCase()}
               </span>
-              <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground font-medium">
+              <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground font-medium">
                 <span>{date.toLocaleDateString()}</span>
                 <span className="opacity-50">•</span>
                 <span>{date.toLocaleTimeString()}</span>

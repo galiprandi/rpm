@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useUI } from '@/components/ui/UIProvider';
 
 interface EnhancedItem {
   id: string;
@@ -38,6 +39,7 @@ interface Operative {
 }
 
 export function ApprovalView({ operativeId }: { operativeId: string }) {
+  const { confirm } = useUI();
   const [operative, setOperative] = useState<Operative | null>(null);
   const [loading, setLoading] = useState(true);
   const [approving, setApproving] = useState(false);
@@ -82,6 +84,16 @@ export function ApprovalView({ operativeId }: { operativeId: string }) {
   };
 
   const handleApprove = async () => {
+    const confirmed = await confirm({
+      title: 'Aprobar y Ajustar Inventario',
+      description: `Se ajustará el stock de ${operative?.items.length || 0} artículos según los valores finales ingresados. Esta acción impacta el inventario del sistema y no se puede deshacer.`,
+      confirmText: 'Aprobar y Ajustar',
+      cancelText: 'Cancelar',
+      variant: 'default',
+    });
+
+    if (!confirmed) return;
+
     setApproving(true);
     try {
       const payload = Object.entries(adjustments).map(([itemId, data]) => ({
@@ -209,7 +221,7 @@ export function ApprovalView({ operativeId }: { operativeId: string }) {
                       </div>
                       <div className="min-w-0">
                         <div className="font-semibold tracking-tight text-sm truncate">{item.product.name}</div>
-                        <div className="text-[10px] text-muted-foreground font-mono font-medium">SKU: {item.product.sku || 'N/A'}</div>
+                        <div className="text-[11px] text-muted-foreground font-mono font-medium">SKU: {item.product.sku || 'N/A'}</div>
                       </div>
                     </div>
                   </TableCell>
@@ -218,11 +230,11 @@ export function ApprovalView({ operativeId }: { operativeId: string }) {
                   </TableCell>
                   <TableCell className="text-center py-4">
                     {!item.isFound ? (
-                      <Badge variant="outline" className="text-red-700 border-red-200 bg-red-50 text-[10px] h-5">No encontrado</Badge>
+                      <Badge variant="outline" className="text-red-700 border-red-200 bg-red-50 text-[11px] h-5">No encontrado</Badge>
                     ) : (
                       <div className="flex flex-col items-center">
                         <span className="font-bold text-sm">{item.countedStock}</span>
-                        <span className={cn("text-[10px] font-medium", diff > 0 ? "text-emerald-700" : diff < 0 ? "text-red-700" : "text-muted-foreground")}>
+                        <span className={cn("text-[11px] font-medium", diff > 0 ? "text-emerald-700" : diff < 0 ? "text-red-700" : "text-muted-foreground")}>
                           ({diff > 0 ? '+' : ''}{diff})
                         </span>
                       </div>
@@ -234,7 +246,7 @@ export function ApprovalView({ operativeId }: { operativeId: string }) {
                         <TooltipTrigger asChild>
                           <Badge
                             variant="outline"
-                            className="cursor-help bg-amber-50 text-amber-700 border-amber-200 text-[10px] h-5 font-bold outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
+                            className="cursor-help bg-amber-50 text-amber-700 border-amber-200 text-[11px] h-5 font-bold outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
                             tabIndex={0}
                             aria-label={`Movimiento simultáneo: ${item.concurrentMovement > 0 ? '+' : ''}${item.concurrentMovement}. Se registraron ${item.salesDuringCount} ventas durante el proceso.`}
                           >
@@ -247,7 +259,7 @@ export function ApprovalView({ operativeId }: { operativeId: string }) {
                         </TooltipContent>
                       </Tooltip>
                     ) : (
-                      <span className="text-[10px] text-muted-foreground/50">-</span>
+                      <span className="text-[11px] text-muted-foreground/50">-</span>
                     )}
                   </TableCell>
                   <TableCell className="py-4">
@@ -261,7 +273,7 @@ export function ApprovalView({ operativeId }: { operativeId: string }) {
                         className={cn("font-mono font-bold text-center h-8 text-sm focus-visible:ring-primary", adj.stock !== item.countedStock && "border-amber-500 ring-amber-500/20")}
                       />
                       {adj.stock !== item.countedStock && (
-                        <div className="text-[9px] text-amber-700 font-medium flex items-center gap-0.5 justify-center">
+                        <div className="text-[11px] text-amber-700 font-medium flex items-center gap-0.5 justify-center">
                           <Info className="h-2 w-2" /> Sug: {item.suggestedStock}
                         </div>
                       )}

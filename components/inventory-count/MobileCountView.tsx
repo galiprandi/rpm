@@ -107,11 +107,11 @@ export function MobileCountView({ operativeId }: { operativeId: string }) {
   if (loading) return <div className="p-8 flex justify-center"><Loader2 className="animate-spin" /></div>;
   if (!operative) return <div className="p-8 text-center">Operativo no encontrado</div>;
 
-  if (operative.status === 'APPROVED' || operative.status === 'COMPLETED' && !activeItemId) {
+  if (operative.status === 'APPROVED' || (operative.status === 'COMPLETED' && !activeItemId)) {
     return (
       <Card className="m-4">
         <CardContent className="p-8 flex flex-col items-center text-center space-y-4">
-          <div className="bg-green-100 p-4 rounded-full">
+          <div className="bg-emerald-100 p-4 rounded-full">
             <Check className="h-12 w-12 text-emerald-600" />
           </div>
           <CardTitle>¡Conteo Finalizado!</CardTitle>

@@ -367,7 +367,7 @@ export default function CustomersReportClient() {
                                   className="w-full bg-primary/80 hover:bg-primary rounded-t-sm transition-all relative"
                                   style={{ height: `${height}%` }}
                                 >
-                                  <div className="opacity-0 group-hover:opacity-100 absolute -top-7 left-1/2 -translate-x-1/2 bg-popover text-popover-foreground text-[10px] px-2 py-1 rounded shadow-md whitespace-nowrap z-10 font-mono">
+                                  <div className="opacity-0 group-hover:opacity-100 absolute -top-7 left-1/2 -translate-x-1/2 bg-popover text-popover-foreground text-[11px] px-2 py-1 rounded shadow-md whitespace-nowrap z-10 font-mono">
                                     {item.count} clientes
                                   </div>
                           </div>
@@ -382,7 +382,7 @@ export default function CustomersReportClient() {
               {data.evolution.map((item, idx) => (
                 <div
                   key={idx}
-                  className="flex-1 min-w-[20px] max-w-[60px] text-[10px] text-muted-foreground text-center"
+                  className="flex-1 min-w-[20px] max-w-[60px] text-[11px] text-muted-foreground text-center"
                 >
                   {item.label}
                 </div>

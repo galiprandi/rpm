@@ -70,7 +70,7 @@ export default function PriceListDetailClient({
 }: PriceListDetailClientProps) {
   const params = useParams();
   const priceListId = params.id as string;
-  const { alert } = useUI();
+  const { alert, confirm } = useUI();
 
   const [priceList, setPriceList] = useState<PriceListDetail>(initialPriceList);
   const [loading, setLoading] = useState(false);
@@ -146,18 +146,65 @@ export default function PriceListDetailClient({
     }
   };
 
-  const handleDeleteException = async (itemId: string) => {
+  const handleDeleteException = async (item: PriceListItem) => {
+    const confirmed = await confirm({
+      title: "Eliminar excepción de precio",
+      description: `¿Está seguro de eliminar la excepción para "${item.productName}"? Esta acción no se puede deshacer.`,
+      confirmText: "Eliminar",
+      cancelText: "Cancelar",
+      variant: "destructive",
+    });
+
+    if (!confirmed) return;
+
+    // Capture previous data for undo
+    const previousData = {
+      productId: item.productId,
+      overrideMarginPercentage: item.overrideMarginPercentage,
+      fixedPrice: item.fixedPrice,
+    };
+
     try {
       const response = await fetch(
-        `/api/price-lists/${priceListId}/items/${itemId}`,
+        `/api/price-lists/${priceListId}/items/${item.id}`,
         {
           method: "DELETE",
         },
       );
 
       if (response.ok) {
-        fetchPriceList();
-        toast.success("Excepción de precio eliminada");
+        // Optimistically remove from list
+        setPriceList((prev) =>
+          prev
+            ? { ...prev, items: prev.items.filter((i) => i.id !== item.id) }
+            : prev,
+        );
+        toast.success("Excepción de precio eliminada", {
+          action: {
+            label: "Deshacer",
+            onClick: async () => {
+              try {
+                const restoreRes = await fetch(
+                  `/api/price-lists/${priceListId}/items`,
+                  {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(previousData),
+                  },
+                );
+                if (restoreRes.ok) {
+                  fetchPriceList();
+                  toast.success("Excepción de precio restaurada");
+                } else {
+                  toast.error("Error al restaurar excepción");
+                }
+              } catch {
+                toast.error("Error al restaurar excepción");
+              }
+            },
+          },
+          duration: 8000,
+        });
       } else {
         const error = await response.json();
         await alert({
@@ -262,14 +309,14 @@ export default function PriceListDetailClient({
           <div className="flex items-center gap-2">
             <span
               className={`font-mono ${
-                isLow ? "text-orange-700 font-bold" : ""
+                isLow ? "text-amber-600 font-bold" : ""
               }`}
             >
               {row.original.actualMargin.toFixed(1)}%
             </span>
             {isLow && (
               <AlertTriangle
-                className="h-4 w-4 text-orange-500 pointer-events-none"
+                className="h-4 w-4 text-amber-600 pointer-events-none"
                 aria-hidden="true"
               />
             )}
@@ -287,7 +334,7 @@ export default function PriceListDetailClient({
               variant="ghost"
               size="sm"
               className="text-destructive hover:text-destructive hover:bg-destructive/10"
-              onClick={() => handleDeleteException(row.original.id)}
+              onClick={() => handleDeleteException(row.original)}
               aria-label="Eliminar excepción"
             >
               <Trash2 className="h-4 w-4" />
@@ -361,7 +408,7 @@ export default function PriceListDetailClient({
           {priceList.items.length === 0 ? (
             <div className="text-center py-12">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
-                <Calculator className="h-8 w-8 text-muted-foreground" />
+                <Calculator className="h-8 w-8 text-muted-foreground/20" />
               </div>
               <p className="text-muted-foreground mb-4">
                 No hay excepciones configuradas para esta lista.
@@ -404,7 +451,7 @@ export default function PriceListDetailClient({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="overrideMargin">Margen Override (%)</Label>
               <div className="relative">
@@ -447,7 +494,7 @@ export default function PriceListDetailClient({
           </div>
 
           <div className="p-3 bg-muted/50 rounded-lg text-xs text-muted-foreground flex gap-2">
-            <AlertTriangle className="h-4 w-4 shrink-0 text-orange-500" />
+            <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" />
             <p>
               Si defines un <strong>precio fijo</strong>, este prevalecerá. De
               lo contrario, se usará el <strong>margen override</strong>. Si

@@ -385,10 +385,10 @@ export default function ServicesReportClient() {
                                 className="w-full bg-primary/80 hover:bg-primary rounded-t-sm transition-all"
                                 style={{ height: `${Math.max(height, 2)}%` }}
                               />
-                              <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-popover text-popover-foreground text-[10px] px-2 py-1 rounded shadow-md z-10 whitespace-nowrap border font-mono">
+                              <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-popover text-popover-foreground text-[11px] px-2 py-1 rounded shadow-md z-10 whitespace-nowrap border font-mono">
                                 {formatARS(item.total)} ({item.count})
                               </div>
-                              <span className="text-[10px] text-muted-foreground mt-2 truncate w-full text-center">
+                              <span className="text-[11px] text-muted-foreground mt-2 truncate w-full text-center">
                                 {item.label}
                               </span>
                             </div>
@@ -433,7 +433,7 @@ export default function ServicesReportClient() {
                               }}
                             />
                           </div>
-                          <div className="flex justify-between text-[10px] text-muted-foreground font-mono">
+                          <div className="flex justify-between text-[11px] text-muted-foreground font-mono">
                             <span>{item.count} servicios</span>
                             <span>
                               {((item.total / (data.totalServiceRevenue.current || 1)) * 100).toFixed(1)}%
