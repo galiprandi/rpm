@@ -31,7 +31,6 @@ import {
   Receipt,
   MessageSquare,
   Tag,
-  Download,
   Printer,
 } from "lucide-react";
 import Link from "next/link";
