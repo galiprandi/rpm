@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation';
 import SettingsClient from './SettingsClient';
 import { db } from '@/lib/db';
 import { setting } from '@/db/schema';
@@ -13,7 +14,7 @@ export default async function SettingsPage() {
   const userRole = (session.user as { role?: string }).role as UserRole || UserRole.USER;
 
   if (userRole !== UserRole.ADMIN) {
-    throw new Error('Acceso denegado');
+    redirect('/adm');
   }
 
   const settings = await db.query.setting.findMany({

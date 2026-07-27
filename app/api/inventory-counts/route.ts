@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireRole } from '@/lib/auth-server';
 import { UserRole } from '@/lib/auth/roles';
+import { withPermission } from '@/lib/api-middleware';
 import { getSuggestedProductsForCount, createCountOperative } from '@/lib/services/inventoryCountService';
 import { db } from '@/lib/db';
 import { inventoryCountOperative } from '@/db/schema';
@@ -37,11 +38,10 @@ export async function GET() {
 
 /**
  * POST /api/inventory-counts
- * Create a new inventory count operative
+ * Create a new inventory count operative (requiere can_approve_inventory)
  */
-export async function POST(request: NextRequest) {
+export const POST = withPermission('can_approve_inventory', async (request: NextRequest, session) => {
   try {
-    const session = await requireRole(UserRole.ADMIN);
     const body = await request.json();
     const { productIds } = body;
 
@@ -55,4 +55,4 @@ export async function POST(request: NextRequest) {
     console.error('Error creating inventory count:', error);
     return NextResponse.json({ error: 'Error al crear arqueo de inventario' }, { status: 500 });
   }
-}
+});

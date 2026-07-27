@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAdmin } from '@/lib/api-middleware';
+import { withPermission } from '@/lib/api-middleware';
 import { createDirectSale } from '@/lib/services/directSaleService';
 import { isCashRegisterOpen } from '@/lib/services/cashMovementService';
 import { db } from '@/lib/db';
@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export const POST = withAdmin(async (request: NextRequest, session) => {
+export const POST = withPermission('can_create_sales', async (request: NextRequest, session) => {
   try {
     // Check if cash register is open
     const isOpen = await isCashRegisterOpen();

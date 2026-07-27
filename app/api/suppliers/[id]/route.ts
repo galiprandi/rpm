@@ -4,6 +4,7 @@
  * Spec: /specs/suppliers.md
  */
 import { NextRequest, NextResponse } from "next/server";
+import { withPermissionDynamic } from "@/lib/api-middleware";
 import { db } from "@/lib/db";
 import { supplier } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -12,8 +13,8 @@ interface Params {
   params: Promise<{ id: string }>;
 }
 
-// PUT /api/suppliers/[id] - Actualizar proveedor
-export async function PUT(request: NextRequest, { params }: Params) {
+// PUT /api/suppliers/[id] - Actualizar proveedor (requiere can_manage_suppliers)
+export const PUT = withPermissionDynamic('can_manage_suppliers', async (request: NextRequest, { params }: Params, _session) => {
   try {
     const { id } = await params;
     const body = await request.json();
@@ -62,10 +63,10 @@ export async function PUT(request: NextRequest, { params }: Params) {
       { status: 500 },
     );
   }
-}
+});
 
 // DELETE /api/suppliers/[id] - Desactivar proveedor (soft delete)
-export async function DELETE(request: NextRequest, { params }: Params) {
+export const DELETE = withPermissionDynamic('can_manage_suppliers', async (request: NextRequest, { params }: Params, _session) => {
   try {
     const { id } = await params;
 
@@ -103,4 +104,4 @@ export async function DELETE(request: NextRequest, { params }: Params) {
       { status: 500 },
     );
   }
-}
+});

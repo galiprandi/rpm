@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { withAdmin } from "@/lib/api-middleware";
+import { withAuth, withPermission } from "@/lib/api-middleware";
 import {
   getCustomers,
   createCustomer,
   type CreateCustomerInput,
 } from "@/lib/services/customerService";
 
-// GET /api/customers - List customers with optional search (requiere ADMIN)
+// GET /api/customers - List customers with optional search (cualquier usuario autenticado)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const GET = withAdmin(async (request: NextRequest, _session) => {
+export const GET = withAuth(async (request: NextRequest, _session) => {
   try {
     const { searchParams } = request.nextUrl;
     const search = searchParams.get("search");
@@ -31,9 +31,9 @@ export const GET = withAdmin(async (request: NextRequest, _session) => {
   }
 });
 
-// POST /api/customers - Create customer (requiere ADMIN)
+// POST /api/customers - Create customer (requiere can_manage_customers)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const POST = withAdmin(async (request: NextRequest, _session) => {
+export const POST = withPermission('can_manage_customers', async (request: NextRequest, _session) => {
   try {
     const body = await request.json();
     const input: CreateCustomerInput = {

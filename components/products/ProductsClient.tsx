@@ -10,6 +10,7 @@ import { ProductPricesModal } from "@/components/products/ProductPricesModal";
 import { ProductExportModal } from "@/components/products/ProductExportModal";
 import { QuickSaleModal } from "@/components/dashboard/QuickSaleModal";
 import { useUI } from "@/components/ui/UIProvider";
+import { useUser } from "@/components/ui/UserProvider";
 import { toast } from "sonner";
 import { Header, CrudAdmin, StatItem, CrudStats } from "@/components/adm";
 import {
@@ -95,6 +96,9 @@ export function ProductsClient({
   initialLowStockFilter = false,
 }: ProductsClientProps) {
   const { alert } = useUI();
+  const { can } = useUser();
+  const canEditCosts = can('can_edit_costs');
+  const canEditStock = can('can_edit_stock');
   const router = useRouter();
 
   const [products, setProducts] = useState<Product[]>(initialProducts);
@@ -319,11 +323,11 @@ export function ProductsClient({
     if (!formData.name.trim()) missingFields.push("Nombre");
     if (!formData.categoryId) missingFields.push("Categoría");
     if (!formData.supplierId) missingFields.push("Proveedor");
-    if (!formData.costPrice.trim()) missingFields.push("Costo");
-    if (!formData.replacementCost.trim())
+    if (canEditCosts && !formData.costPrice.trim()) missingFields.push("Costo");
+    if (canEditCosts && !formData.replacementCost.trim())
       missingFields.push("Costo de Reposición");
-    if (!formData.stock.trim()) missingFields.push("Stock");
-    if (!formData.minStock.trim()) missingFields.push("Mínimo");
+    if (canEditStock && !formData.stock.trim()) missingFields.push("Stock");
+    if (canEditStock && !formData.minStock.trim()) missingFields.push("Mínimo");
 
     if (missingFields.length > 0) {
       await alert({
@@ -335,13 +339,23 @@ export function ProductsClient({
       return;
     }
 
-    const payload = {
-      ...formData,
-      costPrice: parseFloat(formData.costPrice) || 0,
-      replacementCost: parseFloat(formData.replacementCost) || 0,
-      stock: parseInt(formData.stock) || 0,
-      minStock: parseInt(formData.minStock) || 0,
+    const payload: Record<string, unknown> = {
+      sku: formData.sku,
+      name: formData.name,
+      description: formData.description,
+      barcode: formData.barcode,
+      categoryId: formData.categoryId,
+      supplierId: formData.supplierId,
+      location: formData.location,
     };
+    if (canEditCosts) {
+      payload.costPrice = parseFloat(formData.costPrice) || 0;
+      payload.replacementCost = parseFloat(formData.replacementCost) || 0;
+    }
+    if (canEditStock) {
+      payload.stock = parseInt(formData.stock) || 0;
+      payload.minStock = parseInt(formData.minStock) || 0;
+    }
 
     try {
       const url = editingProduct
@@ -423,10 +437,10 @@ export function ProductsClient({
       formData.name.trim() !== "" &&
       formData.categoryId !== "" &&
       formData.supplierId !== "" &&
-      formData.costPrice.trim() !== "" &&
-      formData.replacementCost.trim() !== "" &&
-      formData.stock.trim() !== "" &&
-      formData.minStock.trim() !== ""
+      (!canEditCosts || formData.costPrice.trim() !== "") &&
+      (!canEditCosts || formData.replacementCost.trim() !== "") &&
+      (!canEditStock || formData.stock.trim() !== "") &&
+      (!canEditStock || formData.minStock.trim() !== "")
     );
   };
 
@@ -551,11 +565,15 @@ export function ProductsClient({
           value: filteredProducts.length,
           icon: EyeOff,
         },
-        {
-          label: "Valor inventario",
-          value: <PriceDisplay value={totalInventoryValue} />,
-          icon: DollarSign,
-        },
+        ...(canEditCosts
+          ? [
+              {
+                label: "Valor inventario",
+                value: <PriceDisplay value={totalInventoryValue} />,
+                icon: DollarSign,
+              },
+            ]
+          : []),
       ]
     : [
         {
@@ -569,11 +587,15 @@ export function ProductsClient({
           icon: AlertTriangle,
           iconColor: lowStockCount > 0 ? "#c2410c" : undefined, // orange-700 — applied as inline style by CrudStats
         },
-        {
-          label: "Valor inventario",
-          value: <PriceDisplay value={totalInventoryValue} />,
-          icon: DollarSign,
-        },
+        ...(canEditCosts
+          ? [
+              {
+                label: "Valor inventario",
+                value: <PriceDisplay value={totalInventoryValue} />,
+                icon: DollarSign,
+              },
+            ]
+          : []),
       ];
 
   const columns: ColumnDef<Product>[] = [

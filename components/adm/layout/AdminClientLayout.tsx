@@ -12,6 +12,7 @@ import {
   SidebarInset,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
+import { UserProvider } from "@/components/ui/UserProvider";
 
 interface AdminClientLayoutProps {
   children: React.ReactNode;
@@ -21,6 +22,7 @@ interface AdminClientLayoutProps {
     email: string;
     image?: string | null;
     role?: string;
+    permissions?: string[];
   };
 }
 
@@ -58,40 +60,42 @@ export function AdminClientLayout({ children, user }: AdminClientLayoutProps) {
   };
 
   return (
-    <SidebarProvider defaultOpen={defaultOpen}>
-      {!mounted ? (
-        <div className="min-h-screen bg-background">
-          <div className="flex">
-            <aside className="w-64 bg-sidebar h-screen" />
-            <main className="flex-1 p-6">{children}</main>
+    <UserProvider user={user}>
+      <SidebarProvider defaultOpen={defaultOpen}>
+        {!mounted ? (
+          <div className="min-h-screen bg-background">
+            <div className="flex">
+              <aside className="w-64 bg-sidebar h-screen" />
+              <main className="flex-1 p-6">{children}</main>
+            </div>
           </div>
-        </div>
-      ) : (
-        <>
-          <AppSidebar
-            user={user}
-            onSignOut={handleSignOut}
-            onOpenPalette={() => setPaletteOpen(true)}
-            onOpenChat={() => setChatOpen(true)}
-          />
-          <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
-          <SidebarInset>
-            <main className="flex-1 p-6">
-              <div className="md:hidden flex items-center -mt-4 -mx-2 mb-2">
-                <SidebarTrigger />
-              </div>
-              {children}
-            </main>
-          </SidebarInset>
-          <ChatFloating
-            isOpen={chatOpen}
-            onOpenChange={setChatOpen}
-            serverUser={user}
-          />
-          <WebMCPTools />
-          <WebMCPNavTools />
-        </>
-      )}
-    </SidebarProvider>
+        ) : (
+          <>
+            <AppSidebar
+              user={user}
+              onSignOut={handleSignOut}
+              onOpenPalette={() => setPaletteOpen(true)}
+              onOpenChat={() => setChatOpen(true)}
+            />
+            <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
+            <SidebarInset>
+              <main className="flex-1 p-6">
+                <div className="md:hidden flex items-center -mt-4 -mx-2 mb-2">
+                  <SidebarTrigger />
+                </div>
+                {children}
+              </main>
+            </SidebarInset>
+            <ChatFloating
+              isOpen={chatOpen}
+              onOpenChange={setChatOpen}
+              serverUser={user}
+            />
+            <WebMCPTools />
+            <WebMCPNavTools />
+          </>
+        )}
+      </SidebarProvider>
+    </UserProvider>
   );
 }

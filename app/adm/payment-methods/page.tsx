@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation';
 import PaymentMethodsClient from './PaymentMethodsClient';
 import { db } from '@/lib/db';
 import { paymentMethod } from '@/db/schema';
@@ -14,7 +15,7 @@ export default async function PaymentMethodsPage() {
   const userRole = (session.user as { role?: string }).role as UserRole || UserRole.USER;
 
   if (userRole !== UserRole.ADMIN) {
-    throw new Error('Acceso denegado');
+    redirect('/adm');
   }
 
   const paymentMethods = await db.query.paymentMethod.findMany({

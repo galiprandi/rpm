@@ -9,6 +9,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { ProductsClient } from './ProductsClient';
 import { type Product, type Category, type Supplier } from '@/components/products/types';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { UserProvider } from '@/components/ui/UserProvider';
 
 // Mock de componentes
 vi.mock('@/components/ui/button', () => ({
@@ -121,13 +122,15 @@ describe('ProductsClient', () => {
 
   it('should render products correctly', () => {
     render(
-      <TooltipProvider>
-        <ProductsClient
-          products={mockProducts}
-          categories={mockCategories}
-          suppliers={mockSuppliers}
-        />
-      </TooltipProvider>
+      <UserProvider user={{ id: 'test-user', name: 'Test', email: 'test@test.com', role: 'ADMIN', permissions: ['*'] }}>
+        <TooltipProvider>
+          <ProductsClient
+            products={mockProducts}
+            categories={mockCategories}
+            suppliers={mockSuppliers}
+          />
+        </TooltipProvider>
+      </UserProvider>
     );
 
     expect(screen.getByText('Product 1')).toBeInTheDocument();
@@ -136,13 +139,15 @@ describe('ProductsClient', () => {
 
   it('should render stats correctly', () => {
     render(
-      <TooltipProvider>
-        <ProductsClient
-          products={mockProducts}
-          categories={mockCategories}
-          suppliers={mockSuppliers}
-        />
-      </TooltipProvider>
+      <UserProvider user={{ id: 'test-user', name: 'Test', email: 'test@test.com', role: 'ADMIN', permissions: ['*'] }}>
+        <TooltipProvider>
+          <ProductsClient
+            products={mockProducts}
+            categories={mockCategories}
+            suppliers={mockSuppliers}
+          />
+        </TooltipProvider>
+      </UserProvider>
     );
 
     // Check that stats are rendered with flexible text matching
@@ -153,13 +158,15 @@ describe('ProductsClient', () => {
 
   it('should handle empty products list', () => {
     render(
-      <TooltipProvider>
-        <ProductsClient
-          products={[]}
-          categories={mockCategories}
-          suppliers={mockSuppliers}
-        />
-      </TooltipProvider>
+      <UserProvider user={{ id: 'test-user', name: 'Test', email: 'test@test.com', role: 'ADMIN', permissions: ['*'] }}>
+        <TooltipProvider>
+          <ProductsClient
+            products={[]}
+            categories={mockCategories}
+            suppliers={mockSuppliers}
+          />
+        </TooltipProvider>
+      </UserProvider>
     );
 
     expect(screen.getByText('Total: 0')).toBeInTheDocument();
@@ -167,13 +174,15 @@ describe('ProductsClient', () => {
 
   it('should open ProductDialog when create button is clicked', () => {
     render(
-      <TooltipProvider>
-        <ProductsClient
-          products={mockProducts}
-          categories={mockCategories}
-          suppliers={mockSuppliers}
-        />
-      </TooltipProvider>
+      <UserProvider user={{ id: 'test-user', name: 'Test', email: 'test@test.com', role: 'ADMIN', permissions: ['*'] }}>
+        <TooltipProvider>
+          <ProductsClient
+            products={mockProducts}
+            categories={mockCategories}
+            suppliers={mockSuppliers}
+          />
+        </TooltipProvider>
+      </UserProvider>
     );
 
     const createButton = screen.getByText('Create');
@@ -184,13 +193,15 @@ describe('ProductsClient', () => {
 
   it('should render Header component', () => {
     render(
-      <TooltipProvider>
-        <ProductsClient
-          products={mockProducts}
-          categories={mockCategories}
-          suppliers={mockSuppliers}
-        />
-      </TooltipProvider>
+      <UserProvider user={{ id: 'test-user', name: 'Test', email: 'test@test.com', role: 'ADMIN', permissions: ['*'] }}>
+        <TooltipProvider>
+          <ProductsClient
+            products={mockProducts}
+            categories={mockCategories}
+            suppliers={mockSuppliers}
+          />
+        </TooltipProvider>
+      </UserProvider>
     );
 
     expect(screen.getByText('Productos')).toBeInTheDocument();
@@ -220,13 +231,15 @@ describe('ProductsClient', () => {
     ];
 
     render(
-      <TooltipProvider>
-        <ProductsClient
-          products={customProducts}
-          categories={mockCategories}
-          suppliers={mockSuppliers}
-        />
-      </TooltipProvider>
+      <UserProvider user={{ id: 'test-user', name: 'Test', email: 'test@test.com', role: 'ADMIN', permissions: ['*'] }}>
+        <TooltipProvider>
+          <ProductsClient
+            products={customProducts}
+            categories={mockCategories}
+            suppliers={mockSuppliers}
+          />
+        </TooltipProvider>
+      </UserProvider>
     );
 
     // Verify name
@@ -273,13 +286,15 @@ describe('ProductsClient', () => {
     ];
 
     render(
-      <TooltipProvider>
-        <ProductsClient
-          products={customProducts}
-          categories={mockCategories}
-          suppliers={mockSuppliers}
-        />
-      </TooltipProvider>
+      <UserProvider user={{ id: 'test-user', name: 'Test', email: 'test@test.com', role: 'ADMIN', permissions: ['*'] }}>
+        <TooltipProvider>
+          <ProductsClient
+            products={customProducts}
+            categories={mockCategories}
+            suppliers={mockSuppliers}
+          />
+        </TooltipProvider>
+      </UserProvider>
     );
 
     expect(screen.getByText('Only SKU Product')).toBeInTheDocument();

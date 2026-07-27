@@ -25,6 +25,12 @@ const NITRO_QUERIES: Record<UserRole, string[]> = {
     "¿Cuántas OTs hay en progreso?",
     "¿Qué vendí hoy?",
   ],
+  [UserRole.VENDEDOR]: [
+    "¿Cuál es el stock de filtros de aire?",
+    "¿Qué vendí hoy?",
+    "¿Qué OTs están listas para entregar?",
+    "¿Cuánto cobré con tarjeta hoy?",
+  ],
   [UserRole.STAFF]: [
     "¿Cuál es el stock de filtros de aire?",
     "¿Qué vendí hoy?",

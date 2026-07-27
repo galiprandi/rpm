@@ -4,12 +4,12 @@
  * Spec: /specs/inventory-sales.md
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { withAdmin } from '@/lib/api-middleware';
+import { withAuth, withPermission } from '@/lib/api-middleware';
 import { getCategories, createCategory, getCategoryByName } from '@/lib/services/categoryService';
 
-// GET /api/categories - List categories (requiere ADMIN)
+// GET /api/categories - List categories (cualquier usuario autenticado)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const GET = withAdmin(async (request: NextRequest, _session) => {
+export const GET = withAuth(async (request: NextRequest, _session) => {
   try {
     const { searchParams } = request.nextUrl;
     const includeInactive = searchParams.get('includeInactive') === 'true';
@@ -26,9 +26,9 @@ export const GET = withAdmin(async (request: NextRequest, _session) => {
   }
 });
 
-// POST /api/categories - Create category (requiere ADMIN)
+// POST /api/categories - Create category (requiere can_edit_products)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const POST = withAdmin(async (request: NextRequest, _session) => {
+export const POST = withPermission('can_edit_products', async (request: NextRequest, _session) => {
   try {
     const body = await request.json();
 

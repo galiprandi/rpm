@@ -4,8 +4,7 @@
  * Spec: /specs/users.md
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { getSession } from '@/lib/auth-server';
-import { UserRole } from '@/lib/auth/roles';
+import { withPermissionDynamic } from '@/lib/api-middleware';
 import {
   getUserById,
   updateUser,
@@ -18,16 +17,9 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
-// GET /api/users/[id] - Obtener usuario específico
-export async function GET(_request: NextRequest, { params }: RouteParams) {
+// GET /api/users/[id] - Obtener usuario específico (requiere can_manage_users)
+export const GET = withPermissionDynamic('can_manage_users', async (_request: NextRequest, { params }: RouteParams, _session) => {
   try {
-    const session = await getSession();
-
-    // Only ADMIN can get user details
-    if (!session?.user || session.user.role !== UserRole.ADMIN) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
     const { id } = await params;
     const user = await getUserById(id);
 
@@ -46,18 +38,11 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
       { status: 500 }
     );
   }
-}
+});
 
-// PUT /api/users/[id] - Actualizar usuario
-export async function PUT(request: NextRequest, { params }: RouteParams) {
+// PUT /api/users/[id] - Actualizar usuario (requiere can_manage_users)
+export const PUT = withPermissionDynamic('can_manage_users', async (request: NextRequest, { params }: RouteParams, session) => {
   try {
-    const session = await getSession();
-
-    // Only ADMIN can update users
-    if (!session?.user || session.user.role !== UserRole.ADMIN) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
     const { id } = await params;
     const body = await request.json();
 
@@ -76,7 +61,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     if (body.notes !== undefined) updateData.notes = body.notes;
     if (body.isActive !== undefined) updateData.isActive = body.isActive;
 
-    const user = await updateUser(id, updateData, session.user.email);
+    const user = await updateUser(id, updateData, session.user.email || session.user.id);
 
     return NextResponse.json({ user });
   } catch (error) {
@@ -87,20 +72,13 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       { status: 500 }
     );
   }
-}
+});
 
-// PATCH /api/users/[id] - Toggle active status
-export async function PATCH(request: NextRequest, { params }: RouteParams) {
+// PATCH /api/users/[id] - Toggle active status (requiere can_manage_users)
+export const PATCH = withPermissionDynamic('can_manage_users', async (_request: NextRequest, { params }: RouteParams, session) => {
   try {
-    const session = await getSession();
-
-    // Only ADMIN can toggle user status
-    if (!session?.user || session.user.role !== UserRole.ADMIN) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
     const { id } = await params;
-    const user = await toggleUserActive(id, session.user.email);
+    const user = await toggleUserActive(id, session.user.email || session.user.id);
 
     return NextResponse.json({ user });
   } catch (error) {
@@ -111,20 +89,13 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       { status: 500 }
     );
   }
-}
+});
 
-// DELETE /api/users/[id] - Eliminar usuario
-export async function DELETE(_request: NextRequest, { params }: RouteParams) {
+// DELETE /api/users/[id] - Eliminar usuario (requiere can_manage_users)
+export const DELETE = withPermissionDynamic('can_manage_users', async (_request: NextRequest, { params }: RouteParams, session) => {
   try {
-    const session = await getSession();
-
-    // Only ADMIN can delete users
-    if (!session?.user || session.user.role !== UserRole.ADMIN) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
     const { id } = await params;
-    await deleteUser(id, session.user.email);
+    await deleteUser(id, session.user.email || session.user.id);
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -135,4 +106,4 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
       { status: 500 }
     );
   }
-}
+});

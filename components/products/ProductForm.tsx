@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { useUser } from '@/components/ui/UserProvider';
 import {
   X,
   Upload,
@@ -82,6 +83,9 @@ export function ProductForm({
   onImageDeleteStart,
   onImageDeleteEnd,
 }: ProductFormProps) {
+  const { can } = useUser();
+  const canEditCosts = can('can_edit_costs');
+  const canEditStock = can('can_edit_stock');
   const [localImageUrl, setLocalImageUrl] = React.useState<string | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -227,80 +231,96 @@ export function ProductForm({
       </div>
 
       {/* Fila 4: Costo | Venta | Stock | Mínimo */}
-      <div className="grid grid-cols-4 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="costPrice" required>Costo</Label>
-          <div className="relative">
-            <DollarSign className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
-            <Input
-              id="costPrice"
-              type="number"
-              min="0"
-              step="0.01"
-              value={formData.costPrice}
-              onChange={(e) => setFormData({ ...formData, costPrice: e.target.value })}
-              placeholder="0.00"
-              className="pl-10 font-mono"
-              required
-              aria-required="true"
-            />
+      <div
+        className={`grid gap-4 ${
+          canEditCosts && canEditStock
+            ? 'grid-cols-4'
+            : canEditCosts || canEditStock
+              ? 'grid-cols-2'
+              : 'hidden'
+        }`}
+      >
+        {canEditCosts && (
+          <div className="space-y-2">
+            <Label htmlFor="costPrice" required>Costo</Label>
+            <div className="relative">
+              <DollarSign className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+              <Input
+                id="costPrice"
+                type="number"
+                min="0"
+                step="0.01"
+                value={formData.costPrice}
+                onChange={(e) => setFormData({ ...formData, costPrice: e.target.value })}
+                placeholder="0.00"
+                className="pl-10 font-mono"
+                required
+                aria-required="true"
+              />
+            </div>
           </div>
-        </div>
+        )}
 
-        <div className="space-y-2">
-          <Label htmlFor="replacementCost" required>Reposición</Label>
-          <div className="relative">
-            <TrendingUp className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
-            <Input
-              id="replacementCost"
-              type="number"
-              min="0"
-              step="0.01"
-              value={formData.replacementCost}
-              onChange={(e) => setFormData({ ...formData, replacementCost: e.target.value })}
-              placeholder="0.00"
-              className="pl-10 font-mono"
-              required
-              aria-required="true"
-            />
+        {canEditCosts && (
+          <div className="space-y-2">
+            <Label htmlFor="replacementCost" required>Reposición</Label>
+            <div className="relative">
+              <TrendingUp className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+              <Input
+                id="replacementCost"
+                type="number"
+                min="0"
+                step="0.01"
+                value={formData.replacementCost}
+                onChange={(e) => setFormData({ ...formData, replacementCost: e.target.value })}
+                placeholder="0.00"
+                className="pl-10 font-mono"
+                required
+                aria-required="true"
+              />
+            </div>
           </div>
-        </div>
+        )}
 
-        <div className="space-y-2">
-          <Label htmlFor="stock" required>Stock</Label>
-          <div className="relative">
-            <Package className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
-            <Input
-              id="stock"
-              type="number"
-              min="0"
-              value={formData.stock}
-              onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
-              placeholder="0"
-              className="pl-10 font-mono"
-              required
-              aria-required="true"
-            />
+        {canEditStock && (
+          <div className="space-y-2">
+            <Label htmlFor="stock" required>Stock</Label>
+            <div className="relative">
+              <Package className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+              <Input
+                id="stock"
+                type="number"
+                min="0"
+                value={formData.stock}
+                onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+                placeholder="0"
+                className="pl-10 font-mono"
+                required
+                aria-required="true"
+              />
+            </div>
           </div>
-        </div>
+        )}
 
-        <div className="space-y-2">
-          <Label htmlFor="minStock" required>Mínimo</Label>
-          <div className="relative">
-            <AlertCircle className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
-            <Input
-              id="minStock"
-              type="number"
-              min="0"
-              value={formData.minStock}
-              onChange={(e) => setFormData({ ...formData, minStock: e.target.value })}
-              placeholder="0"
-              className="pl-10 font-mono"
-              required
-              aria-required="true"
-            />
+        {canEditStock && (
+          <div className="space-y-2">
+            <Label htmlFor="minStock" required>Mínimo</Label>
+            <div className="relative">
+              <AlertCircle className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+              <Input
+                id="minStock"
+                type="number"
+                min="0"
+                value={formData.minStock}
+                onChange={(e) => setFormData({ ...formData, minStock: e.target.value })}
+                placeholder="0"
+                className="pl-10 font-mono"
+                required
+                aria-required="true"
+              />
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Fila 5: Descripción */}

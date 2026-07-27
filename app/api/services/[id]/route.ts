@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { withPermissionDynamic } from "@/lib/api-middleware";
 import { db } from "@/lib/db";
 import { service } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { toISODate } from "@/lib/utils/date";
+import { hasPermission } from "@/lib/permissions/check";
 
 // Helper to transform service record for API response
 function transformService(item: typeof service.$inferSelect) {
@@ -44,15 +46,22 @@ export async function GET(
   }
 }
 
-// PUT /api/services/[id] - Update service
-export async function PUT(
+// PUT /api/services/[id] - Update service (requiere can_manage_services)
+export const PUT = withPermissionDynamic('can_manage_services', async (
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+  { params }: { params: Promise<{ id: string }> },
+  session
+) => {
   try {
     const { id } = await params;
     const body = await request.json();
-    const { name, description, baseCost, timeMinutes, vehicleFactor, isActive } = body;
+    const { name, description, timeMinutes, vehicleFactor, isActive } = body;
+
+    // Field-level permission check:
+    // Strip baseCost if the user lacks can_edit_costs.
+    // For PUT, keep the existing service's baseCost so it is preserved.
+    const canEditCosts = hasPermission(session, 'can_edit_costs');
+    const baseCost = canEditCosts ? body.baseCost : undefined;
 
     // Check if service exists
     const existingService = await db.query.service.findFirst({
@@ -97,13 +106,14 @@ export async function PUT(
       { status: 500 }
     );
   }
-}
+});
 
 // DELETE /api/services/[id] - Soft delete (deactivate) service
-export async function DELETE(
+export const DELETE = withPermissionDynamic('can_manage_services', async (
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+  { params }: { params: Promise<{ id: string }> },
+  _session
+) => {
   try {
     const { id } = await params;
 
@@ -130,4 +140,4 @@ export async function DELETE(
       { status: 500 }
     );
   }
-}
+});
