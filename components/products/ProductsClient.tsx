@@ -28,6 +28,7 @@ import {
   Power,
   ArrowLeft,
   EyeOff,
+  MapPin,
 } from "lucide-react";
 import { PriceDisplay } from "@/components/ui/price-display";
 import { StockDisplay } from "@/components/ui/stock-display";
@@ -43,6 +44,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { type ColumnDef, type FilterFn } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
 
@@ -58,6 +67,7 @@ interface ProductsClientProps {
   categories: Category[];
   suppliers: Supplier[];
   inactiveMode?: boolean;
+  initialLowStockFilter?: boolean;
 }
 
 const productSearchFilter: FilterFn<Product> = (
@@ -82,6 +92,7 @@ export function ProductsClient({
   categories,
   suppliers,
   inactiveMode = false,
+  initialLowStockFilter = false,
 }: ProductsClientProps) {
   const { alert } = useUI();
   const router = useRouter();
@@ -89,6 +100,9 @@ export function ProductsClient({
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState<string>("");
+  const [lowStockFilter, setLowStockFilter] =
+    useState<boolean>(initialLowStockFilter);
+  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
 
   // Helper matching logic consistent with productSearchFilter
   const matchProduct = useCallback((p: Product, term: string) => {
@@ -109,9 +123,10 @@ export function ProductsClient({
         const matchesCategory =
           selectedCategory === "all" || p.categoryId === selectedCategory;
         const matchesSearch = matchProduct(p, searchTerm);
-        return matchesCategory && matchesSearch;
+        const matchesLowStock = !lowStockFilter || p.isLowStock;
+        return matchesCategory && matchesSearch && matchesLowStock;
       }),
-    [products, selectedCategory, searchTerm, matchProduct],
+    [products, selectedCategory, searchTerm, lowStockFilter, matchProduct],
   );
 
   const lowStockCount = filteredProducts.filter((p) => p.isLowStock).length;
@@ -487,7 +502,28 @@ export function ProductsClient({
               p.id === product.id ? { ...p, isActive: true } : p,
             ),
           );
-          toast.success(`Producto "${product.name}" reactivado`);
+          toast.success(`Producto "${product.name}" reactivado`, {
+            action: {
+              label: "Deshacer",
+              onClick: async () => {
+                try {
+                  await fetch(`/api/products/${product.id}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ isActive: false }),
+                  });
+                  setProducts((prev) =>
+                    prev.map((p) =>
+                      p.id === product.id ? { ...p, isActive: false } : p,
+                    ),
+                  );
+                  toast.success("Producto desactivado");
+                } catch {
+                  toast.error("Error al desactivar producto");
+                }
+              },
+            },
+          });
         } else {
           const error = await response.json();
           await alert({
@@ -531,7 +567,7 @@ export function ProductsClient({
           label: "Stock bajo",
           value: lowStockCount,
           icon: AlertTriangle,
-          iconColor: lowStockCount > 0 ? "#c2410c" : undefined, // orange-700
+          iconColor: lowStockCount > 0 ? "#c2410c" : undefined, // orange-700 — applied as inline style by CrudStats
         },
         {
           label: "Valor inventario",
@@ -567,7 +603,7 @@ export function ProductsClient({
               {row.original.name}
             </span>
             {(row.original.sku || row.original.barcode || row.original.location || row.original.supplier?.name) && (
-              <div className="flex flex-wrap items-center gap-1.5 mt-0.5 text-[10.5px] leading-none font-medium">
+              <div className="flex flex-wrap items-center gap-1.5 mt-0.5 text-[11px] leading-none font-medium">
                 {row.original.sku && (
                   <span className="font-mono uppercase tracking-wider text-neutral-950 dark:text-neutral-50 font-semibold bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded border border-neutral-200 dark:border-neutral-700">
                     {row.original.sku}
@@ -584,8 +620,8 @@ export function ProductsClient({
                 {row.original.location && (
                   <>
                     {(row.original.sku || row.original.barcode) && <span className="text-muted-foreground/40 select-none" aria-hidden="true">•</span>}
-                    <span className="text-muted-foreground truncate max-w-[120px]" title={`Ubicación: ${row.original.location}`}>
-                      📍 {row.original.location}
+                    <span className="text-muted-foreground truncate max-w-[120px] inline-flex items-center gap-0.5" title={`Ubicación: ${row.original.location}`}>
+                      <MapPin className="h-3 w-3 shrink-0" aria-hidden="true" />{row.original.location}
                     </span>
                   </>
                 )}
@@ -722,26 +758,45 @@ export function ProductsClient({
           filterFn={productSearchFilter}
           externalGlobalFilter={searchTerm}
           onExternalGlobalFilterChange={setSearchTerm}
-          hasActiveFilters={searchTerm !== "" || selectedCategory !== "all"}
+          hasActiveFilters={
+            searchTerm !== "" ||
+            selectedCategory !== "all" ||
+            lowStockFilter
+          }
           onExport={() => setIsExportDialogOpen(true)}
           headerFilter={
-            <Select
-              value={selectedCategory}
-              onValueChange={setSelectedCategory}
-            >
-              <SelectTrigger className="w-[180px] h-9">
-                <Tags className="h-4 w-4 mr-2 text-muted-foreground" />
-                <SelectValue placeholder="Categoría" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas las categorías</SelectItem>
-                {categories.map((cat) => (
-                  <SelectItem key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-2">
+              <Select
+                value={selectedCategory}
+                onValueChange={setSelectedCategory}
+              >
+                <SelectTrigger className="w-[180px] h-9">
+                  <Tags className="h-4 w-4 mr-2 text-muted-foreground" />
+                  <SelectValue placeholder="Categoría" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas las categorías</SelectItem>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {!inactiveMode && (
+                <Button
+                  variant={lowStockFilter ? "default" : "outline"}
+                  size="sm"
+                  className="h-9"
+                  onClick={() => setLowStockFilter((v) => !v)}
+                  aria-pressed={lowStockFilter}
+                  aria-label="Filtrar por stock bajo"
+                >
+                  <AlertTriangle className="h-4 w-4 mr-2" />
+                  Stock bajo
+                </Button>
+              )}
+            </div>
           }
           emptyIcon={
             <Boxes className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
@@ -807,7 +862,7 @@ export function ProductsClient({
                       variant="ghost"
                       size="sm"
                       className="text-red-700 hover:text-red-800 hover:bg-red-50"
-                      onClick={() => handleDelete(product)}
+                      onClick={() => setProductToDelete(product)}
                       aria-label={`Desactivar producto ${product.name}`}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -881,6 +936,43 @@ export function ProductsClient({
           onSuccess={handleQuickSaleSuccess}
         />
       )}
+
+      <Dialog
+        open={productToDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setProductToDelete(null);
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Desactivar producto</DialogTitle>
+            <DialogDescription>
+              {productToDelete
+                ? `¿Seguro que deseas desactivar "${productToDelete.name}"? El producto ya no aparecerá en el catálogo activo.`
+                : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button
+              variant="ghost"
+              onClick={() => setProductToDelete(null)}
+            >
+              No, cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (productToDelete) {
+                  handleDelete(productToDelete);
+                  setProductToDelete(null);
+                }
+              }}
+            >
+              Sí, desactivar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

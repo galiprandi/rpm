@@ -9,7 +9,11 @@ import { UserRole } from "@/lib/auth/roles";
 export const dynamic = "force-dynamic";
 export const revalidate = 60;
 
-export default async function ProductsPage() {
+export default async function ProductsPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ lowStock?: string }>;
+}) {
   const session = await requireAuth();
   const userRole =
     ((session.user as { role?: string }).role as UserRole) || UserRole.USER;
@@ -17,6 +21,9 @@ export default async function ProductsPage() {
   if (userRole !== UserRole.ADMIN && userRole !== UserRole.STAFF) {
     throw new Error("Acceso denegado");
   }
+
+  const resolvedSearchParams = await searchParams;
+  const lowStockParam = resolvedSearchParams?.lowStock === "true";
 
   // Fetch data from services in parallel
   const [productsData, categoriesData, suppliersData] = await Promise.all([
@@ -34,6 +41,7 @@ export default async function ProductsPage() {
       products={products}
       categories={categories}
       suppliers={suppliers}
+      initialLowStockFilter={lowStockParam}
     />
   );
 }
