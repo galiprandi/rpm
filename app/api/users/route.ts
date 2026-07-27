@@ -4,8 +4,7 @@
  * Spec: /specs/users.md
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { getSession } from '@/lib/auth-server';
-import { UserRole } from '@/lib/auth/roles';
+import { withPermission } from '@/lib/api-middleware';
 import {
   getUsers,
   createUser,
@@ -13,21 +12,9 @@ import {
   CreateUserInput,
 } from '@/lib/services/userService';
 
-// GET /api/users - Listar usuarios
-export async function GET(request: NextRequest) {
+// GET /api/users - Listar usuarios (requiere can_manage_users)
+export const GET = withPermission('can_manage_users', async (request: NextRequest, _session) => {
   try {
-    const session = await getSession();
-
-    // Only ADMIN or STAFF can list users
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const userRole = session.user.role as UserRole;
-    if (userRole !== UserRole.ADMIN && userRole !== UserRole.STAFF) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
     const { searchParams } = request.nextUrl;
     const includeInactive = searchParams.get('includeInactive') === 'true';
     const roleFilter = searchParams.get('role'); // e.g., "staff,admin" or "staff" or "admin"
@@ -64,18 +51,11 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
 
-// POST /api/users - Crear usuario
-export async function POST(request: NextRequest) {
+// POST /api/users - Crear usuario (requiere can_manage_users)
+export const POST = withPermission('can_manage_users', async (request: NextRequest, _session) => {
   try {
-    const session = await getSession();
-
-    // Only ADMIN can create users
-    if (!session?.user || session.user.role !== UserRole.ADMIN) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
     const body = await request.json();
 
     // Validations
@@ -120,4 +100,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

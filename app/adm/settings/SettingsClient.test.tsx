@@ -49,6 +49,7 @@ vi.mock('lucide-react', () => ({
   UserCheck: () => <div data-testid="icon-usercheck" />,
   FolderOpen: () => <div data-testid="icon-folderopen" />,
   Wifi: () => <div data-testid="icon-wifi" />,
+  KeyRound: () => <div data-testid="icon-keyround" />,
 }));
 
 // Mock Switch and Select

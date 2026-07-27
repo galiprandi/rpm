@@ -4,6 +4,7 @@ import { useState, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useUI } from "@/components/ui/UIProvider";
+import { useUser } from "@/components/ui/UserProvider";
 import { toast } from "sonner";
 import { Header, CrudAdmin, CrudStats, type StatItem } from "@/components/adm";
 import { Wrench, Pencil, Trash2, Clock, List, Plus } from "lucide-react";
@@ -44,6 +45,8 @@ export default function ServicesClient({
   initialServices,
 }: ServicesClientProps) {
   const { alert, confirm } = useUI();
+  const { can } = useUser();
+  const canEditCosts = can('can_edit_costs');
   const [services, setServices] = useState<Service[]>(initialServices);
   const [loading, setLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -107,7 +110,7 @@ export default function ServicesClient({
     // Validate before submitting
     const missingFields: string[] = [];
     if (!formData.name.trim()) missingFields.push("Nombre");
-    if (!formData.baseCost.trim()) missingFields.push("Costo base");
+    if (canEditCosts && !formData.baseCost.trim()) missingFields.push("Costo base");
     if (!formData.timeMinutes.trim()) missingFields.push("Tiempo estimado");
 
     if (missingFields.length > 0) {
@@ -119,12 +122,15 @@ export default function ServicesClient({
       return;
     }
 
-    const payload = {
-      ...formData,
-      baseCost: parseFloat(formData.baseCost) || 0,
+    const payload: Record<string, unknown> = {
+      name: formData.name,
+      description: formData.description,
       timeMinutes: parseInt(formData.timeMinutes) || 60,
       vehicleFactor: parseFloat(formData.vehicleFactor) || 1.0,
     };
+    if (canEditCosts) {
+      payload.baseCost = parseFloat(formData.baseCost) || 0;
+    }
 
     setIsSubmitting(true);
     try {
@@ -167,7 +173,7 @@ export default function ServicesClient({
   const isFormValid = () => {
     return (
       formData.name.trim() !== "" &&
-      formData.baseCost.trim() !== "" &&
+      (!canEditCosts || formData.baseCost.trim() !== "") &&
       formData.timeMinutes.trim() !== ""
     );
   };
@@ -282,15 +288,19 @@ export default function ServicesClient({
           </div>
         ),
       },
-      {
-        accessorKey: "baseCost",
-        header: "Costo Base",
-        cell: ({ row }) => (
-          <span className="font-medium">
-            <PriceDisplay value={row.original.baseCost} />
-          </span>
-        ),
-      },
+      ...(canEditCosts
+        ? [
+            {
+              accessorKey: "baseCost",
+              header: "Costo Base",
+              cell: ({ row }: { row: { original: Service } }) => (
+                <span className="font-medium">
+                  <PriceDisplay value={row.original.baseCost} />
+                </span>
+              ),
+            } as ColumnDef<Service>,
+          ]
+        : []),
       {
         accessorKey: "timeMinutes",
         header: "Tiempo",
@@ -326,7 +336,7 @@ export default function ServicesClient({
           ),
       },
     ],
-    [],
+    [canEditCosts],
   );
 
   return (

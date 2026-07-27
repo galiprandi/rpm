@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation';
 import UsersClient from './UsersClient';
 import { getUsers } from '@/lib/services/userService';
 import { requireAuth } from '@/lib/auth-server';
@@ -11,7 +12,7 @@ export default async function UsersPage() {
   const userRole = (session.user as { role?: string }).role as UserRole || UserRole.USER;
 
   if (userRole !== UserRole.ADMIN) {
-    throw new Error('Acceso denegado');
+    redirect('/adm');
   }
 
   const data = await getUsers(true);

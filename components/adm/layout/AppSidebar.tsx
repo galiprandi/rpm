@@ -130,9 +130,11 @@ export function AppSidebar({ user, onSignOut, onOpenPalette, onOpenChat }: AppSi
   const roleLabel =
     userRole === UserRole.ADMIN
       ? 'Admin'
-      : userRole === UserRole.USER
-        ? 'Técnico'
-        : 'Staff';
+      : userRole === UserRole.VENDEDOR
+        ? 'Vendedor'
+        : userRole === UserRole.USER
+          ? 'Técnico'
+          : 'Staff';
 
   // Keep the current module expanded after navigation.
   const [overrides, setOverrides] = useState<Record<string, boolean>>({});

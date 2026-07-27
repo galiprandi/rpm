@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ProductForm, ProductFormData } from '@/components/products/ProductForm';
+import { UserProvider } from '@/components/ui/UserProvider';
 
 // Mock the Select component from shadcn/ui
 vi.mock('@/components/ui/select', () => ({
@@ -54,12 +55,14 @@ describe('ProductForm', () => {
   describe('Validation', () => {
     it('should mark required fields with an asterisk', () => {
       render(
-        <ProductForm
-          formData={defaultFormData}
-          setFormData={mockSetFormData}
-          categories={categories}
-          suppliers={suppliers}
-        />
+        <UserProvider user={{ id: 'test-user', name: 'Test', email: 'test@test.com', role: 'ADMIN', permissions: ['*'] }}>
+          <ProductForm
+            formData={defaultFormData}
+            setFormData={mockSetFormData}
+            categories={categories}
+            suppliers={suppliers}
+          />
+        </UserProvider>
       );
       
       expect(screen.getByText(/^Producto$/i)).toBeInTheDocument();
@@ -76,12 +79,14 @@ describe('ProductForm', () => {
 
     it('should render Select for category and supplier', () => {
       render(
-        <ProductForm
-          formData={defaultFormData}
-          setFormData={mockSetFormData}
-          categories={categories}
-          suppliers={suppliers}
-        />
+        <UserProvider user={{ id: 'test-user', name: 'Test', email: 'test@test.com', role: 'ADMIN', permissions: ['*'] }}>
+          <ProductForm
+            formData={defaultFormData}
+            setFormData={mockSetFormData}
+            categories={categories}
+            suppliers={suppliers}
+          />
+        </UserProvider>
       );
       
       expect(screen.getByText(/Selecciona categoría/i)).toBeInTheDocument();
@@ -92,12 +97,14 @@ describe('ProductForm', () => {
   describe('Form Interaction', () => {
     it('should update name when input changes', () => {
       render(
-        <ProductForm
-          formData={defaultFormData}
-          setFormData={mockSetFormData}
-          categories={categories}
-          suppliers={suppliers}
-        />
+        <UserProvider user={{ id: 'test-user', name: 'Test', email: 'test@test.com', role: 'ADMIN', permissions: ['*'] }}>
+          <ProductForm
+            formData={defaultFormData}
+            setFormData={mockSetFormData}
+            categories={categories}
+            suppliers={suppliers}
+          />
+        </UserProvider>
       );
       
       const nameInput = screen.getByLabelText(/^Producto/i);
@@ -110,12 +117,14 @@ describe('ProductForm', () => {
 
     it('should update categoryId when category is selected', () => {
       render(
-        <ProductForm
-          formData={defaultFormData}
-          setFormData={mockSetFormData}
-          categories={categories}
-          suppliers={suppliers}
-        />
+        <UserProvider user={{ id: 'test-user', name: 'Test', email: 'test@test.com', role: 'ADMIN', permissions: ['*'] }}>
+          <ProductForm
+            formData={defaultFormData}
+            setFormData={mockSetFormData}
+            categories={categories}
+            suppliers={suppliers}
+          />
+        </UserProvider>
       );
       
       // Find the mocked select and click it (our mock calls onValueChange('cat-1'))
@@ -132,12 +141,14 @@ describe('ProductForm', () => {
   describe('Complete Form Data', () => {
     it('should render all required fields', () => {
       render(
-        <ProductForm
-          formData={defaultFormData}
-          setFormData={mockSetFormData}
-          categories={categories}
-          suppliers={suppliers}
-        />
+        <UserProvider user={{ id: 'test-user', name: 'Test', email: 'test@test.com', role: 'ADMIN', permissions: ['*'] }}>
+          <ProductForm
+            formData={defaultFormData}
+            setFormData={mockSetFormData}
+            categories={categories}
+            suppliers={suppliers}
+          />
+        </UserProvider>
       );
       
       expect(screen.getByText(/^Producto$/i)).toBeInTheDocument();

@@ -3,6 +3,7 @@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { useUser } from '@/components/ui/UserProvider';
 import { Wrench, FileText, DollarSign, Clock, Truck } from 'lucide-react';
 
 export interface ServiceFormData {
@@ -20,6 +21,8 @@ interface ServiceFormProps {
 }
 
 export function ServiceForm({ formData, onChange, disabled }: ServiceFormProps) {
+  const { can } = useUser();
+  const canEditCosts = can('can_edit_costs');
   const handleChange = (field: keyof ServiceFormData, value: string) => {
     onChange({ ...formData, [field]: value });
   };
@@ -64,29 +67,31 @@ export function ServiceForm({ formData, onChange, disabled }: ServiceFormProps) 
       </div>
 
       {/* Numerical Fields Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className={`grid gap-4 ${canEditCosts ? 'grid-cols-1 md:grid-cols-3' : 'grid-cols-1 md:grid-cols-2'}`}>
         {/* Base Cost */}
-        <div className="space-y-2">
-          <Label htmlFor="baseCost" required>
-            Costo Base ($)
-          </Label>
-          <div className="relative">
-            <DollarSign className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
-            <Input
-              id="baseCost"
-              type="number"
-              min="0"
-              step="0.01"
-              value={formData.baseCost}
-              onChange={(e) => handleChange('baseCost', e.target.value)}
-              placeholder="15000"
-              className="pl-9 font-mono"
-              required
-              aria-required="true"
-              disabled={disabled}
-            />
+        {canEditCosts && (
+          <div className="space-y-2">
+            <Label htmlFor="baseCost" required>
+              Costo Base ($)
+            </Label>
+            <div className="relative">
+              <DollarSign className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+              <Input
+                id="baseCost"
+                type="number"
+                min="0"
+                step="0.01"
+                value={formData.baseCost}
+                onChange={(e) => handleChange('baseCost', e.target.value)}
+                placeholder="15000"
+                className="pl-9 font-mono"
+                required
+                aria-required="true"
+                disabled={disabled}
+              />
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Time Estimated */}
         <div className="space-y-2">

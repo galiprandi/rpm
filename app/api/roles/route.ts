@@ -22,21 +22,15 @@ const ROLES_CONFIG: RoleOption[] = [
     badgeVariant: 'default',
   },
   {
-    value: 'SELLER',
+    value: 'VENDEDOR',
     label: 'Vendedor',
-    description: 'Gestiona ventas, cotizaciones y clientes. Acceso limitado a módulo de ventas.',
+    description: 'Acceso a ventas, cotizaciones, clientes, taller, catálogo, finanzas, reportes y compras.',
     badgeVariant: 'secondary',
   },
   {
-    value: 'TECHNICIAN',
-    label: 'Técnico',
-    description: 'Acceso a órdenes de trabajo, instalaciones y tareas técnicas.',
-    badgeVariant: 'outline',
-  },
-  {
-    value: 'CASHIER',
-    label: 'Cajero',
-    description: 'Gestiona cobros, caja diaria y movimientos de tesorería.',
+    value: 'STAFF',
+    label: 'Staff',
+    description: 'Staff básico. Acceso a /adm con permisos limitados.',
     badgeVariant: 'outline',
   },
   {

@@ -10,7 +10,7 @@ export default async function PriceListsPage() {
   const session = await requireAuth();
   const userRole = (session.user as { role?: string }).role as UserRole || UserRole.USER;
 
-  if (userRole !== UserRole.ADMIN && userRole !== UserRole.STAFF) {
+  if (userRole !== UserRole.ADMIN && userRole !== UserRole.STAFF && userRole !== UserRole.VENDEDOR) {
     throw new Error('Acceso denegado');
   }
 

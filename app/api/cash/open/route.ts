@@ -21,7 +21,8 @@ export async function POST(request: NextRequest) {
     const roleHierarchy = {
       [UserRole.USER]: 0,
       [UserRole.STAFF]: 1,
-      [UserRole.ADMIN]: 2,
+      [UserRole.VENDEDOR]: 2,
+      [UserRole.ADMIN]: 3,
     };
 
     if (roleHierarchy[userRole] < roleHierarchy[UserRole.STAFF]) {

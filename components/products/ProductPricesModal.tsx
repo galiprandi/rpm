@@ -12,6 +12,7 @@ import { ModalBase } from '@/components/ui/ModalBase';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, Pencil, Calculator } from 'lucide-react';
+import { useUser } from '@/components/ui/UserProvider';
 import { calculateMarginPercentage, applyRounding, type RoundingRule } from '@/lib/utils/rounding';
 import { DataTable } from '@/components/ui/data-table';
 import { ColumnDef } from '@tanstack/react-table';
@@ -53,6 +54,8 @@ interface ProductPricesModalProps {
 type EditMode = 'override' | 'fixed' | 'default';
 
 export function ProductPricesModal({ isOpen, onClose, product }: ProductPricesModalProps) {
+  const { can } = useUser();
+  const canEditCosts = can('can_edit_costs');
   const [priceLists, setPriceLists] = useState<PriceList[]>([]);
   const [prices, setPrices] = useState<ProductPriceInfo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -362,17 +365,19 @@ export function ProductPricesModal({ isOpen, onClose, product }: ProductPricesMo
         maxHeight="max-h-[80vh]"
       >
         {/* Replacement Cost Section */}
-        <div className="bg-muted/50 rounded-lg p-4 mb-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground mb-1">Costo de Reposición</p>
-              <p className="text-2xl font-bold">{formatPrice(replacementCost)}</p>
+        {canEditCosts && (
+          <div className="bg-muted/50 rounded-lg p-4 mb-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Costo de Reposición</p>
+                <p className="text-2xl font-bold">{formatPrice(replacementCost)}</p>
+              </div>
+              <Badge variant="outline" className="text-muted-foreground">
+                {availableListsCount} {availableListsCount === 1 ? 'lista' : 'listas'} disponibles
+              </Badge>
             </div>
-            <Badge variant="outline" className="text-muted-foreground">
-              {availableListsCount} {availableListsCount === 1 ? 'lista' : 'listas'} disponibles
-            </Badge>
           </div>
-        </div>
+        )}
 
         {/* Prices Table */}
         {loading ? (
@@ -418,10 +423,12 @@ export function ProductPricesModal({ isOpen, onClose, product }: ProductPricesMo
           
           <div className="space-y-4 py-4">
             {/* Replacement Cost Display */}
-            <div className="bg-muted/50 rounded-lg p-3">
-              <p className="text-xs text-muted-foreground mb-1">Costo de Reposición</p>
-              <p className="text-xl font-bold">{formatPrice(replacementCost)}</p>
-            </div>
+            {canEditCosts && (
+              <div className="bg-muted/50 rounded-lg p-3">
+                <p className="text-xs text-muted-foreground mb-1">Costo de Reposición</p>
+                <p className="text-xl font-bold">{formatPrice(replacementCost)}</p>
+              </div>
+            )}
 
             {/* Mode selector buttons */}
             <div className="flex flex-wrap gap-2">

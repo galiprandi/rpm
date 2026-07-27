@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAdmin } from '@/lib/api-middleware';
+import { withAdmin, withPermission } from '@/lib/api-middleware';
 import { createCreditNote, getCreditNotes } from '@/lib/services/creditNoteService';
 import { isCashRegisterOpen } from '@/lib/services/cashMovementService';
 import { toISODate } from '@/lib/utils/date';
 import { serializeDrizzleResult } from '@/lib/utils/serialization';
 
-export const POST = withAdmin(async (request: NextRequest, session) => {
+export const POST = withPermission('can_create_credit_notes', async (request: NextRequest, session) => {
   try {
     const body = await request.json();
     const { originalSaleId, originalSaleType, items, refundMethod, paymentMethodId, notes } = body;

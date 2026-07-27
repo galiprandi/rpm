@@ -125,6 +125,13 @@ function getRolePrompt(role: UserRole): string {
 - Puede gestionar clientes y vehículos
 - No puede modificar configuración del sistema ni usuarios`,
 
+    [UserRole.VENDEDOR]: `## Rol: VENDEDOR
+- Puede realizar ventas, consultar stock y precios
+- Puede crear y gestionar OTs
+- Puede gestionar clientes y vehículos
+- Acceso a taller, catálogo, finanzas, reportes y compras
+- No puede modificar configuración del sistema ni usuarios`,
+
     [UserRole.USER]: `## Rol: USUARIO
 - Acceso limitado según sus permisos
 - Puede consultar productos y precios

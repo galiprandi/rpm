@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { withAdminDynamic } from "@/lib/api-middleware";
+import { withAdminDynamic, withPermissionDynamic } from "@/lib/api-middleware";
 import { db } from "@/lib/db";
 import { customer, cashMovement, workOrder, directSale, creditNote } from "@/db/schema";
 import { eq, desc, and } from "drizzle-orm";
@@ -127,9 +127,9 @@ export const GET = withAdminDynamic(async (request: NextRequest, { params }: Par
   }
 });
 
-// PUT /api/customers/[id] - Update customer (requiere ADMIN)
+// PUT /api/customers/[id] - Update customer (requiere can_manage_customers)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const PUT = withAdminDynamic(async (request: NextRequest, { params }: Params, _session) => {
+export const PUT = withPermissionDynamic('can_manage_customers', async (request: NextRequest, { params }: Params, _session) => {
   try {
     const { id } = await params;
     const body = await request.json();
@@ -181,9 +181,9 @@ export const PUT = withAdminDynamic(async (request: NextRequest, { params }: Par
   }
 });
 
-// DELETE /api/customers/[id] - Delete customer (requiere ADMIN)
+// DELETE /api/customers/[id] - Delete customer (requiere can_manage_customers)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const DELETE = withAdminDynamic(async (request: NextRequest, { params }: Params, _session) => {
+export const DELETE = withPermissionDynamic('can_manage_customers', async (request: NextRequest, { params }: Params, _session) => {
   try {
     const { id } = await params;
     await db.delete(customer).where(eq(customer.id, id));
