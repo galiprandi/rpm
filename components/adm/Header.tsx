@@ -119,7 +119,7 @@ export function Header({
 }: HeaderProps) {
   return (
     <header className={`space-y-1 ${className}`}>
-      <div className="flex justify-between items-start">
+      <div className="flex justify-between items-start gap-2 flex-wrap">
         <div className="min-w-0 flex-1">
           <h1
             className={`text-3xl font-bold text-foreground ${titleClassName}`}
@@ -135,7 +135,7 @@ export function Header({
           </h1>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink max-w-full flex-wrap justify-end">
           {/* Botón Volver */}
           {showBackButton && (
             <Button

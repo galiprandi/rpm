@@ -28,7 +28,7 @@ export function FuelLevelSlider({ value, onChange, label }: FuelLevelSliderProps
           {TICKS.map((tick) => (
             <div key={tick} className="flex flex-col items-center">
               <div className="w-0.5 h-1.5 bg-muted-foreground/40 mb-1" />
-              <span className={`text-[10px] ${value === tick ? 'text-blue-700 font-bold' : 'text-muted-foreground/70'}`}>
+              <span className={`text-[11px] ${value === tick ? 'text-blue-700 font-bold' : 'text-muted-foreground/70'}`}>
                 {tick}%
               </span>
             </div>
