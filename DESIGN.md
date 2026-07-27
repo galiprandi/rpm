@@ -166,3 +166,98 @@ Los `loading.tsx` deben implementar esqueletos que imiten no solo la estructura 
 - **Detail Headers**: Utilizar `Header` con `titleClassName="font-mono"` para patentes/IDs. Integrar metadatos técnicos (Categoría, Año, Color) y contactos de clientes en el slot `children` usando mini-pills con `bg-muted/50` o colores semánticos (azul para teléfonos).
 - **History Visualization**: El historial de OTs debe seguir el *Standardized List Row Entity Pattern* con el icono `ClipboardList` en contenedor 8x8 y `font-mono` para IDs y montos.
 - **Form Patterns**: `VehicleDialog` debe implementar el *Form UX Enhancement Pattern* con iconos absolutos y `font-mono` en todos los campos de identificación y contacto.
+
+## 19. Filter Popover Pattern
+
+Los filtros de listados (invoices, work-orders) deben destilarse en un `Popover` con `PopoverTrigger` como botón secundario, agrupando todos los filtros en una sola superficie en lugar de dispersarlos inline.
+
+- **Trigger**: Botón `outline` con icono `Filter` + count badge (`bg-primary text-primary-foreground`) mostrando filtros activos.
+- **Content**: `PopoverContent` con `w-72`, secciones agrupadas por categoría (Estado, Pago, Fechas) usando `<Label>` + `Select` de shadcn/ui o `Switch` con `id` + `<Label htmlFor>`.
+- **Accesibilidad**: Cada `Switch` debe tener `id` único y su `<Label htmlFor>` correspondiente. No usar `<span>` adyacente como label.
+- **Acciones**: Footer con "Limpiar" (ghost) y "Aplicar" (primary) dentro del popover.
+- **Regla**: Máximo 3 filtros inline visibles fuera del popover. El resto va dentro.
+
+## 20. AlertDialog Confirmation Pattern
+
+Las acciones destructivas (cancelar comprobante, cancelar OT, cerrar caja) deben usar `AlertDialog` de shadcn/ui con contexto summary, no `confirm()` nativo.
+
+- **Estructura**: `AlertDialog` con `AlertDialogTitle`, `AlertDialogDescription` específica (no genérica), y footer con "No, cancelar" (ghost) + acción destructiva (destructive variant).
+- **Summary Context**: La descripción debe incluir el recurso afectado (número de comprobante, patente + cliente, monto).
+- **Warning Condicional**: Si la acción tiene implicaciones financieras (ej: OT con pagos asociados), mostrar un bloque amber (`bg-amber-50 border border-amber-200 text-amber-800`) con `AlertTriangle` entre la descripción y los botones.
+- **Regla**: Nunca usar `window.confirm()`. Siempre `AlertDialog`.
+
+## 21. Undo Toast Pattern (Post-Confirmation)
+
+Toda acción destructiva confirmada debe mostrar un toast de `sonner` con botón "Deshacer" que revierte la acción dentro de una ventana de 8 segundos.
+
+```tsx
+toast.success("Comprobante cancelado correctamente", {
+  description: "El comprobante fue cancelado correctamente.",
+  action: {
+    label: "Deshacer",
+    onClick: () => handleUndoCancel(previousStatus),
+  },
+  duration: 8000,
+});
+```
+
+- **Captura previa**: Antes de mutar, capturar `previousStatus` para poder revertir.
+- **Undo API**: Reutilizar el mismo endpoint de mutación con el estado anterior (ej: `PATCH /api/invoices/:id` con `{ status: previousStatus }`).
+- **Batch Undo**: Para cancelación múltiple, trackear `cancelledInvoices: Array<{ id, previousStatus }>` y revertir cada uno.
+- **Regla**: El toast es un safety net ADICIONAL al AlertDialog, no lo reemplaza.
+
+## 22. Cash Close Ceremony Pattern
+
+El cierre de caja debe ser una ceremonia con comparación visual de montos, no un simple confirm.
+
+- **Esperado vs Contado vs Diferencia**: Mostrar los tres valores lado a lado, con la diferencia en color semántico (`emerald-600` si cuadra, `red-600` si hay faltante, `amber-600` si hay sobrante).
+- **Motivo obligatorio**: Si hay diferencia, un campo de razón es obligatorio antes de confirmar.
+- **Ceremony Modal**: Tras el cierre exitoso, mostrar un modal celebratorio con: total de ventas, transacciones, top producto, hora pico, y diferencia final.
+- **Reopen discoverable**: El modal de ceremonia debe incluir un botón "Reabrir Caja" (amber/outline, `RotateCcw` icon) visible mientras el modal está abierto, además del toast con action "Reabrir" (10s window).
+- **Regla**: El reopen debe ser discoverable en el momento exacto del cierre, no oculto en una tab de historial.
+
+## 23. Role-Aware Dashboard Pattern
+
+El dashboard `/adm` debe renderizar cards diferentes según el rol del usuario (`ADMIN`, `STAFF`, `USER`).
+
+- **ADMIN**: 4 KPIs compactos (Sales, Cash, Debtors, Stock) + Taller col-span-2 + ReadyForDelivery + TopProducts + PaymentMethods + CashMovements.
+- **STAFF**: Sales + Stock + ReadyForDelivery + PaymentMethods + CashMovements (sin Debtors ni Taller detallado).
+- **USER**: WorkshopKanban col-span-2 + ReadyForDelivery + WorkOrders full width (sin KPIs financieros).
+- **AskNitroCard**: Común a todos los roles, al tope del dashboard, con queries role-tailored.
+- **Regla**: Nunca mostrar información financiera (deudores, ventas totales) a roles no autorizados.
+
+## 24. AskNitroCard & nitro:ask Event Pattern
+
+El copiloto NITRO debe celebrarse en el dashboard, no enterrarse.
+
+- **AskNitroCard**: Card con gradient sutil (`bg-[linear-gradient(135deg,hsl(var(--primary)/0.10)...)]`), icono `Sparkles` en contenedor `bg-primary/15`, badge "Copiloto", y queries como pills clickeables.
+- **Event Contract**: El card emite `window.dispatchEvent(new CustomEvent("nitro:ask", { detail: { query } }))`. El `ChatFloating` component escucha este evento, abre el chat, y envía la query.
+- **Desacoplamiento**: El dashboard no conoce la implementación del chat — solo emite el intent. El chat consumer reacciona.
+- **Queries**: Role-tailored, máximo 4-5, ordenadas de más útil a menos útil.
+
+## 25. Semantic Icon Containers (No border-l-2)
+
+Las cards del dashboard deben usar contenedores de icono semánticos en lugar de barras `border-l-2` para comunicar categoría.
+
+- **Pattern**: `<span className="flex size-7 shrink-0 items-center justify-center rounded-lg border bg-{color}-500/10 border-{color}-500/20">` + icono `h-3.5 w-3.5` con `text-{color}-700` y `aria-hidden="true"`.
+- **Colores por dominio**: Sales=emerald, Cash=cyan, Debtors=red, Stock=orange/emerald, Taller=amber, ReadyForDelivery=violet, PaymentMethods=indigo, TopProducts=blue.
+- **Regla**: Nunca usar `border-l-2` o `border-l-4` para indicar categoría. Usar el contenedor semántico.
+
+## 26. Accessibility: Text Size Floor
+
+Todo texto funcional debe tener un mínimo de 11px. El browser detector flaggea `text-[9px]` y `text-[10px]` como `undersized-ui-text`.
+
+- **Floor**: `text-[11px]` es el mínimo absoluto para texto funcional (labels, badges, metadata, links).
+- **Prohibido**: `text-[9px]`, `text-[10px]` en cualquier elemento con texto funcional.
+- **Permitido**: `text-xs` (12px) o superior para body text. `text-[11px]` para labels compactos.
+- **Excepción**: Elementos puramente decorativos (dots, dividers sin texto) no están sujetos al floor.
+- **Regla**: Si necesitás texto más chico que 11px para que entre, el layout está mal — rediseñar el contenedor.
+
+## 27. Truncate + min-w-0 Pattern
+
+Para que `truncate` funcione en flex/grid children, el contenedor padre debe tener `min-w-0`.
+
+- **Problema**: Flex/grid items tienen `min-width: auto` por defecto, que se resuelve al min-content width del texto. Un `<p>` con `truncate` tiene min-content muy ancho, expandiendo el contenedor y rompiendo el truncate.
+- **Fix**: Agregar `min-w-0` al contenedor padre (Card, CardContent, o el flex item más cercano).
+- **Cadena**: Si el truncate está anidado profundo (Card → CardContent → Tooltip → p), agregar `min-w-0` en cada nivel de la cadena hasta que funcione.
+- **Regla**: Todo `<p className="truncate">` dentro de un grid/flex necesita `min-w-0` en su ancestro más cercano.
