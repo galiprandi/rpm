@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useUI } from "@/components/ui/UIProvider";
+import { toast } from "sonner";
 import {
   ProductServiceSelector,
   type SelectedItem,
@@ -470,6 +471,9 @@ export function AddVoucherItemDialog({
   };
 
   const handleRemoveItem = async (itemId: string) => {
+    // Capture item data for potential undo
+    const removedItem = items.find((it) => it.id === itemId);
+
     const confirmed = await confirm({
       title: "Eliminar ítem",
       description: "¿Está seguro de eliminar este ítem del comprobante?",
@@ -511,6 +515,46 @@ export function AddVoucherItemDialog({
       }
 
       onItemAdded?.();
+
+      toast.success("Ítem eliminado del comprobante", {
+        action: {
+          label: "Deshacer",
+          onClick: async () => {
+            if (!removedItem) return;
+            try {
+              const priceListData: Record<string, { price: number; isFixed: boolean }> = {};
+              removedItem.priceListPrices.forEach((pl) => {
+                priceListData[pl.priceListId] = {
+                  price: pl.isFixed ? (pl.fixedPrice ?? pl.calculatedPrice) : pl.calculatedPrice,
+                  isFixed: pl.isFixed,
+                };
+              });
+              const restoreRes = await fetch(
+                `/api/purchase-vouchers/${voucherId}/items`,
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    productId: removedItem.productId,
+                    quantity: removedItem.quantity,
+                    unitCost: removedItem.unitCost,
+                    priceListData,
+                  }),
+                },
+              );
+              if (restoreRes.ok) {
+                await loadExistingItems();
+                toast.success("Ítem restaurado");
+              } else {
+                toast.error("Error al restaurar el ítem");
+              }
+            } catch {
+              toast.error("Error al restaurar el ítem");
+            }
+          },
+        },
+        duration: 8000,
+      });
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "Error al eliminar ítem.";
@@ -535,6 +579,34 @@ export function AddVoucherItemDialog({
     });
     if (!confirmed) return;
 
+    // Capture voucher header data for potential undo
+    let previousData: {
+      supplierId: string;
+      letter: string;
+      number: string;
+      date: string;
+      totalAmount: number;
+      paymentMethodId: string | null;
+      notes: string | null;
+    } | null = null;
+    try {
+      const captureRes = await fetch(`/api/purchase-vouchers/${voucherId}`);
+      if (captureRes.ok) {
+        const v = await captureRes.json();
+        previousData = {
+          supplierId: v.supplierId,
+          letter: v.letter,
+          number: v.number,
+          date: new Date(v.date).toISOString(),
+          totalAmount: parseFloat(v.totalAmount),
+          paymentMethodId: v.paymentMethodId,
+          notes: v.notes,
+        };
+      }
+    } catch {
+      // If capture fails, proceed without undo data
+    }
+
     try {
       const res = await fetch(`/api/purchase-vouchers/${voucherId}`, {
         method: "DELETE",
@@ -542,6 +614,31 @@ export function AddVoucherItemDialog({
       if (res.ok) {
         onClose();
         if (onItemAdded) onItemAdded();
+        toast.success("Comprobante eliminado", {
+          description: "El comprobante fue eliminado correctamente.",
+          action: {
+            label: "Deshacer",
+            onClick: async () => {
+              if (!previousData) return;
+              try {
+                const restoreRes = await fetch("/api/purchase-vouchers", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(previousData),
+                });
+                if (restoreRes.ok) {
+                  if (onItemAdded) onItemAdded();
+                  toast.success("Comprobante restaurado");
+                } else {
+                  toast.error("Error al restaurar el comprobante");
+                }
+              } catch {
+                toast.error("Error al restaurar el comprobante");
+              }
+            },
+          },
+          duration: 8000,
+        });
       } else {
         const error = await res.json();
         await alert({
@@ -750,6 +847,7 @@ export function AddVoucherItemDialog({
                   la sección productos
                 </p>
                 <div className="border rounded-md overflow-hidden">
+                  <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-muted/50 hover:bg-muted/50 h-8">
@@ -809,7 +907,7 @@ export function AddVoucherItemDialog({
                             <TableCell className="p-2">
                               <Badge
                                 variant={pl.isFixed ? "default" : "secondary"}
-                                className="text-[10px] h-4 px-1.5 cursor-pointer hover:opacity-80"
+                                className="text-[11px] h-4 px-1.5 cursor-pointer hover:opacity-80"
                                 onClick={() =>
                                   pl.isFixed && handleUnfixPrice(pl.priceListId)
                                 }
@@ -843,6 +941,7 @@ export function AddVoucherItemDialog({
                       })}
                     </TableBody>
                   </Table>
+                  </div>
                 </div>
               </div>
             )}
@@ -884,7 +983,7 @@ export function AddVoucherItemDialog({
           <div className="flex-1 overflow-y-auto">
             {items.length === 0 ? (
               <div className="p-6 text-center text-muted-foreground text-sm">
-                <Package className="h-8 w-8 mx-auto mb-2 opacity-40" />
+                <Package className="h-8 w-8 mx-auto mb-2 text-muted-foreground/20" />
                 <p>
                   {supplierName
                     ? `Agregue productos al comprobante de ${supplierName}`
@@ -892,6 +991,7 @@ export function AddVoucherItemDialog({
                 </p>
               </div>
             ) : (
+              <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/50 hover:bg-muted/50 h-8">
@@ -957,6 +1057,7 @@ export function AddVoucherItemDialog({
                   ))}
                 </TableBody>
               </Table>
+              </div>
             )}
           </div>
         </div>

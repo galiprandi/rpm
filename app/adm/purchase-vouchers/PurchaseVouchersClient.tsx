@@ -20,6 +20,7 @@ import {
   Pencil,
 } from "lucide-react";
 import { useUI } from "@/components/ui/UIProvider";
+import { toast } from "sonner";
 import { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -137,12 +138,52 @@ export default function PurchaseVouchersClient({
       variant: "destructive",
     });
     if (!confirmed) return;
+
+    // Capture voucher data for potential undo
+    const deletedVoucher = vouchers.find((v) => v.id === voucherId);
+    const previousData = deletedVoucher
+      ? {
+          supplierId: deletedVoucher.supplierId,
+          letter: deletedVoucher.letter,
+          number: deletedVoucher.number,
+          date: new Date(deletedVoucher.date).toISOString(),
+          totalAmount: parseFloat(deletedVoucher.totalAmount || "0"),
+          paymentMethodId: deletedVoucher.paymentMethodId,
+          notes: deletedVoucher.notes,
+        }
+      : null;
+
     try {
       const response = await fetch(`/api/purchase-vouchers/${voucherId}`, {
         method: "DELETE",
       });
       if (response.ok) {
         setVouchers((prev) => prev.filter((v) => v.id !== voucherId));
+        toast.success("Borrador eliminado", {
+          description: "El comprobante fue eliminado correctamente.",
+          action: {
+            label: "Deshacer",
+            onClick: async () => {
+              if (!previousData) return;
+              try {
+                const restoreRes = await fetch("/api/purchase-vouchers", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(previousData),
+                });
+                if (restoreRes.ok) {
+                  await handleVoucherCreated();
+                  toast.success("Comprobante restaurado");
+                } else {
+                  toast.error("Error al restaurar el comprobante");
+                }
+              } catch {
+                toast.error("Error al restaurar el comprobante");
+              }
+            },
+          },
+          duration: 8000,
+        });
       } else {
         const error = await response.json();
         await alert({
@@ -391,7 +432,7 @@ export default function PurchaseVouchersClient({
                     <Button
                       size="icon"
                       variant="ghost"
-                      className="h-8 w-8 text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted/50"
                       onClick={async () => {
                         try {
                           const response = await fetch(
@@ -446,7 +487,7 @@ export default function PurchaseVouchersClient({
                   <Button
                     size="icon"
                     variant="ghost"
-                    className="h-8 w-8 text-slate-600 hover:text-slate-900"
+                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
                     asChild
                   >
                     <a

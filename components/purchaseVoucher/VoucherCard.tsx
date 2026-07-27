@@ -13,9 +13,9 @@ export const VoucherCard: React.FC<VoucherCardProps> = ({ id, supplierName, stat
   return (
     <div className="border rounded-lg p-4 shadow hover:shadow-lg transition-shadow">
       <h3 className="text-xl font-semibold mb-2">Voucher {id.slice(0, 8)}…</h3>
-      <p className="text-gray-600">Supplier: {supplierName}</p>
-      <p className="text-gray-600">Status: {status}</p>
-      <p className="text-gray-500 text-sm">Created: {new Date(createdAt).toLocaleDateString()}</p>
+      <p className="text-muted-foreground">Supplier: {supplierName}</p>
+      <p className="text-muted-foreground">Status: {status}</p>
+      <p className="text-muted-foreground text-sm">Created: {new Date(createdAt).toLocaleDateString()}</p>
       <Link href={`/adm/purchase-vouchers/${id}`} className="mt-2 inline-block text-primary underline">
         View details
       </Link>
