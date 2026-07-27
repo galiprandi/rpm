@@ -344,6 +344,18 @@ export function ChatFloating({
     await sendMessage({ text });
   }, [isSubmitting, sendMessage]);
 
+  // Listen for "nitro:ask" events from the AskNitroCard dashboard widget
+  useEffect(() => {
+    const handleNitroAsk = (event: Event) => {
+      const query = (event as CustomEvent<{ query: string }>).detail?.query;
+      if (!query) return;
+      setIsOpen(true);
+      handleSuggestionClick(query);
+    };
+    window.addEventListener("nitro:ask", handleNitroAsk);
+    return () => window.removeEventListener("nitro:ask", handleNitroAsk);
+  }, [handleSuggestionClick, setIsOpen]);
+
   const handleActionClick = async (action: string) => {
     if (isSubmitting) return;
     await sendMessage({ text: action });

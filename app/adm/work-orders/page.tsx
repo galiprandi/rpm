@@ -34,6 +34,9 @@ import {
   Package,
   Camera,
   Download,
+  LogIn,
+  LogOut,
+  Filter,
   type LucideIcon,
 } from "lucide-react";
 import { Header } from "@/components/adm/Header";
@@ -78,6 +81,13 @@ import {
 import { getWhatsAppLink, getWorkOrderMessage } from "@/lib/utils/whatsapp";
 import { formatARS, relativeTime } from "@/lib/utils/format";
 import { useIsMobile } from "@/hooks/use-mobile";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 interface WorkOrder {
   id: string;
@@ -205,10 +215,8 @@ function KanbanCard({
   const content = (
     <Card
       className={cn(
-        "group relative cursor-pointer hover:shadow-md transition-all border-l-4 bg-background shadow-sm",
-        isDelayed(wo)
-          ? "border-l-orange-500 bg-orange-50/40"
-          : "border-l-transparent",
+        "group relative cursor-pointer hover:shadow-md transition-all bg-background shadow-sm",
+        isDelayed(wo) && "bg-orange-50/40 ring-1 ring-orange-200",
         isDragging && !isOverlay && "opacity-30",
         isOverlay &&
           "shadow-xl border-primary ring-2 ring-primary ring-opacity-50 scale-105",
@@ -306,7 +314,7 @@ function KanbanCard({
           <Badge
             variant="outline"
             className={cn(
-              "text-[10px] px-1.5 py-0 h-5 font-mono",
+              "text-[11px] px-1.5 py-0 h-5 font-mono",
               wo.isFullyPaid
                 ? "border-emerald-200 bg-emerald-50 text-emerald-700"
                 : wo.totalPaid && wo.totalPaid > 0
@@ -318,7 +326,7 @@ function KanbanCard({
           </Badge>
 
           {/* Micro indicators for checklists and photos */}
-          <div className="flex items-center gap-1.5 text-muted-foreground text-[10px]">
+          <div className="flex items-center gap-1.5 text-muted-foreground text-[11px]">
             {/* Checklist Entry Indicator */}
             <TooltipProvider>
               <Tooltip>
@@ -329,7 +337,7 @@ function KanbanCard({
                       ? "text-blue-600 font-semibold"
                       : "text-muted-foreground/30"
                   )}>
-                    📥
+                    <LogIn className="h-3 w-3" aria-hidden="true" />
                   </span>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -348,7 +356,7 @@ function KanbanCard({
                       ? "text-emerald-600 font-semibold"
                       : "text-muted-foreground/30"
                   )}>
-                    📤
+                    <LogOut className="h-3 w-3" aria-hidden="true" />
                   </span>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -362,7 +370,7 @@ function KanbanCard({
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <span className="flex items-center gap-0.5 text-slate-500 font-mono text-[9px] shrink-0 cursor-help">
+                    <span className="flex items-center gap-0.5 text-slate-500 font-mono text-[11px] shrink-0 cursor-help">
                       <Camera className="h-3 w-3" />
                       {wo.photo.length}
                     </span>
@@ -380,7 +388,7 @@ function KanbanCard({
           <DropdownMenuTrigger asChild>
             <div
               className={cn(
-                "flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border w-full transition-colors cursor-pointer",
+                "flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded border w-full transition-colors cursor-pointer",
                 wo.technician
                   ? "bg-purple-50 text-purple-700 border-purple-100 hover:bg-purple-100"
                   : "bg-muted/60 text-slate-600 border-slate-200/50 hover:bg-muted",
@@ -429,7 +437,7 @@ function KanbanCard({
         </DropdownMenu>
         {/* Line 5: Date/Delayed status (full width) */}
         {isDelayed(wo) ? (
-          <span className="text-white bg-orange-500 font-bold text-[9px] flex items-center justify-center gap-0.5 w-full px-1.5 py-0.5 rounded-full shadow-sm">
+          <span className="text-white bg-orange-500 font-bold text-[11px] flex items-center justify-center gap-0.5 w-full px-1.5 py-0.5 rounded-full shadow-sm">
             <AlertCircle
               className="h-2.5 w-2.5 pointer-events-none"
               aria-hidden="true"
@@ -439,7 +447,7 @@ function KanbanCard({
         ) : wo.scheduledDate ? (
           <span
             className={cn(
-              "text-primary font-bold text-[10px] flex items-center gap-0.5",
+              "text-primary font-bold text-[11px] flex items-center gap-0.5",
               new Date(wo.scheduledDate).toDateString() ===
                 new Date().toDateString() &&
                 "bg-primary/10 px-1.5 py-0.5 rounded-full ring-1 ring-primary/20 justify-center w-full",
@@ -459,7 +467,7 @@ function KanbanCard({
           </span>
         ) : (
           <span
-            className="font-mono text-[10px] text-muted-foreground/70 flex items-center gap-0.5"
+            className="font-mono text-[11px] text-muted-foreground/70 flex items-center gap-0.5"
             title={new Date(wo.createdAt).toLocaleString("es-AR")}
           >
             <Clock
@@ -523,7 +531,7 @@ function KanbanColumn({
       >
         <div className="flex justify-between items-center">
           <span className="font-semibold text-sm">{status.label}</span>
-          <span className="text-slate-700 text-[10px] font-mono bg-white/80 px-1.5 py-0.5 rounded-full border border-black/10 shadow-sm">
+          <span className="text-slate-700 text-[11px] font-mono bg-white/80 px-1.5 py-0.5 rounded-full border border-black/10 shadow-sm">
             {items.length}
           </span>
         </div>
@@ -665,6 +673,24 @@ export default function WorkOrdersPage() {
       );
     }).length;
   }, [workOrders]);
+
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (paymentFilter !== "all") count++;
+    if (delayedFilter !== "all") count++;
+    if (todayFilter !== "all") count++;
+    if (statusFilter !== "all") count++;
+    if (technicianFilter !== "all") count++;
+    return count;
+  }, [paymentFilter, delayedFilter, todayFilter, statusFilter, technicianFilter]);
+
+  const clearAllFilters = useCallback(() => {
+    setPaymentFilter("all");
+    setDelayedFilter("all");
+    setTodayFilter("all");
+    setStatusFilter("all");
+    setTechnicianFilter("all");
+  }, []);
 
   const filteredWorkOrders = useMemo(() => {
     return workOrders.filter((wo) => {
@@ -1087,150 +1113,160 @@ export default function WorkOrdersPage() {
               )}
             </div>
             {searchQuery && (
-              <span className="text-[10px] text-muted-foreground font-mono whitespace-nowrap">
+              <span className="text-[11px] text-muted-foreground font-mono whitespace-nowrap">
                 {filteredWorkOrders.length} resultado
                 {filteredWorkOrders.length !== 1 ? "s" : ""}
               </span>
             )}
           </div>
 
-          <Button
-            variant={paymentFilter === "pending" ? "default" : "outline"}
-            size="sm"
-            onClick={() =>
-              setPaymentFilter(paymentFilter === "pending" ? "all" : "pending")
-            }
-            className={cn(
-              "h-8 text-xs flex items-center gap-1.5",
-              paymentFilter === "pending"
-                ? "bg-amber-500 text-white border-amber-500 hover:bg-amber-600 hover:border-amber-600"
-                : "",
-            )}
-          >
-            Pendientes de Pago
-            <span
-              className={cn(
-                "text-[10px] px-1.5 py-0.5 rounded font-mono font-bold",
-                paymentFilter === "pending"
-                  ? "bg-white text-amber-700"
-                  : "bg-amber-100 text-amber-800",
-              )}
-            >
-              {countPendingPayment}
-            </span>
-          </Button>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant={activeFiltersCount > 0 ? "default" : "outline"}
+                size="sm"
+                className="h-8 text-xs flex items-center gap-1.5"
+              >
+                <Filter className="h-3.5 w-3.5 pointer-events-none" aria-hidden="true" />
+                Filtros
+                {activeFiltersCount > 0 && (
+                  <span className="text-[11px] px-1.5 py-0.5 rounded font-mono font-bold bg-background/20">
+                    {activeFiltersCount}
+                  </span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-80">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold">Filtros</span>
+                  {activeFiltersCount > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={clearAllFilters}
+                      className="h-7 text-xs text-muted-foreground hover:text-foreground px-2"
+                    >
+                      <X className="h-3 w-3 mr-1" />
+                      Limpiar todo
+                    </Button>
+                  )}
+                </div>
 
-          <Button
-            variant={delayedFilter === "delayed" ? "default" : "outline"}
-            size="sm"
-            onClick={() =>
-              setDelayedFilter(delayedFilter === "delayed" ? "all" : "delayed")
-            }
-            className={cn(
-              "h-8 text-xs flex items-center gap-1.5",
-              delayedFilter === "delayed"
-                ? "bg-orange-500 text-white border-orange-500 hover:bg-orange-600 hover:border-orange-600"
-                : "",
-            )}
-          >
-            Demoradas
-            <span
-              className={cn(
-                "text-[10px] px-1.5 py-0.5 rounded font-mono font-bold",
-                delayedFilter === "delayed"
-                  ? "bg-white text-orange-700"
-                  : "bg-orange-100 text-orange-800",
-              )}
-            >
-              {countDelayed}
-            </span>
-          </Button>
+                {/* Estado group */}
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Estado</p>
+                  <div className="relative">
+                    <ClipboardList
+                      className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none"
+                      aria-hidden="true"
+                    />
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                      <SelectTrigger className="h-8 w-full pl-9 text-xs">
+                        <SelectValue placeholder="Estado" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todos los estados</SelectItem>
+                        {STATUSES.map((status) => (
+                          <SelectItem key={status.id} value={status.id}>
+                            {status.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <Label htmlFor="filter-delayed" className="text-xs flex items-center gap-1.5 cursor-pointer">
+                      <AlertCircle className="h-3.5 w-3.5 text-orange-500" aria-hidden="true" />
+                      Demoradas
+                      <span className="text-[11px] px-1.5 py-0.5 rounded font-mono font-bold bg-orange-100 text-orange-800">
+                        {countDelayed}
+                      </span>
+                    </Label>
+                    <Switch
+                      id="filter-delayed"
+                      checked={delayedFilter === "delayed"}
+                      onCheckedChange={(checked) =>
+                        setDelayedFilter(checked ? "delayed" : "all")
+                      }
+                    />
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <Label htmlFor="filter-today" className="text-xs flex items-center gap-1.5 cursor-pointer">
+                      <Calendar className="h-3.5 w-3.5 text-blue-500" aria-hidden="true" />
+                      Turnos de Hoy
+                      <span className="text-[11px] px-1.5 py-0.5 rounded font-mono font-bold bg-blue-100 text-blue-800">
+                        {countToday}
+                      </span>
+                    </Label>
+                    <Switch
+                      id="filter-today"
+                      checked={todayFilter === "today"}
+                      onCheckedChange={(checked) =>
+                        setTodayFilter(checked ? "today" : "all")
+                      }
+                    />
+                  </div>
+                </div>
 
-          <Button
-            variant={todayFilter === "today" ? "default" : "outline"}
-            size="sm"
-            onClick={() =>
-              setTodayFilter(todayFilter === "today" ? "all" : "today")
-            }
-            className={cn(
-              "h-8 text-xs flex items-center gap-1.5",
-              todayFilter === "today"
-                ? "bg-blue-500 text-white border-blue-500 hover:bg-blue-600 hover:border-blue-600"
-                : "",
-            )}
-          >
-            Turnos de Hoy
-            <span
-              className={cn(
-                "text-[10px] px-1.5 py-0.5 rounded font-mono font-bold",
-                todayFilter === "today"
-                  ? "bg-white text-blue-700"
-                  : "bg-blue-100 text-blue-800",
-              )}
-            >
-              {countToday}
-            </span>
-          </Button>
+                {/* Pago group */}
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Pago</p>
+                  <div className="flex items-center justify-between gap-2">
+                    <Label htmlFor="filter-payment" className="text-xs flex items-center gap-1.5 cursor-pointer">
+                      <Wallet className="h-3.5 w-3.5 text-amber-500" aria-hidden="true" />
+                      Pendientes de Pago
+                      <span className="text-[11px] px-1.5 py-0.5 rounded font-mono font-bold bg-amber-100 text-amber-800">
+                        {countPendingPayment}
+                      </span>
+                    </Label>
+                    <Switch
+                      id="filter-payment"
+                      checked={paymentFilter === "pending"}
+                      onCheckedChange={(checked) =>
+                        setPaymentFilter(checked ? "pending" : "all")
+                      }
+                    />
+                  </div>
+                </div>
 
-          <div className="relative">
-            <UserCog
-              className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none"
-              aria-hidden="true"
-            />
-            <Select
-              value={technicianFilter}
-              onValueChange={setTechnicianFilter}
-            >
-              <SelectTrigger className="h-8 w-[150px] pl-9 text-xs">
-                <SelectValue placeholder="Responsable" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos los responsables</SelectItem>
-                {technicians.map((tech) => (
-                  <SelectItem key={tech.id} value={tech.id}>
-                    {tech.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+                {/* Técnico group */}
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Técnico</p>
+                  <div className="relative">
+                    <UserCog
+                      className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none"
+                      aria-hidden="true"
+                    />
+                    <Select
+                      value={technicianFilter}
+                      onValueChange={setTechnicianFilter}
+                    >
+                      <SelectTrigger className="h-8 w-full pl-9 text-xs">
+                        <SelectValue placeholder="Responsable" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todos los responsables</SelectItem>
+                        {technicians.map((tech) => (
+                          <SelectItem key={tech.id} value={tech.id}>
+                            {tech.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
 
-          <div className="relative">
-            <ClipboardList
-              className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none"
-              aria-hidden="true"
-            />
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="h-8 w-[140px] pl-9 text-xs">
-                <SelectValue placeholder="Estado" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos los estados</SelectItem>
-                {STATUSES.map((status) => (
-                  <SelectItem key={status.id} value={status.id}>
-                    {status.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {(searchQuery ||
-            paymentFilter !== "all" ||
-            delayedFilter !== "all" ||
-            todayFilter !== "all" ||
-            statusFilter !== "all" ||
-            technicianFilter !== "all") && (
+          {(searchQuery || activeFiltersCount > 0) && (
             <Button
               variant="ghost"
               size="sm"
               onClick={() => {
                 setSearchQuery("");
-                setPaymentFilter("all");
-                setDelayedFilter("all");
-                setTodayFilter("all");
-                setStatusFilter("all");
-                setTechnicianFilter("all");
+                clearAllFilters();
               }}
               className="h-8 text-xs text-muted-foreground hover:text-foreground"
             >
@@ -1330,12 +1366,13 @@ export default function WorkOrdersPage() {
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <span className={cn(
-                                    "flex items-center text-xs shrink-0 cursor-help",
+                                    "flex items-center gap-1 text-xs shrink-0 cursor-help",
                                     wo.entryChecklist
                                       ? "text-blue-600 font-semibold"
                                       : "text-muted-foreground/30"
                                   )}>
-                                    📥 Checklist Ingreso
+                                    <LogIn className="h-3.5 w-3.5" aria-hidden="true" />
+                                    Checklist Ingreso
                                   </span>
                                 </TooltipTrigger>
                                 <TooltipContent>
@@ -1348,12 +1385,13 @@ export default function WorkOrdersPage() {
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <span className={cn(
-                                    "flex items-center text-xs shrink-0 cursor-help",
+                                    "flex items-center gap-1 text-xs shrink-0 cursor-help",
                                     wo.exitChecklist
                                       ? "text-emerald-600 font-semibold"
                                       : "text-muted-foreground/30"
                                   )}>
-                                    📤 Checklist Calidad
+                                    <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
+                                    Checklist Calidad
                                   </span>
                                 </TooltipTrigger>
                                 <TooltipContent>
@@ -1380,7 +1418,7 @@ export default function WorkOrdersPage() {
                           </div>
 
                           {wo.technician && (
-                            <div className="flex items-center gap-1 text-[10px] bg-purple-50 text-purple-700 px-2 py-1 rounded border border-purple-100 font-medium">
+                            <div className="flex items-center gap-1 text-[11px] bg-purple-50 text-purple-700 px-2 py-1 rounded border border-purple-100 font-medium">
                               <UserCog className="h-3 w-3" />
                               {wo.technician.name}
                             </div>
@@ -1420,7 +1458,7 @@ export default function WorkOrdersPage() {
                           {wo.scheduledDate && (
                             <div
                               className={cn(
-                                "flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full",
+                                "flex items-center gap-1 text-[11px] font-bold px-2 py-1 rounded-full",
                                 new Date(wo.scheduledDate).toDateString() ===
                                   new Date().toDateString()
                                   ? "bg-primary/10 text-primary ring-1 ring-primary/20"

@@ -39,10 +39,136 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { AlertDialog as AlertDialogPrimitive } from "radix-ui";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { validateCUIT, formatCUIT } from "@/lib/utils/cuit-validation";
 import { cn } from "@/lib/utils";
+
+// --- Thin styled AlertDialog wrappers (radix-ui primitives) ---
+const AlertDialog = AlertDialogPrimitive.Root;
+const AlertDialogPortal = AlertDialogPrimitive.Portal;
+function AlertDialogOverlay(props: React.ComponentProps<typeof AlertDialogPrimitive.Overlay>) {
+  return (
+    <AlertDialogPrimitive.Overlay
+      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0"
+      {...props}
+    />
+  );
+}
+function AlertDialogContent({
+  className,
+  children,
+  ...props
+}: React.ComponentProps<typeof AlertDialogPrimitive.Content>) {
+  return (
+    <AlertDialogPortal>
+      <AlertDialogOverlay />
+      <AlertDialogPrimitive.Content
+        className={cn(
+          "fixed left-1/2 top-1/2 z-50 grid w-full max-w-md -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-background p-6 shadow-2xl outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+          className,
+        )}
+        {...props}
+      >
+        {children}
+      </AlertDialogPrimitive.Content>
+    </AlertDialogPortal>
+  );
+}
+function AlertDialogTitle({
+  className,
+  ...props
+}: React.ComponentProps<typeof AlertDialogPrimitive.Title>) {
+  return (
+    <AlertDialogPrimitive.Title
+      className={cn("text-base font-semibold leading-tight", className)}
+      {...props}
+    />
+  );
+}
+function AlertDialogDescription({
+  className,
+  ...props
+}: React.ComponentProps<typeof AlertDialogPrimitive.Description>) {
+  return (
+    <AlertDialogPrimitive.Description
+      className={cn("text-sm text-muted-foreground leading-relaxed", className)}
+      {...props}
+    />
+  );
+}
+const AlertDialogAction = AlertDialogPrimitive.Action;
+const AlertDialogCancel = AlertDialogPrimitive.Cancel;
+
+// --- AFIP error parser (UI-only, does not touch API/service logic) ---
+function parseAfipError(errorData: any): {
+  title: string;
+  detail?: string;
+  suggestion?: string;
+} {
+  const rawError =
+    typeof errorData === "string"
+      ? errorData
+      : errorData?.error || errorData?.message || "";
+  const code = errorData?.code || errorData?.afipErrorCode;
+  const lower = rawError.toLowerCase();
+
+  if (
+    lower.includes("conexion") ||
+    lower.includes("connection") ||
+    lower.includes("timeout") ||
+    lower.includes("no se pudo conectar")
+  ) {
+    return {
+      title: "Sin conexión con AFIP",
+      detail: rawError,
+      suggestion:
+        "No se pudo conectar con los servidores de AFIP. Intente nuevamente en unos momentos.",
+    };
+  }
+
+  if (lower.includes("fecha") || lower.includes("date")) {
+    return {
+      title: code
+        ? `Error de validación de fecha (Cód. ${code})`
+        : "Error de validación de fecha",
+      detail: rawError,
+      suggestion:
+        "Verifique que la fecha del comprobante no sea anterior a la del último comprobante oficializado.",
+    };
+  }
+
+  if (
+    lower.includes("cae") ||
+    lower.includes("autorizado") ||
+    lower.includes("rechaz") ||
+    code
+  ) {
+    return {
+      title: code
+        ? `AFIP rechazó el comprobante (Cód. ${code})`
+        : "AFIP rechazó el comprobante",
+      detail: rawError,
+      suggestion:
+        "Revise los datos del cliente y del comprobante. Si el problema persiste, contacte al administrador del sistema.",
+    };
+  }
+
+  return {
+    title: "Error al oficializar",
+    detail: rawError || "Ocurrió un error inesperado.",
+    suggestion:
+      "Intente nuevamente. Si el problema persiste, contacte al administrador.",
+  };
+}
 
 interface InvoiceItem {
   name: string;
@@ -89,6 +215,7 @@ export default function InvoiceDetailPage() {
   const [loading, setLoading] = useState(true);
 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
   const [editForm, setEditForm] = useState({
     customerName: "",
     customerDocType: "SIN_DOC",
@@ -137,12 +264,19 @@ export default function InvoiceDetailPage() {
           setInvoice(await updatedResponse.json());
         }
       } else {
-        const error = await response.json();
-        toast.error(error.error || "Error al actualizar los datos", { id: toastId });
+        const error = await response.json().catch(() => ({}));
+        toast.error(
+          error.error ||
+            "No se pudieron actualizar los datos de facturación. Verifique los campos e intente nuevamente.",
+          { id: toastId },
+        );
       }
     } catch (error) {
       console.error("Error updating billing data:", error);
-      toast.error("Error de conexión", { id: toastId });
+      toast.error(
+        "No se pudieron actualizar los datos. Verifique su conexión de red e intente nuevamente.",
+        { id: toastId },
+      );
     } finally {
       setIsSaving(false);
     }
@@ -161,11 +295,15 @@ export default function InvoiceDetailPage() {
             setTimeout(() => window.print(), 1000);
           }
         } else {
-          toast.error("No se pudo encontrar el comprobante");
+          toast.error(
+            "No se pudo encontrar el comprobante. Verifique que el identificador sea correcto e intente nuevamente.",
+          );
         }
       } catch (error) {
         console.error("Error fetching invoice:", error);
-        toast.error("Error de conexión");
+        toast.error(
+          "No se pudo cargar el comprobante. Verifique su conexión de red e intente nuevamente.",
+        );
       } finally {
         setLoading(false);
       }
@@ -219,13 +357,8 @@ export default function InvoiceDetailPage() {
   };
 
   const handleCancel = async () => {
-    if (
-      !confirm(
-        "¿Está seguro de que desea cancelar este comprobante? Esta acción no se puede deshacer.",
-      )
-    ) {
-      return;
-    }
+    setIsCancelDialogOpen(false);
+    const previousStatus = invoice?.status;
 
     try {
       const response = await fetch(`/api/invoices/${id}`, {
@@ -235,7 +368,14 @@ export default function InvoiceDetailPage() {
       });
 
       if (response.ok) {
-        toast.success("Comprobante cancelado correctamente");
+        toast.success("Comprobante cancelado correctamente", {
+          description: "El comprobante fue cancelado correctamente.",
+          action: {
+            label: "Deshacer",
+            onClick: () => void handleUndoCancel(previousStatus),
+          },
+          duration: 8000,
+        });
         router.refresh();
         // Re-fetch to update UI state
         const updatedResponse = await fetch(`/api/invoices/${id}`);
@@ -243,12 +383,55 @@ export default function InvoiceDetailPage() {
           setInvoice(await updatedResponse.json());
         }
       } else {
-        const error = await response.json();
-        toast.error(error.error || "Error al cancelar el comprobante");
+        const error = await response.json().catch(() => ({}));
+        toast.error(
+          error.error ||
+            "No se pudo cancelar el comprobante. Si el problema persiste, contacte al administrador.",
+        );
       }
     } catch (error) {
       console.error("Error cancelling invoice:", error);
-      toast.error("Error de conexión");
+      toast.error(
+        "No se pudo cancelar el comprobante. Verifique su conexión de red e intente nuevamente.",
+      );
+    }
+  };
+
+  const handleUndoCancel = async (previousStatus?: string) => {
+    if (!previousStatus) return;
+    const undoToastId = toast.loading("Revirtiendo cancelación...");
+    try {
+      const response = await fetch(`/api/invoices/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: previousStatus }),
+      });
+
+      if (response.ok) {
+        toast.success("Cancelación revertida", {
+          id: undoToastId,
+          description: "El comprobante volvió a su estado anterior.",
+        });
+        router.refresh();
+        // Re-fetch to update UI state
+        const updatedResponse = await fetch(`/api/invoices/${id}`);
+        if (updatedResponse.ok) {
+          setInvoice(await updatedResponse.json());
+        }
+      } else {
+        const error = await response.json().catch(() => ({}));
+        toast.error(
+          error.error ||
+            "No se pudo deshacer la cancelación. El comprobante sigue cancelado.",
+          { id: undoToastId },
+        );
+      }
+    } catch (error) {
+      console.error("Error undoing cancel:", error);
+      toast.error(
+        "No se pudo deshacer la cancelación. Verifique su conexión de red e intente nuevamente.",
+        { id: undoToastId },
+      );
     }
   };
 
@@ -267,12 +450,19 @@ export default function InvoiceDetailPage() {
           setInvoice(await updatedResponse.json());
         }
       } else {
-        const error = await response.json();
-        toast.error(error.error || "Error al oficializar", { id: toastId });
+        const errorData = await response.json().catch(() => ({}));
+        const parsed = parseAfipError(errorData);
+        const fullMessage = parsed.detail
+          ? `${parsed.title}: ${parsed.detail}${parsed.suggestion ? ` — ${parsed.suggestion}` : ""}`
+          : `${parsed.title}${parsed.suggestion ? ` — ${parsed.suggestion}` : ""}`;
+        toast.error(fullMessage, { id: toastId });
       }
     } catch (error) {
       console.error("Error officializing invoice:", error);
-      toast.error("Error de conexión", { id: toastId });
+      toast.error(
+        "Sin conexión con AFIP. Verifique su conexión de red e intente nuevamente.",
+        { id: toastId },
+      );
     }
   };
 
@@ -309,7 +499,7 @@ export default function InvoiceDetailPage() {
               ? [
                   {
                     label: "Cancelar",
-                    onClick: handleCancel,
+                    onClick: () => setIsCancelDialogOpen(true),
                     icon: XCircle,
                     variant: "destructive" as const,
                   },
@@ -655,18 +845,25 @@ export default function InvoiceDetailPage() {
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-sm">Estado actual:</span>
-                  <Badge
-                    variant={
-                      invoice.status === "ISSUED" ? "default" : "outline"
-                    }
-                    className={
-                      invoice.status === "ISSUED"
-                        ? "bg-emerald-500 hover:bg-emerald-600"
-                        : ""
-                    }
-                  >
-                    {invoice.status}
-                  </Badge>
+                  {invoice.status === "ISSUED" ? (
+                    <Badge variant="outline" className="text-emerald-600 border-emerald-200 bg-emerald-50">
+                      {invoice.status}
+                    </Badge>
+                  ) : invoice.status === "REJECTED" ? (
+                    <Badge variant="outline" className="text-red-600 border-red-200 bg-red-50">
+                      {invoice.status}
+                    </Badge>
+                  ) : invoice.status === "DRAFT" ? (
+                    <Badge variant="outline" className="text-amber-600 border-amber-200 bg-amber-50">
+                      {invoice.status}
+                    </Badge>
+                  ) : invoice.status === "CANCELLED" ? (
+                    <Badge variant="outline" className="text-slate-600 border-slate-200 bg-slate-50">
+                      {invoice.status}
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline">{invoice.status}</Badge>
+                  )}
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm">Fecha emisión:</span>
@@ -772,23 +969,25 @@ export default function InvoiceDetailPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="customerDocType">Tipo de Doc.</Label>
-                <select
-                  id="customerDocType"
+                <Select
                   value={editForm.customerDocType}
-                  onChange={(e) => {
-                    const docType = e.target.value;
+                  onValueChange={(docType) => {
                     setEditForm({
                       ...editForm,
                       customerDocType: docType,
-                      customerDoc: docType === 'SIN_DOC' ? '' : editForm.customerDoc
+                      customerDoc: docType === "SIN_DOC" ? "" : editForm.customerDoc,
                     });
                   }}
-                  className="h-8 w-full rounded-lg border border-input bg-background px-2.5 py-1 text-sm text-foreground transition-colors outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 >
-                  <option value="SIN_DOC">Sin Documento</option>
-                  <option value="DNI">DNI</option>
-                  <option value="CUIT">CUIT</option>
-                </select>
+                  <SelectTrigger id="customerDocType" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="SIN_DOC">Sin Documento</SelectItem>
+                    <SelectItem value="DNI">DNI</SelectItem>
+                    <SelectItem value="CUIT">CUIT</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">
@@ -882,6 +1081,37 @@ export default function InvoiceDetailPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Cancel confirmation AlertDialog */}
+      <AlertDialog open={isCancelDialogOpen} onOpenChange={setIsCancelDialogOpen}>
+        <AlertDialogContent>
+          <div className="flex items-start gap-3.5">
+            <div className="flex-shrink-0 rounded-lg bg-red-500/10 p-2.5">
+              <XCircle className="h-5 w-5 text-red-600" aria-hidden="true" />
+            </div>
+            <div className="flex-1 space-y-2">
+              <AlertDialogTitle>Cancelar comprobante</AlertDialogTitle>
+              <AlertDialogDescription>
+                Está por cancelar el comprobante{" "}
+                <span className="font-mono font-semibold text-foreground">
+                  {invoice.number}
+                </span>{" "}
+                ({invoice.type.replace(/_/g, " ")}). Esta acción no se puede deshacer.
+              </AlertDialogDescription>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 border-t pt-4 mt-2">
+            <AlertDialogCancel asChild>
+              <Button variant="outline">No, mantener</Button>
+            </AlertDialogCancel>
+            <AlertDialogAction asChild>
+              <Button variant="destructive" onClick={handleCancel}>
+                Sí, cancelar
+              </Button>
+            </AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

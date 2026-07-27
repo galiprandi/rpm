@@ -2,6 +2,7 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
+import { PackageX, PackageCheck } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -23,18 +24,27 @@ export function StockAlertCard({
   lowStockItems,
 }: StockAlertCardProps) {
   const hasAlerts = lowStockCount > 0;
+  const Icon = hasAlerts ? PackageX : PackageCheck;
 
   return (
-    <Card
-      className={`relative overflow-hidden border-l-2 ${hasAlerts ? "border-l-orange-500/60" : "border-l-emerald-500/60"}`}
-    >
-      <CardContent className="p-3.5">
+    <Card className="relative overflow-hidden min-w-0">
+      <CardContent className="p-3.5 min-w-0">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-            Stock Bajo
-          </span>
+          <div className="flex items-center gap-2 min-w-0">
+            <span
+              className={`flex size-7 shrink-0 items-center justify-center rounded-lg border ${hasAlerts ? "bg-orange-500/10 border-orange-500/20" : "bg-emerald-500/10 border-emerald-500/20"}`}
+            >
+              <Icon
+                className={`h-3.5 w-3.5 pointer-events-none ${hasAlerts ? "text-orange-700" : "text-emerald-700"}`}
+                aria-hidden="true"
+              />
+            </span>
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70 truncate">
+              Stock Bajo
+            </span>
+          </div>
           {hasAlerts && (
-            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-700">
+            <span className="text-[11px] font-bold px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-700 shrink-0">
               {lowStockCount} prod.
             </span>
           )}
@@ -85,7 +95,7 @@ export function StockAlertCard({
         {hasAlerts && (
           <Link
             href="/adm/products?lowStock=true"
-            className="text-[10px] text-primary hover:underline mt-1.5 inline-block font-medium"
+            className="text-[11px] text-primary hover:underline mt-1.5 inline-block font-medium"
           >
             Ver lista →
           </Link>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ModalBase } from "@/components/ui/ModalBase";
@@ -12,6 +12,7 @@ import { Header, CrudStats } from "@/components/adm";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { formatARS } from "@/lib/utils/format";
+import { ARGENTINA_TIMEZONE } from "@/lib/utils/date";
 import {
   Select,
   SelectContent,
@@ -37,7 +38,13 @@ import {
   ChevronRight,
   User,
   Clock,
+  Package,
+  Receipt,
+  RotateCcw,
+  AlertTriangle,
+  PartyPopper,
 } from "lucide-react";
+import { toast } from "sonner";
 
 interface CashSummary {
   opening: number;
@@ -83,6 +90,17 @@ interface PaymentMethod {
   name: string;
 }
 
+interface CeremonySummary {
+  totalSales: number;
+  transactionCount: number;
+  topProduct: { name: string; quantity: number } | null;
+  peakHour: { label: string; count: number } | null;
+  totalExpected: number;
+  totalCounted: number;
+  totalDifference: number;
+  hasDifference: boolean;
+}
+
 export default function CashClient() {
   const { alert } = useUI();
   const [cashStatus, setCashStatus] = useState<CashStatus | null>(null);
@@ -111,6 +129,17 @@ export default function CashClient() {
     number
   > | null>(null);
   const [counts, setCounts] = useState<Record<string, string>>({});
+
+  // Close flow state: confirmation dialog + ceremony summary
+  const [isCloseConfirmOpen, setIsCloseConfirmOpen] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
+  const [isCeremonyOpen, setIsCeremonyOpen] = useState(false);
+  const [ceremonyData, setCeremonyData] = useState<CeremonySummary | null>(null);
+  const [reopenLoading, setReopenLoading] = useState(false);
+  const differenceReasonRef = useRef<HTMLTextAreaElement>(null);
+  // Refs to allow retry actions to reference the latest handler without TDZ
+  const fetchStatusRef = useRef<() => Promise<void>>(() => Promise.resolve());
+  const reopenRef = useRef<() => Promise<void>>(() => Promise.resolve());
 
   // Responsible user state
   const [responsibleId, setResponsibleId] = useState("");
@@ -146,15 +175,29 @@ export default function CashClient() {
         setCounts(initialCounts);
       } else {
         await alert({
-          title: "Error",
-          description: "No se pudo cargar el estado de caja",
+          title: "No se pudo cargar el estado de caja",
+          description:
+            "Ocurrió un error al consultar el estado actual. Verifique su conexión e intente nuevamente.",
           variant: "error",
+          action: { label: "Reintentar", onClick: () => fetchStatusRef.current() },
         });
       }
     } catch (error) {
       console.error("Error fetching cash status:", error);
+      await alert({
+        title: "Sin conexión con el servidor",
+        description:
+          "No se pudo contactar al servidor para obtener el estado de caja. Reintente en unos segundos.",
+        variant: "error",
+        action: { label: "Reintentar", onClick: () => fetchStatusRef.current() },
+      });
     }
   }, [alert]);
+
+  // Keep retry ref in sync with the latest status handler
+  useEffect(() => {
+    fetchStatusRef.current = fetchStatus;
+  }, [fetchStatus]);
 
   const fetchPaymentMethods = useCallback(async () => {
     try {
@@ -389,11 +432,19 @@ export default function CashClient() {
     }
   };
 
-  const handleCloseCash = async () => {
+  // Build the counts payload from the current input state
+  const buildCountsData = useCallback((): Record<string, number> => {
     const countsData: Record<string, number> = {};
     Object.entries(counts).forEach(([method, value]) => {
       countsData[method] = parseFloat(value) || 0;
     });
+    return countsData;
+  }, [counts]);
+
+  // Open the confirmation dialog after validating counts + reason
+  const handleConfirmClose = async () => {
+    if (isClosing) return;
+    const countsData = buildCountsData();
 
     // Check for differences (including server-reported ones from cache staleness)
     let hasDifference = false;
@@ -415,10 +466,104 @@ export default function CashClient() {
       await alert({
         title: "Diferencias detectadas",
         description:
-          "Debe ingresar una explicación de al menos 5 caracteres para las diferencias encontradas",
+          "Debe ingresar una explicación de al menos 5 caracteres para las diferencias encontradas antes de confirmar el cierre.",
         variant: "error",
       });
       return;
+    }
+
+    setIsCloseConfirmOpen(true);
+  };
+
+  // Fetch the day's sales report to populate the ceremony summary
+  const fetchCeremonyData = useCallback(
+    async (closeResponse: {
+      expected: Record<string, number>;
+      counted: Record<string, number>;
+      differences: Record<string, number>;
+      hasDifference: boolean;
+    }): Promise<CeremonySummary> => {
+      const totalExpected = Object.values(closeResponse.expected).reduce(
+        (a, b) => a + (Number(b) || 0),
+        0,
+      );
+      const totalCounted = Object.values(closeResponse.counted).reduce(
+        (a, b) => a + (Number(b) || 0),
+        0,
+      );
+      const totalDifference = totalCounted - totalExpected;
+
+      const base: CeremonySummary = {
+        totalSales: totalCounted,
+        transactionCount: 0,
+        topProduct: null,
+        peakHour: null,
+        totalExpected,
+        totalCounted,
+        totalDifference,
+        hasDifference: closeResponse.hasDifference,
+      };
+
+      try {
+        const todayStr = new Intl.DateTimeFormat("en-CA", {
+          timeZone: ARGENTINA_TIMEZONE,
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+        }).format(new Date());
+
+        const res = await fetch(
+          `/api/reports/sales?startDate=${todayStr}&endDate=${todayStr}&groupBy=hour`,
+        );
+        if (res.ok) {
+          const data = await res.json();
+          base.totalSales = data.totalSales?.current ?? base.totalCounted;
+          base.transactionCount = data.orderCount?.current ?? 0;
+          if (Array.isArray(data.topProducts) && data.topProducts.length > 0) {
+            const top = data.topProducts[0];
+            base.topProduct = {
+              name: top.name,
+              quantity: Number(top.quantity) || 0,
+            };
+          }
+          if (Array.isArray(data.evolution) && data.evolution.length > 0) {
+            const peak = data.evolution.reduce(
+              (
+                max: { label: string; count: number },
+                item: { label: string; count: number },
+              ) => (item.count > max.count ? item : max),
+              data.evolution[0],
+            );
+            if (peak && peak.count > 0) {
+              base.peakHour = { label: peak.label, count: peak.count };
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching ceremony sales data:", error);
+      }
+
+      return base;
+    },
+    [],
+  );
+
+  // Actual close API call — triggered from the confirmation dialog
+  const handleCloseCash = async () => {
+    if (isClosing) return;
+    setIsClosing(true);
+    const countsData = buildCountsData();
+
+    let hasDifference = false;
+    Object.entries(cashStatus?.summary || {}).forEach(([method, summary]) => {
+      const expected = summary.expected;
+      const counted = countsData[method] || 0;
+      if (Math.abs(expected - counted) > 0.01) {
+        hasDifference = true;
+      }
+    });
+    if (serverDifferences) {
+      hasDifference = true;
     }
 
     try {
@@ -435,36 +580,114 @@ export default function CashClient() {
         const data = await res.json();
         if (data.requiresReason) {
           // Backend detected differences that the frontend didn't show (cache staleness)
+          setIsCloseConfirmOpen(false);
           setServerDifferences(data.differences);
           await alert({
-            title: "Diferencias detectadas",
+            title: "Diferencias detectadas por el sistema",
             description:
-              "El sistema detectó diferencias entre el conteo y los movimientos reales. Ingrese una explicación y vuelva a confirmar.",
+              "El sistema detectó diferencias entre el conteo y los movimientos reales (posible desactualización de caché). Ingrese una explicación y vuelva a confirmar.",
             variant: "warning",
           });
           return;
         }
+        setIsCloseConfirmOpen(false);
         setIsCloseModalOpen(false);
         setDifferenceReason("");
         setServerDifferences(null);
         fetchStatus();
+
+        // Discoverable undo: toast with a reopen action so users who
+        // accidentally closed can revert immediately, alongside the
+        // ceremony modal which also offers the same action.
+        toast.success("Caja cerrada correctamente", {
+          action: {
+            label: "Reabrir",
+            onClick: () => handleReopenCash(),
+          },
+          duration: 10000,
+        });
+
+        // Build and show the ceremony summary
+        const ceremony = await fetchCeremonyData(data);
+        setCeremonyData(ceremony);
+        setIsCeremonyOpen(true);
       } else {
-        const error = await res.json();
+        const error = await res.json().catch(() => ({}));
+        setIsCloseConfirmOpen(false);
         await alert({
-          title: "Error",
-          description: error.error || "No se pudo cerrar la caja",
+          title: "No se pudo cerrar la caja",
+          description:
+            error.error ||
+            "Ocurrió un error al registrar el cierre. Reintente en unos segundos.",
           variant: "error",
+          action: { label: "Reintentar", onClick: () => setIsCloseConfirmOpen(true) },
         });
       }
     } catch (error) {
       console.error("Error closing cash:", error);
+      setIsCloseConfirmOpen(false);
       await alert({
-        title: "Error",
-        description: "Error al cerrar la caja",
+        title: "Sin conexión con el servidor",
+        description:
+          "No se pudo contactar al servidor para cerrar la caja. Verifique su conexión e reintente.",
         variant: "error",
+        action: { label: "Reintentar", onClick: () => setIsCloseConfirmOpen(true) },
       });
+    } finally {
+      setIsClosing(false);
     }
   };
+
+  // Soft-undo: reopen the cash register after a close, using the last closing
+  // amount as the new opening. This re-opens for continued operation.
+  const handleReopenCash = useCallback(async () => {
+    if (reopenLoading) return;
+    setReopenLoading(true);
+    const amount = cashStatus?.suggestedOpeningAmount || 0;
+
+    try {
+      const res = await fetch("/api/cash/open", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount, responsibleId: currentUserId }),
+      });
+
+      if (res.ok) {
+        await alert({
+          title: "Caja reabierta",
+          description: `Se reabrió la caja con un monto inicial de ${formatARS(amount)}. Puede continuar registrando movimientos.`,
+          variant: "success",
+        });
+        fetchStatus();
+      } else {
+        const error = await res.json().catch(() => ({}));
+        await alert({
+          title: "No se pudo reabrir la caja",
+          description:
+            error.error ||
+            "Ocurrió un error al reabrir la caja. Reintente en unos segundos.",
+          variant: "error",
+          action: { label: "Reintentar", onClick: () => reopenRef.current() },
+        });
+      }
+    } catch (error) {
+      console.error("Error reopening cash:", error);
+      await alert({
+        title: "Sin conexión con el servidor",
+        description:
+          "No se pudo contactar al servidor para reabrir la caja. Verifique su conexión e reintente.",
+        variant: "error",
+        action: { label: "Reintentar", onClick: () => reopenRef.current() },
+      });
+    } finally {
+      setReopenLoading(false);
+    }
+  }, [reopenLoading, cashStatus?.suggestedOpeningAmount, currentUserId, alert, fetchStatus]);
+
+  // Keep retry ref in sync with the latest reopen handler
+  useEffect(() => {
+    reopenRef.current = handleReopenCash;
+  }, [handleReopenCash]);
 
   const getMethodName = (code: string) => {
     const method = paymentMethods.find((m) => m.code === code);
@@ -478,6 +701,60 @@ export default function CashClient() {
   };
 
   const isOpen = cashStatus?.status === "OPEN";
+
+  // Aggregated totals for the close comparison table + confirmation dialog
+  const summaryMethods = Object.keys(cashStatus?.summary || {}).filter(
+    (method) => {
+      const s = cashStatus?.summary[method];
+      return s && (s.expected > 0 || s.opening > 0);
+    },
+  );
+
+  const closeTotals = useMemo(() => {
+    let totalExpected = 0;
+    let totalCounted = 0;
+    summaryMethods.forEach((method) => {
+      totalExpected += cashStatus?.summary[method]?.expected || 0;
+      totalCounted += parseFloat(counts[method] || "0") || 0;
+    });
+    return {
+      totalExpected,
+      totalCounted,
+      totalDifference: totalCounted - totalExpected,
+    };
+  }, [cashStatus, counts, summaryMethods]);
+
+  // True when every active method has a non-empty count value
+  const allCountsEntered = useMemo(() => {
+    if (summaryMethods.length === 0) return false;
+    return summaryMethods.every(
+      (method) =>
+        counts[method] !== undefined &&
+        counts[method] !== "" &&
+        !isNaN(parseFloat(counts[method])),
+    );
+  }, [counts, summaryMethods]);
+
+  const hasFrontendDifferences = useMemo(
+    () => Math.abs(closeTotals.totalDifference) > 0.01,
+    [closeTotals.totalDifference],
+  );
+
+  // The ceremony modal opens immediately after a successful close and is
+  // dismissed by the user, so while it's open the close is always recent.
+  // The history tab's reopen button remains available for later reopens.
+  const canReopenFromCeremony = isCeremonyOpen && !!cashStatus?.closedAt;
+
+  // Auto-focus the difference-reason field when differences are detected
+  useEffect(() => {
+    if (
+      isCloseModalOpen &&
+      (hasFrontendDifferences || serverDifferences) &&
+      differenceReasonRef.current
+    ) {
+      differenceReasonRef.current.focus();
+    }
+  }, [isCloseModalOpen, hasFrontendDifferences, serverDifferences]);
 
   const stats = useMemo(
     () => [
@@ -733,16 +1010,38 @@ export default function CashClient() {
                 No hay una jornada activa. Abre la caja para comenzar a
                 registrar movimientos.
               </p>
-              <Button
-                onClick={() => setIsOpenModalOpen(true)}
-                className="mt-6 bg-emerald-600 hover:bg-emerald-700"
-              >
-                <ArrowUpCircle
-                  className="mr-2 h-4 w-4 pointer-events-none"
-                  aria-hidden="true"
-                />
-                Abrir Caja Ahora
-              </Button>
+              <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+                <Button
+                  onClick={() => setIsOpenModalOpen(true)}
+                  className="bg-emerald-600 hover:bg-emerald-700"
+                >
+                  <ArrowUpCircle
+                    className="mr-2 h-4 w-4 pointer-events-none"
+                    aria-hidden="true"
+                  />
+                  Abrir Caja Ahora
+                </Button>
+                {cashStatus?.closedAt && (
+                  <Button
+                    onClick={handleReopenCash}
+                    disabled={reopenLoading}
+                    variant="outline"
+                    className="border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors"
+                  >
+                    <RotateCcw
+                      className="mr-2 h-4 w-4 pointer-events-none"
+                      aria-hidden="true"
+                    />
+                    {reopenLoading ? "Reabriendo..." : "Reabrir Caja"}
+                  </Button>
+                )}
+              </div>
+              {cashStatus?.closedAt && (
+                <p className="text-xs text-muted-foreground mt-4 max-w-md mx-auto">
+                  Si cerró por error y aún no registró movimientos, puede
+                  reabrir la caja con el monto del último cierre.
+                </p>
+              )}
             </div>
           )}
         </TabsContent>
@@ -1230,13 +1529,20 @@ export default function CashClient() {
               <tbody className="divide-y">
                 {Object.entries(cashStatus?.summary || {}).map(
                   ([method, summary]) => {
+                    if (!(summary.expected > 0 || summary.opening > 0))
+                      return null;
                     const diff = calculateDifference(method);
                     const hasDiff = Math.abs(diff) > 0.01;
 
                     return (
                       <tr
                         key={method}
-                        className="hover:bg-muted/5 transition-colors"
+                        className={cn(
+                          "transition-colors",
+                          hasDiff
+                            ? "bg-red-50 hover:bg-red-100/60"
+                            : "hover:bg-muted/5",
+                        )}
                       >
                         <td className="py-3 px-6">
                           <div className="flex items-center gap-3">
@@ -1273,17 +1579,19 @@ export default function CashClient() {
                               }
                               className="pl-8 text-right h-9 font-mono"
                               placeholder="0.00"
+                              aria-label={`Contado ${getMethodName(method)}`}
                             />
                           </div>
                         </td>
                         <td
-                          className={`text-right py-3 px-6 font-bold font-mono ${
+                          className={cn(
+                            "text-right py-3 px-6 font-bold font-mono",
                             hasDiff
                               ? diff > 0
-                                ? "text-blue-700"
-                                : "text-red-700"
-                              : "text-emerald-700"
-                          }`}
+                                ? "text-amber-600"
+                                : "text-red-600"
+                              : "text-emerald-600",
+                          )}
                         >
                           {hasDiff ? (
                             <div className="flex items-center justify-end gap-1.5">
@@ -1316,14 +1624,36 @@ export default function CashClient() {
                   },
                 )}
               </tbody>
+              <tfoot>
+                <tr className="bg-muted/30 border-t-2 border-muted-foreground/10 font-semibold">
+                  <td className="py-3 px-6 text-card-foreground">Total</td>
+                  <td className="text-right py-3 px-6 font-mono text-card-foreground">
+                    {formatARS(closeTotals.totalExpected)}
+                  </td>
+                  <td className="text-right py-3 px-6 font-mono text-card-foreground">
+                    {formatARS(closeTotals.totalCounted)}
+                  </td>
+                  <td
+                    className={cn(
+                      "text-right py-3 px-6 font-bold font-mono",
+                      Math.abs(closeTotals.totalDifference) > 0.01
+                        ? closeTotals.totalDifference > 0
+                          ? "text-amber-600"
+                          : "text-red-600"
+                        : "text-emerald-600",
+                    )}
+                  >
+                    {Math.abs(closeTotals.totalDifference) > 0.01
+                      ? `${closeTotals.totalDifference > 0 ? "+" : ""}${formatARS(closeTotals.totalDifference)}`
+                      : "Cuadrado"}
+                  </td>
+                </tr>
+              </tfoot>
             </table>
           </div>
 
           {/* Check for differences (frontend-detected or server-reported) */}
-          {(Object.entries(cashStatus?.summary || {}).some(
-            ([method]) => Math.abs(calculateDifference(method)) > 0.01,
-          ) ||
-            serverDifferences) && (
+          {(hasFrontendDifferences || serverDifferences) && (
             <div className="space-y-3 p-4 bg-red-50 border border-red-100 rounded-lg animate-in slide-in-from-top-2">
               <div className="flex items-center gap-2 text-red-700">
                 <AlertCircle
@@ -1343,6 +1673,7 @@ export default function CashClient() {
                   />
                   <textarea
                     id="differenceReason"
+                    ref={differenceReasonRef}
                     value={differenceReason}
                     onChange={(e) => setDifferenceReason(e.target.value)}
                     placeholder="Explique las diferencias encontradas (mínimo 5 caracteres)"
@@ -1353,16 +1684,305 @@ export default function CashClient() {
             </div>
           )}
 
+          {!allCountsEntered && (
+            <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+              <AlertCircle
+                className="h-3.5 w-3.5 pointer-events-none"
+                aria-hidden="true"
+              />
+              Ingrese el monto contado de todos los métodos para habilitar el
+              cierre.
+            </p>
+          )}
+
           <div className="flex justify-end gap-3 pt-4">
             <Button variant="ghost" onClick={() => setIsCloseModalOpen(false)}>
               Cancelar
             </Button>
             <Button
-              onClick={handleCloseCash}
+              onClick={handleConfirmClose}
+              disabled={!allCountsEntered || isClosing}
               variant="destructive"
               className="font-semibold shadow-lg"
             >
               Confirmar Cierre de Caja
+            </Button>
+          </div>
+        </div>
+      </ModalBase>
+
+      {/* Close Confirmation Dialog (AlertDialog pattern) */}
+      <ModalBase
+        isOpen={isCloseConfirmOpen}
+        onClose={() => setIsCloseConfirmOpen(false)}
+        title="Confirmar Cierre de Caja"
+        maxWidth="md"
+      >
+        <div className="space-y-5 p-1">
+          <div className="flex items-start gap-3.5">
+            <div className="flex-shrink-0 rounded-lg p-2.5 bg-red-500/10">
+              <AlertTriangle
+                className="h-5 w-5 text-red-600 pointer-events-none"
+                aria-hidden="true"
+              />
+            </div>
+            <div className="flex-1 space-y-1 pt-0.5">
+              <h3 className="text-base font-semibold leading-tight">
+                ¿Confirmar el cierre de caja?
+              </h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Revise el resumen antes de confirmar. Esta acción registra el
+                arqueo definitivo del día.
+              </p>
+            </div>
+          </div>
+
+          <div className="rounded-lg border bg-muted/20 overflow-hidden">
+            <table className="w-full text-sm">
+              <tbody className="divide-y">
+                <tr>
+                  <td className="py-2.5 px-4 text-muted-foreground">
+                    Total Esperado
+                  </td>
+                  <td className="text-right py-2.5 px-4 font-mono font-semibold text-card-foreground">
+                    {formatARS(closeTotals.totalExpected)}
+                  </td>
+                </tr>
+                <tr>
+                  <td className="py-2.5 px-4 text-muted-foreground">
+                    Total Contado
+                  </td>
+                  <td className="text-right py-2.5 px-4 font-mono font-semibold text-card-foreground">
+                    {formatARS(closeTotals.totalCounted)}
+                  </td>
+                </tr>
+                <tr
+                  className={cn(
+                    Math.abs(closeTotals.totalDifference) > 0.01 &&
+                      "bg-red-50",
+                  )}
+                >
+                  <td className="py-2.5 px-4 text-muted-foreground">
+                    Diferencia
+                  </td>
+                  <td
+                    className={cn(
+                      "text-right py-2.5 px-4 font-mono font-bold",
+                      Math.abs(closeTotals.totalDifference) > 0.01
+                        ? closeTotals.totalDifference > 0
+                          ? "text-amber-600"
+                          : "text-red-600"
+                        : "text-emerald-600",
+                    )}
+                  >
+                    {Math.abs(closeTotals.totalDifference) > 0.01
+                      ? `${closeTotals.totalDifference > 0 ? "+" : ""}${formatARS(closeTotals.totalDifference)}`
+                      : "Cuadrado"}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          {(hasFrontendDifferences || serverDifferences) &&
+            differenceReason.trim() && (
+              <div className="rounded-lg border border-red-100 bg-red-50 p-3">
+                <p className="text-xs font-semibold text-red-700 mb-1">
+                  Motivo de la diferencia
+                </p>
+                <p className="text-sm text-red-800">
+                  {differenceReason.trim()}
+                </p>
+              </div>
+            )}
+
+          <div className="flex justify-end gap-3 pt-2">
+            <Button
+              variant="ghost"
+              onClick={() => setIsCloseConfirmOpen(false)}
+              disabled={isClosing}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleCloseCash}
+              disabled={isClosing}
+              variant="destructive"
+              className="font-semibold"
+            >
+              {isClosing ? "Cerrando..." : "Sí, Cerrar Caja"}
+            </Button>
+          </div>
+        </div>
+      </ModalBase>
+
+      {/* Ceremony Summary — positive emotional peak after the daily ritual */}
+      <ModalBase
+        isOpen={isCeremonyOpen}
+        onClose={() => setIsCeremonyOpen(false)}
+        title="Caja Cerrada"
+        maxWidth="md"
+      >
+        <div className="space-y-6 p-1">
+          <div className="flex flex-col items-center text-center pt-2">
+            <div className="rounded-full bg-emerald-500/10 p-3 mb-3">
+              <PartyPopper
+                className="h-7 w-7 text-emerald-600 pointer-events-none"
+                aria-hidden="true"
+              />
+            </div>
+            <h3 className="text-lg font-semibold text-card-foreground">
+              ¡Arqueo completado!
+            </h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Resumen de la jornada de hoy
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            {/* Total ventas del día */}
+            <div className="rounded-lg border bg-muted/20 p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <TrendingUp
+                  className="h-4 w-4 text-emerald-600 pointer-events-none"
+                  aria-hidden="true"
+                />
+                <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Ventas del día
+                </span>
+              </div>
+              <div className="text-xl font-bold font-mono text-emerald-600">
+                {formatARS(ceremonyData?.totalSales ?? 0)}
+              </div>
+            </div>
+
+            {/* Cantidad de transacciones */}
+            <div className="rounded-lg border bg-muted/20 p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Receipt
+                  className="h-4 w-4 text-primary pointer-events-none"
+                  aria-hidden="true"
+                />
+                <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Transacciones
+                </span>
+              </div>
+              <div className="text-xl font-bold font-mono text-card-foreground">
+                {ceremonyData?.transactionCount ?? 0}
+              </div>
+            </div>
+
+            {/* Top producto del día */}
+            <div className="rounded-lg border bg-muted/20 p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Package
+                  className="h-4 w-4 text-primary pointer-events-none"
+                  aria-hidden="true"
+                />
+                <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Top del día
+                </span>
+              </div>
+              <div className="text-sm font-semibold text-card-foreground truncate">
+                {ceremonyData?.topProduct?.name || "Sin datos"}
+              </div>
+              {ceremonyData?.topProduct && (
+                <div className="text-xs text-muted-foreground mt-0.5 font-mono">
+                  {ceremonyData.topProduct.quantity} u.
+                </div>
+              )}
+            </div>
+
+            {/* Hora pico */}
+            <div className="rounded-lg border bg-muted/20 p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Clock
+                  className="h-4 w-4 text-primary pointer-events-none"
+                  aria-hidden="true"
+                />
+                <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Hora pico
+                </span>
+              </div>
+              <div className="text-xl font-bold font-mono text-card-foreground">
+                {ceremonyData?.peakHour?.label || "—"}
+              </div>
+              {ceremonyData?.peakHour && (
+                <div className="text-xs text-muted-foreground mt-0.5">
+                  {ceremonyData.peakHour.count} ops.
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Diferencia final */}
+          <div
+            className={cn(
+              "rounded-lg border p-4 flex items-center justify-between",
+              ceremonyData && Math.abs(ceremonyData.totalDifference) > 0.01
+                ? "border-red-100 bg-red-50"
+                : "border-emerald-100 bg-emerald-50",
+            )}
+          >
+            <div className="flex items-center gap-2">
+              {ceremonyData &&
+              Math.abs(ceremonyData.totalDifference) > 0.01 ? (
+                <AlertCircle
+                  className="h-5 w-5 text-red-600 pointer-events-none"
+                  aria-hidden="true"
+                />
+              ) : (
+                <CheckCircle2
+                  className="h-5 w-5 text-emerald-600 pointer-events-none"
+                  aria-hidden="true"
+                />
+              )}
+              <span className="font-semibold text-card-foreground">
+                Diferencia final
+              </span>
+            </div>
+            <span
+              className={cn(
+                "text-lg font-bold font-mono",
+                ceremonyData &&
+                  Math.abs(ceremonyData.totalDifference) > 0.01
+                  ? ceremonyData.totalDifference > 0
+                    ? "text-amber-600"
+                    : "text-red-600"
+                  : "text-emerald-600",
+              )}
+            >
+              {ceremonyData &&
+              Math.abs(ceremonyData.totalDifference) > 0.01
+                ? `${ceremonyData.totalDifference > 0 ? "+" : ""}${formatARS(ceremonyData.totalDifference)}`
+                : "Cuadrado"}
+            </span>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-2">
+            {canReopenFromCeremony && (
+              <Button
+                onClick={() => {
+                  setIsCeremonyOpen(false);
+                  handleReopenCash();
+                }}
+                disabled={reopenLoading}
+                variant="outline"
+                className="border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors"
+                aria-label="Reabrir caja tras cierre accidental"
+              >
+                <RotateCcw
+                  className="mr-2 h-4 w-4 pointer-events-none"
+                  aria-hidden="true"
+                />
+                {reopenLoading ? "Reabriendo..." : "Reabrir Caja"}
+              </Button>
+            )}
+            <Button
+              onClick={() => setIsCeremonyOpen(false)}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
+            >
+              Listo
             </Button>
           </div>
         </div>

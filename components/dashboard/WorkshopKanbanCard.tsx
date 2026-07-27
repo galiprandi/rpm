@@ -64,7 +64,7 @@ export function WorkshopKanbanCard({ byStatus }: WorkshopKanbanCardProps) {
               >
                 {status.value}
               </div>
-              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mt-1">
+              <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mt-1">
                 {status.label}
               </p>
             </div>

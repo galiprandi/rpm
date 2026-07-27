@@ -149,7 +149,7 @@ export default function SettingsClient({
       <div className="space-y-6">
         {/* Apariencia */}
         <Card className="overflow-hidden shadow-sm">
-          <CardHeader className="pb-4 -mt-4 pt-4 bg-muted/40 border-b">
+          <CardHeader className="pb-4 -mt-4 pt-4 bg-muted/20 border-b">
             <CardTitle className="text-lg">Apariencia</CardTitle>
             <CardDescription>
               Personaliza el tema visual de la aplicación.
@@ -171,7 +171,7 @@ export default function SettingsClient({
 
         {/* Configuración de Precios */}
         <Card className="overflow-hidden shadow-sm">
-          <CardHeader className="pb-4 -mt-4 pt-4 bg-muted/40 border-b">
+          <CardHeader className="pb-4 -mt-4 pt-4 bg-muted/20 border-b">
             <CardTitle className="text-lg">Listas de Precios</CardTitle>
             <CardDescription>
               Configuración global para el cálculo y alertas de precios.
@@ -222,7 +222,7 @@ export default function SettingsClient({
 
         {/* Configuración Fiscal */}
         <Card className="overflow-hidden shadow-sm">
-          <CardHeader className="pb-4 -mt-4 pt-4 bg-muted/40 border-b">
+          <CardHeader className="pb-4 -mt-4 pt-4 bg-muted/20 border-b">
             <CardTitle className="text-lg">
               Configuración Fiscal (AFIP)
             </CardTitle>
@@ -394,7 +394,7 @@ export default function SettingsClient({
 
         {/* Finanzas */}
         <Card className="overflow-hidden shadow-sm">
-          <CardHeader className="pb-4 -mt-4 pt-4 bg-muted/40 border-b">
+          <CardHeader className="pb-4 -mt-4 pt-4 bg-muted/20 border-b">
             <CardTitle className="text-lg">Finanzas</CardTitle>
             <CardDescription>
               Configuración de métodos de pago y opciones de cobro.

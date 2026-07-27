@@ -56,11 +56,17 @@ export function WorkOrdersCard({
   ];
 
   return (
-    <Card className="relative overflow-hidden border-l-2 border-l-primary/40">
+    <Card className="relative overflow-hidden">
       <CardContent className="p-4">
         {/* Header: title + total + newToday badge */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
+            <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 border border-amber-500/20">
+              <Wrench
+                className="h-3.5 w-3.5 text-amber-700 pointer-events-none"
+                aria-hidden="true"
+              />
+            </span>
             <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
               Taller
             </span>
@@ -70,7 +76,7 @@ export function WorkOrdersCard({
             <span className="text-[11px] text-muted-foreground">activas</span>
           </div>
           {newToday > 0 && (
-            <div className="flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-700">
+            <div className="flex items-center gap-0.5 text-[11px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-700">
               <ArrowUp
                 className="h-2.5 w-2.5 pointer-events-none"
                 aria-hidden="true"
@@ -99,7 +105,7 @@ export function WorkOrdersCard({
                 >
                   {status.value}
                 </div>
-                <p className="text-[9px] font-medium text-muted-foreground uppercase tracking-wider mt-0.5 truncate">
+                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mt-0.5 truncate">
                   {status.label}
                 </p>
               </div>
@@ -115,7 +121,7 @@ export function WorkOrdersCard({
                 className="h-3 w-3 text-amber-700 pointer-events-none"
                 aria-hidden="true"
               />
-              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
                 Más viejas
               </p>
             </div>
@@ -137,7 +143,7 @@ export function WorkOrdersCard({
                       {wo.customerName}
                     </span>
                   </div>
-                  <span className="text-[10px] font-mono tabular-nums text-amber-700 shrink-0">
+                  <span className="text-[11px] font-mono tabular-nums text-amber-700 shrink-0">
                     {relativeTime(wo.createdAt)}
                   </span>
                 </div>
@@ -148,7 +154,7 @@ export function WorkOrdersCard({
 
         <Link
           href="/adm/work-orders"
-          className="text-[10px] text-primary hover:underline font-medium mt-3 pt-2 border-t border-border/40 inline-block w-full"
+          className="text-[11px] text-primary hover:underline font-medium mt-3 pt-2 border-t border-border/40 inline-block w-full"
         >
           Ver todas las OTs →
         </Link>

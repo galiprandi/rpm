@@ -4,16 +4,141 @@ import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { Header, CrudStats } from '@/components/adm';
 import { DataTable } from '@/components/ui/data-table';
-import { FileText, Search, RefreshCw, Send, Download, Eye, XCircle, Calendar, X, CheckCircle2, Clock, AlertTriangle } from 'lucide-react';
+import {
+  FileText, Search, RefreshCw, Send, Download, Eye, XCircle,
+  Calendar, X, CheckCircle2, Clock, AlertTriangle, SlidersHorizontal,
+  AlertCircle, RotateCcw,
+} from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  Select, SelectContent, SelectGroup, SelectItem, SelectLabel,
+  SelectTrigger, SelectValue,
+} from '@/components/ui/select';
+import {
+  Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
+  Popover, PopoverTrigger, PopoverContent,
+} from '@/components/ui/popover';
+import { AlertDialog as AlertDialogPrimitive } from 'radix-ui';
 import { formatARS } from '@/lib/utils/format';
 import { toast } from 'sonner';
-import { AlertCircle } from 'lucide-react';
 import { ColumnDef } from '@tanstack/react-table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
+
+// --- Thin styled AlertDialog wrappers (radix-ui primitives) ---
+const AlertDialog = AlertDialogPrimitive.Root;
+const AlertDialogTrigger = AlertDialogPrimitive.Trigger;
+const AlertDialogPortal = AlertDialogPrimitive.Portal;
+function AlertDialogOverlay(props: React.ComponentProps<typeof AlertDialogPrimitive.Overlay>) {
+  return (
+    <AlertDialogPrimitive.Overlay
+      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0"
+      {...props}
+    />
+  );
+}
+function AlertDialogContent({
+  className,
+  children,
+  ...props
+}: React.ComponentProps<typeof AlertDialogPrimitive.Content>) {
+  return (
+    <AlertDialogPortal>
+      <AlertDialogOverlay />
+      <AlertDialogPrimitive.Content
+        className={cn(
+          'fixed left-1/2 top-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-background p-6 shadow-2xl outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95',
+          className,
+        )}
+        {...props}
+      >
+        {children}
+      </AlertDialogPrimitive.Content>
+    </AlertDialogPortal>
+  );
+}
+function AlertDialogTitle({
+  className,
+  ...props
+}: React.ComponentProps<typeof AlertDialogPrimitive.Title>) {
+  return (
+    <AlertDialogPrimitive.Title
+      className={cn('text-base font-semibold leading-tight', className)}
+      {...props}
+    />
+  );
+}
+function AlertDialogDescription({
+  className,
+  ...props
+}: React.ComponentProps<typeof AlertDialogPrimitive.Description>) {
+  return (
+    <AlertDialogPrimitive.Description
+      className={cn('text-sm text-muted-foreground leading-relaxed', className)}
+      {...props}
+    />
+  );
+}
+const AlertDialogAction = AlertDialogPrimitive.Action;
+const AlertDialogCancel = AlertDialogPrimitive.Cancel;
+
+// --- AFIP error parser (UI-only, does not touch API/service logic) ---
+function parseAfipError(errorData: any): {
+  title: string;
+  detail?: string;
+  suggestion?: string;
+} {
+  const rawError =
+    typeof errorData === 'string'
+      ? errorData
+      : errorData?.error || errorData?.message || '';
+  const code = errorData?.code || errorData?.afipErrorCode;
+  const lower = rawError.toLowerCase();
+
+  if (
+    lower.includes('conexion') ||
+    lower.includes('connection') ||
+    lower.includes('timeout') ||
+    lower.includes('no se pudo conectar')
+  ) {
+    return {
+      title: 'Sin conexión con AFIP',
+      detail: rawError,
+      suggestion:
+        'No se pudo conectar con los servidores de AFIP. Intente nuevamente en unos momentos.',
+    };
+  }
+
+  if (lower.includes('fecha') || lower.includes('date')) {
+    return {
+      title: code ? `Error de validación de fecha (Cód. ${code})` : 'Error de validación de fecha',
+      detail: rawError,
+      suggestion:
+        'Verifique que la fecha del comprobante no sea anterior a la del último comprobante oficializado.',
+    };
+  }
+
+  if (lower.includes('cae') || lower.includes('autorizado') || lower.includes('rechaz') || code) {
+    return {
+      title: code ? `AFIP rechazó el comprobante (Cód. ${code})` : 'AFIP rechazó el comprobante',
+      detail: rawError,
+      suggestion:
+        'Revise los datos del cliente y del comprobante. Si el problema persiste, contacte al administrador del sistema.',
+    };
+  }
+
+  return {
+    title: 'Error al oficializar',
+    detail: rawError || 'Ocurrió un error inesperado.',
+    suggestion: 'Intente nuevamente. Si el problema persiste, contacte al administrador.',
+  };
+}
 
 export default function InvoicesPage() {
   const [invoices, setInvoices] = useState<any[]>([]);
@@ -28,6 +153,12 @@ export default function InvoicesPage() {
     endDate: '',
   });
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
+  const [loadError, setLoadError] = useState<{
+    message: string;
+    isTransient: boolean;
+  } | null>(null);
 
   const stats = useMemo(() => {
     const totalCount = invoices.length;
@@ -80,6 +211,7 @@ export default function InvoicesPage() {
 
   const fetchInvoices = async (searchOverride?: string) => {
     setLoading(true);
+    setLoadError(null);
     try {
       const queryParams = new URLSearchParams();
       if (filters.type) queryParams.append('type', filters.type);
@@ -96,11 +228,21 @@ export default function InvoicesPage() {
         const data = await response.json();
         setInvoices(data);
       } else {
-        toast.error('Error al cargar comprobantes');
+        const isTransient = response.status >= 500;
+        const message = isTransient
+          ? 'El servidor no está disponible. Intente nuevamente en unos momentos.'
+          : response.status === 404
+            ? 'No se encontraron comprobantes con los filtros aplicados.'
+            : 'No se pudieron cargar los comprobantes. Si el problema persiste, contacte al administrador.';
+        setLoadError({ message, isTransient });
       }
     } catch (error) {
       console.error('Error fetching invoices:', error);
-      toast.error('Error de conexión');
+      setLoadError({
+        message:
+          'No se pudieron cargar los comprobantes. Verifique su conexión de red e intente nuevamente.',
+        isTransient: true,
+      });
     } finally {
       setLoading(false);
     }
@@ -113,22 +255,47 @@ export default function InvoicesPage() {
 
   useEffect(() => {
     fetchInvoices();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters.type, filters.status, filters.startDate, filters.endDate]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'DRAFT':
-        return <Badge variant="outline" className="bg-yellow-50 text-amber-700 border-amber-200">X - Pendiente</Badge>;
+        return (
+          <Badge variant="outline" className="text-amber-600 border-amber-200 bg-amber-50">
+            X - Pendiente
+          </Badge>
+        );
       case 'PENDING':
-        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Enviando...</Badge>;
+        return (
+          <Badge variant="outline" className="text-blue-600 border-blue-200 bg-blue-50">
+            Enviando...
+          </Badge>
+        );
       case 'ISSUED':
-        return <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">Oficializado</Badge>;
+        return (
+          <Badge variant="outline" className="text-emerald-600 border-emerald-200 bg-emerald-50">
+            Oficializado
+          </Badge>
+        );
       case 'REJECTED':
-        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Rechazado</Badge>;
+        return (
+          <Badge variant="outline" className="text-red-600 border-red-200 bg-red-50">
+            Rechazado
+          </Badge>
+        );
       case 'CANCELLED':
-        return <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">Cancelado</Badge>;
+        return (
+          <Badge variant="outline" className="text-slate-600 border-slate-200 bg-slate-50">
+            Cancelado
+          </Badge>
+        );
       case 'ANNULLED':
-        return <Badge variant="outline" className="bg-red-50 text-red-900 border-red-300">Anulado</Badge>;
+        return (
+          <Badge variant="outline" className="text-red-700 border-red-300 bg-red-50">
+            Anulado
+          </Badge>
+        );
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -184,7 +351,7 @@ export default function InvoicesPage() {
       header: 'Fecha',
       accessorKey: 'createdAt',
       cell: ({ row }) => (
-        <span className="text-sm text-muted-foreground">
+        <span className="text-sm text-muted-foreground font-mono">
           {format(new Date(row.original.createdAt), 'dd/MM/yy HH:mm', { locale: es })}
         </span>
       ),
@@ -216,21 +383,33 @@ export default function InvoicesPage() {
         if (!silent) toast.success('Comprobante oficializado con éxito', { id: toastId! });
         return { success: true };
       } else {
-        const error = await response.json();
-        if (!silent) toast.error(error.error || 'Error al oficializar', { id: toastId! });
-        return { success: false, error: error.error };
+        const errorData = await response.json().catch(() => ({}));
+        if (!silent) {
+          const parsed = parseAfipError(errorData);
+          const fullMessage = parsed.detail
+            ? `${parsed.title}: ${parsed.detail}${parsed.suggestion ? ` — ${parsed.suggestion}` : ''}`
+            : `${parsed.title}${parsed.suggestion ? ` — ${parsed.suggestion}` : ''}`;
+          toast.error(fullMessage, { id: toastId! });
+        }
+        return { success: false, error: errorData?.error };
       }
     } catch (error) {
       console.error('Error officializing invoice:', error);
-      if (!silent) toast.error('Error de conexión', { id: toastId! });
+      if (!silent) {
+        toast.error(
+          'Sin conexión con AFIP. Verifique su conexión de red e intente nuevamente.',
+          { id: toastId! },
+        );
+      }
       return { success: false, error: 'Error de conexión' };
     }
   };
 
   const handleBatchCancel = async () => {
-    const selectedIds = Object.keys(rowSelection).filter(id => rowSelection[id]);
-    const eligibleInvoices = invoices.filter(inv =>
-      selectedIds.includes(inv.id) && (inv.status === 'DRAFT' || inv.status === 'REJECTED')
+    const selectedIds = Object.keys(rowSelection).filter((id) => rowSelection[id]);
+    const eligibleInvoices = invoices.filter(
+      (inv) =>
+        selectedIds.includes(inv.id) && (inv.status === 'DRAFT' || inv.status === 'REJECTED'),
     );
 
     if (eligibleInvoices.length === 0) {
@@ -238,13 +417,24 @@ export default function InvoicesPage() {
       return;
     }
 
-    if (!confirm(`¿Está seguro de que desea cancelar ${eligibleInvoices.length} comprobantes? Esta acción no se puede deshacer.`)) {
-      return;
-    }
+    setIsCancelDialogOpen(true);
+  };
+
+  const confirmBatchCancel = async () => {
+    setIsCancelDialogOpen(false);
+
+    const selectedIds = Object.keys(rowSelection).filter((id) => rowSelection[id]);
+    const eligibleInvoices = invoices.filter(
+      (inv) =>
+        selectedIds.includes(inv.id) && (inv.status === 'DRAFT' || inv.status === 'REJECTED'),
+    );
+
+    if (eligibleInvoices.length === 0) return;
 
     const toastId = toast.loading(`Cancelando ${eligibleInvoices.length} comprobantes...`);
     let successCount = 0;
     let failCount = 0;
+    const cancelledInvoices: Array<{ id: string; previousStatus: string }> = [];
 
     for (const inv of eligibleInvoices) {
       try {
@@ -256,6 +446,7 @@ export default function InvoicesPage() {
 
         if (response.ok) {
           successCount++;
+          cancelledInvoices.push({ id: inv.id, previousStatus: inv.status });
         } else {
           failCount++;
         }
@@ -263,25 +454,82 @@ export default function InvoicesPage() {
         console.error('Error cancelling invoice:', error);
         failCount++;
       }
-      await new Promise(r => setTimeout(r, 100));
+      await new Promise((r) => setTimeout(r, 100));
     }
 
     if (failCount === 0) {
-      toast.success(`Se cancelaron ${successCount} comprobantes con éxito`, { id: toastId });
+      toast.success(`Se cancelaron ${successCount} comprobantes con éxito`, {
+        id: toastId,
+        action: {
+          label: 'Deshacer',
+          onClick: () => void handleUndoBatchCancel(cancelledInvoices),
+        },
+        duration: 8000,
+      });
     } else {
-      toast.error(`Proceso terminado: ${successCount} éxitos, ${failCount} errores`, { id: toastId });
+      toast.error(
+        `Proceso terminado: ${successCount} éxitos, ${failCount} errores. Revise los comprobantes que no se pudieron cancelar.`,
+        { id: toastId },
+      );
     }
 
     setRowSelection({});
     fetchInvoices();
   };
 
+  const handleUndoBatchCancel = async (
+    cancelledInvoices: Array<{ id: string; previousStatus: string }>,
+  ) => {
+    if (cancelledInvoices.length === 0) return;
+
+    const undoToastId = toast.loading(
+      `Revirtiendo ${cancelledInvoices.length} cancelación(es)...`,
+    );
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const inv of cancelledInvoices) {
+      try {
+        const response = await fetch(`/api/invoices/${inv.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: inv.previousStatus }),
+        });
+
+        if (response.ok) {
+          successCount++;
+        } else {
+          failCount++;
+        }
+      } catch (error) {
+        console.error('Error undoing cancel:', error);
+        failCount++;
+      }
+      await new Promise((r) => setTimeout(r, 100));
+    }
+
+    if (failCount === 0) {
+      toast.success(
+        `Se revirtieron ${successCount} cancelación(es) con éxito`,
+        { id: undoToastId },
+      );
+    } else {
+      toast.error(
+        `Proceso terminado: ${successCount} éxitos, ${failCount} errores. Algunos comprobantes siguen cancelados.`,
+        { id: undoToastId },
+      );
+    }
+
+    fetchInvoices();
+  };
+
   const handleBatchOfficialize = async () => {
-    const selectedIds = Object.keys(rowSelection).filter(id => rowSelection[id]);
-    const eligibleInvoices = invoices.filter(inv =>
-      selectedIds.includes(inv.id) &&
-      (inv.status === 'DRAFT' || inv.status === 'REJECTED') &&
-      (inv.type.startsWith('X_') || inv.type.startsWith('NOTA_CREDITO_X_'))
+    const selectedIds = Object.keys(rowSelection).filter((id) => rowSelection[id]);
+    const eligibleInvoices = invoices.filter(
+      (inv) =>
+        selectedIds.includes(inv.id) &&
+        (inv.status === 'DRAFT' || inv.status === 'REJECTED') &&
+        (inv.type.startsWith('X_') || inv.type.startsWith('NOTA_CREDITO_X_')),
     );
 
     if (eligibleInvoices.length === 0) {
@@ -301,13 +549,16 @@ export default function InvoicesPage() {
         failCount++;
       }
       // Brief pause to allow UI update and avoid hitting AFIP too rapidly
-      await new Promise(r => setTimeout(r, 200));
+      await new Promise((r) => setTimeout(r, 200));
     }
 
     if (failCount === 0) {
       toast.success(`Se oficializaron ${successCount} comprobantes con éxito`, { id: toastId });
     } else {
-      toast.error(`Proceso terminado: ${successCount} éxitos, ${failCount} errores`, { id: toastId });
+      toast.error(
+        `Proceso terminado: ${successCount} éxitos, ${failCount} errores. Algunos comprobantes fueron rechazados por AFIP — revise el detalle de cada uno.`,
+        { id: toastId },
+      );
     }
 
     setRowSelection({});
@@ -316,51 +567,87 @@ export default function InvoicesPage() {
 
   const rowActions = (row: any) => (
     <div className="flex items-center gap-1">
-      <Link href={`/adm/invoices/${row.id}`}>
-        <button
-          className="p-2 hover:bg-muted rounded-md transition-colors text-muted-foreground hover:text-foreground"
-          title="Ver Detalle"
-        >
-          <Eye className="h-4 w-4" />
-        </button>
-      </Link>
-      <button
-        className="p-2 hover:bg-muted rounded-md transition-colors text-muted-foreground hover:text-foreground"
-        title="Imprimir / PDF"
-        onClick={() => {
-          window.open(`/adm/invoices/${row.id}?print=true`, '_blank');
-        }}
-      >
-        <Download className="h-4 w-4" />
-      </button>
-      {(row.status === 'DRAFT' || row.status === 'REJECTED') && (row.type.startsWith('X_') || row.type.startsWith('NOTA_CREDITO_X_')) && (
-        <button
-          className="p-2 hover:bg-primary/10 rounded-md transition-colors text-primary"
-          title="Enviar a AFIP"
-          onClick={() => handleOfficialize(row.id)}
-        >
-          <Send className="h-4 w-4" />
-        </button>
-      )}
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Link href={`/adm/invoices/${row.id}`}>
+              <button
+                className="p-2 hover:bg-muted rounded-md transition-colors text-muted-foreground hover:text-foreground"
+              >
+                <Eye className="h-4 w-4" />
+                <span className="sr-only">Ver Detalle</span>
+              </button>
+            </Link>
+          </TooltipTrigger>
+          <TooltipContent>Ver Detalle</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              className="p-2 hover:bg-muted rounded-md transition-colors text-muted-foreground hover:text-foreground"
+              onClick={() => {
+                window.open(`/adm/invoices/${row.id}?print=true`, '_blank');
+              }}
+            >
+              <Download className="h-4 w-4" />
+              <span className="sr-only">Imprimir / PDF</span>
+            </button>
+          </TooltipTrigger>
+          <TooltipContent>Imprimir / PDF</TooltipContent>
+        </Tooltip>
+        {(row.status === 'DRAFT' || row.status === 'REJECTED') && (row.type.startsWith('X_') || row.type.startsWith('NOTA_CREDITO_X_')) && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                className="p-2 hover:bg-primary/10 rounded-md transition-colors text-primary"
+                onClick={() => handleOfficialize(row.id)}
+              >
+                <Send className="h-4 w-4" />
+                <span className="sr-only">Enviar a AFIP</span>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>Enviar a AFIP</TooltipContent>
+          </Tooltip>
+        )}
+      </TooltipProvider>
     </div>
   );
 
-  const eligibleSelectedCount = invoices.filter(inv =>
-    rowSelection[inv.id] &&
-    (inv.status === 'DRAFT' || inv.status === 'REJECTED') &&
-    (inv.type.startsWith('X_') || inv.type.startsWith('NOTA_CREDITO_X_'))
+  const eligibleSelectedCount = invoices.filter(
+    (inv) =>
+      rowSelection[inv.id] &&
+      (inv.status === 'DRAFT' || inv.status === 'REJECTED') &&
+      (inv.type.startsWith('X_') || inv.type.startsWith('NOTA_CREDITO_X_')),
   ).length;
 
-  const cancellableSelectedCount = invoices.filter(inv =>
-    rowSelection[inv.id] && (inv.status === 'DRAFT' || inv.status === 'REJECTED')
+  const cancellableSelectedCount = invoices.filter(
+    (inv) => rowSelection[inv.id] && (inv.status === 'DRAFT' || inv.status === 'REJECTED'),
   ).length;
 
-  const headerActions = [];
+  // Summary of comprobantes to cancel (for AlertDialog)
+  const cancellableInvoices = invoices.filter(
+    (inv) => rowSelection[inv.id] && (inv.status === 'DRAFT' || inv.status === 'REJECTED'),
+  );
+  const cancelSummaryByType = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const inv of cancellableInvoices) {
+      const label = inv.type.replace(/_/g, ' ');
+      counts[label] = (counts[label] || 0) + 1;
+    }
+    return counts;
+  }, [cancellableInvoices]);
+
+  const headerActions: {
+    label: string;
+    icon: typeof Send;
+    onClick: () => void;
+    variant?: 'outline' | 'default' | 'destructive';
+  }[] = [];
   if (eligibleSelectedCount > 0) {
     headerActions.push({
       label: `Oficializar (${eligibleSelectedCount})`,
       icon: Send,
-      onClick: handleBatchOfficialize
+      onClick: handleBatchOfficialize,
     });
   }
   if (cancellableSelectedCount > 0) {
@@ -368,7 +655,7 @@ export default function InvoicesPage() {
       label: `Cancelar (${cancellableSelectedCount})`,
       icon: XCircle,
       onClick: handleBatchCancel,
-      variant: 'outline' as const
+      variant: 'outline' as const,
     });
   }
 
@@ -391,7 +678,7 @@ export default function InvoicesPage() {
       'Total',
       'Estado',
       'CAE',
-      'Vto. CAE'
+      'Vto. CAE',
     ];
 
     const rows = invoices.map((inv) => {
@@ -414,24 +701,28 @@ export default function InvoicesPage() {
         Number(inv.total || 0).toFixed(2),
         inv.status || '',
         inv.afipData?.cae || '',
-        vtoCae
+        vtoCae,
       ];
     });
 
-    const csvContent = "\ufeff" + [
-      headers.join(","),
-      ...rows.map((r) => r.map((field) => `"${String(field).replace(/"/g, '""')}"`).join(",")),
-    ].join("\n");
+    const csvContent =
+      '\ufeff' +
+      [
+        headers.join(','),
+        ...rows.map((r) =>
+          r.map((field) => `"${String(field).replace(/"/g, '""')}"`).join(','),
+        ),
+      ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement("a");
+    const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
-    link.setAttribute("href", url);
+    link.setAttribute('href', url);
     link.setAttribute(
-      "download",
-      `comprobantes_${new Date().toISOString().split("T")[0]}.csv`,
+      'download',
+      `comprobantes_${new Date().toISOString().split('T')[0]}.csv`,
     );
-    link.style.visibility = "hidden";
+    link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -446,8 +737,26 @@ export default function InvoicesPage() {
       onClick: handleExportCSV,
       variant: 'outline' as const,
       disabled: invoices.length === 0,
-    }
+    },
   ];
+
+  // Count active popover-managed filters (dates + type)
+  const activePopoverFilterCount = [
+    filters.startDate,
+    filters.endDate,
+    filters.type,
+  ].filter(Boolean).length;
+
+  const handleClearAllFilters = () => {
+    setFilters({
+      type: '',
+      status: '',
+      search: '',
+      startDate: '',
+      endDate: '',
+    });
+    fetchInvoices('');
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -461,6 +770,7 @@ export default function InvoicesPage() {
       <CrudStats stats={stats} />
 
       <div className="bg-background border rounded-xl shadow-sm overflow-hidden">
+        {/* Filter bar: search + status always visible, rest in popover */}
         <div className="p-4 border-b flex flex-wrap items-center justify-between gap-4 bg-muted/5">
           <div className="flex items-center gap-3 flex-1 min-w-[300px]">
             <div className="relative flex-1">
@@ -485,82 +795,179 @@ export default function InvoicesPage() {
                 </button>
               )}
             </div>
-            <button
-              onClick={() => fetchInvoices()}
-              className="p-2 hover:bg-background border rounded-lg transition-colors shadow-sm cursor-pointer"
-              title="Refrescar"
-            >
-              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-            </button>
-          </div>
 
-          <div className="flex items-center gap-3 flex-wrap">
-            {/* Filtros de Fecha */}
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground font-medium">Desde:</span>
-              <input
-                type="date"
-                className="px-2 py-1.5 text-sm bg-background border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
-                value={filters.startDate}
-                onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
-              />
-            </div>
-
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground font-medium">Hasta:</span>
-              <input
-                type="date"
-                className="px-2 py-1.5 text-sm bg-background border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
-                value={filters.endDate}
-                onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
-              />
-            </div>
-
-            {(filters.startDate || filters.endDate) && (
-              <button
-                onClick={() => setFilters({ ...filters, startDate: '', endDate: '' })}
-                className="p-1.5 hover:bg-background border rounded-lg transition-colors shadow-sm text-muted-foreground hover:text-foreground text-xs flex items-center gap-1 cursor-pointer"
-                title="Limpiar fechas"
-              >
-                <X className="h-3.5 w-3.5" />
-                <span>Limpiar fechas</span>
-              </button>
-            )}
-
-            <div className="h-4 w-px bg-border hidden sm:block mx-1" />
-
-            <select
-              className="px-3 py-2 text-sm bg-background border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
-              value={filters.type}
-              onChange={(e) => setFilters({ ...filters, type: e.target.value })}
-            >
-              <option value="">Todos los tipos</option>
-              <option value="X_A">Pre-Factura A</option>
-              <option value="X_B">Pre-Factura B</option>
-              <option value="FACTURA_A">Factura A</option>
-              <option value="FACTURA_B">Factura B</option>
-              <option value="NOTA_CREDITO_X_A">NC Preliminar A</option>
-              <option value="NOTA_CREDITO_X_B">NC Preliminar B</option>
-              <option value="NOTA_CREDITO_A">Nota de Crédito A</option>
-              <option value="NOTA_CREDITO_B">Nota de Crédito B</option>
-              <option value="PRESUPUESTO">Presupuesto</option>
-              <option value="REMITO">Remito</option>
-            </select>
-
-            <select
-              className="px-3 py-2 text-sm bg-background border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
+            {/* Status filter — most used, stays inline */}
+            <Select
               value={filters.status}
-              onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+              onValueChange={(value) =>
+                setFilters({ ...filters, status: value === '__all' ? '' : value })
+              }
             >
-              <option value="">Todos los estados</option>
-              <option value="DRAFT">Pendiente (X)</option>
-              <option value="ISSUED">Oficializado</option>
-              <option value="REJECTED">Rechazado</option>
-              <option value="CANCELLED">Cancelado</option>
-            </select>
+              <SelectTrigger className="w-[180px]" aria-label="Filtrar por estado">
+                <SelectValue placeholder="Todos los estados" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all">Todos los estados</SelectItem>
+                <SelectItem value="DRAFT">Pendiente (X)</SelectItem>
+                <SelectItem value="ISSUED">Oficializado</SelectItem>
+                <SelectItem value="REJECTED">Rechazado</SelectItem>
+                <SelectItem value="CANCELLED">Cancelado</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Filtros popover — dates + type + refresh */}
+            <Popover open={isFiltersOpen} onOpenChange={setIsFiltersOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="relative">
+                  <SlidersHorizontal className="h-4 w-4" />
+                  <span>Filtros</span>
+                  {activePopoverFilterCount > 0 && (
+                    <span className="ml-1 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold leading-none">
+                      {activePopoverFilterCount}
+                    </span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80" align="start" sideOffset={8}>
+                <div className="space-y-4">
+                  {/* Fechas group */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      <Calendar className="h-3.5 w-3.5" />
+                      <span>Fechas</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <label className="text-xs text-muted-foreground">Desde</label>
+                        <input
+                          type="date"
+                          className="w-full px-2 py-1.5 text-sm bg-background border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 font-mono"
+                          value={filters.startDate}
+                          onChange={(e) =>
+                            setFilters({ ...filters, startDate: e.target.value })
+                          }
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs text-muted-foreground">Hasta</label>
+                        <input
+                          type="date"
+                          className="w-full px-2 py-1.5 text-sm bg-background border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 font-mono"
+                          value={filters.endDate}
+                          onChange={(e) =>
+                            setFilters({ ...filters, endDate: e.target.value })
+                          }
+                        />
+                      </div>
+                    </div>
+                    {(filters.startDate || filters.endDate) && (
+                      <button
+                        onClick={() =>
+                          setFilters({ ...filters, startDate: '', endDate: '' })
+                        }
+                        className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
+                      >
+                        <X className="h-3 w-3" />
+                        Limpiar fechas
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Tipo de comprobante group */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      <FileText className="h-3.5 w-3.5" />
+                      <span>Tipo de comprobante</span>
+                    </div>
+                    <Select
+                      value={filters.type}
+                      onValueChange={(value) =>
+                        setFilters({ ...filters, type: value === '__all' ? '' : value })
+                      }
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Todos los tipos" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__all">Todos los tipos</SelectItem>
+                        <SelectGroup>
+                          <SelectLabel>Facturas</SelectLabel>
+                          <SelectItem value="X_A">Pre-Factura A</SelectItem>
+                          <SelectItem value="X_B">Pre-Factura B</SelectItem>
+                          <SelectItem value="FACTURA_A">Factura A</SelectItem>
+                          <SelectItem value="FACTURA_B">Factura B</SelectItem>
+                        </SelectGroup>
+                        <SelectGroup>
+                          <SelectLabel>Notas de Crédito</SelectLabel>
+                          <SelectItem value="NOTA_CREDITO_X_A">NC Preliminar A</SelectItem>
+                          <SelectItem value="NOTA_CREDITO_X_B">NC Preliminar B</SelectItem>
+                          <SelectItem value="NOTA_CREDITO_A">Nota de Crédito A</SelectItem>
+                          <SelectItem value="NOTA_CREDITO_B">Nota de Crédito B</SelectItem>
+                        </SelectGroup>
+                        <SelectGroup>
+                          <SelectLabel>Otros</SelectLabel>
+                          <SelectItem value="PRESUPUESTO">Presupuesto</SelectItem>
+                          <SelectItem value="REMITO">Remito</SelectItem>
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center justify-between gap-2 pt-2 border-t">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleClearAllFilters}
+                      disabled={
+                        !filters.startDate &&
+                        !filters.endDate &&
+                        !filters.type &&
+                        !filters.status &&
+                        !filters.search
+                      }
+                    >
+                      <RotateCcw className="h-3.5 w-3.5" />
+                      Limpiar todo
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        fetchInvoices();
+                        setIsFiltersOpen(false);
+                      }}
+                    >
+                      <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+                      Refrescar
+                    </Button>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
+
+        {/* Error banner with retry */}
+        {loadError && !loading && (
+          <div className="p-4 border-b bg-red-50 border-red-200 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3 text-red-800">
+              <AlertCircle className="h-5 w-5 shrink-0" />
+              <span className="text-sm font-medium">{loadError.message}</span>
+            </div>
+            {loadError.isTransient && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fetchInvoices()}
+                className="border-red-300 text-red-700 hover:bg-red-100 hover:text-red-800"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                Reintentar
+              </Button>
+            )}
+          </div>
+        )}
 
         <div className="relative min-h-[400px] p-6">
           {loading ? (
@@ -568,6 +975,16 @@ export default function InvoicesPage() {
               {[1, 2, 3, 4, 5].map((i) => (
                 <Skeleton key={i} className="h-12 w-full" />
               ))}
+            </div>
+          ) : invoices.length === 0 && !loadError ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <FileText className="h-12 w-12 text-muted-foreground/20 mb-4" />
+              <p className="text-sm font-medium text-muted-foreground">
+                No se encontraron comprobantes
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Ajuste los filtros o cree un nuevo comprobante desde una venta u OT.
+              </p>
             </div>
           ) : (
             <DataTable
@@ -583,6 +1000,54 @@ export default function InvoicesPage() {
           )}
         </div>
       </div>
+
+      {/* Cancel confirmation AlertDialog */}
+      <AlertDialog open={isCancelDialogOpen} onOpenChange={setIsCancelDialogOpen}>
+        <AlertDialogContent>
+          <div className="flex items-start gap-3.5">
+            <div className="flex-shrink-0 rounded-lg bg-red-500/10 p-2.5">
+              <XCircle className="h-5 w-5 text-red-600" aria-hidden="true" />
+            </div>
+            <div className="flex-1 space-y-2">
+              <AlertDialogTitle>
+                Cancelar {cancellableInvoices.length}{' '}
+                {cancellableInvoices.length === 1 ? 'comprobante' : 'comprobantes'}
+              </AlertDialogTitle>
+              <AlertDialogDescription asChild>
+                <div className="space-y-2">
+                  <p>
+                    Está por cancelar los siguientes comprobantes. Esta acción no se puede
+                    deshacer.
+                  </p>
+                  <div className="rounded-lg border bg-muted/30 p-3 space-y-1">
+                    {Object.entries(cancelSummaryByType).map(([type, count]) => (
+                      <div
+                        key={type}
+                        className="flex items-center justify-between text-xs"
+                      >
+                        <span className="font-medium text-foreground">{type}</span>
+                        <span className="font-mono text-muted-foreground">
+                          {count} {count === 1 ? 'comprobante' : 'comprobantes'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </AlertDialogDescription>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 border-t pt-4 mt-2">
+            <AlertDialogCancel asChild>
+              <Button variant="outline">No, mantener</Button>
+            </AlertDialogCancel>
+            <AlertDialogAction asChild>
+              <Button variant="destructive" onClick={confirmBatchCancel}>
+                Sí, cancelar
+              </Button>
+            </AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

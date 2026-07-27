@@ -17,16 +17,20 @@ export function PaymentMethodsCard({
 
   if (methods.length === 0) {
     return (
-      <Card className="relative overflow-hidden border-l-2 border-l-indigo-500/40">
+      <Card className="relative overflow-hidden">
         <CardContent className="p-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-              Medios de Pago
-            </span>
-            <CreditCard
-              className="h-3.5 w-3.5 text-muted-foreground/40 pointer-events-none"
-              aria-hidden="true"
-            />
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-indigo-500/10 border border-indigo-500/20">
+                <CreditCard
+                  className="h-3.5 w-3.5 text-indigo-700 pointer-events-none"
+                  aria-hidden="true"
+                />
+              </span>
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70 truncate">
+                Medios de Pago
+              </span>
+            </div>
           </div>
           <p className="text-xs text-muted-foreground/60 py-3 text-center">
             Sin movimientos hoy
@@ -39,16 +43,20 @@ export function PaymentMethodsCard({
   const total = methods.reduce((sum, item) => sum + item.total, 0);
 
   return (
-    <Card className="relative overflow-hidden border-l-2 border-l-indigo-500/40">
+    <Card className="relative overflow-hidden">
       <CardContent className="p-4">
         <div className="flex items-center justify-between mb-3">
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-            Medios de Pago
-          </span>
-          <CreditCard
-            className="h-3.5 w-3.5 text-muted-foreground/40 pointer-events-none"
-            aria-hidden="true"
-          />
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-indigo-500/10 border border-indigo-500/20">
+              <CreditCard
+                className="h-3.5 w-3.5 text-indigo-700 pointer-events-none"
+                aria-hidden="true"
+              />
+            </span>
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70 truncate">
+              Medios de Pago
+            </span>
+          </div>
         </div>
         <div className="space-y-2">
           {methods.map((method) => {
@@ -61,7 +69,7 @@ export function PaymentMethodsCard({
                     {toTitleCase(method.name)}
                   </span>
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[9px] font-mono font-bold text-muted-foreground/50 bg-muted/60 px-1 rounded tabular-nums">
+                    <span className="text-[11px] font-mono font-bold text-muted-foreground/50 bg-muted/60 px-1 rounded tabular-nums">
                       {percentage.toFixed(1)}%
                     </span>
                     <span

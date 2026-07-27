@@ -107,23 +107,27 @@ export function CashMovementsCard({ cashMovements }: CashMovementsCardProps) {
 
   if (movements.length === 0) {
     return (
-      <Card className="relative overflow-hidden border-l-2 border-l-cyan-500/40">
+      <Card className="relative overflow-hidden">
         <CardContent className="p-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-              Movimientos
-            </span>
-            <DollarSign
-              className="h-3.5 w-3.5 text-muted-foreground/40 pointer-events-none"
-              aria-hidden="true"
-            />
+            <div className="flex items-center gap-2">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-cyan-500/10 border border-cyan-500/20">
+                <DollarSign
+                  className="h-3.5 w-3.5 text-cyan-700"
+                  aria-hidden="true"
+                />
+              </span>
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+                Movimientos
+              </span>
+            </div>
           </div>
           <p className="text-xs text-muted-foreground/60 py-3 text-center">
             Sin movimientos hoy
           </p>
           <Link
             href="/adm/operations"
-            className="text-[10px] text-primary hover:underline font-medium flex items-center gap-1"
+            className="text-[11px] text-primary hover:underline font-medium flex items-center gap-1"
           >
             Ver operaciones
             <ExternalLink
@@ -137,16 +141,20 @@ export function CashMovementsCard({ cashMovements }: CashMovementsCardProps) {
   }
 
   return (
-    <Card className="relative overflow-hidden border-l-2 border-l-cyan-500/40 flex flex-col h-full">
+    <Card className="relative overflow-hidden flex flex-col h-full">
       <CardContent className="p-4 flex-1 overflow-hidden">
         <div className="flex items-center justify-between mb-3">
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-            Movimientos
-          </span>
-          <DollarSign
-            className="h-3.5 w-3.5 text-muted-foreground/40 pointer-events-none"
-            aria-hidden="true"
-          />
+          <div className="flex items-center gap-2">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-cyan-500/10 border border-cyan-500/20">
+              <DollarSign
+                className="h-3.5 w-3.5 text-cyan-700"
+                aria-hidden="true"
+              />
+            </span>
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+              Movimientos
+            </span>
+          </div>
         </div>
         <div className="space-y-1.5 max-h-[280px] overflow-y-auto pr-1">
           {movements.map((movement) => (
@@ -161,11 +169,11 @@ export function CashMovementsCard({ cashMovements }: CashMovementsCardProps) {
                     <span className="font-semibold tracking-tight text-xs">
                       {getMovementTypeLabel(movement.type)}
                     </span>
-                    <span className="text-[9px] font-bold tracking-wider text-muted-foreground/80">
+                    <span className="text-[11px] font-bold tracking-wider text-muted-foreground/80">
                       {getMethodNameLabel(movement.methodName)}
                     </span>
                   </div>
-                  <div className="text-[10px] font-mono text-muted-foreground/60 tabular-nums">
+                  <div className="text-[11px] font-mono text-muted-foreground/60 tabular-nums">
                     {new Date(movement.createdAt).toLocaleTimeString("es-AR", {
                       hour: "2-digit",
                       minute: "2-digit",
@@ -188,7 +196,7 @@ export function CashMovementsCard({ cashMovements }: CashMovementsCardProps) {
         </div>
         <Link
           href="/adm/operations"
-          className="text-[10px] text-primary hover:underline font-medium flex items-center gap-1 mt-3 pt-2 border-t border-border/40"
+          className="text-[11px] text-primary hover:underline font-medium flex items-center gap-1 mt-3 pt-2 border-t border-border/40"
         >
           Ver todas las operaciones
           <ExternalLink

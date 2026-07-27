@@ -15,6 +15,8 @@ import {
   Sparkles,
   ShieldCheck,
   MessageSquare,
+  Wrench,
+  ShoppingBag,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -72,6 +74,47 @@ function getActiveGroupLabel(path: string): string | undefined {
   )?.label;
 }
 
+/**
+ * Visual accent kind per navigation group — a subconscious cue for the
+ * híbrido taller+accesorios business. Taller (workshop) gets a warm amber
+ * tint; Catálogo (retail/ventas) gets the brand-primary tint; everything
+ * else stays neutral. This is Operate-mode subtlety, not a redesign.
+ */
+type NavAccent = 'taller' | 'retail' | 'default';
+
+function groupAccent(label: string): NavAccent {
+  if (label === 'Taller') return 'taller';
+  if (label === 'Catálogo') return 'retail';
+  return 'default';
+}
+
+/** Icon container classes for a resting (inactive) item, tinted by accent. */
+const ACCENT_REST: Record<NavAccent, string> = {
+  taller: 'bg-amber-500/10 text-amber-700/75',
+  retail: 'bg-primary/10 text-primary/70',
+  default: 'bg-sidebar-foreground/5 text-sidebar-foreground/68',
+};
+
+/** Icon container classes for an active item, tinted by accent. */
+const ACCENT_ACTIVE: Record<NavAccent, string> = {
+  taller: 'bg-amber-500/15 text-amber-700',
+  retail: 'bg-primary/12 text-primary',
+  default: 'bg-primary/12 text-primary',
+};
+
+/** Group header icon override — swaps the navConfig icon for a clearer cue. */
+const GROUP_HEADER_ICON: Partial<Record<NavAccent, typeof Wrench>> = {
+  taller: Wrench,
+  retail: ShoppingBag,
+};
+
+/** Group header icon tint per accent. */
+const ACCENT_HEADER_ICON: Record<NavAccent, string> = {
+  taller: 'text-amber-600/70',
+  retail: 'text-primary/70',
+  default: 'text-sidebar-foreground/42',
+};
+
 export function AppSidebar({ user, onSignOut, onOpenPalette, onOpenChat }: AppSidebarProps) {
   const pathname = usePathname();
   const { isMobile, toggleSidebar, state } = useSidebar();
@@ -84,7 +127,12 @@ export function AppSidebar({ user, onSignOut, onOpenPalette, onOpenChat }: AppSi
   const { hasUnread } = useNovedadesRead();
 
   const userRole = (user.role?.toUpperCase() as UserRole) ?? UserRole.STAFF;
-  const roleLabel = userRole === UserRole.ADMIN ? 'Admin' : 'Staff';
+  const roleLabel =
+    userRole === UserRole.ADMIN
+      ? 'Admin'
+      : userRole === UserRole.USER
+        ? 'Técnico'
+        : 'Staff';
 
   // Keep the current module expanded after navigation.
   const [overrides, setOverrides] = useState<Record<string, boolean>>({});
@@ -105,7 +153,7 @@ export function AppSidebar({ user, onSignOut, onOpenPalette, onOpenChat }: AppSi
     (i) => isPinned(i.href) && canAccess(userRole, i.roles)
   );
 
-  const renderItem = (item: (typeof allItems)[number], showPin = true) => {
+  const renderItem = (item: (typeof allItems)[number], showPin = true, accent: NavAccent = 'default') => {
     const isActive = item.href === '/adm'
       ? pathname === item.href
       : pathname === item.href || pathname.startsWith(item.href + '/');
@@ -128,8 +176,8 @@ export function AppSidebar({ user, onSignOut, onOpenPalette, onOpenChat }: AppSi
           <Link href={item.href}>
             <span
               className={cn(
-                "relative flex size-7 shrink-0 items-center justify-center rounded-md bg-sidebar-foreground/5 text-sidebar-foreground/68 transition-colors",
-                isActive && "bg-primary/12 text-primary"
+                "relative flex size-7 shrink-0 items-center justify-center rounded-md transition-colors",
+                isActive ? ACCENT_ACTIVE[accent] : ACCENT_REST[accent],
               )}
             >
               <Icon className="size-4.5" />
@@ -193,7 +241,7 @@ export function AppSidebar({ user, onSignOut, onOpenPalette, onOpenChat }: AppSi
             >
               <Search className="size-4.5" />
               <span className="text-sm font-medium">Buscar módulo...</span>
-              <kbd className="ml-auto rounded-md border border-sidebar-border bg-sidebar-foreground/5 px-1.5 py-0.5 text-[10px] font-mono text-sidebar-foreground/58 group-data-[collapsible=icon]:hidden">⌘K</kbd>
+              <kbd className="ml-auto rounded-md border border-sidebar-border bg-sidebar-foreground/5 px-1.5 py-0.5 text-[11px] font-mono text-sidebar-foreground/58 group-data-[collapsible=icon]:hidden">⌘K</kbd>
             </SidebarMenuButton>
           </SidebarMenuItem>
           {onOpenChat && (
@@ -205,7 +253,7 @@ export function AppSidebar({ user, onSignOut, onOpenPalette, onOpenChat }: AppSi
               >
                 <MessageSquare className="size-4.5" />
                 <span className="text-sm font-medium">Preguntar a Nitro</span>
-                <kbd className="ml-auto rounded-md border border-sidebar-border bg-sidebar-foreground/5 px-1.5 py-0.5 text-[10px] font-mono text-sidebar-foreground/58 group-data-[collapsible=icon]:hidden">{chatShortcutLabel}</kbd>
+                <kbd className="ml-auto rounded-md border border-sidebar-border bg-sidebar-foreground/5 px-1.5 py-0.5 text-[11px] font-mono text-sidebar-foreground/58 group-data-[collapsible=icon]:hidden">{chatShortcutLabel}</kbd>
               </SidebarMenuButton>
             </SidebarMenuItem>
           )}
@@ -236,7 +284,8 @@ export function AppSidebar({ user, onSignOut, onOpenPalette, onOpenChat }: AppSi
           if (visibleItems.length === 0) return null;
 
           const open = isGroupOpen(group.label);
-          const GroupIcon = group.icon;
+          const accent = groupAccent(group.label);
+          const HeaderIcon = GROUP_HEADER_ICON[accent] ?? group.icon;
           const hasNovedadesUnread = hasUnread && visibleItems.some((i) => i.href === '/adm/novedades');
 
           return (
@@ -246,7 +295,7 @@ export function AppSidebar({ user, onSignOut, onOpenPalette, onOpenChat }: AppSi
                 className="mb-1 flex h-8 w-full items-center gap-2 rounded-lg px-3 text-[11px] font-semibold uppercase text-sidebar-foreground/54 transition-colors hover:bg-sidebar-accent/55 hover:text-sidebar-foreground group-data-[collapsible=icon]:hidden"
                 aria-expanded={open}
               >
-                <GroupIcon className="size-3.5 text-sidebar-foreground/42" />
+                <HeaderIcon className={cn('size-3.5', ACCENT_HEADER_ICON[accent])} />
                 <span className="flex-1 text-left">{group.label}</span>
                 {hasNovedadesUnread && !open && (
                   <span
@@ -255,7 +304,7 @@ export function AppSidebar({ user, onSignOut, onOpenPalette, onOpenChat }: AppSi
                     role="status"
                   />
                 )}
-                <span className="rounded-full bg-sidebar-foreground/8 px-1.5 py-0.5 text-[10px] text-sidebar-foreground/50">
+                <span className="rounded-full bg-sidebar-foreground/8 px-1.5 py-0.5 text-[11px] text-sidebar-foreground/50">
                   {visibleItems.length}
                 </span>
                 <ChevronRight className={`size-3.5 transition-transform duration-200 ${open ? 'rotate-90 text-primary' : ''}`} />
@@ -265,7 +314,7 @@ export function AppSidebar({ user, onSignOut, onOpenPalette, onOpenChat }: AppSi
                 style={{ maxHeight: open ? '500px' : '0px', opacity: open ? 1 : 0 }}
               >
                 <SidebarGroupContent>
-                  <SidebarMenu>{visibleItems.map((i) => renderItem(i))}</SidebarMenu>
+                  <SidebarMenu>{visibleItems.map((i) => renderItem(i, true, accent))}</SidebarMenu>
                 </SidebarGroupContent>
               </div>
             </SidebarGroup>
@@ -278,7 +327,7 @@ export function AppSidebar({ user, onSignOut, onOpenPalette, onOpenChat }: AppSi
           <div className="flex items-center gap-2 rounded-lg border border-sidebar-border/70 bg-sidebar-foreground/[0.035] px-3 py-2 text-xs text-sidebar-foreground/65">
             <ShieldCheck className="size-4 text-primary" />
             <span className="truncate">Sesión segura</span>
-            <span className="ml-auto rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+            <span className="ml-auto rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
               {roleLabel}
             </span>
           </div>

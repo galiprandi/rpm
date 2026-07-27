@@ -56,6 +56,9 @@ import {
   Send,
   XCircle,
   Car,
+  LogIn,
+  LogOut,
+  AlertTriangle,
 } from "lucide-react";
 import {
   ProductServiceSelector,
@@ -66,6 +69,13 @@ import { Header } from "@/components/adm/Header";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { CustomerCreditNoteDialog } from "@/components/credit-notes/CustomerCreditNoteDialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { getWhatsAppLink, getWorkOrderMessage } from "@/lib/utils/whatsapp";
 import { buildVehicleDescription } from "@/lib/constants/vehicle-categories";
 import {
@@ -391,6 +401,7 @@ export default function WorkOrderDetailPage() {
   >([]);
   const [savingItems, setSavingItems] = useState(false);
   const [isCreditNoteDialogOpen, setIsCreditNoteDialogOpen] = useState(false);
+  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
   const [technicians, setTechnicians] = useState<
     Array<{ id: string; name: string }>
   >([]);
@@ -502,7 +513,7 @@ export default function WorkOrderDetailPage() {
     };
   }, [fetchWorkOrder, fetchPayments, fetchInvoices, fetchAuditLogs]);
 
-  const handleStatusChange = async (newStatus: string) => {
+  const handleStatusChange = async (newStatus: string): Promise<boolean> => {
     setUpdatingStatus(true);
     try {
       const response = await fetch(`/api/work-orders/${workOrderId}/status`, {
@@ -516,31 +527,61 @@ export default function WorkOrderDetailPage() {
       const updated = await response.json();
       setWorkOrder((prev) => (prev ? { ...prev, ...updated } : null));
       void fetchAuditLogs();
+      return true;
     } catch (error) {
       console.error("Error updating status:", error);
       await alert({
-        title: "Error",
+        title: "No se pudo actualizar el estado",
         description:
-          "Error al actualizar estado. Por favor intente nuevamente.",
+          "Ocurrió un error de conexión al cambiar el estado de la OT. Verifica tu conexión e inténtalo nuevamente.",
         variant: "error",
+        action: {
+          label: "Reintentar",
+          onClick: () => void handleStatusChange(newStatus),
+        },
       });
+      return false;
     } finally {
       setUpdatingStatus(false);
     }
   };
 
-  const handleCancelOrder = async () => {
+  const handleCancelOrder = () => {
     if (!workOrder) return;
-    const isConfirmed = await confirmAction({
-      title: "¿Cancelar Orden de Trabajo?",
-      description: "Esta acción es irreversible, cambiará el estado de la OT a 'Cancelada' y anulará/restará el saldo correspondiente en la cuenta corriente del cliente (si aplica). ¿Deseas continuar?",
-      confirmText: "Sí, cancelar orden",
-      cancelText: "No, volver",
-      variant: "destructive",
-    });
+    setIsCancelDialogOpen(true);
+  };
 
-    if (isConfirmed) {
-      await handleStatusChange("CANCELLED");
+  const confirmCancelOrder = async () => {
+    if (!workOrder) return;
+    const previousStatus = workOrder.status;
+    const statusLabel = getStatusLabel(workOrder.status);
+    setIsCancelDialogOpen(false);
+    const success = await handleStatusChange("CANCELLED");
+    if (success) {
+      toast.success("Orden de trabajo cancelada", {
+        description: `La OT fue cancelada correctamente (estado anterior: ${statusLabel}).`,
+        action: {
+          label: "Deshacer",
+          onClick: () => void handleUndoCancel(previousStatus),
+        },
+        duration: 8000,
+      });
+    }
+  };
+
+  const handleUndoCancel = async (previousStatus: string) => {
+    const undoToastId = toast.loading("Revirtiendo cancelación...");
+    const success = await handleStatusChange(previousStatus);
+    if (success) {
+      toast.success("Cancelación revertida", {
+        id: undoToastId,
+        description: `La OT volvió al estado "${getStatusLabel(previousStatus)}".`,
+      });
+    } else {
+      toast.error(
+        "No se pudo deshacer la cancelación. Revise el estado de la OT manualmente.",
+        { id: undoToastId },
+      );
     }
   };
 
@@ -698,7 +739,14 @@ export default function WorkOrderDetailPage() {
     e.preventDefault();
     e.stopPropagation();
 
-    const confirmed = window.confirm("¿Estás seguro de que deseas eliminar esta foto?");
+    const confirmed = await confirmAction({
+      title: "¿Eliminar esta foto?",
+      description:
+        "La foto se eliminará permanentemente de la orden de trabajo. Esta acción no se puede deshacer.",
+      confirmText: "Sí, eliminar",
+      cancelText: "No, mantener",
+      variant: "destructive",
+    });
     if (!confirmed) return;
 
     const toastId = toast.loading("Eliminando foto...");
@@ -716,7 +764,16 @@ export default function WorkOrderDetailPage() {
       void fetchAuditLogs();
     } catch (error: any) {
       console.error("Error deleting photo:", error);
-      toast.error(error?.message || "Error al eliminar la foto", { id: toastId });
+      toast.error(
+        "No se pudo eliminar la foto por un error de conexión. Toca aquí para reintentar.",
+        {
+          id: toastId,
+          action: {
+            label: "Reintentar",
+            onClick: () => void handlePhotoDelete(url, e),
+          },
+        },
+      );
     }
   };
 
@@ -1792,6 +1849,61 @@ export default function WorkOrderDetailPage() {
         }}
       />
 
+      {/* Cancel Order Dialog */}
+      <Dialog open={isCancelDialogOpen} onOpenChange={setIsCancelDialogOpen}>
+        <DialogContent className="max-w-md p-0" showCloseButton={false}>
+          <DialogTitle className="sr-only">
+            ¿Cancelar Orden de Trabajo?
+          </DialogTitle>
+          <div className="flex items-start gap-3.5 p-5">
+            <div className="flex-shrink-0 rounded-lg bg-destructive/10 p-2.5">
+              <XCircle
+                className="h-5 w-5 text-destructive"
+                aria-hidden="true"
+              />
+            </div>
+            <div className="flex-1 space-y-3 pt-0.5">
+              <h3 className="text-base font-semibold leading-tight">
+                ¿Cancelar Orden de Trabajo?
+              </h3>
+              <DialogDescription className="text-sm leading-relaxed">
+                Estás por cancelar la OT {workOrder.id} del cliente{" "}
+                {workOrder.customer?.name || "—"} (estado actual:{" "}
+                {getStatusLabel(workOrder.status)}). Esta acción puede no ser
+                reversible: cambiará el estado a “Cancelada” y
+                anulará/restará el saldo correspondiente en la cuenta corriente
+                del cliente (si aplica). ¿Deseas continuar?
+              </DialogDescription>
+              {totalPaid > 0 && (
+                <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-amber-800">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                  <p className="text-sm">
+                    Esta OT tiene pagos asociados ({formatARS(totalPaid)}).
+                    Cancelarla puede requerir emitir una nota de crédito.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+          <DialogFooter className="mx-0 mb-0 px-5 py-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsCancelDialogOpen(false)}
+            >
+              No, mantener
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => void confirmCancelOrder()}
+            >
+              Cancelar OT
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Tabs Section - hidden in print */}
       <Tabs defaultValue="checklists" className="w-full print:hidden">
         <TabsList
@@ -1838,11 +1950,13 @@ export default function WorkOrderDetailPage() {
         {/* Tab: Checklists */}
         <TabsContent value="checklists" className="pt-4 outline-none">
           <div className="grid md:grid-cols-2 gap-4">
-            <Card className="border-l-4 border-l-blue-500">
+            <Card>
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-blue-500" />
+                    <span className="w-5 h-5 rounded-md bg-blue-600 flex items-center justify-center shrink-0">
+                      <LogIn className="h-3 w-3 text-white" aria-hidden="true" />
+                    </span>
                     Checklist de Ingreso
                   </CardTitle>
                   {workOrder.entryChecklist && (
@@ -2035,11 +2149,13 @@ export default function WorkOrderDetailPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-l-4 border-l-green-500">
+            <Card>
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <span className="w-5 h-5 rounded-md bg-emerald-600 flex items-center justify-center shrink-0">
+                      <LogOut className="h-3 w-3 text-white" aria-hidden="true" />
+                    </span>
                     Checklist de Calidad (Salida)
                   </CardTitle>
                   {workOrder.exitChecklist && (
@@ -2641,13 +2757,15 @@ export default function WorkOrderDetailPage() {
                             </div>
                           )}
                           <div className="flex items-center gap-1.5 text-slate-600 bg-slate-100/50 px-2 py-1 rounded border">
-                            <span className="text-xs shrink-0">📥 Checklist Ingreso:</span>
+                            <LogIn className="h-3.5 w-3.5 shrink-0 text-blue-600" aria-hidden="true" />
+                            <span className="text-xs shrink-0">Checklist Ingreso:</span>
                             <span className={cn("font-medium", pastWo.entryChecklist ? "text-blue-600" : "text-muted-foreground/50")}>
                               {pastWo.entryChecklist ? "Completado" : "Pendiente"}
                             </span>
                           </div>
                           <div className="flex items-center gap-1.5 text-slate-600 bg-slate-100/50 px-2 py-1 rounded border">
-                            <span className="text-xs shrink-0">📤 Checklist Calidad:</span>
+                            <LogOut className="h-3.5 w-3.5 shrink-0 text-emerald-600" aria-hidden="true" />
+                            <span className="text-xs shrink-0">Checklist Calidad:</span>
                             <span className={cn("font-medium", pastWo.exitChecklist ? "text-emerald-600" : "text-muted-foreground/50")}>
                               {pastWo.exitChecklist ? "Completado" : "Pendiente"}
                             </span>

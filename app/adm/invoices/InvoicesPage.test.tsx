@@ -61,6 +61,71 @@ vi.mock('@/components/ui/input', () => ({
   Input: (props: any) => <input data-testid="input" {...props} />,
 }));
 
+vi.mock('@/components/ui/button', () => ({
+  Button: ({ children, onClick, disabled, ...props }: any) => (
+    <button data-testid="button" onClick={onClick} disabled={disabled} {...props}>
+      {children}
+    </button>
+  ),
+}));
+
+vi.mock('@/components/ui/select', () => ({
+  Select: ({ children, value, onValueChange }: any) => (
+    <div data-testid="select" data-value={value}>{children}</div>
+  ),
+  SelectTrigger: ({ children, ...props }: any) => (
+    <div data-testid="select-trigger" {...props}>{children}</div>
+  ),
+  SelectValue: ({ placeholder }: any) => (
+    <span data-testid="select-value">{placeholder || ''}</span>
+  ),
+  SelectContent: ({ children }: any) => (
+    <div data-testid="select-content">{children}</div>
+  ),
+  SelectGroup: ({ children }: any) => <div data-testid="select-group">{children}</div>,
+  SelectLabel: ({ children }: any) => <div data-testid="select-label">{children}</div>,
+  SelectItem: ({ children, value }: any) => (
+    <div data-testid="select-item" data-value={value}>{children}</div>
+  ),
+}));
+
+vi.mock('@/components/ui/tooltip', () => ({
+  TooltipProvider: ({ children }: any) => <div data-testid="tooltip-provider">{children}</div>,
+  Tooltip: ({ children }: any) => <div data-testid="tooltip">{children}</div>,
+  TooltipTrigger: ({ children }: any) => <div data-testid="tooltip-trigger">{children}</div>,
+  TooltipContent: ({ children }: any) => <div data-testid="tooltip-content">{children}</div>,
+}));
+
+vi.mock('radix-ui', () => ({
+  Popover: {
+    Root: ({ children, open, onOpenChange }: any) => (
+      <div data-testid="popover-root" data-open={open}>{children}</div>
+    ),
+    Trigger: ({ children, asChild }: any) => <div data-testid="popover-trigger">{children}</div>,
+    Portal: ({ children }: any) => <div data-testid="popover-portal">{children}</div>,
+    Content: ({ children, ...props }: any) => (
+      <div data-testid="popover-content" {...props}>{children}</div>
+    ),
+  },
+  AlertDialog: {
+    Root: ({ children, open, onOpenChange }: any) => (
+      <div data-testid="alert-dialog-root" data-open={open}>{children}</div>
+    ),
+    Trigger: ({ children, asChild }: any) => <div data-testid="alert-dialog-trigger">{children}</div>,
+    Portal: ({ children }: any) => <div data-testid="alert-dialog-portal">{children}</div>,
+    Overlay: (props: any) => <div data-testid="alert-dialog-overlay" {...props} />,
+    Content: ({ children, ...props }: any) => (
+      <div data-testid="alert-dialog-content" {...props}>{children}</div>
+    ),
+    Title: ({ children, ...props }: any) => <h2 data-testid="alert-dialog-title" {...props}>{children}</h2>,
+    Description: ({ children, ...props }: any) => (
+      <div data-testid="alert-dialog-description" {...props}>{children}</div>
+    ),
+    Action: ({ children, ...props }: any) => <div data-testid="alert-dialog-action" {...props}>{children}</div>,
+    Cancel: ({ children, ...props }: any) => <div data-testid="alert-dialog-cancel" {...props}>{children}</div>,
+  },
+}));
+
 // Mock Sonner
 vi.mock('sonner', () => ({
   toast: {
@@ -85,6 +150,8 @@ vi.mock('lucide-react', () => ({
   Clock: () => <div data-testid="icon-clock" />,
   AlertTriangle: () => <div data-testid="icon-alerttriangle" />,
   AlertCircle: () => <div data-testid="icon-alertcircle" />,
+  SlidersHorizontal: () => <div data-testid="icon-slidershorizontal" />,
+  RotateCcw: () => <div data-testid="icon-rotateccw" />,
 }));
 
 // Mock Next Navigation
