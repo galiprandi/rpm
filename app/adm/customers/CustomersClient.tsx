@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/tooltip";
 import { getWhatsAppLink, getDebtReminderMessage } from "@/lib/utils/whatsapp";
 import { formatPhone } from "@/lib/utils/format";
+import { useUI } from "@/components/ui/UIProvider";
 
 interface Customer {
   id: string;
@@ -68,6 +69,7 @@ export default function CustomersClient({
   initialCustomers,
 }: CustomersClientProps) {
   const router = useRouter();
+  const { alert } = useUI();
   const [customers, setCustomers] = useState<Customer[]>(initialCustomers);
   const [loading, setLoading] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -286,13 +288,13 @@ export default function CustomersClient({
                 <Link
                   key={v.id}
                   href={`/adm/vehicles/${v.id}`}
-                  className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-secondary/50 text-[10px] font-mono border border-secondary hover:bg-secondary transition-colors"
+                  className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-secondary/50 text-[11px] font-mono border border-secondary hover:bg-secondary transition-colors"
                 >
                   {v.identifier}
                 </Link>
               ))}
               {vehicles.length > 3 && (
-                <span className="text-[10px] text-muted-foreground self-center">
+                <span className="text-[11px] text-muted-foreground self-center">
                   +{vehicles.length - 3}
                 </span>
               )}
@@ -404,7 +406,11 @@ export default function CustomersClient({
       fetchCustomers();
     } catch (error) {
       console.error("Error creating customer:", error);
-      alert("Error al crear cliente");
+      await alert({
+        title: "Error",
+        description: "Error al crear cliente",
+        variant: "error",
+      });
     } finally {
       setIsCreating(false);
     }

@@ -340,7 +340,7 @@ export function CustomerForm({
       </div>
 
       {/* Teléfonos */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="customer-phone">Teléfono Principal</Label>
           <div className="relative">
@@ -509,7 +509,7 @@ export function CustomerForm({
             <p className="text-sm text-muted-foreground">
               Solo completa si el cliente requiere factura AFIP
             </p>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="customer-cuit">CUIT</Label>
                 <div className="relative">

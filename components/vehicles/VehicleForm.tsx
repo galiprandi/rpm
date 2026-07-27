@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { VEHICLE_CATEGORIES } from "@/lib/constants/vehicle-categories";
 import type { VehicleFormData } from "@/lib/types/vehicle";
+import { getCategoryIcon } from "@/components/vehicles/CategoryIcon";
 
 export { VEHICLE_CATEGORIES };
 export type { VehicleFormData };
@@ -226,12 +227,15 @@ export function VehicleForm({
               <SelectValue placeholder="Seleccione categoría" />
             </SelectTrigger>
             <SelectContent>
-              {VEHICLE_CATEGORIES.map((cat) => (
-                <SelectItem key={cat.value} value={cat.value}>
-                  <span className="mr-2">{cat.icon}</span>
-                  {cat.label}
-                </SelectItem>
-              ))}
+              {VEHICLE_CATEGORIES.map((cat) => {
+                const Icon = getCategoryIcon(cat.value);
+                return (
+                  <SelectItem key={cat.value} value={cat.value}>
+                    <Icon className="h-4 w-4 mr-2 inline-block align-text-bottom" />
+                    {cat.label}
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
         </div>

@@ -22,6 +22,7 @@ import {
   Mail,
 } from 'lucide-react';
 import { VehicleForm, type VehicleFormData } from './VehicleForm';
+import { useUI } from '@/components/ui/UIProvider';
 
 interface Customer {
   id: string;
@@ -46,6 +47,7 @@ export function VehicleDialog({
   preselectedIdentifier,
   onSuccess,
 }: VehicleDialogProps) {
+  const { alert } = useUI();
   const [loading, setLoading] = useState(false);
   const [customerId, setCustomerId] = useState<string | null>(customerIdProp || null);
   const [customerName, setCustomerName] = useState(customerNameProp || '');
@@ -109,11 +111,19 @@ export function VehicleDialog({
         setTimeout(() => setShowCustomerCreatedToast(false), 2000);
       } else {
         const error = await res.json();
-        alert(error.error || 'Error al crear cliente');
+        await alert({
+          title: 'Error',
+          description: error.error || 'Error al crear cliente',
+          variant: 'error',
+        });
       }
     } catch (error) {
       console.error('Error creating customer:', error);
-      alert('Error al crear cliente');
+      await alert({
+        title: 'Error',
+        description: 'Error al crear cliente',
+        variant: 'error',
+      });
     } finally {
       setCreatingCustomer(false);
     }
@@ -122,7 +132,11 @@ export function VehicleDialog({
   const handleSubmit = async (formData: VehicleFormData) => {
     const finalCustomerId = customerId || customerIdProp;
     if (!finalCustomerId) {
-      alert('Seleccione un cliente');
+      await alert({
+        title: 'Cliente requerido',
+        description: 'Seleccione un cliente',
+        variant: 'warning',
+      });
       return;
     }
 
@@ -146,7 +160,11 @@ export function VehicleDialog({
       onSuccess?.(vehicle);
     } catch (error) {
       console.error('Error creating vehicle:', error);
-      alert('Error al crear vehículo');
+      await alert({
+        title: 'Error',
+        description: 'Error al crear vehículo',
+        variant: 'error',
+      });
     } finally {
       setLoading(false);
     }

@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/tooltip";
 import { getWhatsAppLink } from "@/lib/utils/whatsapp";
 import { formatARS } from "@/lib/utils/format";
+import { getCategoryIcon } from "@/components/vehicles/CategoryIcon";
 
 interface WorkOrder {
   id: string;
@@ -208,7 +209,7 @@ export default function VehiclesClient({
               <div className="font-semibold tracking-tight font-mono">
                 {row.original.identifier}
               </div>
-              <div className="text-[10px] text-muted-foreground uppercase">
+              <div className="text-[11px] text-muted-foreground uppercase">
                 {getVehicleCategoryLabel(row.original.category)}
               </div>
             </div>
@@ -268,6 +269,7 @@ export default function VehiclesClient({
                     rel="noopener noreferrer"
                     className="p-1 rounded-md hover:bg-emerald-50 text-emerald-700 opacity-0 group-hover/owner:opacity-100 transition-opacity"
                     onClick={(e) => e.stopPropagation()}
+                    aria-label={`Enviar WhatsApp a ${row.original.customer.name}`}
                   >
                     <MessageSquare className="h-3.5 w-3.5" />
                   </a>
@@ -378,11 +380,15 @@ export default function VehiclesClient({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas las categorías</SelectItem>
-                {VEHICLE_CATEGORIES.map((cat) => (
-                  <SelectItem key={cat.value} value={cat.value}>
-                    {cat.icon} {cat.label}
-                  </SelectItem>
-                ))}
+                {VEHICLE_CATEGORIES.map((cat) => {
+                  const Icon = getCategoryIcon(cat.value);
+                  return (
+                    <SelectItem key={cat.value} value={cat.value}>
+                      <Icon className="h-4 w-4 mr-2 inline-block align-text-bottom" />
+                      {cat.label}
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
           </div>
