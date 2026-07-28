@@ -4,6 +4,7 @@
 - [ ] Direct photo attachments for work order checklist items.
 
 ## ✅ DONE
+- [x] 2026-07-28 — Implement dynamic local image previews and file extension badges for chat file attachments with robust object URL memory management and cleanup lifecycles (PR #289).
 - [x] 2026-07-27 — Implement the registerWorkOrderPayment tool for the virtual assistant (Nitro) with full database transaction support, cash movement registration, atomic balance adjustment, and integrity verification tests (PR #288).
 - [x] 2026-07-26 — Enhance chatbot keyboard accessibility and navigation by adding focus-visible offset ring/outline styling to all close, clear, toggle, and secondary controls inside ChatFloating.tsx (PR #276).
 - [x] 2026-07-26 — Implement contextual client-side barcode and QR code detection for uploaded image attachments using the native browser BarcodeDetector API, and expand dynamic context-aware suggestion chips for admin pages (/cash, /purchase-vouchers, /suppliers, /settings, /reports) (PR #263).
@@ -18,6 +19,10 @@
 - [x] 2026-03-28 — Initial audit of bot tools, removal of mock tools, fixing conversation history unit tests, and implementing major UI/UX improvements (smart scrolling, success states for tool execution, empty-state quick start suggestion chips, and full WCAG accessibility).
 
 ## 🧠 LEARNINGS
+### 2026-07-28 — Chatbot Image and File Attachment Visual Preview UI Standard
+**Learning:** Attaching files (such as purchase invoices or product barcode images) without visual confirmation can leave users anxious. Displaying a dynamic local thumbnail preview using `URL.createObjectURL(attachedFile)` when the file is an image, and a fallback file-type extension badge (e.g. "pdf", "txt") otherwise, provides immediate visual feedback and reassurance. Properly managing the life cycle of these object URLs by calling `URL.revokeObjectURL` on change, removal, or unmounting is critical to prevent memory leaks in single-page applications.
+**Action:** Always provide visual thumbnail previews or file type badging for file attachments and strictly implement hook cleanup routines to release browser memory resources.
+
 ### 2026-07-27 — Chatbot Work Order Payment Registration Standard
 **Learning:** Adding financial mutation capabilities to the virtual assistant (like registering work order payments) provides massive operational speedups for the staff, but requires robust safe guards: (1) verifying if the cash register is actually open, (2) resolving active payment methods dynamically using name similarity (e.g. "contado"), (3) wrapping payment records, income cash movements, and atomic customer balance adjustments in a single safe database transaction, and (4) transitioning the work order status to "PAID" once fully settled.
 **Action:** Always wrap companion tool mutations in robust, transaction-safe database sessions and enforce integrity checks (integrity tests, system documentation, and UI visual labels) to avoid dead ends or inconsistencies.
