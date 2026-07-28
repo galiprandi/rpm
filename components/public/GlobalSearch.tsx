@@ -1,13 +1,12 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Search, X, ArrowRight, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import {
   Dialog,
   DialogContent,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { featuredProducts } from '@/lib/constants/featured-products';
 import { publicServices } from '@/lib/constants/services';
 import { useRouter } from 'next/navigation';
@@ -34,6 +33,7 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
   const [liveProducts, setLiveProducts] = useState<SearchProduct[] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Reset query when dialog closes
   useEffect(() => {
@@ -142,12 +142,14 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
             ) : (
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-500 group-focus-within:text-brand transition-colors pointer-events-none" aria-hidden="true" />
             )}
-            <Input
+            <input
+              ref={inputRef}
               autoFocus
+              type="text"
               placeholder="Buscar productos, servicios..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="h-14 bg-zinc-900 border-none pl-12 pr-12 text-lg text-white focus-visible:ring-1 focus-visible:ring-brand/50 rounded-2xl"
+              className="h-14 w-full bg-zinc-900 border-none pl-12 pr-12 text-lg text-white focus-visible:ring-1 focus-visible:ring-brand/50 rounded-2xl outline-none"
               aria-label="Término de búsqueda global"
             />
             {query && (
@@ -164,11 +166,39 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
 
         <div className="max-h-[60vh] overflow-y-auto p-2 custom-scrollbar">
           {!query && (
-            <div className="p-12 text-center">
-              <div className="w-16 h-16 bg-zinc-900 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-white/5">
-                <Search className="h-8 w-8 text-zinc-700 pointer-events-none" aria-hidden="true" />
+            <div className="p-6 text-center space-y-8 animate-fade-in">
+              <div className="space-y-3">
+                <div className="w-16 h-16 bg-zinc-900 rounded-2xl flex items-center justify-center mx-auto border border-white/5">
+                  <Search className="h-8 w-8 text-zinc-700 pointer-events-none" aria-hidden="true" />
+                </div>
+                <p className="text-zinc-400 font-semibold text-base">¿Qué estás buscando hoy?</p>
+                <p className="text-zinc-500 text-xs">Sugerencias populares para tu vehículo:</p>
               </div>
-              <p className="text-zinc-500 font-medium italic">¿Qué estás buscando hoy?</p>
+
+              {/* Suggested Search Chips */}
+              <div className="flex flex-wrap justify-center gap-2.5 max-w-md mx-auto">
+                {[
+                  { label: '💡 Bi-LED', term: 'Bi-LED' },
+                  { label: '✨ PPF', term: 'PPF' },
+                  { label: '🛡️ Cerámico', term: 'Cerámico' },
+                  { label: '🔌 Audio DSP', term: 'DSP' },
+                  { label: '🏔️ Off-Road', term: 'Off-Road' }
+                ].map((item) => (
+                  <button
+                    key={item.term}
+                    onClick={() => {
+                      setQuery(item.term);
+                      setTimeout(() => {
+                        inputRef.current?.focus();
+                      }, 50);
+                    }}
+                    className="px-4 py-2.5 bg-zinc-900/50 hover:bg-zinc-800/80 border border-white/5 hover:border-brand/30 text-xs font-semibold text-zinc-300 hover:text-white rounded-full transition-all duration-300 outline-none focus-visible:ring-2 focus-visible:ring-brand hover:scale-105 active:scale-95"
+                    aria-label={`Buscar sugerencia: ${item.term}`}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 

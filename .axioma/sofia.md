@@ -3,6 +3,7 @@
 ## 📋 BACKLOG
 
 ## ✅ DONE
+- [x] 2026-07-26 — Sugerencias interactivas de búsqueda global y protección contra el secuestro de foco en menús móviles cerrados (PR #sofia/public/search-suggestions-and-focus-fix)
 - [x] 2026-07-25 — Visibilidad de enfoque por teclado para overlays con transiciones de hover en el catálogo de productos y hitos (PR #sofia/public/keyboard-focus-visibility)
 - [x] 2026-07-24 — Refinamiento integral de accesibilidad (ARIA), navegación por teclado y ocultación de íconos decorativos en toda la web pública (PR #sofia/public/accessibility-refinement)
 - [x] 2026-07-23 — Multi-step success/pending flow en el formulario de contacto para evitar bloqueadores de popups (PR #sofia/public/contact-flow-ux)
@@ -25,12 +26,16 @@
 
 ## 🧠 LEARNINGS
 
+## 2026-07-26 - Sugerencias de Búsqueda y Protección contra Secuestro de Foco por Teclado
+**Learning:** (1) El menú móvil público, a pesar de estar visualmente colapsado/oculto, puede secuestrar el foco por teclado del usuario de forma "invisible" si sus elementos siguen teniendo `tabIndex={0}`. Al condicionar estos elementos con `tabIndex={isOpen ? 0 : -1}`, eliminamos la fricción de navegación por teclado y garantizamos un comportamiento 100% accesible sin romper las animaciones CSS. (2) Añadir chips de sugerencia de búsqueda populares en el estado vacío de la paleta de búsqueda global incrementa la conversión al sugerir términos comunes como "Bi-LED" o "PPF" y guiar al usuario sin obligarle a teclear desde cero.
+**Action:** Utilizar consistentemente `tabIndex={isOpen ? 0 : -1}` en componentes ocultables/deslizables e integrar chips de sugerencia con auto-foco en interfaces de búsqueda complejas.
+
 ## 2026-07-25 - Visibilidad de Enfoque por Teclado para Overlays de Transición en Hover
-**Learning:** En interfaces de alta gama con efectos de hover elegantes (como revelar botones de "Vista Rápida" o "DETALLES" deslizando/escalando la tarjeta), los usuarios de navegación por teclado y lectores de pantalla se encuentran con un problema de invisibilidad de enfoque. Al tabbing por la página, el foco se asocia a elementos que permanecen invisibles (`opacity-0`) debido a que la animación de visibilidad solo escucha el evento `:hover` del contenedor principal. Para solucionar esto con Tailwind de forma robusta y nativa, se debe aplicar `group-focus-within:opacity-100` y restaurar los offsets de animación (`group-focus-within:translate-y-0`, `group-focus-within:translate-x-0`). Esto revela de forma inmediata y automática las acciones del elemento tan pronto como cualquier sub-botón interactivo recibe el foco por teclado.
+**Learning:** En interfaces de alta gama con efectos de hover elegantes (como revelar botones de "Vista Rápiva" o "DETALLES" deslizando/escalando la tarjeta), los usuarios de navegación por teclado y lectores de pantalla se encuentran con un problema de invisibilidad de enfoque. Al tabbing por la página, el foco se asocia a elementos que permanecen invisibles (`opacity-0`) debido a que la animación de visibilidad solo escucha el evento `:hover` del contenedor principal. Para solucionar esto con Tailwind de forma robusta y nativa, se debe aplicar `group-focus-within:opacity-100` y restaurar los offsets de animación (`group-focus-within:translate-y-0`, `group-focus-within:translate-x-0`). Esto revela de forma inmediata y automática las acciones del elemento tan pronto como cualquier sub-botón interactivo recibe el foco por teclado.
 **Action:** Usar sistemáticamente las clases `group-focus-within` en todos los overlays, menús deslizables o bloques interactivos de transición para garantizar visibilidad al enfocar con el teclado.
 
 ## 2026-07-24 - Accesibilidad y Cumplimiento de Normas ARIA en la Web Pública
-**Learning:** Ocultar sistemáticamente todos los íconos Lucide decorativos mediante `aria-hidden="true"` y `pointer-events-none`, junto con la adición de etiquetas `aria-label` descriptivas para enlaces e íconos interactivos sin texto visible, reduce drásticamente el ruido para los lectores de pantalla. Además, dar soporte de teclado completo (`tabIndex={0}`, enfoque visual y manejadores de eventos como `Enter` o `Space` en componentes de tipo botón o tarjeta interactiva) eleva la experiencia de usuario de la web pública a estándares de excelencia internacional WCAG AA.
+**Learning:** Ocultar sistemáticamente todos los íconos Lucide decorativos mediante `aria-hidden="true"` and `pointer-events-none`, junto con la adición de etiquetas `aria-label` descriptivas para enlaces e íconos interactivos sin texto visible, reduce drásticamente el ruido para los lectores de pantalla. Además, dar soporte de teclado completo (`tabIndex={0}`, enfoque visual y manejadores de eventos como `Enter` o `Space` en componentes de tipo botón o tarjeta interactiva) eleva la experiencia de usuario de la web pública a estándares de excelencia internacional WCAG AA.
 **Action:** Asegurar que todo elemento visual que requiera interacción táctil posea marcado semántico interactivo, foco por teclado y compatibilidad total con lectores de pantalla.
 
 ## 2026-07-23 - Redirección Asíncrona y Bloqueadores de Ventanas Emergentes (Popup Blockers)
@@ -38,7 +43,7 @@
 **Action:** Aplicar este patrón de flujo de redirección manual/asistido en todos los formularios públicos que enlacen de forma externa tras procesamiento o carga local.
 
 ## 2026-07-22 - Conversión Contextual y Chat de WhatsApp
-**Learning:** Reemplazar el botón flotante estático de WhatsApp por un widget de chat interactivo que personifica una asistente de atención al cliente ("Sofi") eleva de forma extraordinaria la conversión y la cercanía de la marca. Ofrecer chips interactivos con consultas pre-escritas (como coordinar turnos, cotizar iluminación LED, detailing/PPF o equipamiento off-road) elimina la "fricción de la hoja en blanco", incentivando al usuario a iniciar la interacción de forma lúdica. Además, asegurar accesibilidad total (tecla ESC para cerrar, enfoque inteligente y clic fuera) garantiza que el widget no obstaculice la navegación.
+**Learning:** Reemplazar el botón flotante estático de WhatsApp por un widget de chat interactivo que personifica una asistente de atención al cliente ("Sofi") eleva de forma extraordinaria la conversión y la cercanía de la marca. Ofrecer chips interactivos con consultas pre-escritas (como coordinar turnos, cotizar iluminación LED, detailing/PPF o equipamiento off-road) elimina la "fricción de la hoja en blanco", incentivando al usuario a iniciar la interacción de forma lúdica. Asegurar accesibilidad total (tecla ESC para cerrar, enfoque inteligente y clic fuera) garantiza que el widget no obstaculice la navegación.
 **Action:** Mantener un estándar de micro-UX humanizado y accesible en todas las integraciones flotantes y de contacto del sitio web público.
 
 ## 2026-07-20 - Optimización LCP de Imágenes y Configuración de Host Remoto

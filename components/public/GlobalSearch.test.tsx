@@ -137,4 +137,26 @@ describe('GlobalSearch', () => {
     expect(mockPush).toHaveBeenCalledWith('/productos?product=p-select');
     expect(mockOnClose).toHaveBeenCalled();
   });
+
+  it('renders suggested search chips and triggers search on click', async () => {
+    render(<GlobalSearch isOpen={true} onClose={mockOnClose} />);
+
+    // Check that suggested chips are visible in the empty query state
+    expect(screen.getByText('Sugerencias populares para tu vehículo:')).toBeInTheDocument();
+
+    const chipBtn = screen.getByText('✨ PPF');
+    expect(chipBtn).toBeInTheDocument();
+
+    // Click on the PPF chip
+    fireEvent.click(chipBtn);
+
+    // The input query should update to 'PPF' and show matching results (like PPF in static featuredProducts or category)
+    const input = screen.getByPlaceholderText('Buscar productos, servicios...') as HTMLInputElement;
+    expect(input.value).toBe('PPF');
+
+    // Wait for the results to render based on the 'PPF' query
+    await waitFor(() => {
+      expect(screen.queryByText('Sugerencias populares para tu vehículo:')).not.toBeInTheDocument();
+    });
+  });
 });
