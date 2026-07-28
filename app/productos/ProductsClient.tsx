@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { PublicLayout } from '@/components/public/layout/PublicLayout';
 import { Button } from '@/components/ui/button';
@@ -22,17 +22,91 @@ interface ProductsClientProps {
   initialCategories: string[];
 }
 
+// Custom descriptions for each category to increase context and conversion
+const CATEGORY_DESCRIPTIONS: Record<string, string> = {
+  'Todos': 'Explorá nuestra colección completa de equipamiento premium para elevar el rendimiento, la seguridad y el diseño de tu vehículo.',
+  'Iluminación': 'Sistemas Bi-LED, luces auxiliares y proyectores de alta potencia para una visibilidad nocturna superior y de estándar profesional.',
+  'Estética': 'Tratamientos cerámicos, PPF (Paint Protection Film) y acabados detallados para conservar el valor y brillo original de tu vehículo.',
+  'Equipamiento': 'Accesorios off-road robustos, enganches y protectores diseñados para resistir las condiciones de terreno más extremas.',
+  'Seguridad': 'Sistemas de alarma avanzados, rastreo satelital y sensores para mantener tu vehículo siempre protegido en todo momento.',
+  'Audio y Electrónica': 'Mejoras de conectividad, pantallas de infoentretenimiento y sistemas de audio premium DSP de alta definición.',
+};
+
+const SUGGESTED_CHIPS = [
+  { label: '💡 Bi-LED', query: 'Bi-LED' },
+  { label: '✨ PPF', query: 'PPF' },
+  { label: '🛡️ Cerámico', query: 'Cerámico' },
+  { label: '🔌 Audio DSP', query: 'Audio DSP' },
+  { label: '🏔️ Off-Road', query: 'Off-Road' },
+];
+
 export default function ProductsClient({ initialProducts, initialCategories }: ProductsClientProps) {
   const searchParams = useSearchParams();
-  const [selectedCategory, setSelectedCategory] = useState('Todos');
-  const [searchQuery, setSearchQuery] = useState('');
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Initialize state directly from URL search params on mount
+  const [selectedCategory, setSelectedCategory] = useState(() => {
+    return searchParams?.get('category') || 'Todos';
+  });
+  const [searchQuery, setSearchQuery] = useState(() => {
+    return searchParams?.get('q') || '';
+  });
+
   const [selectedProduct, setSelectedProduct] = useState<PublicCatalogProduct | null>(null);
   const [productsList] = useState<PublicCatalogProduct[]>(initialProducts);
   const [categoriesList] = useState<string[]>(initialCategories);
 
+  // Sync state when URL params change (e.g. from browser back/forward or deep linking)
+  useEffect(() => {
+    if (!searchParams) return;
+    const cat = searchParams.get('category') || 'Todos';
+    const q = searchParams.get('q') || '';
+    setSelectedCategory(cat);
+    setSearchQuery(q);
+  }, [searchParams]);
+
+  // Sync active filters to URL search params dynamically without reloading the page
+  const updateUrlParams = (category: string, query: string) => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams();
+    if (category && category !== 'Todos') {
+      params.set('category', category);
+    }
+    if (query) {
+      params.set('q', query);
+    }
+    const newRelativePathQuery = window.location.pathname + (params.toString() ? `?${params.toString()}` : '');
+    window.history.replaceState(null, '', newRelativePathQuery);
+  };
+
+  // Safe handlers that update state and URL together
+  const handleCategoryChange = (category: string) => {
+    setSelectedCategory(category);
+    updateUrlParams(category, searchQuery);
+  };
+
+  const handleSearchChange = (query: string) => {
+    setSearchQuery(query);
+    updateUrlParams(selectedCategory, query);
+  };
+
+  const handleSuggestionClick = (query: string) => {
+    setSearchQuery(query);
+    updateUrlParams(selectedCategory, query);
+    if (searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  };
+
+  const handleClearFilters = () => {
+    setSelectedCategory('Todos');
+    setSearchQuery('');
+    updateUrlParams('Todos', '');
+  };
+
   useEffect(() => {
     let cancelled = false;
-    const productId = searchParams.get('product');
+    const productId = searchParams?.get('product');
     if (productId) {
       const product = productsList.find(p => p.id === productId);
       if (product) {
@@ -71,17 +145,18 @@ export default function ProductsClient({ initialProducts, initialCategories }: P
               <div className="relative group">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500 group-focus-within:text-brand transition-colors pointer-events-none" aria-hidden="true" />
                 <input
+                  ref={searchInputRef}
                   type="text"
                   placeholder="Buscar producto..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => handleSearchChange(e.target.value)}
                   className="h-14 w-full lg:w-80 bg-zinc-900 border border-white/5 rounded-2xl pl-12 pr-12 text-sm text-white focus:outline-none focus:border-brand/50 transition-all"
                 />
                 {searchQuery && (
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <button
-                        onClick={() => setSearchQuery('')}
+                        onClick={() => handleSearchChange('')}
                         className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 flex items-center justify-center rounded-full bg-zinc-800 text-zinc-400 hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none focus-visible:ring-offset-1"
                         aria-label="Limpiar búsqueda"
                       >
@@ -99,9 +174,9 @@ export default function ProductsClient({ initialProducts, initialCategories }: P
                 {categoriesList.map((category) => (
                   <button
                     key={category}
-                    onClick={() => setSelectedCategory(category)}
+                    onClick={() => handleCategoryChange(category)}
                     className={cn(
-                      "px-6 h-10 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-300 border",
+                      "px-6 h-10 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-300 border cursor-pointer",
                       selectedCategory === category
                         ? "bg-brand border-brand text-white shadow-[0_0_20px_rgba(255,75,0,0.3)]"
                         : "bg-zinc-900 border-white/5 text-zinc-500 hover:text-white hover:border-white/20"
@@ -112,6 +187,13 @@ export default function ProductsClient({ initialProducts, initialCategories }: P
                 ))}
               </div>
             </div>
+          </div>
+
+          {/* Dynamic category descriptions */}
+          <div className="mb-12 max-w-4xl animate-fade-up opacity-0" style={{ animationDelay: '0.4s' }}>
+            <p className="text-zinc-400 text-sm md:text-base leading-relaxed tracking-wide border-l-2 border-brand/50 pl-4 font-medium">
+              {CATEGORY_DESCRIPTIONS[selectedCategory] || CATEGORY_DESCRIPTIONS['Todos']}
+            </p>
           </div>
 
           {filteredProducts.length > 0 && (
@@ -171,7 +253,7 @@ export default function ProductsClient({ initialProducts, initialCategories }: P
                     <span className="text-white font-mono font-semibold">{formatARS(product.price)}</span>
                     <button
                       onClick={() => setSelectedProduct(product)}
-                      className="flex items-center text-xs font-bold text-brand hover:text-white transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-lg"
+                      className="flex items-center text-xs font-bold text-brand hover:text-white transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-lg cursor-pointer"
                       aria-label={`Ver detalles del producto ${product.name}`}
                     >
                       DETALLES <ArrowRight className="ml-2 h-3 w-3 pointer-events-none" aria-hidden="true" />
@@ -189,11 +271,28 @@ export default function ProductsClient({ initialProducts, initialCategories }: P
                 <Search className="h-8 w-8 text-zinc-700 pointer-events-none" aria-hidden="true" />
               </div>
               <h3 className="text-2xl font-bold text-white mb-2">No se encontraron productos</h3>
-              <p className="text-zinc-500">Probá con otros filtros o términos de búsqueda.</p>
+              <p className="text-zinc-500 mb-6">Probá con otros filtros o términos de búsqueda.</p>
+
+              {/* Interactive suggestion chips inside empty state */}
+              <div className="flex flex-col items-center justify-center gap-3 mb-8">
+                <p className="text-xs font-semibold text-zinc-500 uppercase tracking-widest">Sugerencias de Búsqueda</p>
+                <div className="flex flex-wrap items-center justify-center gap-2 max-w-md">
+                  {SUGGESTED_CHIPS.map((chip) => (
+                    <button
+                      key={chip.label}
+                      onClick={() => handleSuggestionClick(chip.query)}
+                      className="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 border border-white/5 hover:border-brand/30 text-xs font-semibold text-zinc-300 hover:text-white rounded-full transition-all duration-300 cursor-pointer focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
+                    >
+                      {chip.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <Button
                 variant="link"
-                className="mt-4 text-brand font-bold"
-                onClick={() => { setSelectedCategory('Todos'); setSearchQuery(''); }}
+                className="text-brand font-bold cursor-pointer"
+                onClick={handleClearFilters}
               >
                 Limpiar filtros
               </Button>
@@ -215,7 +314,7 @@ export default function ProductsClient({ initialProducts, initialCategories }: P
               Nuestro catálogo digital es una selección. Si necesitás un accesorio específico o una cotización a medida, contactanos.
             </p>
             <div className="flex justify-center">
-               <Button asChild className="bg-brand text-white hover:bg-brand/90 font-bold px-16 h-20 text-xl rounded-full transition-all hover:scale-105 active:scale-95 border-none shadow-[0_0_40px_rgba(255,75,0,0.3)] gap-3">
+               <Button asChild className="bg-brand text-white hover:bg-brand/90 font-bold px-16 h-20 text-xl rounded-full transition-all hover:scale-105 active:scale-95 border-none shadow-[0_0_40px_rgba(255,75,0,0.3)] gap-3 cursor-pointer">
                  <a href={PUBLIC_SITE_CONFIG.links.whatsapp(DEFAULT_WHATSAPP_MESSAGE)} target="_blank" rel="noopener noreferrer" aria-label="Consultar por WhatsApp a medida">
                     <MessageCircle className="h-6 w-6 fill-current pointer-events-none" aria-hidden="true" />
                     Consultar a Medida
