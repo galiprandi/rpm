@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { Header } from "@/components/adm/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -216,6 +217,7 @@ export default function InvoiceDetailPage() {
 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
+  const [isAnularDialogOpen, setIsAnularDialogOpen] = useState(false);
   const [editForm, setEditForm] = useState({
     customerName: "",
     customerDocType: "SIN_DOC",
@@ -509,9 +511,7 @@ export default function InvoiceDetailPage() {
               ? [
                   {
                     label: "Anular (NC)",
-                    onClick: () => {
-                      toast.info("Para anular un comprobante oficializado, genere una Nota de Crédito desde la venta u OT original.");
-                    },
+                    onClick: () => setIsAnularDialogOpen(true),
                     icon: Undo2,
                     variant: "outline" as const,
                   },
@@ -1112,6 +1112,48 @@ export default function InvoiceDetailPage() {
           </div>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Educational Dialog for invoice annullation (Credit Note requirement) */}
+      <Dialog open={isAnularDialogOpen} onOpenChange={setIsAnularDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-700">
+              <AlertCircle className="h-5 w-5 text-red-700" />
+              Requisito de Nota de Crédito
+            </DialogTitle>
+            <DialogDescription className="space-y-3 pt-2 text-foreground">
+              <p>
+                Según la normativa fiscal de la <strong>AFIP</strong>, los comprobantes oficializados (con <strong>CAE</strong>) no pueden eliminarse ni modificarse directamente.
+              </p>
+              <p>
+                Para anular o corregir esta factura, es obligatorio emitir una <strong>Nota de Crédito</strong>. Esta se genera automáticamente al iniciar una devolución desde el documento de origen.
+              </p>
+              <p className="text-xs text-muted-foreground bg-muted p-2.5 rounded-lg border">
+                Al oficializar la Nota de Crédito correspondiente, el sistema anulará de forma automática este comprobante.
+              </p>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2 border-t pt-4 mt-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsAnularDialogOpen(false)}
+            >
+              Cerrar
+            </Button>
+            <Button asChild>
+              <Link
+                href={
+                  invoice.referenceType === "work_order"
+                    ? `/adm/work-orders/${invoice.referenceId}`
+                    : `/adm/direct-sales/${invoice.referenceId}`
+                }
+              >
+                Ir al Documento de Origen
+              </Link>
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
