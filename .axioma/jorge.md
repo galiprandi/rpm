@@ -2,6 +2,7 @@
 - [ ] Idea pendiente — breve descripción
 
 ## ✅ COMPLETADO
+- [x] 2026-07-28 — Atajo de "Marcar todos como OK" en checklists de ingreso y egreso en creación y edición de OT (PR #jorge/work-orders/checklist-bulk-toggle)
 - [x] 2026-07-27 — Selector de Estado Interactivo en Detalle de OT (PR #jorge/work-orders/status-select-header)
 - [x] 2026-07-26 — Historial de Órdenes de Trabajo del Vehículo en Detalle de OT (PR #jorge/work-orders/vehicle-history-tab)
 - [x] 2026-07-24 — Bloqueo de Estados Terminales y Reversión de Saldos por Cancelación de OT (PR #jorge/work-orders/cancelled-terminal-states)
@@ -16,6 +17,10 @@
 - [x] 2025-07-08 — Servicio Centralizado de OT y Timeline Unificado (PR #jorge/work-orders/centralized-updates)
 
 ## 🧠 APRENDIZAJES
+## 2026-07-28 - Atajo de "Marcar todos como OK" en checklists de ingreso y egreso en creación y edición de OT
+**Aprendizaje:** En talleres donde los operarios realizan checklists rutinarios sobre múltiples vehículos cada día, hacer click individualmente en 6 u 8 casillas de verificación para marcar que todo está bien resulta en una gran fatiga de clics y frustración de UX. Proveer un botón/enlace secundario discreto de "Marcar todos como OK" (que muta a "Desmarcar todos" cuando todo está seleccionado) simplifica radicalmente esta tarea repetitiva. Esto permite rellenar rápidamente el checklist como "todo OK" y solo desmarcar de manera puntual los elementos que requieran atención especial, acelerando el flujo de trabajo de taller sin perder precisión técnica.
+**Acción:** Siempre incluir botones de acción masiva / atajos rápidos en formularios con múltiples checkboxes repetitivos para optimizar el flujo diario del usuario.
+
 ## 2026-07-27 - Selector de Estado Interactivo en Detalle de OT
 **Aprendizaje:** En pantallas de gestión detalladas de taller, la visibilidad e interactividad sobre el estado de la operación (OT) es crucial. Si el usuario está en móvil (donde no hay Kanban de arrastre) o desea corregir o cambiar de estado rápidamente, verse forzado a volver a la vista general o usar solo la acción lineal por defecto crea una fricción innecesaria. Integrar un dropdown select nativo con colores semánticos por estado en la cabecera misma soluciona de forma elegante la falta de visualización clara del estado actual y proporciona control total inmediato desde cualquier dispositivo.
 **Acción:** Siempre proveer selectores de estado interactivos y coloreados en cabeceras de detalle técnico para mejorar accesibilidad y velocidad operativa.

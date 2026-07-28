@@ -2012,14 +2012,34 @@ export default function WorkOrderDetailPage() {
                     Checklist de Ingreso
                   </CardTitle>
                   {workOrder.entryChecklist && (
-                    <Button
-                      variant="ghost"
-                      size="default"
-                      onClick={() => startEditingChecklist("entry")}
-                      disabled={workOrder.status === "DELIVERED" || workOrder.status === "CANCELLED"}
-                    >
-                      Editar
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      {editingChecklist === "entry" && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 text-xs text-primary hover:text-primary/80 px-2"
+                          onClick={() => {
+                            const allChecked = editingChecklistItems.every((item) => item.checked);
+                            setEditingChecklistItems((prev) =>
+                              prev.map((item) => ({ ...item, checked: !allChecked }))
+                            );
+                          }}
+                        >
+                          {editingChecklistItems.every((item) => item.checked)
+                            ? "Desmarcar todos"
+                            : "Marcar todos como OK"}
+                        </Button>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="default"
+                        onClick={() => startEditingChecklist("entry")}
+                        disabled={workOrder.status === "DELIVERED" || workOrder.status === "CANCELLED"}
+                      >
+                        Editar
+                      </Button>
+                    </div>
                   )}
                 </div>
               </CardHeader>
@@ -2212,14 +2232,34 @@ export default function WorkOrderDetailPage() {
                     Checklist de Calidad (Salida)
                   </CardTitle>
                   {workOrder.exitChecklist && (
-                    <Button
-                      variant="ghost"
-                      size="default"
-                      onClick={() => startEditingChecklist("exit")}
-                      disabled={workOrder.status === "DELIVERED" || workOrder.status === "CANCELLED"}
-                    >
-                      Editar
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      {editingChecklist === "exit" && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 text-xs text-primary hover:text-primary/80 px-2"
+                          onClick={() => {
+                            const allChecked = editingChecklistItems.every((item) => item.checked);
+                            setEditingChecklistItems((prev) =>
+                              prev.map((item) => ({ ...item, checked: !allChecked }))
+                            );
+                          }}
+                        >
+                          {editingChecklistItems.every((item) => item.checked)
+                            ? "Desmarcar todos"
+                            : "Marcar todos como OK"}
+                        </Button>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="default"
+                        onClick={() => startEditingChecklist("exit")}
+                        disabled={workOrder.status === "DELIVERED" || workOrder.status === "CANCELLED"}
+                      >
+                        Editar
+                      </Button>
+                    </div>
                   )}
                 </div>
               </CardHeader>
