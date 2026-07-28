@@ -1,6 +1,11 @@
 ## 📋 BACKLOG
 
 ## ✅ DONE
+- [x] 2026-07-27 — Integración Unificada de Botón Imprimir en Cabeceras de Detalle de Clientes y Vehículos
+  - Incorporación del botón de acción secundaria "Imprimir" con el icono `Printer` en la cabecera principal de las fichas de Detalle de Cliente y Detalle de Vehículo. Esto unifica la experiencia con los demás reportes del sistema (Deudores, Rentabilidad, Finanzas) y permite generar el resumen de cuenta impreso de alta fidelidad en cualquier momento, incluso cuando el saldo actual es exactamente $0.00.
+  - Actualización de los botones de impresión incrustados en las tarjetas de cuenta corriente para que utilicen el icono `Printer` y el texto "Imprimir" en lugar de "Exportar PDF" con un icono de descarga, logrando coherencia visual absoluta.
+  - Optimización de la vista de impresión del vehículo (`#print-section`) para renderizar un mensaje de fallback limpio y elegante de "No hay órdenes de trabajo pendientes de pago" en la tabla cuando no existen deudas, alineándose con el diseño del cliente.
+  - Verificación visual end-to-end completa con capturas de pantalla y grabación de video mediante un script de Playwright en modo desatendido.
 - [x] 2026-07-26 — Seguimiento de Deuda y Filtros de Cuentas Corrientes en Listado de Vehículos
   - Implementación del cálculo dinámico de deuda de vehículos en tiempo real en `VehiclesClient.tsx` agregando los totales de órdenes de trabajo con estado pendiente (distinto de `PAID` y `CANCELLED`).
   - Adición de dos nuevas tarjetas de estadísticas KPI ("Con Deuda" y "Deuda Total") en la cabecera de vehículos para una visualización agregada perfecta del estado financiero de las unidades del taller.

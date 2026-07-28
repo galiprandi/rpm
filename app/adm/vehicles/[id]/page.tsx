@@ -37,6 +37,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Download,
+  Printer,
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -571,6 +572,12 @@ export default function VehicleDetailPage() {
         }}
         secondaryActions={[
           {
+            label: "Imprimir",
+            onClick: () => window.print(),
+            icon: Printer,
+            variant: "outline",
+          },
+          {
             label: "Editar",
             onClick: () => setIsEditModalOpen(true),
             variant: "outline",
@@ -833,8 +840,8 @@ export default function VehicleDetailPage() {
                   size="sm"
                   className="border-zinc-300 text-zinc-700 hover:bg-zinc-50 hover:text-zinc-800"
                 >
-                  <Download className="h-4 w-4 mr-1" />
-                  Exportar PDF
+                  <Printer className="h-4 w-4 mr-1" />
+                  Imprimir
                 </Button>
                 <Button
                   onClick={() => {
@@ -1450,27 +1457,35 @@ export default function VehicleDetailPage() {
               </tr>
             </thead>
             <tbody>
-              {unpaidWorkOrders.map((wo) => (
-                <tr key={wo.id} className="border-b border-zinc-300">
-                  <td className="py-2 px-3 font-mono font-semibold border-r border-zinc-300 text-zinc-955">
-                    #{wo.id.slice(-6).toUpperCase()}
-                  </td>
-                  <td className="py-2 px-3 font-mono border-r border-zinc-300 text-zinc-600">
-                    {new Date(wo.createdAt).toLocaleDateString("es-AR")}
-                  </td>
-                  <td className="py-2 px-3 border-r border-zinc-300 text-zinc-700">
-                    {wo.status === "CONFIRMED" ? "Confirmada" :
-                     wo.status === "WAITING" ? "En espera" :
-                     wo.status === "IN_PROGRESS" ? "En progreso" :
-                     wo.status === "QC_CHECK" ? "Control de Calidad" :
-                     wo.status === "READY" ? "Listo" :
-                     wo.status === "DELIVERED" ? "Entregado" : wo.status}
-                  </td>
-                  <td className="py-2 px-3 text-right font-mono font-semibold text-zinc-955">
-                    {formatARS(Number(wo.total), 2)}
+              {unpaidWorkOrders.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="py-4 px-3 text-center text-zinc-500 italic">
+                    No hay órdenes de trabajo pendientes de pago.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                unpaidWorkOrders.map((wo) => (
+                  <tr key={wo.id} className="border-b border-zinc-300">
+                    <td className="py-2 px-3 font-mono font-semibold border-r border-zinc-300 text-zinc-955">
+                      #{wo.id.slice(-6).toUpperCase()}
+                    </td>
+                    <td className="py-2 px-3 font-mono border-r border-zinc-300 text-zinc-600">
+                      {new Date(wo.createdAt).toLocaleDateString("es-AR")}
+                    </td>
+                    <td className="py-2 px-3 border-r border-zinc-300 text-zinc-700">
+                      {wo.status === "CONFIRMED" ? "Confirmada" :
+                       wo.status === "WAITING" ? "En espera" :
+                       wo.status === "IN_PROGRESS" ? "En progreso" :
+                       wo.status === "QC_CHECK" ? "Control de Calidad" :
+                       wo.status === "READY" ? "Listo" :
+                       wo.status === "DELIVERED" ? "Entregado" : wo.status}
+                    </td>
+                    <td className="py-2 px-3 text-right font-mono font-semibold text-zinc-955">
+                      {formatARS(Number(wo.total), 2)}
+                    </td>
+                  </tr>
+                ))
+              )}
               {/* Fila del Total Acumulado */}
               <tr className="bg-zinc-50 border-t-2 border-zinc-900 font-bold">
                 <td colSpan={3} className="py-3 px-3 text-right text-zinc-700">

@@ -20,6 +20,12 @@ vi.mock('@/lib/auth', () => ({
   },
 }));
 
+// Mock permissions/check to avoid DB queries during tests
+vi.mock('@/lib/permissions/check', () => ({
+  loadPermissionsForRole: vi.fn(async () => []),
+  hasPermission: vi.fn(() => true),
+}));
+
 // Mock dev-auth to control bypass behavior
 const mockIsDevBypassEnabled = vi.fn(() => false);
 const mockCreateDevSession = vi.fn(() => ({
