@@ -3,6 +3,7 @@
 ## 📋 BACKLOG
 
 ## ✅ DONE
+- [x] 2026-07-27 — Vista de Impresión y Contraste de Accesibilidad WCAG AA en Reporte de Finanzas: Añadida la acción secundaria "Imprimir" en el Reporte de Finanzas & Flujo, diseñando una plantilla de impresión de alta fidelidad con KPIs de control financiero, evolución diaria, distribución de pagos y firmas administrativas. Elevada la legibilidad de colores semánticos a nivel 700 para cumplir con WCAG AA (4.5:1). (PR #diego/reports/finance-print-layout-and-accessibility)
 - [x] 2026-07-24 — Implementación de Vista de Impresión y Contraste WCAG AA en Reporte de Deudores: Añadida acción secundaria "Imprimir" en el reporte de Deudores, diseñando una plantilla de impresión de alta fidelidad con KPIs, tabla de deudores formateada, y bloques de firmas de control. Elevada la legibilidad de colores semánticos a nivel 700 para cumplir con WCAG AA (4.5:1). (PR #diego/reports/debtors-print-and-accessibility-improvements)
 - [x] 2026-07-23 — Refactorización de Renderizados en Cascada y Estados de Carga en Clientes de Reportes: Reemplazadas las inicializaciones de fechas personalizadas en los 8 clientes de reportes con inicializadores perezosos de estado (`lazy state initializers`) de React (`useState(() => ...)`), eliminando los efectos post-montaje redundantes. Reubicada la transición de estado `loading=true` a los controladores de eventos de cambios de filtro e inputs de fecha personalizados para eliminar advertencias `react-hooks/set-state-in-effect`, mejorar el rendimiento de montaje y asegurar transiciones de estado predecibles. (PR #diego/reports/react-hooks-cascading-renders-fix)
 - [x] 2026-07-22 — Estandarización de Accesibilidad y Contraste WCAG AA en Clientes de Reportes: Removido el TooltipProvider local redundante en el reporte de Stock y normalizado el uso de clases de contraste de texto financiero semántico (pasando de `text-emerald-600`/`text-red-600` a las variantes accesibles `text-emerald-700`/`text-red-700`) en los reportes de Taller, Finanzas, Servicios y Rentabilidad. Agregado de atributos `aria-hidden="true"` y `pointer-events-none` en todos los iconos Lucide decorativos de los reportes. (PR #diego/reports/accessibility-contrast-polishing)
@@ -24,6 +25,10 @@
 - [x] 2025-07-09 — Implementación de reporte de Clientes (adquisición, recurrencia y ranking) (PR #diego/reports/customer-report)
 
 ## 🧠 LEARNINGS
+## 2026-07-27 - Vista de Impresión y Contraste de Accesibilidad WCAG AA en Reporte de Finanzas
+**Learning:** El Reporte de Finanzas y Flujo es un ledger de tesorería y auditoría fundamental en la gestión diaria. Facilitar una plantilla de impresión nativa a través de `@media print` permite al usuario archivar o presentar balances de caja impecables sin elementos del panel de control como barra lateral, header, o botones flotantes de asistencia. Al mantener el contraste semántico verde/rojo a nivel de saturación `700` (`text-emerald-700` / `text-red-700`) se satisface estrictamente el estándar WCAG AA de legibilidad.
+**Action:** Implementar siempre una plantilla corporativa de alta fidelidad con KPIs, tablas completas de flujo, distribución por medio de pago y áreas de firma de auditoría, asegurando una visualización analítica libre de distracciones durante la impresión.
+
 ## 2026-07-24 - Plantilla de Impresión de Alta Fidelidad y Contraste en Reportes Financieros
 **Learning:** El reporte de Deudores es un documento de auditoría crítico que a menudo se revisa de forma física o en PDF. Facilitar una acción de impresión nativa y dar estilo específico a través de `@media print` y clases responsivas de ocultamiento (`print:hidden`, `hidden print:block`) permite presentar un balance de cuentas de deudores impecable, sin barras de navegación, sidebars o interfaces de chat. De igual forma, mantener el contraste de texto rojo/verde en nivel 700 garantiza que el reporte sea accesible para personas con visión limitada en cualquier pantalla o papel.
 **Action:** Al implementar reportes analíticos o financieros, incorporar siempre una plantilla de impresión dedicada y utilizar exclusivamente colores semánticos accesibles (nivel 700).
@@ -41,7 +46,7 @@
 **Action:** Al implementar filtros de fecha dinámicos, autocalcular siempre la ventana de comparación anterior con la misma cantidad de milisegundos y desfasada exactamente por la duración seleccionada.
 
 ## 2026-07-20 - Consistencia en Exportación a CSV
-**Learning:** En un sistema de reportes multi-módulo, la consistencia en utilidades secundarias (como la exportación a CSV) es tan crítica como los KPIs visuales principales. Utilizar primitivas legacy (`data:text/csv`) sin BOM UTF-8 o sin escape de caracteres en algunos módulos mientras que otros usan Blobs estructurados genera una experiencia inconsistente para el usuario final al abrir sus datos en Excel.
+**Learning:** En un sistema de reportes multi-módulo, la consistencia en utilidades secundarias (como la exportación a CSV) is tan crítica como los KPIs visuales principales. Utilizar primitivas legacy (`data:text/csv`) sin BOM UTF-8 o sin escape de caracteres en algunos módulos mientras que otros usan Blobs estructurados genera una experiencia inconsistente para el usuario final al abrir sus datos en Excel.
 **Action:** Unificar y estandarizar siempre las rutinas de descarga de archivos exportados usando el mismo estándar robusto de codificación y formateo en todas las pantallas.
 
 ## 2026-07-19 - Exportación Estructurada Multi-Sección en CSV
