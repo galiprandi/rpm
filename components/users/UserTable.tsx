@@ -46,10 +46,13 @@ const getRoleBadgeClasses = (role: string): string => {
   switch (role) {
     case 'ADMIN':
       return 'text-red-700 border-red-200 bg-red-50';
+    case 'VENDEDOR':
     case 'SELLER':
     case 'TECHNICIAN':
     case 'CASHIER':
       return 'text-blue-700 border-blue-200 bg-blue-50';
+    case 'STAFF':
+      return 'text-amber-700 border-amber-200 bg-amber-50';
     default:
       return '';
   }
@@ -58,9 +61,11 @@ const getRoleBadgeClasses = (role: string): string => {
 const getRoleLabel = (role: string): string => {
   const labels: Record<string, string> = {
     ADMIN: 'Administrador',
+    VENDEDOR: 'Vendedor',
     SELLER: 'Vendedor',
     TECHNICIAN: 'Técnico',
     CASHIER: 'Cajero',
+    STAFF: 'Staff',
     USER: 'Usuario',
   };
   return labels[role] || role;

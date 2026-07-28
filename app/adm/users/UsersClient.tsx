@@ -186,13 +186,22 @@ export default function UsersClient({ initialUsers }: UsersClientProps) {
     > = {
       ADMIN: {
         variant: 'outline',
-        label: 'Admin',
+        label: 'Administrador',
         className: 'text-red-700 border-red-200 bg-red-50',
       },
-      MANAGER: { variant: 'default', label: 'Manager' },
+      VENDEDOR: {
+        variant: 'outline',
+        label: 'Vendedor',
+        className: 'text-blue-700 border-blue-200 bg-blue-50',
+      },
+      STAFF: {
+        variant: 'outline',
+        label: 'Staff',
+        className: 'text-amber-700 border-amber-200 bg-amber-50',
+      },
       USER: { variant: 'secondary', label: 'Usuario' },
     };
-    const config = variants[role] || variants.USER;
+    const config = variants[role] || { variant: 'secondary' as const, label: role };
     return (
       <Badge variant={config.variant} className={config.className}>
         {config.label}
