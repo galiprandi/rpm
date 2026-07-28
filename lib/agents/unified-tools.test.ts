@@ -27,6 +27,7 @@ const EXPECTED_TOOLS = [
   'createDirectSale',
   // Update
   'updateWorkOrderStatus',
+  'registerWorkOrderPayment',
   // Query
   'getWorkOrderDetail',
   'getCashStatus',
