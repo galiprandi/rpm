@@ -347,7 +347,7 @@ export default function CustomerDetailPage() {
     [],
   );
 
-  // Combinar ventas directas y notas de crédito en transacciones unificadas
+  // Combinar ventas directas, notas de crédito, pagos y órdenes de trabajo en transacciones unificadas
   const transactions: Transaction[] = useMemo(() => {
     if (!customer) return [];
 
@@ -377,8 +377,22 @@ export default function CustomerDetailPage() {
       notes: p.notes,
     }));
 
+    const workOrders: Transaction[] = customer.workOrders.map((wo) => ({
+      id: wo.id,
+      type: "INVOICE" as TransactionType,
+      total: Number(wo.total),
+      createdAt: wo.createdAt,
+      status: wo.status === "CANCELLED" ? "CANCELLED" : wo.status === "PAID" ? "PAID" : "ISSUED",
+      items: [
+        {
+          name: `Orden de Trabajo #${wo.id.slice(-6).toUpperCase()} - Vehículo ${wo.vehicle?.identifier || ""}`,
+          quantity: 1,
+        },
+      ],
+    }));
+
     // Combinar y ordenar por fecha (más reciente primero)
-    return [...sales, ...creditNotes, ...payments].sort(
+    return [...sales, ...creditNotes, ...payments, ...workOrders].sort(
       (a, b) =>
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
@@ -447,6 +461,10 @@ export default function CustomerDetailPage() {
               CANCELLED: {
                 label: "Cancelada",
                 color: "bg-red-100 text-red-800",
+              },
+              PAID: {
+                label: "Pagada",
+                color: "bg-blue-100 text-blue-800",
               },
             };
           const config = statusConfig[status] || {
@@ -1395,6 +1413,22 @@ export default function CustomerDetailPage() {
                     }}
                   >
                     Crear Nota de Crédito
+                  </Button>
+                </div>
+              )}
+
+              {/* Botón para navegar a la OT si es tipo INVOICE */}
+              {selectedTransaction.type === "INVOICE" && (
+                <div className="border-t pt-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    asChild
+                  >
+                    <Link href={`/adm/work-orders/${selectedTransaction.id}`}>
+                      Ver Orden de Trabajo Detallada
+                    </Link>
                   </Button>
                 </div>
               )}
