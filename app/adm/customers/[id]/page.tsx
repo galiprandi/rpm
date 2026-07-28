@@ -31,7 +31,7 @@ import {
   Receipt,
   MessageSquare,
   Tag,
-  Download,
+  Printer,
 } from "lucide-react";
 import Link from "next/link";
 import { Header } from "@/components/adm/Header";
@@ -543,6 +543,12 @@ export default function CustomerDetailPage() {
         }}
         secondaryActions={[
           {
+            label: "Imprimir",
+            onClick: () => window.print(),
+            icon: Printer,
+            variant: "outline",
+          },
+          {
             label: "Nota de Crédito",
             onClick: () => setIsCreditNoteModalOpen(true),
             icon: Receipt,
@@ -666,8 +672,8 @@ export default function CustomerDetailPage() {
                   size="sm"
                   className="border-zinc-300 text-zinc-700 hover:bg-zinc-50 hover:text-zinc-800"
                 >
-                  <Download className="h-4 w-4 mr-1" />
-                  Exportar PDF
+                  <Printer className="h-4 w-4 mr-1" />
+                  Imprimir
                 </Button>
                 <Button
                   onClick={() => setIsPaymentModalOpen(true)}

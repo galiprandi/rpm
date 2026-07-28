@@ -843,6 +843,7 @@ export function ChatFloating({
                                   "Registrando cliente y vehículo...",
                                 processPurchaseInvoice:
                                   "Procesando factura de compra...",
+                                registerWorkOrderPayment: "Registrando pago...",
                               };
                               const completedLabels: Record<string, string> = {
                                 searchProducts:
@@ -873,6 +874,8 @@ export function ChatFloating({
                                   "Cliente y vehículo registrados exitosamente",
                                 processPurchaseInvoice:
                                   "Factura de compra procesada exitosamente",
+                                registerWorkOrderPayment:
+                                  "Pago registrado exitosamente",
                               };
                               const partState = (part as { state?: string })
                                 .state;

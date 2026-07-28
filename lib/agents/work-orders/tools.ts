@@ -1,11 +1,14 @@
 import { tool } from "ai";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { workOrder, customer, vehicle, workOrderItem, product, service, payment, user } from "@/db/schema";
+import { workOrder, customer, vehicle, workOrderItem, product, service, payment, user, paymentMethod } from "@/db/schema";
 import { eq, and, ilike, desc, or, type SQL } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { updateWorkOrder } from "@/lib/services/workOrderService";
 import logger from "../utils/logger";
+import { isCashRegisterOpen, createCashMovement } from "@/lib/services/cashMovementService";
+import { adjustBalanceAtomically } from "@/lib/services/balanceService";
+import { invalidateCashStatus } from "@/lib/cache";
 
 export const searchWorkOrdersTool = tool({
   description:
@@ -204,9 +207,139 @@ export const getWorkOrderDetailTool = tool({
   },
 });
 
+export const registerWorkOrderPaymentTool = tool({
+  description:
+    "Registra un pago para una orden de trabajo (OT). Requiere ID de la orden de trabajo, monto, método de pago y notas opcionales. Debe llamarse solo después de que el usuario confirma explícitamente.",
+  inputSchema: z.object({
+    workOrderId: z.string().describe("ID de la orden de trabajo"),
+    amount: z.number().min(0.01).describe("Monto a pagar"),
+    paymentMethod: z
+      .string()
+      .describe('Método de pago: "contado", "tarjeta", "transferencia" u otro similar'),
+    notes: z.string().optional().describe("Notas opcionales sobre el pago"),
+    userId: z
+      .string()
+      .optional()
+      .describe(
+        "ID del usuario que realiza la operación (del runtime USER_ID, si está disponible)",
+      ),
+  }),
+  execute: async (input) => {
+    logger.debug(
+      { workOrderId: input.workOrderId, amount: input.amount, paymentMethod: input.paymentMethod },
+      "Register work order payment",
+    );
+
+    try {
+      // 1. Check if cash register is open
+      const isOpen = await isCashRegisterOpen();
+      if (!isOpen) {
+        return "🔴 La caja está cerrada. Debe abrir la caja para registrar pagos.";
+      }
+
+      // 2. Verify work order exists
+      const workOrderRecord = await db.query.workOrder.findFirst({
+        where: eq(workOrder.id, input.workOrderId),
+        columns: { id: true, total: true, customerId: true, status: true },
+        with: {
+          customer: { columns: { name: true } },
+          payments: { columns: { amount: true } },
+        },
+      });
+
+      if (!workOrderRecord) {
+        return "🔴 Orden de trabajo no encontrada.";
+      }
+
+      // 3. Resolve payment method by name
+      const pm = await db.query.paymentMethod.findFirst({
+        where: ilike(paymentMethod.name, `%${input.paymentMethod}%`),
+      });
+
+      if (!pm) {
+        const allPms = await db.query.paymentMethod.findMany({
+          where: eq(paymentMethod.isActive, true),
+        });
+        return `🔴 Método de pago "${input.paymentMethod}" no encontrado. Disponibles: ${allPms.map((p) => p.name).join(", ")}`;
+      }
+
+      if (!pm.isActive) {
+        return `🔴 El método de pago "${pm.name}" no está activo.`;
+      }
+
+      const totalPaidBefore = workOrderRecord.payments.reduce(
+        (sum, p) => sum + Number(p.amount),
+        0,
+      );
+      const remainingAmount = Number(workOrderRecord.total) - totalPaidBefore;
+
+      if (remainingAmount <= 0) {
+        return `ℹ️ La OT #${input.workOrderId.slice(0, 8)} ya se encuentra completamente pagada.`;
+      }
+
+      const paymentAmount = Math.min(input.amount, remainingAmount);
+
+      // 4. Perform transaction
+      const paymentId = randomUUID();
+      await db.transaction(async (tx) => {
+        // Create payment
+        await tx.insert(payment).values({
+          id: paymentId,
+          workOrderId: input.workOrderId,
+          paymentMethodId: pm.id,
+          amount: paymentAmount.toString(),
+          notes: input.notes ?? "",
+          createdBy: input.userId || "nitro-bot",
+        });
+
+        // Create cash movement
+        await createCashMovement(
+          {
+            type: "INCOME",
+            amount: paymentAmount,
+            method: pm.code,
+            referenceId: paymentId,
+            referenceType: "work_order_payment",
+            reason: `Pago OT #${input.workOrderId.slice(0, 8)}`,
+            createdBy: input.userId || "nitro-bot",
+          },
+          tx,
+        );
+
+        // Update customer balance atomically
+        if (workOrderRecord.customerId) {
+          await adjustBalanceAtomically(
+            workOrderRecord.customerId,
+            -paymentAmount,
+            "payment",
+            tx,
+          );
+        }
+      });
+
+      // 5. Update work order status to PAID if fully paid now
+      const isFullyPaidNow = totalPaidBefore + paymentAmount >= Number(workOrderRecord.total);
+      if (isFullyPaidNow && workOrderRecord.status !== "PAID" && workOrderRecord.status !== "DELIVERED") {
+        await db
+          .update(workOrder)
+          .set({ status: "PAID" })
+          .where(eq(workOrder.id, input.workOrderId));
+      }
+
+      invalidateCashStatus();
+
+      return `✅ Pago registrado exitosamente:\n- OT: #${input.workOrderId.slice(0, 8)} (${workOrderRecord.customer?.name || "Consumidor Final"})\n- Monto: $${paymentAmount}\n- Método de pago: ${pm.name}\n- Estado de la OT: ${isFullyPaidNow ? "PAID (Totalmente pagada)" : `Pendiente ($${(remainingAmount - paymentAmount).toFixed(2)} restantes)`}`;
+    } catch (error) {
+      logger.error({ error }, "Error registering work order payment");
+      return `🔴 Error al registrar el pago: ${error instanceof Error ? error.message : "Error desconocido"}`;
+    }
+  },
+});
+
 export const workOrderTools = {
   searchWorkOrders: searchWorkOrdersTool,
   createWorkOrder: createWorkOrderTool,
   updateWorkOrderStatus: updateWorkOrderStatusTool,
   getWorkOrderDetail: getWorkOrderDetailTool,
+  registerWorkOrderPayment: registerWorkOrderPaymentTool,
 };

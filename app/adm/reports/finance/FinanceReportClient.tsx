@@ -13,6 +13,7 @@ import {
   Clock,
   CreditCard,
   Download,
+  Printer,
 } from "lucide-react";
 import { formatARS } from "@/lib/utils/format";
 import {
@@ -42,6 +43,17 @@ type Period =
   | "last12months"
   | "thisYear"
   | "custom";
+
+const periodLabels: Record<Period, string> = {
+  today: "Hoy",
+  last7days: "Últimos 7 días",
+  last30days: "Últimos 30 días",
+  thisMonth: "Este mes",
+  lastMonth: "Mes pasado",
+  last12months: "Últimos 12 meses",
+  thisYear: "Este año",
+  custom: "Personalizado"
+};
 
 export default function FinanceReportClient() {
   const [period, setPeriod] = useState<Period>("last30days");
@@ -238,6 +250,13 @@ export default function FinanceReportClient() {
         title="Reporte de Finanzas & Flujo"
         description="Análisis de ingresos, egresos y rentabilidad operativa."
         secondaryActions={[
+          {
+            label: "Imprimir",
+            onClick: () => window.print(),
+            disabled: !data || loading,
+            icon: Printer,
+            variant: "outline",
+          },
           {
             label: "Exportar CSV",
             onClick: exportToCSV,
@@ -516,6 +535,179 @@ export default function FinanceReportClient() {
           </>
         )
       )}
+
+      {/* Sección de Impresión (Solo visible al imprimir) */}
+      {data && (
+        <div className="hidden print:block font-sans p-6 text-black bg-white" id="print-section">
+          {/* Header de la Empresa */}
+          <div className="flex justify-between items-start border-b-2 border-zinc-900 pb-4 mb-6">
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight text-zinc-900">RPM ACCESORIOS</h1>
+              <p className="text-xs text-zinc-500 uppercase font-medium mt-0.5">Taller de Equipamiento y Estética Vehicular</p>
+              <p className="text-[11px] text-zinc-400 font-mono mt-1">Sarmiento 1234, Rosario, Santa Fe | Tel: 341-5556789</p>
+            </div>
+            <div className="text-right">
+              <div className="border border-zinc-900 text-zinc-900 font-bold text-xs py-1 px-3 uppercase tracking-wider inline-block rounded">
+                Reporte de Finanzas & Flujo de Caja
+              </div>
+              <p className="text-xs text-zinc-500 font-mono mt-2">
+                Fecha de Emisión: {new Date().toLocaleDateString("es-AR")}
+              </p>
+              <p className="text-[11px] text-zinc-500 font-mono mt-1">
+                Período: {periodLabels[period]} ({getDatesForPeriod(period).startDate.toLocaleDateString("es-AR")} - {getDatesForPeriod(period).endDate.toLocaleDateString("es-AR")})
+              </p>
+            </div>
+          </div>
+
+          {/* Resumen de KPIs */}
+          <div className="grid grid-cols-3 gap-4 border border-zinc-300 rounded-lg p-4 mb-6 bg-zinc-50/50">
+            <div className="space-y-1">
+              <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">Ingresos Totales</span>
+              <p className="text-sm font-bold font-mono text-emerald-700">{formatARS(data.totalIncome.current)}</p>
+            </div>
+            <div className="space-y-1">
+              <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">Egresos Totales</span>
+              <p className="text-sm font-bold font-mono text-red-700">{formatARS(data.totalExpense.current)}</p>
+            </div>
+            <div className="space-y-1">
+              <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">Flujo Neto</span>
+              <p className={cn(
+                "text-sm font-bold font-mono",
+                data.netFlow.current >= 0 ? "text-emerald-700" : "text-red-700"
+              )}>{formatARS(data.netFlow.current)}</p>
+            </div>
+          </div>
+
+          {/* Dos columnas en impresión: Métodos de Pago y Evolución del Flujo */}
+          <div className="grid grid-cols-3 gap-6 mb-6 print:break-inside-avoid">
+            {/* Por Medio de Pago */}
+            <div className="col-span-1">
+              <h2 className="text-xs font-bold text-zinc-800 uppercase tracking-wider mb-2">Por Medio de Pago</h2>
+              <div className="border border-zinc-300 rounded-lg overflow-hidden">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-zinc-100 border-b border-zinc-300 text-[11px] font-bold text-zinc-700 uppercase">
+                      <th className="p-2">Medio</th>
+                      <th className="p-2 text-right">Neto</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.methodDistribution.length === 0 ? (
+                      <tr>
+                        <td colSpan={2} className="p-4 text-center text-xs text-zinc-500 italic">
+                          Sin actividad de pago
+                        </td>
+                      </tr>
+                    ) : (
+                      data.methodDistribution.map((item) => (
+                        <tr key={item.method} className="border-b border-zinc-200 text-[11px]">
+                          <td className="p-2 font-medium uppercase">{item.method}</td>
+                          <td className={cn(
+                            "p-2 text-right font-mono font-bold",
+                            item.net >= 0 ? "text-emerald-700" : "text-red-700"
+                          )}>{formatARS(item.net)}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Evolución Temporal del Flujo */}
+            <div className="col-span-2">
+              <h2 className="text-xs font-bold text-zinc-800 uppercase tracking-wider mb-2">Evolución Detallada</h2>
+              <div className="border border-zinc-300 rounded-lg overflow-hidden">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-zinc-100 border-b border-zinc-300 text-[11px] font-bold text-zinc-700 uppercase">
+                      <th className="p-2">Período</th>
+                      <th className="p-2 text-right">Ingresos</th>
+                      <th className="p-2 text-right">Egresos</th>
+                      <th className="p-2 text-right">Neto</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.evolution.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="p-4 text-center text-xs text-zinc-500 italic">
+                          Sin datos para este período
+                        </td>
+                      </tr>
+                    ) : (
+                      data.evolution.slice().reverse().slice(0, 15).map((item, idx) => (
+                        <tr key={idx} className="border-b border-zinc-200 text-[11px]">
+                          <td className="p-2 font-medium">{item.label}</td>
+                          <td className="p-2 text-right font-mono text-emerald-700">{formatARS(item.income)}</td>
+                          <td className="p-2 text-right font-mono text-red-700">{formatARS(item.expense)}</td>
+                          <td className={cn(
+                            "p-2 text-right font-mono font-bold",
+                            (item.income - item.expense) >= 0 ? "text-emerald-700" : "text-red-700"
+                          )}>{formatARS(item.income - item.expense)}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          {/* Firmas de Control */}
+          <div className="grid grid-cols-2 gap-12 mt-12 mb-8 print:break-inside-avoid">
+            <div className="flex flex-col items-center">
+              <div className="w-48 border-b border-zinc-400 h-10" />
+              <span className="text-[11px] text-zinc-500 font-semibold uppercase tracking-wider mt-2">
+                Responsable de Administración
+              </span>
+            </div>
+            <div className="flex flex-col items-center">
+              <div className="w-48 border-b border-zinc-400 h-10" />
+              <span className="text-[11px] text-zinc-500 font-semibold uppercase tracking-wider mt-2">
+                Firma Autorizada Gerencia
+              </span>
+            </div>
+          </div>
+
+          {/* Pie de Página */}
+          <div className="text-center border-t border-zinc-200 pt-4 text-[11px] text-zinc-400 font-mono">
+            RPM Accesorios © {new Date().getFullYear()} - Reporte de Control de Finanzas, Flujo de Caja y Auditoría Contable Interna.
+          </div>
+        </div>
+      )}
+
+      {/* Estilos para impresión */}
+      <style media="print">
+        {`
+          @media print {
+            aside,
+            [data-sidebar="sidebar"],
+            .print\\:hidden,
+            button,
+            header,
+            footer,
+            nav,
+            .web-mcp-tools,
+            #chat-floating-button,
+            [role="dialog"],
+            .DialogOverlay {
+              display: none !important;
+            }
+
+            main, .container, body {
+              padding: 0 !important;
+              margin: 0 !important;
+              max-width: none !important;
+              background: white !important;
+              color: black !important;
+            }
+
+            .container {
+              width: 100% !important;
+            }
+          }
+        `}
+      </style>
     </div>
   );
 }

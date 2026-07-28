@@ -31,6 +31,7 @@ export const unifiedTools = {
   createDirectSale: financeTools.createDirectSale,
   // Update
   updateWorkOrderStatus: workOrderTools.updateWorkOrderStatus,
+  registerWorkOrderPayment: workOrderTools.registerWorkOrderPayment,
   // Query
   getWorkOrderDetail: workOrderTools.getWorkOrderDetail,
   getCashStatus: financeTools.getCashStatus,

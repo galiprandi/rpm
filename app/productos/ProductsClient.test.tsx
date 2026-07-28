@@ -3,6 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import ProductsClient from './ProductsClient';
 import { useSearchParams } from 'next/navigation';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import type { PublicCatalogProduct } from '@/lib/services/publicCatalogService';
 
 // Mock the subcomponents & layout
 vi.mock('@/components/public/layout/PublicLayout', () => ({
@@ -10,7 +11,7 @@ vi.mock('@/components/public/layout/PublicLayout', () => ({
 }));
 
 vi.mock('@/components/public/ProductQuickView', () => ({
-  ProductQuickView: ({ product, onClose }: { product: any; onClose: () => void }) =>
+  ProductQuickView: ({ product, onClose }: { product: PublicCatalogProduct | null; onClose: () => void }) =>
     product ? (
       <div data-testid="quick-view">
         <span>{product.name} - Quick View</span>
@@ -24,43 +25,52 @@ vi.mock('next/navigation', () => ({
   useSearchParams: vi.fn(),
 }));
 
-const mockProducts = [
+const mockProducts: PublicCatalogProduct[] = [
   {
     id: 'prod-1',
+    sku: 'SKU-001',
     name: 'Proyector Bi-LED Laser',
     category: 'Iluminación',
     price: 150000,
     image: '💡',
     imageUrl: null,
+    description: 'Description 1',
+    features: [],
   },
   {
     id: 'prod-2',
+    sku: 'SKU-002',
     name: 'Kit Tratamiento Cerámico',
     category: 'Estética',
     price: 85000,
     image: '🛡️',
     imageUrl: null,
+    description: 'Description 2',
+    features: [],
   },
   {
     id: 'prod-3',
+    sku: 'SKU-003',
     name: 'Fenders Off-Road Hilux',
     category: 'Equipamiento',
     price: 120000,
     image: '🏔️',
     imageUrl: null,
+    description: 'Description 3',
+    features: [],
   },
 ];
 
 const mockCategories = ['Todos', 'Iluminación', 'Estética', 'Equipamiento'];
 
 describe('ProductsClient Public Catalog', () => {
-  let mockHistoryReplaceState: any;
+  let mockHistoryReplaceState: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     vi.clearAllMocks();
     mockHistoryReplaceState = vi.spyOn(window.history, 'replaceState').mockImplementation(() => {});
     (useSearchParams as any).mockReturnValue({
-      get: (key: string) => null,
+      get: () => null,
     });
   });
 
