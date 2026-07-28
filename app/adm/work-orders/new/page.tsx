@@ -1334,7 +1334,27 @@ export default function NewWorkOrderPage() {
               </div>
 
               <div className="space-y-3">
-                <Label>Checklist de Ingreso</Label>
+                <div className="flex justify-between items-center">
+                  <Label>Checklist de Ingreso</Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs text-primary hover:text-primary/80 px-2"
+                    onClick={() => {
+                      const allChecked = DEFAULT_ENTRY_CHECKLIST.every((item) => checklist[item.id]);
+                      const newChecklist: Record<string, boolean> = {};
+                      DEFAULT_ENTRY_CHECKLIST.forEach((item) => {
+                        newChecklist[item.id] = !allChecked;
+                      });
+                      setChecklist(newChecklist);
+                    }}
+                  >
+                    {DEFAULT_ENTRY_CHECKLIST.every((item) => checklist[item.id])
+                      ? "Desmarcar todos"
+                      : "Marcar todos como OK"}
+                  </Button>
+                </div>
                 <div className="space-y-3 border rounded-md p-4">
                   {DEFAULT_ENTRY_CHECKLIST.map((item) => (
                     <Checkbox
