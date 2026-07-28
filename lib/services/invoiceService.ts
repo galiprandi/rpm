@@ -1,5 +1,5 @@
 import { db, type Database } from "@/lib/db";
-import { invoice, workOrderItem, directSaleItem, creditNoteItem } from "@/db/schema";
+import { invoice, workOrderItem, directSaleItem, creditNoteItem, creditNote } from "@/db/schema";
 import { eq, and, or, gte, lte, ilike, like, desc, type SQL } from "drizzle-orm";
 
 type DbOrTx = Database | Parameters<Parameters<Database["transaction"]>[0]>[0];
@@ -374,19 +374,48 @@ export async function markInvoiceAsOfficial(
     afipData: unknown;
   },
 ) {
-  const [updated] = await db
-    .update(invoice)
-    .set({
-      number: data.number,
-      type: data.type,
-      status: "ISSUED",
-      issuedAt: new Date().toISOString(),
-      afipData: data.afipData as any,
-    })
-    .where(eq(invoice.id, id))
-    .returning();
+  return await db.transaction(async (tx) => {
+    const [updated] = await tx
+      .update(invoice)
+      .set({
+        number: data.number,
+        type: data.type,
+        status: "ISSUED",
+        issuedAt: new Date().toISOString(),
+        afipData: data.afipData as any,
+      })
+      .where(eq(invoice.id, id))
+      .returning();
 
-  return updated;
+    // If a Credit Note invoice is officialized, automatically annul the original invoice
+    if (updated && updated.type.startsWith("NOTA_CREDITO_") && updated.referenceType === "credit_note") {
+      const creditNoteRecord = await tx.query.creditNote.findFirst({
+        where: eq(creditNote.id, updated.referenceId),
+      });
+
+      if (creditNoteRecord) {
+        // Find the original invoice linked to the original sale or work order
+        const originalInvoice = await tx.query.invoice.findFirst({
+          where: and(
+            eq(invoice.referenceId, creditNoteRecord.originalSaleId),
+            eq(invoice.referenceType, creditNoteRecord.originalSaleType)
+          ),
+        });
+
+        if (originalInvoice) {
+          await tx
+            .update(invoice)
+            .set({
+              status: "ANNULLED",
+            })
+            .where(eq(invoice.id, originalInvoice.id))
+            .returning();
+        }
+      }
+    }
+
+    return updated;
+  });
 }
 
 /**
