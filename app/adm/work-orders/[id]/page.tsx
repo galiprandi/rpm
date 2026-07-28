@@ -59,6 +59,7 @@ import {
   LogIn,
   LogOut,
   AlertTriangle,
+  ClipboardList,
 } from "lucide-react";
 import {
   ProductServiceSelector,
@@ -1420,6 +1421,42 @@ export default function WorkOrderDetailPage() {
                   {technicians.map((tech) => (
                     <SelectItem key={tech.id} value={tech.id}>
                       {tech.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="w-px h-8 bg-border" />
+
+          {/* Estado */}
+          <div className="flex flex-col">
+            <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground/60">
+              Estado
+            </span>
+            <div className={cn(
+              "flex items-center gap-1 border rounded-md text-xs font-semibold shadow-sm transition-colors",
+              STATUSES.find((s) => s.id === workOrder.status)?.color
+            )}>
+              <ClipboardList
+                className="h-3.5 w-3.5 ml-1.5 pointer-events-none opacity-80"
+                aria-hidden="true"
+              />
+              <Select
+                value={workOrder.status}
+                onValueChange={handleStatusChange}
+                disabled={
+                  updatingStatus || workOrder.status === "CANCELLED"
+                }
+              >
+                <SelectTrigger className="h-7 border-none bg-transparent hover:bg-black/5 dark:hover:bg-white/5 shadow-none focus:ring-0 px-1.5 min-w-[110px] text-xs font-semibold">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {STATUSES.map((status) => (
+                    <SelectItem key={status.id} value={status.id}>
+                      {status.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
