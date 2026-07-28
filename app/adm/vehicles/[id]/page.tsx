@@ -64,6 +64,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { getWhatsAppLink, getDebtReminderMessage } from "@/lib/utils/whatsapp";
+import { toast } from "sonner";
 
 interface WorkOrder {
   id: string;
@@ -296,11 +297,62 @@ export default function VehicleDetailPage() {
       variant: "destructive",
     });
     if (!confirmed) return;
+
+    // Capture vehicle data for undo
+    const previousVehicle = vehicle
+      ? {
+          identifier: vehicle.identifier,
+          category: vehicle.category,
+          makeName: vehicle.vehicleMake?.name,
+          modelName: vehicle.vehicleModel?.name,
+          year: vehicle.year,
+          color: vehicle.color,
+          equipmentName: vehicle.equipmentName,
+          equipmentType: vehicle.equipmentType,
+          description: vehicle.description,
+          notes: vehicle.notes,
+          customerId: vehicle.customer?.id,
+        }
+      : null;
+
     try {
       const res = await fetch(`/api/vehicles/${vehicleId}`, {
         method: "DELETE",
       });
       if (res.ok) {
+        toast.success("Vehículo eliminado", {
+          description: `${vehicle?.identifier || "El vehículo"} fue eliminado correctamente.`,
+          action: {
+            label: "Deshacer",
+            onClick: async () => {
+              if (!previousVehicle?.customerId) return;
+              try {
+                const restoreRes = await fetch("/api/vehicles", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    ...previousVehicle,
+                    year: previousVehicle.year
+                      ? Number(previousVehicle.year)
+                      : undefined,
+                  }),
+                });
+                if (restoreRes.ok) {
+                  const restored = await restoreRes.json();
+                  toast.success("Vehículo restaurado", {
+                    description: `${restored.identifier || "El vehículo"} fue restaurado correctamente.`,
+                  });
+                  router.push(`/adm/vehicles/${restored.id}`);
+                } else {
+                  toast.error("No se pudo restaurar el vehículo");
+                }
+              } catch {
+                toast.error("No se pudo restaurar el vehículo");
+              }
+            },
+          },
+          duration: 8000,
+        });
         router.push("/adm/customers");
       } else {
         const error = await res.json();
@@ -604,7 +656,7 @@ export default function VehicleDetailPage() {
         </div>
       </Header>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {/* Vehicle Details */}
         <Card>
           <CardHeader>
@@ -617,7 +669,7 @@ export default function VehicleDetailPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {!isEquipment && vehicle.year && (
                 <div className="flex items-center gap-2">
                   <Calendar
@@ -878,7 +930,7 @@ export default function VehicleDetailPage() {
           <div className="space-y-4 py-4">
             <div>
               <div className="flex items-center justify-between mb-2">
-                <Label>Monto a Abonar *</Label>
+                <Label htmlFor="payment-amount">Monto a Abonar *</Label>
                 <Button
                   variant="link"
                   size="sm"
@@ -889,6 +941,7 @@ export default function VehicleDetailPage() {
                 </Button>
               </div>
               <Input
+                id="payment-amount"
                 type="number"
                 step="0.01"
                 min="0.01"
@@ -899,9 +952,9 @@ export default function VehicleDetailPage() {
               />
             </div>
             <div>
-              <Label>Método de Pago *</Label>
+              <Label htmlFor="payment-method">Método de Pago *</Label>
               <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                <SelectTrigger>
+                <SelectTrigger id="payment-method">
                   <SelectValue placeholder="Seleccione método" />
                 </SelectTrigger>
                 <SelectContent>
@@ -913,8 +966,9 @@ export default function VehicleDetailPage() {
               </Select>
             </div>
             <div>
-              <Label>Notas (opcional)</Label>
+              <Label htmlFor="payment-notes">Notas (opcional)</Label>
               <Input
+                id="payment-notes"
                 placeholder="Referencia, comprobante, etc."
                 value={paymentNotes}
                 onChange={(e) => setPaymentNotes(e.target.value)}
@@ -1247,7 +1301,7 @@ export default function VehicleDetailPage() {
                         <Badge
                           variant="secondary"
                           className={cn(
-                            "text-[10px] font-semibold tracking-wide py-0.5 px-1.5 uppercase shadow-sm border",
+                            "text-[11px] font-semibold tracking-wide py-0.5 px-1.5 uppercase shadow-sm border",
                             photo.type === "ENTRY"
                               ? "bg-blue-50 text-blue-700 border-blue-200"
                               : photo.type === "EXIT"
@@ -1272,12 +1326,12 @@ export default function VehicleDetailPage() {
                           >
                             OT #{photo.workOrderCode}
                           </Link>
-                          <span className="text-[10px] text-white/70">
+                          <span className="text-[11px] text-white/70">
                             {new Date(photo.createdAt).toLocaleDateString("es-AR")}
                           </span>
                         </div>
                         {photo.description && (
-                          <p className="text-[10px] text-white/90 line-clamp-1 mt-1 font-medium italic">
+                          <p className="text-[11px] text-white/90 line-clamp-1 mt-1 font-medium italic">
                             {photo.description}
                           </p>
                         )}
@@ -1455,7 +1509,7 @@ export default function VehicleDetailPage() {
           </div>
         </div>
 
-        <div className="mt-14 text-center border-t border-zinc-200 pt-4 text-[10px] text-zinc-400 font-mono">
+        <div className="mt-14 text-center border-t border-zinc-200 pt-4 text-[11px] text-zinc-400 font-mono">
           RPM Accesorios © {new Date().getFullYear()} - Documento no válido como factura fiscal.
         </div>
       </div>
@@ -1535,7 +1589,7 @@ export default function VehicleDetailPage() {
                   <Badge
                     variant="secondary"
                     className={cn(
-                      "text-[10px] font-semibold py-0.5 px-1.5 uppercase",
+                      "text-[11px] font-semibold py-0.5 px-1.5 uppercase",
                       filteredPhotos[activePhotoIndex].type === "ENTRY"
                         ? "bg-blue-500 text-white"
                         : filteredPhotos[activePhotoIndex].type === "EXIT"

@@ -793,6 +793,18 @@ export const priceListItem = pgTable("price_list_item", {
 		}).onUpdate("cascade").onDelete("cascade"),
 ]);
 
+export const rolePermission = pgTable("role_permission", {
+	id: text().primaryKey().default(sql`gen_random_uuid()`).notNull(),
+	role: text().notNull(),
+	permission: text().notNull(),
+	enabled: boolean().default(false).notNull(),
+	createdAt: timestamp({ precision: 3, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+	updatedAt: timestamp({ precision: 3, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	index("role_permission_role_idx").using("btree", table.role.asc().nullsLast().op("text_ops")),
+	uniqueIndex("role_permission_role_permission_key").using("btree", table.role.asc().nullsLast().op("text_ops"), table.permission.asc().nullsLast().op("text_ops")),
+]);
+
 export const balanceAudit = pgTable("balance_audit", {
 	id: text().primaryKey().default(sql`gen_random_uuid()`).notNull(),
 	customerId: text().notNull(),

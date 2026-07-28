@@ -243,7 +243,7 @@ export function CreateDraftVoucherDialog({
       }
     >
       <form onSubmit={handleSubmit} className="space-y-4" onKeyDown={handleKeyDown}>
-        <div className="grid md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="supplier" required>Proveedor</Label>
             <div className="flex gap-2">
@@ -306,7 +306,7 @@ export function CreateDraftVoucherDialog({
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="space-y-2">
             <Label htmlFor="letter" required>Letra</Label>
             <div className="relative">
@@ -330,7 +330,7 @@ export function CreateDraftVoucherDialog({
             </div>
           </div>
 
-          <div className="col-span-2 space-y-2">
+          <div className="col-span-1 sm:col-span-2 space-y-2">
             <Label htmlFor="number" required>Número de Factura</Label>
             <div className="relative">
               <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
@@ -347,7 +347,7 @@ export function CreateDraftVoucherDialog({
           </div>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="date" required>Fecha de Emisión</Label>
             <div className="relative">

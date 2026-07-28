@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation';
 import { Header } from '@/components/adm/Header';
 import { ApprovalView } from '@/components/inventory-count/ApprovalView';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,12 +10,21 @@ import { inventoryCountOperative } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { Badge } from '@/components/ui/badge';
 import { Package, ClipboardList, Calendar } from 'lucide-react';
+import { requireAuth } from '@/lib/auth-server';
+import { UserRole } from '@/lib/auth/roles';
 
 export default async function InventoryCountDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const session = await requireAuth();
+  const userRole = (session.user as { role?: string }).role as UserRole || UserRole.USER;
+
+  if (userRole !== UserRole.ADMIN) {
+    redirect('/adm');
+  }
+
   const { id } = await params;
 
   const operative = await db.query.inventoryCountOperative.findFirst({
@@ -132,7 +142,7 @@ export default async function InventoryCountDetailPage({
                   El operario debe escanear esto con su celular para iniciar la tarea de conteo ciego.
                 </p>
               </div>
-              <div className="w-full pt-2 border-t text-[10px] break-all text-muted-foreground font-mono">
+              <div className="w-full pt-2 border-t text-[11px] break-all text-muted-foreground font-mono">
                 {mobileUrl}
               </div>
             </CardContent>

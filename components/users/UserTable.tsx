@@ -107,7 +107,7 @@ export function UserTable({
         header: 'Email',
         cell: ({ row }) => {
           return (
-            <span className="text-sm text-muted-foreground">
+            <span className="text-sm text-muted-foreground font-mono">
               {row.original.email}
             </span>
           );
@@ -193,13 +193,14 @@ export function UserTable({
 
   return (
     <div>
-      <div className="relative w-[300px] mb-4">
+      <div className="relative w-full max-w-[300px] mb-4">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder="Buscar por nombre o email..."
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           className="pl-10"
+          aria-label="Buscar usuarios"
         />
       </div>
       <DataTable

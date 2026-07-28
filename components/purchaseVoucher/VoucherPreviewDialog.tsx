@@ -99,7 +99,7 @@ export function VoucherPreviewDialog({ isOpen, onClose, voucherId, onContinue }:
       ) : (
         <div className="space-y-6">
           {/* Header info */}
-          <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
             <div>
               <span className="text-muted-foreground">Proveedor</span>
               <p className="font-medium">{voucher.supplier?.name || 'Desconocido'}</p>
@@ -148,6 +148,7 @@ export function VoucherPreviewDialog({ isOpen, onClose, voucherId, onContinue }:
 
             {items.length > 0 ? (
               <div className="border rounded-md overflow-hidden">
+                <div className="overflow-x-auto">
                 <Table>
                   <TableHeader className="bg-muted/50">
                     <TableRow>
@@ -183,10 +184,11 @@ export function VoucherPreviewDialog({ isOpen, onClose, voucherId, onContinue }:
                     </TableRow>
                   </TableFooter>
                 </Table>
+                </div>
               </div>
             ) : (
               <div className="text-center py-6 text-muted-foreground border rounded-md">
-                <Package className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <Package className="h-8 w-8 mx-auto mb-2 text-muted-foreground/20" />
                 <p className="text-sm">No hay productos cargados aún</p>
                 <p className="text-xs">Hacé click en &quot;Continuar carga&quot; para empezar</p>
               </div>

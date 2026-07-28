@@ -32,6 +32,7 @@ import {
   UserCheck,
   FolderOpen,
   Wifi,
+  KeyRound,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -410,6 +411,34 @@ export default function SettingsClient({
                   title="Métodos de Pago"
                   description="Administra las formas de pago disponibles (Efectivo, Transferencia, QR, etc.)"
                   icon={CreditCard}
+                >
+                  <div className="flex items-center gap-2 text-muted-foreground group-hover:text-primary transition-colors">
+                    <ChevronRight className="h-4 w-4" />
+                  </div>
+                </SettingItem>
+              </div>
+            </Link>
+          </CardContent>
+        </Card>
+
+        {/* Permisos por Rol */}
+        <Card className="overflow-hidden shadow-sm">
+          <CardHeader className="pb-4 -mt-4 pt-4 bg-muted/20 border-b">
+            <CardTitle className="text-lg">Seguridad</CardTitle>
+            <CardDescription>
+              Gestión de accesos y permisos del sistema.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <Link
+              href="/adm/settings/permissions"
+              className="group block hover:bg-muted/30 transition-colors"
+            >
+              <div className="px-6">
+                <SettingItem
+                  title="Permisos por Rol"
+                  description="Configura qué permisos tienen los roles Staff y Vendedor"
+                  icon={KeyRound}
                 >
                   <div className="flex items-center gap-2 text-muted-foreground group-hover:text-primary transition-colors">
                     <ChevronRight className="h-4 w-4" />

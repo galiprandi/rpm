@@ -10,9 +10,10 @@ import { userRole, user } from '@/db/schema';
 import { eq, and, inArray } from 'drizzle-orm';
 
 export enum UserRole {
-  USER = 'USER',        // Clientes finales - Acceso a /
-  STAFF = 'STAFF',      // Staff básico - Acceso a /adm limitado
-  ADMIN = 'ADMIN'       // Administradores - Acceso completo a /adm
+  USER = 'USER',          // Clientes finales - Acceso a /
+  STAFF = 'STAFF',        // Staff básico - Acceso a /adm limitado
+  VENDEDOR = 'VENDEDOR',  // Vendedor - Acceso a /adm con permisos configurables
+  ADMIN = 'ADMIN'         // Administradores - Acceso completo a /adm
 }
 
 // Domains that automatically get STAFF role if no explicit role in DB
@@ -42,8 +43,11 @@ export const getUserRole = async (email: string): Promise<UserRole> => {
   if (user_roleRecord?.isActive) {
     // Map database role to enum (handles both old and new role names)
     const role = user_roleRecord.role.toUpperCase();
-    if (role === 'ADMIN' || role === 'SELLER' || role === 'TECHNICIAN' || role === 'CASHIER') {
+    if (role === 'ADMIN') {
       return UserRole.ADMIN;
+    }
+    if (role === 'SELLER' || role === 'TECHNICIAN' || role === 'CASHIER' || role === 'VENDEDOR') {
+      return UserRole.VENDEDOR;
     }
     if (role === 'STAFF') {
       return UserRole.STAFF;
@@ -70,7 +74,7 @@ export const getUserRole = async (email: string): Promise<UserRole> => {
 export const getAdminEmails = async (): Promise<string[]> => {
   const admins = await db.query.userRole.findMany({
     where: and(
-      inArray(userRole.role, ['ADMIN', 'SELLER', 'TECHNICIAN', 'CASHIER']),
+      inArray(userRole.role, ['ADMIN']),
       eq(userRole.isActive, true),
     ),
   });

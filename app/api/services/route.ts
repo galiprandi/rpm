@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { withAdmin } from "@/lib/api-middleware";
+import { withAuth, withPermission } from "@/lib/api-middleware";
 import { db } from "@/lib/db";
 import { service } from "@/db/schema";
 import { eq, ilike, and, asc } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { toISODate } from "@/lib/utils/date";
+import { hasPermission } from "@/lib/permissions/check";
 
-// GET /api/services - List all services (requiere ADMIN)
+// GET /api/services - List all services (cualquier usuario autenticado)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const GET = withAdmin(async (request: NextRequest, _session) => {
+export const GET = withAuth(async (request: NextRequest, _session) => {
   try {
     const { searchParams } = request.nextUrl;
     
@@ -47,21 +48,33 @@ export const GET = withAdmin(async (request: NextRequest, _session) => {
   }
 });
 
-// POST /api/services - Create service (requiere ADMIN)
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const POST = withAdmin(async (request: NextRequest, _session) => {
+// POST /api/services - Create service (requiere can_manage_services)
+export const POST = withPermission('can_manage_services', async (request: NextRequest, session) => {
   try {
     const body = await request.json();
-    const { name, description, baseCost, timeMinutes, vehicleFactor } = body;
+    const { name, description, timeMinutes, vehicleFactor } = body;
 
-    if (!name || baseCost === undefined) {
+    // Field-level permission check:
+    // Strip baseCost if the user lacks can_edit_costs.
+    // For POST, stripped baseCost defaults to 0 (no existing service to fall back to).
+    const canEditCosts = hasPermission(session, 'can_edit_costs');
+    const baseCost = canEditCosts ? body.baseCost : 0;
+
+    if (!name) {
       return NextResponse.json(
-        { error: "Nombre y costo base son requeridos" },
+        { error: "Nombre es requerido" },
         { status: 400 }
       );
     }
 
-    if (baseCost < 0) {
+    if (canEditCosts && baseCost === undefined) {
+      return NextResponse.json(
+        { error: "Costo base es requerido" },
+        { status: 400 }
+      );
+    }
+
+    if (baseCost !== undefined && baseCost < 0) {
       return NextResponse.json(
         { error: "El costo no puede ser negativo" },
         { status: 400 }
@@ -84,7 +97,7 @@ export const POST = withAdmin(async (request: NextRequest, _session) => {
       id: randomUUID(),
       name,
       description,
-      baseCost: String(baseCost),
+      baseCost: String(baseCost ?? 0),
       timeMinutes: timeMinutes || 60,
       vehicleFactor: String(vehicleFactor || 1.0),
       updatedAt: new Date().toISOString(),

@@ -1,18 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireRole } from '@/lib/auth-server';
-import { UserRole } from '@/lib/auth/roles';
+import { withPermissionDynamic } from '@/lib/api-middleware';
 import { approveOperative } from '@/lib/services/inventoryCountService';
 
 /**
  * POST /api/inventory-counts/[id]/approve
- * Approve and apply inventory count adjustments
+ * Approve and apply inventory count adjustments (requiere can_approve_inventory)
  */
-export async function POST(
+export const POST = withPermissionDynamic('can_approve_inventory', async (
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+  { params }: { params: Promise<{ id: string }> },
+  session
+) => {
   try {
-    const session = await requireRole(UserRole.ADMIN);
     const { id } = await params;
     const body = await request.json();
     const { adjustments } = body;
@@ -27,4 +26,4 @@ export async function POST(
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-}
+});

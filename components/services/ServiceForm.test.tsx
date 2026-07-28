@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { ServiceForm, type ServiceFormData } from './ServiceForm';
+import { UserProvider } from '@/components/ui/UserProvider';
 import React from 'react';
 
 // Mock Lucide icons to simplify DOM inspection
@@ -24,7 +25,9 @@ describe('ServiceForm', () => {
 
   it('renders all fields with their respective icons', () => {
     render(
-      <ServiceForm formData={mockFormData} onChange={mockOnChange} />
+      <UserProvider user={{ id: 'test-user', name: 'Test', email: 'test@test.com', role: 'ADMIN', permissions: ['*'] }}>
+        <ServiceForm formData={mockFormData} onChange={mockOnChange} />
+      </UserProvider>
     );
 
     expect(screen.getByLabelText(/Nombre del Servicio/i)).toBeInTheDocument();
@@ -45,7 +48,9 @@ describe('ServiceForm', () => {
 
   it('applies pl-9 class to inputs for icon spacing', () => {
     render(
-      <ServiceForm formData={mockFormData} onChange={mockOnChange} />
+      <UserProvider user={{ id: 'test-user', name: 'Test', email: 'test@test.com', role: 'ADMIN', permissions: ['*'] }}>
+        <ServiceForm formData={mockFormData} onChange={mockOnChange} />
+      </UserProvider>
     );
 
     expect(screen.getByLabelText(/Nombre del Servicio/i)).toHaveClass('pl-9');
@@ -57,7 +62,9 @@ describe('ServiceForm', () => {
 
   it('uses required prop on Name, Cost and Time labels and aria-required on Inputs', () => {
     render(
-      <ServiceForm formData={mockFormData} onChange={mockOnChange} />
+      <UserProvider user={{ id: 'test-user', name: 'Test', email: 'test@test.com', role: 'ADMIN', permissions: ['*'] }}>
+        <ServiceForm formData={mockFormData} onChange={mockOnChange} />
+      </UserProvider>
     );
 
     const nameInput = screen.getByLabelText(/Nombre del Servicio/i);
@@ -75,7 +82,9 @@ describe('ServiceForm', () => {
 
   it('applies font-mono class to technical numerical fields', () => {
     render(
-      <ServiceForm formData={mockFormData} onChange={mockOnChange} />
+      <UserProvider user={{ id: 'test-user', name: 'Test', email: 'test@test.com', role: 'ADMIN', permissions: ['*'] }}>
+        <ServiceForm formData={mockFormData} onChange={mockOnChange} />
+      </UserProvider>
     );
 
     expect(screen.getByLabelText(/Costo Base/i)).toHaveClass('font-mono');

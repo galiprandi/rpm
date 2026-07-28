@@ -4,6 +4,7 @@
 - [ ] Direct photo attachments for work order checklist items.
 
 ## ✅ DONE
+- [x] 2026-07-27 — Implement the registerWorkOrderPayment tool for the virtual assistant (Nitro) with full database transaction support, cash movement registration, atomic balance adjustment, and integrity verification tests (PR #288).
 - [x] 2026-07-26 — Enhance chatbot keyboard accessibility and navigation by adding focus-visible offset ring/outline styling to all close, clear, toggle, and secondary controls inside ChatFloating.tsx (PR #276).
 - [x] 2026-07-26 — Implement contextual client-side barcode and QR code detection for uploaded image attachments using the native browser BarcodeDetector API, and expand dynamic context-aware suggestion chips for admin pages (/cash, /purchase-vouchers, /suppliers, /settings, /reports) (PR #263).
 - [x] 2026-07-24 — Integrate the virtual assistant "Preguntar a Nitro" trigger directly in the AppSidebar and AdminClientLayout for seamless mobile and desktop accessibility, and upgrade ChatFloating mobile fullscreen layout to use dynamic h-[100dvh].
@@ -17,6 +18,10 @@
 - [x] 2026-03-28 — Initial audit of bot tools, removal of mock tools, fixing conversation history unit tests, and implementing major UI/UX improvements (smart scrolling, success states for tool execution, empty-state quick start suggestion chips, and full WCAG accessibility).
 
 ## 🧠 LEARNINGS
+### 2026-07-27 — Chatbot Work Order Payment Registration Standard
+**Learning:** Adding financial mutation capabilities to the virtual assistant (like registering work order payments) provides massive operational speedups for the staff, but requires robust safe guards: (1) verifying if the cash register is actually open, (2) resolving active payment methods dynamically using name similarity (e.g. "contado"), (3) wrapping payment records, income cash movements, and atomic customer balance adjustments in a single safe database transaction, and (4) transitioning the work order status to "PAID" once fully settled.
+**Action:** Always wrap companion tool mutations in robust, transaction-safe database sessions and enforce integrity checks (integrity tests, system documentation, and UI visual labels) to avoid dead ends or inconsistencies.
+
 ### 2026-07-26 — Chatbot Keyboard Accessibility and Focus Ring Standard
 **Learning:** Icon-only control buttons inside floating widgets (like close buttons, file attachment removal controls, and clear conversation triggers) must use explicit high-visibility focus rings and offsets (e.g., `focus-visible:ring-2` with `focus-visible:ring-primary` and offsets) to ensure keyboard-only and assistive-technology users can navigate and interact with the chatbot panel safely and with confidence.
 **Action:** Always verify that all icon-only buttons in dialog headers, absolute overlay containers, or assistant tools are focus-visible with standard focus outlines and rounded click-targets.

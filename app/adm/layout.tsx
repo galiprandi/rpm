@@ -30,7 +30,12 @@ export default async function AdminLayout({
 
   // Pass user data to client component
   return (
-    <AdminClientLayout user={session.user}>
+    <AdminClientLayout
+      user={{
+        ...session.user,
+        permissions: (session.user as { permissions?: string[] }).permissions ?? [],
+      }}
+    >
       {children}
     </AdminClientLayout>
   );

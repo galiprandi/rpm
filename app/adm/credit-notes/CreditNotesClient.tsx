@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { type ColumnDef } from '@tanstack/react-table';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import { useUI } from '@/components/ui/UIProvider';
 import { Header, CrudStats, CrudAdmin, type StatItem } from '@/components/adm';
 import { Badge } from '@/components/ui/badge';
@@ -61,6 +62,10 @@ export default function CreditNotesClient({ initialCreditNotes }: CreditNotesCli
       }
       const updated = await res.json();
       setCreditNotes(prev => prev.map(cn => cn.id === updated.id ? { ...cn, status: updated.status } : cn));
+      toast.success('Nota de crédito cancelada', {
+        description: `La NC #${creditNote.id.slice(0, 8)} fue cancelada correctamente. Se revirtió el stock, el efectivo y el saldo del cliente.`,
+        duration: 8000,
+      });
     } catch (e) {
       console.error(e);
       await alert({ title: 'Error', description: e instanceof Error ? e.message : 'Error al cancelar' });

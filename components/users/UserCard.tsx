@@ -65,7 +65,7 @@ export function UserCard({ user, onEdit, onToggleActive, canToggle }: UserCardPr
       <CardContent className="p-6">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center">
+            <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
               {user.image ? (
                 <Image
                   src={user.image}
@@ -75,12 +75,12 @@ export function UserCard({ user, onEdit, onToggleActive, canToggle }: UserCardPr
                   className="h-12 w-12 rounded-full object-cover"
                 />
               ) : (
-                <span className="text-sm font-medium text-slate-600">{initials}</span>
+                <span className="text-sm font-medium text-muted-foreground">{initials}</span>
               )}
             </div>
             <div>
               <h3 className="font-semibold">{user.name}</h3>
-              <p className="text-sm text-muted-foreground">{user.email}</p>
+              <p className="text-sm text-muted-foreground font-mono">{user.email}</p>
             </div>
           </div>
           <div className="flex gap-1">

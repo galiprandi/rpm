@@ -324,7 +324,7 @@ export default function DebtorsClient() {
                     />
                     {contactPhone}
                     {debtor.phoneAlt && !debtor.phone && (
-                      <span className="text-[10px] ml-1 opacity-70">(alt)</span>
+                      <span className="text-[11px] ml-1 opacity-70">(alt)</span>
                     )}
                   </div>
                 )}
@@ -345,13 +345,13 @@ export default function DebtorsClient() {
                 <Badge
                   key={plate}
                   variant="outline"
-                  className="font-mono text-[10px] px-1 py-0 h-4 bg-muted/50"
+                  className="font-mono text-[11px] px-1 py-0 h-4 bg-muted/50"
                 >
                   {plate}
                 </Badge>
               ))}
               {vehicles.length > 2 && (
-                <Badge variant="outline" className="text-[10px] px-1 py-0 h-4">
+                <Badge variant="outline" className="text-[11px] px-1 py-0 h-4">
                   +{vehicles.length - 2}
                 </Badge>
               )}
@@ -743,7 +743,7 @@ export default function DebtorsClient() {
             <p className="text-xs text-zinc-500 font-mono mt-2">
               Fecha: {new Date().toLocaleDateString("es-AR")}
             </p>
-            <p className="text-[10px] text-zinc-500 font-mono">
+            <p className="text-[11px] text-zinc-500 font-mono">
               Ordenado por: {sortBy === "amount" ? "Mayor Deuda" : sortBy === "oldest" ? "Deuda Más Antigua" : "Deuda Más Reciente"}
             </p>
           </div>
@@ -753,23 +753,23 @@ export default function DebtorsClient() {
         {summary && (
           <div className="grid grid-cols-5 gap-4 border border-zinc-300 rounded-lg p-4 mb-6 bg-zinc-50/50">
             <div className="space-y-1">
-              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Deuda Total</span>
+              <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">Deuda Total</span>
               <p className="text-sm font-bold font-mono text-red-700">{formatARS(summary.totalDebt)}</p>
             </div>
             <div className="space-y-1">
-              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Clientes Deudores</span>
+              <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">Clientes Deudores</span>
               <p className="text-sm font-bold font-mono text-zinc-900">{summary.totalCustomers}</p>
             </div>
             <div className="space-y-1">
-              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">OTs Impagas</span>
+              <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">OTs Impagas</span>
               <p className="text-sm font-bold font-mono text-zinc-900">{summary.totalWorkOrders}</p>
             </div>
             <div className="space-y-1">
-              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Ventas Dir. Impagas</span>
+              <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">Ventas Dir. Impagas</span>
               <p className="text-sm font-bold font-mono text-zinc-900">{summary.totalDirectSales || 0}</p>
             </div>
             <div className="space-y-1">
-              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Deuda Promedio</span>
+              <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">Deuda Promedio</span>
               <p className="text-sm font-bold font-mono text-zinc-900">{formatARS(summary.averageDebt)}</p>
             </div>
           </div>
@@ -779,7 +779,7 @@ export default function DebtorsClient() {
         <div className="border border-zinc-300 rounded-lg overflow-hidden mb-8">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-zinc-100 border-b border-zinc-300 text-[10px] font-bold text-zinc-700 uppercase">
+              <tr className="bg-zinc-100 border-b border-zinc-300 text-[11px] font-bold text-zinc-700 uppercase">
                 <th className="p-2">Cliente</th>
                 <th className="p-2">Vehículos</th>
                 <th className="p-2 text-center">Cant. OTs/VD</th>
@@ -801,19 +801,19 @@ export default function DebtorsClient() {
                 debtors.map((debtor, idx) => {
                   const daysSince = getDaysSince(debtor.oldestDebtDate);
                   return (
-                    <tr key={idx} className="border-b border-zinc-200 text-[10px] hover:bg-zinc-50 transition-colors">
+                    <tr key={idx} className="border-b border-zinc-200 text-[11px] hover:bg-zinc-50 transition-colors">
                       <td className="p-2">
                         <div className="font-bold text-zinc-900 text-xs">{debtor.customerName}</div>
                         {(debtor.phone || debtor.phoneAlt) && (
-                          <div className="text-[9px] text-zinc-500 font-mono mt-0.5">
+                          <div className="text-[11px] text-zinc-500 font-mono mt-0.5">
                             {debtor.phone || debtor.phoneAlt}
                           </div>
                         )}
                       </td>
-                      <td className="p-2 max-w-[120px] truncate font-mono text-[9px]">
+                      <td className="p-2 max-w-[120px] truncate font-mono text-[11px]">
                         {debtor.vehicles.join(", ") || "-"}
                       </td>
-                      <td className="p-2 text-center font-mono text-[9px]">
+                      <td className="p-2 text-center font-mono text-[11px]">
                         {debtor.workOrderCount} / {debtor.directSaleCount || 0}
                       </td>
                       <td className="p-2 text-right font-mono text-red-700">
@@ -832,7 +832,7 @@ export default function DebtorsClient() {
                         {debtor.oldestDebtDate ? (
                           <div>
                             <div>{formatDate(debtor.oldestDebtDate)}</div>
-                            {daysSince && <div className="text-[9px] text-zinc-500">({daysSince} días)</div>}
+                            {daysSince && <div className="text-[11px] text-zinc-500">({daysSince} días)</div>}
                           </div>
                         ) : "-"}
                       </td>
@@ -848,20 +848,20 @@ export default function DebtorsClient() {
         <div className="grid grid-cols-2 gap-12 mt-12 mb-8 print:break-inside-avoid">
           <div className="flex flex-col items-center">
             <div className="w-48 border-b border-zinc-400 h-10" />
-            <span className="text-[10px] text-zinc-500 font-semibold uppercase tracking-wider mt-2">
+            <span className="text-[11px] text-zinc-500 font-semibold uppercase tracking-wider mt-2">
               Auditor / Responsable de Finanzas
             </span>
           </div>
           <div className="flex flex-col items-center">
             <div className="w-48 border-b border-zinc-400 h-10" />
-            <span className="text-[10px] text-zinc-500 font-semibold uppercase tracking-wider mt-2">
+            <span className="text-[11px] text-zinc-500 font-semibold uppercase tracking-wider mt-2">
               Firma Autorizada RPM
             </span>
           </div>
         </div>
 
         {/* Pie de Página */}
-        <div className="text-center border-t border-zinc-200 pt-4 text-[10px] text-zinc-400 font-mono">
+        <div className="text-center border-t border-zinc-200 pt-4 text-[11px] text-zinc-400 font-mono">
           RPM Accesorios © {new Date().getFullYear()} - Reporte de cuentas corrientes y control de deudores interno.
         </div>
       </div>

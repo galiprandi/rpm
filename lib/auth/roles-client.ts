@@ -6,9 +6,10 @@
  */
 
 export enum UserRole {
-  USER = 'USER',        // Clientes finales - Acceso a /
-  STAFF = 'STAFF',      // Staff básico - Acceso a /adm limitado
-  ADMIN = 'ADMIN'       // Administradores - Acceso completo a /adm
+  USER = 'USER',          // Clientes finales - Acceso a /
+  STAFF = 'STAFF',        // Staff básico - Acceso a /adm limitado
+  VENDEDOR = 'VENDEDOR',  // Vendedor - Acceso a /adm con permisos configurables
+  ADMIN = 'ADMIN'         // Administradores - Acceso completo a /adm
 }
 
 // Domains that automatically get STAFF role if no explicit role in DB

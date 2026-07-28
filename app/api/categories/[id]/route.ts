@@ -4,6 +4,7 @@
  * Spec: /specs/inventory-sales.md
  */
 import { NextRequest, NextResponse } from 'next/server';
+import { withPermissionDynamic } from '@/lib/api-middleware';
 import { db } from '@/lib/db';
 import { category, product } from '@/db/schema';
 import { eq, count } from 'drizzle-orm';
@@ -51,8 +52,8 @@ export async function GET(request: NextRequest, { params }: Params) {
   }
 }
 
-// PUT /api/categories/[id] - Actualizar categoría
-export async function PUT(request: NextRequest, { params }: Params) {
+// PUT /api/categories/[id] - Actualizar categoría (requiere can_edit_products)
+export const PUT = withPermissionDynamic('can_edit_products', async (request: NextRequest, { params }: Params, _session) => {
   try {
     const { id } = await params;
     const body = await request.json();
@@ -109,10 +110,10 @@ export async function PUT(request: NextRequest, { params }: Params) {
       { status: 500 }
     );
   }
-}
+});
 
 // DELETE /api/categories/[id] - Desactivar categoría (soft delete)
-export async function DELETE(request: NextRequest, { params }: Params) {
+export const DELETE = withPermissionDynamic('can_edit_products', async (request: NextRequest, { params }: Params, _session) => {
   try {
     const { id } = await params;
 
@@ -160,4 +161,4 @@ export async function DELETE(request: NextRequest, { params }: Params) {
       { status: 500 }
     );
   }
-}
+});

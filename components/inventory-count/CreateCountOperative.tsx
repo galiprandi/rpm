@@ -163,7 +163,7 @@ export function CreateCountOperative({ open, onOpenChange }: CreateCountOperativ
                             </div>
                             <div className="min-w-0">
                               <div className="font-semibold tracking-tight text-sm truncate">{product.name}</div>
-                              <div className="text-[10px] text-muted-foreground font-mono">SKU: {product.sku || 'N/A'} • Stock: {product.stock}</div>
+                              <div className="text-[11px] text-muted-foreground font-mono">SKU: {product.sku || 'N/A'} • Stock: {product.stock}</div>
                             </div>
                           </div>
                         </TableCell>
@@ -175,7 +175,7 @@ export function CreateCountOperative({ open, onOpenChange }: CreateCountOperativ
                         </TableCell>
                         <TableCell className="text-center">
                           <Badge variant="outline" className={cn(
-                            "text-[10px] font-bold border-orange-200 bg-orange-50 text-orange-700",
+                            "text-[11px] font-bold border-orange-200 bg-orange-50 text-orange-700",
                             product.score > 50 && "border-red-200 bg-red-50 text-red-700"
                           )}>
                             {product.score}

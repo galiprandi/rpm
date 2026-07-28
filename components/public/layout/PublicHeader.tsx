@@ -141,6 +141,7 @@ export function PublicHeader() {
           tabIndex={isOpen ? 0 : -1}
           className="flex items-center space-x-3 text-white/60 hover:text-brand transition-colors mb-4 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none rounded-lg px-2 py-1"
           aria-label="Buscar en el catálogo"
+          tabIndex={isOpen ? 0 : -1}
         >
           <Search className="h-6 w-6 pointer-events-none" aria-hidden="true" />
           <span className="text-xl font-bold uppercase tracking-widest">Buscar</span>
@@ -158,6 +159,7 @@ export function PublicHeader() {
                 isActive ? "text-brand" : "text-white hover:text-brand"
               )}
               onClick={() => setIsOpen(false)}
+              tabIndex={isOpen ? 0 : -1}
             >
               {item.name}
             </Link>
@@ -168,6 +170,7 @@ export function PublicHeader() {
           tabIndex={isOpen ? 0 : -1}
           className="text-2xl font-bold text-gray-400 hover:text-white transition-colors"
           onClick={() => setIsOpen(false)}
+          tabIndex={isOpen ? 0 : -1}
         >
           Ingresar
         </Link>

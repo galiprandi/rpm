@@ -12,6 +12,7 @@ import { type PriceListFormData } from '@/components/price-lists/PriceListForm';
 import { Header, CrudAdmin, StatItem, CrudStats } from '@/components/adm';
 import { DollarSign, Pencil, Trash2, List, Percent, Layers, TrendingUp, History, Plus } from 'lucide-react';
 import { type ColumnDef } from '@tanstack/react-table';
+import { toast } from 'sonner';
 import {
   Tooltip,
   TooltipContent,
@@ -120,13 +121,46 @@ export default function PriceListsClient({ initialPriceLists }: PriceListsClient
 
     if (!confirmed) return;
 
+    // Capture previous data for undo
+    const previousData: PriceListFormData = {
+      name: priceList.name,
+      baseMarginPercentage: priceList.baseMarginPercentage,
+      roundingRule: priceList.roundingRule as PriceListFormData['roundingRule'],
+      isPublic: priceList.isPublic,
+      isActive: priceList.isActive,
+    };
+
     try {
       const response = await fetch(`/api/price-lists/${priceList.id}`, {
         method: 'DELETE',
       });
 
       if (response.ok) {
-        fetchPriceLists();
+        // Optimistically remove from list
+        setPriceLists((prev) => prev.filter((pl) => pl.id !== priceList.id));
+        toast.success(`Lista de precios "${priceList.name}" eliminada`, {
+          action: {
+            label: 'Deshacer',
+            onClick: async () => {
+              try {
+                const restoreRes = await fetch('/api/price-lists', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(previousData),
+                });
+                if (restoreRes.ok) {
+                  fetchPriceLists();
+                  toast.success('Lista de precios restaurada');
+                } else {
+                  toast.error('Error al restaurar lista de precios');
+                }
+              } catch {
+                toast.error('Error al restaurar lista de precios');
+              }
+            },
+          },
+          duration: 8000,
+        });
       } else {
         const error = await response.json();
         await alert({
@@ -312,7 +346,7 @@ export default function PriceListsClient({ initialPriceLists }: PriceListsClient
         loading={loading}
         columns={columns}
         hideCreateAction
-        emptyIcon={<List className="h-12 w-12 mx-auto text-muted-foreground mb-4" />}
+        emptyIcon={<List className="h-12 w-12 mx-auto text-muted-foreground/20 mb-4" />}
         emptyMessage="No hay listas de precios creadas. Haz clic en 'Nueva Lista' para crear la primera."
         createButtonText="Lista"
         tableTitle="Listado de Listas de Precios"

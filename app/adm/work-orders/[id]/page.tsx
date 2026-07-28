@@ -59,6 +59,7 @@ import {
   LogIn,
   LogOut,
   AlertTriangle,
+  ClipboardList,
 } from "lucide-react";
 import {
   ProductServiceSelector,
@@ -154,7 +155,7 @@ function TimelineItem({
           >
             {title}
           </p>
-          <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">
+          <p className="text-[11px] font-mono text-muted-foreground uppercase tracking-wider">
             {new Date(date).toLocaleString("es-AR", {
               day: "numeric",
               month: "short",
@@ -1029,7 +1030,7 @@ export default function WorkOrderDetailPage() {
         return (
           <Badge
             variant="outline"
-            className="bg-yellow-50 text-amber-700 border-amber-200 text-[10px]"
+            className="bg-yellow-50 text-amber-700 border-amber-200 text-[11px]"
           >
             Pendiente
           </Badge>
@@ -1038,7 +1039,7 @@ export default function WorkOrderDetailPage() {
         return (
           <Badge
             variant="outline"
-            className="bg-blue-50 text-blue-700 border-blue-200 text-[10px]"
+            className="bg-blue-50 text-blue-700 border-blue-200 text-[11px]"
           >
             Enviando...
           </Badge>
@@ -1047,7 +1048,7 @@ export default function WorkOrderDetailPage() {
         return (
           <Badge
             variant="outline"
-            className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px]"
+            className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[11px]"
           >
             Oficial
           </Badge>
@@ -1056,7 +1057,7 @@ export default function WorkOrderDetailPage() {
         return (
           <Badge
             variant="outline"
-            className="bg-red-50 text-red-700 border-red-200 text-[10px]"
+            className="bg-red-50 text-red-700 border-red-200 text-[11px]"
           >
             Rechazado
           </Badge>
@@ -1065,14 +1066,14 @@ export default function WorkOrderDetailPage() {
         return (
           <Badge
             variant="outline"
-            className="bg-gray-50 text-gray-700 border-gray-200 text-[10px]"
+            className="bg-gray-50 text-gray-700 border-gray-200 text-[11px]"
           >
             Cancelado
           </Badge>
         );
       default:
         return (
-          <Badge variant="outline" className="text-[10px]">
+          <Badge variant="outline" className="text-[11px]">
             {status}
           </Badge>
         );
@@ -1295,7 +1296,7 @@ export default function WorkOrderDetailPage() {
           {/* Cliente */}
           <div className="flex items-center gap-2">
             <div className="flex flex-col">
-              <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground/60">
+              <span className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground/60">
                 Cliente
               </span>
               <div className="flex items-center gap-2">
@@ -1318,7 +1319,7 @@ export default function WorkOrderDetailPage() {
 
           {/* Ingreso - días transcurridos */}
           <div className="flex flex-col">
-            <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground/60 flex items-center gap-1">
+            <span className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground/60 flex items-center gap-1">
               <Clock className="h-2.5 w-2.5" />
               Ingreso
             </span>
@@ -1338,21 +1339,23 @@ export default function WorkOrderDetailPage() {
           {/* Fecha prometida */}
 
           <div className="flex flex-col">
-            <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground/60 flex items-center gap-1">
+            <span className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground/60 flex items-center gap-1">
               <Calendar className="h-2.5 w-2.5" />
               Prometida
             </span>
             {editingScheduledDate ? (
               <div className="flex items-center gap-1">
                 <Input
+                  id="scheduled-date"
                   type="datetime-local"
                   value={newScheduledDate}
                   onChange={(e) => setNewScheduledDate(e.target.value)}
                   className="h-7 w-40 font-mono text-xs"
+                  aria-label="Fecha prometida"
                 />
                 <Button
                   size="sm"
-                  className="h-7 px-2"
+                  className="h-9 px-2"
                   onClick={handleUpdateScheduledDate}
                 >
                   OK
@@ -1360,7 +1363,7 @@ export default function WorkOrderDetailPage() {
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="h-7 px-2"
+                  className="h-9 px-2"
                   onClick={() => setEditingScheduledDate(false)}
                 >
                   ✕
@@ -1395,7 +1398,7 @@ export default function WorkOrderDetailPage() {
 
           {/* Responsable */}
           <div className="flex flex-col">
-            <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground/60">
+            <span className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground/60">
               Responsable
             </span>
             <div className="flex items-center gap-1 bg-purple-50 border border-purple-200 rounded-md text-xs font-medium text-purple-700">
@@ -1410,7 +1413,7 @@ export default function WorkOrderDetailPage() {
                   updatingTechnician || workOrder.status === "DELIVERED" || workOrder.status === "CANCELLED"
                 }
               >
-                <SelectTrigger className="h-7 border-none bg-transparent hover:bg-purple-100/50 shadow-none focus:ring-0 px-1.5 min-w-[100px] text-xs">
+                <SelectTrigger className="h-9 border-none bg-transparent hover:bg-purple-100/50 shadow-none focus:ring-0 px-1.5 min-w-[100px] text-xs">
                   <SelectValue placeholder="Sin asignar" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1418,6 +1421,42 @@ export default function WorkOrderDetailPage() {
                   {technicians.map((tech) => (
                     <SelectItem key={tech.id} value={tech.id}>
                       {tech.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="w-px h-8 bg-border" />
+
+          {/* Estado */}
+          <div className="flex flex-col">
+            <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground/60">
+              Estado
+            </span>
+            <div className={cn(
+              "flex items-center gap-1 border rounded-md text-xs font-semibold shadow-sm transition-colors",
+              STATUSES.find((s) => s.id === workOrder.status)?.color
+            )}>
+              <ClipboardList
+                className="h-3.5 w-3.5 ml-1.5 pointer-events-none opacity-80"
+                aria-hidden="true"
+              />
+              <Select
+                value={workOrder.status}
+                onValueChange={handleStatusChange}
+                disabled={
+                  updatingStatus || workOrder.status === "CANCELLED"
+                }
+              >
+                <SelectTrigger className="h-7 border-none bg-transparent hover:bg-black/5 dark:hover:bg-white/5 shadow-none focus:ring-0 px-1.5 min-w-[110px] text-xs font-semibold">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {STATUSES.map((status) => (
+                    <SelectItem key={status.id} value={status.id}>
+                      {status.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -1495,21 +1534,21 @@ export default function WorkOrderDetailPage() {
       )}
 
       {/* Main grid: Work (left 2/3) + Payments+Notes (right 1/3) */}
-      <div className="grid lg:grid-cols-3 gap-4 print:grid-cols-1 print:gap-2 lg:items-stretch">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 print:grid-cols-1 print:gap-2 lg:items-stretch">
         {/* Left column: Items */}
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 min-w-0">
           {/* Servicios y Productos - Editable con ProductServiceSelector */}
           <Card className="h-full">
             <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Package className="h-5 w-5" />
-                  Servicios y Productos
+              <div className="flex items-center justify-between gap-2 min-w-0">
+                <CardTitle className="text-lg flex items-center gap-2 min-w-0">
+                  <Package className="h-5 w-5 shrink-0" />
+                  <span className="truncate">Servicios y Productos</span>
                 </CardTitle>
                 {!isEditingItems && workOrder.status !== "DELIVERED" && workOrder.status !== "CANCELLED" && (
                   <Button
                     variant="outline"
-                    size="sm"
+                    size="default"
                     onClick={startEditingItems}
                     className="print:hidden"
                   >
@@ -1556,86 +1595,88 @@ export default function WorkOrderDetailPage() {
                 </div>
               ) : (
                 <>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Item</TableHead>
-                        <TableHead>Tipo</TableHead>
-                        <TableHead className="text-right">Cantidad</TableHead>
-                        <TableHead className="text-right">
-                          Precio Unit.
-                        </TableHead>
-                        <TableHead className="text-right">Subtotal</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {workOrder.workOrderItems.length === 0 ? (
+                  <div className="overflow-x-auto min-w-0">
+                    <Table>
+                      <TableHeader>
                         <TableRow>
-                          <TableCell
-                            colSpan={5}
-                            className="text-center text-muted-foreground py-8"
-                          >
-                            Sin items registrados
-                          </TableCell>
+                          <TableHead>Item</TableHead>
+                          <TableHead>Tipo</TableHead>
+                          <TableHead className="text-right">Cantidad</TableHead>
+                          <TableHead className="text-right">
+                            Precio Unit.
+                          </TableHead>
+                          <TableHead className="text-right">Subtotal</TableHead>
                         </TableRow>
-                      ) : (
-                        workOrder.workOrderItems.map((item) => (
-                          <TableRow key={item.id}>
-                            <TableCell className="font-medium">
-                              <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0">
-                                  {item.type === "PRODUCT" ? (
-                                    <Package
-                                      className="h-4 w-4 text-primary pointer-events-none"
-                                      aria-hidden="true"
-                                    />
-                                  ) : (
-                                    <Wrench
-                                      className="h-4 w-4 text-primary pointer-events-none"
-                                      aria-hidden="true"
-                                    />
-                                  )}
-                                </div>
-                                <span className="font-semibold tracking-tight">
-                                  {item.name ||
-                                    item.product?.name ||
-                                    item.service?.name ||
-                                    "Item"}
-                                </span>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <Badge
-                                variant={
-                                  item.type === "PRODUCT"
-                                    ? "outline"
-                                    : "secondary"
-                                }
-                                className={
-                                  item.type === "PRODUCT"
-                                    ? "border-primary/20"
-                                    : ""
-                                }
-                              >
-                                {item.type === "PRODUCT"
-                                  ? "Producto"
-                                  : "Servicio"}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-right font-mono">
-                              {item.quantity}
-                            </TableCell>
-                            <TableCell className="text-right font-mono">
-                              {formatARS(Number(item.unitPrice), 2)}
-                            </TableCell>
-                            <TableCell className="text-right font-medium font-mono">
-                              {formatARS(Number(item.subtotal), 2)}
+                      </TableHeader>
+                      <TableBody>
+                        {workOrder.workOrderItems.length === 0 ? (
+                          <TableRow>
+                            <TableCell
+                              colSpan={5}
+                              className="text-center text-muted-foreground py-8"
+                            >
+                              Sin items registrados
                             </TableCell>
                           </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
+                        ) : (
+                          workOrder.workOrderItems.map((item) => (
+                            <TableRow key={item.id}>
+                              <TableCell className="font-medium">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-8 h-8 rounded-lg bg-primary/10 shadow-sm border border-primary/20 flex items-center justify-center shrink-0">
+                                    {item.type === "PRODUCT" ? (
+                                      <Package
+                                        className="h-4 w-4 text-primary pointer-events-none"
+                                        aria-hidden="true"
+                                      />
+                                    ) : (
+                                      <Wrench
+                                        className="h-4 w-4 text-primary pointer-events-none"
+                                        aria-hidden="true"
+                                      />
+                                    )}
+                                  </div>
+                                  <span className="font-semibold tracking-tight">
+                                    {item.name ||
+                                      item.product?.name ||
+                                      item.service?.name ||
+                                      "Item"}
+                                  </span>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge
+                                  variant={
+                                    item.type === "PRODUCT"
+                                      ? "outline"
+                                      : "secondary"
+                                  }
+                                  className={
+                                    item.type === "PRODUCT"
+                                      ? "border-primary/20"
+                                      : ""
+                                  }
+                                >
+                                  {item.type === "PRODUCT"
+                                    ? "Producto"
+                                    : "Servicio"}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right font-mono">
+                                {item.quantity}
+                              </TableCell>
+                              <TableCell className="text-right font-mono">
+                                {formatARS(Number(item.unitPrice), 2)}
+                              </TableCell>
+                              <TableCell className="text-right font-medium font-mono">
+                                {formatARS(Number(item.subtotal), 2)}
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
 
                   {workOrder.workOrderItems.length > 0 && (
                     <div className="mt-4 flex justify-end pt-4 border-t">
@@ -1719,7 +1760,7 @@ export default function WorkOrderDetailPage() {
               </div>
 
               {/* Payment History */}
-              {payments.length > 0 && (
+              {payments.length > 0 ? (
                 <div className="mt-6 pt-4 border-t">
                   <p className="text-sm font-medium mb-3">Historial de Pagos</p>
                   <div className="space-y-2">
@@ -1739,11 +1780,11 @@ export default function WorkOrderDetailPage() {
                             <p className="font-bold font-mono text-emerald-700">
                               {formatARS(Number(payment.amount), 2)}
                             </p>
-                            <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
+                            <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">
                               {payment.paymentMethod.name}
                             </p>
                             {payment.notes && (
-                              <p className="text-[10px] text-muted-foreground italic truncate max-w-[200px]">
+                              <p className="text-[11px] text-muted-foreground italic truncate max-w-[200px]">
                                 &ldquo;{payment.notes}&rdquo;
                               </p>
                             )}
@@ -1757,6 +1798,13 @@ export default function WorkOrderDetailPage() {
                       </div>
                     ))}
                   </div>
+                </div>
+              ) : (
+                <div className="mt-6 pt-4 border-t text-center">
+                  <DollarSign className="h-12 w-12 mx-auto text-muted-foreground/20 mb-4" />
+                  <p className="text-sm text-muted-foreground">
+                    Sin pagos registrados
+                  </p>
                 </div>
               )}
             </CardContent>
@@ -1773,7 +1821,7 @@ export default function WorkOrderDetailPage() {
                 {!editingNotes && workOrder.status !== "DELIVERED" && workOrder.status !== "CANCELLED" && (
                   <Button
                     variant="outline"
-                    size="sm"
+                    size="default"
                     onClick={() => startEditingNotes()}
                     className="print:hidden"
                   >
@@ -1786,12 +1834,16 @@ export default function WorkOrderDetailPage() {
             <CardContent>
               {editingNotes ? (
                 <div className="space-y-2">
+                  <label htmlFor="workshop-notes" className="sr-only">
+                    Notas de Taller
+                  </label>
                   <div className="relative">
                     <FileText
                       className="absolute left-3 top-3 h-4 w-4 text-muted-foreground pointer-events-none"
                       aria-hidden="true"
                     />
                     <Textarea
+                      id="workshop-notes"
                       value={newNotes}
                       onChange={(e) => setNewNotes(e.target.value)}
                       placeholder="Ej: Revisar frenos delanteros, cambiar aceite, alinear dirección..."
@@ -1908,39 +1960,39 @@ export default function WorkOrderDetailPage() {
       <Tabs defaultValue="checklists" className="w-full print:hidden">
         <TabsList
           variant="line"
-          className="w-full justify-start border-b bg-transparent p-0 h-10"
+          className="w-full justify-start border-b bg-transparent p-0 h-10 overflow-x-auto"
         >
           <TabsTrigger
             value="checklists"
-            className="flex items-center gap-2 px-4 py-2 data-[state=active]:after:bg-primary"
+            className="flex items-center gap-2 px-4 py-2 data-[state=active]:after:bg-primary shrink-0"
           >
             <CheckCircle className="h-4 w-4" />
             <span className="hidden sm:inline">Checklists</span>
           </TabsTrigger>
           <TabsTrigger
             value="photos"
-            className="flex items-center gap-2 px-4 py-2 data-[state=active]:after:bg-primary"
+            className="flex items-center gap-2 px-4 py-2 data-[state=active]:after:bg-primary shrink-0"
           >
             <Camera className="h-4 w-4" />
             <span className="hidden sm:inline">Fotos</span>
           </TabsTrigger>
           <TabsTrigger
             value="documents"
-            className="flex items-center gap-2 px-4 py-2 data-[state=active]:after:bg-primary"
+            className="flex items-center gap-2 px-4 py-2 data-[state=active]:after:bg-primary shrink-0"
           >
             <FileText className="h-4 w-4" />
             <span className="hidden sm:inline">Documentos</span>
           </TabsTrigger>
           <TabsTrigger
             value="vehicle-history"
-            className="flex items-center gap-2 px-4 py-2 data-[state=active]:after:bg-primary"
+            className="flex items-center gap-2 px-4 py-2 data-[state=active]:after:bg-primary shrink-0"
           >
             <Car className="h-4 w-4" />
-            <span className="hidden sm:inline">Historial de Vehículo</span>
+            <span className="hidden sm:inline">Historial Vehículo</span>
           </TabsTrigger>
           <TabsTrigger
             value="timeline"
-            className="flex items-center gap-2 px-4 py-2 data-[state=active]:after:bg-primary"
+            className="flex items-center gap-2 px-4 py-2 data-[state=active]:after:bg-primary shrink-0"
           >
             <History className="h-4 w-4" />
             <span className="hidden sm:inline">Historial</span>
@@ -1962,7 +2014,7 @@ export default function WorkOrderDetailPage() {
                   {workOrder.entryChecklist && (
                     <Button
                       variant="ghost"
-                      size="sm"
+                      size="default"
                       onClick={() => startEditingChecklist("entry")}
                       disabled={workOrder.status === "DELIVERED" || workOrder.status === "CANCELLED"}
                     >
@@ -2011,10 +2063,11 @@ export default function WorkOrderDetailPage() {
                             onChange={setEditingFuelLevel}
                           />
                           <div className="pt-2">
-                            <label className="text-xs font-medium mb-1 block">
+                            <label className="text-xs font-medium mb-1 block" htmlFor="entry-checklist-notes">
                               Notas del Checklist:
                             </label>
                             <Textarea
+                              id="entry-checklist-notes"
                               value={checklistNotes}
                               onChange={(e) =>
                                 setChecklistNotes(e.target.value)
@@ -2161,7 +2214,7 @@ export default function WorkOrderDetailPage() {
                   {workOrder.exitChecklist && (
                     <Button
                       variant="ghost"
-                      size="sm"
+                      size="default"
                       onClick={() => startEditingChecklist("exit")}
                       disabled={workOrder.status === "DELIVERED" || workOrder.status === "CANCELLED"}
                     >
@@ -2210,10 +2263,11 @@ export default function WorkOrderDetailPage() {
                             onChange={setEditingFuelLevel}
                           />
                           <div className="pt-2">
-                            <label className="text-xs font-medium mb-1 block">
+                            <label className="text-xs font-medium mb-1 block" htmlFor="exit-checklist-notes">
                               Notas del Checklist:
                             </label>
                             <Textarea
+                              id="exit-checklist-notes"
                               value={checklistNotes}
                               onChange={(e) =>
                                 setChecklistNotes(e.target.value)
@@ -2413,6 +2467,7 @@ export default function WorkOrderDetailPage() {
                             className="absolute top-1.5 right-1.5 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10"
                             onClick={(e) => handlePhotoDelete(url, e)}
                             title="Eliminar foto"
+                            aria-label="Eliminar foto"
                           >
                             <X className="h-3.5 w-3.5" />
                           </Button>
@@ -2489,6 +2544,7 @@ export default function WorkOrderDetailPage() {
                             className="absolute top-1.5 right-1.5 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10"
                             onClick={(e) => handlePhotoDelete(url, e)}
                             title="Eliminar foto"
+                            aria-label="Eliminar foto"
                           >
                             <X className="h-3.5 w-3.5" />
                           </Button>
@@ -2551,7 +2607,7 @@ export default function WorkOrderDetailPage() {
                               </p>
                               {getStatusBadge(inv.status)}
                             </div>
-                            <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
+                            <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">
                               {inv.type.replace("_", " ")}
                             </p>
                           </div>
@@ -2709,7 +2765,7 @@ export default function WorkOrderDetailPage() {
                               return (
                                 <Badge
                                   variant="outline"
-                                  className={cn("text-[10px] px-2 py-0.5", config?.color)}
+                                  className={cn("text-[11px] px-2 py-0.5", config?.color)}
                                 >
                                   {config?.label || pastWo.status}
                                 </Badge>
@@ -2719,7 +2775,7 @@ export default function WorkOrderDetailPage() {
                             <Badge
                               variant={isPaid ? "outline" : "secondary"}
                               className={cn(
-                                "text-[10px] px-2 py-0.5 font-mono",
+                                "text-[11px] px-2 py-0.5 font-mono",
                                 isPaid
                                   ? "border-emerald-200 bg-emerald-50 text-emerald-700"
                                   : (pastWo.totalPaid || 0) > 0
@@ -2797,7 +2853,7 @@ export default function WorkOrderDetailPage() {
                                     <span className="font-semibold text-zinc-800 truncate">
                                       {item.name || item.product?.name || item.service?.name || "Item"}
                                     </span>
-                                    <span className="text-muted-foreground font-mono text-[10px]">
+                                    <span className="text-muted-foreground font-mono text-[11px]">
                                       x{item.quantity}
                                     </span>
                                   </div>
@@ -2891,6 +2947,7 @@ export default function WorkOrderDetailPage() {
                 download
                 className="p-2 hover:bg-white/10 rounded-full transition-colors text-white"
                 title="Descargar imagen"
+                aria-label="Descargar"
               >
                 <FileDown className="h-5 w-5" />
               </a>
@@ -2900,6 +2957,7 @@ export default function WorkOrderDetailPage() {
                 onClick={() => setLightboxIndex(null)}
                 className="text-white hover:bg-white/10 rounded-full h-9 w-9"
                 title="Cerrar (Esc)"
+                aria-label="Cerrar"
               >
                 <X className="h-5 w-5" />
               </Button>
@@ -2916,6 +2974,7 @@ export default function WorkOrderDetailPage() {
                 onClick={() => setLightboxIndex((prev) => prev !== null ? prev - 1 : null)}
                 className="absolute left-2 md:left-4 z-10 text-white bg-black/20 hover:bg-white/10 rounded-full h-11 w-11"
                 title="Anterior (←)"
+                aria-label="Anterior"
               >
                 <Undo2 className="h-6 w-6 rotate-180" />
               </Button>
@@ -2938,6 +2997,7 @@ export default function WorkOrderDetailPage() {
                 onClick={() => setLightboxIndex((prev) => prev !== null ? prev + 1 : null)}
                 className="absolute right-2 md:right-4 z-10 text-white bg-black/20 hover:bg-white/10 rounded-full h-11 w-11"
                 title="Siguiente (→)"
+                aria-label="Siguiente"
               >
                 <Undo2 className="h-6 w-6 scale-x-[-1]" />
               </Button>

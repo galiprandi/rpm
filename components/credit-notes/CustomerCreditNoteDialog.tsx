@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@tanstack/react-table';
 import { useUI } from '@/components/ui/UIProvider';
-import { Undo2, DollarSign, FileText } from 'lucide-react';
+import { Undo2, DollarSign, FileText, Receipt } from 'lucide-react';
 
 interface Sale {
   id: string;
@@ -277,9 +277,12 @@ export function CustomerCreditNoteDialog({ open, onOpenChange, customerId, custo
               <p className="text-sm"><strong>Cliente:</strong> {customerName}</p>
             </div>
             {loading ? (
-              <div className="text-center py-8">Cargando ventas...</div>
+              <div className="text-center py-8 text-muted-foreground">Cargando ventas...</div>
             ) : sales.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">No hay ventas registradas para este cliente</div>
+              <div className="text-center py-8 space-y-3">
+                <Receipt className="h-12 w-12 mx-auto text-muted-foreground/20" aria-hidden="true" />
+                <p className="text-muted-foreground">No hay ventas registradas para este cliente</p>
+              </div>
             ) : (
               <DataTable
                 data={sales}
@@ -330,6 +333,7 @@ export function CustomerCreditNoteDialog({ open, onOpenChange, customerId, custo
                             }));
                           }}
                           className="w-4 h-4"
+                          aria-label={`Devolver ${item.name}`}
                         />
                         <div className="flex-1">
                           <p className="font-medium">{item.name}</p>
@@ -342,8 +346,9 @@ export function CustomerCreditNoteDialog({ open, onOpenChange, customerId, custo
                       </div>
                       {selected > 0 && remaining > 0 && (
                         <div className="flex items-center gap-2">
-                          <Label className="text-sm">Cantidad:</Label>
+                          <Label htmlFor={`qty-${index}`} className="text-sm">Cantidad:</Label>
                           <Input
+                            id={`qty-${index}`}
                             type="number"
                             min={1}
                             max={remaining}

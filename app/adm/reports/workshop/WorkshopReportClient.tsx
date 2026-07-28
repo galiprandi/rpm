@@ -449,7 +449,7 @@ export default function WorkshopReportClient() {
                             <p className="text-sm font-bold text-emerald-700">
                               {tech.completedCount}
                             </p>
-                            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                            <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
                               Completadas
                             </p>
                           </div>
@@ -506,7 +506,7 @@ export default function WorkshopReportClient() {
                                 }}
                                 title={`Completadas: ${item.completed}`}
                               />
-                              <div className="opacity-0 group-hover:opacity-100 absolute -top-12 left-1/2 -translate-x-1/2 bg-popover text-popover-foreground text-[10px] px-2 py-1 rounded shadow-md whitespace-nowrap z-10 font-mono flex flex-col gap-1 border">
+                              <div className="opacity-0 group-hover:opacity-100 absolute -top-12 left-1/2 -translate-x-1/2 bg-popover text-popover-foreground text-[11px] px-2 py-1 rounded shadow-md whitespace-nowrap z-10 font-mono flex flex-col gap-1 border">
                                 <span className="text-blue-600">
                                   Creadas: {item.created}
                                 </span>
@@ -525,7 +525,7 @@ export default function WorkshopReportClient() {
                       {data.evolution.map((item, idx) => (
                         <div
                           key={idx}
-                          className="flex-1 min-w-[30px] max-w-[80px] text-[10px] text-muted-foreground text-center"
+                          className="flex-1 min-w-[30px] max-w-[80px] text-[11px] text-muted-foreground text-center"
                         >
                           {item.label}
                         </div>

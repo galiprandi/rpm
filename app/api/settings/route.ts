@@ -4,7 +4,7 @@
  * Spec: /specs/spec-price-lists.md (REQ-005)
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { withAdmin } from '@/lib/api-middleware';
+import { withPermission } from '@/lib/api-middleware';
 import { getMinimumMargin, setSetting, getSetting } from '@/lib/services';
 import { z } from 'zod';
 
@@ -17,9 +17,9 @@ const updateSettingsSchema = z.object({
   afipCertPath: z.string().optional(),
 });
 
-// GET /api/settings - Get global settings (requiere ADMIN)
+// GET /api/settings - Get global settings (requiere can_manage_settings)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const GET = withAdmin(async (request: NextRequest, _session) => {
+export const GET = withPermission('can_manage_settings', async (request: NextRequest, _session) => {
   try {
     const [
       minimumMarginPercentage,
@@ -54,9 +54,9 @@ export const GET = withAdmin(async (request: NextRequest, _session) => {
   }
 });
 
-// PUT /api/settings - Update global settings (requiere ADMIN)
+// PUT /api/settings - Update global settings (requiere can_manage_settings)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const PUT = withAdmin(async (request: NextRequest, _session) => {
+export const PUT = withPermission('can_manage_settings', async (request: NextRequest, _session) => {
   try {
     const body = await request.json();
 

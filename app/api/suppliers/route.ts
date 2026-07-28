@@ -4,17 +4,12 @@
  * Spec: /specs/suppliers.md
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { getSession } from '@/lib/auth-server';
+import { withAuth, withPermission } from '@/lib/api-middleware';
 import { getSuppliers, createSupplier, getSupplierByName } from '@/lib/services/supplierService';
 
-// GET /api/suppliers - Listar proveedores
-export async function GET(request: NextRequest) {
+// GET /api/suppliers - Listar proveedores (cualquier usuario autenticado)
+export const GET = withAuth(async (request: NextRequest, _session) => {
   try {
-    const session = await getSession();
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const { searchParams } = request.nextUrl;
     const includeInactive = searchParams.get('includeInactive') === 'true';
 
@@ -28,16 +23,11 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
 
-// POST /api/suppliers - Crear proveedor
-export async function POST(request: NextRequest) {
+// POST /api/suppliers - Crear proveedor (requiere can_manage_suppliers)
+export const POST = withPermission('can_manage_suppliers', async (request: NextRequest, _session) => {
   try {
-    const session = await getSession();
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const body = await request.json();
 
     // Validaciones
@@ -75,4 +65,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

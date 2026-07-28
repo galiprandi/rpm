@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { DataTable } from "@/components/ui/data-table";
 import { type ColumnDef } from "@tanstack/react-table";
 import { formatARS, toTitleCase } from "@/lib/utils/format";
@@ -25,6 +26,7 @@ import {
   Package,
   LucideIcon,
   User,
+  Inbox,
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -311,13 +313,76 @@ export function DailyOperations() {
 
       <Card>
         <CardContent className="pt-6">
-          <DataTable
-            columns={columns}
-            data={data?.movements || []}
-            pageSize={50}
-          />
+          {loading && !data ? (
+            <DataTableSkeleton />
+          ) : data && data.movements.length === 0 ? (
+            <EmptyState />
+          ) : (
+            <DataTable
+              columns={columns}
+              data={data?.movements || []}
+              pageSize={50}
+            />
+          )}
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+/** Skeleton placeholder matching the DataTable structure for client-side fetches. */
+function DataTableSkeleton() {
+  return (
+    <div className="space-y-4">
+      <div className="border rounded-md">
+        <div className="p-4 border-b bg-muted/50">
+          <div className="flex gap-4">
+            <Skeleton className="h-4 w-16" />
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-4 flex-[1.5]" />
+            <Skeleton className="h-4 flex-1" />
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-4 w-8 ml-auto" />
+          </div>
+        </div>
+        {[...Array(8)].map((_, i) => (
+          <div key={i} className="p-4 border-b last:border-0">
+            <div className="flex gap-4 items-center">
+              <Skeleton className="h-4 w-16" />
+              <div className="flex items-center gap-3 flex-[0.8]">
+                <Skeleton className="h-8 w-8 rounded-lg" />
+                <Skeleton className="h-4 w-20" />
+              </div>
+              <div className="flex items-center gap-3 flex-[1.5]">
+                <Skeleton className="h-8 w-8 rounded-lg" />
+                <Skeleton className="h-4 w-32" />
+              </div>
+              <Skeleton className="h-4 flex-1" />
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-4 w-24" />
+              <div className="ml-auto">
+                <Skeleton className="h-8 w-8 rounded-md" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Empty state per DESIGN.md §15 — decorative icon + clear message. */
+function EmptyState() {
+  return (
+    <div className="flex flex-col items-center justify-center py-16 text-center">
+      <Inbox
+        className="h-12 w-12 text-muted-foreground/20 mb-4"
+        aria-hidden="true"
+      />
+      <p className="text-sm text-muted-foreground">
+        No hay movimientos registrados para esta fecha
+      </p>
     </div>
   );
 }

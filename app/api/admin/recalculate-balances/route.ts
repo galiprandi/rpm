@@ -1,29 +1,12 @@
-import { NextResponse } from "next/server";
-import { getSessionWithAuth } from "@/lib/api-middleware";
+import { NextRequest, NextResponse } from "next/server";
+import { withPermission } from "@/lib/api-middleware";
 import { db } from "@/lib/db";
 import { customer } from "@/db/schema";
-import { UserRole } from "@/lib/auth/roles";
 import { recalculateCustomerBalance } from "@/lib/services/balanceService";
 
-// POST /api/admin/recalculate-balances - Recalculate all customer balances
-export async function POST() {
+// POST /api/admin/recalculate-balances - Recalculate all customer balances (requiere can_run_maintenance)
+export const POST = withPermission('can_run_maintenance', async (_request: NextRequest, _session) => {
   try {
-    const session = await getSessionWithAuth();
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Check if user is ADMIN
-    const userRole =
-      ((session.user as { role?: string }).role as UserRole) || UserRole.USER;
-    if (userRole !== UserRole.ADMIN) {
-      return NextResponse.json(
-        { error: "Forbidden: Admin only" },
-        { status: 403 },
-      );
-    }
-
     // Get all customers
     const customers = await db
       .select({ id: customer.id, name: customer.name, balance: customer.balance })
@@ -64,4 +47,4 @@ export async function POST() {
       { status: 500 },
     );
   }
-}
+});

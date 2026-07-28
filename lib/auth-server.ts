@@ -9,6 +9,7 @@ import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import { UserRole } from './auth/roles';
 import { isDevBypassEnabled, createDevSession } from './dev-auth';
+import { loadPermissionsForRole } from './permissions/check';
 
 // Environment-based admin emails (comma-separated)
 const getAdminEmailsFromEnv = (): string[] => {
@@ -28,7 +29,12 @@ const getAdminEmailsFromEnv = (): string[] => {
 export async function getSession() {
   // Try dev bypass first (only in development, env-var based)
   if (isDevBypassEnabled()) {
-    return createDevSession();
+    const devSession = createDevSession();
+    // Load permissions from DB based on dev bypass role (ADMIN gets ['*'])
+    const role = (devSession.user as { role?: string }).role || 'USER';
+    const permissions = await loadPermissionsForRole(role);
+    (devSession.user as unknown as { permissions: string[] }).permissions = permissions;
+    return devSession;
   }
 
   // Fall back to real Better Auth session
@@ -43,6 +49,11 @@ export async function getSession() {
     if (userEmail && adminEmails.includes(userEmail.toLowerCase())) {
       (session.user as { role: string }).role = 'ADMIN';
     }
+
+    // Load permissions from DB based on role
+    const role = (session.user as { role?: string }).role || 'USER';
+    const permissions = await loadPermissionsForRole(role);
+    (session.user as unknown as { permissions: string[] }).permissions = permissions;
   }
 
   return session;
@@ -73,7 +84,8 @@ export async function requireRole(requiredRole: UserRole) {
   const roleHierarchy = {
     [UserRole.USER]: 0,
     [UserRole.STAFF]: 1,
-    [UserRole.ADMIN]: 2,
+    [UserRole.VENDEDOR]: 2,
+    [UserRole.ADMIN]: 3,
   };
   
   if (roleHierarchy[userRole] < roleHierarchy[requiredRole]) {
@@ -118,5 +130,5 @@ export async function isAdmin(): Promise<boolean> {
  */
 export async function isStaff(): Promise<boolean> {
   const role = await getUserRole();
-  return role === UserRole.STAFF || role === UserRole.ADMIN;
+  return role === UserRole.STAFF || role === UserRole.VENDEDOR || role === UserRole.ADMIN;
 }

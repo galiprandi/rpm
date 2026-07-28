@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { withStaff, withAdmin } from "@/lib/api-middleware";
+import { withStaff, withPermission } from "@/lib/api-middleware";
 import { db } from "@/lib/db";
 import { paymentMethod, payment } from "@/db/schema";
 import { desc, asc, eq, count } from "drizzle-orm";
@@ -36,8 +36,8 @@ export const GET = withStaff(async () => {
   }
 });
 
-// POST /api/payment-methods - Create new payment method (ADMIN only)
-export const POST = withAdmin(async (request: NextRequest) => {
+// POST /api/payment-methods - Create new payment method (requiere can_manage_settings)
+export const POST = withPermission('can_manage_settings', async (request: NextRequest) => {
   try {
     const body = await request.json();
     const { name, code, description, sortOrder } = body;

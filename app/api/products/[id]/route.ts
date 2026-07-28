@@ -4,11 +4,12 @@
  * Spec: /specs/inventory-sales.md
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { withAdminDynamic } from '@/lib/api-middleware';
+import { withAdminDynamic, withPermissionDynamic } from '@/lib/api-middleware';
 import { db } from '@/lib/db';
 import { product } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { adjustStock, updateProduct, deactivateProduct, getProductById } from '@/lib/services/productService';
+import { hasPermission } from '@/lib/permissions/check';
 import { revalidatePath } from 'next/cache';
 
 interface Params {
@@ -40,8 +41,8 @@ export const GET = withAdminDynamic(async (request: NextRequest, { params }: Par
   }
 });
 
-// PUT /api/products/[id] - Actualizar producto (requiere ADMIN)
-export const PUT = withAdminDynamic(async (request: NextRequest, { params }: Params, session) => {
+// PUT /api/products/[id] - Actualizar producto (requiere can_edit_products)
+export const PUT = withPermissionDynamic('can_edit_products', async (request: NextRequest, { params }: Params, session) => {
   try {
     const { id } = await params;
     const body = await request.json();
@@ -56,6 +57,21 @@ export const PUT = withAdminDynamic(async (request: NextRequest, { params }: Par
         { error: 'Producto no encontrado' },
         { status: 404 }
       );
+    }
+
+    // Field-level permission checks:
+    // Strip cost/stock fields the user is not allowed to edit.
+    // For PUT, keep the existing product's values so they are preserved.
+    const canEditCosts = hasPermission(session, 'can_edit_costs');
+    const canEditStock = hasPermission(session, 'can_edit_stock');
+
+    if (!canEditCosts) {
+      delete body.costPrice;
+      delete body.replacementCost;
+    }
+    if (!canEditStock) {
+      delete body.stock;
+      delete body.minStock;
     }
 
     // Validaciones
@@ -85,8 +101,8 @@ export const PUT = withAdminDynamic(async (request: NextRequest, { params }: Par
       );
     }
 
-    // Check if stock is being modified
-    const stockChanged = body.stock !== undefined && Number(body.stock) !== existing.stock;
+    // Check if stock is being modified (only possible when can_edit_stock)
+    const stockChanged = canEditStock && body.stock !== undefined && Number(body.stock) !== existing.stock;
 
     let updatedProduct;
     if (stockChanged) {
@@ -126,9 +142,9 @@ export const PUT = withAdminDynamic(async (request: NextRequest, { params }: Par
   }
 });
 
-// DELETE /api/products/[id] - Desactivar producto (soft delete) (requiere ADMIN)
+// DELETE /api/products/[id] - Desactivar producto (soft delete) (requiere can_edit_products)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const DELETE = withAdminDynamic(async (request: NextRequest, { params }: Params, _session) => {
+export const DELETE = withPermissionDynamic('can_edit_products', async (request: NextRequest, { params }: Params, _session) => {
   try {
     const { id } = await params;
 

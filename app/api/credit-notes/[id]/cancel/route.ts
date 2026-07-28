@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAdminDynamic } from '@/lib/api-middleware';
+import { withPermissionDynamic } from '@/lib/api-middleware';
 import { cancelCreditNote } from '@/lib/services/creditNoteService';
 
-export const POST = withAdminDynamic(async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+export const POST = withPermissionDynamic('can_cancel_credit_notes', async (request: NextRequest, { params }: { params: Promise<{ id: string }> }, _session) => {
   try {
     const { id } = await params;
     const body = await request.json().catch(() => ({}));

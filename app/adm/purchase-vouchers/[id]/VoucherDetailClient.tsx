@@ -10,7 +10,6 @@ import { Badge } from "@/components/ui/badge";
 import { useUI } from "@/components/ui/UIProvider";
 import { toast } from "sonner";
 import {
-  Save,
   Plus,
   Trash2,
   CheckCircle,
@@ -114,6 +113,9 @@ export default function VoucherDetailClient({
   };
 
   const handleRemoveItem = async (itemId: string) => {
+    // Capture item data for potential undo
+    const removedItem = (voucher.items || []).find((it) => it.id === itemId);
+
     setLoading(true);
     try {
       const res = await fetch(
@@ -134,7 +136,43 @@ export default function VoucherDetailClient({
         setVoucher(updatedVoucher);
       }
 
-      toast.success("Ítem eliminado del comprobante");
+      toast.success("Ítem eliminado del comprobante", {
+        action: {
+          label: "Deshacer",
+          onClick: async () => {
+            if (!removedItem) return;
+            try {
+              const restoreRes = await fetch(
+                `/api/purchase-vouchers/${voucher.id}/items`,
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    productId: removedItem.productId,
+                    quantity: removedItem.quantity,
+                    unitCost: parseFloat(removedItem.unitCost),
+                  }),
+                },
+              );
+              if (restoreRes.ok) {
+                const reloadRes = await fetch(
+                  `/api/purchase-vouchers/${voucher.id}`,
+                );
+                if (reloadRes.ok) {
+                  const updatedVoucher = await reloadRes.json();
+                  setVoucher(updatedVoucher);
+                }
+                toast.success("Ítem restaurado");
+              } else {
+                toast.error("Error al restaurar el ítem");
+              }
+            } catch {
+              toast.error("Error al restaurar el ítem");
+            }
+          },
+        },
+        duration: 8000,
+      });
     } catch (err: any) {
       await alert({
         title: "Error",
@@ -270,7 +308,7 @@ export default function VoucherDetailClient({
         </div>
       </Header>
 
-      <div className="grid lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Productos cargados / Carga items */}
         <div className="lg:col-span-2 space-y-6">
           {voucher.status === "DRAFT" && (
@@ -285,7 +323,7 @@ export default function VoucherDetailClient({
                 </h3>
               </div>
               <div className="p-6 space-y-4">
-                <div className="grid md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label htmlFor="product-select">Producto</Label>
                     <SearchableSelect
@@ -355,6 +393,7 @@ export default function VoucherDetailClient({
                   >
                     {loading ? (
                       <span className="flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
                         Cargando...
                       </span>
                     ) : (
@@ -381,6 +420,7 @@ export default function VoucherDetailClient({
                 {(voucher.items || []).length} ítems
               </Badge>
             </div>
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/30 hover:bg-muted/30">
@@ -401,7 +441,7 @@ export default function VoucherDetailClient({
                       className="text-center py-12 text-muted-foreground"
                     >
                       <Package
-                        className="h-12 w-12 mx-auto mb-4 opacity-20"
+                        className="h-12 w-12 mx-auto mb-4 text-muted-foreground/20"
                         aria-hidden="true"
                       />
                       No hay productos cargados en este comprobante
@@ -481,6 +521,7 @@ export default function VoucherDetailClient({
                 </TableBody>
               )}
             </Table>
+            </div>
           </div>
         </div>
 

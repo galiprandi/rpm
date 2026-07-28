@@ -48,6 +48,8 @@ import { CustomerForm } from "@/components/customers/CustomerForm";
 import { VehicleDialog } from "@/components/vehicles/VehicleDialog";
 import { getWhatsAppLink, getDebtReminderMessage } from "@/lib/utils/whatsapp";
 import { CustomerCreditNoteDialog } from "@/components/credit-notes/CustomerCreditNoteDialog";
+import { useUI } from "@/components/ui/UIProvider";
+import { toast } from "sonner";
 
 interface Vehicle {
   id: string;
@@ -133,6 +135,7 @@ export default function CustomerDetailPage() {
 
   const [customer, setCustomer] = useState<CustomerDetail | null>(null);
   const router = useRouter();
+  const { alert, confirm } = useUI();
   const [loading, setLoading] = useState(true);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -191,7 +194,7 @@ export default function CustomerDetailPage() {
         color: "bg-purple-100 text-purple-800",
         label: "Control de Calidad",
       },
-      READY: { color: "bg-green-100 text-green-800", label: "Lista" },
+      READY: { color: "bg-emerald-100 text-emerald-800", label: "Lista" },
       PAID: { color: "bg-emerald-100 text-emerald-800", label: "Pagada" },
       DELIVERED: { color: "bg-gray-100 text-gray-800", label: "Entregada" },
     };
@@ -231,7 +234,7 @@ export default function CustomerDetailPage() {
                   {row.original.identifier}
                 </span>
                 {vDebt > 0 && (
-                  <Badge variant="outline" className="text-[10px] font-semibold py-0 px-1 border-red-200 bg-red-50 text-red-700 mt-0.5 w-fit">
+                  <Badge variant="outline" className="text-[11px] font-semibold py-0 px-1 border-red-200 bg-red-50 text-red-700 mt-0.5 w-fit">
                     Debe {formatARS(vDebt, 2)}
                   </Badge>
                 )}
@@ -258,7 +261,7 @@ export default function CustomerDetailPage() {
                   {row.original.equipmentName || "Equipo sin nombre"}
                 </span>
                 {row.original.equipmentType && (
-                  <span className="text-[10px] text-muted-foreground uppercase">
+                  <span className="text-[11px] text-muted-foreground uppercase">
                     {row.original.equipmentType}
                   </span>
                 )}
@@ -274,7 +277,7 @@ export default function CustomerDetailPage() {
               <span className="font-medium text-zinc-900">
                 {makeName || modelName ? `${makeName} ${modelName}` : "Vehículo sin marca/modelo"}
               </span>
-              <span className="text-[10px] text-muted-foreground uppercase">
+              <span className="text-[11px] text-muted-foreground uppercase">
                 {row.original.category}
               </span>
             </div>
@@ -298,6 +301,7 @@ export default function CustomerDetailPage() {
             size="sm"
             className="h-8 w-8 p-0 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
             title="Nueva Orden para este vehículo"
+            aria-label="Nueva Orden para este vehículo"
           >
             <Link
               href={`/adm/work-orders/new?customerId=${customerId}&vehicleId=${row.original.id}`}
@@ -404,7 +408,7 @@ export default function CustomerDetailPage() {
             },
             INVOICE: {
               label: "Factura",
-              color: "bg-green-100 text-green-800",
+              color: "bg-emerald-100 text-emerald-800",
               icon: FileText,
             },
             PAYMENT: {
@@ -438,7 +442,7 @@ export default function CustomerDetailPage() {
             {
               ISSUED: {
                 label: "Emitida",
-                color: "bg-green-100 text-green-800",
+                color: "bg-emerald-100 text-emerald-800",
               },
               CANCELLED: {
                 label: "Cancelada",
@@ -671,7 +675,7 @@ export default function CustomerDetailPage() {
                   className={
                     customer.balance > 0
                       ? "bg-red-600 hover:bg-red-700"
-                      : "bg-green-600 hover:bg-green-700"
+                      : "bg-emerald-600 hover:bg-emerald-700"
                   }
                 >
                   <ArrowDownLeft className="h-4 w-4 mr-1" />
@@ -834,8 +838,8 @@ export default function CustomerDetailPage() {
           ]}
           rowActions={(vehicle) => (
             <Link href={`/adm/vehicles/${vehicle.id}`}>
-              <Button variant="ghost" size="sm">
-                <Eye className="h-4 w-4" />
+              <Button variant="ghost" size="sm" aria-label="Ver detalle del vehículo">
+                <Eye className="h-4 w-4" aria-hidden="true" />
               </Button>
             </Link>
           )}
@@ -895,8 +899,8 @@ export default function CustomerDetailPage() {
           ]}
           rowActions={(workOrder) => (
             <Link href={`/adm/work-orders/${workOrder.id}`}>
-              <Button variant="ghost" size="sm">
-                <Pencil className="h-4 w-4" />
+              <Button variant="ghost" size="sm" aria-label="Ver detalle de la orden de trabajo">
+                <Pencil className="h-4 w-4" aria-hidden="true" />
               </Button>
             </Link>
           )}
@@ -905,15 +909,21 @@ export default function CustomerDetailPage() {
 
       {/* Historial de Transacciones - DataTable */}
       {transactions.length === 0 ? (
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold flex items-center gap-2">
-            <Receipt className="h-5 w-5" />
-            Historial de Transacciones (0)
-          </h2>
-          <div className="text-center py-8 text-muted-foreground">
-            No hay transacciones registradas
-          </div>
-        </div>
+        <Card className="border-dashed bg-muted/10">
+          <CardContent className="flex flex-col items-center justify-center py-12 text-center space-y-4">
+            <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center border border-dashed">
+              <Receipt className="h-8 w-8 text-muted-foreground/40 pointer-events-none" aria-hidden="true" />
+            </div>
+            <div className="space-y-1">
+              <p className="text-lg font-medium text-foreground">
+                Sin transacciones
+              </p>
+              <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+                No hay transacciones registradas para este cliente. Las ventas, pagos y notas de crédito aparecerán aquí.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       ) : (
         <DataTable
           data={transactions}
@@ -931,12 +941,13 @@ export default function CustomerDetailPage() {
             <Button
               variant="ghost"
               size="sm"
+              aria-label="Ver detalle de la transacción"
               onClick={() => {
                 setSelectedTransaction(transaction);
                 setIsTransactionModalOpen(true);
               }}
             >
-              <Eye className="h-4 w-4" />
+              <Eye className="h-4 w-4" aria-hidden="true" />
             </Button>
           )}
         />
@@ -956,7 +967,7 @@ export default function CustomerDetailPage() {
           <div className="space-y-4 py-4">
             <div>
               <div className="flex items-center justify-between mb-2">
-                <Label>Monto a Abonar *</Label>
+                <Label htmlFor="payment-amount">Monto a Abonar *</Label>
                 {customer && customer.balance > 0 && (
                   <Button
                     variant="link"
@@ -969,6 +980,7 @@ export default function CustomerDetailPage() {
                 )}
               </div>
               <Input
+                id="payment-amount"
                 type="number"
                 step="0.01"
                 min="0.01"
@@ -985,9 +997,9 @@ export default function CustomerDetailPage() {
               )}
             </div>
             <div>
-              <Label>Método de Pago *</Label>
+              <Label htmlFor="payment-method">Método de Pago *</Label>
               <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                <SelectTrigger>
+                <SelectTrigger id="payment-method">
                   <SelectValue placeholder="Seleccione método" />
                 </SelectTrigger>
                 <SelectContent>
@@ -999,8 +1011,9 @@ export default function CustomerDetailPage() {
               </Select>
             </div>
             <div>
-              <Label>Notas (opcional)</Label>
+              <Label htmlFor="payment-notes">Notas (opcional)</Label>
               <Input
+                id="payment-notes"
                 placeholder="Referencia, comprobante, etc."
                 value={paymentNotes}
                 onChange={(e) => setPaymentNotes(e.target.value)}
@@ -1023,7 +1036,11 @@ export default function CustomerDetailPage() {
               onClick={async () => {
                 const amount = parseFloat(paymentAmount);
                 if (!amount || amount <= 0) {
-                  alert("Ingrese un monto válido");
+                  await alert({
+                    title: "Monto inválido",
+                    description: "Ingrese un monto válido",
+                    variant: "warning",
+                  });
                   return;
                 }
 
@@ -1049,11 +1066,19 @@ export default function CustomerDetailPage() {
                     fetchCustomer(); // Refresh customer data
                   } else {
                     const error = await res.json();
-                    alert(error.error || "Error al registrar pago");
+                    await alert({
+                      title: "Error",
+                      description: error.error || "Error al registrar pago",
+                      variant: "error",
+                    });
                   }
                 } catch (error) {
                   console.error("Error:", error);
-                  alert("Error al registrar pago");
+                  await alert({
+                    title: "Error",
+                    description: "Error al registrar pago",
+                    variant: "error",
+                  });
                 } finally {
                   setIsSubmittingPayment(false);
                 }
@@ -1117,7 +1142,11 @@ export default function CustomerDetailPage() {
                 fetchCustomer();
               } catch (error) {
                 console.error("Error updating customer:", error);
-                alert("Error al actualizar cliente");
+                await alert({
+                  title: "Error",
+                  description: "Error al actualizar cliente",
+                  variant: "error",
+                });
               } finally {
                 setIsEditing(false);
               }
@@ -1169,7 +1198,7 @@ export default function CustomerDetailPage() {
                         ? "bg-orange-100 text-orange-800"
                         : selectedTransaction.type === "PAYMENT"
                           ? "bg-emerald-100 text-emerald-800"
-                          : "bg-green-100 text-green-800"
+                          : "bg-emerald-100 text-emerald-800"
                   }
                 >
                   {selectedTransaction.type === "DIRECT_SALE"
@@ -1267,8 +1296,9 @@ export default function CustomerDetailPage() {
                 selectedTransaction.status === "ISSUED" && (
                   <div className="border-t pt-4 space-y-3">
                     <div>
-                      <Label className="text-sm">Motivo de cancelación</Label>
+                      <Label htmlFor="cancel-reason" className="text-sm">Motivo de cancelación</Label>
                       <Input
+                        id="cancel-reason"
                         placeholder="Ej: Error en la nota de crédito"
                         value={cancelReason}
                         onChange={(e) => setCancelReason(e.target.value)}
@@ -1281,11 +1311,22 @@ export default function CustomerDetailPage() {
                       className="w-full"
                       onClick={async () => {
                         if (!cancelReason.trim()) {
-                          alert(
-                            "Por favor ingresa un motivo para la cancelación",
-                          );
+                          await alert({
+                            title: "Motivo requerido",
+                            description: "Por favor ingresa un motivo para la cancelación",
+                            variant: "warning",
+                          });
                           return;
                         }
+
+                        const confirmed = await confirm({
+                          title: "Cancelar Nota de Crédito",
+                          description: `¿Está seguro de cancelar la nota de crédito #${selectedTransaction.id.slice(-6).toUpperCase()}? Se revertirá el stock, el efectivo y el saldo del cliente.`,
+                          variant: "destructive",
+                          confirmText: "Sí, cancelar",
+                          cancelText: "No, cancelar",
+                        });
+                        if (!confirmed) return;
 
                         setIsCancelling(true);
                         try {
@@ -1302,16 +1343,25 @@ export default function CustomerDetailPage() {
                             setIsTransactionModalOpen(false);
                             setCancelReason("");
                             fetchCustomer();
+                            toast.success("Nota de crédito cancelada correctamente", {
+                              description: `NC #${selectedTransaction.id.slice(-6).toUpperCase()} fue cancelada.`,
+                              duration: 8000,
+                            });
                           } else {
                             const error = await res.json();
-                            alert(
-                              error.error ||
-                                "Error al cancelar nota de crédito",
-                            );
+                            await alert({
+                              title: "Error",
+                              description: error.error || "Error al cancelar nota de crédito",
+                              variant: "error",
+                            });
                           }
                         } catch (error) {
                           console.error("Error:", error);
-                          alert("Error al cancelar nota de crédito");
+                          await alert({
+                            title: "Error",
+                            description: "Error al cancelar nota de crédito",
+                            variant: "error",
+                          });
                         } finally {
                           setIsCancelling(false);
                         }
@@ -1522,7 +1572,7 @@ export default function CustomerDetailPage() {
           </div>
         </div>
 
-        <div className="mt-14 text-center border-t border-zinc-200 pt-4 text-[10px] text-zinc-400 font-mono">
+        <div className="mt-14 text-center border-t border-zinc-200 pt-4 text-[11px] text-zinc-400 font-mono">
           RPM Accesorios © {new Date().getFullYear()} - Documento de control interno no válido como factura fiscal.
         </div>
       </div>

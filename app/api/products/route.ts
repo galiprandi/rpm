@@ -4,16 +4,17 @@
  * Spec: /specs/inventory-sales.md
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { withAdmin } from '@/lib/api-middleware';
+import { withAuth, withPermission } from '@/lib/api-middleware';
 import { getProducts, createProduct, createStockMovement, type MovementReason } from '@/lib/services/productService';
+import { hasPermission } from '@/lib/permissions/check';
 import { revalidatePath } from 'next/cache';
 
 // Renderizado on-demand sin revalidate periódico
 export const dynamic = 'force-dynamic';
 
-// GET /api/products - Listar productos (requiere ADMIN)
+// GET /api/products - Listar productos (cualquier usuario autenticado)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const GET = withAdmin(async (request: NextRequest, _session) => {
+export const GET = withAuth(async (request: NextRequest, _session) => {
   try {
     const { searchParams } = request.nextUrl;
 
@@ -40,10 +41,25 @@ export const GET = withAdmin(async (request: NextRequest, _session) => {
   }
 });
 
-// POST /api/products - Crear producto (requiere ADMIN)
-export const POST = withAdmin(async (request: NextRequest, session) => {
+// POST /api/products - Crear producto (requiere can_edit_products)
+export const POST = withPermission('can_edit_products', async (request: NextRequest, session) => {
   try {
     const body = await request.json();
+
+    // Field-level permission checks:
+    // Strip cost/stock fields the user is not allowed to edit.
+    // For POST, stripped fields default to 0 (no existing product to fall back to).
+    const canEditCosts = hasPermission(session, 'can_edit_costs');
+    const canEditStock = hasPermission(session, 'can_edit_stock');
+
+    if (!canEditCosts) {
+      delete body.costPrice;
+      delete body.replacementCost;
+    }
+    if (!canEditStock) {
+      delete body.stock;
+      delete body.minStock;
+    }
 
     // Validaciones básicas
     if (!body.name || !body.categoryId) {
@@ -56,21 +72,29 @@ export const POST = withAdmin(async (request: NextRequest, session) => {
     // Generar SKU automático si no se proporciona
     const sku = body.sku || `PRD-${Date.now()}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
 
-    if (body.replacementCost === undefined || body.replacementCost === null || isNaN(body.replacementCost)) {
-      return NextResponse.json(
-        { error: 'replacementCost es requerido' },
-        { status: 400 }
-      );
+    // Cost fields are optional when the user lacks can_edit_costs (default to 0)
+    const costPrice = canEditCosts ? body.costPrice : 0;
+    const replacementCost = canEditCosts ? body.replacementCost : 0;
+    if (canEditCosts) {
+      if (replacementCost === undefined || replacementCost === null || isNaN(replacementCost)) {
+        return NextResponse.json(
+          { error: 'replacementCost es requerido' },
+          { status: 400 }
+        );
+      }
+
+      if (costPrice === undefined || costPrice === null || isNaN(costPrice)) {
+        return NextResponse.json(
+          { error: 'costPrice es requerido' },
+          { status: 400 }
+        );
+      }
     }
 
-    if (body.costPrice === undefined || body.costPrice === null || isNaN(body.costPrice)) {
-      return NextResponse.json(
-        { error: 'costPrice es requerido' },
-        { status: 400 }
-      );
-    }
-
-    if (body.stock < 0 || body.minStock < 0) {
+    // Stock fields are optional when the user lacks can_edit_stock (default to 0)
+    const stock = canEditStock ? (body.stock || 0) : 0;
+    const minStock = canEditStock ? (body.minStock || 0) : 0;
+    if (canEditStock && (body.stock < 0 || body.minStock < 0)) {
       return NextResponse.json(
         { error: 'El stock no puede ser negativo' },
         { status: 400 }
@@ -84,25 +108,24 @@ export const POST = withAdmin(async (request: NextRequest, session) => {
         description: body.description,
         barcode: body.barcode,
         categoryId: body.categoryId,
-        costPrice: body.costPrice,
-        replacementCost: body.replacementCost,
-        stock: body.stock || 0,
-        minStock: body.minStock || 0,
+        costPrice,
+        replacementCost,
+        stock,
+        minStock,
         supplierId: body.supplierId,
         location: body.location,
       });
 
       // Create stock movement record if initial stock > 0
-      const initialStock = body.stock || 0;
-      if (initialStock > 0) {
+      if (stock > 0) {
         await createStockMovement({
           productId: product.id,
           userId: session.user.id,
           userName: session.user.name || session.user.email || 'Sistema',
           type: 'IN',
-          quantity: initialStock,
+          quantity: stock,
           previousStock: 0,
-          newStock: initialStock,
+          newStock: stock,
           reason: 'CARGA_INICIAL' as MovementReason,
           salePrice: undefined,
         });
