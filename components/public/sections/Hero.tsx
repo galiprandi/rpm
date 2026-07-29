@@ -43,11 +43,18 @@ export function Hero() {
               </Button>
             </Link>
             <Button 
+              asChild
               variant="link" 
               className="text-white text-lg font-bold hover:text-brand transition-colors"
-              onClick={() => window.open(PUBLIC_SITE_CONFIG.links.whatsapp(DEFAULT_WHATSAPP_MESSAGE), '_blank')}
             >
-              Reservar una consulta
+              <a
+                href={PUBLIC_SITE_CONFIG.links.whatsapp(DEFAULT_WHATSAPP_MESSAGE)}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Reservar una consulta por WhatsApp (se abre en una pestaña nueva)"
+              >
+                Reservar una consulta
+              </a>
             </Button>
           </div>
         </div>
