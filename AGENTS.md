@@ -142,3 +142,37 @@ Todo formulario de creación/edición debe implementar estado `isSubmitting`:
 # Boy Scout Rule
 
 Cada modificación deja el archivo en mejor estado: legibilidad, comentarios, nombres. Sin bugs, alcance razonable.
+
+---
+
+# Sentry CLI
+
+Error monitoring con Sentry. SDK integrado via `@sentry/nextjs` (client/server/edge configs).
+
+- **CLI:** `sentry-cli` (v3.6.1) — binario global, instalado con `npm i -g @sentry/cli`
+- **Auth:** `SENTRY_AUTH_TOKEN` en `.env.local` (auto-cargado por el CLI)
+- **Config:** `.sentryclirc` en la raíz con `org=rpm-bz` y `project=rpm`
+- **DSN:** `NEXT_PUBLIC_SENTRY_DSN` en `.env.local` y Vercel
+
+## Comandos útiles
+
+```bash
+# Ver issues activos
+sentry-cli issues list
+
+# Ver releases y source maps subidos
+sentry-cli releases list
+
+# Verificar auth y configuración
+sentry-cli info
+
+# Subir source maps manualmente (solo si hace falta)
+sentry-cli sourcemaps upload --release <commit-sha>
+```
+
+## Notas
+
+- Source maps se suben automáticamente en builds de producción via `withSentryConfig` en `next.config.ts`
+- `tracesSampleRate: 0.1` en producción (10% de traces), `1.0` en dev
+- Página de test: `/sentry-example-page` (trigger manual de error)
+- Webhook a Discord: pendiente
