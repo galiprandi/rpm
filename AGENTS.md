@@ -149,8 +149,8 @@ Cada modificación deja el archivo en mejor estado: legibilidad, comentarios, no
 
 Error monitoring con Sentry. SDK integrado via `@sentry/nextjs` (client/server/edge configs).
 
-- **CLI:** `sentry-cli` (v3.6.1) — binario global, instalado con `npm i -g @sentry/cli`
-- **Auth:** `SENTRY_AUTH_TOKEN` en `.env.local` (auto-cargado por el CLI)
+- **CLI:** `npx sentry-cli` via `pnpm sentry:*` scripts — sin instalación global
+- **Auth:** `SENTRY_AUTH_TOKEN` en `.env.local` (cargado por `dotenv-cli` en los scripts)
 - **Config:** `.sentryclirc` en la raíz con `org=rpm-bz` y `project=rpm`
 - **DSN:** `NEXT_PUBLIC_SENTRY_DSN` en `.env.local` y Vercel
 
@@ -158,16 +158,16 @@ Error monitoring con Sentry. SDK integrado via `@sentry/nextjs` (client/server/e
 
 ```bash
 # Ver issues activos
-sentry-cli issues list
+pnpm sentry:issues
 
 # Ver releases y source maps subidos
-sentry-cli releases list
+pnpm sentry:releases
 
 # Verificar auth y configuración
-sentry-cli info
+pnpm sentry:info
 
 # Subir source maps manualmente (solo si hace falta)
-sentry-cli sourcemaps upload --release <commit-sha>
+dotenv -e .env.local -- npx sentry-cli sourcemaps upload --release <commit-sha>
 ```
 
 ## Notas

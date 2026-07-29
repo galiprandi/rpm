@@ -21,6 +21,9 @@
     "db:generate": "npx drizzle-kit generate",
     "db:push": "npx drizzle-kit push",
     "deploy": "vercel --prod",
+    "sentry:issues": "dotenv -e .env.local -- npx sentry-cli issues list",
+    "sentry:releases": "dotenv -e .env.local -- npx sentry-cli releases list",
+    "sentry:info": "dotenv -e .env.local -- npx sentry-cli info",
     "prepare": "husky || true"
   },
   "dependencies": {
@@ -94,6 +97,7 @@
     "@types/sharp": "^0.32.0",
     "@vitest/coverage-v8": "4.1.1",
     "@vitest/ui": "^4.1.1",
+    "dotenv-cli": "^11.0.0",
     "drizzle-kit": "0.31.10",
     "eslint": "^9",
     "eslint-config-next": "16.2.1",
