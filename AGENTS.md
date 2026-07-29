@@ -174,5 +174,4 @@ sentry-cli sourcemaps upload --release <commit-sha>
 
 - Source maps se suben automáticamente en builds de producción via `withSentryConfig` en `next.config.ts`
 - `tracesSampleRate: 0.1` en producción (10% de traces), `1.0` en dev
-- Página de test: `/sentry-example-page` (trigger manual de error)
 - Webhook a Discord: pendiente
