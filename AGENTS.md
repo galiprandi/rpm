@@ -6,6 +6,26 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ---
 
+# Mensajes a Daniela Federik por WhatsApp
+
+Cuando el usuario diga **"Decile a Daniela ..."** (o variantes similares), enviar el mensaje por WhatsApp usando el MCP server **`Chrome perfil German`** (web.whatsapp.com ya abierto en ese perfil).
+
+**Pautas para el mensaje:**
+- **Tono:** casual, como si hablara German ("amiga", "decile a las chicas", emojis 🙌)
+- **Brevedad:** 2-4 líneas máximo, sin tecnicismos ni explicaciones del problema
+- **Enfoque:** el resultado/solución, no el bug ni el proceso — a Daniela le importa que ya funciona
+- **No mencionar "bug", "error", "issue" ni lenguaje técnico**
+- **Cierre:** pedir que prueben y avisen si hay algo más
+- **Estilo:** imitar cómo escribe German en WhatsApp (frases cortas, directo, sin signos de puntuación excesivos)
+
+**Flujo:**
+1. `browser_click` en el chat de "Daniela Federik" en la lista de chats
+2. `browser_type` el mensaje en el textbox contenteditable
+3. `browser_press_key` Enter para enviar
+4. Verificar con `browser_evaluate` que el mensaje apareció como último mensaje enviado
+
+---
+
 # Política de Idioma
 
 - **Español:** `AGENTS.md`, `specs/*.md`, títulos/descripción de PRs
