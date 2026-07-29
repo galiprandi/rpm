@@ -2,6 +2,7 @@
 - [ ] Idea pendiente — breve descripción
 
 ## ✅ COMPLETADO
+- [x] 2026-07-29 — Duplicación/Clonación de Órdenes de Trabajo desde Detalle e Historial con Resguardo de Borrador (PR #jorge/work-orders/duplicate-work-order-ux)
 - [x] 2026-07-28 — Atajo de "Marcar todos como OK" en checklists de ingreso y egreso en creación y edición de OT (PR #jorge/work-orders/checklist-bulk-toggle)
 - [x] 2026-07-27 — Selector de Estado Interactivo en Detalle de OT (PR #jorge/work-orders/status-select-header)
 - [x] 2026-07-26 — Historial de Órdenes de Trabajo del Vehículo en Detalle de OT (PR #jorge/work-orders/vehicle-history-tab)
@@ -17,6 +18,11 @@
 - [x] 2025-07-08 — Servicio Centralizado de OT y Timeline Unificado (PR #jorge/work-orders/centralized-updates)
 
 ## 🧠 APRENDIZAJES
+## 2026-07-29 - Duplicación/Clonación de Órdenes de Trabajo y Salvaguarda de Persistencia del Asistente
+**Aprendizaje 1:** En talleres mecánicos donde se realizan mantenimientos periódicos o se gestionan flotas con múltiples vehículos idénticos, tener que cargar manualmente la lista de ítems (productos y servicios), el cliente y el vehículo desde cero para cada servicio recurrente genera una gran fricción administrativa. Proveer un botón de "Duplicar" en la cabecera del detalle y de manera contextual en cada tarjeta de orden pasada en la pestaña "Historial de Vehículo" agiliza enormemente la creación, mejorando la retención de usuarios.
+**Aprendizaje 2:** Al implementar carga de estado asincrónica (p. ej., `loadSavedState` que inicia con `await Promise.resolve()`) junto con un efecto secundario síncrono que persiste los cambios a `localStorage` tras cada render, el guardado automático del estado por defecto (con variables vacías e iniciales en el primer render) puede sobreescribir y borrar prematuramente el estado cargado o pre-configurado de la caché antes de que termine el loader de inicialización. Añadir una bandera booleana `isLoaded` (inicializada en `false` y colocada en `true` en el bloque `finally` de la carga de datos) para resguardar/bloquear el `setItem` de guardado automático soluciona de forma definitiva esta carrera de estados (race condition) en React.
+**Acción:** Siempre acoplar los guardados automáticos de localStorage con banderas de carga (`isLoaded`) para evitar sobreescritura prematura del estado, y proveer atajos de clonación contextual para flujos de registro repetitivos.
+
 ## 2026-07-28 - Atajo de "Marcar todos como OK" en checklists de ingreso y egreso en creación y edición de OT
 **Aprendizaje:** En talleres donde los operarios realizan checklists rutinarios sobre múltiples vehículos cada día, hacer click individualmente en 6 u 8 casillas de verificación para marcar que todo está bien resulta en una gran fatiga de clics y frustración de UX. Proveer un botón/enlace secundario discreto de "Marcar todos como OK" (que muta a "Desmarcar todos" cuando todo está seleccionado) simplifica radicalmente esta tarea repetitiva. Esto permite rellenar rápidamente el checklist como "todo OK" y solo desmarcar de manera puntual los elementos que requieran atención especial, acelerando el flujo de trabajo de taller sin perder precisión técnica.
 **Acción:** Siempre incluir botones de acción masiva / atajos rápidos en formularios con múltiples checkboxes repetitivos para optimizar el flujo diario del usuario.
@@ -26,7 +32,7 @@
 **Acción:** Siempre proveer selectores de estado interactivos y coloreados en cabeceras de detalle técnico para mejorar accesibilidad y velocidad operativa.
 
 ## 2026-07-26 - Historial de Órdenes de Trabajo del Vehículo en Detalle de OT
-**Aprendizaje:** En talleres mecánicos, los vehículos suelen ser recurrentes. Contar con visibilidad instantánea sobre el historial técnico completo (OTs pasadas, responsables, notas, checklists y productos/servicios específicos realizados) directamente desde la pantalla de la OT en curso disminuye drásticamente la fricción administrativa y de diagnóstico, eliminando la necesidad de abandonar el flujo principal para ir a buscar la ficha del vehículo por separado. Además, al trabajar con Next.js 15 y el nuevo React Compiler, las dependencias complejas (como optional chaining en arrays `[workOrder?.vehicle?.id]`) pueden impedir que se preserve la memoización manual, arrojando errores de compilación (`Compilation Skipped: Existing memoization could not be preserved`). Desestructurar y aplanar estas referencias en variables simples de tipo string o undefined (`const vehicleId = workOrder?.vehicle?.id`) antes de pasarlas a los hooks de React garantiza compatibilidad completa con el compilador de React y optimizaciones robustas.
+**Aprendizaje:** En talleres mecánicos, los vehículos suelen ser recurrentes. Contar con visibilidad instantánea sobre el historial técnico completo (OTs pasadas, responsables, notas, checklists y productos/servicios específicos realizados) directamente desde la pantalla de la OT en curso disminuye drásticamente la fricción administrativa y de diagnóstico, eliminando la necesidad de abandonar el flujo principal para ir a buscar la ficha del vehículo por separado. Además, al trabajar con Next.js 15 y el nuevo React Compiler, las dependencias complejas (como optional chaining en arrays `[workOrder?.vehicle?.id]`) pueden impedir que se preserve la memoización manual, arrojando errores de compilación (`Compilation Skipped: Existing memoization could not be preserved`). Desestructurar y aplanar estas referencias en variables simples de tipo string o undefined (`const vehicleId = workOrder?.vehicle?.id`) before passing them to React hooks guarantees complete compatibility with the compiler and robust optimizations.
 **Acción:** Siempre proveer pestañas de historial contextual técnico y asegurar de aplanar propiedades anidadas o con optional chaining al incluirlas en dependencias de cookies o hooks con React Compiler.
 
 ## 2026-07-24 - Bloqueo de Estados Terminales y Reversión de Saldos por Cancelación de OT
@@ -34,7 +40,7 @@
 **Acción:** Siempre acoplar los estados terminales de negocio con el bloqueo estricto de todas las funciones mutables, informando claramente al usuario la razón de la inhabilitación.
 
 ## 2026-07-23 - Búsqueda por Cliente y Pre-carga de Cuenta en Alta de OT
-**Aprendizaje:** Al iniciar el alta de un servicio en el taller, es común que el recepcionista no conozca de inmediato la patente del vehículo, o que el cliente sea recurrente y tenga múltiples unidades. Permitir buscar directamente por cliente (nombre o teléfono) e integrar la pre-carga desde la URL (para redirecciones fluidas desde la ficha del cliente) reduce sustancialmente el tiempo de carga administrativa y elimina la fricción de duplicar búsquedas de cuentas existentes.
+**Aprendizaje:** Al iniciar el alta de un servicio en el taller, es común que el recepcionista no conozca de inmediato la patente del vehículo, o que el cliente sea recurrente y tenga múltiples unidades. Permitir buscar directamente por cliente (nombre o teléfono) e integrar la pre-carga desde la URL (para redirecciones fluidas desde la ficha del cliente) reduce sustancialmente el tiempo de carga administrativa y de la fricción de duplicar búsquedas de cuentas existentes.
 **Acción:** Siempre proveer múltiples caminos de búsqueda en flujos de creación (por entidad técnica y por entidad de cliente) y pre-cargar el contexto de forma transparente si proviene de una vista relacional previa.
 
 ## 2026-07-22 - Indicadores Visuales de Metadatos y Exportación CSV en Taller

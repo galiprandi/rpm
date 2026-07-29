@@ -131,6 +131,7 @@ export default function NewWorkOrderPage() {
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
   const [plateError, setPlateError] = useState<string | null>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   // Step 1: Search by license plate or serial number
   const [plateSearch, setPlateSearch] = useState("");
@@ -251,6 +252,8 @@ export default function NewWorkOrderPage() {
         }
       } catch {
         // Ignore parse errors
+      } finally {
+        setIsLoaded(true);
       }
     };
     void loadSavedState();
@@ -261,6 +264,7 @@ export default function NewWorkOrderPage() {
 
   // Save wizard state to localStorage on changes
   useEffect(() => {
+    if (!isLoaded) return;
     const state = {
       step,
       checklist,
@@ -273,7 +277,7 @@ export default function NewWorkOrderPage() {
       selectedCustomer,
     };
     localStorage.setItem(WIZARD_STORAGE_KEY, JSON.stringify(state));
-  }, [step, checklist, odometerValue, fuelLevel, notes, scheduledDate, items, foundVehicle, selectedCustomer]);
+  }, [isLoaded, step, checklist, odometerValue, fuelLevel, notes, scheduledDate, items, foundVehicle, selectedCustomer]);
 
   // Warn before leaving if wizard has data
   useEffect(() => {
