@@ -60,6 +60,7 @@ import {
   LogOut,
   AlertTriangle,
   ClipboardList,
+  Copy,
 } from "lucide-react";
 import {
   ProductServiceSelector,
@@ -328,6 +329,80 @@ export default function WorkOrderDetailPage() {
   // Vehicle History State
   const [vehicleHistory, setVehicleHistory] = useState<any[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
+
+  const handleDuplicateWorkOrder = async (woToDuplicate: any) => {
+    if (!woToDuplicate) return;
+
+    const confirmed = await confirmAction({
+      title: "¿Duplicar esta Orden de Trabajo?",
+      description:
+        "Se iniciará el asistente de creación pre-cargando los mismos datos de cliente, vehículo e ítems (servicios y productos). El borrador actual del asistente en este navegador será reemplazado.",
+      confirmText: "Duplicar",
+      cancelText: "Cancelar",
+    });
+
+    if (!confirmed) return;
+
+    try {
+      const rawItems = woToDuplicate.workOrderItems || woToDuplicate.items || [];
+      const items = rawItems.map((item: any) => ({
+        type: item.type === "PRODUCT" ? "PRODUCT" : "SERVICE",
+        productId: item.productId || undefined,
+        serviceId: item.serviceId || undefined,
+        name: item.name || item.product?.name || item.service?.name || "Item",
+        isManualName: item.isManualName || false,
+        quantity: item.quantity,
+        unitPrice: Number(item.unitPrice),
+        priceListId: item.priceListId || undefined,
+        isManualPrice: item.isManualPrice || false,
+        originalPrice: Number(item.unitPrice),
+      }));
+
+      const cloneState = {
+        step: 2, // Direct to step 2: Items review
+        checklist: {},
+        odometerValue: "",
+        fuelLevel: 50,
+        notes: woToDuplicate.notes || "",
+        scheduledDate: "",
+        items,
+        foundVehicle: woToDuplicate.vehicle
+          ? {
+              id: woToDuplicate.vehicle.id,
+              identifier: woToDuplicate.vehicle.identifier,
+              category: woToDuplicate.vehicle.category,
+              vehicleMake: woToDuplicate.vehicle.vehicleMake,
+              vehicleModel: woToDuplicate.vehicle.vehicleModel,
+              year: woToDuplicate.vehicle.year,
+              color: woToDuplicate.vehicle.color,
+              customer: {
+                id: woToDuplicate.customer?.id,
+                name: woToDuplicate.customer?.name || "",
+                phone: woToDuplicate.customer?.phone || "",
+                email: woToDuplicate.customer?.email || "",
+              },
+            }
+          : null,
+        selectedCustomer: woToDuplicate.customer
+          ? {
+              id: woToDuplicate.customer.id,
+              name: woToDuplicate.customer.name || "",
+              phone: woToDuplicate.customer.phone || "",
+              email: woToDuplicate.customer.email || "",
+            }
+          : null,
+      };
+
+      localStorage.setItem("work-order-wizard-state", JSON.stringify(cloneState));
+      toast.success("Orden de trabajo duplicada en el borrador", {
+        description: "Redirigiendo al asistente de creación...",
+      });
+      router.push("/adm/work-orders/new");
+    } catch (err) {
+      console.error("Error cloning work order:", err);
+      toast.error("Ocurrió un error al duplicar la orden de trabajo");
+    }
+  };
 
   const vehicleId = workOrder?.vehicle?.id;
 
@@ -1240,6 +1315,15 @@ export default function WorkOrderDetailPage() {
             iconOnly: true,
             title: "Imprimir orden de trabajo",
             ariaLabel: "Imprimir orden de trabajo",
+          },
+          {
+            label: "Duplicar",
+            onClick: () => handleDuplicateWorkOrder(workOrder),
+            variant: "ghost",
+            icon: Copy,
+            iconOnly: true,
+            title: "Duplicar orden de trabajo",
+            ariaLabel: "Duplicar orden de trabajo",
           },
           {
             label: "Nota de crédito",
@@ -2835,6 +2919,16 @@ export default function WorkOrderDetailPage() {
                                 year: "numeric",
                               })}
                             </span>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 px-2.5 text-xs flex items-center gap-1 bg-background hover:bg-muted text-zinc-700 hover:text-zinc-900"
+                              onClick={() => handleDuplicateWorkOrder(pastWo)}
+                              title="Duplicar esta orden de trabajo anterior"
+                            >
+                              <Copy className="h-3.5 w-3.5" />
+                              Duplicar
+                            </Button>
                             <Link href={`/adm/work-orders/${pastWo.id}`} target="_blank">
                               <Button variant="outline" size="sm" className="h-7 px-2.5 text-xs flex items-center gap-1 bg-background hover:bg-muted">
                                 <Eye className="h-3.5 w-3.5" />
