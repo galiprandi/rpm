@@ -7,7 +7,7 @@
 
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
-import { UserRole } from './auth/roles';
+import { UserRole, getUserRole as resolveUserRoleFromDB } from './auth/roles';
 import { isDevBypassEnabled, createDevSession } from './dev-auth';
 import { loadPermissionsForRole } from './permissions/check';
 
@@ -41,16 +41,26 @@ export async function getSession() {
   const headersList = await headers();
   const session = await auth.api.getSession({ headers: headersList });
 
-  // Override role based on ADMIN_EMAILS environment variable
+  // Resolve role from user_role table (source of truth), not from user.role
+  // (Better Auth's user.role is stale — it's only set at signup time and may
+  // not reflect role changes made from the admin panel).
   if (session?.user) {
     const userEmail = (session.user as { email?: string }).email;
-    const adminEmails = getAdminEmailsFromEnv();
 
+    if (userEmail) {
+      const resolvedRole = await resolveUserRoleFromDB(userEmail);
+      if (resolvedRole) {
+        (session.user as { role: string }).role = resolvedRole;
+      }
+    }
+
+    // Override with ADMIN_EMAILS env var (highest priority)
+    const adminEmails = getAdminEmailsFromEnv();
     if (userEmail && adminEmails.includes(userEmail.toLowerCase())) {
       (session.user as { role: string }).role = 'ADMIN';
     }
 
-    // Load permissions from DB based on role
+    // Load permissions from DB based on the resolved role
     const role = (session.user as { role?: string }).role || 'USER';
     const permissions = await loadPermissionsForRole(role);
     (session.user as unknown as { permissions: string[] }).permissions = permissions;
