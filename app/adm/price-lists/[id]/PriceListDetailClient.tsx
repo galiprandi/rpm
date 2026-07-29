@@ -16,6 +16,7 @@ import {
   Calculator,
   Search,
   Package,
+  Pencil,
 } from "lucide-react";
 import { Header, StatItem, CrudStats } from "@/components/adm";
 import { ModalBase, ModalBaseFooter } from "@/components/ui/ModalBase";
@@ -79,6 +80,13 @@ export default function PriceListDetailClient({
   const [selectedProduct, setSelectedProduct] = useState<string>("");
   const [overrideMargin, setOverrideMargin] = useState<string>("");
   const [fixedPrice, setFixedPrice] = useState<string>("");
+
+  // Edit state
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<PriceListItem | null>(null);
+  const [editOverrideMargin, setEditOverrideMargin] = useState<string>("");
+  const [editFixedPrice, setEditFixedPrice] = useState<string>("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchPriceList = useCallback(async () => {
     try {
@@ -223,6 +231,64 @@ export default function PriceListDetailClient({
     setIsAddModalOpen(true);
   };
 
+  const openEditModal = (item: PriceListItem) => {
+    setEditingItem(item);
+    setEditOverrideMargin(
+      item.overrideMarginPercentage !== null ? String(item.overrideMarginPercentage) : ""
+    );
+    setEditFixedPrice(
+      item.fixedPrice !== null ? String(item.fixedPrice) : ""
+    );
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditException = async () => {
+    if (!editingItem) return;
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch(
+        `/api/price-lists/${priceListId}/items/${editingItem.id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            overrideMarginPercentage: editOverrideMargin
+              ? parseFloat(editOverrideMargin)
+              : null,
+            fixedPrice: editFixedPrice ? parseFloat(editFixedPrice) : null,
+          }),
+        }
+      );
+
+      if (response.ok) {
+        setIsEditModalOpen(false);
+        setEditingItem(null);
+        setEditOverrideMargin("");
+        setEditFixedPrice("");
+        fetchPriceList();
+        toast.success("Excepción de precio actualizada");
+      } else {
+        const error = await response.json();
+        await alert({
+          title: "Error",
+          description: error.error || "Error al actualizar excepción",
+          variant: "error",
+        });
+      }
+    } catch (error) {
+      console.error("Error editing exception:", error);
+      await alert({
+        title: "Error",
+        description: "Error al actualizar excepción",
+        variant: "error",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const getRoundingRuleLabel = (rule: string) => {
     const labels: Record<string, string> = {
       EXACT: "Exacto",
@@ -328,20 +394,35 @@ export default function PriceListDetailClient({
       id: "actions",
       header: "",
       cell: ({ row }) => (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-destructive hover:text-destructive hover:bg-destructive/10"
-              onClick={() => handleDeleteException(row.original)}
-              aria-label="Eliminar excepción"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Eliminar excepción</TooltipContent>
-        </Tooltip>
+        <div className="flex items-center gap-1">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => openEditModal(row.original)}
+                aria-label="Editar excepción"
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Editar excepción</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                onClick={() => handleDeleteException(row.original)}
+                aria-label="Eliminar excepción"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Eliminar excepción</TooltipContent>
+          </Tooltip>
+        </div>
       ),
     },
   ];
@@ -486,6 +567,90 @@ export default function PriceListDetailClient({
                   step={0.01}
                   value={fixedPrice}
                   onChange={(e) => setFixedPrice(e.target.value)}
+                  placeholder="Ej: 1500"
+                  className="pl-9 font-mono"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="p-3 bg-muted/50 rounded-lg text-xs text-muted-foreground flex gap-2">
+            <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" />
+            <p>
+              Si defines un <strong>precio fijo</strong>, este prevalecerá. De
+              lo contrario, se usará el <strong>margen override</strong>. Si
+              ambos están vacíos, se aplicará el margen base de la lista (
+              {priceList.baseMarginPercentage}%).
+            </p>
+          </div>
+        </div>
+      </ModalBase>
+
+      {/* Edit Exception Modal */}
+      <ModalBase
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          if (!isSubmitting) {
+            setIsEditModalOpen(false);
+            setEditingItem(null);
+          }
+        }}
+        title="Editar Excepción de Precio"
+        description={
+          editingItem?.productName
+            ? `Modificar precio para ${editingItem.productName}`
+            : "Modificar excepción de precio"
+        }
+        footer={
+          <ModalBaseFooter
+            onCancel={() => {
+              if (!isSubmitting) {
+                setIsEditModalOpen(false);
+                setEditingItem(null);
+              }
+            }}
+            onSave={handleEditException}
+            saveText="Guardar Cambios"
+            isLoading={isSubmitting}
+          />
+        }
+      >
+        <div className="space-y-4 py-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-overrideMargin">Margen Override (%)</Label>
+              <div className="relative">
+                <Percent
+                  className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none"
+                  aria-hidden="true"
+                />
+                <Input
+                  id="edit-overrideMargin"
+                  type="number"
+                  min={0}
+                  step={0.1}
+                  value={editOverrideMargin}
+                  onChange={(e) => setEditOverrideMargin(e.target.value)}
+                  placeholder="Ej: 35"
+                  className="pl-9 font-mono"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-fixedPrice">Precio Fijo ($)</Label>
+              <div className="relative">
+                <DollarSign
+                  className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none"
+                  aria-hidden="true"
+                />
+                <Input
+                  id="edit-fixedPrice"
+                  type="number"
+                  min={0}
+                  step={0.01}
+                  value={editFixedPrice}
+                  onChange={(e) => setEditFixedPrice(e.target.value)}
                   placeholder="Ej: 1500"
                   className="pl-9 font-mono"
                 />

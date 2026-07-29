@@ -336,7 +336,8 @@ export async function deletePriceList(id: string): Promise<void> {
   revalidatePublicCatalog();
 }
 
-// CREATE price list item (exception)
+// UPSERT price list item (exception)
+// If an item already exists for (priceListId, productId), update it instead of failing.
 export async function createPriceListItem(
   priceListId: string,
   input: CreatePriceListItemInput
@@ -361,15 +362,25 @@ export async function createPriceListItem(
 
   const replacementCost = getProductBaseCost(prod.replacementCost, prod.costPrice);
 
-  // Create the item
-  const [item] = await db.insert(priceListItem).values({
-    id: randomUUID(),
-    priceListId,
-    productId: input.productId,
-    overrideMarginPercentage: input.overrideMarginPercentage != null ? input.overrideMarginPercentage.toString() : null,
-    fixedPrice: input.fixedPrice != null ? input.fixedPrice.toString() : null,
-    updatedAt: new Date().toISOString(),
-  }).returning();
+  // Upsert: insert or update on conflict (priceListId, productId)
+  const [item] = await db.insert(priceListItem)
+    .values({
+      id: randomUUID(),
+      priceListId,
+      productId: input.productId,
+      overrideMarginPercentage: input.overrideMarginPercentage != null ? input.overrideMarginPercentage.toString() : null,
+      fixedPrice: input.fixedPrice != null ? input.fixedPrice.toString() : null,
+      updatedAt: new Date().toISOString(),
+    })
+    .onConflictDoUpdate({
+      target: [priceListItem.priceListId, priceListItem.productId],
+      set: {
+        overrideMarginPercentage: input.overrideMarginPercentage != null ? input.overrideMarginPercentage.toString() : null,
+        fixedPrice: input.fixedPrice != null ? input.fixedPrice.toString() : null,
+        updatedAt: new Date().toISOString(),
+      },
+    })
+    .returning();
 
   // Fetch with product relation
   const itemWithProduct = await db.query.priceListItem.findFirst({
@@ -426,6 +437,99 @@ export async function createPriceListItem(
 export async function deletePriceListItem(id: string): Promise<void> {
   await db.delete(priceListItem).where(eq(priceListItem.id, id));
   revalidatePublicCatalog();
+}
+
+// UPDATE price list item by id
+export async function updatePriceListItem(
+  id: string,
+  input: Partial<CreatePriceListItemInput>
+): Promise<PriceListItem> {
+  const existing = await db.query.priceListItem.findFirst({
+    where: eq(priceListItem.id, id),
+  });
+
+  if (!existing) {
+    throw new Error('Price list item not found');
+  }
+
+  const pl = await db.query.priceList.findFirst({
+    where: eq(priceList.id, existing.priceListId),
+  });
+
+  if (!pl) {
+    throw new Error('Price list not found');
+  }
+
+  const prod = existing.productId
+    ? await db.query.product.findFirst({ where: eq(product.id, existing.productId) })
+    : null;
+
+  if (!prod) {
+    throw new Error('Product not found');
+  }
+
+  const replacementCost = getProductBaseCost(prod.replacementCost, prod.costPrice);
+
+  const [item] = await db.update(priceListItem)
+    .set({
+      overrideMarginPercentage: input.overrideMarginPercentage != null
+        ? input.overrideMarginPercentage.toString()
+        : null,
+      fixedPrice: input.fixedPrice != null ? input.fixedPrice.toString() : null,
+      updatedAt: new Date().toISOString(),
+    })
+    .where(eq(priceListItem.id, id))
+    .returning();
+
+  const itemWithProduct = await db.query.priceListItem.findFirst({
+    where: eq(priceListItem.id, item.id),
+    with: {
+      product: {
+        columns: {
+          id: true,
+          name: true,
+          sku: true,
+          replacementCost: true,
+          costPrice: true,
+        },
+      },
+    },
+  });
+
+  const minimumMargin = await getMinimumMargin();
+
+  const finalPrice = item.fixedPrice !== null
+    ? Number(item.fixedPrice)
+    : calculateFinalPrice(
+        replacementCost,
+        Number(pl.baseMarginPercentage),
+        pl.roundingRule as RoundingRule,
+        item.overrideMarginPercentage !== null
+          ? { overrideMarginPercentage: Number(item.overrideMarginPercentage) }
+          : undefined
+      );
+
+  const actualMargin = calculateMarginPercentage(replacementCost, finalPrice);
+
+  revalidatePublicCatalog();
+
+  return {
+    id: item.id,
+    priceListId: item.priceListId,
+    productId: item.productId,
+    productName: itemWithProduct?.product?.name || 'Unknown Product',
+    productSku: itemWithProduct?.product?.sku || undefined,
+    replacementCost,
+    overrideMarginPercentage: item.overrideMarginPercentage !== null
+      ? Number(item.overrideMarginPercentage)
+      : null,
+    fixedPrice: item.fixedPrice !== null ? Number(item.fixedPrice) : null,
+    finalPrice,
+    actualMargin,
+    isBelowMinimum: actualMargin < minimumMargin,
+    createdAt: new Date(item.createdAt),
+    updatedAt: new Date(item.updatedAt),
+  };
 }
 
 // Calculate price for a product in a specific price list
