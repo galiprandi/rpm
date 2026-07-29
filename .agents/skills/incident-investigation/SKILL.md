@@ -13,6 +13,44 @@ Procedimiento obligatorio cuando un cliente reporta un bug, error o incidente.
 - Se detecta un comportamiento inesperado en producción
 - Sentry alerta de un error nuevo en Discord
 
+## Configuración del ambiente
+
+Todos los tokens y credenciales viven en `.env.local` (no commiteado). Los CLIs los leen de ahí.
+
+### Sentry CLI
+
+- **Token:** `SENTRY_AUTH_TOKEN` en `.env.local`
+- **Org/Project:** `.sentryclirc` en la raíz del repo (commiteado, sin secretos)
+- **Scripts:** `pnpm sentry:issues`, `pnpm sentry:releases`, `pnpm sentry:info`
+- **Cómo funciona:** `dotenv-cli` carga `.env.local` y pasa el token a `npx sentry-cli`
+
+### Vercel
+
+- **Auth:** `vercel` CLI linkeado al proyecto (`vercel link`)
+- **Project:** `.vercel/project.json` (auto-generado por `vercel link`)
+- **Nota:** El CLI está linkeado a `german-aliprandis-projects/rpm` pero el proyecto real está en `rpmsysadim-5965s-projects/rpm`. Usar Chrome MCP para acceso confiable.
+- **Acceso principal:** Chrome MCP navegando a `https://vercel.com/rpmsysadim-5965s-projects/rpm/`
+- **Token OIDC:** `VERCEL_OIDC_TOKEN` en `.env.local` (auto-generado por `vercel link`)
+
+### Neon (PostgreSQL)
+
+- **Connection string:** `DATABASE_URL` en `.env.local`
+- **CLI:** `npx neon` o Neon MCP server (`Neon 💾` en Devin)
+- **psql local:** `pnpm exec dotenv -e .env.local -- bash -c 'psql "$DATABASE_URL" -c "<query>"'`
+- **Regla:** Solo queries de lectura durante investigación. Nunca modificar datos sin confirmación.
+
+### Git
+
+- **Auth:** SSH keys configurados en `~/.ssh/` o token HTTPS en git config
+- **Remote:** `github.com-personal:galiprandi/rpm.git` (SSH)
+- **Comandos directos:** `git log`, `git diff`, `git blame` — sin auth extra
+
+### Chrome MCP
+
+- **Perfil:** `Chrome perfil RPM` en Devin MCP config
+- **Acceso:** Navegación a URLs de producción (`https://rpm-wheat.vercel.app/`) y dashboards (Sentry, Vercel)
+- **Sin tokens:** Usa la sesión del browser, no necesita credenciales aparte
+
 ## Flujo de investigación
 
 ### Step 1: Sentry — errores recientes
@@ -54,14 +92,16 @@ Solo si el incidente puede estar relacionado con datos:
 - "El stock no coincide"
 
 ```bash
-# Conexión a DB local o Neon según .env.local
-# Usar queries específicas, NO explorar toda la BD
+# Conexión a DB via .env.local
+pnpm exec dotenv -e .env.local -- bash -c 'psql "$DATABASE_URL" -c "SELECT id, name, active FROM product WHERE name ILIKE '\''%<nombre>%'\''"'
+
+# O usar Neon MCP server si está disponible
 ```
 
-Ejemplos:
-- Producto desaparecido: `SELECT id, name, active FROM products WHERE name ILIKE '%<nombre>%'`
-- Precio incorrecto: `SELECT * FROM price_list_items WHERE product_id = '<id>'`
-- OT no aparece: `SELECT id, status, created_at FROM work_orders WHERE customer_id = '<id>' ORDER BY created_at DESC LIMIT 5`
+Ejemplos (tablas son singulares: `product`, `price_list_item`, `work_order`):
+- Producto desaparecido: `SELECT id, name, active FROM product WHERE name ILIKE '%<nombre>%'`
+- Precio incorrecto: `SELECT * FROM price_list_item WHERE product_id = '<id>'`
+- OT no aparece: `SELECT id, status, created_at FROM work_order WHERE customer_id = '<id>' ORDER BY created_at DESC LIMIT 5`
 
 ### Step 4: Git — cambios recientes
 
@@ -104,11 +144,12 @@ Antes de proponer cualquier fix, presentar al usuario:
 
 ## Herramientas disponibles
 
-| Herramienta | Comando | Para qué |
-|---|---|---|
-| Sentry CLI | `pnpm sentry:issues` | Ver errores capturados |
-| Sentry CLI | `pnpm sentry:releases` | Ver releases y source maps |
-| Vercel | Chrome MCP a deployments page | Estado de deploys |
-| Neon | `psql` o Neon MCP | Queries a la BD |
-| Git | `git log`, `git diff` | Cambios recientes |
-| Chrome MCP | Navegar a la URL afectada | Reproducir el error visualmente |
+| Herramienta | Comando | Auth | Para qué |
+|---|---|---|---|
+| Sentry CLI | `pnpm sentry:issues` | `SENTRY_AUTH_TOKEN` en `.env.local` | Ver errores capturados |
+| Sentry CLI | `pnpm sentry:releases` | `SENTRY_AUTH_TOKEN` en `.env.local` | Ver releases y source maps |
+| Vercel | Chrome MCP a deployments page | Sesión del browser | Estado de deploys |
+| Neon | `pnpm exec dotenv -e .env.local -- bash -c 'psql "$DATABASE_URL" ...'` | `DATABASE_URL` en `.env.local` | Queries a la BD |
+| Neon MCP | `Neon 💾` server en Devin | OAuth | Queries a la BD |
+| Git | `git log`, `git diff` | SSH keys | Cambios recientes |
+| Chrome MCP | Navegar a la URL afectada | Sesión del browser | Reproducir el error visualmente |
