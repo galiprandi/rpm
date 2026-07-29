@@ -33,6 +33,11 @@
       "source": "mindrally/skills",
       "sourceType": "github",
       "computedHash": "d169826735a2241ac893ecc97985e8c1dd15944fd38e4ecf1ae57e85c01df2d6"
+    },
+    "sentry-cli": {
+      "source": "cli.sentry.dev",
+      "sourceType": "well-known",
+      "computedHash": "e2bf3c521caa54d20bb3b6efd2ee74b2759ae325d73a3791aa70d4ea555f1715"
     }
   }
 }
