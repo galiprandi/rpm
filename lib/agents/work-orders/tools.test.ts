@@ -178,7 +178,7 @@ describe('registerWorkOrderPaymentTool', () => {
     expect(mockDb.update).not.toHaveBeenCalled(); // No status update because not fully paid
   });
 
-  it('should register payment and transition status to PAID if fully paid', async () => {
+  it('should register payment and NOT transition status to PAID when fully paid', async () => {
     mockIsCashRegisterOpen.mockResolvedValueOnce(true);
     // OT total 1000, already paid 500, new payment 500
     mockDb.query.workOrder.findFirst.mockResolvedValueOnce({
@@ -204,10 +204,9 @@ describe('registerWorkOrderPaymentTool', () => {
     const result = await registerWorkOrderPaymentTool.execute(mockInput, {} as any);
 
     expect(result).toContain('Pago registrado exitosamente');
-    expect(result).toContain('PAID (Totalmente pagada)');
-    expect(mockDb.update).toHaveBeenCalled();
-    expect(setFn).toHaveBeenCalledWith(
-      expect.objectContaining({ status: 'PAID' }),
-    );
+    expect(result).toContain('Totalmente pagada');
+    // Payment status is tracked via isFullyPaid, NOT by changing the OT status.
+    // "PAID" is not a kanban column — setting it would make the OT disappear.
+    expect(mockDb.update).not.toHaveBeenCalled();
   });
 });

@@ -224,12 +224,12 @@ export async function POST(
     const pendingAmount = Math.max(0, workOrderTotal - totalPaid);
     const isFullyPaid = totalPaid >= workOrderTotal;
 
-    // Update work order status to PAID if fully paid
-    if (isFullyPaid) {
-      await db.update(workOrder)
-        .set({ status: "PAID" })
-        .where(eq(workOrder.id, workOrderId));
-    }
+    // Note: We intentionally do NOT change the work order status to "PAID".
+    // The payment status is tracked via the isFullyPaid flag (computed from payments)
+    // and shown with color-coded badges in the kanban. The kanban only has 6 columns
+    // (CONFIRMED, WAITING, IN_PROGRESS, QC_CHECK, READY, DELIVERED) — "PAID" is not
+    // a kanban column, so setting it would make the OT disappear from the board.
+    // The OT should remain in its current workflow status until manually moved.
 
     invalidateCashStatus();
 
