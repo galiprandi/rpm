@@ -12,6 +12,7 @@ import {
   Clock,
   Users,
   Download,
+  Printer,
 } from "lucide-react";
 import { formatARS } from "@/lib/utils/format";
 import {
@@ -22,6 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PurchaseReportData, type PurchaseGroupBy } from "@/lib/services/purchaseReportService";
+import { cn } from "@/lib/utils";
 import {
   Table,
   TableBody,
@@ -40,6 +42,17 @@ type Period =
   | "last12months"
   | "thisYear"
   | "custom";
+
+const periodLabels: Record<Period, string> = {
+  today: "Hoy",
+  last7days: "Últimos 7 días",
+  last30days: "Últimos 30 días",
+  thisMonth: "Este mes",
+  lastMonth: "Mes pasado",
+  last12months: "Últimos 12 meses",
+  thisYear: "Este año",
+  custom: "Personalizado"
+};
 
 export default function PurchasesReportClient() {
   const [period, setPeriod] = useState<Period>("last30days");
@@ -239,6 +252,13 @@ export default function PurchasesReportClient() {
         title="Reporte de Compras"
         description="Métricas de abastecimiento, proveedores y evolución de costos."
         secondaryActions={[
+          {
+            label: "Imprimir",
+            onClick: () => window.print(),
+            disabled: !data || loading,
+            icon: Printer,
+            variant: "outline",
+          },
           {
             label: "Exportar CSV",
             onClick: exportToCSV,
@@ -529,6 +549,181 @@ export default function PurchasesReportClient() {
           </>
         )
       )}
+
+      {/* Sección de Impresión (Solo visible al imprimir) */}
+      {data && (
+        <div className="hidden print:block font-sans p-6 text-black bg-white" id="print-section">
+          {/* Header de la Empresa */}
+          <div className="flex justify-between items-start border-b-2 border-zinc-900 pb-4 mb-6">
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight text-zinc-900">RPM ACCESORIOS</h1>
+              <p className="text-xs text-zinc-500 uppercase font-medium mt-0.5">Taller de Equipamiento y Estética Vehicular</p>
+              <p className="text-[11px] text-zinc-400 font-mono mt-1">Sarmiento 1234, Rosario, Santa Fe | Tel: 341-5556789</p>
+            </div>
+            <div className="text-right">
+              <div className="border border-zinc-900 text-zinc-900 font-bold text-xs py-1 px-3 uppercase tracking-wider inline-block rounded">
+                Reporte de Compras & Abastecimiento
+              </div>
+              <p className="text-xs text-zinc-500 font-mono mt-2">
+                Fecha de Emisión: {new Date().toLocaleDateString("es-AR")}
+              </p>
+              <p className="text-[11px] text-zinc-500 font-mono mt-1">
+                Período: {periodLabels[period]} ({getDatesForPeriod(period).startDate.toLocaleDateString("es-AR")} - {getDatesForPeriod(period).endDate.toLocaleDateString("es-AR")})
+              </p>
+            </div>
+          </div>
+
+          {/* Resumen de KPIs */}
+          <div className="grid grid-cols-3 gap-4 border border-zinc-300 rounded-lg p-4 mb-6 bg-zinc-50/50">
+            <div className="space-y-1">
+              <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">Compras Totales</span>
+              <p className="text-sm font-bold font-mono text-zinc-900">{formatARS(data.totalPurchases.current)}</p>
+            </div>
+            <div className="space-y-1">
+              <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">Cantidad de Comprobantes</span>
+              <p className="text-sm font-bold font-mono text-zinc-900">{data.voucherCount.current}</p>
+            </div>
+            <div className="space-y-1">
+              <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">Comprobante Promedio</span>
+              <p className="text-sm font-bold font-mono text-zinc-900">{formatARS(data.averageVoucher.current)}</p>
+            </div>
+          </div>
+
+          {/* Dos columnas en impresión: Top Proveedores y Evolución de Compras */}
+          <div className="grid grid-cols-3 gap-6 mb-6 print:break-inside-avoid">
+            {/* Top Proveedores */}
+            <div className="col-span-1">
+              <h2 className="text-xs font-bold text-zinc-800 uppercase tracking-wider mb-2">Top Proveedores</h2>
+              <div className="border border-zinc-300 rounded-lg overflow-hidden">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-zinc-100 border-b border-zinc-300 text-[11px] font-bold text-zinc-700 uppercase">
+                      <th className="p-2">Proveedor</th>
+                      <th className="p-2 text-right">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.supplierDistribution.length === 0 ? (
+                      <tr>
+                        <td colSpan={2} className="p-4 text-center text-xs text-zinc-500 italic">
+                          Sin compras registradas
+                        </td>
+                      </tr>
+                    ) : (
+                      data.supplierDistribution.slice(0, 10).map((item) => (
+                        <tr key={item.supplierId} className="border-b border-zinc-200 text-[11px]">
+                          <td className="p-2 font-medium truncate max-w-[120px]">{item.supplierName}</td>
+                          <td className="p-2 text-right font-mono font-bold text-zinc-900">{formatARS(item.total)}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Evolución Detallada por Período */}
+            <div className="col-span-2">
+              <h2 className="text-xs font-bold text-zinc-800 uppercase tracking-wider mb-2">Evolución Detallada</h2>
+              <div className="border border-zinc-300 rounded-lg overflow-hidden">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-zinc-100 border-b border-zinc-300 text-[11px] font-bold text-zinc-700 uppercase">
+                      <th className="p-2">
+                        {data.groupBy === "hour"
+                          ? "Hora"
+                          : data.groupBy === "month"
+                            ? "Mes"
+                            : "Fecha"}
+                      </th>
+                      <th className="p-2 text-right">Compras</th>
+                      <th className="p-2 text-right">Cant.</th>
+                      <th className="p-2 text-right">Promedio</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.evolution.filter((e) => e.total > 0).length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="p-4 text-center text-xs text-zinc-500 italic">
+                          Sin datos para este período
+                        </td>
+                      </tr>
+                    ) : (
+                      data.evolution
+                        .filter((e) => e.total > 0)
+                        .slice()
+                        .reverse()
+                        .slice(0, 15)
+                        .map((item, idx) => (
+                          <tr key={idx} className="border-b border-zinc-200 text-[11px]">
+                            <td className="p-2 font-medium">{item.label}</td>
+                            <td className="p-2 text-right font-mono font-bold text-red-700">{formatARS(item.total)}</td>
+                            <td className="p-2 text-right">{item.count}</td>
+                            <td className="p-2 text-right font-mono">{formatARS(item.count > 0 ? item.total / item.count : 0)}</td>
+                          </tr>
+                        ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          {/* Firmas de Control */}
+          <div className="grid grid-cols-2 gap-12 mt-12 mb-8 print:break-inside-avoid">
+            <div className="flex flex-col items-center">
+              <div className="w-48 border-b border-zinc-400 h-10" />
+              <span className="text-[11px] text-zinc-500 font-semibold uppercase tracking-wider mt-2">
+                Responsable de Compras
+              </span>
+            </div>
+            <div className="flex flex-col items-center">
+              <div className="w-48 border-b border-zinc-400 h-10" />
+              <span className="text-[11px] text-zinc-500 font-semibold uppercase tracking-wider mt-2">
+                Firma Autorizada Gerencia
+              </span>
+            </div>
+          </div>
+
+          {/* Pie de Página */}
+          <div className="text-center border-t border-zinc-200 pt-4 text-[11px] text-zinc-400 font-mono">
+            RPM Accesorios © {new Date().getFullYear()} - Reporte de Abastecimiento, Control de Proveedores y Auditoría de Costos.
+          </div>
+        </div>
+      )}
+
+      {/* Estilos para impresión */}
+      <style media="print">
+        {`
+          @media print {
+            aside,
+            [data-sidebar="sidebar"],
+            .print\\:hidden,
+            button,
+            header,
+            footer,
+            nav,
+            .web-mcp-tools,
+            #chat-floating-button,
+            [role="dialog"],
+            .DialogOverlay {
+              display: none !important;
+            }
+
+            main, .container, body {
+              padding: 0 !important;
+              margin: 0 !important;
+              max-width: none !important;
+              background: white !important;
+              color: black !important;
+            }
+
+            .container {
+              width: 100% !important;
+            }
+          }
+        `}
+      </style>
     </div>
   );
 }
