@@ -56,6 +56,7 @@ export function ChatFloating({
     controlledIsOpen !== undefined ? controlledIsOpen : internalIsOpen;
   const setIsOpen = onOpenChange || setInternalIsOpen;
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [detectedBarcode, setDetectedBarcode] = useState<{ value: string; format: string } | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -76,6 +77,32 @@ export function ChatFloating({
       }
     };
   }, []);
+
+  // Generate and manage object URL for local image preview
+  useEffect(() => {
+    if (!attachedFile || !attachedFile.type.startsWith("image/")) {
+      setPreviewUrl(null);
+      return;
+    }
+
+    const url = URL.createObjectURL(attachedFile);
+    setPreviewUrl(url);
+
+    return () => {
+      URL.revokeObjectURL(url);
+      setPreviewUrl(null);
+    };
+  }, [attachedFile]);
+
+  // Clean up attached file when chat closes
+  useEffect(() => {
+    if (!isOpen) {
+      setAttachedFile(null);
+      setDetectedBarcode(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      if (cameraInputRef.current) cameraInputRef.current.value = "";
+    }
+  }, [isOpen]);
 
   // Check if speech recognition is supported in the current environment/browser
   const isSpeechSupported = useMemo(() => {
@@ -977,10 +1004,25 @@ export function ChatFloating({
           <form onSubmit={onSubmit} className="p-4 border-t">
             {attachedFile && (
               <div className="mb-2 flex flex-col gap-1.5 p-2 bg-muted rounded-md">
-                <div className="flex items-center justify-between w-full">
-                  <span className="text-sm truncate flex-1 font-medium text-foreground">
-                    📎 {attachedFile.name}
-                  </span>
+                <div className="flex items-center gap-3 justify-between w-full">
+                  <div className="flex items-center gap-2 overflow-hidden flex-1">
+                    {previewUrl ? (
+                      <div className="relative w-10 h-10 rounded-md border bg-background overflow-hidden flex-shrink-0 shadow-sm">
+                        <img
+                          src={previewUrl}
+                          alt="Previsualización"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-10 h-10 rounded-md border bg-background flex items-center justify-center flex-shrink-0 shadow-sm text-[10px] font-mono font-bold text-primary bg-primary/5 uppercase">
+                        {attachedFile.name.split(".").pop()?.slice(0, 4).toUpperCase() || "FILE"}
+                      </div>
+                    )}
+                    <span className="text-sm truncate font-medium text-foreground">
+                      {attachedFile.name}
+                    </span>
+                  </div>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button

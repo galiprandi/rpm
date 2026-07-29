@@ -317,4 +317,76 @@ describe("ChatFloating Component", () => {
     rerender(<ChatFloating isOpen={true} />);
     expect(screen.getByRole("button", { name: /📊 Resumen diario/i })).toBeInTheDocument();
   });
+
+  it("renders a thumbnail image preview for attached image files", async () => {
+    const mockCreateObjectURL = vi.fn().mockReturnValue("blob:http://localhost/mock-preview-url");
+    const mockRevokeObjectURL = vi.fn();
+    window.URL.createObjectURL = mockCreateObjectURL;
+    window.URL.revokeObjectURL = mockRevokeObjectURL;
+
+    const { container } = render(<ChatFloating isOpen={true} />);
+    const fileInput = container.querySelector('input[type="file"]');
+    const file = new File(["dummy image"], "test-image.png", { type: "image/png" });
+
+    await act(async () => {
+      fireEvent.change(fileInput!, { target: { files: [file] } });
+    });
+
+    // Check that createObjectURL was called with the file
+    expect(mockCreateObjectURL).toHaveBeenCalledWith(file);
+
+    // Verify the image thumbnail preview is displayed
+    const previewImg = screen.getByAltText("Previsualización");
+    expect(previewImg).toBeInTheDocument();
+    expect(previewImg).toHaveAttribute("src", "blob:http://localhost/mock-preview-url");
+
+    // Click to remove file
+    const removeBtn = screen.getByRole("button", { name: /Quitar archivo adjunto/i });
+    await act(async () => {
+      fireEvent.click(removeBtn);
+    });
+
+    // Verify preview and file are cleared, and revokeObjectURL was called
+    expect(screen.queryByAltText("Previsualización")).not.toBeInTheDocument();
+    expect(mockRevokeObjectURL).toHaveBeenCalledWith("blob:http://localhost/mock-preview-url");
+  });
+
+  it("renders a capitalized file extension fallback badge for attached non-image files", async () => {
+    const { container } = render(<ChatFloating isOpen={true} />);
+    const fileInput = container.querySelector('input[type="file"]');
+    const file = new File(["dummy pdf"], "document.pdf", { type: "application/pdf" });
+
+    await act(async () => {
+      fireEvent.change(fileInput!, { target: { files: [file] } });
+    });
+
+    // Check that fallback extension badge displays 'PDF'
+    const extensionBadge = screen.getByText("PDF");
+    expect(extensionBadge).toBeInTheDocument();
+    expect(screen.getByText("document.pdf")).toBeInTheDocument();
+    expect(screen.queryByAltText("Previsualización")).not.toBeInTheDocument();
+  });
+
+  it("automatically clears attached file state and revokes url when chat isOpen is set to false", async () => {
+    const mockCreateObjectURL = vi.fn().mockReturnValue("blob:http://localhost/mock-preview-url-close");
+    const mockRevokeObjectURL = vi.fn();
+    window.URL.createObjectURL = mockCreateObjectURL;
+    window.URL.revokeObjectURL = mockRevokeObjectURL;
+
+    const { container, rerender } = render(<ChatFloating isOpen={true} />);
+    const fileInput = container.querySelector('input[type="file"]');
+    const file = new File(["dummy image"], "close-test.jpg", { type: "image/jpeg" });
+
+    await act(async () => {
+      fireEvent.change(fileInput!, { target: { files: [file] } });
+    });
+
+    expect(screen.getByAltText("Previsualización")).toBeInTheDocument();
+
+    // Close the chat
+    rerender(<ChatFloating isOpen={false} />);
+
+    // Verify revokeObjectURL was called
+    expect(mockRevokeObjectURL).toHaveBeenCalledWith("blob:http://localhost/mock-preview-url-close");
+  });
 });
