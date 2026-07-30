@@ -1,22 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSessionWithAuth } from "@/lib/api-middleware";
-import { hasRole, UserRole } from "@/lib/auth/roles";
+import { withStaff, withPermission } from "@/lib/api-middleware";
 import { db } from "@/lib/db";
 import { cashMovement } from "@/db/schema";
 import { eq, gte, lte, and, desc } from "drizzle-orm";
-import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
 import { invalidateCashStatus } from "@/lib/cache";
 import { toISODate } from "@/lib/utils/date";
 
 // GET /api/cash-movements - List cash movements
-export async function GET(request: NextRequest) {
+export const GET = withStaff(async (request: NextRequest) => {
   try {
-    const session = await getSessionWithAuth();
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const { searchParams } = request.nextUrl;
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
@@ -53,24 +46,11 @@ export async function GET(request: NextRequest) {
       { status: 500 },
     );
   }
-}
+});
 
-// POST /api/cash-movements - Create manual cash movement
-export async function POST(request: NextRequest) {
+// POST /api/cash-movements - Create manual cash movement (requiere can_manage_cash)
+export const POST = withPermission('can_manage_cash', async (request: NextRequest, session) => {
   try {
-    const session = await getSessionWithAuth();
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const userRole = await hasRole(session.user.id, UserRole.ADMIN);
-    if (!userRole) {
-      return NextResponse.json(
-        { error: "Only ADMIN can create manual cash movements" },
-        { status: 403 },
-      );
-    }
-
     const body = await request.json();
     const { type, amount, method, reason, notes } = body;
 
@@ -112,4 +92,4 @@ export async function POST(request: NextRequest) {
       { status: 500 },
     );
   }
-}
+});
