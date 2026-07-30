@@ -3,6 +3,15 @@ import { render, screen, fireEvent, act } from "@testing-library/react";
 import { ChatFloating } from "./ChatFloating";
 import React from "react";
 
+// Mock URL createObjectURL and revokeObjectURL for memory management testing
+const mockCreateObjectURL = vi.fn().mockReturnValue("blob:mock-url");
+const mockRevokeObjectURL = vi.fn();
+
+if (typeof window !== "undefined") {
+  window.URL.createObjectURL = mockCreateObjectURL;
+  window.URL.revokeObjectURL = mockRevokeObjectURL;
+}
+
 // Mock scrollIntoView for HTMLElement in JSDOM
 HTMLElement.prototype.scrollIntoView = vi.fn();
 
@@ -74,6 +83,8 @@ vi.mock("@/components/ui/tooltip", () => ({
 describe("ChatFloating Component", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockCreateObjectURL.mockClear();
+    mockRevokeObjectURL.mockClear();
     mockMessages = [];
     mockPathname = "/adm/dashboard";
     // Clear global speech recognition mocks
@@ -316,5 +327,47 @@ describe("ChatFloating Component", () => {
     mockPathname = "/adm/reports";
     rerender(<ChatFloating isOpen={true} />);
     expect(screen.getByRole("button", { name: /📊 Resumen diario/i })).toBeInTheDocument();
+  });
+
+  it("renders local image preview thumbnail and cleans it up via URL.revokeObjectURL", async () => {
+    const { container } = render(<ChatFloating isOpen={true} />);
+    const fileInput = container.querySelector('input[type="file"]');
+    const file = new File(["dummy image"], "test-pic.png", { type: "image/png" });
+
+    await act(async () => {
+      fireEvent.change(fileInput!, { target: { files: [file] } });
+    });
+
+    // Check that createObjectURL was called and image preview is displayed
+    expect(mockCreateObjectURL).toHaveBeenCalledWith(file);
+    const previewImg = screen.getByAltText("Vista previa");
+    expect(previewImg).toBeInTheDocument();
+    expect(previewImg).toHaveAttribute("src", "blob:mock-url");
+
+    // Remove the file and verify revocation
+    const removeBtn = screen.getByRole("button", { name: /quitar archivo adjunto/i });
+    await act(async () => {
+      fireEvent.click(removeBtn);
+    });
+
+    expect(mockRevokeObjectURL).toHaveBeenCalledWith("blob:mock-url");
+    expect(screen.queryByAltText("Vista previa")).not.toBeInTheDocument();
+  });
+
+  it("renders fallback extension badge for non-image file uploads with no object URL creation", async () => {
+    const { container } = render(<ChatFloating isOpen={true} />);
+    const fileInput = container.querySelector('input[type="file"]');
+    const file = new File(["dummy text"], "notes.txt", { type: "text/plain" });
+
+    await act(async () => {
+      fireEvent.change(fileInput!, { target: { files: [file] } });
+    });
+
+    // Verify createObjectURL was NOT called
+    expect(mockCreateObjectURL).not.toHaveBeenCalled();
+
+    // Verify fallback extension badge is rendered
+    expect(screen.getByText("TXT")).toBeInTheDocument();
+    expect(screen.queryByAltText("Vista previa")).not.toBeInTheDocument();
   });
 });

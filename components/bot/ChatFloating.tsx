@@ -68,6 +68,40 @@ export function ChatFloating({
   const confirmClearTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<any>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  // Compute file extension for non-image file uploads fallback badge
+  const fileExtension = useMemo(() => {
+    if (!attachedFile) return "";
+    const parts = attachedFile.name.split(".");
+    return parts.length > 1 ? parts[parts.length - 1].toUpperCase() : "FILE";
+  }, [attachedFile]);
+
+  // Handle attached image preview & memory cleanup (object URL)
+  useEffect(() => {
+    if (!attachedFile) {
+      setPreviewUrl(null);
+      return;
+    }
+
+    if (attachedFile.type.startsWith("image/")) {
+      const url = URL.createObjectURL(attachedFile);
+      setPreviewUrl(url);
+      return () => {
+        URL.revokeObjectURL(url);
+      };
+    } else {
+      setPreviewUrl(null);
+    }
+  }, [attachedFile]);
+
+  // Ensure attached file is cleared when chat closes
+  useEffect(() => {
+    if (!isOpen) {
+      setAttachedFile(null);
+      setDetectedBarcode(null);
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     return () => {
@@ -977,16 +1011,32 @@ export function ChatFloating({
           <form onSubmit={onSubmit} className="p-4 border-t">
             {attachedFile && (
               <div className="mb-2 flex flex-col gap-1.5 p-2 bg-muted rounded-md">
-                <div className="flex items-center justify-between w-full">
-                  <span className="text-sm truncate flex-1 font-medium text-foreground">
-                    📎 {attachedFile.name}
-                  </span>
+                <div className="flex items-center gap-2 w-full">
+                  {previewUrl ? (
+                    <img
+                      src={previewUrl}
+                      alt="Vista previa"
+                      className="h-10 w-10 object-cover rounded border bg-background shrink-0"
+                    />
+                  ) : (
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded border bg-muted text-[10px] font-bold text-muted-foreground uppercase">
+                      {fileExtension}
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm truncate font-medium text-foreground">
+                      {attachedFile.name}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {(attachedFile.size / 1024).toFixed(1)} KB
+                    </p>
+                  </div>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
                         type="button"
                         variant="ghost"
-                        className="h-7 w-7 hover:bg-background/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1 rounded-full p-0.5"
+                        className="h-7 w-7 hover:bg-background/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1 rounded-full p-0.5 shrink-0"
                         onClick={handleRemoveFile}
                         aria-label="Quitar archivo adjunto"
                       >
