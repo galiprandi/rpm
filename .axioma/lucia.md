@@ -1,6 +1,12 @@
 ## 📋 BACKLOG
 
 ## ✅ DONE
+- [x] 2026-07-31 — Filtro Avanzado de Antigüedad y Búsqueda en Reporte de Deudores
+  - Implementación de filtros client-side avanzados en el Reporte de Deudores (`app/adm/reports/debtors/DebtorsClient.tsx`), permitiendo segmentar por antigüedad de la deuda (deudas mayores a 30, 60, 90 días, o deudas recientes inferiores a 30 días).
+  - Integración de barra de búsqueda global en la DataTable para buscar deudores por nombre, teléfonos, email, o por patentes de vehículos registrados.
+  - Recálculo en tiempo real de los indicadores KPI de resumen (Deuda Total, Clientes Deudores, OTs, Promedio de Deuda) tanto en pantalla como en el layout de impresión de alta fidelidad, asegurando consistencia absoluta entre lo que se ve en pantalla y el documento impreso.
+  - Sincronización de la exportación a CSV para respetar los filtros y búsquedas aplicadas activamente por el usuario.
+  - Cobertura completa de pruebas de filtrado y búsqueda en `DebtorsClient.test.tsx` garantizando la robustez del flujo.
 - [x] 2026-07-30 — Historial Financiero Unificado con Órdenes de Trabajo en Detalle de Cliente
   - Integración de Órdenes de Trabajo como transacciones de tipo `"INVOICE"` (Factura) directamente dentro de la tabla consolidada de "Historial de Transacciones" en la ficha de detalle de cliente (`app/adm/customers/[id]/page.tsx`). Esto unifica los movimientos de taller con las ventas directas, notas de crédito y pagos en una verdadera cuenta corriente unificada y cronológica.
   - Mapeo de conceptos técnicos con descripciones legibles ("Orden de Trabajo #CODE - Vehículo [PATENTE]") para los ítems de órdenes de trabajo.
@@ -68,7 +74,7 @@
   - Mensaje descriptivo "CUIT válido" en verde con un indicador de punto e input con bordes verde esmeralda para una UX limpia y agradable.
   - Validación del CUIT en el evento `onBlur` que advierte si la longitud es inferior a 11 dígitos.
   - Agregada protección de doble envío de formulario (`isSubmitting`) en los formularios de Clientes (`CustomerForm`) y Vehículos (`VehicleForm`).
-  - Suite de tests unitarios completa en `CustomerForm.test.tsx` cubriendo inputs, carga de initialData, validación en tiempo real de CUIT, validación onBlur y protección de doble envío.
+  - Suite de tests unitarios completa en `CustomerForm.test.tsx` cubriendo inputs, carga de initialData, validación en tiempo real de CUIT, validación onBlur and protección de doble envío.
 - [x] 2026-07-15 — Expansión de búsqueda y mejoras en reporte de deudores
   - Expansión de búsqueda en backend (`customerService.ts`) para incluir Email, Dirección y Patente.
   - Mejora visual en reporte de deudores para resaltar deudas con más de 30 días.
@@ -81,6 +87,10 @@
   - Mejora de navegación con botón de "Volver" en el detalle del cliente.
 
 ## 🧠 LEARNINGS
+## 2026-07-31 - Filtros Dinámicos Integrados con Métricas de Resumen y Exportación
+**Learning:** Al añadir herramientas de segmentación avanzada (como la antigüedad de la deuda y filtros de búsqueda) en reportes financieros de gran volumen, es fundamental que la UI reaccione como un todo integrado. El usuario final espera que, al realizar un filtro de cohorte (ej. ver solo deudores con más de 30 días), no solo se filtre la tabla, sino que también se recalculen de inmediato las tarjetas KPI de resumen (Deuda Total, Cuenta de Clientes, Promedio de Deuda) tanto en la pantalla como en los formatos de impresión física o exportación CSV. Esta sincronización elimina por completo discrepancias de datos y brinda una experiencia de altísimo nivel técnico.
+**Action:** Al filtrar listados que cuenten con paneles de estadísticas o layouts de impresión integrados, utilizar siempre computaciones de useMemo para recalcular los resúmenes de manera reactiva e inyectar el dataset filtrado unificado a todas las vistas derivadas.
+
 ## 2026-07-30 - Historial de Transacciones como Estado de Cuenta Corriente Real
 **Learning:** Una ficha de cliente que muestra por separado las órdenes de trabajo del resto de movimientos financieros (como notas de crédito y pagos) dificulta la interpretación cronológica del saldo de la cuenta corriente. Al consolidar todos estos tipos de transacciones de forma cronológica en un único historial unificado —tratando las órdenes de trabajo como transacciones debitadoras (`"INVOICE"`)—, el operador puede seguir perfectamente la evolución del balance del cliente. Adicionalmente, enriquecer el modal de resumen de transacciones con un botón de navegación directa a la entidad origen de la transacción reduce significativamente la fricción de navegación.
 **Action:** Unificar siempre todos los registros debitadores y acreditadores de una cuenta corriente en un único listado transaccional y ofrecer enlaces contextuales de navegación rápida.
@@ -118,7 +128,7 @@
 **Action:** Mantener la simetría de flujos financieros en vistas relacionadas (Clientes <-> Vehículos) para eliminar clics de navegación innecesarios.
 
 ## 2026-07-28 - Validación de CUIT en Tiempo Real de Alta Fidelidad
-**Learning:** Validar el CUIT en tiempo real inmediatamente al presionar teclas puede resultar frustrante si se muestra un error de longitud mientras el usuario apenas está escribiendo. Disparar la validación algorítmica (Fórmula de Módulo 11) exactamente cuando la longitud es 11 dígitos, y reservar la advertencia de longitud incompleta para el evento `onBlur`, proporciona un flujo sumamente natural e interactivo.
+**Learning:** Validar el CUIT en tiempo real inmediatamente al presionar teclas puede resultar frustrante si se muestra un error de longitud mientras el usuario apenas está escribiendo. Disparar la validación algorítmica (Fórmula de Módulo 11) exactamente cuando la longitud es 11 dígitos, and reservar la advertencia de longitud incompleta para el evento `onBlur`, proporciona un flujo sumamente natural e interactivo.
 **Action:** Usar este patrón híbrido (tiempo real a longitud fija + onBlur para campos incompletos) para campos de formato estructurado.
 
 ## 2025-07-24 - Estandarización de Datos Financieros
