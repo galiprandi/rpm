@@ -58,7 +58,7 @@ export function PublicHeader() {
                   key={item.name}
                   href={item.href}
                   className={cn(
-                    "text-[13px] font-medium transition-all duration-300 uppercase tracking-widest relative group/link",
+                    "text-[13px] font-medium transition-all duration-300 uppercase tracking-widest relative group/link focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none rounded px-2 py-1",
                     isActive ? "text-white" : "text-gray-400 hover:text-white"
                   )}
                 >
@@ -88,16 +88,16 @@ export function PublicHeader() {
                 Buscar
               </TooltipContent>
             </Tooltip>
-            <Link href="/login" className="text-[13px] font-medium text-gray-400 hover:text-white transition-all duration-300 uppercase tracking-widest">
+            <Link href="/login" className="text-[13px] font-medium text-gray-400 hover:text-white transition-all duration-300 uppercase tracking-widest focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none rounded px-2 py-1">
               Ingresar
             </Link>
-            <Button asChild variant="ghost" className="text-[13px] font-bold text-white hover:text-brand transition-colors uppercase tracking-widest">
+            <Button asChild variant="ghost" className="text-[13px] font-bold text-white hover:text-brand transition-colors uppercase tracking-widest focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none rounded px-2 py-1">
               <a href={PUBLIC_SITE_CONFIG.links.whatsapp(DEFAULT_WHATSAPP_MESSAGE)} target="_blank" rel="noopener noreferrer">
                 WhatsApp
               </a>
             </Button>
             <Link href="/contacto">
-              <Button className="bg-white text-black hover:bg-white/90 text-xs font-black rounded-full px-6 py-2 uppercase tracking-tighter transition-transform active:scale-95">
+              <Button className="bg-white text-black hover:bg-white/90 text-xs font-black rounded-full px-6 py-2 uppercase tracking-tighter transition-transform active:scale-95 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none">
                 Reservar
               </Button>
             </Link>
@@ -115,7 +115,7 @@ export function PublicHeader() {
             <Button
               variant="ghost"
               size="icon"
-              className="text-white"
+              className="text-white focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none rounded-lg"
               onClick={() => setIsOpen(!isOpen)}
               aria-label={isOpen ? "Cerrar menú de navegación" : "Abrir menú de navegación"}
             >
