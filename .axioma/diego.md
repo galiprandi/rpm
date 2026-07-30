@@ -3,6 +3,7 @@
 ## 📋 BACKLOG
 
 ## ✅ DONE
+- [x] 2026-07-30 — Vista de Impresión de Alta Fidelidad y Accesibilidad WCAG AA en Reporte de Taller: Añadida la acción secundaria "Imprimir" en el Reporte de Taller, diseñando una plantilla de impresión de alta fidelidad con KPIs de control operativo, distribución por estado de OT, performance de técnicos, evolución diaria/mensual y bloques de firmas de control de calidad. Elevada la legibilidad de colores semánticos a nivel 700 para cumplir con WCAG AA (4.5:1). (PR #diego/reports/workshop-print-layout-and-accessibility)
 - [x] 2026-07-28 — Vista de Impresión de Alta Fidelidad y Accesibilidad WCAG AA en Reporte de Ventas: Añadida la acción secundaria "Imprimir" en el Reporte de Ventas, diseñando una plantilla de impresión de alta fidelidad con KPIs de facturación, distribución de ventas por categoría, desglose de top productos/servicios y firmas de control comercial. Elevado el cumplimiento visual de accesibilidad para satisfacer estrictamente el estándar WCAG AA (4.5:1). (PR #diego/reports/sales-print-layout-and-accessibility)
 - [x] 2026-07-27 — Vista de Impresión y Contraste de Accesibilidad WCAG AA en Reporte de Finanzas: Añadida la acción secundaria "Imprimir" en el Reporte de Finanzas & Flujo, diseñando una plantilla de impresión de alta fidelidad con KPIs de control financiero, evolución diaria, distribución de pagos y firmas administrativas. Elevada la legibilidad de colores semánticos a nivel 700 para cumplir con WCAG AA (4.5:1). (PR #diego/reports/finance-print-layout-and-accessibility)
 - [x] 2026-07-24 — Implementación de Vista de Impresión y Contraste WCAG AA en Reporte de Deudores: Añadida acción secundaria "Imprimir" en el reporte de Deudores, diseñando una plantilla de impresión de alta fidelidad con KPIs, tabla de deudores formateada, y bloques de firmas de control. Elevada la legibilidad de colores semánticos a nivel 700 para cumplir con WCAG AA (4.5:1). (PR #diego/reports/debtors-print-and-accessibility-improvements)
@@ -26,6 +27,10 @@
 - [x] 2025-07-09 — Implementación de reporte de Clientes (adquisición, recurrencia y ranking) (PR #diego/reports/customer-report)
 
 ## 🧠 LEARNINGS
+## 2026-07-30 - Vista de Impresión de Alta Fidelidad y Accesibilidad WCAG AA en Reporte de Taller (Workshop)
+**Learning:** El Reporte de Taller (Workshop) permite auditar el flujo de operaciones, los cuellos de botella de estados de las OTs y medir la performance operativa de los técnicos. Habilitar la acción de impresión nativa y dar un formato estructurado con `@media print` permite al equipo de dirección y control archivar hojas de control de calidad y performance limpias de ruidos visuales de interfaz (como menús laterales, asistentes virtuales o cabeceras). Asimismo, elevar la legibilidad de colores semánticos a nivel de saturación `700` (`text-blue-700` y `text-emerald-700`) garantiza una experiencia visualmente inclusiva y de estricta conformidad con el estándar WCAG AA de contraste (4.5:1).
+**Action:** Diseñar siempre esquemas de impresión estructurados con la identidad de RPM Accesorios, desgloses tabulares de KPIs, distribuciones operativas y bloques de firmas para control interno y auditoría en taller.
+
 ## 2026-07-28 - Vista de Impresión de Alta Fidelidad y Accesibilidad WCAG AA en Reporte de Ventas
 **Learning:** El Reporte de Ventas y Facturación comercial es vital para auditorías de facturación e informes comerciales periódicos. Incorporar un botón de impresión nativa y dar un estilo de impresión específico (con `@media print` y contenedores ocultos que solo se muestran al imprimir) permite generar resúmenes impecables y legibles de KPIs, distribuciones de categorías, y productos estrella para presentación o archivo físico. Asimismo, asegurar niveles de contraste semánticos altos (de nivel `700`) contribuye de forma crítica al cumplimiento estricto del estándar de accesibilidad visual WCAG AA.
 **Action:** Diseñar siempre esquemas de impresión nativos estructurados con un formato corporativo coherente, firmas administrativas y alineación perfecta de columnas y filas en tablas analíticas.
@@ -87,5 +92,5 @@
 **Action:** Utilizar `Promise.all` para paralelizar queries y mantener el patrón de caching de 10 minutos en el API route.
 
 ## 2026-07-15 - Estimación de Costos (COGS)
-**Learning:** Al no contar con un histórico de costos por ítem en el momento de la venta, la rentabilidad se estima utilizando el `costPrice` actual de los productos y el `baseCost` de los servicios. Aunque no es exacto retrospectivamente ante cambios de precios, ofrece una aproximación valiosa de la performance económica actual.
+**Learning:** Al no contar con un histórico de costos por ítem en el momento de la venta, la rentabilidad se estima utilizando el `costPrice` actual de los productos and el `baseCost` de los servicios. Aunque no es exacto retrospectivamente ante cambios de precios, ofrece una aproximación valiosa de la performance económica actual.
 **Action:** Clarificar en la UI que los costos son "estimados" basados en valores vigentes.
