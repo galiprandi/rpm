@@ -2,6 +2,7 @@
 - [ ] Idea pendiente — breve descripción
 
 ## ✅ COMPLETADO
+- [x] 2026-07-30 — Atajos de Fecha de Entrega y Resumen de Ítems en Kanban/Lista (PR #jorge/work-orders/scheduled-date-items-summary)
 - [x] 2026-07-29 — Duplicación/Clonación de Órdenes de Trabajo desde Detalle e Historial con Resguardo de Borrador (PR #jorge/work-orders/duplicate-work-order-ux)
 - [x] 2026-07-28 — Atajo de "Marcar todos como OK" en checklists de ingreso y egreso en creación y edición de OT (PR #jorge/work-orders/checklist-bulk-toggle)
 - [x] 2026-07-27 — Selector de Estado Interactivo en Detalle de OT (PR #jorge/work-orders/status-select-header)
@@ -18,6 +19,11 @@
 - [x] 2025-07-08 — Servicio Centralizado de OT y Timeline Unificado (PR #jorge/work-orders/centralized-updates)
 
 ## 🧠 APRENDIZAJES
+## 2026-07-30 - Atajos de Fecha de Entrega y Resumen de Ítems en Kanban/Lista
+**Aprendizaje 1:** En la gestión diaria del taller, tener que abrir el selector de fecha y hora nativo del navegador para asignar turnos a un par de horas en el futuro, al día siguiente o al inicio de la semana siguiente genera una fricción administrativa importante. Ofrecer accesos rápidos interactivos (+2h, Mañana, Lunes) calcula y rellena instantáneamente el campo `datetime-local` en la zona horaria local del cliente, acelerando enormemente la carga.
+**Aprendizaje 2:** El tablero Kanban y las listas de órdenes de trabajo resultan poco informativas si solo muestran el nombre del cliente y la patente. Al agregar un resumen directo y elegante de los ítems programados (distinguiendo productos con 📦 y servicios con 🔧) en la tarjeta misma, el recepcionista y los técnicos adquieren un entendimiento contextual inmediato de la operación sin necesidad de navegar al detalle de cada OT.
+**Acción:** Siempre acoplar entradas de fecha/hora con atajos rápidos de cálculo dinámico de tiempos comunes, y proveer micro-resúmenes visuales en vistas agrupadas (como Kanban o listados) para optimizar el flujo de trabajo operacional.
+
 ## 2026-07-29 - Duplicación/Clonación de Órdenes de Trabajo y Salvaguarda de Persistencia del Asistente
 **Aprendizaje 1:** En talleres mecánicos donde se realizan mantenimientos periódicos o se gestionan flotas con múltiples vehículos idénticos, tener que cargar manualmente la lista de ítems (productos y servicios), el cliente y el vehículo desde cero para cada servicio recurrente genera una gran fricción administrativa. Proveer un botón de "Duplicar" en la cabecera del detalle y de manera contextual en cada tarjeta de orden pasada en la pestaña "Historial de Vehículo" agiliza enormemente la creación, mejorando la retención de usuarios.
 **Aprendizaje 2:** Al implementar carga de estado asincrónica (p. ej., `loadSavedState` que inicia con `await Promise.resolve()`) junto con un efecto secundario síncrono que persiste los cambios a `localStorage` tras cada render, el guardado automático del estado por defecto (con variables vacías e iniciales en el primer render) puede sobreescribir y borrar prematuramente el estado cargado o pre-configurado de la caché antes de que termine el loader de inicialización. Añadir una bandera booleana `isLoaded` (inicializada en `false` y colocada en `true` en el bloque `finally` de la carga de datos) para resguardar/bloquear el `setItem` de guardado automático soluciona de forma definitiva esta carrera de estados (race condition) en React.
@@ -45,7 +51,7 @@
 
 ## 2026-07-22 - Indicadores Visuales de Metadatos y Exportación CSV en Taller
 **Aprendizaje:** En la gestión diaria del taller mecánico, tener visibilidad inmediata sobre si los checklists (de ingreso y de salida) han sido completados y la cantidad de fotos cargadas en las tarjetas del Kanban y de la Lista evita que se dejen vehículos sin inspección previa o posterior. Además, poder exportar en un solo click (respetando filtros activos, codificación Excel UTF-8 BOM, escape de caracteres y relaciones de vehículos/responsables de manera defensiva) eleva considerablemente la productividad administrativa del taller.
-**Acción:** Siempre include micro-indicadores visuales con tooltips informativos para estados de procesos secuenciales (checklists, fotos) y habilitar exportación a CSV segura y amigable para Excel.
+**Acción:** Siempre include micro-indicadores visuales con tooltips informativos para estados de procesos secuenciales (checklists, fotos) and habilitar exportación a CSV segura y amigable para Excel.
 
 ## 2026-07-21 - Botones de Filtro Rápido para Eficiencia en Taller
 **Learning:** En flujos con alta carga de trabajo (como talleres mecánicos), disponer de contadores globales dinámicos en los botones de filtro rápido ("Demoradas", "Turnos de Hoy", etc.) le da al usuario visibilidad inmediata del estado de su operación sin tener que aplicar cada filtro. Esto acelera drásticamente la toma de decisiones.
@@ -68,7 +74,7 @@
 **Acción:** Al duplicar funcionalidades de filtrado/búsqueda en dos vistas de un mismo módulo, extraer la lógica de ordenamiento y filtrado a funciones puras reusables o memos unificados.
 
 ## 2025-07-12 - Acciones Rápidas en Kanban
-**Learning:** Las acciones rápidas en tarjetas Kanban (hover buttons) reducen drácticamente la fricción para flujos lineales de trabajo, evitando la necesidad de drag-and-drop para transiciones comunes.
+**Learning:** Las acciones rápidas en tarjetas Kanban (hover buttons) reducen drásticamente la fricción para flujos lineales de trabajo, evitando la necesidad de drag-and-drop para transiciones comunes.
 **Acción:** Implementar el patrón `NEXT_STATUS_MAP` para guiar al usuario hacia la siguiente acción lógica en el flujo de negocio.
 
 ## 2025-07-08 - UX Kanban y Propagación de Eventos

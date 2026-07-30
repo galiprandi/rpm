@@ -195,6 +195,24 @@ export default function NewWorkOrderPage() {
   const [selectedTechnicianId, setSelectedTechnicianId] =
     useState<string>("unassigned");
 
+  const setQuickDate = (type: "2h" | "tomorrow" | "monday") => {
+    const date = new Date();
+    if (type === "2h") {
+      date.setHours(date.getHours() + 2);
+    } else if (type === "tomorrow") {
+      date.setDate(date.getDate() + 1);
+      date.setHours(9, 0, 0, 0);
+    } else if (type === "monday") {
+      const day = date.getDay();
+      const daysToMonday = day === 0 ? 1 : 8 - day;
+      date.setDate(date.getDate() + daysToMonday);
+      date.setHours(9, 0, 0, 0);
+    }
+    const tzoffset = date.getTimezoneOffset() * 60000;
+    const localISOTime = new Date(date.getTime() - tzoffset).toISOString().slice(0, 16);
+    setScheduledDate(localISOTime);
+  };
+
   const handleDiscardDraft = async () => {
     const confirmed = await confirm({
       title: "Descartar Borrador",
@@ -1445,6 +1463,35 @@ export default function NewWorkOrderPage() {
                       onChange={(e) => setScheduledDate(e.target.value)}
                       className="pl-9 font-mono"
                     />
+                  </div>
+                  <div className="flex flex-wrap gap-1 mt-1.5">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-6 text-[10px] px-2 rounded-full border-zinc-200 bg-background hover:bg-muted text-muted-foreground"
+                      onClick={() => setQuickDate("2h")}
+                    >
+                      +2 Horas
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-6 text-[10px] px-2 rounded-full border-zinc-200 bg-background hover:bg-muted text-muted-foreground"
+                      onClick={() => setQuickDate("tomorrow")}
+                    >
+                      Mañana 9:00
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-6 text-[10px] px-2 rounded-full border-zinc-200 bg-background hover:bg-muted text-muted-foreground"
+                      onClick={() => setQuickDate("monday")}
+                    >
+                      Lunes Próx. 9:00
+                    </Button>
                   </div>
                 </div>
               </div>

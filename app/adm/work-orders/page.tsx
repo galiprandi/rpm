@@ -110,6 +110,16 @@ interface WorkOrder {
   entryChecklist?: any;
   exitChecklist?: any;
   photo?: Array<{ id: string; url: string }>;
+  workOrderItems?: Array<{
+    id: string;
+    type: string;
+    name: string | null;
+    isManualName: boolean;
+    productId?: string;
+    serviceId?: string;
+    product?: { name: string };
+    service?: { name: string };
+  }>;
 }
 
 const KANBAN_STATUSES = [
@@ -309,6 +319,15 @@ function KanbanCard({
         <p className="text-xs font-medium truncate leading-tight">
           {wo.customer.name}
         </p>
+        {/* Line 2.5: Items summary */}
+        {wo.workOrderItems && wo.workOrderItems.length > 0 && (
+          <div className="text-[11px] text-muted-foreground/80 line-clamp-1 leading-tight border-t border-dashed pt-1 mt-1 font-sans">
+            {wo.workOrderItems.map((item) => {
+              const name = item.name || item.product?.name || item.service?.name || "Item";
+              return (item.type === "PRODUCT" ? "📦" : "🔧") + " " + name;
+            }).join(", ")}
+          </div>
+        )}
         {/* Line 3: Amount badge + Checklist/Photo Indicators */}
         <div className="flex items-center justify-between">
           <Badge
@@ -1357,6 +1376,19 @@ export default function WorkOrdersPage() {
                               {wo.customer.name} • {wo.vehicle.vehicleMake?.name || ""}{" "}
                               {wo.vehicle.vehicleModel?.name || ""}
                             </div>
+                            {wo.workOrderItems && wo.workOrderItems.length > 0 && (
+                              <div className="text-xs text-muted-foreground/80 mt-1.5 flex flex-wrap gap-1 items-center">
+                                <span className="font-semibold text-[10px] uppercase tracking-wider text-muted-foreground/55 mr-1">Ítems:</span>
+                                {wo.workOrderItems.map((item, i) => {
+                                  const name = item.name || item.product?.name || item.service?.name || "Item";
+                                  return (
+                                    <span key={item.id || i} className="inline-flex items-center gap-0.5 bg-muted/80 px-2 py-0.5 rounded text-[11px] border border-muted-foreground/10 text-muted-foreground font-sans">
+                                      {item.type === "PRODUCT" ? "📦" : "🔧"} {name}
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                            )}
                           </div>
                         </div>
                         <div className="flex items-center gap-4">

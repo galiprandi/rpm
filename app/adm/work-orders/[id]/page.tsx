@@ -1428,30 +1428,83 @@ export default function WorkOrderDetailPage() {
               Prometida
             </span>
             {editingScheduledDate ? (
-              <div className="flex items-center gap-1">
-                <Input
-                  id="scheduled-date"
-                  type="datetime-local"
-                  value={newScheduledDate}
-                  onChange={(e) => setNewScheduledDate(e.target.value)}
-                  className="h-7 w-40 font-mono text-xs"
-                  aria-label="Fecha prometida"
-                />
-                <Button
-                  size="sm"
-                  className="h-9 px-2"
-                  onClick={handleUpdateScheduledDate}
-                >
-                  OK
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-9 px-2"
-                  onClick={() => setEditingScheduledDate(false)}
-                >
-                  ✕
-                </Button>
+              <div className="flex flex-col gap-1.5 mt-1">
+                <div className="flex items-center gap-1">
+                  <Input
+                    id="scheduled-date"
+                    type="datetime-local"
+                    value={newScheduledDate}
+                    onChange={(e) => setNewScheduledDate(e.target.value)}
+                    className="h-7 w-40 font-mono text-xs"
+                    aria-label="Fecha prometida"
+                  />
+                  <Button
+                    size="sm"
+                    className="h-7 px-2 text-xs"
+                    onClick={handleUpdateScheduledDate}
+                  >
+                    OK
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 px-2 text-xs"
+                    onClick={() => setEditingScheduledDate(false)}
+                  >
+                    ✕
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-5 text-[9px] px-1.5 rounded-full border-zinc-200 bg-background hover:bg-muted text-muted-foreground font-normal"
+                    onClick={() => {
+                      const date = new Date();
+                      date.setHours(date.getHours() + 2);
+                      const tzoffset = date.getTimezoneOffset() * 60000;
+                      const localISOTime = new Date(date.getTime() - tzoffset).toISOString().slice(0, 16);
+                      setNewScheduledDate(localISOTime);
+                    }}
+                  >
+                    +2h
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-5 text-[9px] px-1.5 rounded-full border-zinc-200 bg-background hover:bg-muted text-muted-foreground font-normal"
+                    onClick={() => {
+                      const date = new Date();
+                      date.setDate(date.getDate() + 1);
+                      date.setHours(9, 0, 0, 0);
+                      const tzoffset = date.getTimezoneOffset() * 60000;
+                      const localISOTime = new Date(date.getTime() - tzoffset).toISOString().slice(0, 16);
+                      setNewScheduledDate(localISOTime);
+                    }}
+                  >
+                    Mañana
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-5 text-[9px] px-1.5 rounded-full border-zinc-200 bg-background hover:bg-muted text-muted-foreground font-normal"
+                    onClick={() => {
+                      const date = new Date();
+                      const day = date.getDay();
+                      const daysToMonday = day === 0 ? 1 : 8 - day;
+                      date.setDate(date.getDate() + daysToMonday);
+                      date.setHours(9, 0, 0, 0);
+                      const tzoffset = date.getTimezoneOffset() * 60000;
+                      const localISOTime = new Date(date.getTime() - tzoffset).toISOString().slice(0, 16);
+                      setNewScheduledDate(localISOTime);
+                    }}
+                  >
+                    Lunes
+                  </Button>
+                </div>
               </div>
             ) : (
               <button
