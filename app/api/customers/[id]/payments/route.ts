@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionWithAuth } from "@/lib/api-middleware";
 import { db } from "@/lib/db";
-import { customer, cashMovement, workOrder, payment, directSale, directSalePayment } from "@/db/schema";
-import { eq, notInArray, sql, inArray, and } from "drizzle-orm";
+import { customer, cashMovement, payment, directSale, directSalePayment } from "@/db/schema";
+import { eq, sql, inArray, and } from "drizzle-orm";
 import { UserRole } from "@/lib/auth/roles";
 import { revalidatePath } from "next/cache";
 import { invalidateCashStatus } from "@/lib/cache";
@@ -109,27 +109,11 @@ export async function POST(
         })
         .returning();
 
-      // Mark individual work orders as PAID if their total - payments <= 0
-      const customerWorkOrders = await tx.query.workOrder.findMany({
-        where: and(eq(workOrder.customerId, id), notInArray(workOrder.status, ["CANCELLED", "PAID"])),
-        with: {
-          payments: { columns: { amount: true } },
-        },
-      });
-
-      for (const wo of customerWorkOrders) {
-        const woTotal = decimalToNumber(wo.total);
-        const woPaid = wo.payments.reduce(
-          (s, p) => s + decimalToNumber(p.amount),
-          0,
-        );
-        if (woTotal - woPaid <= 0.01) {
-          await tx
-            .update(workOrder)
-            .set({ status: "PAID" })
-            .where(eq(workOrder.id, wo.id));
-        }
-      }
+      // Note: We intentionally do NOT change work order status to "PAID".
+      // Payment status is tracked via isFullyPaid (computed from payments) and shown
+      // with color-coded badges in the kanban. "PAID" is not a kanban column, so
+      // setting it would make the OT disappear from the board.
+      // The OT remains in its current workflow status until manually moved.
 
       // Mark individual direct sales as fully paid if applicable
       const customerDirectSales = await tx.query.directSale.findMany({

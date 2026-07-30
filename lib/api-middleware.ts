@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-import { UserRole } from "@/lib/auth/roles";
+import { UserRole, getUserRole } from "@/lib/auth/roles";
 import { isDevBypassEnabled, createDevSession } from "@/lib/dev-auth";
 import { hasPermission, loadPermissionsForRole, type SessionUser } from "@/lib/permissions/check";
 
@@ -70,8 +70,13 @@ export async function getSessionWithAuth() {
   // Fall back to Better Auth
   const session = await auth.api.getSession({ headers: await headers() });
 
-  // Load permissions from DB based on role
+  // Resolve role from user_role table (source of truth), not from user.role
   if (session?.user) {
+    const userEmail = (session.user as { email?: string }).email;
+    if (userEmail) {
+      const resolvedRole = await getUserRole(userEmail);
+      (session.user as { role: string }).role = resolvedRole;
+    }
     const role = (session.user as { role?: string }).role || 'USER';
     const permissions = await loadPermissionsForRole(role);
     (session.user as unknown as { permissions: string[] }).permissions = permissions;

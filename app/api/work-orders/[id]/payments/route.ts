@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSessionWithAuth } from "@/lib/api-middleware";
+import { getSessionWithAuth, withPermissionDynamic, withStaffDynamic } from "@/lib/api-middleware";
 import { db } from "@/lib/db";
 import { workOrder, payment, paymentMethod } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
-import { hasRole, UserRole } from "@/lib/auth/roles";
 import {
   isCashRegisterOpen,
   createCashMovement,
@@ -12,17 +11,13 @@ import { invalidateCashStatus } from "@/lib/cache";
 import { adjustBalanceAtomically } from "@/lib/services/balanceService";
 import { toISODate } from "@/lib/utils/date";
 
-// GET /api/work-orders/[id]/payments - List payments with totals
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  try {
-    const session = await getSessionWithAuth();
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+interface Params {
+  params: Promise<{ id: string }>;
+}
 
+// GET /api/work-orders/[id]/payments - List payments with totals
+export const GET = withStaffDynamic(async (request: NextRequest, { params }: Params, _session) => {
+  try {
     const { id: workOrderId } = await params;
 
     // Verify work order exists
@@ -80,30 +75,11 @@ export async function GET(
       { status: 500 },
     );
   }
-}
+});
 
-// POST /api/work-orders/[id]/payments - Register new payment
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
+// POST /api/work-orders/[id]/payments - Register new payment (requiere can_manage_cash)
+export const POST = withPermissionDynamic('can_manage_cash', async (request: NextRequest, { params }: Params, session) => {
   try {
-    const session = await getSessionWithAuth();
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Check if user is SELLER or ADMIN (only these roles can register payments)
-    const isAdmin = await hasRole(session.user.id, UserRole.ADMIN);
-    const isStaff = await hasRole(session.user.id, UserRole.STAFF);
-
-    if (!isAdmin && !isStaff) {
-      return NextResponse.json(
-        { error: "Only staff can register payments" },
-        { status: 403 },
-      );
-    }
-
     // Check if cash register is open
     const isOpen = await isCashRegisterOpen();
     if (!isOpen) {
@@ -224,12 +200,12 @@ export async function POST(
     const pendingAmount = Math.max(0, workOrderTotal - totalPaid);
     const isFullyPaid = totalPaid >= workOrderTotal;
 
-    // Update work order status to PAID if fully paid
-    if (isFullyPaid) {
-      await db.update(workOrder)
-        .set({ status: "PAID" })
-        .where(eq(workOrder.id, workOrderId));
-    }
+    // Note: We intentionally do NOT change the work order status to "PAID".
+    // The payment status is tracked via the isFullyPaid flag (computed from payments)
+    // and shown with color-coded badges in the kanban. The kanban only has 6 columns
+    // (CONFIRMED, WAITING, IN_PROGRESS, QC_CHECK, READY, DELIVERED) — "PAID" is not
+    // a kanban column, so setting it would make the OT disappear from the board.
+    // The OT should remain in its current workflow status until manually moved.
 
     invalidateCashStatus();
 
@@ -256,4 +232,4 @@ export async function POST(
       { status: 500 },
     );
   }
-}
+});

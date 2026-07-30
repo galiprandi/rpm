@@ -4,6 +4,7 @@
 - [ ] Direct photo attachments for work order checklist items.
 
 ## ✅ DONE
+- [x] 2026-07-30 — Enhance chatbot file attachment UI to show dynamic local image previews (thumbnails) and fallback uppercase file extension badges with comprehensive, leak-proof browser object URL lifetime management (PR #290).
 - [x] 2026-07-28 — Implement dynamic local image previews and file extension badges for chat file attachments with robust object URL memory management and cleanup lifecycles (PR #289).
 - [x] 2026-07-27 — Implement the registerWorkOrderPayment tool for the virtual assistant (Nitro) with full database transaction support, cash movement registration, atomic balance adjustment, and integrity verification tests (PR #288).
 - [x] 2026-07-26 — Enhance chatbot keyboard accessibility and navigation by adding focus-visible offset ring/outline styling to all close, clear, toggle, and secondary controls inside ChatFloating.tsx (PR #276).
@@ -19,62 +20,6 @@
 - [x] 2026-03-28 — Initial audit of bot tools, removal of mock tools, fixing conversation history unit tests, and implementing major UI/UX improvements (smart scrolling, success states for tool execution, empty-state quick start suggestion chips, and full WCAG accessibility).
 
 ## 🧠 LEARNINGS
-### 2026-07-28 — Chatbot Image and File Attachment Visual Preview UI Standard
-**Learning:** Attaching files (such as purchase invoices or product barcode images) without visual confirmation can leave users anxious. Displaying a dynamic local thumbnail preview using `URL.createObjectURL(attachedFile)` when the file is an image, and a fallback file-type extension badge (e.g. "pdf", "txt") otherwise, provides immediate visual feedback and reassurance. Properly managing the life cycle of these object URLs by calling `URL.revokeObjectURL` on change, removal, or unmounting is critical to prevent memory leaks in single-page applications.
-**Action:** Always provide visual thumbnail previews or file type badging for file attachments and strictly implement hook cleanup routines to release browser memory resources.
-
-### 2026-07-27 — Chatbot Work Order Payment Registration Standard
-**Learning:** Adding financial mutation capabilities to the virtual assistant (like registering work order payments) provides massive operational speedups for the staff, but requires robust safe guards: (1) verifying if the cash register is actually open, (2) resolving active payment methods dynamically using name similarity (e.g. "contado"), (3) wrapping payment records, income cash movements, and atomic customer balance adjustments in a single safe database transaction, and (4) transitioning the work order status to "PAID" once fully settled.
-**Action:** Always wrap companion tool mutations in robust, transaction-safe database sessions and enforce integrity checks (integrity tests, system documentation, and UI visual labels) to avoid dead ends or inconsistencies.
-
-### 2026-07-26 — Chatbot Keyboard Accessibility and Focus Ring Standard
-**Learning:** Icon-only control buttons inside floating widgets (like close buttons, file attachment removal controls, and clear conversation triggers) must use explicit high-visibility focus rings and offsets (e.g., `focus-visible:ring-2` with `focus-visible:ring-primary` and offsets) to ensure keyboard-only and assistive-technology users can navigate and interact with the chatbot panel safely and with confidence.
-**Action:** Always verify that all icon-only buttons in dialog headers, absolute overlay containers, or assistant tools are focus-visible with standard focus outlines and rounded click-targets.
-
-### 2026-07-26 — Native Barcode/QR Code Detection with Browser API and Graceful Fallback
-**Learning:** Utilizing modern browser-native APIs (like `BarcodeDetector`) for features like barcode or QR code scanning on uploaded attachments completely eliminates heavy external JavaScript libraries (like `jsqr` or `html5-qrcode`). This maintains a super lightweight and fast frontend bundle. By pairing it with a simple, dynamic React state effect and safe feature-checking (`"BarcodeDetector" in window`), the app achieves high-performance capability on supported devices with zero runtime or bundle size overhead.
-**Action:** Always prioritize modern native web standards with feature detection checks over heavy NPM packages, and provide beautiful, responsive UX shortcuts whenever structured data is detected in file previews.
-
-### 2026-07-24 — Mobile Layouts and Sidebar Accessibility Integration
-**Learning:** For floating or overlay-based companion widgets (like virtual assistant chat windows), a floating action toggle button is often not enough because on mobile devices they are hidden to prevent UI clutter, locking out mobile users entirely. Integrating the trigger seamlessly inside the native administrative layout sidebar is a beautiful design pattern that unifies the desktop and mobile accessibility story while preserving identical design system visuals and shortcuts.
-**Action:** Always provide secondary sidebar entryways for companion widgets to ensure 100% accessibility across all form factors.
-
-### 2026-07-23 — Contextual File Actions & Automation Shortcuts
-**Learning:** For workflows requiring multi-step interactions (such as uploading an invoice and typing an instruction like "process this invoice"), offering context-aware quick-action buttons inside the file upload preview greatly optimizes the user experience. The user can perform complex file operations with a single click, completely removing phrasing friction.
-**Action:** Always inspect user attachment states and render contextually appropriate shortcut chips/buttons right next to the file preview elements.
-
-### 2026-07-22 — Speech Recognition & JSDOM Testing Hooks
-**Learning:** Standard browser event triggers inside custom API handlers (such as SpeechRecognition's `onstart`/`onend`) often require explicit wrapping inside React's `act()` in test files to sync component states correctly and update the simulated DOM. Furthermore, mocking `window.matchMedia` and `HTMLElement.prototype.scrollIntoView` is essential to prevent DOM-level runtime crashes under JSDOM tests.
-**Action:** Always wrap stateful web API event triggers within `act()` inside Vitest files and pre-mock browser layout utilities globally.
-
-### 2026-07-21 — State Loading & Multi-User State Separation
-**Learning:** Persisting state to sessionStorage/localStorage is highly beneficial for seamless navigation, but naive multi-effect sync patterns based on `userId` dependencies introduce race conditions when the user identifier transitions. During a render tick, React schedules state updates, so effects that save state may fire using the *previous* user's messages bound to the *new* user's key. Wrapping loading and saving into a unified effect gated by a `lastLoadedUserIdRef` ref solves this cleanly and prevents data leaks.
-**Action:** Always coordinate local storage loads and saves for key-dynamic resources in a single synchronized block or ref gate to guarantee data privacy.
-
-### 2026-07-20 — Button Grouping and State Guarding
-**Learning:** Rendering adjacent confirmation action buttons block-wise takes up excessive vertical space in a compact chat window, while permitting old action triggers to remain clickable can lead to accidental double actions on obsolete context. Grouping adjacent actions inline inside a flex row makes the interface extremely compact and modern, while disabling triggers on older historical messages guarantees prompt safety.
-**Action:** Always group consecutive inline actions side-by-side inside a single flex container (safely bypassing whitespace/empty tokens) and restrict active interaction triggers strictly to the latest message.
-
-### 2026-07-25 — Standalone Vehicle Registration & Robust State Tracking
-**Learning:** While composite tools like `registerCustomerWithVehicle` are powerful, users frequently need to perform discrete, smaller operations (like adding a vehicle to an existing customer) conversing with the chatbot. Making the `registerVehicle` tool available standalone directly expands Nitro's technical capabilities without increasing cognitive load. Additionally, maintaining a perfect 1-to-1 sync between backend tools, system instructions, and frontend label loaders ensures zero black-box states during LLM tool-calling.
-**Action:** Always provide standalone counterparts for composite operations, ensure they are documented in system instructions, and map visual progress keys (`toolLabels` & `completedLabels`) on the client layout.
-
-### 2026-07-16 — Session Reset Cleanliness
-**Learning:** Clearing a chat conversation shouldn't just set the messages array to empty; it should also gracefully reset the stream's error states (`clearError`), cancel active runs (`stop`), clear file attachments, and clean the text input to ensure a completely clean state.
-**Action:** Provide holistic reset handlers that bind client-side states, stream states, and input files in one single click action.
-
-### 2026-07-16 — Mobile Viewport & Virtual Keyboards
-**Learning:** Automatically focusing on inputs when loading a chat modal/drawer on mobile devices causes virtual keyboards to immediately slide up, obstructing quick suggestions/welcome chips and requiring users to dismiss them. Disabling auto-focus on mobile devices improves user delight and scannability.
-**Action:** Restrict auto-focus hooks to desktop viewports using dynamic width checks (e.g. `!isMobile`).
-
-### 2026-07-16 — Accessibility & High Contrast Interactive Elements
-**Learning:** Icon-only interactive elements lack affordance for users with low vision or cognitive limitations. Wrapping them with Radix-powered accessible Tooltips improves both click confidence and accessibility. Furthermore, ensuring 700-weight colors (like `text-red-700` and `text-emerald-700`) on light/muted backgrounds complies with WCAG AA 4.5:1 minimum contrast guidelines.
-**Action:** Wrap all secondary/icon-only controls with accessible tooltips and use 700-weight semantic colors for status typography on light surfaces.
-
-### 2026-03-28 — Scrolling Hijack Prevention
-**Learning:** Forcing page/chat scrolling to the bottom on every token stream can annoy users who scrolled up to read previous instructions.
-**Action:** Restrict auto-scroll to cases where the scroll position is already at the bottom or the action was initiated by a user submit.
-
-### 2026-03-28 — Micro-UX & Settle States
-**Learning:** Abruptly hiding tool states when they finish executing (`output-available`) causes rapid layout shifting and cognitive disconnect. Retaining completed tool indicators with clear success icons provides visual closure and high UX quality.
-**Action:** Always transition from dynamic loading states to a static "completed/checked" state instead of simple deletion.
+### 2026-07-30 — Chatbot Image and File Attachment Visual Preview UI Standard
+**Learning:** Attaching files without visual preview leaves the user uncertain about what is uploaded. Displaying a dynamic local thumbnail preview using `URL.createObjectURL(attachedFile)` when the file is an image, and a fallback uppercase file-type extension badge (e.g. "PDF", "TXT") otherwise, significantly boosts interactive clarity and engagement. Safely managing the object URL lifecycle via React hook cleanup destructors prevents browser memory leaks when files are changed, removed, or when the chat is closed/cleared.
+**Action:** Always wrap companion web API object creations inside synchronized React `useEffect` structures and provide beautiful, responsive visual indicator fallbacks for arbitrary file uploads.

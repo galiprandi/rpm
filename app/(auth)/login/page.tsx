@@ -15,7 +15,7 @@ export default function LoginPage() {
   useEffect(() => {
     if (!isPending && session?.user) {
       const role = (session.user as { role?: string }).role;
-      if (role === 'ADMIN' || role === 'STAFF') {
+      if (role === 'ADMIN' || role === 'STAFF' || role === 'VENDEDOR') {
         router.push('/adm');
       } else {
         router.push('/');

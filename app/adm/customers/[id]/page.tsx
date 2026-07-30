@@ -163,6 +163,7 @@ export default function CustomerDetailPage() {
   const [preselectedSaleId, setPreselectedSaleId] = useState<
     string | undefined
   >(undefined);
+  const [transactionTypeFilter, setTransactionTypeFilter] = useState<string>("ALL");
 
 
   const fetchCustomer = useCallback(async () => {
@@ -397,6 +398,11 @@ export default function CustomerDetailPage() {
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
   }, [customer]);
+
+  const filteredTransactions = useMemo(() => {
+    if (transactionTypeFilter === "ALL") return transactions;
+    return transactions.filter((t) => t.type === transactionTypeFilter);
+  }, [transactions, transactionTypeFilter]);
 
   // Columnas para DataTable de Transacciones
   const transactionColumns: ColumnDef<Transaction>[] = useMemo(
@@ -950,7 +956,7 @@ export default function CustomerDetailPage() {
         </Card>
       ) : (
         <DataTable
-          data={transactions}
+          data={filteredTransactions}
           columns={transactionColumns}
           enableGlobalFilter={true}
           globalFilterPlaceholder="Buscar transacción..."
@@ -958,8 +964,22 @@ export default function CustomerDetailPage() {
           title={
             <span className="flex items-center gap-2">
               <Receipt className="h-5 w-5" />
-              Historial de Transacciones ({transactions.length})
+              Historial de Transacciones ({filteredTransactions.length})
             </span>
+          }
+          headerFilter={
+            <Select value={transactionTypeFilter} onValueChange={setTransactionTypeFilter}>
+              <SelectTrigger className="w-[180px] h-9" aria-label="Filtrar transacciones por tipo">
+                <SelectValue placeholder="Filtrar por tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">Todos los tipos</SelectItem>
+                <SelectItem value="DIRECT_SALE">Ventas</SelectItem>
+                <SelectItem value="CREDIT_NOTE">Notas de Crédito</SelectItem>
+                <SelectItem value="PAYMENT">Pagos</SelectItem>
+                <SelectItem value="INVOICE">Facturas (OTs)</SelectItem>
+              </SelectContent>
+            </Select>
           }
           rowActions={(transaction) => (
             <Button

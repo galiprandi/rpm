@@ -28,9 +28,9 @@ export async function GET() {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    // Verificar si tiene rol STAFF o ADMIN
+    // Verificar si tiene rol STAFF, VENDEDOR o ADMIN
     const userRole = session.user.role;
-    if (userRole !== UserRole.ADMIN && userRole !== UserRole.STAFF) {
+    if (userRole !== UserRole.ADMIN && userRole !== UserRole.STAFF && userRole !== UserRole.VENDEDOR) {
       return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
     }
 

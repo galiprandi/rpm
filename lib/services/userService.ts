@@ -42,11 +42,18 @@ export interface UserListResult {
   total: number;
 }
 
-// Role mapping from UserRole table to User.role enum
+// Role mapping from UserRole table to User.role enum (Better Auth)
+// Keeps user.role in sync so client-side session reflects the correct role.
 function mapToUserRoleEnum(role: string): string {
   const upperRole = role.toUpperCase();
-  if (upperRole === 'ADMIN' || upperRole === 'SELLER' || upperRole === 'TECHNICIAN' || upperRole === 'CASHIER') {
+  if (upperRole === 'ADMIN') {
     return 'ADMIN';
+  }
+  if (upperRole === 'SELLER' || upperRole === 'TECHNICIAN' || upperRole === 'CASHIER' || upperRole === 'VENDEDOR') {
+    return 'VENDEDOR';
+  }
+  if (upperRole === 'STAFF') {
+    return 'STAFF';
   }
   return 'USER';
 }

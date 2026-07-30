@@ -317,18 +317,16 @@ export const registerWorkOrderPaymentTool = tool({
         }
       });
 
-      // 5. Update work order status to PAID if fully paid now
+      // 5. Payment status is tracked via isFullyPaid (computed from payments) and
+      // shown with color-coded badges in the kanban. We intentionally do NOT change
+      // the work order status to "PAID" — "PAID" is not a kanban column, so setting
+      // it would make the OT disappear from the board. The OT remains in its current
+      // workflow status until manually moved.
       const isFullyPaidNow = totalPaidBefore + paymentAmount >= Number(workOrderRecord.total);
-      if (isFullyPaidNow && workOrderRecord.status !== "PAID" && workOrderRecord.status !== "DELIVERED") {
-        await db
-          .update(workOrder)
-          .set({ status: "PAID" })
-          .where(eq(workOrder.id, input.workOrderId));
-      }
 
       invalidateCashStatus();
 
-      return `✅ Pago registrado exitosamente:\n- OT: #${input.workOrderId.slice(0, 8)} (${workOrderRecord.customer?.name || "Consumidor Final"})\n- Monto: $${paymentAmount}\n- Método de pago: ${pm.name}\n- Estado de la OT: ${isFullyPaidNow ? "PAID (Totalmente pagada)" : `Pendiente ($${(remainingAmount - paymentAmount).toFixed(2)} restantes)`}`;
+      return `✅ Pago registrado exitosamente:\n- OT: #${input.workOrderId.slice(0, 8)} (${workOrderRecord.customer?.name || "Consumidor Final"})\n- Monto: $${paymentAmount}\n- Método de pago: ${pm.name}\n- Estado de pago: ${isFullyPaidNow ? "Totalmente pagada" : `Pendiente ($${(remainingAmount - paymentAmount).toFixed(2)} restantes)`}`;
     } catch (error) {
       logger.error({ error }, "Error registering work order payment");
       return `🔴 Error al registrar el pago: ${error instanceof Error ? error.message : "Error desconocido"}`;

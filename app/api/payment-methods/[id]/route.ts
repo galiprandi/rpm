@@ -1,22 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSessionWithAuth } from "@/lib/api-middleware";
+import { withStaffDynamic, withPermissionDynamic } from "@/lib/api-middleware";
 import { db } from "@/lib/db";
 import { paymentMethod, payment } from "@/db/schema";
 import { eq, count } from "drizzle-orm";
-import { hasRole, UserRole } from "@/lib/auth/roles";
 import { toISODate } from "@/lib/utils/date";
 
-// GET /api/payment-methods/[id] - Get single payment method
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  try {
-    const session = await getSessionWithAuth();
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+interface Params {
+  params: Promise<{ id: string }>;
+}
 
+// GET /api/payment-methods/[id] - Get single payment method
+export const GET = withStaffDynamic(async (request: NextRequest, { params }: Params, _session) => {
+  try {
     const { id } = await params;
 
     const pm = await db.query.paymentMethod.findFirst({
@@ -52,27 +47,11 @@ export async function GET(
       { status: 500 },
     );
   }
-}
+});
 
-// PUT /api/payment-methods/[id] - Update payment method (ADMIN only)
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
+// PUT /api/payment-methods/[id] - Update payment method (requiere can_manage_settings)
+export const PUT = withPermissionDynamic('can_manage_settings', async (request: NextRequest, { params }: Params, _session) => {
   try {
-    const session = await getSessionWithAuth();
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Check if user is ADMIN
-    if (!(await hasRole(session.user.id, UserRole.ADMIN))) {
-      return NextResponse.json(
-        { error: "Only ADMIN can update payment methods" },
-        { status: 403 },
-      );
-    }
-
     const { id } = await params;
     const body = await request.json();
     const { name, description, isActive, sortOrder } = body;
@@ -114,27 +93,11 @@ export async function PUT(
       { status: 500 },
     );
   }
-}
+});
 
-// DELETE /api/payment-methods/[id] - Delete payment method (ADMIN only)
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
+// DELETE /api/payment-methods/[id] - Delete payment method (requiere can_manage_settings)
+export const DELETE = withPermissionDynamic('can_manage_settings', async (request: NextRequest, { params }: Params, _session) => {
   try {
-    const session = await getSessionWithAuth();
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Check if user is ADMIN
-    if (!(await hasRole(session.user.id, UserRole.ADMIN))) {
-      return NextResponse.json(
-        { error: "Only ADMIN can delete payment methods" },
-        { status: 403 },
-      );
-    }
-
     const { id } = await params;
 
     // Check if payment method exists
@@ -176,4 +139,4 @@ export async function DELETE(
       { status: 500 },
     );
   }
-}
+});

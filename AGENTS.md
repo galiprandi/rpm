@@ -6,6 +6,26 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ---
 
+# Mensajes a Daniela Federik por WhatsApp
+
+Cuando el usuario diga **"Decile a Daniela ..."** (o variantes similares), enviar el mensaje por WhatsApp usando el MCP server **`Chrome perfil German`** (web.whatsapp.com ya abierto en ese perfil).
+
+**Pautas para el mensaje:**
+- **Tono:** casual, como si hablara German ("amiga", "decile a las chicas", emojis 🙌)
+- **Brevedad:** 2-4 líneas máximo, sin tecnicismos ni explicaciones del problema
+- **Enfoque:** el resultado/solución, no el bug ni el proceso — a Daniela le importa que ya funciona
+- **No mencionar "bug", "error", "issue" ni lenguaje técnico**
+- **Cierre:** pedir que prueben y avisen si hay algo más
+- **Estilo:** imitar cómo escribe German en WhatsApp (frases cortas, directo, sin signos de puntuación excesivos)
+
+**Flujo:**
+1. `browser_click` en el chat de "Daniela Federik" en la lista de chats
+2. `browser_type` el mensaje en el textbox contenteditable
+3. `browser_press_key` Enter para enviar
+4. Verificar con `browser_evaluate` que el mensaje apareció como último mensaje enviado
+
+---
+
 # Política de Idioma
 
 - **Español:** `AGENTS.md`, `specs/*.md`, títulos/descripción de PRs
@@ -122,3 +142,36 @@ Todo formulario de creación/edición debe implementar estado `isSubmitting`:
 # Boy Scout Rule
 
 Cada modificación deja el archivo en mejor estado: legibilidad, comentarios, nombres. Sin bugs, alcance razonable.
+
+---
+
+# Sentry CLI
+
+Error monitoring con Sentry. SDK integrado via `@sentry/nextjs` (client/server/edge configs).
+
+- **CLI:** `npx sentry-cli` via `pnpm sentry:*` scripts — sin instalación global
+- **Auth:** `SENTRY_AUTH_TOKEN` en `.env.local` (cargado por `dotenv-cli` en los scripts)
+- **Config:** `.sentryclirc` en la raíz con `org=rpm-bz` y `project=rpm`
+- **DSN:** `NEXT_PUBLIC_SENTRY_DSN` en `.env.local` y Vercel
+
+## Comandos útiles
+
+```bash
+# Ver issues activos
+pnpm sentry:issues
+
+# Ver releases y source maps subidos
+pnpm sentry:releases
+
+# Verificar auth y configuración
+pnpm sentry:info
+
+# Subir source maps manualmente (solo si hace falta)
+dotenv -e .env.local -- npx sentry-cli sourcemaps upload --release <commit-sha>
+```
+
+## Notas
+
+- Source maps se suben automáticamente en builds de producción via `withSentryConfig` en `next.config.ts`
+- `tracesSampleRate: 0.1` en producción (10% de traces), `1.0` en dev
+- Webhook a Discord: pendiente

@@ -70,6 +70,7 @@ export {
   updatePriceList,
   deletePriceList,
   createPriceListItem,
+  updatePriceListItem,
   deletePriceListItem,
   calculateProductPrice,
   getProductBaseCost,

@@ -88,6 +88,8 @@ export default function DebtorsClient() {
   const [sortBy, setSortBy] = useState<"amount" | "oldest" | "newest">(
     "amount",
   );
+  const [agingFilter, setAgingFilter] = useState<"all" | "over30" | "over60" | "over90" | "under30">("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [selectedDebtor, setSelectedDebtor] = useState<Debtor | null>(null);
@@ -201,8 +203,63 @@ export default function DebtorsClient() {
     return diffDays;
   };
 
+  const filteredDebtors = useMemo(() => {
+    return debtors.filter((debtor) => {
+      // 1. Aging Filter
+      if (agingFilter !== "all") {
+        const days = getDaysSince(debtor.oldestDebtDate);
+        if (days === null) return false;
+        if (agingFilter === "over30" && days <= 30) return false;
+        if (agingFilter === "over60" && days <= 60) return false;
+        if (agingFilter === "over90" && days <= 90) return false;
+        if (agingFilter === "under30" && days > 30) return false;
+      }
+
+      // 2. Search Filter
+      if (searchQuery.trim()) {
+        const term = searchQuery.toLowerCase();
+        const matchesName = (debtor.customerName || "").toLowerCase().includes(term);
+        const matchesPhone = (debtor.phone || "").toLowerCase().includes(term);
+        const matchesPhoneAlt = (debtor.phoneAlt || "").toLowerCase().includes(term);
+        const matchesEmail = (debtor.email || "").toLowerCase().includes(term);
+        const matchesVehicles = debtor.vehicles?.some((v) => v.toLowerCase().includes(term)) || false;
+
+        if (!matchesName && !matchesPhone && !matchesPhoneAlt && !matchesEmail && !matchesVehicles) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [debtors, agingFilter, searchQuery]);
+
+  const filteredSummary = useMemo(() => {
+    if (filteredDebtors.length === 0) {
+      return {
+        totalDebt: 0,
+        totalCustomers: 0,
+        totalWorkOrders: 0,
+        totalDirectSales: 0,
+        averageDebt: 0,
+      };
+    }
+    const totalDebt = filteredDebtors.reduce((acc, d) => acc + d.balance, 0);
+    const totalCustomers = filteredDebtors.length;
+    const totalWorkOrders = filteredDebtors.reduce((acc, d) => acc + d.workOrderCount, 0);
+    const totalDirectSales = filteredDebtors.reduce((acc, d) => acc + (d.directSaleCount || 0), 0);
+    const averageDebt = totalDebt / totalCustomers;
+
+    return {
+      totalDebt,
+      totalCustomers,
+      totalWorkOrders,
+      totalDirectSales,
+      averageDebt,
+    };
+  }, [filteredDebtors]);
+
   const exportToCSV = () => {
-    if (!debtors || debtors.length === 0) return;
+    if (!filteredDebtors || filteredDebtors.length === 0) return;
 
     const headers = [
       "Cliente",
@@ -219,7 +276,7 @@ export default function DebtorsClient() {
       "Vehículos",
     ];
 
-    const rows = debtors.map((debtor) => [
+    const rows = filteredDebtors.map((debtor) => [
       debtor.customerName,
       debtor.phone || debtor.phoneAlt || "",
       debtor.email || "",
@@ -261,40 +318,40 @@ export default function DebtorsClient() {
     document.body.removeChild(link);
   };
 
-  const stats = summary
-    ? [
-        {
-          label: "Deuda Total",
-          value: formatARS(summary.totalDebt),
-          icon: TrendingDown,
-          iconColor: "#ef4444", // red-500
-        },
-        {
-          label: "Clientes Deudores",
-          value: summary.totalCustomers,
-          icon: Users,
-          iconColor: "#3b82f6", // blue-500
-        },
-        {
-          label: "OTs Impagas",
-          value: summary.totalWorkOrders,
-          icon: Receipt,
-          iconColor: "#f59e0b", // amber-500
-        },
-        {
-          label: "Ventas Directas",
-          value: summary.totalDirectSales || 0,
-          icon: ShoppingCart,
-          iconColor: "#0891b2", // cyan-600
-        },
-        {
-          label: "Deuda Promedio",
-          value: formatARS(summary.averageDebt),
-          icon: DollarSign,
-          iconColor: "#9333ea", // purple-600
-        },
-      ]
-    : [];
+  const stats = useMemo(() => {
+    return [
+      {
+        label: "Deuda Total",
+        value: formatARS(filteredSummary.totalDebt),
+        icon: TrendingDown,
+        iconColor: "#ef4444", // red-500
+      },
+      {
+        label: "Clientes Deudores",
+        value: filteredSummary.totalCustomers,
+        icon: Users,
+        iconColor: "#3b82f6", // blue-500
+      },
+      {
+        label: "OTs Impagas",
+        value: filteredSummary.totalWorkOrders,
+        icon: Receipt,
+        iconColor: "#f59e0b", // amber-500
+      },
+      {
+        label: "Ventas Directas",
+        value: filteredSummary.totalDirectSales,
+        icon: ShoppingCart,
+        iconColor: "#0891b2", // cyan-600
+      },
+      {
+        label: "Deuda Promedio",
+        value: formatARS(filteredSummary.averageDebt),
+        icon: DollarSign,
+        iconColor: "#9333ea", // purple-600
+      },
+    ];
+  }, [filteredSummary]);
 
   const columns: ColumnDef<Debtor>[] = useMemo(
     () => [
@@ -593,24 +650,47 @@ export default function DebtorsClient() {
             },
           ]}
         leftActions={
-          <div key="sort-select" className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Ordenar por:</span>
-            <Select
-              value={sortBy}
-              onValueChange={(v) => {
-                setSortBy(v as "amount" | "oldest" | "newest");
-                setLoading(true);
-              }}
-            >
-              <SelectTrigger className="w-44 h-9">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="amount">Mayor Deuda</SelectItem>
-                <SelectItem value="oldest">Más Antiguo</SelectItem>
-                <SelectItem value="newest">Más Reciente</SelectItem>
-              </SelectContent>
-            </Select>
+          <div key="filters-container" className="flex items-center gap-4 flex-wrap">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Ordenar por:</span>
+              <Select
+                value={sortBy}
+                onValueChange={(v) => {
+                  setSortBy(v as "amount" | "oldest" | "newest");
+                  setLoading(true);
+                }}
+              >
+                <SelectTrigger className="w-40 h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="amount">Mayor Deuda</SelectItem>
+                  <SelectItem value="oldest">Más Antiguo</SelectItem>
+                  <SelectItem value="newest">Más Reciente</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Antigüedad:</span>
+              <Select
+                value={agingFilter}
+                onValueChange={(v) => {
+                  setAgingFilter(v as any);
+                }}
+              >
+                <SelectTrigger className="w-44 h-9">
+                  <SelectValue placeholder="Antigüedad" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas las deudas</SelectItem>
+                  <SelectItem value="over30">Más de 30 días</SelectItem>
+                  <SelectItem value="over60">Más de 60 días</SelectItem>
+                  <SelectItem value="over90">Más de 90 días</SelectItem>
+                  <SelectItem value="under30">Recientes (≤ 30 días)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         }
       />
@@ -621,12 +701,16 @@ export default function DebtorsClient() {
         <CardContent className="pt-6">
           <DataTable
             columns={columns}
-            data={debtors}
+            data={filteredDebtors}
+            enableGlobalFilter={true}
+            externalGlobalFilter={searchQuery}
+            onExternalGlobalFilterChange={setSearchQuery}
+            globalFilterPlaceholder="Buscar por cliente, teléfono o patente..."
             pageSize={50}
             emptyMessage={
               loading
                 ? "Cargando reporte..."
-                : "No hay clientes con deuda pendiente"
+                : "No hay clientes con deuda pendiente que coincidan con los filtros"
             }
           />
         </CardContent>
@@ -746,31 +830,45 @@ export default function DebtorsClient() {
             <p className="text-[11px] text-zinc-500 font-mono">
               Ordenado por: {sortBy === "amount" ? "Mayor Deuda" : sortBy === "oldest" ? "Deuda Más Antigua" : "Deuda Más Reciente"}
             </p>
+            {agingFilter !== "all" && (
+              <p className="text-[11px] text-zinc-500 font-mono">
+                Filtro Antigüedad: {
+                  agingFilter === "over30" ? "Más de 30 días" :
+                  agingFilter === "over60" ? "Más de 60 días" :
+                  agingFilter === "over90" ? "Más de 90 días" : "Recientes (≤ 30 días)"
+                }
+              </p>
+            )}
+            {searchQuery.trim() && (
+              <p className="text-[11px] text-zinc-500 font-mono">
+                Búsqueda: &quot;{searchQuery}&quot;
+              </p>
+            )}
           </div>
         </div>
 
         {/* Resumen de Cuentas (KPIs para impresión) */}
-        {summary && (
+        {filteredSummary && (
           <div className="grid grid-cols-5 gap-4 border border-zinc-300 rounded-lg p-4 mb-6 bg-zinc-50/50">
             <div className="space-y-1">
               <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">Deuda Total</span>
-              <p className="text-sm font-bold font-mono text-red-700">{formatARS(summary.totalDebt)}</p>
+              <p className="text-sm font-bold font-mono text-red-700">{formatARS(filteredSummary.totalDebt)}</p>
             </div>
             <div className="space-y-1">
               <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">Clientes Deudores</span>
-              <p className="text-sm font-bold font-mono text-zinc-900">{summary.totalCustomers}</p>
+              <p className="text-sm font-bold font-mono text-zinc-900">{filteredSummary.totalCustomers}</p>
             </div>
             <div className="space-y-1">
               <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">OTs Impagas</span>
-              <p className="text-sm font-bold font-mono text-zinc-900">{summary.totalWorkOrders}</p>
+              <p className="text-sm font-bold font-mono text-zinc-900">{filteredSummary.totalWorkOrders}</p>
             </div>
             <div className="space-y-1">
               <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">Ventas Dir. Impagas</span>
-              <p className="text-sm font-bold font-mono text-zinc-900">{summary.totalDirectSales || 0}</p>
+              <p className="text-sm font-bold font-mono text-zinc-900">{filteredSummary.totalDirectSales}</p>
             </div>
             <div className="space-y-1">
               <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">Deuda Promedio</span>
-              <p className="text-sm font-bold font-mono text-zinc-900">{formatARS(summary.averageDebt)}</p>
+              <p className="text-sm font-bold font-mono text-zinc-900">{formatARS(filteredSummary.averageDebt)}</p>
             </div>
           </div>
         )}
@@ -791,14 +889,14 @@ export default function DebtorsClient() {
               </tr>
             </thead>
             <tbody>
-              {debtors.length === 0 ? (
+              {filteredDebtors.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="p-4 text-center text-xs text-zinc-500 italic">
-                    No hay clientes con deuda pendiente
+                    No hay clientes con deuda pendiente que coincidan con los filtros
                   </td>
                 </tr>
               ) : (
-                debtors.map((debtor, idx) => {
+                filteredDebtors.map((debtor, idx) => {
                   const daysSince = getDaysSince(debtor.oldestDebtDate);
                   return (
                     <tr key={idx} className="border-b border-zinc-200 text-[11px] hover:bg-zinc-50 transition-colors">

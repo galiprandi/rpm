@@ -3,6 +3,15 @@ import { render, screen, fireEvent, act } from "@testing-library/react";
 import { ChatFloating } from "./ChatFloating";
 import React from "react";
 
+// Mock URL createObjectURL and revokeObjectURL for memory management testing
+const mockCreateObjectURL = vi.fn().mockReturnValue("blob:mock-url");
+const mockRevokeObjectURL = vi.fn();
+
+if (typeof window !== "undefined") {
+  window.URL.createObjectURL = mockCreateObjectURL;
+  window.URL.revokeObjectURL = mockRevokeObjectURL;
+}
+
 // Mock scrollIntoView for HTMLElement in JSDOM
 HTMLElement.prototype.scrollIntoView = vi.fn();
 
@@ -74,6 +83,8 @@ vi.mock("@/components/ui/tooltip", () => ({
 describe("ChatFloating Component", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockCreateObjectURL.mockClear();
+    mockRevokeObjectURL.mockClear();
     mockMessages = [];
     mockPathname = "/adm/dashboard";
     // Clear global speech recognition mocks
