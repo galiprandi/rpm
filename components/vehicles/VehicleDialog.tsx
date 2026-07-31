@@ -23,6 +23,19 @@ import {
 } from 'lucide-react';
 import { VehicleForm, type VehicleFormData } from './VehicleForm';
 import { useUI } from '@/components/ui/UIProvider';
+import {
+  validateArgentinePhone,
+  formatArgentinePhone,
+} from '@/lib/utils/phone-validation';
+import { cn } from '@/lib/utils';
+
+const POPULAR_PREFIXES = [
+  { code: "11", label: "AMBA (11)" },
+  { code: "351", label: "Córdoba (351)" },
+  { code: "341", label: "Rosario (341)" },
+  { code: "261", label: "Mendoza (261)" },
+  { code: "381", label: "Tucumán (381)" },
+];
 
 interface Customer {
   id: string;
@@ -63,6 +76,11 @@ export function VehicleDialog({
     email: '',
   });
 
+  // Validation States for Inline Customer Phone
+  const [phoneError, setPhoneError] = useState<string | null>(null);
+  const [phoneSuccess, setPhoneSuccess] = useState<boolean>(false);
+  const [phoneRegion, setPhoneRegion] = useState<string | null>(null);
+
   // Reset form when modal opens
   useEffect(() => {
     if (open) {
@@ -72,6 +90,9 @@ export function VehicleDialog({
       setFoundCustomers([]);
       setIsCreatingCustomer(false);
       setNewCustomerData({ name: '', phone: '', email: '' });
+      setPhoneError(null);
+      setPhoneSuccess(false);
+      setPhoneRegion(null);
     }
   }, [open, customerIdProp, customerNameProp]);
 
@@ -91,8 +112,118 @@ export function VehicleDialog({
     }
   };
 
+  const handlePhoneChange = (val: string) => {
+    setNewCustomerData((prev) => ({ ...prev, phone: val }));
+
+    const digits = val.replace(/\D/g, "");
+    if (digits.length >= 10) {
+      const res = validateArgentinePhone(val);
+      if (res.isValid) {
+        setPhoneError(null);
+        setPhoneSuccess(true);
+        setPhoneRegion(res.region || null);
+        if (res.normalized) {
+          const formatted = formatArgentinePhone(res.normalized);
+          setNewCustomerData((prev) => ({ ...prev, phone: formatted }));
+        }
+      } else {
+        setPhoneSuccess(false);
+        setPhoneRegion(null);
+      }
+    } else {
+      setPhoneSuccess(false);
+      setPhoneRegion(null);
+      setPhoneError(null);
+    }
+  };
+
+  const handlePhoneBlur = (val: string) => {
+    if (!val) {
+      setPhoneError(null);
+      setPhoneSuccess(false);
+      setPhoneRegion(null);
+      return;
+    }
+    const res = validateArgentinePhone(val);
+    if (res.isValid) {
+      setPhoneError(null);
+      setPhoneSuccess(true);
+      setPhoneRegion(res.region || null);
+      if (res.normalized) {
+        const formatted = formatArgentinePhone(res.normalized);
+        setNewCustomerData((prev) => ({ ...prev, phone: formatted }));
+      }
+    } else {
+      setPhoneError(res.error || "Número no válido");
+      setPhoneSuccess(false);
+      setPhoneRegion(null);
+    }
+  };
+
+  const applyPrefix = (code: string) => {
+    setNewCustomerData((prev) => {
+      const currentVal = prev.phone;
+      let localDigits = "";
+      if (currentVal) {
+        const digits = currentVal.replace(/\D/g, "");
+        if (digits.length > 0) {
+          let cleanDigits = digits;
+          if (cleanDigits.startsWith("549")) {
+            cleanDigits = cleanDigits.substring(3);
+          } else if (cleanDigits.startsWith("54")) {
+            cleanDigits = cleanDigits.substring(2);
+          }
+          if (cleanDigits.startsWith("9")) {
+            cleanDigits = cleanDigits.substring(1);
+          }
+          if (cleanDigits.startsWith("0")) {
+            cleanDigits = cleanDigits.substring(1);
+          }
+          localDigits = cleanDigits.slice(-Math.min(cleanDigits.length, 8));
+        }
+      }
+
+      const newRaw = `549${code}${localDigits}`;
+      const formatted = localDigits ? formatArgentinePhone(newRaw) : `+54 9 ${code} `;
+
+      const res = validateArgentinePhone(formatted);
+      if (res.isValid) {
+        setPhoneError(null);
+        setPhoneSuccess(true);
+        setPhoneRegion(res.region || null);
+      } else {
+        setPhoneError(null);
+        setPhoneSuccess(false);
+        setPhoneRegion(null);
+      }
+
+      return {
+        ...prev,
+        phone: formatted,
+      };
+    });
+
+    setTimeout(() => {
+      const el = document.getElementById("new-customer-phone") as HTMLInputElement;
+      if (el) {
+        el.focus();
+        const len = el.value.length;
+        el.setSelectionRange(len, len);
+      }
+    }, 50);
+  };
+
   const createCustomerInline = async () => {
     if (!newCustomerData.name || !newCustomerData.phone) return;
+
+    // Validate phone number before sending
+    const res = validateArgentinePhone(newCustomerData.phone);
+    if (!res.isValid) {
+      setPhoneError(res.error || "Teléfono principal inválido");
+      setPhoneSuccess(false);
+      return;
+    }
+
     setCreatingCustomer(true);
     try {
       const res = await fetch('/api/customers', {
@@ -316,14 +447,45 @@ export function VehicleDialog({
                     <Input
                       id="new-customer-phone"
                       value={newCustomerData.phone}
-                      onChange={(e) =>
-                        setNewCustomerData((prev) => ({ ...prev, phone: e.target.value }))
-                      }
-                      placeholder="Ej: 1123456789"
-                      className="pl-9 font-mono"
+                      onChange={(e) => handlePhoneChange(e.target.value)}
+                      onBlur={(e) => handlePhoneBlur(e.target.value)}
+                      placeholder="+54 9 11 1234-5678"
+                      className={cn(
+                        "pl-9 font-mono",
+                        phoneError && "border-destructive ring-destructive/20 focus-visible:ring-destructive",
+                        phoneSuccess && "border-emerald-500 focus-visible:ring-emerald-500"
+                      )}
                       aria-required="true"
                     />
                   </div>
+
+                  {/* Quick Prefixes Autocomplete Chips */}
+                  <div className="mt-1 flex flex-wrap gap-1 items-center">
+                    <span className="text-[0.7rem] text-muted-foreground mr-0.5">Prefijos:</span>
+                    {POPULAR_PREFIXES.map((prefix) => (
+                      <button
+                        key={prefix.code}
+                        type="button"
+                        onClick={() => applyPrefix(prefix.code)}
+                        className="inline-flex items-center justify-center rounded-md border border-input bg-background px-1.5 py-0.5 text-[0.7rem] font-medium hover:bg-accent hover:text-accent-foreground transition-all duration-200 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 cursor-pointer"
+                        aria-label={`Aplicar prefijo (${prefix.code}) al teléfono principal`}
+                      >
+                        {prefix.code}
+                      </button>
+                    ))}
+                  </div>
+
+                  {phoneError && (
+                    <p className="text-[0.8rem] font-medium text-destructive mt-1">
+                      {phoneError}
+                    </p>
+                  )}
+                  {phoneSuccess && (
+                    <p className="text-[0.8rem] font-medium text-emerald-700 mt-1 flex items-center gap-1">
+                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      Teléfono válido ({phoneRegion})
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="new-customer-email">Email</Label>
