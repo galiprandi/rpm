@@ -17,6 +17,7 @@ import {
   Search,
   Package,
   Pencil,
+  GitBranch,
 } from "lucide-react";
 import { Header, StatItem, CrudStats } from "@/components/adm";
 import { ModalBase, ModalBaseFooter } from "@/components/ui/ModalBase";
@@ -52,6 +53,7 @@ interface PriceListDetail {
   isActive: boolean;
   baseMarginPercentage: number;
   roundingRule: string;
+  basePriceListId: string | null;
   itemCount: number;
   items: PriceListItem[];
 }
@@ -440,6 +442,11 @@ export default function PriceListDetailClient({
       label: "Margen Base",
       value: `${priceList.baseMarginPercentage}%`,
       icon: Percent,
+    },
+    {
+      label: "Base",
+      value: priceList.basePriceListId ? "Otra lista" : "Costo",
+      icon: GitBranch,
     },
     {
       label: "Redondeo",

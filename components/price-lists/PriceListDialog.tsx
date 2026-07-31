@@ -1,7 +1,7 @@
 'use client';
 
 import { ModalBase, ModalBaseFooter } from '@/components/ui/ModalBase';
-import { PriceListForm, type PriceListFormData } from './PriceListForm';
+import { PriceListForm, type PriceListFormData, type PriceListOption } from './PriceListForm';
 
 interface PriceList {
   id: string;
@@ -20,6 +20,8 @@ interface PriceListDialogProps {
   formData: PriceListFormData;
   setFormData: (data: PriceListFormData) => void;
   onSubmit: (e?: React.FormEvent) => void;
+  /** Other price lists available to use as a calculation base. */
+  availableBaseLists?: PriceListOption[];
 }
 
 export function PriceListDialog({
@@ -29,6 +31,7 @@ export function PriceListDialog({
   formData,
   setFormData,
   onSubmit,
+  availableBaseLists = [],
 }: PriceListDialogProps) {
   return (
     <ModalBase
@@ -52,6 +55,8 @@ export function PriceListDialog({
         formData={formData}
         setFormData={setFormData}
         onSubmit={onSubmit}
+        availableBaseLists={availableBaseLists}
+        currentListId={editingPriceList?.id}
       />
     </ModalBase>
   );

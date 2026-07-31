@@ -87,12 +87,20 @@ export async function PUT(request: NextRequest, { params }: Params) {
     if (body.isActive !== undefined) input.isActive = body.isActive;
     if (body.startDate !== undefined) input.startDate = body.startDate ? new Date(body.startDate) : null;
     if (body.endDate !== undefined) input.endDate = body.endDate ? new Date(body.endDate) : null;
+    if (body.basePriceListId !== undefined) input.basePriceListId = body.basePriceListId;
 
     const priceList = await updatePriceList(id, input);
 
     return NextResponse.json({ priceList });
   } catch (error) {
     console.error('Error updating price list:', error);
+    // CircularReferenceError → 400 (client error: invalid base)
+    if (error instanceof Error && error.name === 'CircularReferenceError') {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 400 }
+      );
+    }
     return NextResponse.json(
       { error: 'Error updating price list' },
       { status: 500 }

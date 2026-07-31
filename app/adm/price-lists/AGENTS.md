@@ -20,9 +20,14 @@ Gestión de listas de precios dinámicas que calculan precios de venta desde cos
 ## Architecture
 
 - **Costo base**: `getProductBaseCost()` usa `replacementCost` → `costPrice`
-- **Cálculo precio**: `replacementCost * (1 + margin%) + rounding`
-- **Excepciones**: Ítems con margen override o precio fijo
+- **Cálculo precio**: Centralizado en `lib/services/priceCalculationService.ts`
+  - `calculateBatchPrices(productIds, listIds)` — batch con `PriceCalcContext` (cache en memoria)
+  - Resuelve cadena `basePriceListId` recursivamente (sin límite de profundidad, con detección de ciclos)
+  - Cuando una lista tiene `basePriceListId`, el precio final de la lista base se usa como costo base
+  - `isBelowMinimum` / `actualMargin` siempre contra el costo real del producto (no contra el precio base)
+- **Excepciones**: Ítems con margen override o precio fijo (prioridad: fixedPrice > overrideMargin > baseMargin)
 - **Alertas**: 🔴 para márgenes por debajo del mínimo global
+- **Cache**: `unstable_cache` con tag `price-lists` en `publicCatalogService`; `invalidatePriceLists()` en todas las mutaciones
 
 ## Development Notes
 

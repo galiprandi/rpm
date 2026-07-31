@@ -78,6 +78,7 @@ export const POST = withStaff(async (request: NextRequest, _session) => {
       isActive: body.isActive ?? true,
       startDate: body.startDate ? new Date(body.startDate) : null,
       endDate: body.endDate ? new Date(body.endDate) : null,
+      basePriceListId: body.basePriceListId ?? null,
     };
 
     const priceList = await createPriceList(input);
@@ -85,6 +86,13 @@ export const POST = withStaff(async (request: NextRequest, _session) => {
     return NextResponse.json({ priceList }, { status: 201 });
   } catch (error) {
     console.error('Error creating price list:', error);
+    // CircularReferenceError → 400 (client error: invalid base)
+    if (error instanceof Error && error.name === 'CircularReferenceError') {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 400 }
+      );
+    }
     return NextResponse.json(
       { error: 'Error creating price list', details: (error as Error).message },
       { status: 500 }

@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Tag, TrendingUp, ListOrdered, Eye, CheckCircle } from 'lucide-react';
+import { Tag, TrendingUp, ListOrdered, Eye, CheckCircle, GitBranch } from 'lucide-react';
 
 export interface PriceListFormData {
   name: string;
@@ -17,23 +17,37 @@ export interface PriceListFormData {
   roundingRule: 'EXACT' | 'NEAREST_INTEGER' | 'PSYCHOLOGICAL' | 'SMART_HUNDREDS';
   isPublic: boolean;
   isActive: boolean;
+  basePriceListId: string | null;
+}
+
+export interface PriceListOption {
+  id: string;
+  name: string;
 }
 
 interface PriceListFormProps {
   formData: PriceListFormData;
   setFormData: (data: PriceListFormData) => void;
   onSubmit: (e?: React.FormEvent) => void;
+  /** Other price lists available to use as a calculation base. */
+  availableBaseLists?: PriceListOption[];
+  /** When editing, the list's own id (excluded from base options). */
+  currentListId?: string;
 }
 
 export function PriceListForm({
   formData,
   setFormData,
   onSubmit,
+  availableBaseLists = [],
+  currentListId,
 }: PriceListFormProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit(e);
   };
+
+  const baseOptions = availableBaseLists.filter((l) => l.id !== currentListId);
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 py-2">
@@ -51,6 +65,39 @@ export function PriceListForm({
             className="pl-9"
           />
         </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="basePriceListId">Lista Base (opcional)</Label>
+        <div className="relative">
+          <GitBranch className="absolute left-3 top-2 h-4 w-4 text-muted-foreground z-10 pointer-events-none" aria-hidden="true" />
+          <Select
+            value={formData.basePriceListId ?? '__none__'}
+            onValueChange={(value) =>
+              setFormData({
+                ...formData,
+                basePriceListId: value === '__none__' ? null : value,
+              })
+            }
+          >
+            <SelectTrigger id="basePriceListId" className="pl-9">
+              <SelectValue placeholder="Calcular desde costo de reposición" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none__">Costo de reposición (sin base)</SelectItem>
+              {baseOptions.map((list) => (
+                <SelectItem key={list.id} value={list.id}>
+                  {list.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Si seleccionas otra lista, el precio final de esa lista se usa como costo base
+          para calcular los precios de esta. El margen mínimo siempre se valida contra
+          el costo real del producto.
+        </p>
       </div>
 
       <div className="space-y-2">

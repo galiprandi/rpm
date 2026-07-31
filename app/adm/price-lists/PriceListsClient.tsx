@@ -10,7 +10,7 @@ import { CostUpdateDialog } from '@/components/cost-updates/CostUpdateDialog';
 import { ProductAuditModal } from '@/components/products/ProductAuditModal';
 import { type PriceListFormData } from '@/components/price-lists/PriceListForm';
 import { Header, CrudAdmin, StatItem, CrudStats } from '@/components/adm';
-import { DollarSign, Pencil, Trash2, List, Percent, Layers, TrendingUp, History, Plus } from 'lucide-react';
+import { DollarSign, Pencil, Trash2, List, Percent, Layers, TrendingUp, History, Plus, GitBranch } from 'lucide-react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';
 import {
@@ -26,6 +26,7 @@ interface PriceList {
   isActive: boolean;
   baseMarginPercentage: number;
   roundingRule: string;
+  basePriceListId: string | null;
   itemCount: number;
 }
 
@@ -43,6 +44,7 @@ export default function PriceListsClient({ initialPriceLists }: PriceListsClient
     roundingRule: 'SMART_HUNDREDS',
     isPublic: false,
     isActive: true,
+    basePriceListId: null,
   });
   const [editingPriceList, setEditingPriceList] = useState<PriceList | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -55,6 +57,7 @@ export default function PriceListsClient({ initialPriceLists }: PriceListsClient
     roundingRule: 'SMART_HUNDREDS',
     isPublic: false,
     isActive: true,
+    basePriceListId: null,
   });
 
   const fetchPriceLists = async () => {
@@ -94,6 +97,7 @@ export default function PriceListsClient({ initialPriceLists }: PriceListsClient
           roundingRule: 'SMART_HUNDREDS',
           isPublic: false,
           isActive: true,
+          basePriceListId: null,
         });
         setIsCreateDialogOpen(false);
         fetchPriceLists();
@@ -128,6 +132,7 @@ export default function PriceListsClient({ initialPriceLists }: PriceListsClient
       roundingRule: priceList.roundingRule as PriceListFormData['roundingRule'],
       isPublic: priceList.isPublic,
       isActive: priceList.isActive,
+      basePriceListId: priceList.basePriceListId ?? null,
     };
 
     try {
@@ -182,6 +187,7 @@ export default function PriceListsClient({ initialPriceLists }: PriceListsClient
       roundingRule: priceList.roundingRule as PriceListFormData['roundingRule'],
       isPublic: priceList.isPublic,
       isActive: priceList.isActive,
+      basePriceListId: priceList.basePriceListId ?? null,
     });
     setIsDialogOpen(true);
   };
@@ -270,6 +276,23 @@ export default function PriceListsClient({ initialPriceLists }: PriceListsClient
         ),
       },
       {
+        accessorKey: 'basePriceListId',
+        header: 'Base',
+        cell: ({ row }) => {
+          const baseId = row.original.basePriceListId;
+          if (!baseId) {
+            return <Badge variant="outline">Costo</Badge>;
+          }
+          const baseList = priceLists.find((pl) => pl.id === baseId);
+          return (
+            <Badge variant="secondary" className="gap-1">
+              <GitBranch className="h-3 w-3" aria-hidden="true" />
+              {baseList?.name ?? 'Eliminada'}
+            </Badge>
+          );
+        },
+      },
+      {
         accessorKey: 'roundingRule',
         header: 'Redondeo',
         cell: ({ row }) => (
@@ -307,7 +330,7 @@ export default function PriceListsClient({ initialPriceLists }: PriceListsClient
           ),
       },
     ],
-    []
+    [priceLists]
   );
 
   return (
@@ -393,6 +416,7 @@ export default function PriceListsClient({ initialPriceLists }: PriceListsClient
         formData={editForm}
         setFormData={setEditForm}
         onSubmit={handleEditSubmit}
+        availableBaseLists={priceLists.map((pl) => ({ id: pl.id, name: pl.name }))}
       />
 
       {/* Create Price List Dialog */}
@@ -406,6 +430,7 @@ export default function PriceListsClient({ initialPriceLists }: PriceListsClient
           e?.preventDefault();
           handleCreatePriceList();
         }}
+        availableBaseLists={priceLists.map((pl) => ({ id: pl.id, name: pl.name }))}
       />
       {/* Cost Update Dialog */}
       <CostUpdateDialog

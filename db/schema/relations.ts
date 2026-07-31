@@ -287,8 +287,16 @@ export const priceListItemRelations = relations(priceListItem, ({one}) => ({
 	}),
 }));
 
-export const priceListRelations = relations(priceList, ({many}) => ({
+export const priceListRelations = relations(priceList, ({many, one}) => ({
 	priceListItems: many(priceListItem),
+	// The list this list is based on (if any). Self-reference one() side only —
+	// the many() side (dependentLists) is omitted to avoid infinite recursive
+	// types in Drizzle's inference.
+	basePriceList: one(priceList, {
+		fields: [priceList.basePriceListId],
+		references: [priceList.id],
+		relationName: "basePriceList",
+	}),
 }));
 
 export const balanceAuditRelations = relations(balanceAudit, ({one}) => ({

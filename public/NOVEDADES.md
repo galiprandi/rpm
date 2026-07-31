@@ -4,6 +4,14 @@ Mantente al día con las últimas actualizaciones y mejoras
 
 ---
 
+### 🗓️ 16 de Julio de 2026
+
+**🎉 Precios**: Las listas de precios ahora pueden calcularse sobre otras listas. Por ejemplo, "Tarjetas" puede basarse en "Contado", que a su vez se calcula sobre el costo de reposición. El margen mínimo siempre se valida contra el costo real del producto.
+
+**✨ Precios**: Cálculo de precios centralizado en un único servicio, eliminando duplicación entre búsqueda, catálogo público y batch de precios.
+
+---
+
 ### 🗓️ 15 de Julio de 2026
 
 **🎉 Reportes**: Nuevo reporte de Rentabilidad en el centro de reportes.

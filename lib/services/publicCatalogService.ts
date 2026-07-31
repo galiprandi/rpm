@@ -24,9 +24,11 @@
  */
 
 import { db } from '@/lib/db';
-import { priceList, priceListItem, product, category } from '@/db/schema';
-import { eq, and, isNotNull, desc, asc } from 'drizzle-orm';
-import { applyRounding, RoundingRule } from '@/lib/utils/rounding';
+import { priceList, product, category } from '@/db/schema';
+import { eq, and, desc, asc } from 'drizzle-orm';
+import { calculateBatchPrices } from './priceCalculationService';
+import { CACHE_TAGS, CACHE_DURATIONS } from '@/lib/cache';
+import { unstable_cache } from 'next/cache';
 
 /**
  * Coerce a Drizzle numeric (string/number/null) into a number.
@@ -71,112 +73,44 @@ export interface PublicCatalogResult {
 
 // Helpers
 
-interface PriceException {
-  overrideMarginPercentage: number | null;
-  fixedPrice: number | null;
-}
-
-interface PublicPriceListContext {
-  id: string;
-  baseMarginPercentage: number;
-  roundingRule: RoundingRule;
-  exceptions: Map<string, PriceException>;
-}
-
 /**
- * Load the active public price list together with its per-product
- * exceptions. Returns null when no public price list is active.
+ * Load the active public price list id. Returns null when no public price
+ * list is active. The actual price computation is delegated to the
+ * centralized priceCalculationService (which resolves basePriceListId
+ * chains and exceptions consistently).
  */
-async function loadPublicPriceListContext(): Promise<PublicPriceListContext | null> {
+async function getPublicPriceListId(): Promise<string | null> {
   const publicPriceList = await db.query.priceList.findFirst({
     where: and(
       eq(priceList.isPublic, true),
       eq(priceList.isActive, true),
     ),
     orderBy: desc(priceList.createdAt),
-    columns: {
-      id: true,
-      baseMarginPercentage: true,
-      roundingRule: true,
-    },
+    columns: { id: true },
   });
 
-  if (!publicPriceList) return null;
-
-  const exceptions = await db.query.priceListItem.findMany({
-    where: and(
-      eq(priceListItem.priceListId, publicPriceList.id),
-      isNotNull(priceListItem.productId),
-    ),
-    columns: {
-      productId: true,
-      overrideMarginPercentage: true,
-      fixedPrice: true,
-    },
-  });
-
-  const exceptionMap = new Map<string, PriceException>();
-  for (const item of exceptions) {
-    if (item.productId) {
-      exceptionMap.set(item.productId, {
-        overrideMarginPercentage:
-          item.overrideMarginPercentage !== null
-            ? toNumber(item.overrideMarginPercentage, 0)
-            : null,
-        fixedPrice: item.fixedPrice !== null ? toNumber(item.fixedPrice, 0) : null,
-      });
-    }
-  }
-
-  return {
-    id: publicPriceList.id,
-    baseMarginPercentage: toNumber(publicPriceList.baseMarginPercentage, 0),
-    roundingRule: (publicPriceList.roundingRule as RoundingRule) || 'SMART_HUNDREDS',
-    exceptions: exceptionMap,
-  };
+  return publicPriceList?.id ?? null;
 }
 
 /**
- * Compute the public price for a single product given the active
- * public price list context (or null when none exists).
- *
- * Priority:
- *   1. fixedPrice exception (no rounding applied)
- *   2. overrideMarginPercentage exception over the base cost
- *   3. baseMarginPercentage from the public price list
- *   4. category defaultMarginPercent fallback (when no public list)
- *
- * Base cost prefers replacementCost when > 0, otherwise costPrice.
+ * Compute the public price for a single product using the category default
+ * margin fallback (when no public price list exists). Uses the same
+ * rounding rule as the centralized service for consistency.
  */
-function computePublicPrice(
+function computeCategoryFallbackPrice(
   productRec: {
-    id: string;
     costPrice: unknown;
     replacementCost: unknown;
     category: { defaultMarginPercent: unknown } | null;
   },
-  ctx: PublicPriceListContext | null,
 ): number {
   const costPrice = toNumber(productRec.costPrice, 0);
   const replacementCost = toNumber(productRec.replacementCost, 0);
   const baseCost = replacementCost > 0 ? replacementCost : costPrice;
-
-  if (ctx) {
-    const exc = ctx.exceptions.get(productRec.id);
-    if (exc && exc.fixedPrice !== null) {
-      return exc.fixedPrice;
-    }
-    const margin =
-      exc && exc.overrideMarginPercentage !== null
-        ? exc.overrideMarginPercentage
-        : ctx.baseMarginPercentage;
-    const rawPrice = baseCost * (1 + margin / 100);
-    return applyRounding(rawPrice, ctx.roundingRule);
-  }
-
   const categoryMargin = toNumber(productRec.category?.defaultMarginPercent ?? null, 40);
   const rawPrice = baseCost * (1 + categoryMargin / 100);
-  return applyRounding(rawPrice, 'SMART_HUNDREDS');
+  // SMART_HUNDREDS: round to nearest 10 (matches original behavior)
+  return Math.round(rawPrice / 10) * 10;
 }
 
 // Public API
@@ -186,10 +120,14 @@ function computePublicPrice(
  * and active categories ordered by sortOrder. Only safe fields are
  * returned. Throws when the database is unreachable so the caller
  * (Server Component / API route) can surface a 500 error.
+ *
+ * Prices are computed via the centralized priceCalculationService so that
+ * basePriceListId chains and exceptions are resolved consistently with the
+ * rest of the system. Cached with unstable_cache + 'price-lists' tag.
  */
-export async function getPublicCatalog(): Promise<PublicCatalogResult> {
-  const [priceListCtx, dbProducts, dbCategories] = await Promise.all([
-    loadPublicPriceListContext(),
+async function fetchPublicCatalog(): Promise<PublicCatalogResult> {
+  const [publicListId, dbProducts, dbCategories] = await Promise.all([
+    getPublicPriceListId(),
     db.query.product.findMany({
       where: eq(product.isActive, true),
       columns: {
@@ -219,14 +157,28 @@ export async function getPublicCatalog(): Promise<PublicCatalogResult> {
     }),
   ]);
 
-  const products: PublicCatalogProduct[] = dbProducts.map((productRec) => {
-    const price = computePublicPrice(productRec, priceListCtx);
+  // Compute prices via centralized service when a public list exists.
+  // Falls back to category default margin otherwise.
+  let priceMap: Map<string, Map<string, any>> = new Map();
+  if (publicListId && dbProducts.length > 0) {
+    const productIds = dbProducts.map((p) => p.id);
+    priceMap = await calculateBatchPrices(productIds, [publicListId]) as any;
+  }
+
+  const products: PublicCatalogProduct[] = dbProducts.map((productRec: any) => {
+    let price: number;
+    if (publicListId) {
+      const calc = priceMap.get(productRec.id)?.get(publicListId);
+      price = calc?.finalPrice ?? computeCategoryFallbackPrice(productRec);
+    } else {
+      price = computeCategoryFallbackPrice(productRec);
+    }
     const imageFallback = productRec.name ? productRec.name.charAt(0).toUpperCase() : 'P';
     return {
       id: productRec.id,
       sku: productRec.sku || '',
       name: productRec.name,
-      category: productRec.category?.name || 'Varios',
+      category: (productRec.category as any)?.name || 'Varios',
       price,
       image: imageFallback,
       imageUrl: productRec.imageUrl || null,
@@ -244,3 +196,16 @@ export async function getPublicCatalog(): Promise<PublicCatalogResult> {
     })),
   };
 }
+
+/**
+ * Cached public catalog. Invalidated via the 'price-lists' tag whenever
+ * price lists or items are mutated (see invalidatePriceLists).
+ */
+export const getPublicCatalog = unstable_cache(
+  fetchPublicCatalog,
+  ['public-catalog'],
+  {
+    revalidate: CACHE_DURATIONS.PRICE_LISTS,
+    tags: [CACHE_TAGS.PRICE_LISTS],
+  },
+);

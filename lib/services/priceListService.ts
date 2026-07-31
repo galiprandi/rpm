@@ -10,6 +10,12 @@ import { priceList, priceListItem, product } from '@/db/schema';
 import { eq, sql, asc, desc } from 'drizzle-orm';
 import { calculateFinalPrice, calculateMarginPercentage, type RoundingRule } from '@/lib/utils/rounding';
 import { getMinimumMargin } from './settingsService';
+import { invalidatePriceLists } from '@/lib/cache';
+import {
+  calculateBatchPrices,
+  validateNoCycle,
+  CircularReferenceError,
+} from './priceCalculationService';
 import { randomUUID } from 'crypto';
 import { revalidatePath } from 'next/cache';
 
@@ -21,6 +27,7 @@ import { revalidatePath } from 'next/cache';
 function revalidatePublicCatalog(): void {
   revalidatePath('/');
   revalidatePath('/productos');
+  invalidatePriceLists();
 }
 
 /**
@@ -59,6 +66,8 @@ export interface PriceList {
   endDate: Date | null;
   baseMarginPercentage: number;
   roundingRule: RoundingRule;
+  /** Optional reference to another price list used as the calculation base. */
+  basePriceListId: string | null;
   itemCount: number;
   createdAt: Date;
   updatedAt: Date;
@@ -92,6 +101,8 @@ export interface CreatePriceListInput {
   endDate?: Date | null;
   baseMarginPercentage: number;
   roundingRule?: RoundingRule;
+  /** Optional reference to another price list used as the calculation base. */
+  basePriceListId?: string | null;
 }
 
 export type UpdatePriceListInput = Partial<CreatePriceListInput>;
@@ -146,6 +157,7 @@ export async function getPriceLists(includeInactive: boolean = false): Promise<P
       endDate: pl.endDate ? new Date(pl.endDate) : null,
       baseMarginPercentage: Number(pl.baseMarginPercentage),
       roundingRule: pl.roundingRule as RoundingRule,
+      basePriceListId: pl.basePriceListId ?? null,
       itemCount: pl.priceListItems.length,
       createdAt: new Date(pl.createdAt),
       updatedAt: new Date(pl.updatedAt),
@@ -167,6 +179,7 @@ export async function getPriceListById(id: string): Promise<PriceListDetail | nu
               name: true,
               sku: true,
               replacementCost: true,
+              costPrice: true,
             },
           },
         },
@@ -177,26 +190,28 @@ export async function getPriceListById(id: string): Promise<PriceListDetail | nu
 
   if (!pl) return null;
 
-  const minimumMargin = await getMinimumMargin();
+  // Compute prices via the centralized service so chains (basePriceListId)
+  // and exceptions are resolved consistently across the system.
+  const productIds = pl.priceListItems
+    .map((item: { productId: string | null }) => item.productId)
+    .filter((pid: string | null): pid is string => pid !== null);
 
-  // Transform items with calculated prices and margins
-  const transformedItems: PriceListItem[] = pl.priceListItems.map((item) => {
-    const replacementCost = item.product?.replacementCost
-      ? Number(item.product.replacementCost)
+  const priceMap = productIds.length > 0
+    ? await calculateBatchPrices(productIds, [pl.id])
+    : new Map<string, Map<string, ReturnType<typeof Object>>>();
+
+  const transformedItems: PriceListItem[] = pl.priceListItems.map((item: any) => {
+    const replacementCost = item.product
+      ? getProductBaseCost(item.product.replacementCost, item.product.costPrice)
       : 0;
 
-    const finalPrice = item.fixedPrice !== null
-      ? Number(item.fixedPrice)
-      : calculateFinalPrice(
-          replacementCost,
-          Number(pl.baseMarginPercentage),
-          pl.roundingRule as RoundingRule,
-          item.overrideMarginPercentage !== null
-            ? { overrideMarginPercentage: Number(item.overrideMarginPercentage) }
-            : undefined
-        );
+    const calc = item.productId
+      ? (priceMap as Map<string, Map<string, any>>).get(item.productId)?.get(pl.id)
+      : undefined;
 
-    const actualMargin = calculateMarginPercentage(replacementCost, finalPrice);
+    const finalPrice = calc?.finalPrice ?? (item.fixedPrice !== null ? Number(item.fixedPrice) : 0);
+    const actualMargin = calc?.actualMargin ?? calculateMarginPercentage(replacementCost, finalPrice);
+    const isBelowMinimum = calc?.isBelowMinimum ?? false;
 
     return {
       id: item.id,
@@ -211,7 +226,7 @@ export async function getPriceListById(id: string): Promise<PriceListDetail | nu
       fixedPrice: item.fixedPrice !== null ? Number(item.fixedPrice) : null,
       finalPrice,
       actualMargin,
-      isBelowMinimum: actualMargin < minimumMargin,
+      isBelowMinimum,
       createdAt: new Date(item.createdAt),
       updatedAt: new Date(item.updatedAt),
     };
@@ -226,6 +241,7 @@ export async function getPriceListById(id: string): Promise<PriceListDetail | nu
     endDate: pl.endDate ? new Date(pl.endDate) : null,
     baseMarginPercentage: Number(pl.baseMarginPercentage),
     roundingRule: pl.roundingRule as RoundingRule,
+    basePriceListId: pl.basePriceListId ?? null,
     itemCount: pl.priceListItems.length,
     createdAt: new Date(pl.createdAt),
     updatedAt: new Date(pl.updatedAt),
@@ -253,6 +269,7 @@ export async function getPriceListByName(name: string): Promise<PriceList | null
     endDate: pl.endDate ? new Date(pl.endDate) : null,
     baseMarginPercentage: Number(pl.baseMarginPercentage),
     roundingRule: pl.roundingRule as RoundingRule,
+    basePriceListId: pl.basePriceListId ?? null,
     itemCount: pl.priceListItems.length,
     createdAt: new Date(pl.createdAt),
     updatedAt: new Date(pl.updatedAt),
@@ -261,8 +278,19 @@ export async function getPriceListByName(name: string): Promise<PriceList | null
 
 // CREATE price list
 export async function createPriceList(input: CreatePriceListInput): Promise<PriceList> {
+  // Validate no cycle before inserting. The new list's id is generated now so
+  // we can check self-reference and transitive cycles against the proposed base.
+  const newId = randomUUID();
+  const basePriceListId = input.basePriceListId ?? null;
+
+  if (basePriceListId !== null) {
+    // For a new list, the only possible cycle is self-reference (impossible
+    // with a random UUID) — but validate the base exists and its chain is clean.
+    await validateNoCycle(newId, basePriceListId);
+  }
+
   const [created] = await db.insert(priceList).values({
-    id: randomUUID(),
+    id: newId,
     name: input.name,
     isPublic: input.isPublic ?? false,
     isActive: input.isActive ?? true,
@@ -270,8 +298,9 @@ export async function createPriceList(input: CreatePriceListInput): Promise<Pric
     endDate: input.endDate ? input.endDate.toISOString() : null,
     baseMarginPercentage: input.baseMarginPercentage.toString(),
     roundingRule: input.roundingRule ?? 'SMART_HUNDREDS',
+    basePriceListId,
     updatedAt: new Date().toISOString(),
-  }).returning();
+  }).returning() as any;
 
   revalidatePublicCatalog();
 
@@ -286,6 +315,7 @@ export async function createPriceList(input: CreatePriceListInput): Promise<Pric
     endDate: created.endDate ? new Date(created.endDate) : null,
     baseMarginPercentage: Number(created.baseMarginPercentage),
     roundingRule: created.roundingRule as RoundingRule,
+    basePriceListId: created.basePriceListId ?? null,
     itemCount,
     createdAt: new Date(created.createdAt),
     updatedAt: new Date(created.updatedAt),
@@ -294,6 +324,11 @@ export async function createPriceList(input: CreatePriceListInput): Promise<Pric
 
 // UPDATE price list
 export async function updatePriceList(id: string, input: UpdatePriceListInput): Promise<PriceList> {
+  // Validate no cycle when basePriceListId is being changed.
+  if (input.basePriceListId !== undefined) {
+    await validateNoCycle(id, input.basePriceListId ?? null);
+  }
+
   const data: Partial<typeof priceList.$inferInsert> = {};
 
   if (input.name !== undefined) data.name = input.name;
@@ -303,6 +338,7 @@ export async function updatePriceList(id: string, input: UpdatePriceListInput): 
   if (input.endDate !== undefined) data.endDate = input.endDate ? input.endDate.toISOString() : null;
   if (input.baseMarginPercentage !== undefined) data.baseMarginPercentage = input.baseMarginPercentage.toString();
   if (input.roundingRule !== undefined) data.roundingRule = input.roundingRule;
+  if (input.basePriceListId !== undefined) data.basePriceListId = input.basePriceListId;
 
   await db.update(priceList).set(data).where(eq(priceList.id, id));
 
@@ -324,6 +360,7 @@ export async function updatePriceList(id: string, input: UpdatePriceListInput): 
     endDate: pl.endDate ? new Date(pl.endDate) : null,
     baseMarginPercentage: Number(pl.baseMarginPercentage),
     roundingRule: pl.roundingRule as RoundingRule,
+    basePriceListId: pl.basePriceListId ?? null,
     itemCount: pl.priceListItems.length,
     createdAt: new Date(pl.createdAt),
     updatedAt: new Date(pl.updatedAt),
@@ -398,28 +435,20 @@ export async function createPriceListItem(
     },
   });
 
-  const minimumMargin = await getMinimumMargin();
-
-  const finalPrice = item.fixedPrice !== null
-    ? Number(item.fixedPrice)
-    : calculateFinalPrice(
-        replacementCost,
-        Number(pl.baseMarginPercentage),
-        pl.roundingRule as RoundingRule,
-        item.overrideMarginPercentage !== null
-          ? { overrideMarginPercentage: Number(item.overrideMarginPercentage) }
-          : undefined
-      );
-
-  const actualMargin = calculateMarginPercentage(replacementCost, finalPrice);
+  // Compute price via centralized service (resolves basePriceListId chain)
+  const calc = await calculateBatchPrices([input.productId], [priceListId]);
+  const calcResult = calc.get(input.productId)?.get(priceListId);
+  const finalPrice = calcResult?.finalPrice ?? (item.fixedPrice !== null ? Number(item.fixedPrice) : 0);
+  const actualMargin = calcResult?.actualMargin ?? calculateMarginPercentage(replacementCost, finalPrice);
+  const isBelowMinimum = calcResult?.isBelowMinimum ?? false;
 
   revalidatePublicCatalog();
   return {
     id: item.id,
     priceListId: item.priceListId,
     productId: item.productId,
-    productName: itemWithProduct?.product?.name || 'Unknown Product',
-    productSku: itemWithProduct?.product?.sku || undefined,
+    productName: (itemWithProduct?.product as any)?.name || 'Unknown Product',
+    productSku: (itemWithProduct?.product as any)?.sku || undefined,
     replacementCost,
     overrideMarginPercentage: item.overrideMarginPercentage !== null
       ? Number(item.overrideMarginPercentage)
@@ -427,7 +456,7 @@ export async function createPriceListItem(
     fixedPrice: item.fixedPrice !== null ? Number(item.fixedPrice) : null,
     finalPrice,
     actualMargin,
-    isBelowMinimum: actualMargin < minimumMargin,
+    isBelowMinimum,
     createdAt: new Date(item.createdAt),
     updatedAt: new Date(item.updatedAt),
   };
@@ -496,20 +525,15 @@ export async function updatePriceListItem(
     },
   });
 
-  const minimumMargin = await getMinimumMargin();
-
-  const finalPrice = item.fixedPrice !== null
-    ? Number(item.fixedPrice)
-    : calculateFinalPrice(
-        replacementCost,
-        Number(pl.baseMarginPercentage),
-        pl.roundingRule as RoundingRule,
-        item.overrideMarginPercentage !== null
-          ? { overrideMarginPercentage: Number(item.overrideMarginPercentage) }
-          : undefined
-      );
-
-  const actualMargin = calculateMarginPercentage(replacementCost, finalPrice);
+  // Compute price via centralized service (resolves basePriceListId chain)
+  const productId = existing.productId ?? '';
+  const calc = productId
+    ? await calculateBatchPrices([productId], [existing.priceListId])
+    : new Map<string, Map<string, any>>();
+  const calcResult = calc.get(productId)?.get(existing.priceListId);
+  const finalPrice = calcResult?.finalPrice ?? (item.fixedPrice !== null ? Number(item.fixedPrice) : 0);
+  const actualMargin = calcResult?.actualMargin ?? calculateMarginPercentage(replacementCost, finalPrice);
+  const isBelowMinimum = calcResult?.isBelowMinimum ?? false;
 
   revalidatePublicCatalog();
 
@@ -517,8 +541,8 @@ export async function updatePriceListItem(
     id: item.id,
     priceListId: item.priceListId,
     productId: item.productId,
-    productName: itemWithProduct?.product?.name || 'Unknown Product',
-    productSku: itemWithProduct?.product?.sku || undefined,
+    productName: (itemWithProduct?.product as any)?.name || 'Unknown Product',
+    productSku: (itemWithProduct?.product as any)?.sku || undefined,
     replacementCost,
     overrideMarginPercentage: item.overrideMarginPercentage !== null
       ? Number(item.overrideMarginPercentage)
@@ -526,7 +550,7 @@ export async function updatePriceListItem(
     fixedPrice: item.fixedPrice !== null ? Number(item.fixedPrice) : null,
     finalPrice,
     actualMargin,
-    isBelowMinimum: actualMargin < minimumMargin,
+    isBelowMinimum,
     createdAt: new Date(item.createdAt),
     updatedAt: new Date(item.updatedAt),
   };
@@ -549,57 +573,18 @@ export async function calculateProductPrice(
 
   if (!prod) return null;
 
-  const replacementCost = getProductBaseCost(prod.replacementCost, prod.costPrice);
-
-  // Check for exception
-  const exception = await db.query.priceListItem.findFirst({
-    where: eq(priceListItem.priceListId, priceListId),
-  });
-
-  // Need to also filter by productId - use a more specific query
-  const exceptionWithProduct = exception?.productId === productId ? exception : await db.query.priceListItem.findFirst({
-    where: eq(priceListItem.productId, productId),
-  });
-
-  // Actually, we need to find by both priceListId AND productId
-  // Let's use a proper query
-  const { and } = await import('drizzle-orm');
-  const properException = await db.query.priceListItem.findFirst({
-    where: and(
-      eq(priceListItem.priceListId, priceListId),
-      eq(priceListItem.productId, productId),
-    ),
-  });
-
-  const minimumMargin = await getMinimumMargin();
-
-  const finalPrice = properException?.fixedPrice !== null && properException?.fixedPrice !== undefined
-    ? Number(properException.fixedPrice)
-    : calculateFinalPrice(
-        replacementCost,
-        Number(pl.baseMarginPercentage),
-        pl.roundingRule as RoundingRule,
-        properException?.overrideMarginPercentage !== null && properException?.overrideMarginPercentage !== undefined
-          ? { overrideMarginPercentage: Number(properException.overrideMarginPercentage) }
-          : undefined
-      );
-
-  const appliedMargin = properException?.overrideMarginPercentage !== null && properException?.overrideMarginPercentage !== undefined
-    ? Number(properException.overrideMarginPercentage)
-    : Number(pl.baseMarginPercentage);
-
-  const actualMargin = calculateMarginPercentage(replacementCost, finalPrice);
+  // Delegate to centralized service (resolves basePriceListId chain + exceptions)
+  const { calculateListItemPrice } = await import('./priceCalculationService');
+  const calc = await calculateListItemPrice(productId, priceListId);
 
   return {
-    replacementCost,
+    replacementCost: calc.realCost,
     baseMargin: Number(pl.baseMarginPercentage),
-    appliedMargin,
+    appliedMargin: calc.appliedMargin,
     roundingRule: pl.roundingRule as RoundingRule,
-    finalPrice,
-    actualMargin,
-    isBelowMinimum: actualMargin < minimumMargin,
-    fixedPrice: properException?.fixedPrice !== null && properException?.fixedPrice !== undefined
-      ? Number(properException.fixedPrice)
-      : null,
+    finalPrice: calc.finalPrice,
+    actualMargin: calc.actualMargin,
+    isBelowMinimum: calc.isBelowMinimum,
+    fixedPrice: calc.isFixed ? calc.finalPrice : null,
   };
 }

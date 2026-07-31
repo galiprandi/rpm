@@ -1,3 +1,5 @@
+🚦 Estado: 🟢 Implementado (precios vía calculateBatchPrices)
+
 # Especificación: ProductServiceSelector
 
 ## Visión General
@@ -144,7 +146,7 @@ interface SelectedItem {
 | `priceListId` | string? | Lista de precios seleccionada para precio base |
 | `limit` | number | Límite de resultados (default: 20) |
 
-**Nota:** El backend siempre devuelve `allPrices` con los precios calculados para todas las listas activas, permitiendo cambio instantáneo de lista sin nueva petición.
+**Nota:** El backend siempre devuelve `allPrices` con los precios calculados para todas las listas activas, permitiendo cambio instantáneo de lista sin nueva petición. Los precios se calculan con el servicio centralizado `priceCalculationService` (`calculateBatchPrices`), que resuelve la cadena de listas (`basePriceListId`) y aplica excepciones + redondeo de forma consistente. Ver [Listas de Precios](../features/price-lists.md).
 
 **Response:**
 ```typescript

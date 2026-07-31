@@ -84,6 +84,16 @@ export {
   type CalculatedPrice,
 } from './priceListService';
 
+// Price Calculation Service (centralized)
+export {
+  calculateListItemPrice,
+  calculateBatchPrices,
+  validateNoCycle,
+  PriceCalcContext,
+  CircularReferenceError,
+  type CalculatedPrice as CalcPrice,
+} from './priceCalculationService';
+
 // Cost Update Service
 export {
   previewCostUpdate,

@@ -281,11 +281,22 @@ export const priceList = pgTable("price_list", {
 	endDate: timestamp({ precision: 3, mode: 'string' }),
 	baseMarginPercentage: numeric({ precision: 5, scale:  2 }).notNull(),
 	roundingRule: text().default('SMART_HUNDREDS').notNull(),
+	// Optional reference to another price list used as the calculation base.
+	// When null, prices are computed from the product's replacement/cost price
+	// (default behavior). When set, the base is the final price of the product
+	// in the referenced list. ON DELETE SET NULL so dependent lists gracefully
+	// fall back to cost-based calculation if their base is removed.
+	basePriceListId: text(),
 	createdAt: timestamp({ precision: 3, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
 	updatedAt: timestamp({ precision: 3, mode: 'string' }).defaultNow().notNull(),
 }, (table) => [
 	index("price_list_isActive_idx").using("btree", table.isActive.asc().nullsLast().op("bool_ops")),
 	index("price_list_isPublic_idx").using("btree", table.isPublic.asc().nullsLast().op("bool_ops")),
+	index("price_list_basePriceListId_idx").using("btree", table.basePriceListId.asc().nullsLast().op("text_ops")),
+	// NOTE: The self-referencing FK (basePriceListId → price_list.id) is defined
+	// in the migration SQL only, not here. Drizzle's TypeScript inference cannot
+	// handle a table referencing itself in its own config function (TS7022/TS7024).
+	// The FK constraint is applied via migration 0005 and enforced at the DB level.
 ]);
 
 export const invoice = pgTable("invoice", {

@@ -8,7 +8,7 @@ Este módulo centraliza todas las operaciones de venta (mostrador), gestión de 
 ## 2. Casos de Uso Principales (Flujos de éxito)
 - **Venta Rápida (Mostrador)**: Permite registrar una venta, descontar stock, generar la factura e ingresar el dinero a la caja o a la cuenta corriente del cliente.
 - **Facturación Electrónica (Estructura)**: Base de datos preparada para registrar CAE y datos de AFIP.
-- **Listas de Precios Dinámicas**: Permite definir márgenes sobre el costo de reposición (`replacementCost`) con reglas de redondeo, calculando el precio final automáticamente.
+- **Listas de Precios Dinámicas**: Permite definir márgenes sobre el costo de reposición (`replacementCost`) o sobre el precio final de otra lista (`basePriceListId`), con reglas de redondeo, calculando el precio final automáticamente. Todos los precios del sistema se calculan con un único servicio centralizado (`priceCalculationService`). Ver [Listas de Precios](./price-lists.md).
 - **Arqueo de Caja**: Permite abrir y cerrar caja, registrar ingresos/egresos manuales y detectar diferencias físicas vs el sistema.
 - **Devoluciones y Notas de Crédito**: Emite notas de crédito, restablece stock automáticamente y reintegra dinero (o genera saldo a favor del cliente).
 

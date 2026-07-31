@@ -6,14 +6,15 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { priceList, product, service, priceListItem } from "@/db/schema";
-import { eq, ilike, or, and, asc, inArray, type SQL } from "drizzle-orm";
+import { product, service } from "@/db/schema";
+import { eq, ilike, or, and, asc, type SQL } from "drizzle-orm";
 import {
   calculateFinalPrice,
   calculateMarginPercentage,
   type RoundingRule,
 } from "@/lib/utils/rounding";
 import { getProductBaseCost } from "@/lib/services/priceListService";
+import { calculateBatchPrices } from "@/lib/services/priceCalculationService";
 import { getMinimumMargin } from "@/lib/services/settingsService";
 import { parseSearchQuery } from "@/lib/utils/searchQueryParser";
 
@@ -58,32 +59,22 @@ export async function GET(request: NextRequest) {
     const priceListId = searchParams.get("priceListId");
     const limit = Math.min(parseInt(searchParams.get("limit") || "20"), 50);
 
-    // Obtener lista de precios seleccionada y todas las listas activas (siempre cacheamos todos los precios)
-    let selectedPriceList: {
-      id: string;
-      baseMarginPercentage: number;
-      roundingRule: RoundingRule;
-    } | null = null;
-    const allActivePriceLists: Array<{
-      id: string;
-      baseMarginPercentage: number;
-      roundingRule: RoundingRule;
-    }> = [];
+    // Obtener todas las listas activas (para allPrices) y la seleccionada
+    const allActivePriceListIds: string[] = [];
+    let selectedPriceListId: string | null = null;
 
-    const lists = await db.query.priceList.findMany({
-      where: eq(priceList.isActive, true),
-      orderBy: asc(priceList.name),
-    });
-
-    for (const pl of lists) {
-      const listData = {
-        id: pl.id,
-        baseMarginPercentage: Number(pl.baseMarginPercentage),
-        roundingRule: pl.roundingRule as RoundingRule,
-      };
-      allActivePriceLists.push(listData);
-      if (pl.id === priceListId) {
-        selectedPriceList = listData;
+    {
+      const { priceList } = await import("@/db/schema");
+      const lists = await db.query.priceList.findMany({
+        where: eq(priceList.isActive, true),
+        orderBy: asc(priceList.name),
+        columns: { id: true },
+      });
+      for (const pl of lists) {
+        allActivePriceListIds.push(pl.id);
+        if (pl.id === priceListId) {
+          selectedPriceListId = pl.id;
+        }
       }
     }
 
@@ -259,125 +250,16 @@ export async function GET(request: NextRequest) {
       }));
     }
 
-    // Obtener excepciones de lista de precios para los productos encontrados
-    const priceExceptions: Map<
-      string,
-      { fixedPrice: number | null; overrideMarginPercentage: number | null }
-    > = new Map();
-
-    if (priceListId && products.length > 0) {
-      const productIds = products.map((p) => p.id);
-      const exceptions = await db.query.priceListItem.findMany({
-        where: and(
-          eq(priceListItem.priceListId, priceListId),
-          inArray(priceListItem.productId, productIds),
-        ),
-      });
-
-      for (const ex of exceptions) {
-        if (ex.productId) {
-          priceExceptions.set(ex.productId, {
-            fixedPrice: ex.fixedPrice !== null ? Number(ex.fixedPrice) : null,
-            overrideMarginPercentage:
-              ex.overrideMarginPercentage !== null
-                ? Number(ex.overrideMarginPercentage)
-                : null,
-          });
-        }
-      }
-    }
-
-    // Obtener excepciones para TODAS las listas
-    const allExceptions: Map<
-      string,
-      Map<
-        string,
-        { fixedPrice: number | null; overrideMarginPercentage: number | null }
-      >
-    > = new Map();
-
-    if (products.length > 0 && allActivePriceLists.length > 0) {
-      const productIds = products.map((p) => p.id);
-      const allListIds = allActivePriceLists.map((pl) => pl.id);
-
-      const exceptions = await db.query.priceListItem.findMany({
-        where: and(
-          inArray(priceListItem.priceListId, allListIds),
-          inArray(priceListItem.productId, productIds),
-        ),
-      });
-
-      for (const ex of exceptions) {
-        if (ex.productId) {
-          if (!allExceptions.has(ex.priceListId)) {
-            allExceptions.set(ex.priceListId, new Map());
-          }
-          allExceptions.get(ex.priceListId)!.set(ex.productId, {
-            fixedPrice: ex.fixedPrice !== null ? Number(ex.fixedPrice) : null,
-            overrideMarginPercentage:
-              ex.overrideMarginPercentage !== null
-                ? Number(ex.overrideMarginPercentage)
-                : null,
-          });
-        }
-      }
-    }
-
     // Obtener margen mínimo global
     const minimumMargin = await getMinimumMargin();
 
-    // Función helper para calcular precio de un producto para una lista específica
-    const calculateProductPriceForList = (
-      product: (typeof products)[0],
-      baseCost: number,
-      list: {
-        id: string;
-        baseMarginPercentage: number;
-        roundingRule: RoundingRule;
-      },
-      exception?: {
-        fixedPrice: number | null;
-        overrideMarginPercentage: number | null;
-      },
-    ): PriceInfo => {
-      let finalPrice: number;
-      let isFixed = false;
-      let overrideMargin: number | null = null;
-
-      if (
-        exception?.fixedPrice !== null &&
-        exception?.fixedPrice !== undefined
-      ) {
-        finalPrice = exception.fixedPrice;
-        isFixed = true;
-      } else {
-        if (
-          exception?.overrideMarginPercentage !== null &&
-          exception?.overrideMarginPercentage !== undefined
-        ) {
-          overrideMargin = exception.overrideMarginPercentage;
-        }
-        finalPrice = calculateFinalPrice(
-          baseCost,
-          list.baseMarginPercentage,
-          list.roundingRule,
-          overrideMargin !== null
-            ? { overrideMarginPercentage: overrideMargin }
-            : undefined,
-        );
-      }
-
-      const actualMargin = calculateMarginPercentage(baseCost, finalPrice);
-      const isBelowMinimum = actualMargin < minimumMargin;
-
-      return {
-        finalPrice,
-        isBelowMinimum,
-        isFixed,
-        overrideMargin,
-        roundingRule: list.roundingRule,
-      };
-    };
+    // Calcular precios para todos los productos en todas las listas activas
+    // usando el servicio centralizado (resuelve basePriceListId + excepciones)
+    const productIds = products.map((p) => p.id);
+    const batchPriceMap =
+      productIds.length > 0 && allActivePriceListIds.length > 0
+        ? await calculateBatchPrices(productIds, allActivePriceListIds)
+        : new Map<string, Map<string, any>>();
 
     // Transformar productos
     const productResults: SearchResult[] = products.map((product: any) => {
@@ -396,14 +278,10 @@ export async function GET(request: NextRequest) {
       let finalPrice: number;
       let isBelowMinimum = false;
 
-      if (selectedPriceList) {
-        const exception = priceExceptions.get(product.id);
-        const priceInfo = calculateProductPriceForList(
-          product,
-          baseCost,
-          selectedPriceList,
-          exception,
-        );
+      const productPrices = batchPriceMap.get(product.id);
+
+      if (selectedPriceListId && productPrices?.has(selectedPriceListId)) {
+        const priceInfo = productPrices.get(selectedPriceListId);
         finalPrice = priceInfo.finalPrice;
         isBelowMinimum = priceInfo.isBelowMinimum;
       } else {
@@ -413,18 +291,17 @@ export async function GET(request: NextRequest) {
         isBelowMinimum = actualMargin < minimumMargin;
       }
 
-      // Calcular allPrices para todas las listas
+      // Calcular allPrices para todas las listas activas
       const allPrices: Record<string, PriceInfo> = {};
-      if (allActivePriceLists.length > 0) {
-        for (const list of allActivePriceLists) {
-          const listExceptions = allExceptions.get(list.id);
-          const exception = listExceptions?.get(product.id);
-          allPrices[list.id] = calculateProductPriceForList(
-            product,
-            baseCost,
-            list,
-            exception,
-          );
+      if (productPrices) {
+        for (const [listId, calc] of productPrices.entries()) {
+          allPrices[listId] = {
+            finalPrice: calc.finalPrice,
+            isBelowMinimum: calc.isBelowMinimum,
+            isFixed: calc.isFixed,
+            overrideMargin: calc.overrideMargin,
+            roundingRule: calc.roundingRule as RoundingRule,
+          };
         }
       }
 
@@ -441,7 +318,7 @@ export async function GET(request: NextRequest) {
         stock: product.stock,
         location: product.location || undefined,
         categoryId: product.categoryId || undefined,
-        categoryName: product.category?.name || undefined,
+        categoryName: (product.category as any)?.name || undefined,
         replacementCost: Number(product.replacementCost) || undefined,
         costPrice: Number(product.costPrice) || undefined,
       };

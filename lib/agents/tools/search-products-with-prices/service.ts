@@ -1,8 +1,8 @@
 import { db } from "@/lib/db";
-import { product, priceList, priceListItem } from "@/db/schema";
-import { eq, and, or, ilike, asc, inArray } from "drizzle-orm";
+import { product, priceList } from "@/db/schema";
+import { eq, and, or, ilike, asc } from "drizzle-orm";
 import { getProductBaseCost } from "@/lib/services/priceListService";
-import { calculateFinalPrice, type RoundingRule } from "@/lib/utils/rounding";
+import { calculateBatchPrices } from "@/lib/services/priceCalculationService";
 
 export interface ProductWithPrices {
   id: string;
@@ -38,8 +38,12 @@ export async function searchProductsWithPricesService(
 
   if (products.length === 0) return [];
 
+  // Load active price lists and find contado/tarjeta by name (backward compat
+  // for the agent's output shape). Prices are computed via the centralized
+  // service so basePriceListId chains and exceptions are resolved consistently.
   const priceLists = await db.query.priceList.findMany({
     where: eq(priceList.isActive, true),
+    columns: { id: true, name: true },
   });
 
   const contadoList = priceLists.find(
@@ -49,61 +53,32 @@ export async function searchProductsWithPricesService(
     pl.name.toLowerCase().includes("tarjeta"),
   );
 
+  const targetListIds = [contadoList?.id, tarjetaList?.id].filter(
+    (id): id is string => id !== undefined,
+  );
+
   const productIds = products.map((p) => p.id);
-  const exceptions = await db.query.priceListItem.findMany({
-    where: and(
-      inArray(priceListItem.productId, productIds),
-      inArray(priceListItem.priceListId, priceLists.map((pl) => pl.id)),
-    ),
-  });
-
-  const exceptionMap = new Map<
-    string,
-    Map<string, { fixedPrice: number | null; overrideMargin: number | null }>
-  >();
-  for (const ex of exceptions) {
-    if (!ex.productId) continue;
-    if (!exceptionMap.has(ex.priceListId))
-      exceptionMap.set(ex.priceListId, new Map());
-    exceptionMap.get(ex.priceListId)!.set(ex.productId, {
-      fixedPrice: ex.fixedPrice !== null ? Number(ex.fixedPrice) : null,
-      overrideMargin:
-        ex.overrideMarginPercentage !== null
-          ? Number(ex.overrideMarginPercentage)
-          : null,
-    });
-  }
-
-  function calcPrice(
-    productId: string,
-    baseCost: number,
-    list: typeof contadoList,
-  ): number | null {
-    if (!list) return null;
-    const ex = exceptionMap.get(list.id)?.get(productId);
-    return calculateFinalPrice(
-      baseCost,
-      Number(list.baseMarginPercentage),
-      list.roundingRule as RoundingRule,
-      ex?.fixedPrice != null
-        ? { fixedPrice: ex.fixedPrice }
-        : ex?.overrideMargin != null
-          ? { overrideMarginPercentage: ex.overrideMargin }
-          : undefined,
-    );
-  }
+  const priceMap =
+    targetListIds.length > 0
+      ? await calculateBatchPrices(productIds, targetListIds)
+      : new Map<string, Map<string, any>>();
 
   return products.map((p) => {
     const baseCost = getProductBaseCost(p.replacementCost, p.costPrice);
+    const productPrices = priceMap.get(p.id);
     return {
       id: p.id,
       name: p.name,
       sku: p.sku,
       stock: p.stock,
       minStock: p.minStock,
-      categoryName: p.category?.name ?? "Sin categoría",
-      contadoPrice: calcPrice(p.id, baseCost, contadoList),
-      tarjetaPrice: calcPrice(p.id, baseCost, tarjetaList),
+      categoryName: (p.category as any)?.name ?? "Sin categoría",
+      contadoPrice: contadoList
+        ? productPrices?.get(contadoList.id)?.finalPrice ?? null
+        : null,
+      tarjetaPrice: tarjetaList
+        ? productPrices?.get(tarjetaList.id)?.finalPrice ?? null
+        : null,
       replacementCost: baseCost,
     };
   });
