@@ -78,7 +78,8 @@ describe('WorkOrdersPage - Interactive List View Controls', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    global.fetch = vi.fn((url: string) => {
+    global.fetch = vi.fn((input: any) => {
+      const url = typeof input === 'string' ? input : (input as any).url || '';
       if (url.includes("/api/work-orders")) {
         return Promise.resolve({
           ok: true,
@@ -95,7 +96,7 @@ describe('WorkOrdersPage - Interactive List View Controls', () => {
         ok: true,
         json: () => Promise.resolve({}),
       } as any);
-    });
+    }) as any;
   });
 
   it('renders the interactive status and technician controls on List View rows', async () => {
