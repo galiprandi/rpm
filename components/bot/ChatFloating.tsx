@@ -87,21 +87,7 @@ export function ChatFloating({
     const url = URL.createObjectURL(attachedFile);
     setAttachedPreviewUrl(url);
 
-    return () => {
-      URL.revokeObjectURL(url);
-      setAttachedPreviewUrl(null);
-    };
-  }, [attachedFile]);
-
-  useEffect(() => {
-    return () => {
-      if (confirmClearTimerRef.current) {
-        clearTimeout(confirmClearTimerRef.current);
-      }
-    };
-  }, []);
-
-  // Clean up attached file when chat closes
+  // Clean up attached file, barcode, and input fields when chat closes
   useEffect(() => {
     if (!isOpen) {
       setAttachedFile(null);
@@ -110,6 +96,14 @@ export function ChatFloating({
       if (cameraInputRef.current) cameraInputRef.current.value = "";
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    return () => {
+      if (confirmClearTimerRef.current) {
+        clearTimeout(confirmClearTimerRef.current);
+      }
+    };
+  }, []);
 
   // Check if speech recognition is supported in the current environment/browser
   const isSpeechSupported = useMemo(() => {
