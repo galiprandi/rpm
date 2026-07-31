@@ -43,6 +43,9 @@ Cuando el usuario diga **"Decile a Daniela ..."** (o variantes similares), envia
 - **Relations:** `db/schema/relations.ts` — relaciones entre tablas
 - **Client:** `lib/db.ts` — exporta `db` (Drizzle instance con node-postgres Pool)
 - **Migraciones:** `db/migrations/` — usar `pnpm db:generate` para crear, `pnpm db:migrate` para aplicar
+- **Deploy Vercel:** `vercel-build` corre `drizzle-kit migrate` antes de `next build` — las migraciones se aplican automáticamente en producción con la `DATABASE_URL` de Vercel
+- **Migración manual a producción:** Si hace falta aplicar fuera de deploy, usar Neon MCP (`run_sql`) con projectId `winter-rain-16519094`. No usar `vercel env run` (carga `.env.local` que sobreescribe `DATABASE_URL`)
+- **FK self-reference:** Drizzle no soporta FK self-reference en el schema (TS7022/TS7024). Definir la FK en el SQL de migración only, no en `schema.ts`. La relación ORM va en `relations.ts` con `one()`
 - **Timestamps:** Todas las columnas timestamp usan `mode: 'string'` — Drizzle devuelve strings, no Date objects
 
 ---
