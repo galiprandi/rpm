@@ -1449,12 +1449,66 @@ export default function WorkOrdersPage() {
                             )}
                           </div>
 
-                          {wo.technician && (
-                            <div className="flex items-center gap-1 text-[11px] bg-purple-50 text-purple-700 px-2 py-1 rounded border border-purple-100 font-medium">
-                              <UserCog className="h-3 w-3" />
-                              {wo.technician.name}
-                            </div>
-                          )}
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <div
+                                className={cn(
+                                  "flex items-center gap-1 text-[11px] px-2 py-1 rounded border transition-colors cursor-pointer font-medium",
+                                  wo.status === "CANCELLED" && "cursor-not-allowed opacity-60",
+                                  wo.technician
+                                    ? "bg-purple-50 text-purple-700 border-purple-100 hover:bg-purple-100"
+                                    : "bg-muted text-slate-600 border-slate-200 hover:bg-muted/80",
+                                )}
+                                onMouseDown={(e) => e.stopPropagation()}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                }}
+                              >
+                                <UserCog className="h-3 w-3 shrink-0" />
+                                <span className="truncate max-w-[120px]">
+                                  {wo.technician?.name || "Sin asignar"}
+                                </span>
+                              </div>
+                            </DropdownMenuTrigger>
+                            {wo.status !== "CANCELLED" && (
+                              <DropdownMenuContent
+                                align="end"
+                                className="w-48"
+                                onMouseDown={(e) => e.stopPropagation()}
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <DropdownMenuLabel className="text-xs font-semibold">
+                                  Asignar Responsable
+                                </DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  className="text-xs"
+                                  onClick={() => handleTechnicianUpdate(wo.id, null)}
+                                >
+                                  <X className="h-3.5 w-3.5 mr-2" />
+                                  Sin asignar
+                                  {!wo.technician && (
+                                    <Check className="h-3.5 w-3.5 ml-auto text-primary" />
+                                  )}
+                                </DropdownMenuItem>
+                                {technicians.map((tech) => (
+                                  <DropdownMenuItem
+                                    key={tech.id}
+                                    className="text-xs"
+                                    onClick={() => handleTechnicianUpdate(wo.id, tech.id)}
+                                  >
+                                    <UserCog className="h-3.5 w-3.5 mr-2" />
+                                    {tech.name}
+                                    {wo.technician?.id === tech.id && (
+                                      <Check className="h-3.5 w-3.5 ml-auto text-primary" />
+                                    )}
+                                  </DropdownMenuItem>
+                                ))}
+                              </DropdownMenuContent>
+                            )}
+                          </DropdownMenu>
+
                           {wo.status === "READY" && wo.customer.phone && (
                             <Button
                               variant="ghost"
@@ -1486,7 +1540,55 @@ export default function WorkOrdersPage() {
                               />
                             </Button>
                           )}
-                          {getStatusBadge(wo.status)}
+
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button
+                                className={cn(
+                                  "text-xs px-2 py-0.5 rounded-full border font-semibold inline-flex items-center gap-1 transition-all",
+                                  wo.status === "CANCELLED" ? "cursor-not-allowed opacity-60" : "cursor-pointer hover:brightness-95",
+                                  STATUSES.find((s) => s.id === wo.status)?.color || "bg-gray-50 text-gray-700 border-gray-200"
+                                )}
+                                onMouseDown={(e) => e.stopPropagation()}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                }}
+                              >
+                                <ClipboardList className="h-3 w-3 shrink-0 opacity-80" />
+                                <span>{STATUSES.find((s) => s.id === wo.status)?.label || wo.status}</span>
+                              </button>
+                            </DropdownMenuTrigger>
+                            {wo.status !== "CANCELLED" && (
+                              <DropdownMenuContent
+                                align="end"
+                                className="w-48"
+                                onMouseDown={(e) => e.stopPropagation()}
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <DropdownMenuLabel className="text-xs font-semibold">
+                                  Cambiar Estado
+                                </DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                {STATUSES.map((status) => (
+                                  <DropdownMenuItem
+                                    key={status.id}
+                                    className={cn(
+                                      "text-xs flex items-center gap-2",
+                                      wo.status === status.id && "font-semibold bg-muted"
+                                    )}
+                                    onClick={() => handleStatusUpdate(wo.id, status.id)}
+                                  >
+                                    <span className={cn("w-2 h-2 rounded-full", status.color.split(" ")[0])} />
+                                    {status.label}
+                                    {wo.status === status.id && (
+                                      <Check className="h-3.5 w-3.5 ml-auto text-primary" />
+                                    )}
+                                  </DropdownMenuItem>
+                                ))}
+                              </DropdownMenuContent>
+                            )}
+                          </DropdownMenu>
                           {wo.scheduledDate && (
                             <div
                               className={cn(

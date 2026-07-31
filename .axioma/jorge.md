@@ -2,6 +2,7 @@
 - [ ] Idea pendiente — breve descripción
 
 ## ✅ COMPLETADO
+- [x] 2026-07-31 — Controles Interactivos de Estado y Técnico en Vista de Lista de OT (PR #jorge/work-orders/list-view-interactive-controls)
 - [x] 2026-07-30 — Atajos de Fecha de Entrega y Resumen de Ítems en Kanban/Lista (PR #jorge/work-orders/scheduled-date-items-summary)
 - [x] 2026-07-29 — Duplicación/Clonación de Órdenes de Trabajo desde Detalle e Historial con Resguardo de Borrador (PR #jorge/work-orders/duplicate-work-order-ux)
 - [x] 2026-07-28 — Atajo de "Marcar todos como OK" en checklists de ingreso y egreso en creación y edición de OT (PR #jorge/work-orders/checklist-bulk-toggle)
@@ -19,6 +20,11 @@
 - [x] 2025-07-08 — Servicio Centralizado de OT y Timeline Unificado (PR #jorge/work-orders/centralized-updates)
 
 ## 🧠 APRENDIZAJES
+## 2026-07-31 - Controles Interactivos de Estado y Técnico en Vista de Lista de OT
+**Aprendizaje 1:** En dispositivos móviles, la vista de lista es la predeterminada y única disponible. Forzar a los usuarios a navegar al detalle de cada orden de trabajo individual para tareas simples como cambiar de técnico o actualizar el estado de la OT genera una enorme fricción y ralentiza el flujo operativo de taller. Reemplazar los textos estáticos con menús desplegables (`DropdownMenu`) inline dota de una velocidad excepcional a la gestión desde cualquier dispositivo móvil o tablet.
+**Aprendizaje 2:** Al anidar elementos interactivos complejos (como dropdowns con portales) dentro de contenedores clickeables (como filas envueltas en `<Link>`), es imperativo bloquear la propagación del evento tanto en `onMouseDown` como en `onClick` a nivel del trigger. Esto asegura que la selección de un menú no dispare la navegación general del enlace, preservando la consistencia y usabilidad de la UI.
+**Aprendizaje 3:** Para respetar estrictamente las reglas de estados terminales, deshabilitar visualmente y funcionalmente los triggers de los dropdowns (añadiendo estilos de `cursor-not-allowed opacity-60`) cuando el estado de la OT es `"CANCELLED"` o `"DELIVERED"` previene cambios accidentales y mantiene la integridad transaccional de los datos sin requerir validaciones intrusivas posteriores.
+
 ## 2026-07-30 - Atajos de Fecha de Entrega y Resumen de Ítems en Kanban/Lista
 **Aprendizaje 1:** En la gestión diaria del taller, tener que abrir el selector de fecha y hora nativo del navegador para asignar turnos a un par de horas en el futuro, al día siguiente o al inicio de la semana siguiente genera una fricción administrativa importante. Ofrecer accesos rápidos interactivos (+2h, Mañana, Lunes) calcula y rellena instantáneamente el campo `datetime-local` en la zona horaria local del cliente, acelerando enormemente la carga.
 **Aprendizaje 2:** El tablero Kanban y las listas de órdenes de trabajo resultan poco informativas si solo muestran el nombre del cliente y la patente. Al agregar un resumen directo y elegante de los ítems programados (distinguiendo productos con 📦 y servicios con 🔧) en la tarjeta misma, el recepcionista y los técnicos adquieren un entendimiento contextual inmediato de la operación sin necesidad de navegar al detalle de cada OT.
