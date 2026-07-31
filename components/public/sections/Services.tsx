@@ -63,7 +63,7 @@ export function Services() {
               }}
               whileTap={{ scale: 0.96 }}
               onClick={() => setSelectedService(service)}
-              className={`group relative overflow-hidden rounded-3xl p-8 cursor-pointer ${service.bg} border border-white/5 hover:border-brand/20 ${service.gridClassName}`}
+              className={`group relative overflow-hidden rounded-3xl p-8 cursor-pointer ${service.bg} border border-white/5 hover:border-brand/20 ${service.gridClassName} focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none focus-visible:ring-offset-2`}
               aria-label={`Ver detalles del servicio ${service.title}`}
               role="button"
               tabIndex={0}

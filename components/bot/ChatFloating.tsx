@@ -56,7 +56,7 @@ export function ChatFloating({
     controlledIsOpen !== undefined ? controlledIsOpen : internalIsOpen;
   const setIsOpen = onOpenChange || setInternalIsOpen;
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [attachedPreviewUrl, setAttachedPreviewUrl] = useState<string | null>(null);
   const [detectedBarcode, setDetectedBarcode] = useState<{ value: string; format: string } | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -69,7 +69,6 @@ export function ChatFloating({
   const confirmClearTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<any>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   // Compute file extension for non-image file uploads fallback badge
   const fileExtension = useMemo(() => {
@@ -80,29 +79,19 @@ export function ChatFloating({
 
   // Handle attached image preview & memory cleanup (object URL)
   useEffect(() => {
-    if (!attachedFile) {
-      setPreviewUrl(null);
+    if (!attachedFile || !attachedFile.type.startsWith("image/")) {
+      setAttachedPreviewUrl(null);
       return;
     }
 
-    if (attachedFile.type.startsWith("image/")) {
-      const url = URL.createObjectURL(attachedFile);
-      setPreviewUrl(url);
-      return () => {
-        URL.revokeObjectURL(url);
-      };
-    } else {
-      setPreviewUrl(null);
-    }
-  }, [attachedFile]);
+    const url = URL.createObjectURL(attachedFile);
+    setAttachedPreviewUrl(url);
 
-  // Ensure attached file is cleared when chat closes
-  useEffect(() => {
-    if (!isOpen) {
-      setAttachedFile(null);
-      setDetectedBarcode(null);
-    }
-  }, [isOpen]);
+    return () => {
+      URL.revokeObjectURL(url);
+      setAttachedPreviewUrl(null);
+    };
+  }, [attachedFile]);
 
   useEffect(() => {
     return () => {
@@ -111,22 +100,6 @@ export function ChatFloating({
       }
     };
   }, []);
-
-  // Generate and manage object URL for local image preview
-  useEffect(() => {
-    if (!attachedFile || !attachedFile.type.startsWith("image/")) {
-      setPreviewUrl(null);
-      return;
-    }
-
-    const url = URL.createObjectURL(attachedFile);
-    setPreviewUrl(url);
-
-    return () => {
-      URL.revokeObjectURL(url);
-      setPreviewUrl(null);
-    };
-  }, [attachedFile]);
 
   // Clean up attached file when chat closes
   useEffect(() => {
@@ -1040,10 +1013,10 @@ export function ChatFloating({
               <div className="mb-2 flex flex-col gap-1.5 p-2 bg-muted rounded-md">
                 <div className="flex items-center gap-3 justify-between w-full">
                   <div className="flex items-center gap-2 overflow-hidden flex-1">
-                    {previewUrl ? (
+                    {attachedPreviewUrl ? (
                       <div className="relative w-10 h-10 rounded-md border bg-background overflow-hidden flex-shrink-0 shadow-sm">
                         <img
-                          src={previewUrl}
+                          src={attachedPreviewUrl}
                           alt="Previsualización"
                           className="w-full h-full object-cover"
                         />

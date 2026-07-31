@@ -37,7 +37,7 @@ export function Hero() {
           {/* Actions */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6 opacity-0 animate-fade-up" style={{ animationDelay: '0.8s' }}>
             <Link href="/productos">
-              <Button className="group h-16 px-10 bg-white text-black hover:bg-white/90 text-lg font-bold rounded-full transition-all duration-500 hover:scale-105">
+              <Button className="group h-16 px-10 bg-white text-black hover:bg-white/90 text-lg font-bold rounded-full transition-all duration-500 hover:scale-105 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none focus-visible:ring-offset-2">
                 Explorar Catálogo
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </Button>
