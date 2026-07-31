@@ -87,6 +87,11 @@ export function ChatFloating({
     const url = URL.createObjectURL(attachedFile);
     setAttachedPreviewUrl(url);
 
+    return () => {
+      URL.revokeObjectURL(url);
+    };
+  }, [attachedFile]);
+
   // Clean up attached file, barcode, and input fields when chat closes
   useEffect(() => {
     if (!isOpen) {
