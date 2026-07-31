@@ -69,7 +69,6 @@ export function ChatFloating({
   const confirmClearTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<any>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   // Compute file extension for non-image file uploads fallback badge
   const fileExtension = useMemo(() => {
@@ -96,11 +95,13 @@ export function ChatFloating({
     }
   }, [attachedFile]);
 
-  // Ensure attached file is cleared when chat closes
+  // Clean up attached file, barcode, and input fields when chat closes
   useEffect(() => {
     if (!isOpen) {
       setAttachedFile(null);
       setDetectedBarcode(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      if (cameraInputRef.current) cameraInputRef.current.value = "";
     }
   }, [isOpen]);
 
@@ -111,32 +112,6 @@ export function ChatFloating({
       }
     };
   }, []);
-
-  // Generate and manage object URL for local image preview
-  useEffect(() => {
-    if (!attachedFile || !attachedFile.type.startsWith("image/")) {
-      setPreviewUrl(null);
-      return;
-    }
-
-    const url = URL.createObjectURL(attachedFile);
-    setPreviewUrl(url);
-
-    return () => {
-      URL.revokeObjectURL(url);
-      setPreviewUrl(null);
-    };
-  }, [attachedFile]);
-
-  // Clean up attached file when chat closes
-  useEffect(() => {
-    if (!isOpen) {
-      setAttachedFile(null);
-      setDetectedBarcode(null);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-      if (cameraInputRef.current) cameraInputRef.current.value = "";
-    }
-  }, [isOpen]);
 
   // Check if speech recognition is supported in the current environment/browser
   const isSpeechSupported = useMemo(() => {
