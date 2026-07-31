@@ -69,7 +69,6 @@ export function ChatFloating({
   const confirmClearTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<any>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   // Compute file extension for non-image file uploads fallback badge
   const fileExtension = useMemo(() => {
