@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { searchServicesTool } from "./tool";
-import { db } from "@/lib/db";
 
 const { mockDb } = vi.hoisted(() => {
   const query = {
@@ -26,7 +25,7 @@ describe("searchServicesTool", () => {
   it("should return message when no services are found", async () => {
     mockDb.query.service.findMany.mockResolvedValueOnce([]);
 
-    const result = await searchServicesTool.execute({ search: "alineacion" }, {} as any);
+    const result = await searchServicesTool.execute({ search: "alineacion", limit: 10 }, {} as any);
 
     expect(result).toBe("No se encontraron servicios con ese criterio de búsqueda.");
     expect(mockDb.query.service.findMany).toHaveBeenCalled();
@@ -52,7 +51,7 @@ describe("searchServicesTool", () => {
       },
     ]);
 
-    const result = await searchServicesTool.execute({ search: "led" }, {} as any);
+    const result = await searchServicesTool.execute({ search: "led", limit: 10 }, {} as any);
 
     expect(result).toContain("Se encontraron 2 servicio(s):");
     expect(result).toContain("Alineación y Balanceo");
