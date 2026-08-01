@@ -37,6 +37,7 @@ import {
 import { getWhatsAppLink } from "@/lib/utils/whatsapp";
 import { formatARS } from "@/lib/utils/format";
 import { getCategoryIcon } from "@/components/vehicles/CategoryIcon";
+import { VehicleDialog } from "@/components/vehicles/VehicleDialog";
 
 interface WorkOrder {
   id: string;
@@ -80,6 +81,7 @@ export default function VehiclesClient({
   const [loading, setLoading] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [showOnlyWithDebt, setShowOnlyWithDebt] = useState<boolean>(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const getVehicleDebt = (v: Vehicle) => {
     if (!v.workOrders) return 0;
@@ -417,6 +419,7 @@ export default function VehiclesClient({
       <CrudAdmin<Vehicle & { id: string }>
         items={filteredVehicles as any}
         loading={loading}
+        onCreate={() => setIsCreateModalOpen(true)}
         columns={columns}
         filterFn={vehicleFilterFn as any}
         hasActiveFilters={categoryFilter !== "all" || showOnlyWithDebt}
@@ -463,6 +466,12 @@ export default function VehiclesClient({
             </Tooltip>
           </div>
         )}
+      />
+
+      <VehicleDialog
+        open={isCreateModalOpen}
+        onOpenChange={setIsCreateModalOpen}
+        onSuccess={fetchVehicles}
       />
     </div>
   );
