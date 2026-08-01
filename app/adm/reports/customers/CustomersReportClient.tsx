@@ -13,6 +13,7 @@ import {
   Trophy,
   Eye,
   Download,
+  Printer,
 } from "lucide-react";
 import { formatARS } from "@/lib/utils/format";
 import {
@@ -43,6 +44,17 @@ type Period =
   | "last12months"
   | "thisYear"
   | "custom";
+
+const periodLabels: Record<Period, string> = {
+  today: "Hoy",
+  last7days: "Últimos 7 días",
+  last30days: "Últimos 30 días",
+  thisMonth: "Este mes",
+  lastMonth: "Mes pasado",
+  last12months: "Últimos 12 meses",
+  thisYear: "Este año",
+  custom: "Personalizado"
+};
 
 export default function CustomersReportClient() {
   const [period, setPeriod] = useState<Period>("last30days");
@@ -242,6 +254,22 @@ export default function CustomersReportClient() {
       <Header
         title="Reporte de Clientes"
         description="Análisis de adquisición, recurrencia y ranking de clientes."
+        secondaryActions={[
+          {
+            label: "Imprimir",
+            onClick: () => window.print(),
+            disabled: !data || loading,
+            icon: Printer,
+            variant: "outline",
+          },
+          {
+            label: "Exportar CSV",
+            onClick: exportToCSV,
+            disabled: !data || loading,
+            icon: Download,
+            variant: "outline",
+          },
+        ]}
         leftActions={
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2">
@@ -293,17 +321,6 @@ export default function CustomersReportClient() {
                 />
               </div>
             )}
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={exportToCSV}
-              disabled={!data || data.topCustomers.length === 0}
-              className="h-8 gap-2"
-            >
-              <Download className="h-4 w-4 pointer-events-none" aria-hidden="true" />
-              Exportar CSV
-            </Button>
           </div>
         }
       />
@@ -446,6 +463,161 @@ export default function CustomersReportClient() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Sección de Impresión (Solo visible al imprimir) */}
+      {data && (
+        <div className="hidden print:block font-sans p-6 text-black bg-white" id="print-section">
+          {/* Header de la Empresa */}
+          <div className="flex justify-between items-start border-b-2 border-zinc-900 pb-4 mb-6">
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight text-zinc-900">RPM ACCESORIOS</h1>
+              <p className="text-xs text-zinc-500 uppercase font-medium mt-0.5">Taller de Equipamiento y Estética Vehicular</p>
+              <p className="text-[11px] text-zinc-400 font-mono mt-1">Sarmiento 1234, Rosario, Santa Fe | Tel: 341-5556789</p>
+            </div>
+            <div className="text-right">
+              <div className="border border-zinc-900 text-zinc-900 font-bold text-xs py-1 px-3 uppercase tracking-wider inline-block rounded">
+                Reporte de Clientes y Adquisición
+              </div>
+              <p className="text-xs text-zinc-500 font-mono mt-2">
+                Fecha de Emisión: {new Date().toLocaleDateString("es-AR")}
+              </p>
+              <p className="text-[11px] text-zinc-500 font-mono mt-1">
+                Período: {periodLabels[period]} ({getDatesForPeriod(period).startDate.toLocaleDateString("es-AR")} - {getDatesForPeriod(period).endDate.toLocaleDateString("es-AR")})
+              </p>
+            </div>
+          </div>
+
+          {/* Resumen de KPIs */}
+          <div className="grid grid-cols-3 gap-4 border border-zinc-300 rounded-lg p-4 mb-6 bg-zinc-50/50">
+            <div className="space-y-1">
+              <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">Clientes Nuevos</span>
+              <p className="text-sm font-bold font-mono text-zinc-900">{data.newCustomers.current}</p>
+            </div>
+            <div className="space-y-1">
+              <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">Clientes Activos</span>
+              <p className="text-sm font-bold font-mono text-zinc-900">{data.activeCustomers.current}</p>
+            </div>
+            <div className="space-y-1">
+              <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">Tasa de Recurrencia</span>
+              <p className="text-sm font-bold font-mono text-emerald-700">{data.recurrenceRate.current.toFixed(1)}%</p>
+            </div>
+          </div>
+
+          {/* Evolución de Adquisición */}
+          <div className="mb-6 print:break-inside-avoid">
+            <h2 className="text-xs font-bold text-zinc-800 uppercase tracking-wider mb-2">Evolución de Adquisición</h2>
+            <div className="border border-zinc-300 rounded-lg p-4">
+              <div className="flex gap-2 h-20 items-end justify-center">
+                {data.evolution.length === 0 ? (
+                  <span className="text-xs text-zinc-500 italic">Sin movimientos</span>
+                ) : (
+                  data.evolution.map((item, idx) => {
+                    const maxCount = Math.max(...data.evolution.map((e) => e.count), 1);
+                    const height = (item.count / maxCount) * 100;
+                    return (
+                      <div key={idx} className="flex-1 flex flex-col items-center justify-end h-full">
+                        <div className="w-full bg-zinc-800 rounded-t-sm" style={{ height: `${Math.max(height, 5)}%` }} />
+                        <span className="text-[9px] text-zinc-500 mt-1">{item.label}</span>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Top 10 Clientes */}
+          <div className="mb-6 print:break-inside-avoid">
+            <h2 className="text-xs font-bold text-zinc-800 uppercase tracking-wider mb-2">Ranking de Clientes por Facturación</h2>
+            <div className="border border-zinc-300 rounded-lg overflow-hidden">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-zinc-100 border-b border-zinc-300 text-[11px] font-bold text-zinc-700 uppercase">
+                    <th className="p-2">Cliente</th>
+                    <th className="p-2 text-right">Facturación</th>
+                    <th className="p-2 text-right">Operaciones</th>
+                    <th className="p-2 text-right">Última Operación</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.topCustomers.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="p-4 text-center text-xs text-zinc-500 italic">
+                        Sin datos en este período
+                      </td>
+                    </tr>
+                  ) : (
+                    data.topCustomers.map((customer) => (
+                      <tr key={customer.id} className="border-b border-zinc-200 text-[11px]">
+                        <td className="p-2 font-medium">{customer.name}</td>
+                        <td className="p-2 text-right font-mono font-bold text-emerald-700">{formatARS(customer.totalBilling)}</td>
+                        <td className="p-2 text-right font-mono">{customer.ordersCount}</td>
+                        <td className="p-2 text-right text-zinc-500">
+                          {customer.lastOrderDate ? new Date(customer.lastOrderDate).toLocaleDateString('es-AR') : '-'}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Firmas de Control */}
+          <div className="grid grid-cols-2 gap-12 mt-12 mb-8 print:break-inside-avoid">
+            <div className="flex flex-col items-center">
+              <div className="w-48 border-b border-zinc-400 h-10" />
+              <span className="text-[11px] text-zinc-500 font-semibold uppercase tracking-wider mt-2">
+                Responsable de Administración
+              </span>
+            </div>
+            <div className="flex flex-col items-center">
+              <div className="w-48 border-b border-zinc-400 h-10" />
+              <span className="text-[11px] text-zinc-500 font-semibold uppercase tracking-wider mt-2">
+                Firma Autorizada Gerencia
+              </span>
+            </div>
+          </div>
+
+          {/* Pie de Página */}
+          <div className="text-center border-t border-zinc-200 pt-4 text-[11px] text-zinc-400 font-mono">
+            RPM Accesorios © {new Date().getFullYear()} - Reporte de Control de Clientes, Adquisición y Auditoría Administrativa Interna.
+          </div>
+        </div>
+      )}
+
+      {/* Estilos para impresión */}
+      <style media="print">
+        {`
+          @media print {
+            aside,
+            [data-sidebar="sidebar"],
+            .print\\:hidden,
+            button,
+            header,
+            footer,
+            nav,
+            .web-mcp-tools,
+            #chat-floating-button,
+            [role="dialog"],
+            .DialogOverlay {
+              display: none !important;
+            }
+
+            main, .container, body {
+              padding: 0 !important;
+              margin: 0 !important;
+              max-width: none !important;
+              background: white !important;
+              color: black !important;
+            }
+
+            .container {
+              width: 100% !important;
+            }
+          }
+        `}
+      </style>
     </div>
   );
 }

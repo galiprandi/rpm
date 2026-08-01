@@ -14,6 +14,7 @@ import {
   Clock,
   RefreshCw,
   Download,
+  Printer,
 } from "lucide-react";
 import { formatARS } from "@/lib/utils/format";
 import { StockReportData } from "@/lib/services/stockReportService";
@@ -147,6 +148,13 @@ export default function StockReportClient() {
         title="Stock & Inventario"
         description="Valorización de stock, rotación y alertas de reposición."
         secondaryActions={[
+          {
+            label: "Imprimir",
+            onClick: () => window.print(),
+            disabled: loading || !data,
+            icon: Printer,
+            variant: "outline",
+          },
           {
             label: "Exportar CSV",
             onClick: exportToCSV,
@@ -416,6 +424,255 @@ export default function StockReportClient() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Sección de Impresión (Solo visible al imprimir) */}
+      {data && (
+        <div className="hidden print:block font-sans p-6 text-black bg-white" id="print-section">
+          {/* Header de la Empresa */}
+          <div className="flex justify-between items-start border-b-2 border-zinc-900 pb-4 mb-6">
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight text-zinc-900">RPM ACCESORIOS</h1>
+              <p className="text-xs text-zinc-500 uppercase font-medium mt-0.5">Taller de Equipamiento y Estética Vehicular</p>
+              <p className="text-[11px] text-zinc-400 font-mono mt-1">Sarmiento 1234, Rosario, Santa Fe | Tel: 341-5556789</p>
+            </div>
+            <div className="text-right">
+              <div className="border border-zinc-900 text-zinc-900 font-bold text-xs py-1 px-3 uppercase tracking-wider inline-block rounded">
+                Reporte de Stock y Valorización
+              </div>
+              <p className="text-xs text-zinc-500 font-mono mt-2">
+                Fecha de Emisión: {new Date().toLocaleDateString("es-AR")}
+              </p>
+              <p className="text-[11px] text-zinc-500 font-mono mt-1">
+                Auditoría de Inventarios y Alertas
+              </p>
+            </div>
+          </div>
+
+          {/* Resumen de KPIs */}
+          <div className="grid grid-cols-3 gap-4 border border-zinc-300 rounded-lg p-4 mb-6 bg-zinc-50/50">
+            <div className="space-y-1">
+              <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">Valor Total Stock</span>
+              <p className="text-sm font-bold font-mono text-emerald-700">{formatARS(data.totalValue)}</p>
+            </div>
+            <div className="space-y-1">
+              <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">Rotación de Stock</span>
+              <p className="text-sm font-bold font-mono text-zinc-900">{data.inventoryTurnover.toFixed(2)}x</p>
+            </div>
+            <div className="space-y-1">
+              <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">Stock Inmovilizado</span>
+              <p className="text-sm font-bold font-mono text-amber-700">{formatARS(data.deadStockValue)}</p>
+            </div>
+            <div className="space-y-1">
+              <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">Unidades en Stock</span>
+              <p className="text-sm font-bold font-mono text-zinc-900">{data.totalProducts}</p>
+            </div>
+            <div className="space-y-1">
+              <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">Alertas de Reposición</span>
+              <p className="text-sm font-bold font-mono text-red-700">{data.lowStockCount}</p>
+            </div>
+            <div className="space-y-1">
+              <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">Categorías Activas</span>
+              <p className="text-sm font-bold font-mono text-zinc-900">{data.categoryDistribution.length}</p>
+            </div>
+          </div>
+
+          {/* Dos columnas de Distribución y Top Capital */}
+          <div className="grid grid-cols-2 gap-6 mb-6 print:break-inside-avoid">
+            {/* Distribución por Categoría */}
+            <div>
+              <h2 className="text-xs font-bold text-zinc-800 uppercase tracking-wider mb-2">Distribución por Categoría</h2>
+              <div className="border border-zinc-300 rounded-lg overflow-hidden">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-zinc-100 border-b border-zinc-300 text-[11px] font-bold text-zinc-700 uppercase">
+                      <th className="p-2">Categoría</th>
+                      <th className="p-2 text-right">Cant.</th>
+                      <th className="p-2 text-right">Valorización</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.categoryDistribution.length === 0 ? (
+                      <tr>
+                        <td colSpan={3} className="p-2 text-center text-xs text-zinc-500 italic">Sin categorías</td>
+                      </tr>
+                    ) : (
+                      data.categoryDistribution.map((cat) => (
+                        <tr key={cat.id} className="border-b border-zinc-200 text-[11px]">
+                          <td className="p-2 font-medium">{cat.name}</td>
+                          <td className="p-2 text-right font-mono">{cat.count}</td>
+                          <td className="p-2 text-right font-mono font-bold text-emerald-700">{formatARS(cat.value)}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Top Inversión por Producto */}
+            <div>
+              <h2 className="text-xs font-bold text-zinc-800 uppercase tracking-wider mb-2">Top 5 Mayor Inversión</h2>
+              <div className="border border-zinc-300 rounded-lg overflow-hidden">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-zinc-100 border-b border-zinc-300 text-[11px] font-bold text-zinc-700 uppercase">
+                      <th className="p-2">Producto</th>
+                      <th className="p-2 text-right">Stock</th>
+                      <th className="p-2 text-right">Valorización</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.topValuedProducts.length === 0 ? (
+                      <tr>
+                        <td colSpan={3} className="p-2 text-center text-xs text-zinc-500 italic">Sin productos</td>
+                      </tr>
+                    ) : (
+                      data.topValuedProducts.slice(0, 5).map((prod) => (
+                        <tr key={prod.id} className="border-b border-zinc-200 text-[11px]">
+                          <td className="p-2 font-medium truncate max-w-[150px]">{prod.name}</td>
+                          <td className="p-2 text-right font-mono">{prod.stock}</td>
+                          <td className="p-2 text-right font-mono font-bold text-emerald-700">{formatARS(prod.value)}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          {/* Alertas de Reposición */}
+          <div className="mb-6 print:break-inside-avoid">
+            <h2 className="text-xs font-bold text-zinc-800 uppercase tracking-wider mb-2">Alertas de Reposición (Stock Mínimo)</h2>
+            <div className="border border-zinc-300 rounded-lg overflow-hidden">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-zinc-100 border-b border-zinc-300 text-[11px] font-bold text-zinc-700 uppercase">
+                    <th className="p-2">ID</th>
+                    <th className="p-2">Producto</th>
+                    <th className="p-2 text-right">Stock Actual</th>
+                    <th className="p-2 text-right">Stock Mínimo</th>
+                    <th className="p-2">Categoría</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.lowStockProducts.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="p-4 text-center text-xs text-zinc-500 italic">
+                        Sin alertas. Todos los productos tienen stock suficiente.
+                      </td>
+                    </tr>
+                  ) : (
+                    data.lowStockProducts.map((prod) => (
+                      <tr key={prod.id} className="border-b border-zinc-200 text-[11px]">
+                        <td className="p-2 font-mono text-zinc-500">{prod.id}</td>
+                        <td className="p-2 font-medium">{prod.name}</td>
+                        <td className="p-2 text-right font-mono font-bold text-red-700">{prod.stock}</td>
+                        <td className="p-2 text-right font-mono">{prod.minStock}</td>
+                        <td className="p-2 text-zinc-600">{prod.category}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Productos Inmovilizados */}
+          <div className="mb-6 print:break-inside-avoid">
+            <h2 className="text-xs font-bold text-zinc-800 uppercase tracking-wider mb-2">Productos Inmovilizados (Sin Movimientos 90 Días)</h2>
+            <div className="border border-zinc-300 rounded-lg overflow-hidden">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-zinc-100 border-b border-zinc-300 text-[11px] font-bold text-zinc-700 uppercase">
+                    <th className="p-2">ID</th>
+                    <th className="p-2">Producto</th>
+                    <th className="p-2 text-right">Stock</th>
+                    <th className="p-2 text-right">Valorización</th>
+                    <th className="p-2">Último Movimiento</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.deadStockProducts.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="p-4 text-center text-xs text-zinc-500 italic">
+                        Sin productos inmovilizados. Excelente rotación.
+                      </td>
+                    </tr>
+                  ) : (
+                    data.deadStockProducts.map((prod) => (
+                      <tr key={prod.id} className="border-b border-zinc-200 text-[11px]">
+                        <td className="p-2 font-mono text-zinc-500">{prod.id}</td>
+                        <td className="p-2 font-medium">{prod.name}</td>
+                        <td className="p-2 text-right font-mono">{prod.stock}</td>
+                        <td className="p-2 text-right font-mono font-bold text-amber-700">{formatARS(prod.value)}</td>
+                        <td className="p-2 text-zinc-500">
+                          {prod.lastMovement ? new Date(prod.lastMovement).toLocaleDateString("es-AR") : "Sin movimientos registrados"}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Firmas de Control */}
+          <div className="grid grid-cols-2 gap-12 mt-12 mb-8 print:break-inside-avoid">
+            <div className="flex flex-col items-center">
+              <div className="w-48 border-b border-zinc-400 h-10" />
+              <span className="text-[11px] text-zinc-500 font-semibold uppercase tracking-wider mt-2">
+                Responsable de Depósito
+              </span>
+            </div>
+            <div className="flex flex-col items-center">
+              <div className="w-48 border-b border-zinc-400 h-10" />
+              <span className="text-[11px] text-zinc-500 font-semibold uppercase tracking-wider mt-2">
+                Firma Autorizada Gerencia
+              </span>
+            </div>
+          </div>
+
+          {/* Pie de Página */}
+          <div className="text-center border-t border-zinc-200 pt-4 text-[11px] text-zinc-400 font-mono">
+            RPM Accesorios © {new Date().getFullYear()} - Reporte de Auditoría de Inventarios, Reposición y Rotación de Stock.
+          </div>
+        </div>
+      )}
+
+      {/* Estilos para impresión */}
+      <style media="print">
+        {`
+          @media print {
+            aside,
+            [data-sidebar="sidebar"],
+            .print\\:hidden,
+            button,
+            header,
+            footer,
+            nav,
+            .web-mcp-tools,
+            #chat-floating-button,
+            [role="dialog"],
+            .DialogOverlay,
+            .TooltipContent {
+              display: none !important;
+            }
+
+            main, .container, body {
+              padding: 0 !important;
+              margin: 0 !important;
+              max-width: none !important;
+              background: white !important;
+              color: black !important;
+            }
+
+            .container {
+              width: 100% !important;
+            }
+          }
+        `}
+      </style>
     </div>
   );
 }
