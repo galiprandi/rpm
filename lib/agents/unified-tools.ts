@@ -15,6 +15,7 @@ import { registerCustomerWithVehicleTool } from "./tools/register-customer-with-
 import { searchProductsWithPricesTool } from "./tools/search-products-with-prices";
 import { composeWhatsAppMessageTool } from "./tools/compose-message";
 import { processPurchaseInvoiceTool } from "./tools/process-purchase-invoice";
+import { searchServicesTool } from "./tools/search-services";
 
 export const unifiedTools = {
   // Search
@@ -22,6 +23,7 @@ export const unifiedTools = {
   searchCustomers: searchCustomersTool,
   searchVehicles: searchVehiclesTool,
   searchWorkOrders: workOrderTools.searchWorkOrders,
+  searchServices: searchServicesTool,
   // Create
   createCustomer: createCustomerTool,
   createProduct: createProductTool,
