@@ -4,6 +4,7 @@
 - [ ] Direct photo attachments for work order checklist items.
 
 ## ✅ DONE
+- [x] 2026-08-01 — Implement the searchServices tool for the chatbot (Nitro) enabling workshop staff to query active shop services, durations, and costs, with full Drizzle ORM queries, visual status labels, comprehensive integration tests, and system documentation (PR #295).
 - [x] 2026-07-30 — Enhance chatbot file attachment UI to show dynamic local image previews (thumbnails) and fallback uppercase file extension badges with comprehensive, leak-proof browser object URL lifetime management (PR #290).
 - [x] 2026-07-28 — Implement dynamic local image previews and file extension badges for chat file attachments with robust object URL memory management and cleanup lifecycles (PR #289).
 - [x] 2026-07-27 — Implement the registerWorkOrderPayment tool for the virtual assistant (Nitro) with full database transaction support, cash movement registration, atomic balance adjustment, and integrity verification tests (PR #288).
@@ -20,6 +21,10 @@
 - [x] 2026-03-28 — Initial audit of bot tools, removal of mock tools, fixing conversation history unit tests, and implementing major UI/UX improvements (smart scrolling, success states for tool execution, empty-state quick start suggestion chips, and full WCAG accessibility).
 
 ## 🧠 LEARNINGS
+### 2026-08-01 — Chatbot Workshop Services Search Tool
+**Learning:** Expanding the chatbot's searching tools to include active workshop services (`searchServices`) bridges the gap between catalog management and actual garage operations. Providing immediate duration (minutes) and base cost feedback in response to natural language queries drastically cuts lookup times for on-duty technicians and administrative personnel.
+**Action:** Always maintain strict code integrity checks by keeping unified instructions, tool registries, unit tests, and UI states fully synchronized.
+
 ### 2026-07-30 — Chatbot Image and File Attachment Visual Preview UI Standard
 **Learning:** Attaching files without visual preview leaves the user uncertain about what is uploaded. Displaying a dynamic local thumbnail preview using `URL.createObjectURL(attachedFile)` when the file is an image, and a fallback uppercase file-type extension badge (e.g. "PDF", "TXT") otherwise, significantly boosts interactive clarity and engagement. Safely managing the object URL lifecycle via React hook cleanup destructors prevents browser memory leaks when files are changed, removed, or when the chat is closed/cleared.
 **Action:** Always wrap companion web API object creations inside synchronized React `useEffect` structures and provide beautiful, responsive visual indicator fallbacks for arbitrary file uploads.

@@ -862,6 +862,7 @@ export function ChatFloating({
                                 searchVehicles: "Buscando vehículos...",
                                 searchWorkOrders:
                                   "Buscando órdenes de trabajo...",
+                                searchServices: "Buscando servicios...",
                                 createDirectSale: "Registrando venta...",
                                 createCustomer: "Creando cliente...",
                                 createProduct: "Creando producto...",
@@ -887,6 +888,8 @@ export function ChatFloating({
                                   "Búsqueda de vehículos completada",
                                 searchWorkOrders:
                                   "Búsqueda de órdenes completada",
+                                searchServices:
+                                  "Búsqueda de servicios completada",
                                 createDirectSale:
                                   "Venta registrada exitosamente",
                                 createCustomer: "Cliente creado exitosamente",

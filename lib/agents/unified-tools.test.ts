@@ -18,6 +18,7 @@ const EXPECTED_TOOLS = [
   'searchCustomers',
   'searchVehicles',
   'searchWorkOrders',
+  'searchServices',
   // Create
   'createCustomer',
   'createProduct',
