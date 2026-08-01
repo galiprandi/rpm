@@ -106,7 +106,9 @@ export default function ContactClient() {
                     <h3 className="text-2xl font-bold text-white tracking-tight">Enviar Mensaje</h3>
                     <form onSubmit={handleSubmit} className="space-y-6">
                       <div className="space-y-2">
-                        <label htmlFor="name" className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Nombre Completo</label>
+                        <label htmlFor="name" className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+                          Nombre Completo <span className="text-red-500" aria-hidden="true">*</span>
+                        </label>
                         <input
                           id="name"
                           type="text"
@@ -114,12 +116,14 @@ export default function ContactClient() {
                           disabled={isSubmitting}
                           value={formData.name}
                           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                          className="w-full bg-black/50 border border-white/10 rounded-2xl h-14 px-6 text-white focus:outline-none focus:border-brand/50 transition-all disabled:opacity-50"
+                          className="w-full bg-black/50 border border-white/10 rounded-2xl h-14 px-6 text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-black focus:border-brand/50 transition-all disabled:opacity-50"
                           placeholder="Juan Pérez"
                         />
                       </div>
                       <div className="space-y-2">
-                        <label htmlFor="email" className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Email</label>
+                        <label htmlFor="email" className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+                          Email <span className="text-red-500" aria-hidden="true">*</span>
+                        </label>
                         <input
                           id="email"
                           type="email"
@@ -127,19 +131,21 @@ export default function ContactClient() {
                           disabled={isSubmitting}
                           value={formData.email}
                           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                          className="w-full bg-black/50 border border-white/10 rounded-2xl h-14 px-6 text-white focus:outline-none focus:border-brand/50 transition-all disabled:opacity-50"
+                          className="w-full bg-black/50 border border-white/10 rounded-2xl h-14 px-6 text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-black focus:border-brand/50 transition-all disabled:opacity-50"
                           placeholder="juan@ejemplo.com"
                         />
                       </div>
                       <div className="space-y-2">
-                        <label htmlFor="message" className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Mensaje / Consulta</label>
+                        <label htmlFor="message" className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+                          Mensaje / Consulta <span className="text-red-500" aria-hidden="true">*</span>
+                        </label>
                         <textarea
                           id="message"
                           required
                           disabled={isSubmitting}
                           value={formData.message}
                           onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                          className="w-full bg-black/50 border border-white/10 rounded-2xl p-6 text-white focus:outline-none focus:border-brand/50 transition-all min-h-[150px] disabled:opacity-50"
+                          className="w-full bg-black/50 border border-white/10 rounded-2xl p-6 text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-black focus:border-brand/50 transition-all min-h-[150px] disabled:opacity-50"
                           placeholder="¿En qué podemos ayudarte?"
                         ></textarea>
                       </div>
