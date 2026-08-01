@@ -1,6 +1,11 @@
 ## 📋 BACKLOG
 
 ## ✅ DONE
+- [x] 2026-07-31 — Validación y Formateo de Teléfono en Creación de Cliente Inline en Diálogo de Vehículo
+  - Integración de validación de teléfonos argentinos en tiempo real y en blur en la creación de clientes inline dentro de `VehicleDialog.tsx`.
+  - Añadidos chips de autocompletado de prefijos rápidos de Argentina (AMBA, Córdoba, Rosario, Mendoza, Tucumán) con re-enfoque automático del cursor.
+  - Sincronización del estilo visual del campo de entrada del teléfono (borde verde esmeralda y punto pulsante con región detectada en caso de éxito, borde destructivo y descripción en caso de error) para coherencia visual absoluta con `CustomerForm.tsx`.
+  - Cobertura de pruebas completa en `VehicleDialog.test.tsx` para garantizar que la lógica de validación, formateo, pre-llenado de prefijos y bloqueo de envíos incorrectos funcione perfectamente.
 - [x] 2026-07-31 — Filtro Avanzado de Antigüedad y Búsqueda en Reporte de Deudores
   - Implementación de filtros client-side avanzados en el Reporte de Deudores (`app/adm/reports/debtors/DebtorsClient.tsx`), permitiendo segmentar por antigüedad de la deuda (deudas mayores a 30, 60, 90 días, o deudas recientes inferiores a 30 días).
   - Integración de barra de búsqueda global en la DataTable para buscar deudores por nombre, teléfonos, email, o por patentes de vehículos registrados.
@@ -78,7 +83,7 @@
 - [x] 2026-07-15 — Expansión de búsqueda y mejoras en reporte de deudores
   - Expansión de búsqueda en backend (`customerService.ts`) para incluir Email, Dirección y Patente.
   - Mejora visual en reporte de deudores para resaltar deudas con más de 30 días.
-  - Uso de `phoneAlt` como fallback de contacto en el reporte de deudores.
+  - Uso de `phoneAlt` como barra de búsqueda en el reporte de deudores.
 - [x] 2025-07-24 — Mejoras de UX y agilización de cobranzas
   - Inclusión de `phoneAlt` en la búsqueda global de clientes.
   - Estandarización de precisión financiera (`formatARS(x, 2)`) y tipografía (`font-semibold`) en listado de clientes.
@@ -87,6 +92,10 @@
   - Mejora de navegación con botón de "Volver" en el detalle del cliente.
 
 ## 🧠 LEARNINGS
+## 2026-07-31 - Validación de Teléfono en Modales Inline
+**Learning:** Al simplificar los flujos para permitir crear entidades relacionadas en el lugar (como crear un cliente directamente desde el modal para agregar vehículos), es común descuidar la validación y normalización de los datos. Esta inconsistencia no solo daña la UX sino que ensucia la base de datos con formatos inconsistentes de teléfonos que luego pueden fallar en integraciones automatizadas (como envíos de notificaciones de WhatsApp). Trasplantar el mismo motor inteligente de validación, formateo y chips de prefijos geográficos de la pantalla principal a los formularios inline garantiza coherencia visual absoluta, consistencia de datos y deleita al usuario.
+**Action:** Mantener siempre la misma fidelidad de validación y enriquecimiento de campos de datos estructurados (como teléfonos, CUIT o patentes) en formularios de creación rápida/inline que en las vistas completas dedicadas.
+
 ## 2026-07-31 - Filtros Dinámicos Integrados con Métricas de Resumen y Exportación
 **Learning:** Al añadir herramientas de segmentación avanzada (como la antigüedad de la deuda y filtros de búsqueda) en reportes financieros de gran volumen, es fundamental que la UI reaccione como un todo integrado. El usuario final espera que, al realizar un filtro de cohorte (ej. ver solo deudores con más de 30 días), no solo se filtre la tabla, sino que también se recalculen de inmediato las tarjetas KPI de resumen (Deuda Total, Cuenta de Clientes, Promedio de Deuda) tanto en la pantalla como en los formatos de impresión física o exportación CSV. Esta sincronización elimina por completo discrepancias de datos y brinda una experiencia de altísimo nivel técnico.
 **Action:** Al filtrar listados que cuenten con paneles de estadísticas o layouts de impresión integrados, utilizar siempre computaciones de useMemo para recalcular los resúmenes de manera reactiva e inyectar el dataset filtrado unificado a todas las vistas derivadas.
@@ -100,7 +109,7 @@
 **Action:** Integrar siempre la lógica de deuda y filtros de saldos en listas secundarias de activos para agilizar la toma de decisiones.
 
 ## 2026-07-25 - Validación Dinámica de Teléfonos Argentinos Libre de Falsos Positivos
-**Learning:** Al normalizar y validar números telefónicos argentinos en tiempo real, es muy común tener colisiones durante la digitación carácter por carácter (por ejemplo, cuando un número de 10 dígitos que contiene el prefijo `9` pero aún no ha sido completado es interpretado incorrectamente como un número local de 10 dígitos sin código de país, lo que resulta en un formato deformado mid-typing). Limitar los códigos de área de Argentina para que siempre inicien de forma estricta con `1`, `2` o `3` en `validateArgentinePhone` evita este tipo de colisiones y garantiza una auto-corrección totalmente fluida y libre de saltos visuales.
+**Learning:** Al normalizar y validar números telefónicos argentinos en tiempo real, es muy común tener colisiones durante la digitación carácter por carácter (for example, cuando un número de 10 dígitos que contiene el prefijo `9` pero aún no ha sido completado es interpretado incorrectamente como un número local de 10 dígitos sin código de país, lo que resulta en un formato deformado mid-typing). Limitar los códigos de área de Argentina para que siempre inicien de forma estricta con `1`, `2` o `3` en `validateArgentinePhone` evita este tipo de colisiones y garantiza una auto-corrección totalmente fluida y libre de saltos visuales.
 **Action:** Aplicar validación estricta de primer dígito para area codes al programar máquinas de formateo en tiempo real.
 
 ## 2026-07-29 - Acción de Recalcular Saldos y Control de Acceso por Roles
@@ -108,7 +117,7 @@
 **Action:** Propagar siempre variables seguras de rol desde el servidor a componentes de cliente, aplicar feedback de carga con animaciones y notificaciones de UI controladas.
 
 ## 2026-07-22 - Visualización Contextual de Activos y Alertas Financieras
-**Learning:** En fichas de clientes complejos (como flotas de transporte, empresas o clientes con múltiples unidades y equipos), es común tener tanto automotores tradicionales como equipos especiales o remolques registrados en la misma cuenta. Si la interfaz solo muestra marca y modelo estándar, las celdas de equipos quedan vacías, forzando al operador a navegar a la ficha individual de cada equipo para saber qué es. Al renderizar dinámicamente `equipmentName` y `equipmentType` en la misma tabla según la categoría del activo, y añadir alertas de deuda individuales derivadas de las órdenes de trabajo activas, se proporciona una visualización contextual impecable que permite identificar deudores de un vistazo sin clics de navegación adicionales.
+**Learning:** En fichas de clientes complejos (como flotas de transporte, empresas o clientes con múltiples unidades y equipos), es común tener tanto automotores tradicionales como equipos especiales o remolques registrados en la misma cuenta. Si la interfaz solo muestra marca y modelo estándar, las celdas de equipos quedan vacías, forzando al operador a navegar a la ficha individual de cada equipo para saber qué es. Al renderizar dinámicamente `equipmentName` y `equipmentType` en la misma tabla según la categoría del activo, y añadir alertas de deuda individuales derivadas de las órdenes de trabajo activas, se proporciona una visualización contextual de primer nivel que permite identificar deudores de un vistazo sin clics de navegación adicionales.
 **Action:** Utilizar siempre visualizaciones adaptativas basadas en la categoría del activo e inyectar métricas financieras agregadas en la tabla de listado de sub-entidades para reducir fricción.
 
 ## 2026-07-20 - Resumen de Cuenta Corriente del Cliente Impreso y Exportación CSV
@@ -116,7 +125,7 @@
 **Action:** Mantener la simetría de exportaciones PDF imprimibles y exportaciones de listados en formato CSV con BOM compatible con Excel en todo el sistema.
 
 ## 2026-07-19 - Resúmenes de Cuenta Autocontenidos y Listos para Imprimir
-**Learning:** Ofrecer capacidades de exportación rápida a PDF sin añadir dependencias de backend o pesadas librerías de renderizado se puede lograr elegantemente combinando `window.print()` nativo con un bloque `<style media="print">` localizado. De esta manera, el navegador hace todo el trabajo pesado garantizando el renderizado exacto de fuentes y colores. Además, diseñar el documento impreso como un recibo formal o resumen de deudas estructurado (con firmas y disclaimers legales) añade un inmenso valor profesional para los operadores del taller.
+**Learning:** Ofrecer capacidades de exportación rápida a PDF sin añadir dependencias de backend o pesadas librerías de renderizado se puede lograr elegantemente combinando `window.print()` nativo con un bloque `<style media="print">` localizado. De esta manera, el navegador hace todo el trabajo pesado garantizando el renderizado exacto de fuentes y colores. Además, diseñar el documento impreso como un recibo formal o resumen de deudas de un vehículo estructurado (con firmas y disclaimers legales) añade un inmenso valor profesional para los operadores del taller.
 **Action:** Usar estilos autocontenidos `@media print` y contenedores semánticos listos para impresión en módulos de informes u hojas de detalles.
 
 ## 2026-07-18 - Consolidación de Historial Visual de Entidades Relacionadas
@@ -128,7 +137,7 @@
 **Action:** Mantener la simetría de flujos financieros en vistas relacionadas (Clientes <-> Vehículos) para eliminar clics de navegación innecesarios.
 
 ## 2026-07-28 - Validación de CUIT en Tiempo Real de Alta Fidelidad
-**Learning:** Validar el CUIT en tiempo real inmediatamente al presionar teclas puede resultar frustrante si se muestra un error de longitud mientras el usuario apenas está escribiendo. Disparar la validación algorítmica (Fórmula de Módulo 11) exactamente cuando la longitud es 11 dígitos, and reservar la advertencia de longitud incompleta para el evento `onBlur`, proporciona un flujo sumamente natural e interactivo.
+**Learning:** Validar el CUIT en tiempo real inmediatamente al presionar teclas puede resultar frustrante si se muestra un error de longitud mientras el usuario apenas está escribiendo. Disparar la validación algorítmica (Fórmula de Módulo 11) exactamente cuando la longitud es 11 dígitos, y reservar la advertencia de longitud incompleta para el evento `onBlur`, proporciona un flujo sumamente natural e interactivo.
 **Action:** Usar este patrón híbrido (tiempo real a longitud fija + onBlur para campos incompletos) para campos de formato estructurado.
 
 ## 2025-07-24 - Estandarización de Datos Financieros
