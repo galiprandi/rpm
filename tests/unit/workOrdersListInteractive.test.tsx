@@ -13,6 +13,38 @@ vi.mock('next/navigation', () => ({
   usePathname: () => '/adm/work-orders',
 }));
 
+// Mock authClient
+vi.mock("@/lib/auth-client", () => ({
+  authClient: {
+    useSession: () => ({
+      data: {
+        user: { id: "tech_1", name: "Carlos", email: "carlos@tech.com" },
+      },
+    }),
+  },
+}));
+
+// Mock dropdown-menu to render inline under testing library
+vi.mock("@/components/ui/dropdown-menu", () => {
+  return {
+    DropdownMenu: ({ children }: any) => <div>{children}</div>,
+    DropdownMenuPortal: ({ children }: any) => <div>{children}</div>,
+    DropdownMenuTrigger: ({ children, asChild, ...props }: any) => {
+      // Just render the child with props if asChild
+      if (asChild && React.isValidElement(children)) {
+        return React.cloneElement(children as any, props);
+      }
+      return <div data-testid="dropdown-trigger" {...props}>{children}</div>;
+    },
+    DropdownMenuContent: ({ children, ...props }: any) => <div data-testid="dropdown-content" {...props}>{children}</div>,
+    DropdownMenuItem: ({ children, onClick, ...props }: any) => (
+      <div onClick={onClick} role="menuitem" {...props}>{children}</div>
+    ),
+    DropdownMenuLabel: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+    DropdownMenuSeparator: () => <hr />,
+  };
+});
+
 // Mock useIsMobile
 vi.mock('@/hooks/use-mobile', () => ({
   useIsMobile: () => false,
@@ -123,8 +155,8 @@ describe('WorkOrdersPage - Interactive List View Controls', () => {
     expect(assignedText.length).toBeGreaterThan(0);
 
     // Check Status selector on the active row (it has visual text 'Confirmada' inside button)
-    expect(screen.getByText("Confirmada")).toBeInTheDocument();
-    expect(screen.getByText("Cancelada")).toBeInTheDocument();
+    expect(screen.getAllByText("Confirmada")[0]).toBeInTheDocument();
+    expect(screen.getAllByText("Cancelada")[0]).toBeInTheDocument();
   });
 
   it('stops event propagation on clicking technician and status trigger buttons to prevent Link navigation', async () => {
@@ -175,8 +207,33 @@ describe('WorkOrdersPage - Interactive List View Controls', () => {
     });
 
     // Find the Cancelled row element for status
-    const cancelledStatusBtn = screen.getByText("Cancelada").closest('button');
+    const cancelledStatusBtn = screen.getAllByText("Cancelada")
+      .map(el => el.closest('button'))
+      .find(btn => btn !== null);
     expect(cancelledStatusBtn).toHaveClass('cursor-not-allowed');
     expect(cancelledStatusBtn).toHaveClass('opacity-60');
+  });
+
+  it('renders the "Asignarme a mí" option in the technician dropdown when current user is in the technician list', async () => {
+    render(
+      <TooltipProvider>
+        <WorkOrdersPage />
+      </TooltipProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("AAA111")).toBeInTheDocument();
+    });
+
+    // Switch to List View
+    const listButton = screen.getByText("Lista");
+    fireEvent.click(listButton);
+
+    // Open the technician selection dropdown
+    const techTrigger = screen.getAllByText("Sin asignar")[0];
+    fireEvent.click(techTrigger);
+
+    // Verify "Asignarme a mí" is displayed
+    expect(screen.getByText("Asignarme a mí")).toBeInTheDocument();
   });
 });

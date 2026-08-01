@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { authClient } from "@/lib/auth-client";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -123,6 +124,7 @@ interface WorkOrderItem {
 
 export default function NewWorkOrderPage() {
   const { alert, confirm } = useUI();
+  const { data: session } = authClient.useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
   const vehicleIdFromUrl = searchParams.get("vehicleId");
@@ -1425,7 +1427,22 @@ export default function NewWorkOrderPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="technician">Responsable Asignado</Label>
+                  <div className="flex justify-between items-center">
+                    <Label htmlFor="technician">Responsable Asignado</Label>
+                    {session?.user?.id &&
+                      selectedTechnicianId !== session.user.id &&
+                      technicians.some((t) => t.id === session.user.id) && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 text-[10px] text-purple-700 hover:text-purple-800 hover:bg-purple-50 px-2 font-semibold"
+                          onClick={() => setSelectedTechnicianId(session.user.id)}
+                        >
+                          Asignarme a mí
+                        </Button>
+                      )}
+                  </div>
                   <Select
                     value={selectedTechnicianId}
                     onValueChange={setSelectedTechnicianId}

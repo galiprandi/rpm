@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -282,6 +283,7 @@ interface AuditLog {
 
 export default function WorkOrderDetailPage() {
   const { alert, confirm: confirmAction } = useUI();
+  const { data: session } = authClient.useSession();
   const params = useParams();
   const router = useRouter();
   const workOrderId = params.id as string;
@@ -1538,30 +1540,47 @@ export default function WorkOrderDetailPage() {
             <span className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground/60">
               Responsable
             </span>
-            <div className="flex items-center gap-1 bg-purple-50 border border-purple-200 rounded-md text-xs font-medium text-purple-700">
-              <UserCog
-                className="h-3.5 w-3.5 ml-1.5 text-purple-600 pointer-events-none"
-                aria-hidden="true"
-              />
-              <Select
-                value={workOrder.technicianId || "unassigned"}
-                onValueChange={handleTechnicianChange}
-                disabled={
-                  updatingTechnician || workOrder.status === "DELIVERED" || workOrder.status === "CANCELLED"
-                }
-              >
-                <SelectTrigger className="h-9 border-none bg-transparent hover:bg-purple-100/50 shadow-none focus:ring-0 px-1.5 min-w-[100px] text-xs">
-                  <SelectValue placeholder="Sin asignar" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="unassigned">Sin asignar</SelectItem>
-                  {technicians.map((tech) => (
-                    <SelectItem key={tech.id} value={tech.id}>
-                      {tech.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1 bg-purple-50 border border-purple-200 rounded-md text-xs font-medium text-purple-700">
+                <UserCog
+                  className="h-3.5 w-3.5 ml-1.5 text-purple-600 pointer-events-none"
+                  aria-hidden="true"
+                />
+                <Select
+                  value={workOrder.technicianId || "unassigned"}
+                  onValueChange={handleTechnicianChange}
+                  disabled={
+                    updatingTechnician || workOrder.status === "DELIVERED" || workOrder.status === "CANCELLED"
+                  }
+                >
+                  <SelectTrigger className="h-9 border-none bg-transparent hover:bg-purple-100/50 shadow-none focus:ring-0 px-1.5 min-w-[100px] text-xs">
+                    <SelectValue placeholder="Sin asignar" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="unassigned">Sin asignar</SelectItem>
+                    {technicians.map((tech) => (
+                      <SelectItem key={tech.id} value={tech.id}>
+                        {tech.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {session?.user?.id &&
+                workOrder.technicianId !== session.user.id &&
+                technicians.some((t) => t.id === session.user.id) &&
+                workOrder.status !== "DELIVERED" &&
+                workOrder.status !== "CANCELLED" && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 text-[10px] font-bold uppercase tracking-wider text-purple-700 border-purple-200 bg-purple-50/50 hover:bg-purple-100 hover:text-purple-800 transition-colors"
+                    onClick={() => handleTechnicianChange(session.user.id)}
+                    disabled={updatingTechnician}
+                  >
+                    Asignarme
+                  </Button>
+                )}
             </div>
           </div>
 

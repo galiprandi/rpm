@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { authClient } from "@/lib/auth-client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -195,6 +196,7 @@ function KanbanCard({
   onTechnicianUpdate?: (woId: string, techId: string | null) => Promise<void>;
   onStatusUpdate?: (woId: string, newStatus: string) => Promise<void>;
 }) {
+  const { data: session } = authClient.useSession();
   const {
     attributes,
     listeners,
@@ -429,6 +431,21 @@ function KanbanCard({
               Asignar Responsable
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
+            {session?.user?.id && technicians.some((t) => t.id === session.user.id) && (
+              <>
+                <DropdownMenuItem
+                  className="text-xs font-semibold text-purple-700 hover:text-purple-800"
+                  onClick={() => onTechnicianUpdate?.(wo.id, session.user.id)}
+                >
+                  <UserCog className="h-3.5 w-3.5 mr-2 text-purple-600" />
+                  Asignarme a mí
+                  {wo.technician?.id === session.user.id && (
+                    <Check className="h-3.5 w-3.5 ml-auto text-primary" />
+                  )}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+              </>
+            )}
             <DropdownMenuItem
               className="text-xs"
               onClick={() => onTechnicianUpdate?.(wo.id, null)}
@@ -595,6 +612,7 @@ function KanbanColumn({
 // --- Main Page Component ---
 
 export default function WorkOrdersPage() {
+  const { data: session } = authClient.useSession();
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const isMobile = useIsMobile();
@@ -1482,6 +1500,21 @@ export default function WorkOrdersPage() {
                                   Asignar Responsable
                                 </DropdownMenuLabel>
                                 <DropdownMenuSeparator />
+                                {session?.user?.id && technicians.some((t) => t.id === session.user.id) && (
+                                  <>
+                                    <DropdownMenuItem
+                                      className="text-xs font-semibold text-purple-700 hover:text-purple-800"
+                                      onClick={() => handleTechnicianUpdate(wo.id, session.user.id)}
+                                    >
+                                      <UserCog className="h-3.5 w-3.5 mr-2 text-purple-600" />
+                                      Asignarme a mí
+                                      {wo.technician?.id === session.user.id && (
+                                        <Check className="h-3.5 w-3.5 ml-auto text-primary" />
+                                      )}
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                  </>
+                                )}
                                 <DropdownMenuItem
                                   className="text-xs"
                                   onClick={() => handleTechnicianUpdate(wo.id, null)}
