@@ -150,7 +150,8 @@ export default function ProductsClient({ initialProducts, initialCategories }: P
                   placeholder="Buscar producto..."
                   value={searchQuery}
                   onChange={(e) => handleSearchChange(e.target.value)}
-                  className="h-14 w-full lg:w-80 bg-zinc-900 border border-white/5 rounded-2xl pl-12 pr-12 text-sm text-white focus:outline-none focus:border-brand/50 transition-all"
+                  className="h-14 w-full lg:w-80 bg-zinc-900 border border-white/5 rounded-2xl pl-12 pr-12 text-sm text-white focus:outline-none focus:border-brand/50 focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-black transition-all"
+                  aria-label="Buscar producto en el catálogo"
                 />
                 {searchQuery && (
                   <Tooltip>
@@ -175,8 +176,9 @@ export default function ProductsClient({ initialProducts, initialCategories }: P
                   <button
                     key={category}
                     onClick={() => handleCategoryChange(category)}
+                    aria-label={`Filtrar productos por categoría ${category}`}
                     className={cn(
-                      "px-6 h-10 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-300 border cursor-pointer",
+                      "px-6 h-10 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-300 border cursor-pointer focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none focus-visible:ring-offset-2 focus-visible:ring-offset-black",
                       selectedCategory === category
                         ? "bg-brand border-brand text-white shadow-[0_0_20px_rgba(255,75,0,0.3)]"
                         : "bg-zinc-900 border-white/5 text-zinc-500 hover:text-white hover:border-white/20"
