@@ -1,3 +1,7 @@
+## 2026-08-02 - Public Catalog Search and Filter Keyboard Focus Visibility Standard
+**Learning:** Adding standardized high-contrast keyboard-focus outline rings (`focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-black`) to search inputs and filter buttons prevents focus loss and navigation disorientation for keyboard-only users on public pages. Paired with descriptive `aria-label` screen reader tags, this guarantees that both visual and non-visual navigators have equal tracking precision and contextual clarity when browsing product categories.
+**Action:** Always provide explicit visual focus indicators and descriptive ARIA tags to search bars and multi-button filtering controls on public-facing storefront interfaces.
+
 ## 2026-07-31 - Public Website Interactive Element Keyboard Focus Visibility Standard
 **Learning:** Highly custom styled interactive landing page elements (such as hero section CTA buttons and specialized services grid cards) can easily fall into "focus visibility traps" if they override or lack standard high-contrast keyboard-focus outline rings. Standardizing these elements with `focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none focus-visible:ring-offset-2` ensures they are perfectly navigable and trackable for keyboard-only users without compromising the visual mouse/touch hover styling.
 **Action:** Always verify that every custom styled interactive element or button on the public website includes explicit focus-visible outline ring classes.
