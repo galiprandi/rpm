@@ -19,7 +19,8 @@ import {
   TrendingUp,
   DollarSign,
   UserPlus,
-  CheckCircle2
+  CheckCircle2,
+  Printer
 } from 'lucide-react';
 import {
   Select,
@@ -41,6 +42,17 @@ type Period =
   | "last12months"
   | "thisYear"
   | "custom";
+
+const periodLabels: Record<Period, string> = {
+  today: "Hoy",
+  last7days: "Últimos 7 días",
+  last30days: "Últimos 30 días",
+  thisMonth: "Este mes",
+  lastMonth: "Mes pasado",
+  last12months: "Últimos 12 meses",
+  thisYear: "Este año",
+  custom: "Personalizado"
+};
 
 interface ReportCardProps {
   title: string;
@@ -289,6 +301,15 @@ export default function ReportsClient() {
       <Header
         title="Centro de Reportes"
         description="Analiza el desempeño de tu negocio con métricas detalladas y visualizaciones."
+        secondaryActions={[
+          {
+            label: "Imprimir",
+            onClick: () => window.print(),
+            disabled: !data || loading,
+            icon: Printer,
+            variant: "outline",
+          }
+        ]}
         leftActions={
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2">
@@ -559,7 +580,7 @@ export default function ReportsClient() {
         </Card>
       </div>
 
-      <div className="pt-4 border-t">
+      <div className="pt-4 border-t print:hidden">
         <h2 className="text-lg font-semibold mb-4">Módulos Detallados</h2>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {reports.map((report, idx) => (
@@ -567,6 +588,186 @@ export default function ReportsClient() {
           ))}
         </div>
       </div>
+
+      {/* Sección de Impresión (Solo visible al imprimir) */}
+      {data && (
+        <div className="hidden print:block font-sans p-6 text-black bg-white" id="print-section">
+          {/* Header de la Empresa */}
+          <div className="flex justify-between items-start border-b-2 border-zinc-900 pb-4 mb-6">
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight text-zinc-900">RPM ACCESORIOS</h1>
+              <p className="text-xs text-zinc-500 uppercase font-medium mt-0.5">Taller de Equipamiento y Estética Vehicular</p>
+              <p className="text-[11px] text-zinc-400 font-mono mt-1">Sarmiento 1234, Rosario, Santa Fe | Tel: 341-5556789</p>
+            </div>
+            <div className="text-right">
+              <div className="border border-zinc-900 text-zinc-900 font-bold text-xs py-1 px-3 uppercase tracking-wider inline-block rounded">
+                Consolidado de Negocios & BI
+              </div>
+              <p className="text-xs text-zinc-500 font-mono mt-2">
+                Fecha de Emisión: {new Date().toLocaleDateString("es-AR")}
+              </p>
+              <p className="text-[11px] text-zinc-500 font-mono mt-1">
+                Período: {periodLabels[period]} ({getDatesForPeriod(period).startDate.toLocaleDateString("es-AR")} - {getDatesForPeriod(period).endDate.toLocaleDateString("es-AR")})
+              </p>
+            </div>
+          </div>
+
+          {/* Resumen de KPIs */}
+          <div className="grid grid-cols-4 gap-4 border border-zinc-300 rounded-lg p-4 mb-6 bg-zinc-50/50">
+            <div className="space-y-1">
+              <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">Ingresos Totales</span>
+              <p className="text-sm font-bold font-mono text-zinc-900">{formatARS(data.revenue.current)}</p>
+            </div>
+            <div className="space-y-1">
+              <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">Rentabilidad Est.</span>
+              <p className="text-sm font-bold font-mono text-zinc-900">{formatARS(data.estimatedProfit.current)}</p>
+            </div>
+            <div className="space-y-1">
+              <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">OTs Completadas</span>
+              <p className="text-sm font-bold font-mono text-zinc-900">{data.completedOrders.current}</p>
+            </div>
+            <div className="space-y-1">
+              <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">Clientes Nuevos</span>
+              <p className="text-sm font-bold font-mono text-zinc-900">{data.newCustomers.current}</p>
+            </div>
+          </div>
+
+          {/* Estado del Inventario */}
+          <div className="mb-6">
+            <h2 className="text-xs font-bold text-zinc-800 uppercase tracking-wider mb-2">Estado de Inventario</h2>
+            <div className="border border-zinc-300 rounded-lg p-4 bg-zinc-50/50 grid grid-cols-2 gap-4">
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-zinc-500 font-medium">Valorización Total:</span>
+                <span className="font-bold font-mono text-zinc-900">{formatARS(data.stockStatus.totalValue)}</span>
+              </div>
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-zinc-500 font-medium">Alertas de Stock Mínimo:</span>
+                <span className={cn(
+                  "font-bold font-mono",
+                  data.stockStatus.lowStockCount > 0 ? "text-red-700" : "text-emerald-700"
+                )}>
+                  {data.stockStatus.lowStockCount} items
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Comparativo de Rendimiento */}
+          <div className="mb-6 print:break-inside-avoid">
+            <h2 className="text-xs font-bold text-zinc-800 uppercase tracking-wider mb-2">Comparativo de Rendimiento Interperíodo</h2>
+            <div className="border border-zinc-300 rounded-lg overflow-hidden">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-zinc-100 border-b border-zinc-300 text-[11px] font-bold text-zinc-700 uppercase">
+                    <th className="p-2">Indicador Clave</th>
+                    <th className="p-2 text-right">Período Actual</th>
+                    <th className="p-2 text-right">Período Anterior</th>
+                    <th className="p-2 text-right">Variación (%)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    {
+                      label: "Ingresos Totales",
+                      current: data.revenue.current,
+                      previous: data.revenue.previous,
+                      change: data.revenue.change,
+                      formatValue: (val: number) => formatARS(val),
+                    },
+                    {
+                      label: "Rentabilidad Est.",
+                      current: data.estimatedProfit.current,
+                      previous: data.estimatedProfit.previous,
+                      change: data.estimatedProfit.change,
+                      formatValue: (val: number) => formatARS(val),
+                    },
+                    {
+                      label: "OTs Completadas",
+                      current: data.completedOrders.current,
+                      previous: data.completedOrders.previous,
+                      change: data.completedOrders.change,
+                      formatValue: (val: number) => `${val}`,
+                    },
+                    {
+                      label: "Clientes Nuevos",
+                      current: data.newCustomers.current,
+                      previous: data.newCustomers.previous,
+                      change: data.newCustomers.change,
+                      formatValue: (val: number) => `${val}`,
+                    },
+                  ].map((kpi, idx) => (
+                    <tr key={idx} className="border-b border-zinc-200 text-[11px]">
+                      <td className="p-2 font-medium">{kpi.label}</td>
+                      <td className="p-2 text-right font-mono font-bold text-zinc-900">{kpi.formatValue(kpi.current)}</td>
+                      <td className="p-2 text-right font-mono text-zinc-500">{kpi.formatValue(kpi.previous)}</td>
+                      <td className={cn(
+                        "p-2 text-right font-mono font-semibold",
+                        kpi.change > 0 ? "text-emerald-700" : kpi.change < 0 ? "text-red-700" : "text-zinc-600"
+                      )}>
+                        {kpi.change > 0 ? "+" : ""}{kpi.change.toFixed(1)}%
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Firmas de Control */}
+          <div className="grid grid-cols-2 gap-12 mt-12 mb-8 print:break-inside-avoid">
+            <div className="flex flex-col items-center">
+              <div className="w-48 border-b border-zinc-400 h-10" />
+              <span className="text-[11px] text-zinc-500 font-semibold uppercase tracking-wider mt-2">
+                Responsable de Reportes y BI
+              </span>
+            </div>
+            <div className="flex flex-col items-center">
+              <div className="w-48 border-b border-zinc-400 h-10" />
+              <span className="text-[11px] text-zinc-500 font-semibold uppercase tracking-wider mt-2">
+                Firma Autorizada Gerencia
+              </span>
+            </div>
+          </div>
+
+          {/* Pie de Página */}
+          <div className="text-center border-t border-zinc-200 pt-4 text-[11px] text-zinc-400 font-mono">
+            RPM Accesorios © {new Date().getFullYear()} - Reporte de Control Consolidado y Desempeño Operativo / Comercial.
+          </div>
+        </div>
+      )}
+
+      {/* Estilos para impresión */}
+      <style media="print">
+        {`
+          @media print {
+            aside,
+            [data-sidebar="sidebar"],
+            .print\\:hidden,
+            button,
+            header,
+            footer,
+            nav,
+            .web-mcp-tools,
+            #chat-floating-button,
+            [role="dialog"],
+            .DialogOverlay {
+              display: none !important;
+            }
+
+            main, .container, body {
+              padding: 0 !important;
+              margin: 0 !important;
+              max-width: none !important;
+              background: white !important;
+              color: black !important;
+            }
+
+            .container {
+              width: 100% !important;
+            }
+          }
+        `}
+      </style>
     </div>
   );
 }
