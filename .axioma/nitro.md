@@ -4,6 +4,7 @@
 - [ ] Direct photo attachments for work order checklist items.
 
 ## ✅ DONE
+- [x] 2026-08-02 — Implement global keyboard shortcuts Alt+V (toggle voice dictation) and Alt+C (clear conversation flow with confirmation) inside ChatFloating.tsx, featuring responsive tooltips and ARIA-labels, comprehensive keyboard listener lifecycle management, and full unit test coverage (PR #315).
 - [x] 2026-08-01 — Implement the searchServices tool for the chatbot (Nitro) enabling workshop staff to query active shop services, durations, and costs, with full Drizzle ORM queries, visual status labels, comprehensive integration tests, and system documentation (PR #295).
 - [x] 2026-07-30 — Enhance chatbot file attachment UI to show dynamic local image previews (thumbnails) and fallback uppercase file extension badges with comprehensive, leak-proof browser object URL lifetime management (PR #290).
 - [x] 2026-07-28 — Implement dynamic local image previews and file extension badges for chat file attachments with robust object URL memory management and cleanup lifecycles (PR #289).
@@ -21,6 +22,10 @@
 - [x] 2026-03-28 — Initial audit of bot tools, removal of mock tools, fixing conversation history unit tests, and implementing major UI/UX improvements (smart scrolling, success states for tool execution, empty-state quick start suggestion chips, and full WCAG accessibility).
 
 ## 🧠 LEARNINGS
+### 2026-08-02 — Keyboard Shortcuts for Hands-Busy Workshop Staff
+**Learning:** Workshop technicians are frequently hands-busy with gloves or mechanics tools, which makes precise mouse/trackpad clicking of tiny control buttons extremely tedious. Providing global, intuitive keyboard shortcuts like `Alt+V` to toggle voice dictation and `Alt+C` to clear chat (with confirmation safeguard) creates a highly ergonomic, fluid interface. Tooltips and ARIA accessibility labels should dynamically advertise these shortcuts so they are highly discoverable and compliant.
+**Action:** Always include keyboard triggers alongside key visual interactions, especially for accessibility-critical buttons (mic, close, clear, confirm). Ensure standard JSDOM constructors are tested without arrow lexical `this` scoping mismatches.
+
 ### 2026-08-01 — Chatbot Workshop Services Search Tool
 **Learning:** Expanding the chatbot's searching tools to include active workshop services (`searchServices`) bridges the gap between catalog management and actual garage operations. Providing immediate duration (minutes) and base cost feedback in response to natural language queries drastically cuts lookup times for on-duty technicians and administrative personnel.
 **Action:** Always maintain strict code integrity checks by keeping unified instructions, tool registries, unit tests, and UI states fully synchronized.

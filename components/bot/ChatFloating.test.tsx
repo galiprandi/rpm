@@ -134,7 +134,7 @@ describe("ChatFloating Component", () => {
 
     // First click: enters confirmation mode
     fireEvent.click(clearBtn);
-    expect(screen.getByRole("button", { name: /haz clic de nuevo para confirmar/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /haz clic de nuevo o presiona Alt\+C para confirmar/i })).toBeInTheDocument();
 
     // Second click: completes clear
     fireEvent.click(clearBtn);
@@ -399,5 +399,81 @@ describe("ChatFloating Component", () => {
 
     // Verify revokeObjectURL was called
     expect(mockRevokeObjectURL).toHaveBeenCalledWith("blob:http://localhost/mock-preview-url-close");
+  });
+
+  it("triggers voice dictation via Alt+V keyboard shortcut", async () => {
+    const mockStart = vi.fn();
+    const mockStop = vi.fn();
+
+    const MockSpeechRecognition = vi.fn().mockImplementation(function(this: any) {
+      const recognition = {
+        start: function(this: any) {
+          mockStart();
+          if (this.onstart) {
+            act(() => {
+              this.onstart();
+            });
+          }
+        },
+        stop: function(this: any) {
+          mockStop();
+          if (this.onend) {
+            act(() => {
+              this.onend();
+            });
+          }
+        },
+        continuous: false,
+        lang: "es-AR",
+        interimResults: false,
+        onstart: null as any,
+        onend: null as any,
+        onerror: null as any,
+        onresult: null as any,
+      };
+      return recognition;
+    });
+
+    (window as any).SpeechRecognition = MockSpeechRecognition;
+
+    render(<ChatFloating isOpen={true} />);
+
+    // Simulate Alt+V key press
+    await act(async () => {
+      window.dispatchEvent(new KeyboardEvent("keydown", { altKey: true, key: "v" }));
+    });
+
+    // Check placeholder changes to listening state
+    expect(screen.getByPlaceholderText("Escuchando... Hablá ahora")).toBeInTheDocument();
+    expect(mockStart).toHaveBeenCalled();
+
+    // Simulate Alt+V key press again to toggle off
+    await act(async () => {
+      window.dispatchEvent(new KeyboardEvent("keydown", { altKey: true, key: "v" }));
+    });
+
+    expect(mockStop).toHaveBeenCalled();
+  });
+
+  it("handles double-press Alt+C clear conversation confirmation flow via keyboard shortcut", async () => {
+    mockMessages = [{ id: "1", role: "user", parts: [{ type: "text", text: "testing clear shortcut" }] }];
+
+    render(<ChatFloating isOpen={true} />);
+
+    // First Alt+C press should enter confirmation mode
+    await act(async () => {
+      window.dispatchEvent(new KeyboardEvent("keydown", { altKey: true, key: "c" }));
+    });
+
+    // Verify confirmation is shown
+    expect(screen.getByRole("button", { name: /haz clic de nuevo o presiona Alt\+C para confirmar/i })).toBeInTheDocument();
+
+    // Second Alt+C press should finalize clear
+    await act(async () => {
+      window.dispatchEvent(new KeyboardEvent("keydown", { altKey: true, key: "c" }));
+    });
+
+    expect(mockStop).toHaveBeenCalled();
+    expect(mockSetMessages).toHaveBeenCalledWith([]);
   });
 });
