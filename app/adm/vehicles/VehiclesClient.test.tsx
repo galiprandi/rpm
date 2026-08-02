@@ -31,9 +31,10 @@ vi.mock("@/components/adm", () => ({
       ))}
     </div>
   ),
-  CrudAdmin: ({ items, onExport }: any) => (
+  CrudAdmin: ({ items, onExport, onCreate }: any) => (
     <div data-testid="crud-admin">
       <button onClick={onExport} data-testid="export-btn">Exportar CSV</button>
+      {onCreate && <button onClick={onCreate} data-testid="create-btn">Nuevo Vehículo</button>}
       <ul>
         {items?.map((item: any, idx: number) => {
           // Calculate debt for assertion
@@ -53,6 +54,17 @@ vi.mock("@/components/adm", () => ({
         })}
       </ul>
     </div>
+  ),
+}));
+
+vi.mock("@/components/vehicles/VehicleDialog", () => ({
+  VehicleDialog: ({ open, onOpenChange }: any) => (
+    open ? (
+      <div data-testid="vehicle-dialog">
+        <span>Mocked Vehicle Dialog</span>
+        <button onClick={() => onOpenChange(false)} data-testid="close-dialog-btn">Close Dialog</button>
+      </div>
+    ) : null
   ),
 }));
 
@@ -198,5 +210,32 @@ describe("VehiclesClient", () => {
     expect(appendSpy).toHaveBeenCalled();
     expect(removeSpy).toHaveBeenCalled();
     expect(clickMock).toHaveBeenCalled();
+  });
+
+  it("opens and closes the VehicleDialog when create action is triggered", async () => {
+    render(
+      <TooltipProvider>
+        <VehiclesClient initialVehicles={mockVehicles} totalVehicles={2} />
+      </TooltipProvider>
+    );
+
+    // Dialog should not be initially rendered
+    expect(screen.queryByTestId("vehicle-dialog")).not.toBeInTheDocument();
+
+    // Click the "Nuevo Vehículo" button to open dialog
+    const createBtn = screen.getByTestId("create-btn");
+    expect(createBtn).toBeInTheDocument();
+    fireEvent.click(createBtn);
+
+    // Dialog should be rendered now
+    expect(screen.getByTestId("vehicle-dialog")).toBeInTheDocument();
+    expect(screen.getByText("Mocked Vehicle Dialog")).toBeInTheDocument();
+
+    // Click on the close button in the dialog
+    const closeBtn = screen.getByTestId("close-dialog-btn");
+    fireEvent.click(closeBtn);
+
+    // Dialog should be closed
+    expect(screen.queryByTestId("vehicle-dialog")).not.toBeInTheDocument();
   });
 });
