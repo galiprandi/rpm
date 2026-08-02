@@ -394,7 +394,7 @@ export function ChatFloating({
     await sendMessage({ text: action });
   };
 
-  const handleClearConversation = () => {
+  const handleClearConversation = useCallback(() => {
     if (messages.length === 0) return;
 
     if (!isConfirmingClear) {
@@ -423,7 +423,7 @@ export function ChatFloating({
     clearError();
     if (fileInputRef.current) fileInputRef.current.value = "";
     if (cameraInputRef.current) cameraInputRef.current.value = "";
-  };
+  }, [messages.length, isConfirmingClear, stop, setMessages, clearError]);
 
   // Automatically run native BarcodeDetector on image files
   useEffect(() => {
@@ -622,11 +622,39 @@ export function ChatFloating({
           return;
         }
       }
+
+      // Alt+V to toggle voice dictation/listening
+      if (e.altKey && e.key?.toLowerCase() === "v") {
+        if (isSpeechSupported && !isSubmitting) {
+          e.preventDefault();
+          toggleListening();
+        }
+        return;
+      }
+
+      // Alt+C to clear conversation
+      if (e.altKey && e.key?.toLowerCase() === "c") {
+        if (messages.length > 0) {
+          e.preventDefault();
+          handleClearConversation();
+        }
+        return;
+      }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, setIsOpen, messages.length, quickSuggestions, handleSuggestionClick]);
+  }, [
+    isOpen,
+    setIsOpen,
+    messages.length,
+    quickSuggestions,
+    handleSuggestionClick,
+    isSpeechSupported,
+    isSubmitting,
+    toggleListening,
+    handleClearConversation,
+  ]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -702,8 +730,8 @@ export function ChatFloating({
                     disabled={messages.length === 0}
                     aria-label={
                       isConfirmingClear
-                        ? "Haz clic de nuevo para confirmar"
-                        : "Limpiar conversación"
+                        ? "Haz clic de nuevo o presiona Alt+C para confirmar"
+                        : "Limpiar conversación (Alt+C)"
                     }
                     className={`focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1 rounded-full p-0.5 ${
                       isConfirmingClear
@@ -723,8 +751,8 @@ export function ChatFloating({
                   className="bg-slate-900 text-white border-slate-800"
                 >
                   {isConfirmingClear
-                    ? "Haz clic de nuevo para confirmar"
-                    : "Limpiar conversación"}
+                    ? "Presiona Alt+C para confirmar"
+                    : "Limpiar conversación (Alt+C)"}
                 </TooltipContent>
               </Tooltip>
               {!isMobile && (
@@ -1164,7 +1192,7 @@ export function ChatFloating({
                           : "text-muted-foreground hover:text-foreground"
                       }`}
                       aria-label={
-                        isListening ? "Detener dictado por voz" : "Dictar por voz"
+                        isListening ? "Detener dictado por voz (Alt+V)" : "Dictar por voz (Alt+V)"
                       }
                     >
                       {isListening ? (
@@ -1178,7 +1206,7 @@ export function ChatFloating({
                     side="top"
                     className="bg-slate-900 text-white border-slate-800"
                   >
-                    {isListening ? "Detener dictado" : "Dictar por voz"}
+                    {isListening ? "Detener dictado (Alt+V)" : "Dictar por voz (Alt+V)"}
                   </TooltipContent>
                 </Tooltip>
               )}
