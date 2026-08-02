@@ -3,6 +3,7 @@
 ## 📋 BACKLOG
 
 ## ✅ DONE
+- [x] 2026-08-01 — Vista de Impresión de Alta Fidelidad y Accesibilidad WCAG AA en Reportes de Clientes y Stock: Añadida la acción secundaria "Imprimir" en los Reportes de Clientes y de Stock, diseñando plantillas de impresión de alta fidelidad con KPIs de adquisición, valorización de inventario, distribuciones por categoría, alertas de stock mínimo, productos inmovilizados, y bloques de firmas para control interno y auditoría. (PR #diego/reports/customers-and-stock-print-layouts)
 - [x] 2026-07-31 — Vista de Impresión de Alta Fidelidad y Accesibilidad WCAG AA en Reporte de Servicios: Añadida la acción secundaria "Imprimir" en el Reporte de Servicios, diseñando una plantilla de impresión de alta fidelidad con KPIs de ingresos, evolución de ingresos, rendimiento de técnicos por facturación, desgloses por categoría de vehículos y bloques de firmas para auditoría de servicios y control gerencial. Elevado el cumplimiento visual de accesibilidad para satisfacer estrictamente el estándar WCAG AA (4.5:1). (PR #diego/reports/services-print-layout-and-accessibility)
 - [x] 2026-07-30 — Vista de Impresión de Alta Fidelidad y Accesibilidad WCAG AA en Reporte de Taller: Añadida la acción secundaria "Imprimir" en el Reporte de Taller, diseñando una plantilla de impresión de alta fidelidad con KPIs de control operativo, distribución por estado de OT, performance de técnicos, evolución diaria/mensual y bloques de firmas de control de calidad. Elevada la legibilidad de colores semánticos a nivel 700 para cumplir con WCAG AA (4.5:1). (PR #diego/reports/workshop-print-layout-and-accessibility)
 - [x] 2026-07-29 — Vista de Impresión de Alta Fidelidad y Accesibilidad WCAG AA en Reporte de Compras: Añadida la acción secundaria "Imprimir" en el Reporte de Compras, diseñando una plantilla de impresión de alta fidelidad con KPIs de abastecimiento, distribución de compras por proveedor, desglose de evolución de costos temporal y firmas de control comercial. Elevado el cumplimiento visual de accesibilidad para satisfacer estrictamente el estándar WCAG AA (4.5:1). (PR #diego/reports/purchases-print-layout-and-accessibility)
@@ -29,78 +30,6 @@
 - [x] 2025-07-09 — Implementación de reporte de Clientes (adquisición, recurrencia y ranking) (PR #diego/reports/customer-report)
 
 ## 🧠 LEARNINGS
-## 2026-07-31 - Vista de Impresión de Alta Fidelidad y Accesibilidad WCAG AA en Reporte de Servicios
-**Learning:** El Reporte de Servicios ayuda a comprender la demanda por tipo de vehículo, ranking de facturación por servicio e ingresos generados por los técnicos. Agregar la plantilla de impresión nativa y dar un estilo de impresión específico con `@media print` permite al equipo directivo exportar y archivar copias físicas o PDFs estructurados, limpios de menús colaterales y otros ruidos visuales. Asimismo, asegurar niveles de contraste altos con clases del nivel `700` (`text-emerald-700`) contribuye de forma crítica al cumplimiento del estándar de accesibilidad visual WCAG AA.
-**Action:** Diseñar siempre esquemas de impresión estructurados con la identidad corporativa de RPM Accesorios, desgloses tabulares de KPIs y bloques de firmas para control interno y auditoría gerencial en todos los reportes analíticos de la suite.
-
-## 2026-07-30 - Vista de Impresión de Alta Fidelidad y Accesibilidad WCAG AA en Reporte de Taller (Workshop)
-**Learning:** El Reporte de Taller (Workshop) permite auditar el flujo de operaciones, los cuellos de botella de estados de las OTs y medir la performance operativa de los técnicos. Habilitar la acción de impresión nativa y dar un formato estructurado con `@media print` permite al equipo de dirección y control archivar hojas de control de calidad y performance limpias de ruidos visuales de interfaz (como menús laterales, asistentes virtuales o cabeceras). Asimismo, elevar la legibilidad de colores semánticos a nivel de saturación `700` (`text-blue-700` y `text-emerald-700`) garantiza una experiencia visualmente inclusiva y de estricta conformidad con el estándar WCAG AA de contraste (4.5:1).
-**Action:** Diseñar siempre esquemas de impresión estructurados con la identidad de RPM Accesorios, desgloses tabulares de KPIs, distribuciones operativas y bloques de firmas para control interno y auditoría en taller.
-
-## 2026-07-29 - Vista de Impresión de Alta Fidelidad y Accesibilidad WCAG AA en Reporte de Compras
-**Learning:** El Reporte de Compras y Abastecimiento comercial es crucial para auditorías de compras y control de costos de proveedores. Ofrecer un botón de impresión nativa y dar un estilo de impresión específico con `@media print` permite generar resúmenes prolijos y legibles de KPIs, distribuciones de proveedores, y evolución de costos temporal para presentación o archivo físico. Asimismo, asegurar niveles de contraste semánticos altos (de nivel `700`) contribuye de forma crítica al cumplimiento estricto del estándar de accesibilidad visual WCAG AA.
-**Action:** Diseñar siempre esquemas de impresión nativos estructurados con un formato corporativo coherente, firmas administrativas y alineación perfecta de columnas y filas en tablas analíticas.
-
-## 2026-07-28 - Vista de Impresión de Alta Fidelidad y Accesibilidad WCAG AA en Reporte de Ventas
-**Learning:** El Reporte de Ventas y Facturación comercial es vital para auditorías de facturación e informes comerciales periódicos. Incorporar un botón de impresión nativa y dar un estilo de impresión específico (con `@media print` y contenedores ocultos que solo se muestran al imprimir) permite generar resúmenes impecables y legibles de KPIs, distribuciones de categorías, y productos estrella para presentación o archivo físico. Asimismo, asegurar niveles de contraste semánticos altos (de nivel `700`) contribuye de forma crítica al cumplimiento estricto del estándar de accesibilidad visual WCAG AA.
-**Action:** Diseñar siempre esquemas de impresión nativos estructurados con un formato corporativo coherente, firmas administrativas y alineación perfecta de columnas y filas en tablas analíticas.
-
-## 2026-07-27 - Vista de Impresión y Contraste de Accesibilidad WCAG AA en Reporte de Finanzas
-**Learning:** El Reporte de Finanzas y Flujo es un ledger de tesorería y auditoría fundamental en la gestión diaria. Facilitar una plantilla de impresión nativa a través de `@media print` permite al usuario archivar o presentar balances de caja impecables sin elementos del panel de control como barra lateral, header, o botones flotantes de asistencia. Al mantener el contraste semántico verde/rojo a nivel de saturación `700` (`text-emerald-700` / `text-red-700`) se satisface estrictamente el estándar WCAG AA de legibilidad.
-**Action:** Implementar siempre una plantilla corporativa de alta fidelidad con KPIs, tablas completas de flujo, distribución por medio de pago y áreas de firma de auditoría, asegurando una visualización analítica libre de distracciones durante la impresión.
-
-## 2026-07-24 - Plantilla de Impresión de Alta Fidelidad y Contraste en Reportes Financieros
-**Learning:** El reporte de Deudores es un documento de auditoría crítico que a menudo se revisa de forma física o en PDF. Facilitar una acción de impresión nativa y dar estilo específico a través de `@media print` y clases responsivas de ocultamiento (`print:hidden`, `hidden print:block`) permite presentar un balance de cuentas de deudores impecable, sin barras de navegación, sidebars o interfaces de chat. De igual forma, mantener el contraste de texto rojo/verde in nivel 700 garantiza que el reporte sea accesible para personas con visión limitada en cualquier pantalla o papel.
-**Action:** Al implementar reportes analíticos o financieros, incorporar siempre una plantilla de impresión dedicada y utilizar exclusivamente colores semánticos accesibles (nivel 700).
-
-## 2026-07-23 - Eliminación de Renderizados en Cascada e Inicializaciones en Esto
-**Learning:** En React, inicializar estados de filtros en un hook `useEffect` síncrono tras el primer render provoca una doble pasada de renderizado ("cascading renders") que degrada el rendimiento. Al utilizar `lazy state initializers` (`useState(() => ...)`) para inicializar fechas u otros valores dinámicos, el componente se monta con su estado final correcto desde el primer instante. Además, el estado de carga (`loading`) debe ser gestionado a través de transiciones asíncronas o en los controladores de eventos del usuario en lugar de forzarse síncronamente dentro de efectos, eliminando las advertencias de `set-state-in-effect`.
-**Action:** Usar siempre inicializadores perezosos de estado para cualquier estado que deba pre-calcularse al montar y evitar llamadas síncronas de `setState` dentro de `useEffect`.
-
-## 2026-07-22 - Estandarización de Accesibilidad y Contraste WCAG AA en Clientes de Reportes
-**Learning:** El uso de iconos Lucide decorativos sin el atributo `aria-hidden="true"` expone a los usuarios de tecnologías asistivas (lectores de pantalla) a ruido auditivo redundante al navegar por dashboards densos. Asimismo, textos con tonos verdes o rojos claros como `emerald-600` o `red-600` dificultan la lectura por debajo de los ratios de contraste recomendados de 4.5:1. Al elevarlos a clases de nivel `700` (`text-emerald-700` / `text-red-700`), se garantiza la plena legibilidad y conformidad con el estándar WCAG AA de accesibilidad visual.
-**Action:** Aplicar siempre el estándar de contraste de 700 para textos y estados financieros semánticos y ocultar sistemáticamente los iconos decorativos para no perturbar la navegación accesible.
-
-## 2026-07-21 - Filtro Temporal Personalizado en Business Intelligence
-**Learning:** Ofrecer únicamente filtros de rango predefinidos (como 'últimos 30 días' o 'este mes') limita la capacidad analítica de los tomadores de decisiones que necesitan auditar fechas arbitrarias o períodos específicos. Al habilitar selección personalizada de fechas ('custom'), es esensial acompañarla de una lógica automática de comparación de períodos que mantenga una ventana de igual duración inmediatamente anterior para conservar la validez matemática de los porcentajes de cambio (MoM, WoW, etc.).
-**Action:** Al implementar filtros de fecha dinámicos, autocalcular siempre la ventana de comparación anterior con la misma cantidad de milisegundos y desfasada exactamente por la duración seleccionada.
-
-## 2026-07-20 - Consistencia en Exportación a CSV
-**Learning:** En un sistema de reportes multi-módulo, la consistencia en utilidades secundarias (como la exportación a CSV) is tan crítica como los KPIs visuales principales. Utilizar primitivas legacy (`data:text/csv`) sin BOM UTF-8 o sin escape de caracteres en algunos módulos mientras que otros usan Blobs estructurados genera una experiencia inconsistente para el usuario final al abrir sus datos en Excel.
-**Action:** Unificar y estandarizar siempre las rutinas de descarga de archivos exportados usando el mismo estándar robusto de codificación y formateo en todas las pantallas.
-
-## 2026-07-19 - Exportación Estructurada Multi-Sección en CSV
-**Learning:** Cuando un reporte analítico (como el de Stock & Inventario) se compone de múltiples colecciones o tablas independientes en lugar de una única tabla plana, exportar un CSV estructurado con secciones de datos tituladas y líneas en blanco intermedias resulta infinitamente más útil para el usuario que un CSV plano o exportaciones parciales desarticuladas.
-**Action:** Utilizar el formato multi-sección con cabeceras de sección separadas para exportar reportes analíticos complejos a un único archivo CSV.
-
-## 2026-07-18 - Estandarización de Tablas de Reportes a Componentes shadcn/ui
-**Learning:** Reemplazar las tablas nativas de HTML (`<table>`, `<thead>`, `<tbody>`, etc.) con los componentes estándar de shadcn/ui (`Table`, `TableHeader`, `TableBody`, etc.) no solo unifica visualmente los reportes bajo el mismo lenguaje de diseño, sino que también hereda automáticamente comportamientos responsivos, clases de accesibilidad y estados hover consistentes sin necesidad de redefinirlos localmente.
-**Action:** Utilizar siempre las abrasciones de tabla del proyecto (`@/components/ui/table`) en lugar de etiquetas HTML nativas para cualquier vista administrativa o modular nueva.
-
-## 2026-07-17 - UTF-8 BOM para Excel en Exportación CSV
-**Learning:** Al generar archivos CSV en el cliente usando Blobs, Excel por defecto puede fallar al decodificar caracteres UTF-8 en español (como tildes o caracteres especiales en "Teléfono", "Antigüedad", etc.). Prependiendo el Byte Order Mark (BOM) de UTF-8 (`\ufeff`) al inicio del contenido del CSV, Excel detecta automáticamente la codificación y renderiza todo correctamente.
-**Action:** Usar siempre `"\ufeff" + [headers.join(","), ...rows.join("\n")].join("\n")` al exportar archivos CSV con soporte de idioma español.
-
-## 2026-07-16 - Vitest Test File Exclusions
-**Learning:** El archivo `vitest.config.ts` tiene un patrón de exclusión explícito para archivos en `lib/services/*Service.test.ts`. Por esta razón, cualquier nuevo test de servicio debe colocarse en `tests/unit/` (por ejemplo, `tests/unit/overviewReportService.test.ts`) para que el framework de tests lo detecte y ejecute de forma automática.
-**Action:** Colocar siempre los tests de servicios y utilidades del backend en la carpeta `tests/unit/`.
-
-## 2025-07-05 - Reporte de Stock y Valorización
-**Learning:** El componente `MetricCard` utiliza la propiedad `subtitle` en lugar of `description` para el texto secundario. Es importante verificar las interfaces de componentes compartidos antes de usarlos para evitar errores de tipo en el build.
-**Action:** Consultar siempre la definición del componente en `components/dashboard/MetricCard.tsx`.
-
-## 2025-07-05 - Performance en Reportes
-**Learning:** El cálculo de valorización de inventario puede ser pesado si el catálogo es extenso. La implementación de caching en el API Route (`revalidate` y `Cache-Control`) is fundamental para mantener la respuesta rápida del sistema.
-**Action:** Mantener el patrón de caching en futuros reportes (Ventas, Taller, etc).
-
-## 2026-07-12 - Consistencia en Reportes
-**Learning:** Al implementar el Reporte de Servicios, se identificó que la agregación debe contemplar tanto `work_order_item` como `direct_sale_item`. Sin embargo, la distribución por categoría de vehículo solo es aplicable a servicios en OTs, mientras que las ventas directas deben agruparse en una categoría sintética ("Venta Directa") para no perder visibilidad del ingreso total.
-**Action:** Asegurar que todos los reportes de ingresos sumen ambas fuentes (OTs y Ventas Directas) para ser fidedignos.
-
-## 2026-07-14 - Dashboard Overview Agregado
-**Learning:** Para proporcionar una visión holística del negocio, el dashboard de Overview debe centralizar métricas de múltiples módulos (Ventas, Taller, Stock, Clientes). Esto requiere una orquestación eficiente de queries para no penalizar el tiempo de carga de la página principal de reportes.
-**Action:** Utilizar `Promise.all` para paralelizar queries y mantener el patrón de caching de 10 minutos en el API route.
-
-## 2026-07-15 - Estimación de Costos (COGS)
-**Learning:** Al no contar con un histórico de costos por ítem en el momento de la venta, la rentabilidad se estima utilizando el `costPrice` actual de los productos and el `baseCost` de los servicios. Aunque no es exacto retrospectivamente ante cambios de precios, ofrece una aproximación valiosa de la performance económica actual.
-**Action:** Clarificar en la UI que los costos son "estimados" basados en valores vigentes.
+## 2026-08-01 - Vista de Impresión de Alta Fidelidad y Accesibilidad WCAG AA en Reportes de Clientes y Stock
+**Learning:** Completar la suite de reportes de administración con plantillas de impresión nativas de alta fidelidad garantiza una auditoría física impecable para gerencia. El uso de `@media print` permite ocultar dinámicamente elementos interactivos que no tienen sentido en papel (asistente virtual, selectores, botones y barra de navegación) y centrar la atención en KPIs limpios, desgloses estructurados y firmas de supervisor. Además, al duplicar elementos visuales entre la pantalla interactiva y el documento de impresión, las consultas de Testing Library deben reestructurarse usando `getAllByText` para evitar excepciones de elementos duplicados.
+**Action:** Diseñar siempre esquemas de impresión estructurados con la identidad corporativa de RPM Accesorios, desgloses tabulares de KPIs, firmas de auditoría y controles de visibilidad limpios en todas las vistas de reporting.
