@@ -181,6 +181,14 @@ const isDelayed = (wo: WorkOrder) => {
   return daysInStatus > 3 && ["WAITING", "IN_PROGRESS"].includes(wo.status);
 };
 
+const getChecklistStats = (checklist: any) => {
+  if (!checklist || !checklist.items || !Array.isArray(checklist.items) || checklist.items.length === 0) return null;
+  const total = checklist.items.length;
+  const checked = checklist.items.filter((item: any) => item.checked).length;
+  const percentage = Math.round((checked / total) * 100);
+  return { checked, total, percentage };
+};
+
 // --- Components ---
 
 function KanbanCard({
@@ -349,42 +357,82 @@ function KanbanCard({
           {/* Micro indicators for checklists and photos */}
           <div className="flex items-center gap-1.5 text-muted-foreground text-[11px]">
             {/* Checklist Entry Indicator */}
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className={cn(
-                    "flex items-center shrink-0 cursor-help",
-                    wo.entryChecklist
-                      ? "text-blue-600 font-semibold"
-                      : "text-muted-foreground/30"
-                  )}>
-                    <LogIn className="h-3 w-3" aria-hidden="true" />
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{wo.entryChecklist ? "Checklist de Ingreso: COMPLETADO" : "Checklist de Ingreso: PENDIENTE"}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            {(() => {
+              const entryStats = getChecklistStats(wo.entryChecklist);
+              return (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className={cn(
+                        "flex items-center shrink-0 cursor-help gap-0.5",
+                        entryStats
+                          ? entryStats.checked === entryStats.total
+                            ? "text-emerald-600 font-bold"
+                            : "text-blue-600 font-semibold"
+                          : wo.entryChecklist
+                            ? "text-blue-600 font-semibold"
+                            : "text-muted-foreground/30"
+                      )}>
+                        <LogIn className="h-3 w-3" aria-hidden="true" />
+                        {entryStats && (
+                          <span className="text-[10px] font-mono leading-none">
+                            {entryStats.checked}/{entryStats.total}
+                          </span>
+                        )}
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>
+                        {entryStats
+                          ? `Checklist de Ingreso: ${entryStats.checked} de ${entryStats.total} OK (${entryStats.percentage}%)`
+                          : wo.entryChecklist
+                            ? "Checklist de Ingreso: COMPLETADO"
+                            : "Checklist de Ingreso: PENDIENTE"}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              );
+            })()}
 
             {/* Checklist Exit Indicator */}
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className={cn(
-                    "flex items-center shrink-0 cursor-help",
-                    wo.exitChecklist
-                      ? "text-emerald-600 font-semibold"
-                      : "text-muted-foreground/30"
-                  )}>
-                    <LogOut className="h-3 w-3" aria-hidden="true" />
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{wo.exitChecklist ? "Checklist de Salida: COMPLETADO" : "Checklist de Salida: PENDIENTE"}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            {(() => {
+              const exitStats = getChecklistStats(wo.exitChecklist);
+              return (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className={cn(
+                        "flex items-center shrink-0 cursor-help gap-0.5",
+                        exitStats
+                          ? exitStats.checked === exitStats.total
+                            ? "text-emerald-600 font-bold"
+                            : "text-blue-600 font-semibold"
+                          : wo.exitChecklist
+                            ? "text-emerald-600 font-semibold"
+                            : "text-muted-foreground/30"
+                      )}>
+                        <LogOut className="h-3 w-3" aria-hidden="true" />
+                        {exitStats && (
+                          <span className="text-[10px] font-mono leading-none">
+                            {exitStats.checked}/{exitStats.total}
+                          </span>
+                        )}
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>
+                        {exitStats
+                          ? `Checklist de Salida: ${exitStats.checked} de ${exitStats.total} OK (${exitStats.percentage}%)`
+                          : wo.exitChecklist
+                            ? "Checklist de Salida: COMPLETADO"
+                            : "Checklist de Salida: PENDIENTE"}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              );
+            })()}
 
             {/* Photo count indicator */}
             {wo.photo && wo.photo.length > 0 && (
@@ -1412,43 +1460,73 @@ export default function WorkOrdersPage() {
                         <div className="flex items-center gap-4">
                           {/* Checklist & Photo Indicators */}
                           <div className="flex items-center gap-3 text-muted-foreground mr-2">
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <span className={cn(
-                                    "flex items-center gap-1 text-xs shrink-0 cursor-help",
-                                    wo.entryChecklist
-                                      ? "text-blue-600 font-semibold"
-                                      : "text-muted-foreground/30"
-                                  )}>
-                                    <LogIn className="h-3.5 w-3.5" aria-hidden="true" />
-                                    Checklist Ingreso
-                                  </span>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>{wo.entryChecklist ? "Checklist de Ingreso: COMPLETADO" : "Checklist de Ingreso: PENDIENTE"}</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
+                            {(() => {
+                              const entryStats = getChecklistStats(wo.entryChecklist);
+                              return (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span className={cn(
+                                        "flex items-center gap-1 text-xs shrink-0 cursor-help",
+                                        entryStats
+                                          ? entryStats.checked === entryStats.total
+                                            ? "text-emerald-600 font-bold"
+                                            : "text-blue-600 font-semibold"
+                                          : wo.entryChecklist
+                                            ? "text-blue-600 font-semibold"
+                                            : "text-muted-foreground/30"
+                                      )}>
+                                        <LogIn className="h-3.5 w-3.5" aria-hidden="true" />
+                                        Checklist Ingreso {entryStats && `(${entryStats.checked}/${entryStats.total})`}
+                                      </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>
+                                        {entryStats
+                                          ? `Checklist de Ingreso: ${entryStats.checked} de ${entryStats.total} OK (${entryStats.percentage}%)`
+                                          : wo.entryChecklist
+                                            ? "Checklist de Ingreso: COMPLETADO"
+                                            : "Checklist de Ingreso: PENDIENTE"}
+                                      </p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              );
+                            })()}
 
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <span className={cn(
-                                    "flex items-center gap-1 text-xs shrink-0 cursor-help",
-                                    wo.exitChecklist
-                                      ? "text-emerald-600 font-semibold"
-                                      : "text-muted-foreground/30"
-                                  )}>
-                                    <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
-                                    Checklist Calidad
-                                  </span>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>{wo.exitChecklist ? "Checklist de Salida: COMPLETADO" : "Checklist de Salida: PENDIENTE"}</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
+                            {(() => {
+                              const exitStats = getChecklistStats(wo.exitChecklist);
+                              return (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span className={cn(
+                                        "flex items-center gap-1 text-xs shrink-0 cursor-help",
+                                        exitStats
+                                          ? exitStats.checked === exitStats.total
+                                            ? "text-emerald-600 font-bold"
+                                            : "text-blue-600 font-semibold"
+                                          : wo.exitChecklist
+                                            ? "text-emerald-600 font-semibold"
+                                            : "text-muted-foreground/30"
+                                      )}>
+                                        <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
+                                        Checklist Calidad {exitStats && `(${exitStats.checked}/${exitStats.total})`}
+                                      </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>
+                                        {exitStats
+                                          ? `Checklist de Salida: ${exitStats.checked} de ${exitStats.total} OK (${exitStats.percentage}%)`
+                                          : wo.exitChecklist
+                                            ? "Checklist de Salida: COMPLETADO"
+                                            : "Checklist de Salida: PENDIENTE"}
+                                      </p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              );
+                            })()}
 
                             {wo.photo && wo.photo.length > 0 && (
                               <TooltipProvider>
