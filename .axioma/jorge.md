@@ -2,6 +2,7 @@
 - [ ] Idea pendiente — breve descripción
 
 ## ✅ COMPLETADO
+- [x] 2026-08-03 — Historial de Servicios y Duplicación de Ítems en Asistente de Creación de OT (PR jorge/work-orders/wizard-vehicle-history)
 - [x] 2026-07-31 — Controles Interactivos de Estado y Técnico en Vista de Lista de OT (PR #jorge/work-orders/list-view-interactive-controls)
 - [x] 2026-07-30 — Atajos de Fecha de Entrega y Resumen de Ítems en Kanban/Lista (PR #jorge/work-orders/scheduled-date-items-summary)
 - [x] 2026-07-29 — Duplicación/Clonación de Órdenes de Trabajo desde Detalle e Historial con Resguardo de Borrador (PR #jorge/work-orders/duplicate-work-order-ux)
@@ -20,73 +21,12 @@
 - [x] 2025-07-08 — Servicio Centralizado de OT y Timeline Unificado (PR #jorge/work-orders/centralized-updates)
 
 ## 🧠 APRENDIZAJES
+## 2026-08-03 - Historial de Servicios y Duplicación de Ítems en Asistente de Creación de OT
+**Aprendizaje 1:** Integrar el historial de servicios de un vehículo directamente en el asistente de creación de órdenes de trabajo (Step 1) dota a los recepcionistas y técnicos de un contexto inmediato sumamente valioso sobre reparaciones previas, recomendaciones pasadas e ítems instalados sin forzarlos a navegar a la ficha del vehículo en una pestaña secundaria.
+**Aprendizaje 2:** Al anidar un botón de "Cargar ítems" en el historial de servicios dentro de la creación, se resuelve una enorme fricción administrativa al permitir clonar todo un listado de productos y servicios anteriores directamente en el borrador actual en un solo clic, redirigiendo de manera natural a la pantalla de revisión (Paso 2).
+**Aprendizaje 3:** Para resguardar el trabajo en curso del usuario, siempre se debe consultar mediante un diálogo de confirmación `confirm` antes de sobreescribir la lista de ítems del borrador si el usuario ya tiene ítems cargados. Esto requiere el uso correcto de las propiedades de tipado de `ConfirmOptions` (p. ej., usar `description` en lugar de `message`, y `confirmText` / `cancelText` para los botones interactivos).
+
 ## 2026-07-31 - Controles Interactivos de Estado y Técnico en Vista de Lista de OT
 **Aprendizaje 1:** En dispositivos móviles, la vista de lista es la predeterminada y única disponible. Forzar a los usuarios a navegar al detalle de cada orden de trabajo individual para tareas simples como cambiar de técnico o actualizar el estado de la OT genera una enorme fricción y ralentiza el flujo operativo de taller. Reemplazar los textos estáticos con menús desplegables (`DropdownMenu`) inline dota de una velocidad excepcional a la gestión desde cualquier dispositivo móvil o tablet.
 **Aprendizaje 2:** Al anidar elementos interactivos complejos (como dropdowns con portales) dentro de contenedores clickeables (como filas envueltas en `<Link>`), es imperativo bloquear la propagación del evento tanto en `onMouseDown` como en `onClick` a nivel del trigger. Esto asegura que la selección de un menú no dispare la navegación general del enlace, preservando la consistencia y usabilidad de la UI.
-**Aprendizaje 3:** Para respetar estrictamente las reglas de estados terminales, deshabilitar visualmente y funcionalmente los triggers de los dropdowns (añadiendo estilos de `cursor-not-allowed opacity-60`) cuando el estado de la OT es `"CANCELLED"` o `"DELIVERED"` previene cambios accidentales y mantiene la integridad transaccional de los datos sin requerir validaciones intrusivas posteriores.
-
-## 2026-07-30 - Atajos de Fecha de Entrega y Resumen de Ítems en Kanban/Lista
-**Aprendizaje 1:** En la gestión diaria del taller, tener que abrir el selector de fecha y hora nativo del navegador para asignar turnos a un par de horas en el futuro, al día siguiente o al inicio de la semana siguiente genera una fricción administrativa importante. Ofrecer accesos rápidos interactivos (+2h, Mañana, Lunes) calcula y rellena instantáneamente el campo `datetime-local` en la zona horaria local del cliente, acelerando enormemente la carga.
-**Aprendizaje 2:** El tablero Kanban y las listas de órdenes de trabajo resultan poco informativas si solo muestran el nombre del cliente y la patente. Al agregar un resumen directo y elegante de los ítems programados (distinguiendo productos con 📦 y servicios con 🔧) en la tarjeta misma, el recepcionista y los técnicos adquieren un entendimiento contextual inmediato de la operación sin necesidad de navegar al detalle de cada OT.
-**Acción:** Siempre acoplar entradas de fecha/hora con atajos rápidos de cálculo dinámico de tiempos comunes, y proveer micro-resúmenes visuales en vistas agrupadas (como Kanban o listados) para optimizar el flujo de trabajo operacional.
-
-## 2026-07-29 - Duplicación/Clonación de Órdenes de Trabajo y Salvaguarda de Persistencia del Asistente
-**Aprendizaje 1:** En talleres mecánicos donde se realizan mantenimientos periódicos o se gestionan flotas con múltiples vehículos idénticos, tener que cargar manualmente la lista de ítems (productos y servicios), el cliente y el vehículo desde cero para cada servicio recurrente genera una gran fricción administrativa. Proveer un botón de "Duplicar" en la cabecera del detalle y de manera contextual en cada tarjeta de orden pasada en la pestaña "Historial de Vehículo" agiliza enormemente la creación, mejorando la retención de usuarios.
-**Aprendizaje 2:** Al implementar carga de estado asincrónica (p. ej., `loadSavedState` que inicia con `await Promise.resolve()`) junto con un efecto secundario síncrono que persiste los cambios a `localStorage` tras cada render, el guardado automático del estado por defecto (con variables vacías e iniciales en el primer render) puede sobreescribir y borrar prematuramente el estado cargado o pre-configurado de la caché antes de que termine el loader de inicialización. Añadir una bandera booleana `isLoaded` (inicializada en `false` y colocada en `true` en el bloque `finally` de la carga de datos) para resguardar/bloquear el `setItem` de guardado automático soluciona de forma definitiva esta carrera de estados (race condition) en React.
-**Acción:** Siempre acoplar los guardados automáticos de localStorage con banderas de carga (`isLoaded`) para evitar sobreescritura prematura del estado, y proveer atajos de clonación contextual para flujos de registro repetitivos.
-
-## 2026-07-28 - Atajo de "Marcar todos como OK" en checklists de ingreso y egreso en creación y edición de OT
-**Aprendizaje:** En talleres donde los operarios realizan checklists rutinarios sobre múltiples vehículos cada día, hacer click individualmente en 6 u 8 casillas de verificación para marcar que todo está bien resulta en una gran fatiga de clics y frustración de UX. Proveer un botón/enlace secundario discreto de "Marcar todos como OK" (que muta a "Desmarcar todos" cuando todo está seleccionado) simplifica radicalmente esta tarea repetitiva. Esto permite rellenar rápidamente el checklist como "todo OK" y solo desmarcar de manera puntual los elementos que requieran atención especial, acelerando el flujo de trabajo de taller sin perder precisión técnica.
-**Acción:** Siempre incluir botones de acción masiva / atajos rápidos en formularios con múltiples checkboxes repetitivos para optimizar el flujo diario del usuario.
-
-## 2026-07-27 - Selector de Estado Interactivo en Detalle de OT
-**Aprendizaje:** En pantallas de gestión detalladas de taller, la visibilidad e interactividad sobre el estado de la operación (OT) es crucial. Si el usuario está en móvil (donde no hay Kanban de arrastre) o desea corregir o cambiar de estado rápidamente, verse forzado a volver a la vista general o usar solo la acción lineal por defecto crea una fricción innecesaria. Integrar un dropdown select nativo con colores semánticos por estado en la cabecera misma soluciona de forma elegante la falta de visualización clara del estado actual y proporciona control total inmediato desde cualquier dispositivo.
-**Acción:** Siempre proveer selectores de estado interactivos y coloreados en cabeceras de detalle técnico para mejorar accesibilidad y velocidad operativa.
-
-## 2026-07-26 - Historial de Órdenes de Trabajo del Vehículo en Detalle de OT
-**Aprendizaje:** En talleres mecánicos, los vehículos suelen ser recurrentes. Contar con visibilidad instantánea sobre el historial técnico completo (OTs pasadas, responsables, notas, checklists y productos/servicios específicos realizados) directamente desde la pantalla de la OT en curso disminuye drásticamente la fricción administrativa y de diagnóstico, eliminando la necesidad de abandonar el flujo principal para ir a buscar la ficha del vehículo por separado. Además, al trabajar con Next.js 15 y el nuevo React Compiler, las dependencias complejas (como optional chaining en arrays `[workOrder?.vehicle?.id]`) pueden impedir que se preserve la memoización manual, arrojando errores de compilación (`Compilation Skipped: Existing memoization could not be preserved`). Desestructurar y aplanar estas referencias en variables simples de tipo string o undefined (`const vehicleId = workOrder?.vehicle?.id`) before passing them to React hooks guarantees complete compatibility with the compiler and robust optimizations.
-**Acción:** Siempre proveer pestañas de historial contextual técnico y asegurar de aplanar propiedades anidadas o con optional chaining al incluirlas en dependencias de cookies o hooks con React Compiler.
-
-## 2026-07-24 - Bloqueo de Estados Terminales y Reversión de Saldos por Cancelación de OT
-**Aprendizaje:** Una orden de trabajo cancelada representa un estado terminal irreversible de la operación. Dejar el resto de los controles (items, notas, asignaciones, checklists, fotos, pagos) editables tras la cancelación crea riesgos de manipulación de datos, descuadres financieros en cajas cerradas o inconsistencias de stock. El bloqueo integral de todas las entradas (acompañado de banners de advertencia de alto contraste y explicaciones explícitas de por qué las acciones están bloqueadas) provee una UI transparente y segura.
-**Acción:** Siempre acoplar los estados terminales de negocio con el bloqueo estricto de todas las funciones mutables, informando claramente al usuario la razón de la inhabilitación.
-
-## 2026-07-23 - Búsqueda por Cliente y Pre-carga de Cuenta en Alta de OT
-**Aprendizaje:** Al iniciar el alta de un servicio en el taller, es común que el recepcionista no conozca de inmediato la patente del vehículo, o que el cliente sea recurrente y tenga múltiples unidades. Permitir buscar directamente por cliente (nombre o teléfono) e integrar la pre-carga desde la URL (para redirecciones fluidas desde la ficha del cliente) reduce sustancialmente el tiempo de carga administrativa y de la fricción de duplicar búsquedas de cuentas existentes.
-**Acción:** Siempre proveer múltiples caminos de búsqueda en flujos de creación (por entidad técnica y por entidad de cliente) y pre-cargar el contexto de forma transparente si proviene de una vista relacional previa.
-
-## 2026-07-22 - Indicadores Visuales de Metadatos y Exportación CSV en Taller
-**Aprendizaje:** En la gestión diaria del taller mecánico, tener visibilidad inmediata sobre si los checklists (de ingreso y de salida) han sido completados y la cantidad de fotos cargadas en las tarjetas del Kanban y de la Lista evita que se dejen vehículos sin inspección previa o posterior. Además, poder exportar en un solo click (respetando filtros activos, codificación Excel UTF-8 BOM, escape de caracteres y relaciones de vehículos/responsables de manera defensiva) eleva considerablemente la productividad administrativa del taller.
-**Acción:** Siempre include micro-indicadores visuales con tooltips informativos para estados de procesos secuenciales (checklists, fotos) and habilitar exportación a CSV segura y amigable para Excel.
-
-## 2026-07-21 - Botones de Filtro Rápido para Eficiencia en Taller
-**Learning:** En flujos con alta carga de trabajo (como talleres mecánicos), disponer de contadores globales dinámicos en los botones de filtro rápido ("Demoradas", "Turnos de Hoy", etc.) le da al usuario visibilidad inmediata del estado de su operación sin tener que aplicar cada filtro. Esto acelera drásticamente la toma de decisiones.
-**Acción:** Siempre incluir recuentos informativos y badges dinámicos con contrastes WCAG AA adecuados en todos los componentes de filtro principal.
-
-## 2026-07-20 - Gestión de Fotos con Carga Masiva y Lightbox Immersivo
-**Learning:** La implementación de flujos de carga masivos que realizan llamadas secuenciales a los endpoints de carga y de registro de fotos evita las complejidades y el riesgo de timeouts asociados a las cargas de bloques grandes (multipart uploads) de una sola vez. Además, para los componentes de lightbox, el uso de memos unificados que unifican las fotos de ingreso y egreso en un solo carrusel, junto con controles de navegación con el teclado (flechas y Esc) y de descarga, proporciona una navegación sumamente fluida.
-**Acción:** Siempre unificar arrays de archivos de fotos en un solo carrusel indexado cuando se implementen lightboxes interactivos.
-
-## 2026-07-18 - Emulación de Impresión y Contenido de Documentos
-**Learning:** El uso de emulación de medios de impresión (`page.emulate_media(media="print")`) en Playwright facilita enormemente la auditoría y validación visual automatizada de layouts que de otra manera no son fácilmente verificables en pantalla normal. Asimismo, estructurar secciones de despacho (origen/destino) para remitos y cláusulas de validez/precio para presupuestos entrega un nivel de profesionalismo indispensable en documentos de taller y ventas.
-**Acción:** Siempre usar emulación de impresión y validación con capturas de pantalla para todos los comprobantes y reportes imprimibles.
-
-## 2026-07-16 - Checklist Interactivos y Resilientes
-**Learning:** Almacenar checklists como datos serializados es flexible, pero requiere que las operaciones de actualización (PUT/POST) realicen merges seguros (preservando marcas de tiempo como `completedAt`) para evitar regresiones de datos. La inicialización con plantillas unificadas directamente en la interfaz de detalle elimina la necesidad de re-crear OTs completas para agregar protocolos faltantes.
-**Acción:** Siempre fusionar campos de forma granular en APIs que operen sobre documentos JSON embebidos.
-
-## 2026-07-16 - Paridad de Vista de Lista y Corrección de Prioridad HOY
-**Learning:** Mantener la consistencia del motor de búsqueda y filtros entre la vista Kanban y la vista de lista evita sorpresas molestas al usuario. Priorizar visualmente los turnos programados para el día actual ("HOY") con estilos de alta jerarquía y contraste WCAG AA asegura que el equipo no pase por alto los trabajos críticos del día.
-**Acción:** Al duplicar funcionalidades de filtrado/búsqueda en dos vistas de un mismo módulo, extraer la lógica de ordenamiento y filtrado a funciones puras reusables o memos unificados.
-
-## 2025-07-12 - Acciones Rápidas en Kanban
-**Learning:** Las acciones rápidas en tarjetas Kanban (hover buttons) reducen drásticamente la fricción para flujos lineales de trabajo, evitando la necesidad de drag-and-drop para transiciones comunes.
-**Acción:** Implementar el patrón `NEXT_STATUS_MAP` para guiar al usuario hacia la siguiente acción lógica en el flujo de negocio.
-
-## 2025-07-08 - UX Kanban y Propagación de Eventos
-**Learning:** Los elementos interactivos anidados en tarjetas Kanban (como dropdowns de técnicos) requieren stop-propagation tanto en onMouseDown como en onClick para evitar la navegación del Link y conflictos con el inicio del arrastre.
-**Acción:** Usar el "Patrón Guardián de Navegación Kanban" para todas las futuras interfaces tipo tablero.
-
-## 2025-07-08 - Efectos Secundarios Centralizados
-**Learning:** Mover los efectos secundarios como movimientos de stock y facturación automática a un servicio centralizado evita la fragmentación de lógica y el doble disparo durante el drag-and-drop del Kanban.
-**Acción:** Siempre devolver un flag booleano de cambio de estado desde los servicios de actualización para permitir que los llamadores disparen retroalimentación condicional de UI o notificaciones externas.
+**Aprendizaje 3:** Para respetar estrictamente las reglas de estados terminales, deshabilitar visualmente y funcionalmente los triggers de los dropdowns (añadiendo estilos de `cursor-not-allowed opacity-60`) cuando el estado de la OT is `"CANCELLED"` o `"DELIVERED"` previene cambios accidentales y mantiene la integridad transaccional de los datos sin requerir validaciones intrusivas posteriores.

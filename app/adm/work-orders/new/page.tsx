@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
 import { Input } from "@/components/ui/input";
@@ -32,8 +33,25 @@ import {
   Clock,
   UserCog,
   AlertCircle,
+  Copy,
+  Eye,
+  Loader2,
+  RefreshCw,
+  LogIn,
+  LogOut,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { formatARS } from "@/lib/utils/format";
+
+const STATUSES = [
+  { id: "CONFIRMED", label: "Confirmada", color: "bg-blue-50 text-blue-700 border-blue-200" },
+  { id: "WAITING", label: "En Espera", color: "bg-yellow-50 text-yellow-700 border-yellow-200" },
+  { id: "IN_PROGRESS", label: "En Proceso", color: "bg-orange-50 text-orange-700 border-orange-200" },
+  { id: "QC_CHECK", label: "Control QC", color: "bg-purple-50 text-purple-700 border-purple-200" },
+  { id: "READY", label: "Listo", color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  { id: "DELIVERED", label: "Entregada", color: "bg-gray-50 text-gray-700 border-gray-200" },
+  { id: "CANCELLED", label: "Cancelada", color: "bg-red-50 text-red-700 border-red-200" },
+];
 import {
   getVehicleCategoryLabel,
   getVehicleCategoryIcon,
@@ -141,6 +159,8 @@ export default function NewWorkOrderPage() {
   const [foundVehicle, setFoundVehicle] = useState<VehicleWithCustomer | null>(
     null,
   );
+  const [vehicleHistory, setVehicleHistory] = useState<any[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
   const [searchResults, setSearchResults] = useState<VehicleWithCustomer[]>([]);
   const [showCreateVehicle, setShowCreateVehicle] = useState(false);
   const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
@@ -298,6 +318,80 @@ export default function NewWorkOrderPage() {
     };
     localStorage.setItem(WIZARD_STORAGE_KEY, JSON.stringify(state));
   }, [isLoaded, step, checklist, odometerValue, fuelLevel, notes, scheduledDate, items, foundVehicle, selectedCustomer]);
+
+  // Fetch and manage vehicle history for the found vehicle
+  useEffect(() => {
+    if (!foundVehicle?.id) {
+      setVehicleHistory([]);
+      return;
+    }
+    setLoadingHistory(true);
+    fetch(`/api/work-orders?vehicleId=${foundVehicle.id}`)
+      .then((res) => {
+        if (res.ok) return res.json();
+        throw new Error("Failed to fetch vehicle history");
+      })
+      .then((data) => {
+        setVehicleHistory(data.workOrders || []);
+      })
+      .catch((err) => {
+        console.error("Error fetching vehicle history:", err);
+      })
+      .finally(() => {
+        setLoadingHistory(false);
+      });
+  }, [foundVehicle?.id]);
+
+  const refreshVehicleHistory = () => {
+    if (!foundVehicle?.id) return;
+    setLoadingHistory(true);
+    fetch(`/api/work-orders?vehicleId=${foundVehicle.id}`)
+      .then((res) => {
+        if (res.ok) return res.json();
+        throw new Error("Failed to fetch vehicle history");
+      })
+      .then((data) => {
+        setVehicleHistory(data.workOrders || []);
+      })
+      .catch((err) => {
+        console.error("Error fetching vehicle history:", err);
+      })
+      .finally(() => {
+        setLoadingHistory(false);
+      });
+  };
+
+  const handleDuplicatePastWorkOrder = async (pastWo: any) => {
+    if (items.length > 0) {
+      const shouldReplace = await confirm({
+        title: "Reemplazar ítems actuales",
+        description:
+          "Esta acción reemplazará los ítems que ya tienes cargados en el borrador por los de la orden de trabajo anterior. ¿Deseas continuar?",
+        confirmText: "Sí, reemplazar",
+        cancelText: "Cancelar",
+      });
+      if (!shouldReplace) return;
+    }
+
+    const clonedItems = (pastWo.workOrderItems || []).map((item: any) => ({
+      type: item.type,
+      productId: item.productId || undefined,
+      serviceId: item.serviceId || undefined,
+      name: item.name,
+      customName: item.customName || undefined,
+      isManualName: item.isManualName || false,
+      quantity: Number(item.quantity),
+      unitPrice: Number(item.unitPrice),
+      priceListId: item.priceListId || undefined,
+      isManualPrice: item.isManualPrice || false,
+      originalPrice: Number(item.originalPrice || item.unitPrice),
+      replacementCost: Number(item.replacementCost || 0),
+    }));
+
+    setItems(clonedItems);
+    setStep(2); // Go to step 2 directly
+    toast.success("Se cargaron los ítems de la orden de trabajo anterior");
+  };
 
   // Warn before leaving if wizard has data
   useEffect(() => {
@@ -1090,92 +1184,264 @@ export default function NewWorkOrderPage() {
                 </div>
               )}
 
-              {/* Vehicle Found Card */}
+              {/* Vehicle Found Card & History Grid */}
               {foundVehicle && (
-                <div className="max-w-lg mx-auto space-y-4">
-                  <Card className="overflow-hidden">
-                    <div className="bg-emerald-500/5 border-b border-emerald-500/10 px-6 py-4 flex items-center gap-2">
-                      <CheckCircle
-                        className="h-5 w-5 text-emerald-600"
-                        aria-hidden="true"
-                      />
-                      <span className="text-sm font-semibold text-emerald-700">
-                        Vehículo encontrado
-                      </span>
-                    </div>
-                    <CardContent className="pt-6 space-y-4">
-                      {/* Vehicle identity */}
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-xl bg-primary/10 border border-primary/20 shrink-0 flex items-center justify-center text-2xl">
-                          {getVehicleCategoryIcon(foundVehicle.category)}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <h3 className="text-xl font-bold font-mono tracking-tight">
-                              {foundVehicle.identifier}
-                            </h3>
-                            <Badge variant="secondary">
-                              {getVehicleCategoryLabel(foundVehicle.category)}
-                            </Badge>
-                          </div>
-                          <p className="text-sm text-muted-foreground mt-0.5">
-                            {buildVehicleDescription({
-                              category: foundVehicle.category,
-                              make: foundVehicle.vehicleMake?.name,
-                              model: foundVehicle.vehicleModel?.name,
-                              color: foundVehicle.color,
-                              year: foundVehicle.year,
-                            })
-                              .split(" · ")
-                              .slice(1)
-                              .join(" · ") || "Sin detalles"}
-                          </p>
-                        </div>
+                <div className="grid md:grid-cols-12 gap-6 items-start max-w-4xl mx-auto">
+                  {/* Left Column: Vehicle Found Card */}
+                  <div className="md:col-span-5 space-y-4">
+                    <Card className="overflow-hidden">
+                      <div className="bg-emerald-500/5 border-b border-emerald-500/10 px-6 py-4 flex items-center gap-2">
+                        <CheckCircle
+                          className="h-5 w-5 text-emerald-600"
+                          aria-hidden="true"
+                        />
+                        <span className="text-sm font-semibold text-emerald-700">
+                          Vehículo encontrado
+                        </span>
                       </div>
-
-                      {/* Owner info */}
-                      <div className="rounded-lg bg-muted/40 border p-3 space-y-1.5">
-                        <div className="flex items-center gap-2 text-sm font-medium">
-                          <User
-                            className="h-4 w-4 text-muted-foreground"
-                            aria-hidden="true"
-                          />
-                          {foundVehicle.customer.name}
+                      <CardContent className="pt-6 space-y-4">
+                        {/* Vehicle identity */}
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-xl bg-primary/10 border border-primary/20 shrink-0 flex items-center justify-center text-2xl">
+                            {getVehicleCategoryIcon(foundVehicle.category)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <h3 className="text-xl font-bold font-mono tracking-tight">
+                                {foundVehicle.identifier}
+                              </h3>
+                              <Badge variant="secondary">
+                                {getVehicleCategoryLabel(foundVehicle.category)}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-0.5">
+                              {buildVehicleDescription({
+                                category: foundVehicle.category,
+                                make: foundVehicle.vehicleMake?.name,
+                                model: foundVehicle.vehicleModel?.name,
+                                color: foundVehicle.color,
+                                year: foundVehicle.year,
+                              })
+                                .split(" · ")
+                                .slice(1)
+                                .join(" · ") || "Sin detalles"}
+                            </p>
+                          </div>
                         </div>
-                        {foundVehicle.customer.phone && (
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground font-mono ml-6">
-                            <Phone className="h-3.5 w-3.5" aria-hidden="true" />
-                            {foundVehicle.customer.phone}
+
+                        {/* Owner info */}
+                        <div className="rounded-lg bg-muted/40 border p-3 space-y-1.5">
+                          <div className="flex items-center gap-2 text-sm font-medium">
+                            <User
+                              className="h-4 w-4 text-muted-foreground"
+                              aria-hidden="true"
+                            />
+                            {foundVehicle.customer.name}
+                          </div>
+                          {foundVehicle.customer.phone && (
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground font-mono ml-6">
+                              <Phone className="h-3.5 w-3.5" aria-hidden="true" />
+                              {foundVehicle.customer.phone}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex gap-2 pt-2">
+                          <Button
+                            onClick={() => setStep(2)}
+                            className="flex-1 h-11"
+                          >
+                            <CheckCircle
+                              className="h-4 w-4 mr-2"
+                              aria-hidden="true"
+                            />
+                            Confirmar y Continuar
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={resetSearch}
+                            className="h-11"
+                          >
+                            <RotateCcw
+                              className="h-4 w-4 mr-2"
+                              aria-hidden="true"
+                            />
+                            Buscar otro
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Right Column: Vehicle History Card */}
+                  <div className="md:col-span-7 space-y-4">
+                    <Card className="overflow-hidden">
+                      <div className="bg-primary/5 border-b border-primary/10 px-6 py-4 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-5 w-5 text-primary" aria-hidden="true" />
+                          <span className="text-sm font-semibold text-primary">
+                            Historial Reciente de Servicios
+                          </span>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={refreshVehicleHistory}
+                          disabled={loadingHistory}
+                          className="h-8 w-8 p-0 rounded-full"
+                          title="Actualizar historial"
+                        >
+                          <RefreshCw
+                            className={cn(
+                              "h-4 w-4",
+                              loadingHistory && "animate-spin"
+                            )}
+                          />
+                        </Button>
+                      </div>
+                      <CardContent className="pt-6 space-y-4">
+                        {loadingHistory ? (
+                          <div className="flex flex-col items-center justify-center py-12 gap-2 text-muted-foreground">
+                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                            <p className="text-xs">Cargando historial del vehículo...</p>
+                          </div>
+                        ) : vehicleHistory.length === 0 ? (
+                          <div className="text-center py-8 text-muted-foreground flex flex-col items-center gap-2 border border-dashed rounded-lg bg-muted/20">
+                            <Car className="h-8 w-8 text-muted-foreground/30" />
+                            <p className="text-xs font-semibold">Sin servicios anteriores</p>
+                            <p className="text-[11px] text-muted-foreground/70">
+                              Este vehículo no cuenta con otras órdenes de trabajo registradas.
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="space-y-4 max-h-[420px] overflow-y-auto pr-1">
+                            {vehicleHistory.map((pastWo) => {
+                              const totalCost = Number(pastWo.total);
+                              const itemsList = pastWo.workOrderItems || [];
+                              const statusConfig = STATUSES.find((s) => s.id === pastWo.status);
+
+                              return (
+                                <div
+                                  key={pastWo.id}
+                                  className="p-3 bg-muted/30 rounded-lg border border-zinc-200/60 space-y-2.5 text-xs hover:bg-muted/50 transition-colors"
+                                >
+                                  {/* Past OT Header */}
+                                  <div className="flex items-center justify-between gap-2 border-b border-zinc-200/50 pb-2">
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      <span className="font-mono font-bold text-zinc-900 bg-zinc-100 px-1.5 py-0.5 rounded">
+                                        OT-{pastWo.id.substring(0, 8).toUpperCase()}
+                                      </span>
+                                      {statusConfig && (
+                                        <Badge
+                                          variant="outline"
+                                          className={cn("text-[10px] px-1.5 py-0.2", statusConfig.color)}
+                                        >
+                                          {statusConfig.label}
+                                        </Badge>
+                                      )}
+                                      <span className="text-[10px] font-mono font-bold text-zinc-700 bg-zinc-100/80 px-1.5 py-0.5 rounded">
+                                        {formatARS(totalCost)}
+                                      </span>
+                                    </div>
+                                    <span className="text-[10px] text-muted-foreground font-mono">
+                                      {new Date(pastWo.createdAt).toLocaleDateString("es-AR", {
+                                        day: "2-digit",
+                                        month: "short",
+                                        year: "numeric",
+                                      })}
+                                    </span>
+                                  </div>
+
+                                  {/* Technician name & Checklists summary */}
+                                  <div className="flex flex-wrap gap-2 text-[11px]">
+                                    {pastWo.technician?.name && (
+                                      <div className="flex items-center gap-1 text-purple-700 font-medium bg-purple-50 px-1.5 py-0.5 rounded border border-purple-100">
+                                        <UserCog className="h-3 w-3 shrink-0" />
+                                        <span>{pastWo.technician.name}</span>
+                                      </div>
+                                    )}
+                                    {pastWo.entryChecklist && (
+                                      <div className="flex items-center gap-1 text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">
+                                        <LogIn className="h-3 w-3 text-blue-600" aria-hidden="true" />
+                                        <span>Checklist Ingreso</span>
+                                      </div>
+                                    )}
+                                    {pastWo.exitChecklist && (
+                                      <div className="flex items-center gap-1 text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">
+                                        <LogOut className="h-3 w-3 text-emerald-600" aria-hidden="true" />
+                                        <span>Checklist Calidad</span>
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {/* Notes */}
+                                  {pastWo.notes && (
+                                    <p className="text-[11px] text-muted-foreground italic border-l-2 border-dashed border-zinc-300 pl-2 line-clamp-2">
+                                      &ldquo;{pastWo.notes}&rdquo;
+                                    </p>
+                                  )}
+
+                                  {/* Items List */}
+                                  {itemsList.length > 0 && (
+                                    <div className="space-y-1 bg-white/60 p-2 rounded border border-zinc-100">
+                                      <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider">
+                                        Ítems realizados ({itemsList.length}):
+                                      </p>
+                                      <div className="max-h-24 overflow-y-auto space-y-0.5 font-sans">
+                                        {itemsList.map((item: any, idx: number) => (
+                                          <div key={idx} className="flex justify-between text-[10px] text-zinc-600">
+                                            <span className="truncate max-w-[180px]">
+                                              {item.type === "PRODUCT" ? "📦" : "🔧"}{" "}
+                                              {item.name}
+                                            </span>
+                                            <span className="font-mono text-zinc-500">
+                                              {item.quantity} x {formatARS(Number(item.unitPrice))}
+                                            </span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Actions */}
+                                  <div className="flex items-center justify-end gap-1.5 pt-1.5 border-t border-zinc-100">
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => handleDuplicatePastWorkOrder(pastWo)}
+                                      className="h-7 px-2 text-[11px] flex items-center gap-1 bg-background hover:bg-muted text-zinc-700 hover:text-zinc-900 shadow-none border-zinc-200"
+                                      title="Cargar los ítems de esta orden en el borrador actual"
+                                    >
+                                      <Copy className="h-3 w-3" />
+                                      Cargar ítems
+                                    </Button>
+                                    <a
+                                      href={`/adm/work-orders/${pastWo.id}`}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="h-7"
+                                    >
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-7 px-2 text-[11px] flex items-center gap-1 bg-background hover:bg-muted shadow-none border-zinc-200"
+                                      >
+                                        <Eye className="h-3 w-3" />
+                                        Ver OT
+                                      </Button>
+                                    </a>
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
                         )}
-                      </div>
-
-                      {/* Actions */}
-                      <div className="flex gap-2 pt-2">
-                        <Button
-                          onClick={() => setStep(2)}
-                          className="flex-1 h-11"
-                        >
-                          <CheckCircle
-                            className="h-4 w-4 mr-2"
-                            aria-hidden="true"
-                          />
-                          Confirmar y Continuar
-                        </Button>
-                        <Button
-                          variant="outline"
-                          onClick={resetSearch}
-                          className="h-11"
-                        >
-                          <RotateCcw
-                            className="h-4 w-4 mr-2"
-                            aria-hidden="true"
-                          />
-                          Buscar otro
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
+                      </CardContent>
+                    </Card>
+                  </div>
                 </div>
               )}
 
