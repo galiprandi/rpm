@@ -10,20 +10,30 @@ import type { PublicCatalogProduct } from '@/lib/services/publicCatalogService';
 import type { PublicService } from '@/lib/constants/services';
 import type { GalleryItem } from './AboutClient';
 
+interface DialogProps {
+  children?: React.ReactNode;
+  open?: boolean;
+}
+
+interface ClassNameProps {
+  children?: React.ReactNode;
+  className?: string;
+}
+
 // Mock dialog component content/overlay for vitest jsdom environment
 vi.mock('@/components/ui/dialog', () => {
   return {
-    Dialog: ({ children, open, onOpenChange }: any) => {
+    Dialog: ({ children, open }: DialogProps) => {
       if (!open) return null;
       return <div role="dialog" data-state="open">{children}</div>;
     },
-    DialogContent: ({ children, className }: any) => {
+    DialogContent: ({ children, className }: ClassNameProps) => {
       return <div className={className}>{children}</div>;
     },
-    DialogHeader: ({ children, className }: any) => {
+    DialogHeader: ({ children, className }: ClassNameProps) => {
       return <div className={className}>{children}</div>;
     },
-    DialogTitle: ({ children, className }: any) => {
+    DialogTitle: ({ children, className }: ClassNameProps) => {
       return <h2 className={className}>{children}</h2>;
     },
   };
@@ -39,13 +49,13 @@ const mockProduct: PublicCatalogProduct = {
   imageUrl: 'https://images.unsplash.com/photo-1563720223185-11003d516935',
   description: 'Kit completo de proyectores de alta gama con tecnología Bi-LED.',
   features: ['6000K Blanco Frío', 'Alineación precisa', 'Mayor haz de luz'],
-  isActive: true,
 };
 
 const mockService: PublicService = {
   id: 'serv-123',
   title: 'Instalación Bi-LED',
   icon: Wrench,
+  href: '/servicios',
   bg: 'bg-zinc-900',
   gridClassName: 'col-span-1',
   shortDescription: 'Instalación premium con proyectores láser.',
