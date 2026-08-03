@@ -906,6 +906,7 @@ export function ChatFloating({
                                 processPurchaseInvoice:
                                   "Procesando factura de compra...",
                                 registerWorkOrderPayment: "Registrando pago...",
+                                attachPhotoToChecklistItem: "Asociando foto al checklist...",
                               };
                               const completedLabels: Record<string, string> = {
                                 searchProducts:
@@ -940,6 +941,8 @@ export function ChatFloating({
                                   "Factura de compra procesada exitosamente",
                                 registerWorkOrderPayment:
                                   "Pago registrado exitosamente",
+                                attachPhotoToChecklistItem:
+                                  "Foto asociada al checklist exitosamente",
                               };
                               const partState = (part as { state?: string })
                                 .state;

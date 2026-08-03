@@ -1,8 +1,9 @@
 import { tool } from "ai";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { workOrder, customer, vehicle, workOrderItem, product, service, payment, user, paymentMethod } from "@/db/schema";
-import { eq, and, ilike, desc, or, type SQL } from "drizzle-orm";
+import { workOrder, customer, vehicle, workOrderItem, product, service, payment, user, paymentMethod, photo } from "@/db/schema";
+import { eq, and, ilike, desc, or, sql, type SQL } from "drizzle-orm";
+import { DEFAULT_ENTRY_CHECKLIST, DEFAULT_EXIT_CHECKLIST } from "@/lib/constants/work-order";
 import { randomUUID } from "crypto";
 import { updateWorkOrder } from "@/lib/services/workOrderService";
 import logger from "../utils/logger";
@@ -334,10 +335,116 @@ export const registerWorkOrderPaymentTool = tool({
   },
 });
 
+export const attachPhotoToChecklistItemTool = tool({
+  description:
+    "Asocia o adjunta una foto a un ítem específico del checklist de ingreso (ENTRY) o salida/calidad (EXIT) de una orden de trabajo. Requiere ID de la OT, el tipo de checklist, el ID del ítem y la URL de la foto.",
+  inputSchema: z.object({
+    workOrderId: z.string().describe("ID de la orden de trabajo"),
+    checklistType: z.enum(["ENTRY", "EXIT"]).describe("Tipo de checklist: ENTRY (Ingreso) o EXIT (Salida)"),
+    itemId: z.string().describe("ID del ítem del checklist (ej: 'exterior_clean', 'tires', 'lights', etc.) o búsqueda parcial de su etiqueta (ej: 'luces', 'neumáticos', 'Limpieza exterior')"),
+    url: z.string().describe("URL de la foto adjunta"),
+    description: z.string().optional().describe("Descripción opcional de la foto"),
+  }),
+  execute: async ({ workOrderId, checklistType, itemId, url, description }) => {
+    logger.debug(
+      { workOrderId, checklistType, itemId, url },
+      "Attach photo to checklist item",
+    );
+
+    try {
+      // 1. Fetch work order
+      const workOrderRecord = await db.query.workOrder.findFirst({
+        where: eq(workOrder.id, workOrderId),
+        columns: { id: true, entryChecklist: true, exitChecklist: true },
+      });
+
+      if (!workOrderRecord) {
+        return `🔴 Orden de trabajo #${workOrderId.slice(0, 8)} no encontrada.`;
+      }
+
+      let checklist = checklistType === "ENTRY" ? workOrderRecord.entryChecklist : workOrderRecord.exitChecklist;
+
+      // Initialize checklist if null/empty
+      if (!checklist) {
+        const defaultItems = checklistType === "ENTRY" ? DEFAULT_ENTRY_CHECKLIST : DEFAULT_EXIT_CHECKLIST;
+        checklist = {
+          items: defaultItems.map((item) => ({ ...item, checked: false })),
+          completedAt: new Date().toISOString(),
+        };
+      }
+
+      const items = (checklist as any).items || [];
+
+      // Match item smartly: exact ID match first, then partial match on ID, then partial match on label (case-insensitive)
+      let targetItem = items.find((i: any) => i.id === itemId);
+      if (!targetItem) {
+        targetItem = items.find(
+          (i: any) =>
+            i.id.toLowerCase().includes(itemId.toLowerCase()) ||
+            i.label.toLowerCase().includes(itemId.toLowerCase())
+        );
+      }
+
+      if (!targetItem) {
+        const availableItems = items.map((i: any) => `"${i.id}" (${i.label})`).join(", ");
+        return `🔴 No se encontró el ítem "${itemId}" en el checklist de ${
+          checklistType === "ENTRY" ? "Ingreso" : "Salida"
+        }. Ítems disponibles: ${availableItems}`;
+      }
+
+      // Associate photoUrl and mark as checked
+      targetItem.photoUrl = url;
+      targetItem.checked = true;
+
+      // Update checklist
+      const updateData =
+        checklistType === "ENTRY"
+          ? { entryChecklist: checklist as any }
+          : { exitChecklist: checklist as any };
+
+      await db.update(workOrder).set(updateData).where(eq(workOrder.id, workOrderId));
+
+      // 2. Create photo record in database
+      const photoId = randomUUID();
+      await db.insert(photo).values({
+        id: photoId,
+        workOrderId,
+        type: checklistType,
+        url,
+        description: description || `Foto de checklist: ${targetItem.label}`,
+      });
+
+      // 3. Append to work order entryPhotos/exitPhotos array
+      const woPhotos = await db.query.workOrder.findFirst({
+        where: eq(workOrder.id, workOrderId),
+        columns: { entryPhotos: true, exitPhotos: true },
+      });
+
+      if (woPhotos) {
+        if (checklistType === "ENTRY") {
+          const entryPhotos = [...(woPhotos.entryPhotos || []), url];
+          await db.update(workOrder).set({ entryPhotos }).where(eq(workOrder.id, workOrderId));
+        } else {
+          const exitPhotos = [...(woPhotos.exitPhotos || []), url];
+          await db.update(workOrder).set({ exitPhotos }).where(eq(workOrder.id, workOrderId));
+        }
+      }
+
+      return `✅ Foto asociada exitosamente al ítem "${targetItem.label}" del checklist de ${
+        checklistType === "ENTRY" ? "Ingreso" : "Salida"
+      } para la OT #${workOrderId.slice(0, 8)}.`;
+    } catch (error) {
+      logger.error({ error }, "Error attaching photo to checklist item");
+      return `🔴 Error al asociar la foto al checklist: ${error instanceof Error ? error.message : "Error desconocido"}`;
+    }
+  },
+});
+
 export const workOrderTools = {
   searchWorkOrders: searchWorkOrdersTool,
   createWorkOrder: createWorkOrderTool,
   updateWorkOrderStatus: updateWorkOrderStatusTool,
   getWorkOrderDetail: getWorkOrderDetailTool,
   registerWorkOrderPayment: registerWorkOrderPaymentTool,
+  attachPhotoToChecklistItem: attachPhotoToChecklistItemTool,
 };
