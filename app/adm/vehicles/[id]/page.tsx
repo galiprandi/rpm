@@ -65,6 +65,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { getWhatsAppLink, getDebtReminderMessage } from "@/lib/utils/whatsapp";
+import { WhatsAppTemplateDialog } from "@/components/customers/WhatsAppTemplateDialog";
 import { toast } from "sonner";
 
 interface WorkOrder {
@@ -120,6 +121,8 @@ export default function VehicleDetailPage() {
   // Lógica de pagos
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
+  const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = useState(false);
+  const [selectedPhoneForWhatsApp, setSelectedPhoneForWhatsApp] = useState("");
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("CASH");
   const [paymentNotes, setPaymentNotes] = useState("");
@@ -813,25 +816,16 @@ export default function VehicleDetailPage() {
               <div className="flex items-center gap-2">
                 {vehicle.customer && vehicle.customer.phone && (
                   <Button
-                    asChild
                     variant="outline"
                     size="sm"
-                    className="border-emerald-600 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800"
+                    className="border-emerald-600 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 cursor-pointer"
+                    onClick={() => {
+                      setSelectedPhoneForWhatsApp(vehicle.customer!.phone);
+                      setIsWhatsAppModalOpen(true);
+                    }}
                   >
-                    <a
-                      href={getWhatsAppLink(
-                        vehicle.customer.phone,
-                        getDebtReminderMessage(
-                          vehicle.customer.name,
-                          vehicleDebt,
-                        ),
-                      )}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <MessageSquare className="h-4 w-4 mr-1" />
-                      Notificar Deuda
-                    </a>
+                    <MessageSquare className="h-4 w-4 mr-1" />
+                    Notificar Deuda
                   </Button>
                 )}
                 <Button
@@ -1666,6 +1660,18 @@ export default function VehicleDetailPage() {
             </div>
           </DialogContent>
         </Dialog>
+      )}
+
+      {/* Modal de WhatsApp */}
+      {isWhatsAppModalOpen && vehicle.customer && (
+        <WhatsAppTemplateDialog
+          isOpen={isWhatsAppModalOpen}
+          onClose={() => setIsWhatsAppModalOpen(false)}
+          phone={selectedPhoneForWhatsApp}
+          customerName={vehicle.customer.name}
+          balance={vehicleDebt}
+          vehicles={[vehicle.identifier]}
+        />
       )}
     </div>
   );
