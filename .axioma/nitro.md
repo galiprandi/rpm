@@ -1,9 +1,9 @@
 # Nitro 🤖 Journal
 
 ## 📋 BACKLOG
-- [ ] Direct photo attachments for work order checklist items.
 
 ## ✅ DONE
+- [x] 2026-08-03 — Implement the attachPhotoToChecklistItem tool for the virtual assistant (Nitro) enabling workshop staff to upload and associate photos directly with specific ENTRY/EXIT checklist items via the chat panel. Features smart partial label matching, automatic JSONB checklist status updating, photo registration, and work order gallery integration, with comprehensive unit tests and user instruction updates (PR #317).
 - [x] 2026-08-02 — Implement global keyboard shortcuts Alt+V (toggle voice dictation) and Alt+C (clear conversation flow with confirmation) inside ChatFloating.tsx, featuring responsive tooltips and ARIA-labels, comprehensive keyboard listener lifecycle management, and full unit test coverage (PR #315).
 - [x] 2026-08-01 — Implement the searchServices tool for the chatbot (Nitro) enabling workshop staff to query active shop services, durations, and costs, with full Drizzle ORM queries, visual status labels, comprehensive integration tests, and system documentation (PR #295).
 - [x] 2026-07-30 — Enhance chatbot file attachment UI to show dynamic local image previews (thumbnails) and fallback uppercase file extension badges with comprehensive, leak-proof browser object URL lifetime management (PR #290).

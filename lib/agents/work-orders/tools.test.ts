@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { registerWorkOrderPaymentTool } from './tools';
+import { registerWorkOrderPaymentTool, attachPhotoToChecklistItemTool } from './tools';
 import { db } from '@/lib/db';
 
 const {
@@ -208,5 +208,86 @@ describe('registerWorkOrderPaymentTool', () => {
     // Payment status is tracked via isFullyPaid, NOT by changing the OT status.
     // "PAID" is not a kanban column — setting it would make the OT disappear.
     expect(mockDb.update).not.toHaveBeenCalled();
+  });
+});
+
+describe('attachPhotoToChecklistItemTool', () => {
+  const mockInput = {
+    workOrderId: 'wo-123',
+    checklistType: 'ENTRY' as const,
+    itemId: 'tires',
+    url: 'https://cdn.example.com/tires.jpg',
+    description: 'Neumáticos desgastados',
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should return error when work order is not found', async () => {
+    mockDb.query.workOrder.findFirst.mockResolvedValueOnce(null);
+
+    const result = await attachPhotoToChecklistItemTool.execute(mockInput, {} as any);
+
+    expect(result).toContain('no encontrada');
+  });
+
+  it('should initialize and attach photo to checklist item successfully', async () => {
+    // Work order without checklist initialized yet
+    mockDb.query.workOrder.findFirst
+      .mockResolvedValueOnce({
+        id: 'wo-123',
+        entryChecklist: null,
+        exitChecklist: null,
+      }) // Fetch work order
+      .mockResolvedValueOnce({
+        entryPhotos: [],
+        exitPhotos: [],
+      }); // Fetch woPhotos
+
+    // Mock update chain
+    const whereFn = vi.fn(() => Promise.resolve());
+    const setFn = vi.fn(() => ({ where: whereFn }));
+    mockDb.update.mockReturnValue({ set: setFn });
+
+    const result = await attachPhotoToChecklistItemTool.execute(mockInput, {} as any);
+
+    expect(result).toContain('Foto asociada exitosamente');
+    expect(result).toContain('Estado de neumáticos');
+    expect(mockDb.update).toHaveBeenCalled();
+    expect(mockDb.insert).toHaveBeenCalled();
+  });
+
+  it('should attach photo using smart search when itemId is a label', async () => {
+    // Work order with checklist already initialized
+    mockDb.query.workOrder.findFirst
+      .mockResolvedValueOnce({
+        id: 'wo-123',
+        entryChecklist: {
+          items: [
+            { id: 'exterior_clean', label: 'Limpieza exterior', checked: false },
+            { id: 'tires', label: 'Estado de neumáticos', checked: false },
+          ],
+        },
+      }) // Fetch work order
+      .mockResolvedValueOnce({
+        entryPhotos: ['existing-photo-url'],
+        exitPhotos: [],
+      }); // Fetch woPhotos
+
+    // Mock update chain
+    const whereFn = vi.fn(() => Promise.resolve());
+    const setFn = vi.fn(() => ({ where: whereFn }));
+    mockDb.update.mockReturnValue({ set: setFn });
+
+    const result = await attachPhotoToChecklistItemTool.execute({
+      ...mockInput,
+      itemId: 'neumáticos', // Search by label
+    }, {} as any);
+
+    expect(result).toContain('Foto asociada exitosamente');
+    expect(result).toContain('Estado de neumáticos');
+    expect(mockDb.update).toHaveBeenCalled();
+    expect(mockDb.insert).toHaveBeenCalled();
   });
 });

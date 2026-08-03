@@ -34,6 +34,7 @@ export const unifiedTools = {
   // Update
   updateWorkOrderStatus: workOrderTools.updateWorkOrderStatus,
   registerWorkOrderPayment: workOrderTools.registerWorkOrderPayment,
+  attachPhotoToChecklistItem: workOrderTools.attachPhotoToChecklistItem,
   // Query
   getWorkOrderDetail: workOrderTools.getWorkOrderDetail,
   getCashStatus: financeTools.getCashStatus,
