@@ -48,6 +48,7 @@ import { CustomerForm } from "@/components/customers/CustomerForm";
 import { VehicleDialog } from "@/components/vehicles/VehicleDialog";
 import { getWhatsAppLink, getDebtReminderMessage } from "@/lib/utils/whatsapp";
 import { CustomerCreditNoteDialog } from "@/components/credit-notes/CustomerCreditNoteDialog";
+import { WhatsAppTemplateDialog } from "@/components/customers/WhatsAppTemplateDialog";
 import { useUI } from "@/components/ui/UIProvider";
 import { toast } from "sonner";
 
@@ -142,6 +143,8 @@ export default function CustomerDetailPage() {
   const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isCreditNoteModalOpen, setIsCreditNoteModalOpen] = useState(false);
+  const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = useState(false);
+  const [selectedPhoneForWhatsApp, setSelectedPhoneForWhatsApp] = useState("");
   const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("CASH");
@@ -596,15 +599,16 @@ export default function CustomerDetailPage() {
               >
                 <Phone className="h-4 w-4" /> {customer.phone}
               </a>
-              <a
-                href={getWhatsAppLink(customer.phone, `Hola ${customer.name}!`)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-1 rounded-md hover:bg-emerald-50 text-emerald-700 transition-colors"
+              <button
+                onClick={() => {
+                  setSelectedPhoneForWhatsApp(customer.phone!);
+                  setIsWhatsAppModalOpen(true);
+                }}
+                className="p-1 rounded-md hover:bg-emerald-50 text-emerald-700 transition-colors cursor-pointer"
                 title="Enviar WhatsApp"
               >
                 <MessageSquare className="h-4 w-4" />
-              </a>
+              </button>
             </div>
           )}
           {customer.phoneAlt && (
@@ -615,18 +619,16 @@ export default function CustomerDetailPage() {
               >
                 <Phone className="h-4 w-4" /> {customer.phoneAlt} (alt)
               </a>
-              <a
-                href={getWhatsAppLink(
-                  customer.phoneAlt,
-                  `Hola ${customer.name}!`,
-                )}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-1 rounded-md hover:bg-emerald-50 text-emerald-700 transition-colors"
+              <button
+                onClick={() => {
+                  setSelectedPhoneForWhatsApp(customer.phoneAlt!);
+                  setIsWhatsAppModalOpen(true);
+                }}
+                className="p-1 rounded-md hover:bg-emerald-50 text-emerald-700 transition-colors cursor-pointer"
                 title="Enviar WhatsApp"
               >
                 <MessageSquare className="h-4 w-4" />
-              </a>
+              </button>
             </div>
           )}
           {customer.email && (
@@ -669,25 +671,16 @@ export default function CustomerDetailPage() {
                 {customer.balance > 0 &&
                   (customer.phone || customer.phoneAlt) && (
                     <Button
-                      asChild
                       variant="outline"
                       size="sm"
-                      className="border-emerald-600 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800"
+                      className="border-emerald-600 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 cursor-pointer"
+                      onClick={() => {
+                        setSelectedPhoneForWhatsApp((customer.phone || customer.phoneAlt)!);
+                        setIsWhatsAppModalOpen(true);
+                      }}
                     >
-                      <a
-                        href={getWhatsAppLink(
-                          (customer.phone || customer.phoneAlt)!,
-                          getDebtReminderMessage(
-                            customer.name,
-                            customer.balance,
-                          ),
-                        )}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <MessageSquare className="h-4 w-4 mr-1" />
-                        Notificar
-                      </a>
+                      <MessageSquare className="h-4 w-4 mr-1" />
+                      Notificar
                     </Button>
                   )}
                 <Button
@@ -1456,6 +1449,18 @@ export default function CustomerDetailPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Modal de WhatsApp */}
+      {isWhatsAppModalOpen && (
+        <WhatsAppTemplateDialog
+          isOpen={isWhatsAppModalOpen}
+          onClose={() => setIsWhatsAppModalOpen(false)}
+          phone={selectedPhoneForWhatsApp}
+          customerName={customer.name}
+          balance={customer.balance}
+          vehicles={customer.vehicles?.map((v) => v.identifier) || []}
+        />
+      )}
 
       {/* Sección de Impresión de Cuenta Corriente (Solo visible al imprimir) */}
       <div className="hidden print:block font-sans p-6 text-black" id="print-section">
