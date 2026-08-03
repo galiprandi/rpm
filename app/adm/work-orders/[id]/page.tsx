@@ -322,6 +322,36 @@ export default function WorkOrderDetailPage() {
     undefined,
   );
   const [savingChecklist, setSavingChecklist] = useState(false);
+  const [customChecklistItemName, setCustomChecklistItemName] = useState("");
+
+  const handleAddCustomChecklistItem = () => {
+    if (!customChecklistItemName.trim()) return;
+    const newItem = {
+      id: `custom-${Date.now()}`,
+      label: customChecklistItemName.trim(),
+      checked: false,
+    };
+    setEditingChecklistItems((prev) => [...prev, newItem]);
+    setCustomChecklistItemName("");
+  };
+
+  const entryChecklistStats = useMemo(() => {
+    const items = editingChecklist === "entry" ? editingChecklistItems : workOrder?.entryChecklist?.items;
+    if (!items || !Array.isArray(items) || items.length === 0) return null;
+    const total = items.length;
+    const checked = items.filter((item) => item.checked).length;
+    const percentage = Math.round((checked / total) * 100);
+    return { checked, total, percentage };
+  }, [editingChecklist, editingChecklistItems, workOrder?.entryChecklist?.items]);
+
+  const exitChecklistStats = useMemo(() => {
+    const items = editingChecklist === "exit" ? editingChecklistItems : workOrder?.exitChecklist?.items;
+    if (!items || !Array.isArray(items) || items.length === 0) return null;
+    const total = items.length;
+    const checked = items.filter((item) => item.checked).length;
+    const percentage = Math.round((checked / total) * 100);
+    return { checked, total, percentage };
+  }, [editingChecklist, editingChecklistItems, workOrder?.exitChecklist?.items]);
   const [editingScheduledDate, setEditingScheduledDate] = useState(false);
   const [editingNotes, setEditingNotes] = useState(false);
   const [savingNotes, setSavingNotes] = useState(false);
@@ -2188,6 +2218,7 @@ export default function WorkOrderDetailPage() {
                         </Button>
                       )}
                       <Button
+                        data-testid="edit-entry-checklist"
                         variant="ghost"
                         size="default"
                         onClick={() => startEditingChecklist("entry")}
@@ -2202,6 +2233,34 @@ export default function WorkOrderDetailPage() {
               <CardContent>
                 {workOrder.entryChecklist ? (
                   <div className="space-y-3">
+                    {/* Progress Bar */}
+                    {entryChecklistStats && (
+                      <div className="space-y-1 mb-2">
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="font-semibold text-zinc-600">Progreso de Inspección</span>
+                          <span className={cn(
+                            "font-bold font-mono",
+                            entryChecklistStats.checked === entryChecklistStats.total
+                              ? "text-emerald-600"
+                              : "text-blue-600"
+                          )}>
+                            {entryChecklistStats.checked}/{entryChecklistStats.total} OK ({entryChecklistStats.percentage}%)
+                          </span>
+                        </div>
+                        <div className="h-2 w-full bg-zinc-100 rounded-full overflow-hidden border border-zinc-200/50">
+                          <div
+                            className={cn(
+                              "h-full rounded-full transition-all duration-300",
+                              entryChecklistStats.checked === entryChecklistStats.total
+                                ? "bg-emerald-500"
+                                : "bg-blue-600"
+                            )}
+                            style={{ width: `${entryChecklistStats.percentage}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
                     {/* Odometer and Fuel Level */}
                     <div className="p-3 bg-muted/50 rounded-lg space-y-2">
                       {editingChecklist === "entry" ? (
@@ -2313,7 +2372,7 @@ export default function WorkOrderDetailPage() {
                         <div
                           key={index}
                           className={cn(
-                            "flex items-start gap-3 p-2 rounded-md transition-colors",
+                            "flex items-center justify-between p-2 rounded-md transition-colors",
                             item.checked
                               ? "bg-blue-50/50"
                               : "hover:bg-muted/30",
@@ -2324,35 +2383,79 @@ export default function WorkOrderDetailPage() {
                             handleToggleChecklistItem(item.id)
                           }
                         >
-                          <div
-                            className={cn(
-                              "mt-0.5 w-5 h-5 rounded-md flex items-center justify-center shrink-0 border transition-all shadow-sm",
-                              item.checked
-                                ? "bg-blue-600 border-blue-600 text-white"
-                                : "bg-muted/30 border-muted-foreground/20 text-muted-foreground/30",
-                            )}
-                          >
-                            <Check
+                          <div className="flex items-start gap-3">
+                            <div
                               className={cn(
-                                "h-3.5 w-3.5 transition-transform",
-                                item.checked ? "scale-100" : "scale-0",
+                                "mt-0.5 w-5 h-5 rounded-md flex items-center justify-center shrink-0 border transition-all shadow-sm",
+                                item.checked
+                                  ? "bg-blue-600 border-blue-600 text-white"
+                                  : "bg-muted/30 border-muted-foreground/20 text-muted-foreground/30",
                               )}
-                              aria-hidden="true"
-                            />
+                            >
+                              <Check
+                                className={cn(
+                                  "h-3.5 w-3.5 transition-transform",
+                                  item.checked ? "scale-100" : "scale-0",
+                                )}
+                                aria-hidden="true"
+                              />
+                            </div>
+                            <span
+                              className={cn(
+                                "text-xs leading-none pt-1",
+                                item.checked
+                                  ? "font-semibold text-blue-900"
+                                  : "text-muted-foreground",
+                              )}
+                            >
+                              {item.label}
+                            </span>
                           </div>
-                          <span
-                            className={cn(
-                              "text-xs leading-none pt-1",
-                              item.checked
-                                ? "font-semibold text-blue-900"
-                                : "text-muted-foreground",
-                            )}
-                          >
-                            {item.label}
-                          </span>
+                          {editingChecklist === "entry" && item.id.startsWith("custom-") && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full shrink-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingChecklistItems((prev) => prev.filter((i) => i.id !== item.id));
+                              }}
+                              title="Eliminar ítem personalizado"
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          )}
                         </div>
                       ))}
                     </div>
+
+                    {/* Add Custom Item */}
+                    {editingChecklist === "entry" && (
+                      <div className="flex gap-2 mt-4 pt-3 border-t border-dashed border-zinc-200">
+                        <Input
+                          placeholder="Agregar ítem personalizado... (ej: Casco en baúl)"
+                          value={customChecklistItemName}
+                          onChange={(e) => setCustomChecklistItemName(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              handleAddCustomChecklistItem();
+                            }
+                          }}
+                          className="h-8 text-xs flex-1"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={handleAddCustomChecklistItem}
+                          className="h-8 text-xs shrink-0"
+                        >
+                          Agregar
+                        </Button>
+                      </div>
+                    )}
                     <div className="text-xs text-muted-foreground mt-4 pt-3 border-t">
                       Completado:{" "}
                       {new Date(
@@ -2408,6 +2511,7 @@ export default function WorkOrderDetailPage() {
                         </Button>
                       )}
                       <Button
+                        data-testid="edit-exit-checklist"
                         variant="ghost"
                         size="default"
                         onClick={() => startEditingChecklist("exit")}
@@ -2422,6 +2526,34 @@ export default function WorkOrderDetailPage() {
               <CardContent>
                 {workOrder.exitChecklist ? (
                   <div className="space-y-3">
+                    {/* Progress Bar */}
+                    {exitChecklistStats && (
+                      <div className="space-y-1 mb-2">
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="font-semibold text-zinc-600">Progreso de Inspección</span>
+                          <span className={cn(
+                            "font-bold font-mono",
+                            exitChecklistStats.checked === exitChecklistStats.total
+                              ? "text-emerald-600"
+                              : "text-blue-600"
+                          )}>
+                            {exitChecklistStats.checked}/{exitChecklistStats.total} OK ({exitChecklistStats.percentage}%)
+                          </span>
+                        </div>
+                        <div className="h-2 w-full bg-zinc-100 rounded-full overflow-hidden border border-zinc-200/50">
+                          <div
+                            className={cn(
+                              "h-full rounded-full transition-all duration-300",
+                              exitChecklistStats.checked === exitChecklistStats.total
+                                ? "bg-emerald-500"
+                                : "bg-blue-600"
+                            )}
+                            style={{ width: `${exitChecklistStats.percentage}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
                     {/* Odometer and Fuel Level */}
                     <div className="p-3 bg-muted/50 rounded-lg space-y-2">
                       {editingChecklist === "exit" ? (
@@ -2533,7 +2665,7 @@ export default function WorkOrderDetailPage() {
                         <div
                           key={index}
                           className={cn(
-                            "flex items-start gap-3 p-2 rounded-md transition-colors",
+                            "flex items-center justify-between p-2 rounded-md transition-colors",
                             item.checked
                               ? "bg-emerald-50/50"
                               : "hover:bg-muted/30",
@@ -2544,35 +2676,79 @@ export default function WorkOrderDetailPage() {
                             handleToggleChecklistItem(item.id)
                           }
                         >
-                          <div
-                            className={cn(
-                              "mt-0.5 w-5 h-5 rounded-md flex items-center justify-center shrink-0 border transition-all shadow-sm",
-                              item.checked
-                                ? "bg-emerald-600 border-emerald-600 text-white"
-                                : "bg-muted/30 border-muted-foreground/20 text-muted-foreground/30",
-                            )}
-                          >
-                            <Check
+                          <div className="flex items-start gap-3">
+                            <div
                               className={cn(
-                                "h-3.5 w-3.5 transition-transform",
-                                item.checked ? "scale-100" : "scale-0",
+                                "mt-0.5 w-5 h-5 rounded-md flex items-center justify-center shrink-0 border transition-all shadow-sm",
+                                item.checked
+                                  ? "bg-emerald-600 border-emerald-600 text-white"
+                                  : "bg-muted/30 border-muted-foreground/20 text-muted-foreground/30",
                               )}
-                              aria-hidden="true"
-                            />
+                            >
+                              <Check
+                                className={cn(
+                                  "h-3.5 w-3.5 transition-transform",
+                                  item.checked ? "scale-100" : "scale-0",
+                                )}
+                                aria-hidden="true"
+                              />
+                            </div>
+                            <span
+                              className={cn(
+                                "text-xs leading-none pt-1",
+                                item.checked
+                                  ? "font-semibold text-emerald-900"
+                                  : "text-muted-foreground",
+                              )}
+                            >
+                              {item.label}
+                            </span>
                           </div>
-                          <span
-                            className={cn(
-                              "text-xs leading-none pt-1",
-                              item.checked
-                                ? "font-semibold text-emerald-900"
-                                : "text-muted-foreground",
-                            )}
-                          >
-                            {item.label}
-                          </span>
+                          {editingChecklist === "exit" && item.id.startsWith("custom-") && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full shrink-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingChecklistItems((prev) => prev.filter((i) => i.id !== item.id));
+                              }}
+                              title="Eliminar ítem personalizado"
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          )}
                         </div>
                       ))}
                     </div>
+
+                    {/* Add Custom Item */}
+                    {editingChecklist === "exit" && (
+                      <div className="flex gap-2 mt-4 pt-3 border-t border-dashed border-zinc-200">
+                        <Input
+                          placeholder="Agregar ítem personalizado... (ej: Lavado de motor)"
+                          value={customChecklistItemName}
+                          onChange={(e) => setCustomChecklistItemName(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              handleAddCustomChecklistItem();
+                            }
+                          }}
+                          className="h-8 text-xs flex-1"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={handleAddCustomChecklistItem}
+                          className="h-8 text-xs shrink-0"
+                        >
+                          Agregar
+                        </Button>
+                      </div>
+                    )}
                     <div className="text-xs text-muted-foreground mt-4 pt-3 border-t">
                       Completado:{" "}
                       {new Date(

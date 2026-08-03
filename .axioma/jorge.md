@@ -2,6 +2,7 @@
 - [ ] Idea pendiente — breve descripción
 
 ## ✅ COMPLETADO
+- [x] 2026-08-02 — Estadísticas y Barras de Progreso de Checklists e Ítems Personalizados en Taller (PR #jorge/work-orders/checklist-progress-custom-items)
 - [x] 2026-07-31 — Controles Interactivos de Estado y Técnico en Vista de Lista de OT (PR #jorge/work-orders/list-view-interactive-controls)
 - [x] 2026-07-30 — Atajos de Fecha de Entrega y Resumen de Ítems en Kanban/Lista (PR #jorge/work-orders/scheduled-date-items-summary)
 - [x] 2026-07-29 — Duplicación/Clonación de Órdenes de Trabajo desde Detalle e Historial con Resguardo de Borrador (PR #jorge/work-orders/duplicate-work-order-ux)
@@ -20,10 +21,16 @@
 - [x] 2025-07-08 — Servicio Centralizado de OT y Timeline Unificado (PR #jorge/work-orders/centralized-updates)
 
 ## 🧠 APRENDIZAJES
+
+## 2026-08-02 - Estadísticas, Barras de Progreso e Ítems Personalizados en Checklists
+**Aprendizaje 1:** Los checklists son herramientas de control clave en el taller, pero verlos como un estado binario ("COMPLETADO" vs "PENDIENTE") es insuficiente para la visibilidad diaria. Mostrar el progreso numérico de ítems (ej: `5/8`) y porcentajes detallados en Kanban y Listas, acompañados de código de color condicional (verde brillante al completar el 100%, azul al estar parcial), incrementa sustancialmente el entendimiento operacional inmediato.
+**Aprendizaje 2:** Cada vehículo o trabajo puede requerir inspecciones no contempladas en las plantillas estándar (ej. verificar cascos, equipo de sonido caro o detalles de tapizado específicos). Proveer a los técnicos la capacidad de ingresar ítems personalizados de checklist sobre la marcha, con borrado inline y guardado nativo, mantiene el estándar del taller ágil, robusto y sumamente profesional.
+**Aprendizaje 3:** Al realizar pruebas unitarias en entornos JSDOM con componentes interactivos complejos de terceros o Radix-UI (como Tabs o Sliders), es imperativo simular o mockear la existencia de APIs nativas ausentes (como `ResizeObserver`) y simplificar el renderizado de árboles complejos para evitar fallas colaterales de montaje y garantizar pruebas deterministas y veloces.
+
 ## 2026-07-31 - Controles Interactivos de Estado y Técnico en Vista de Lista de OT
 **Aprendizaje 1:** En dispositivos móviles, la vista de lista es la predeterminada y única disponible. Forzar a los usuarios a navegar al detalle de cada orden de trabajo individual para tareas simples como cambiar de técnico o actualizar el estado de la OT genera una enorme fricción y ralentiza el flujo operativo de taller. Reemplazar los textos estáticos con menús desplegables (`DropdownMenu`) inline dota de una velocidad excepcional a la gestión desde cualquier dispositivo móvil o tablet.
 **Aprendizaje 2:** Al anidar elementos interactivos complejos (como dropdowns con portales) dentro de contenedores clickeables (como filas envueltas en `<Link>`), es imperativo bloquear la propagación del evento tanto en `onMouseDown` como en `onClick` a nivel del trigger. Esto asegura que la selección de un menú no dispare la navegación general del enlace, preservando la consistencia y usabilidad de la UI.
-**Aprendizaje 3:** Para respetar estrictamente las reglas de estados terminales, deshabilitar visualmente y funcionalmente los triggers de los dropdowns (añadiendo estilos de `cursor-not-allowed opacity-60`) cuando el estado de la OT es `"CANCELLED"` o `"DELIVERED"` previene cambios accidentales y mantiene la integridad transaccional de los datos sin requerir validaciones intrusivas posteriores.
+**Aprendizaje 3:** Para respetar estrictamente las reglas de estados terminales, deshabilitar visualmente y funcionalmente los triggers de los dropdowns (añadiendo estilos de `cursor-not-allowed opacity-60`) cuando el estado de la OT is `"CANCELLED"` o `"DELIVERED"` previene cambios accidentales y mantiene la integridad transaccional de los datos sin requerir validaciones intrusivas posteriores.
 
 ## 2026-07-30 - Atajos de Fecha de Entrega y Resumen de Ítems en Kanban/Lista
 **Aprendizaje 1:** En la gestión diaria del taller, tener que abrir el selector de fecha y hora nativo del navegador para asignar turnos a un par de horas en el futuro, al día siguiente o al inicio de la semana siguiente genera una fricción administrativa importante. Ofrecer accesos rápidos interactivos (+2h, Mañana, Lunes) calcula y rellena instantáneamente el campo `datetime-local` en la zona horaria local del cliente, acelerando enormemente la carga.
@@ -45,7 +52,7 @@
 
 ## 2026-07-26 - Historial de Órdenes de Trabajo del Vehículo en Detalle de OT
 **Aprendizaje:** En talleres mecánicos, los vehículos suelen ser recurrentes. Contar con visibilidad instantánea sobre el historial técnico completo (OTs pasadas, responsables, notas, checklists y productos/servicios específicos realizados) directamente desde la pantalla de la OT en curso disminuye drásticamente la fricción administrativa y de diagnóstico, eliminando la necesidad de abandonar el flujo principal para ir a buscar la ficha del vehículo por separado. Además, al trabajar con Next.js 15 y el nuevo React Compiler, las dependencias complejas (como optional chaining en arrays `[workOrder?.vehicle?.id]`) pueden impedir que se preserve la memoización manual, arrojando errores de compilación (`Compilation Skipped: Existing memoization could not be preserved`). Desestructurar y aplanar estas referencias en variables simples de tipo string o undefined (`const vehicleId = workOrder?.vehicle?.id`) before passing them to React hooks guarantees complete compatibility with the compiler and robust optimizations.
-**Acción:** Siempre proveer pestañas de historial contextual técnico y asegurar de aplanar propiedades anidadas o con optional chaining al incluirlas en dependencias de cookies o hooks con React Compiler.
+**Acción:** Siempre proveer pestañas de historial contextual técnico y asegurar de aplanar propiedades anidadas o con optional chaining al incluirlas en dependencias de cookies o hooks with React Compiler.
 
 ## 2026-07-24 - Bloqueo de Estados Terminales y Reversión de Saldos por Cancelación de OT
 **Aprendizaje:** Una orden de trabajo cancelada representa un estado terminal irreversible de la operación. Dejar el resto de los controles (items, notas, asignaciones, checklists, fotos, pagos) editables tras la cancelación crea riesgos de manipulación de datos, descuadres financieros en cajas cerradas o inconsistencias de stock. El bloqueo integral de todas las entradas (acompañado de banners de advertencia de alto contraste y explicaciones explícitas de por qué las acciones están bloqueadas) provee una UI transparente y segura.
@@ -56,7 +63,7 @@
 **Acción:** Siempre proveer múltiples caminos de búsqueda en flujos de creación (por entidad técnica y por entidad de cliente) y pre-cargar el contexto de forma transparente si proviene de una vista relacional previa.
 
 ## 2026-07-22 - Indicadores Visuales de Metadatos y Exportación CSV en Taller
-**Aprendizaje:** En la gestión diaria del taller mecánico, tener visibilidad inmediata sobre si los checklists (de ingreso y de salida) han sido completados y la cantidad de fotos cargadas en las tarjetas del Kanban y de la Lista evita que se dejen vehículos sin inspección previa o posterior. Además, poder exportar en un solo click (respetando filtros activos, codificación Excel UTF-8 BOM, escape de caracteres y relaciones de vehículos/responsables de manera defensiva) eleva considerablemente la productividad administrativa del taller.
+**Aprendizaje:** En la gestión diaria del taller mecánico, tener visibilidad inmediata sobre si los checklists (de ingreso y de salida) han sido completados y la cantidad de fotos cargadas en las tarjetas del Kanban y de la Lista evita que se dejen vehículos sin inspección previa o posterior. Además, poder exportar en un solo click (respetando filtros activos, codificación Excel UTF-8 BOM, escape de caracteres y relaciones de vehículos/responsables de manera de manera defensiva) eleva considerablemente la productividad administrativa del taller.
 **Acción:** Siempre include micro-indicadores visuales con tooltips informativos para estados de procesos secuenciales (checklists, fotos) and habilitar exportación a CSV segura y amigable para Excel.
 
 ## 2026-07-21 - Botones de Filtro Rápido para Eficiencia en Taller

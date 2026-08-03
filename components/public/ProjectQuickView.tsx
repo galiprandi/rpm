@@ -75,6 +75,7 @@ export function ProjectQuickView({ project, onClose }: ProjectQuickViewProps) {
 
               <div className="pt-4">
                 <Button
+                  autoFocus
                   className="w-full bg-white text-black hover:bg-brand hover:text-white font-bold h-14 rounded-2xl transition-all duration-300 gap-3 group border-none outline-none focus-visible:ring-2 focus-visible:ring-brand"
                   onClick={() => window.open(PUBLIC_SITE_CONFIG.links.whatsapp(`Hola RPM! Me interesa conocer más sobre su especialización en ${project.title} (${project.year}). ¿Qué servicios similares ofrecen actualmente?`), '_blank')}
                   aria-label={`Consultar por WhatsApp sobre ${project.title}`}
