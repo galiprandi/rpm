@@ -1,3 +1,7 @@
+## 2026-08-03 - Quick View Modals Keyboard Accessibility and Auto-Focus Standard
+**Learning:** In public-facing layouts, Quick View Modals or Dialogs that reveal details and include primary action triggers (such as WhatsApp consultations) benefit immensely from immediate auto-focus placement. Adding `autoFocus` to the primary Call-to-Action button allows keyboard users to instantly trigger the action using the Enter or Space key without having to manually tab through other non-primary elements, such as close buttons or imagery wrappers.
+**Action:** When designing temporary modal dialogues with high-impact primary CTA buttons, always add `autoFocus` to the primary action trigger to maximize keyboard accessibility and click-through rates.
+
 ## 2026-08-02 - Public Catalog Search and Filter Keyboard Focus Visibility Standard
 **Learning:** Adding standardized high-contrast keyboard-focus outline rings (`focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-black`) to search inputs and filter buttons prevents focus loss and navigation disorientation for keyboard-only users on public pages. Paired with descriptive `aria-label` screen reader tags, this guarantees that both visual and non-visual navigators have equal tracking precision and contextual clarity when browsing product categories.
 **Action:** Always provide explicit visual focus indicators and descriptive ARIA tags to search bars and multi-button filtering controls on public-facing storefront interfaces.

@@ -77,6 +77,7 @@ export function ServiceQuickView({ service, onClose }: ServiceQuickViewProps) {
 
               <div className="pt-4 flex flex-col gap-4">
                 <Button
+                  autoFocus
                   className="w-full bg-brand text-white hover:bg-brand/90 font-bold h-14 rounded-2xl transition-all duration-300 gap-3 group"
                   onClick={() => window.open(PUBLIC_SITE_CONFIG.links.whatsapp(`Hola RPM! Me interesa el servicio: ${service.title}. ¿Me podrían dar más información?`), '_blank')}
                   aria-label={`Consultar por WhatsApp sobre ${service.title}`}
