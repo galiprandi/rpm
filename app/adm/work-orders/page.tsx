@@ -457,10 +457,13 @@ function KanbanCard({
           <DropdownMenuTrigger asChild>
             <div
               className={cn(
-                "flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded border w-full transition-colors cursor-pointer",
+                "flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded border w-full transition-colors",
+                (wo.status === "CANCELLED" || wo.status === "DELIVERED")
+                  ? "cursor-not-allowed opacity-60"
+                  : "cursor-pointer hover:bg-purple-100/50",
                 wo.technician
-                  ? "bg-purple-50 text-purple-700 border-purple-100 hover:bg-purple-100"
-                  : "bg-muted/60 text-slate-600 border-slate-200/50 hover:bg-muted",
+                  ? "bg-purple-50 text-purple-700 border-purple-100"
+                  : "bg-muted/60 text-slate-600 border-slate-200/50",
               )}
               onMouseDown={(e) => e.stopPropagation()}
             >
@@ -470,54 +473,56 @@ function KanbanCard({
               </span>
             </div>
           </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="start"
-            className="w-48"
-            onMouseDown={(e) => e.stopPropagation()}
-          >
-            <DropdownMenuLabel className="text-xs font-semibold">
-              Asignar Responsable
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {session?.user?.id && technicians.some((t) => t.id === session.user.id) && (
-              <>
-                <DropdownMenuItem
-                  className="text-xs font-semibold text-purple-700 hover:text-purple-800"
-                  onClick={() => onTechnicianUpdate?.(wo.id, session.user.id)}
-                >
-                  <UserCog className="h-3.5 w-3.5 mr-2 text-purple-600" />
-                  Asignarme a mí
-                  {wo.technician?.id === session.user.id && (
-                    <Check className="h-3.5 w-3.5 ml-auto text-primary" />
-                  )}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-              </>
-            )}
-            <DropdownMenuItem
-              className="text-xs"
-              onClick={() => onTechnicianUpdate?.(wo.id, null)}
+          {wo.status !== "CANCELLED" && wo.status !== "DELIVERED" && (
+            <DropdownMenuContent
+              align="start"
+              className="w-48"
+              onMouseDown={(e) => e.stopPropagation()}
             >
-              <X className="h-3.5 w-3.5 mr-2" />
-              Sin asignar
-              {!wo.technician && (
-                <Check className="h-3.5 w-3.5 ml-auto text-primary" />
+              <DropdownMenuLabel className="text-xs font-semibold">
+                Asignar Responsable
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {session?.user?.id && technicians.some((t) => t.id === session.user.id) && (
+                <>
+                  <DropdownMenuItem
+                    className="text-xs font-semibold text-purple-700 hover:text-purple-800"
+                    onClick={() => onTechnicianUpdate?.(wo.id, session.user.id)}
+                  >
+                    <UserCog className="h-3.5 w-3.5 mr-2 text-purple-600" />
+                    Asignarme a mí
+                    {wo.technician?.id === session.user.id && (
+                      <Check className="h-3.5 w-3.5 ml-auto text-primary" />
+                    )}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </>
               )}
-            </DropdownMenuItem>
-            {technicians.map((tech) => (
               <DropdownMenuItem
-                key={tech.id}
                 className="text-xs"
-                onClick={() => onTechnicianUpdate?.(wo.id, tech.id)}
+                onClick={() => onTechnicianUpdate?.(wo.id, null)}
               >
-                <UserCog className="h-3.5 w-3.5 mr-2" />
-                {tech.name}
-                {wo.technician?.id === tech.id && (
+                <X className="h-3.5 w-3.5 mr-2" />
+                Sin asignar
+                {!wo.technician && (
                   <Check className="h-3.5 w-3.5 ml-auto text-primary" />
                 )}
               </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
+              {technicians.map((tech) => (
+                <DropdownMenuItem
+                  key={tech.id}
+                  className="text-xs"
+                  onClick={() => onTechnicianUpdate?.(wo.id, tech.id)}
+                >
+                  <UserCog className="h-3.5 w-3.5 mr-2" />
+                  {tech.name}
+                  {wo.technician?.id === tech.id && (
+                    <Check className="h-3.5 w-3.5 ml-auto text-primary" />
+                  )}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          )}
         </DropdownMenu>
         {/* Line 5: Date/Delayed status (full width) */}
         {isDelayed(wo) ? (
@@ -801,7 +806,11 @@ export default function WorkOrdersPage() {
         wo.customer.name.toLowerCase().includes(searchLower) ||
         wo.customer.phone?.toLowerCase().includes(searchLower) ||
         wo.vehicle.vehicleMake?.name?.toLowerCase().includes(searchLower) ||
-        wo.vehicle.vehicleModel?.name?.toLowerCase().includes(searchLower);
+        wo.vehicle.vehicleModel?.name?.toLowerCase().includes(searchLower) ||
+        wo.workOrderItems?.some((item) => {
+          const name = item.name || item.product?.name || item.service?.name || "";
+          return name.toLowerCase().includes(searchLower);
+        });
 
       return (
         matchesPayment &&
@@ -1549,11 +1558,13 @@ export default function WorkOrdersPage() {
                             <DropdownMenuTrigger asChild>
                               <div
                                 className={cn(
-                                  "flex items-center gap-1 text-[11px] px-2 py-1 rounded border transition-colors cursor-pointer font-medium",
-                                  wo.status === "CANCELLED" && "cursor-not-allowed opacity-60",
+                                  "flex items-center gap-1 text-[11px] px-2 py-1 rounded border transition-colors font-medium",
+                                  (wo.status === "CANCELLED" || wo.status === "DELIVERED")
+                                    ? "cursor-not-allowed opacity-60"
+                                    : "cursor-pointer hover:bg-purple-100/50",
                                   wo.technician
-                                    ? "bg-purple-50 text-purple-700 border-purple-100 hover:bg-purple-100"
-                                    : "bg-muted text-slate-600 border-slate-200 hover:bg-muted/80",
+                                    ? "bg-purple-50 text-purple-700 border-purple-100"
+                                    : "bg-muted text-slate-600 border-slate-200",
                                 )}
                                 onMouseDown={(e) => e.stopPropagation()}
                                 onClick={(e) => {
@@ -1567,7 +1578,7 @@ export default function WorkOrdersPage() {
                                 </span>
                               </div>
                             </DropdownMenuTrigger>
-                            {wo.status !== "CANCELLED" && (
+                            {wo.status !== "CANCELLED" && wo.status !== "DELIVERED" && (
                               <DropdownMenuContent
                                 align="end"
                                 className="w-48"
