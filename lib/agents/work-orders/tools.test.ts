@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { registerWorkOrderPaymentTool, attachPhotoToChecklistItemTool } from './tools';
+import { registerWorkOrderPaymentTool, attachPhotoToChecklistItemTool, assignWorkOrderTechnicianTool } from './tools';
 import { db } from '@/lib/db';
 
 const {
@@ -7,10 +7,13 @@ const {
   mockIsCashRegisterOpen,
   mockCreateCashMovement,
   mockAdjustBalanceAtomically,
+  mockUpdateWorkOrder,
 } = vi.hoisted(() => {
   const query = {
     workOrder: { findFirst: vi.fn() },
     paymentMethod: { findFirst: vi.fn(), findMany: vi.fn() },
+    user: { findFirst: vi.fn(), findMany: vi.fn() },
+    userRole: { findMany: vi.fn() },
   };
 
   const mockDb = {
@@ -36,12 +39,14 @@ const {
   const mockIsCashRegisterOpen = vi.fn();
   const mockCreateCashMovement = vi.fn();
   const mockAdjustBalanceAtomically = vi.fn();
+  const mockUpdateWorkOrder = vi.fn();
 
   return {
     mockDb,
     mockIsCashRegisterOpen,
     mockCreateCashMovement,
     mockAdjustBalanceAtomically,
+    mockUpdateWorkOrder,
   };
 });
 
@@ -56,6 +61,10 @@ vi.mock('@/lib/services/cashMovementService', () => ({
 
 vi.mock('@/lib/services/balanceService', () => ({
   adjustBalanceAtomically: mockAdjustBalanceAtomically,
+}));
+
+vi.mock('@/lib/services/workOrderService', () => ({
+  updateWorkOrder: mockUpdateWorkOrder,
 }));
 
 vi.mock('@/lib/cache', () => ({
@@ -289,5 +298,116 @@ describe('attachPhotoToChecklistItemTool', () => {
     expect(result).toContain('Estado de neumáticos');
     expect(mockDb.update).toHaveBeenCalled();
     expect(mockDb.insert).toHaveBeenCalled();
+  });
+});
+
+describe('assignWorkOrderTechnicianTool', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should return error if neither technicianName nor technicianId is provided', async () => {
+    const result = await assignWorkOrderTechnicianTool.execute({
+      workOrderId: 'wo-123',
+    }, {} as any);
+
+    expect(result).toContain('Debes proporcionar un nombre o un ID de técnico válido');
+  });
+
+  it('should assign technician by technicianId successfully', async () => {
+    mockDb.query.user.findFirst.mockResolvedValueOnce({
+      id: 'tech-abc',
+      name: 'Carlos Gómez',
+    });
+
+    const result = await assignWorkOrderTechnicianTool.execute({
+      workOrderId: 'wo-123',
+      technicianId: 'tech-abc',
+    }, {} as any);
+
+    expect(result).toContain('asignada exitosamente al técnico: Carlos Gómez');
+    expect(mockUpdateWorkOrder).toHaveBeenCalledWith(
+      'wo-123',
+      { technicianId: 'tech-abc' },
+      expect.any(Object),
+    );
+  });
+
+  it('should assign technician by technicianName successfully (single active user match)', async () => {
+    mockDb.query.user.findMany.mockResolvedValueOnce([
+      { id: 'user-1', name: 'Juan Pérez', email: 'juan@rpmacc.com' },
+      { id: 'user-2', name: 'Carlos Gómez', email: 'carlos@rpmacc.com' },
+    ]);
+    mockDb.query.userRole.findMany.mockResolvedValueOnce([
+      { email: 'juan@rpmacc.com', isActive: true },
+      { email: 'carlos@rpmacc.com', isActive: true },
+    ]);
+
+    const result = await assignWorkOrderTechnicianTool.execute({
+      workOrderId: 'wo-123',
+      technicianName: 'juan',
+    }, {} as any);
+
+    expect(result).toContain('asignada exitosamente al técnico: Juan Pérez');
+    expect(mockUpdateWorkOrder).toHaveBeenCalledWith(
+      'wo-123',
+      { technicianId: 'user-1' },
+      expect.any(Object),
+    );
+  });
+
+  it('should return warning when multiple matches are found for technicianName', async () => {
+    mockDb.query.user.findMany.mockResolvedValueOnce([
+      { id: 'user-1', name: 'Juan Pérez', email: 'juan@rpmacc.com' },
+      { id: 'user-2', name: 'Juan Manuel', email: 'juan.m@rpmacc.com' },
+    ]);
+    mockDb.query.userRole.findMany.mockResolvedValueOnce([
+      { email: 'juan@rpmacc.com', isActive: true },
+      { email: 'juan.m@rpmacc.com', isActive: true },
+    ]);
+
+    const result = await assignWorkOrderTechnicianTool.execute({
+      workOrderId: 'wo-123',
+      technicianName: 'juan',
+    }, {} as any);
+
+    expect(result).toContain('Se encontraron múltiples coincidencias para "juan"');
+    expect(mockUpdateWorkOrder).not.toHaveBeenCalled();
+  });
+
+  it('should fallback to all users matching name when active user search yields no match', async () => {
+    mockDb.query.user.findMany.mockResolvedValueOnce([
+      { id: 'user-1', name: 'Santi Gómez', email: 'santi@rpmacc.com' },
+    ]);
+    mockDb.query.userRole.findMany.mockResolvedValueOnce([]);
+
+    const result = await assignWorkOrderTechnicianTool.execute({
+      workOrderId: 'wo-123',
+      technicianName: 'santi',
+    }, {} as any);
+
+    expect(result).toContain('asignada exitosamente al técnico: Santi Gómez');
+    expect(mockUpdateWorkOrder).toHaveBeenCalledWith(
+      'wo-123',
+      { technicianId: 'user-1' },
+      expect.any(Object),
+    );
+  });
+
+  it('should return warning when no user matches technicianName', async () => {
+    mockDb.query.user.findMany.mockResolvedValueOnce([
+      { id: 'user-1', name: 'Juan Pérez', email: 'juan@rpmacc.com' },
+    ]);
+    mockDb.query.userRole.findMany.mockResolvedValueOnce([
+      { email: 'juan@rpmacc.com', isActive: true },
+    ]);
+
+    const result = await assignWorkOrderTechnicianTool.execute({
+      workOrderId: 'wo-123',
+      technicianName: 'Inexistente',
+    }, {} as any);
+
+    expect(result).toContain('No se encontró ningún técnico activo que coincida con "Inexistente"');
+    expect(mockUpdateWorkOrder).not.toHaveBeenCalled();
   });
 });
