@@ -161,15 +161,30 @@ export function FloatingWhatsApp() {
 
             {/* Footer Form */}
             <div className="p-6 bg-zinc-900/50 border-t border-white/5 space-y-4">
-              <div className="relative">
+              <div className="relative flex flex-col gap-1.5">
                 <textarea
                   ref={textareaRef}
                   value={customMessage}
                   onChange={(e) => setCustomMessage(e.target.value)}
+                  maxLength={500}
                   placeholder="Escribí tu consulta aquí..."
-                  className="w-full bg-zinc-950 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-brand/50 placeholder-zinc-500 h-20 resize-none custom-scrollbar transition-all"
+                  className="w-full bg-zinc-950 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white placeholder-zinc-500 h-20 resize-none custom-scrollbar transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900 focus:border-brand/50"
                   aria-label="Tu mensaje de consulta"
                 />
+                <div className="flex justify-between items-center px-1 text-[10px] font-bold uppercase tracking-widest">
+                  <span className={cn(
+                    "transition-colors",
+                    customMessage.length >= 450 ? "text-brand" : "text-zinc-500"
+                  )}>
+                    {customMessage.length >= 450 ? "Mensaje casi completo" : ""}
+                  </span>
+                  <span className={cn(
+                    "transition-colors",
+                    customMessage.length >= 450 ? "text-brand" : "text-zinc-500"
+                  )} aria-live="polite">
+                    {customMessage.length} / 500
+                  </span>
+                </div>
               </div>
 
               <button
