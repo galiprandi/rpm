@@ -81,7 +81,15 @@ const mockWorkOrders = [
     createdAt: new Date().toISOString(),
     isFullyPaid: false,
     totalPaid: 0,
-    workOrderItems: [],
+    workOrderItems: [
+      {
+        id: "item_3",
+        type: "PRODUCT",
+        name: "Aceite Sintético",
+        isManualName: true,
+        productId: "prod_2",
+      }
+    ],
   },
   {
     id: "wo_2",
@@ -98,6 +106,37 @@ const mockWorkOrders = [
     isFullyPaid: false,
     totalPaid: 0,
     workOrderItems: [],
+  },
+  {
+    id: "wo_3",
+    status: "DELIVERED",
+    customer: { name: "Carlos Sanchez", phone: "99887766" },
+    vehicle: {
+      identifier: "CCC333",
+      category: "TRUCK",
+      vehicleMake: { name: "Scania" },
+      vehicleModel: { name: "R450" },
+    },
+    total: 85000,
+    createdAt: new Date().toISOString(),
+    isFullyPaid: true,
+    totalPaid: 85000,
+    workOrderItems: [
+      {
+        id: "item_1",
+        type: "PRODUCT",
+        name: "Batería Moura",
+        isManualName: true,
+        productId: "prod_1",
+      },
+      {
+        id: "item_2",
+        type: "SERVICE",
+        name: "Alineación y Balanceo",
+        isManualName: false,
+        serviceId: "serv_1",
+      }
+    ],
   }
 ];
 
@@ -235,5 +274,80 @@ describe('WorkOrdersPage - Interactive List View Controls', () => {
 
     // Verify "Asignarme a mí" is displayed
     expect(screen.getByText("Asignarme a mí")).toBeInTheDocument();
+  });
+
+  it('filters and searches work orders by product or service name inside workOrderItems', async () => {
+    render(
+      <TooltipProvider>
+        <WorkOrdersPage />
+      </TooltipProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("AAA111")).toBeInTheDocument();
+    });
+
+    // Switch to List View
+    const listButton = screen.getByText("Lista");
+    fireEvent.click(listButton);
+
+    // Initial check: all three work orders should be rendered or loaded
+    await waitFor(() => {
+      expect(screen.getByText("AAA111")).toBeInTheDocument();
+      expect(screen.getByText("BBB222")).toBeInTheDocument();
+      expect(screen.getByText("CCC333")).toBeInTheDocument();
+    });
+
+    // Type a product name in search input
+    const searchInput = screen.getByPlaceholderText("Buscar por patente, cliente...");
+    fireEvent.change(searchInput, { target: { value: "Moura" } });
+
+    // "CCC333" has "Batería Moura", "AAA111" has "Aceite Sintético", "BBB222" has none.
+    // So only "CCC333" should remain in the document.
+    expect(screen.getByText("CCC333")).toBeInTheDocument();
+    expect(screen.queryByText("AAA111")).not.toBeInTheDocument();
+    expect(screen.queryByText("BBB222")).not.toBeInTheDocument();
+
+    // Clear search
+    fireEvent.change(searchInput, { target: { value: "" } });
+    expect(screen.getByText("AAA111")).toBeInTheDocument();
+    expect(screen.getByText("BBB222")).toBeInTheDocument();
+    expect(screen.getByText("CCC333")).toBeInTheDocument();
+
+    // Type a service name in search input
+    fireEvent.change(searchInput, { target: { value: "Alineación" } });
+    expect(screen.getByText("CCC333")).toBeInTheDocument();
+    expect(screen.queryByText("AAA111")).not.toBeInTheDocument();
+    expect(screen.queryByText("BBB222")).not.toBeInTheDocument();
+  });
+
+  it('disables controls for DELIVERED work orders (terminal state guard compliance)', async () => {
+    render(
+      <TooltipProvider>
+        <WorkOrdersPage />
+      </TooltipProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("AAA111")).toBeInTheDocument();
+    });
+
+    // Switch to List View
+    const listButton = screen.getByText("Lista");
+    fireEvent.click(listButton);
+
+    // Wait for CCC333 (DELIVERED status) to appear
+    await waitFor(() => {
+      expect(screen.getByText("CCC333")).toBeInTheDocument();
+    });
+
+    // Find the DELIVERED row technician container trigger (it says "Sin asignar" or similar)
+    // Find all triggers for technician cog icon
+    const rows = screen.getAllByText("Sin asignar");
+    // Row 1 (CONFIRMED) is 'Sin asignar', Row 3 (DELIVERED) is 'Sin asignar'
+    const deliveredRowTechBtn = rows[rows.length - 1].closest('div');
+
+    expect(deliveredRowTechBtn).toHaveClass('cursor-not-allowed');
+    expect(deliveredRowTechBtn).toHaveClass('opacity-60');
   });
 });

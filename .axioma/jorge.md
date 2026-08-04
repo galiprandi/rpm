@@ -2,6 +2,7 @@
 - [ ] Idea pendiente — breve descripción
 
 ## ✅ COMPLETADO
+- [x] 2026-08-03 — Búsqueda por Ítems y Bloqueo Terminal de Técnicos en Lista de OT (PR #jorge/work-orders/items-search-terminal-technician)
 - [x] 2026-08-02 — Estadísticas y Barras de Progreso de Checklists e Ítems Personalizados en Taller (PR #jorge/work-orders/checklist-progress-custom-items)
 - [x] 2026-07-31 — Controles Interactivos de Estado y Técnico en Vista de Lista de OT (PR #jorge/work-orders/list-view-interactive-controls)
 - [x] 2026-07-30 — Atajos de Fecha de Entrega y Resumen de Ítems en Kanban/Lista (PR #jorge/work-orders/scheduled-date-items-summary)
@@ -21,6 +22,10 @@
 - [x] 2025-07-08 — Servicio Centralizado de OT y Timeline Unificado (PR #jorge/work-orders/centralized-updates)
 
 ## 🧠 APRENDIZAJES
+
+## 2026-08-03 - Búsqueda por Ítems y Bloqueo Terminal de Técnicos en Lista de OT
+**Aprendizaje 1:** En talleres mecánicos con alta concurrencia, los gerentes operativos buscan OTs no solo por la patente del vehículo o el nombre del cliente, sino de manera recurrente por lo que se le hizo o se le va a hacer (por ejemplo, buscar todas las OTs activas que incluyen "Alineación", "Moura" o "Aceite"). Expandir el buscador de la página principal para buscar de manera reactiva dentro de los ítems de servicios y productos asociados a la OT (tanto nombres manuales como productos y servicios de catálogo) añade una capacidad de visibilidad espectacular sin sobrecargar el rendimiento ni la interfaz.
+**Aprendizaje 2:** Es vital mantener absoluta consistencia entre las vistas resumidas (Kanban, Listas) y las vistas de detalle sobre las reglas de estados terminales. Si el detalle de la OT bloquea la asignación de responsables cuando una OT está cancelada o entregada, la vista de lista y el KanbanCard también deben deshabilitar y opacar (con `cursor-not-allowed opacity-60`) estos controles inline de técnico, omitiendo renderizar el contenido del dropdown. Esto protege la integridad transaccional de los datos de trabajo completados ante descuidos humanos cotidianos.
 
 ## 2026-08-02 - Estadísticas, Barras de Progreso e Ítems Personalizados en Checklists
 **Aprendizaje 1:** Los checklists son herramientas de control clave en el taller, pero verlos como un estado binario ("COMPLETADO" vs "PENDIENTE") es insuficiente para la visibilidad diaria. Mostrar el progreso numérico de ítems (ej: `5/8`) y porcentajes detallados en Kanban y Listas, acompañados de código de color condicional (verde brillante al completar el 100%, azul al estar parcial), incrementa sustancialmente el entendimiento operacional inmediato.
@@ -44,7 +49,7 @@
 
 ## 2026-07-28 - Atajo de "Marcar todos como OK" en checklists de ingreso y egreso en creación y edición de OT
 **Aprendizaje:** En talleres donde los operarios realizan checklists rutinarios sobre múltiples vehículos cada día, hacer click individualmente en 6 u 8 casillas de verificación para marcar que todo está bien resulta en una gran fatiga de clics y frustración de UX. Proveer un botón/enlace secundario discreto de "Marcar todos como OK" (que muta a "Desmarcar todos" cuando todo está seleccionado) simplifica radicalmente esta tarea repetitiva. Esto permite rellenar rápidamente el checklist como "todo OK" y solo desmarcar de manera puntual los elementos que requieran atención especial, acelerando el flujo de trabajo de taller sin perder precisión técnica.
-**Acción:** Siempre incluir botones de acción masiva / atajos rápidos en formularios con múltiples checkboxes repetitivos para optimizar el flujo diario del usuario.
+**Acción:** Siempre include botones de acción masiva / atajos rápidos en formularios con múltiples checkboxes repetitivos para optimizar el flujo diario del usuario.
 
 ## 2026-07-27 - Selector de Estado Interactivo en Detalle de OT
 **Aprendizaje:** En pantallas de gestión detalladas de taller, la visibilidad e interactividad sobre el estado de la operación (OT) es crucial. Si el usuario está en móvil (donde no hay Kanban de arrastre) o desea corregir o cambiar de estado rápidamente, verse forzado a volver a la vista general o usar solo la acción lineal por defecto crea una fricción innecesaria. Integrar un dropdown select nativo con colores semánticos por estado en la cabecera misma soluciona de forma elegante la falta de visualización clara del estado actual y proporciona control total inmediato desde cualquier dispositivo.
@@ -59,7 +64,7 @@
 **Acción:** Siempre acoplar los estados terminales de negocio con el bloqueo estricto de todas las funciones mutables, informando claramente al usuario la razón de la inhabilitación.
 
 ## 2026-07-23 - Búsqueda por Cliente y Pre-carga de Cuenta en Alta de OT
-**Aprendizaje:** Al iniciar el alta de un servicio en el taller, es común que el recepcionista no conozca de inmediato la patente del vehículo, o que el cliente sea recurrente y tenga múltiples unidades. Permitir buscar directamente por cliente (nombre o teléfono) e integrar la pre-carga desde la URL (para redirecciones fluidas desde la ficha del cliente) reduce sustancialmente el tiempo de carga administrativa y de la fricción de duplicar búsquedas de cuentas existentes.
+**Aprendizaje:** Al iniciar el alta de un servicio en el taller, es común que el recepcionista no conozca de inmediato la patente del vehículo, o que el cliente sea recurrentes y tenga múltiples unidades. Permitir buscar directamente por cliente (nombre o teléfono) e integrar la pre-carga desde la URL (para redirecciones fluidas desde la ficha del cliente) reduce sustancialmente el tiempo de carga administrativa y de la fricción de duplicar búsquedas de cuentas existentes.
 **Acción:** Siempre proveer múltiples caminos de búsqueda en flujos de creación (por entidad técnica y por entidad de cliente) y pre-cargar el contexto de forma transparente si proviene de una vista relacional previa.
 
 ## 2026-07-22 - Indicadores Visuales de Metadatos y Exportación CSV en Taller
