@@ -30,6 +30,7 @@ const EXPECTED_TOOLS = [
   'updateWorkOrderStatus',
   'registerWorkOrderPayment',
   'attachPhotoToChecklistItem',
+  'assignWorkOrderTechnician',
   // Query
   'getWorkOrderDetail',
   'getCashStatus',

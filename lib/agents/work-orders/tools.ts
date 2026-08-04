@@ -1,7 +1,7 @@
 import { tool } from "ai";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { workOrder, customer, vehicle, workOrderItem, product, service, payment, user, paymentMethod, photo } from "@/db/schema";
+import { workOrder, customer, vehicle, workOrderItem, product, service, payment, user, userRole, paymentMethod, photo } from "@/db/schema";
 import { eq, and, ilike, desc, or, sql, type SQL } from "drizzle-orm";
 import { DEFAULT_ENTRY_CHECKLIST, DEFAULT_EXIT_CHECKLIST } from "@/lib/constants/work-order";
 import { randomUUID } from "crypto";
@@ -440,6 +440,97 @@ export const attachPhotoToChecklistItemTool = tool({
   },
 });
 
+export const assignWorkOrderTechnicianTool = tool({
+  description:
+    "Asigna o cambia el técnico/mecánico responsable de una orden de trabajo (OT). Requiere ID de la OT y el nombre o ID del técnico. Debe llamarse solo después de que el usuario confirma explícitamente.",
+  inputSchema: z.object({
+    workOrderId: z.string().describe("ID de la orden de trabajo"),
+    technicianName: z
+      .string()
+      .optional()
+      .describe("Nombre del técnico a asignar (búsqueda parcial, ej: 'Juan')"),
+    technicianId: z
+      .string()
+      .optional()
+      .describe("ID del técnico a asignar (si ya se conoce)"),
+    userId: z
+      .string()
+      .optional()
+      .describe("ID del usuario que realiza el cambio (del runtime USER_ID, si está disponible)"),
+    userEmail: z
+      .string()
+      .optional()
+      .describe("Email del usuario que realiza el cambio (si está disponible)"),
+  }),
+  execute: async ({ workOrderId, technicianName, technicianId, userId, userEmail }) => {
+    logger.debug(
+      { workOrderId, technicianName, technicianId },
+      "Assign work order technician",
+    );
+
+    try {
+      // 1. Resolve technician by name or ID
+      let selectedTech: { id: string; name: string } | null = null;
+
+      if (technicianId) {
+        const found = await db.query.user.findFirst({
+          where: eq(user.id, technicianId),
+        });
+        if (found) {
+          selectedTech = { id: found.id, name: found.name };
+        }
+      } else if (technicianName) {
+        const allUsers = await db.query.user.findMany();
+        const activeUserRoles = await db.query.userRole.findMany({
+          where: eq(userRole.isActive, true),
+        });
+        const activeEmails = new Set(activeUserRoles.map((r) => r.email.toLowerCase()));
+
+        const matches = allUsers.filter((u) => {
+          const isEmailActive = activeEmails.has(u.email.toLowerCase());
+          const nameMatches = u.name.toLowerCase().includes(technicianName.toLowerCase());
+          return isEmailActive && nameMatches;
+        });
+
+        if (matches.length === 1) {
+          selectedTech = { id: matches[0].id, name: matches[0].name };
+        } else if (matches.length > 1) {
+          const names = matches.map((m) => `"${m.name}"`).join(", ");
+          return `🔴 Se encontraron múltiples coincidencias para "${technicianName}": ${names}. Por favor, sé más específico con el nombre del técnico.`;
+        } else {
+          const fallbackMatches = allUsers.filter((u) => u.name.toLowerCase().includes(technicianName.toLowerCase()));
+          if (fallbackMatches.length === 1) {
+            selectedTech = { id: fallbackMatches[0].id, name: fallbackMatches[0].name };
+          } else if (fallbackMatches.length > 1) {
+            const names = fallbackMatches.map((m) => `"${m.name}"`).join(", ");
+            return `🔴 Se encontraron múltiples coincidencias para "${technicianName}": ${names}. Por favor, sé más específico con el nombre del técnico.`;
+          } else {
+            return `🔴 No se encontró ningún técnico activo que coincida con "${technicianName}".`;
+          }
+        }
+      }
+
+      if (!selectedTech) {
+        return `🔴 Debes proporcionar un nombre o un ID de técnico válido.`;
+      }
+
+      // 2. Update Work Order
+      await updateWorkOrder(
+        workOrderId,
+        { technicianId: selectedTech.id },
+        {
+          userId: userId || "bot",
+          userEmail: userEmail || "nitro@rpm",
+        },
+      );
+
+      return `✅ OT #${workOrderId.slice(0, 8)} asignada exitosamente al técnico: ${selectedTech.name}`;
+    } catch (error) {
+      return `🔴 Error al asignar el técnico a la OT: ${error instanceof Error ? error.message : "Error desconocido"}`;
+    }
+  },
+});
+
 export const workOrderTools = {
   searchWorkOrders: searchWorkOrdersTool,
   createWorkOrder: createWorkOrderTool,
@@ -447,4 +538,5 @@ export const workOrderTools = {
   getWorkOrderDetail: getWorkOrderDetailTool,
   registerWorkOrderPayment: registerWorkOrderPaymentTool,
   attachPhotoToChecklistItem: attachPhotoToChecklistItemTool,
+  assignWorkOrderTechnician: assignWorkOrderTechnicianTool,
 };
