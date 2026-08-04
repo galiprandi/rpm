@@ -248,7 +248,23 @@ export default function CustomerDetailPage() {
         },
       },
       {
-        accessorKey: "make.name",
+        id: "make_model_equipment",
+        accessorFn: (row) => {
+          const isEquipment = [
+            "AUDIO_EQUIPMENT",
+            "ELECTRIC_SCOOTER",
+            "OTHER",
+            "TRAILER",
+          ].includes(row.category);
+
+          if (isEquipment) {
+            return row.equipmentName || "Equipo sin nombre";
+          }
+
+          const makeName = row.vehicleMake?.name || row.make?.name || "";
+          const modelName = row.vehicleModel?.name || row.model?.name || "";
+          return `${makeName} ${modelName}`.trim() || "Vehículo sin marca/modelo";
+        },
         header: "Marca/Modelo / Equipo",
         cell: ({ row }) => {
           const isEquipment = [
@@ -323,9 +339,10 @@ export default function CustomerDetailPage() {
   const workOrderColumns: ColumnDef<WorkOrder>[] = useMemo(
     () => [
       {
-        accessorKey: "vehicle.identifier",
+        id: "vehicle_identifier",
+        accessorFn: (row) => row.vehicle?.identifier || "",
         header: "Vehículo",
-        cell: ({ row }) => row.original.vehicle.identifier,
+        cell: ({ row }) => row.original.vehicle?.identifier || "",
       },
       {
         accessorKey: "status",
@@ -358,7 +375,7 @@ export default function CustomerDetailPage() {
     const sales: Transaction[] = customer.directSales.map((sale) => ({
       id: sale.id,
       type: "DIRECT_SALE" as TransactionType,
-      total: sale.total,
+      total: Number(sale.total),
       createdAt: sale.createdAt,
       items: sale.items,
     }));
@@ -366,7 +383,7 @@ export default function CustomerDetailPage() {
     const creditNotes: Transaction[] = customer.creditNotes.map((cn) => ({
       id: cn.id,
       type: "CREDIT_NOTE" as TransactionType,
-      total: cn.total,
+      total: Number(cn.total),
       createdAt: cn.createdAt,
       items: cn.items,
       status: cn.status,
@@ -375,7 +392,7 @@ export default function CustomerDetailPage() {
     const payments: Transaction[] = customer.payments.map((p) => ({
       id: p.id,
       type: "PAYMENT" as TransactionType,
-      total: p.amount,
+      total: Number(p.amount),
       createdAt: p.createdAt,
       method: p.method,
       notes: p.notes,
@@ -484,7 +501,13 @@ export default function CustomerDetailPage() {
         },
       },
       {
-        accessorKey: "items",
+        id: "items",
+        accessorFn: (row) => {
+          if (row.type === "PAYMENT") {
+            return `Pago Recibido (${row.method || ""}) ${row.notes || ""}`;
+          }
+          return row.items?.map((i: { name: string }) => i.name).join(", ") || "";
+        },
         header: "Concepto / Items",
         cell: ({ row }) => {
           if (row.original.type === "PAYMENT") {
@@ -509,7 +532,8 @@ export default function CustomerDetailPage() {
         },
       },
       {
-        accessorKey: "total",
+        id: "total",
+        accessorFn: (row) => Number(row.total),
         header: "Total",
         cell: ({ row }) => {
           const total = Number(row.original.total);
