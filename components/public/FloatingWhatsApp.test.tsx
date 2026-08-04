@@ -143,4 +143,27 @@ describe('FloatingWhatsApp', () => {
     // Dialog should close
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
+
+  it('enforces character limit on the custom message textarea and updates counter in real-time', () => {
+    renderComponent();
+
+    // Open widget
+    fireEvent.click(screen.getByRole('button', { name: /abrir chat de whatsapp/i }));
+
+    const textarea = screen.getByRole('textbox', { name: /tu mensaje de consulta/i }) as HTMLTextAreaElement;
+    expect(textarea).toHaveAttribute('maxLength', '500');
+
+    // Initially 0 / 500
+    expect(screen.getByText('0 / 500')).toBeInTheDocument();
+
+    // Enter text
+    fireEvent.change(textarea, { target: { value: 'Hola Sofi' } });
+    expect(screen.getByText('9 / 500')).toBeInTheDocument();
+
+    // Enter a very long text to trigger "almost full" state
+    const nearLimitText = 'a'.repeat(460);
+    fireEvent.change(textarea, { target: { value: nearLimitText } });
+    expect(screen.getByText('460 / 500')).toBeInTheDocument();
+    expect(screen.getByText('Mensaje casi completo')).toBeInTheDocument();
+  });
 });
