@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import { Check, MessageCircle } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -18,6 +19,17 @@ interface ProjectQuickViewProps {
 }
 
 export function ProjectQuickView({ project, onClose }: ProjectQuickViewProps) {
+  const ctaRef = useRef<HTMLAnchorElement>(null);
+
+  useEffect(() => {
+    if (project) {
+      const timer = setTimeout(() => {
+        ctaRef.current?.focus();
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [project]);
+
   return (
     <Dialog open={!!project} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-3xl bg-zinc-950 border-white/10 p-0 overflow-hidden">
@@ -75,13 +87,19 @@ export function ProjectQuickView({ project, onClose }: ProjectQuickViewProps) {
 
               <div className="pt-4">
                 <Button
-                  autoFocus
+                  asChild
                   className="w-full bg-white text-black hover:bg-brand hover:text-white font-bold h-14 rounded-2xl transition-all duration-300 gap-3 group border-none outline-none focus-visible:ring-2 focus-visible:ring-brand"
-                  onClick={() => window.open(PUBLIC_SITE_CONFIG.links.whatsapp(`Hola RPM! Me interesa conocer más sobre su especialización en ${project.title} (${project.year}). ¿Qué servicios similares ofrecen actualmente?`), '_blank')}
-                  aria-label={`Consultar por WhatsApp sobre ${project.title}`}
                 >
-                  <MessageCircle className="h-5 w-5 fill-current transition-transform group-hover:scale-110 pointer-events-none" aria-hidden="true" />
-                  CONSULTAR DETALLES
+                  <a
+                    ref={ctaRef}
+                    href={PUBLIC_SITE_CONFIG.links.whatsapp(`Hola RPM! Me interesa conocer más sobre su especialización en ${project.title} (${project.year}). ¿Qué servicios similares ofrecen actualmente?`)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`Consultar por WhatsApp sobre ${project.title} (se abre en una nueva pestaña)`}
+                  >
+                    <MessageCircle className="h-5 w-5 fill-current transition-transform group-hover:scale-110 pointer-events-none" aria-hidden="true" />
+                    CONSULTAR DETALLES
+                  </a>
                 </Button>
               </div>
             </div>

@@ -81,7 +81,7 @@ describe('Quick View Dialogs Focus Accessibility', () => {
       </TooltipProvider>
     );
 
-    const primaryBtn = screen.getByRole('button', { name: /consultar por whatsapp sobre/i });
+    const primaryBtn = screen.getByRole('link', { name: /consultar por whatsapp sobre/i });
     expect(primaryBtn).toBeInTheDocument();
 
     await waitFor(() => {
@@ -96,7 +96,7 @@ describe('Quick View Dialogs Focus Accessibility', () => {
       </TooltipProvider>
     );
 
-    const primaryBtn = screen.getByRole('button', { name: /consultar por whatsapp sobre/i });
+    const primaryBtn = screen.getByRole('link', { name: /consultar por whatsapp sobre/i });
     expect(primaryBtn).toBeInTheDocument();
 
     await waitFor(() => {
@@ -111,7 +111,7 @@ describe('Quick View Dialogs Focus Accessibility', () => {
       </TooltipProvider>
     );
 
-    const primaryBtn = screen.getByRole('button', { name: /consultar por whatsapp sobre/i });
+    const primaryBtn = screen.getByRole('link', { name: /consultar por whatsapp sobre/i });
     expect(primaryBtn).toBeInTheDocument();
 
     await waitFor(() => {

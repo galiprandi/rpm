@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import { Check, MessageCircle, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PUBLIC_SITE_CONFIG } from '@/lib/config/public-site';
@@ -18,6 +19,17 @@ interface ServiceQuickViewProps {
 }
 
 export function ServiceQuickView({ service, onClose }: ServiceQuickViewProps) {
+  const ctaRef = useRef<HTMLAnchorElement>(null);
+
+  useEffect(() => {
+    if (service) {
+      const timer = setTimeout(() => {
+        ctaRef.current?.focus();
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [service]);
+
   return (
     <Dialog open={!!service} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-3xl bg-zinc-950 border-white/10 p-0 overflow-hidden">
@@ -77,13 +89,19 @@ export function ServiceQuickView({ service, onClose }: ServiceQuickViewProps) {
 
               <div className="pt-4 flex flex-col gap-4">
                 <Button
-                  autoFocus
+                  asChild
                   className="w-full bg-brand text-white hover:bg-brand/90 font-bold h-14 rounded-2xl transition-all duration-300 gap-3 group"
-                  onClick={() => window.open(PUBLIC_SITE_CONFIG.links.whatsapp(`Hola RPM! Me interesa el servicio: ${service.title}. ¿Me podrían dar más información?`), '_blank')}
-                  aria-label={`Consultar por WhatsApp sobre ${service.title}`}
                 >
-                  <MessageCircle className="h-5 w-5 fill-current transition-transform group-hover:scale-110 pointer-events-none" aria-hidden="true" />
-                  CONSULTAR POR WHATSAPP
+                  <a
+                    ref={ctaRef}
+                    href={PUBLIC_SITE_CONFIG.links.whatsapp(`Hola RPM! Me interesa el servicio: ${service.title}. ¿Me podrían dar más información?`)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`Consultar por WhatsApp sobre ${service.title} (se abre en una nueva pestaña)`}
+                  >
+                    <MessageCircle className="h-5 w-5 fill-current transition-transform group-hover:scale-110 pointer-events-none" aria-hidden="true" />
+                    CONSULTAR POR WHATSAPP
+                  </a>
                 </Button>
 
                 <Button
