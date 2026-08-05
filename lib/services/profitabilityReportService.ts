@@ -518,7 +518,7 @@ export async function getProfitabilityReport(params: ProfitabilityReportParams):
     grossMargin: {
       current: current.grossMargin,
       previous: previous.grossMargin,
-      change: calculateChange(current.grossMargin, previous.grossMargin),
+      change: current.grossMargin - previous.grossMargin,
     },
     evolution,
     categoryProfitability: Object.values(categoryMap).sort((a, b) => b.profit - a.profit),

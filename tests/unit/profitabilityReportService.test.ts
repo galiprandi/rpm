@@ -150,8 +150,8 @@ describe('profitabilityReportService', () => {
     expect(report.totalCost.change).toBe(80);
     // Gross Profit Change: ((6000 - 5000) / 5000) * 100 = 20%
     expect(report.grossProfit.change).toBe(20);
-    // Gross Margin Change: ((40 - 50) / 50) * 100 = -20%
-    expect(report.grossMargin.change).toBe(-20);
+    // Gross Margin Change: 40 - 50 = -10 (p.p. absolute difference)
+    expect(report.grossMargin.change).toBe(-10);
 
     // 4. Category Profitability Breakdown
     // Category 1: 'cat-1' (Iluminación) -> Revenue: 11000, Profit: 11000 - 6000 = 5000, Margin: (5000 / 11000) * 100 = 45.45%
