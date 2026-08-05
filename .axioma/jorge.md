@@ -2,6 +2,7 @@
 - [ ] Idea pendiente — breve descripción
 
 ## ✅ COMPLETADO
+- [x] 2026-08-05 — Filtro Rápido "Mis OTs" y unificación de sesión de cliente con useUser (PR #jorge/work-orders/my-orders-quick-filter)
 - [x] 2026-08-03 — Búsqueda por Ítems y Bloqueo Terminal de Técnicos en Lista de OT (PR #jorge/work-orders/items-search-terminal-technician)
 - [x] 2026-08-02 — Estadísticas y Barras de Progreso de Checklists e Ítems Personalizados en Taller (PR #jorge/work-orders/checklist-progress-custom-items)
 - [x] 2026-07-31 — Controles Interactivos de Estado y Técnico en Vista de Lista de OT (PR #jorge/work-orders/list-view-interactive-controls)
@@ -22,6 +23,10 @@
 - [x] 2025-07-08 — Servicio Centralizado de OT y Timeline Unificado (PR #jorge/work-orders/centralized-updates)
 
 ## 🧠 APRENDIZAJES
+
+## 2026-08-05 - Filtro Rápido "Mis OTs" y unificación de sesión de cliente con useUser
+**Aprendizaje 1:** En talleres de servicios con alta carga diaria, los mecánicos y técnicos necesitan acceder a sus tareas asignadas con un solo toque (1-click), sin tener que navegar por popovers de filtrado complejos. Ofrecer un botón prominente "Mis OTs" directamente en la barra de herramientas principal, con estilos condicionales llamativos y un contador de tareas activas integrado, mejora enormemente la velocidad y la adopción de la herramienta de taller.
+**Aprendizaje 2:** Al usar Next.js con herramientas de desarrollo que realizan bypass de autenticación del lado del servidor (como `RPM_DEV_BYPASS_AUTH=true`), las cookies del cliente para Better Auth no se generan localmente. Si un componente de cliente utiliza directamente `authClient.useSession()`, el resultado será `null` en local, rompiendo características como "Asignarme a mí" o "Mis OTs". Utilizar la abstracción unificada `useUser()` de `<UserProvider>` (que hereda el estado de sesión robusto resuelto por el servidor) garantiza una paridad absoluta entre desarrollo local y producción, evitando hacks de cookies y simplificando el testeo visual.
 
 ## 2026-08-03 - Búsqueda por Ítems y Bloqueo Terminal de Técnicos en Lista de OT
 **Aprendizaje 1:** En talleres mecánicos con alta concurrencia, los gerentes operativos buscan OTs no solo por la patente del vehículo o el nombre del cliente, sino de manera recurrente por lo que se le hizo o se le va a hacer (por ejemplo, buscar todas las OTs activas que incluyen "Alineación", "Moura" o "Aceite"). Expandir el buscador de la página principal para buscar de manera reactiva dentro de los ítems de servicios y productos asociados a la OT (tanto nombres manuales como productos y servicios de catálogo) añade una capacidad de visibilidad espectacular sin sobrecargar el rendimiento ni la interfaz.
