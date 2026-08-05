@@ -1,8 +1,16 @@
 ## 📋 BACKLOG
+- [ ] Incorporación de un filtro por rango de fechas de ingreso en el listado de vehículos.
+- [ ] Exportación resumida de transacciones filtradas por tipo en formato PDF en la ficha del cliente.
 
 ## ✅ DONE
+- [x] 2026-08-04 — Cobros Rápidos e Inline en Fichas de Clientes y Vehículos desde Listados de Directorio
+  - Implementación de botones de acción rápida con el icono `ArrowDownLeft` ("Registrar Pago") directamente en cada fila de las grillas de Clientes (`CustomersClient.tsx`) y Vehículos (`VehiclesClient.tsx`).
+  - El botón es dinámico y condicionado a la existencia de deudas (`customer.balance > 0` para clientes, y `getVehicleDebt(vehicle) > 0` para vehículos).
+  - Integración de modales autocontenidos y pulidos de cobro que permiten pre-cargar el monto de deuda, usar atajos de "Saldar total", elegir el medio de cobro (Efectivo, Transferencia, Tarjeta, Cheque), y agregar notas de comprobante.
+  - Protección de doble-click (`isSubmittingPayment`) en la confirmación de pago y actualización en tiempo real de la grilla principal tras re-fetching asíncrono asíncrono.
+  - Desarrollo de suites de pruebas unitarias robustas en `app/adm/customers/CustomersClient.test.tsx` y `app/adm/vehicles/VehiclesClient.test.tsx` para cobertura total del flujo con interceptación de fetch dinámico por URL.
 - [x] 2026-08-04 — Ordenamiento Inteligente y Robusto en Grillas de Clientes, Vehículos y Transacciones
-  - Implementación de `accessorFn` explícitos y estables para columnas anidadas y dinámicas en el dashboard de vehículos (`VehiclesClient.tsx`) y detalle de cliente (`app/adm/customers/[id]/page.tsx`).
+  - Implementación de `accessorFn` explísitos y estables para columnas anidadas y dinámicas en el dashboard de vehículos (`VehiclesClient.tsx`) y detalle de cliente (`app/adm/customers/[id]/page.tsx`).
   - Habilitado el ordenamiento dinámico por "Deuda", "Marca/Modelo" y "Propietario" en el listado de vehículos.
   - Normalizado el ordenamiento por "Marca/Modelo/Equipo", "Vehículo" y "Concepto/Items" en las tablas de vehículos, órdenes de trabajo e historial de transacciones de la ficha de cliente.
   - Conversión numérica de montos en `directSales`, `creditNotes` y `payments` para garantizar que la columna "Total" se ordene con precisión matemática matemática y no alfabética.
@@ -98,6 +106,10 @@
   - Mejora de navegación con botón de "Volver" en el detalle del cliente.
 
 ## 🧠 LEARNINGS
+## 2026-08-04 - Cobros Directos e Inline desde Grillas de Listados de Directorio
+**Learning:** En sistemas de gestión del taller donde los operadores administran constantemente un gran volumen de clientes y vehículos, forzar la navegación completa al detalle de la ficha (con la consecuente espera de carga de red y renderizado de la página) únicamente para asentar un pago rápido de cuenta corriente genera una fricción innecesaria. Proporcionar un botón semántico de cobro (`ArrowDownLeft`) directamente en las filas de Clientes y Vehículos con deudas pendientes, acoplado a un diálogo modal autocontenido de pagos, ahorra valiosos clics y tiempo en el punto de atención. Adicionalmente, estructurar las llamadas de fetch asíncronas con interceptaciones de tests unitarios específicos previene regresiones operativas en producción.
+**Action:** Integrar siempre atajos de cobros y registro de pagos rápidos allí donde se presenten listados con deudas de clientes o activos del taller.
+
 ## 2026-08-04 - Ordenamiento de Campos Calculados y Complejos en TanStack Table
 **Learning:** En tablas de datos avanzadas como las de vehículos y transacciones, es común tener columnas basadas en datos compuestos (como la combinación de marca y modelo o el nombre del equipamiento técnico) o calculados al vuelo (como la deuda acumulada de un vehículo). Si estas columnas se renderizan sin un `accessorFn` explícito, TanStack Table pierde la capacidad de ordenarlas y filtrarlas de forma predecible o directamente omite la funcionalidad. Al definir funciones accesoras explícitas (`accessorFn`) para transformar y normalizar estos campos complejos (incluyendo la conversión explícita de montos decimales a tipo numérico de JavaScript), garantizamos un ordenamiento preciso y un filtrado fluido que mejora drásticamente la usabilidad y evita excepciones por valores nulos.
 **Action:** Usar siempre `accessorFn` estables y tipados en TanStack Table para columnas compuestas, anidadas o de montos financieros calculados para asegurar la capacidad de ordenamiento completo de la grilla.
@@ -107,7 +119,7 @@
 **Action:** Mantener siempre la misma fidelidad de validación y enriquecimiento de campos de datos estructurados (como teléfonos, CUIT o patentes) en formularios de creación rápida/inline que en las vistas completas dedicadas.
 
 ## 2026-07-31 - Filtros Dinámicos Integrados con Métricas de Resumen y Exportación
-**Learning:** Al añadir herramientas de segmentación avanzada (como la antigüedad de la deuda y filtros de búsqueda) en reportes financieros de gran volumen, es fundamental que la UI reaccione como un todo integrado. El usuario final espera que, al realizar un filtro de cohorte (ej. ver solo deudores con más de 30 días), no solo se filtre la tabla, sino que también se recalculen de inmediato las tarjetas KPI de resumen (Deuda Total, Cuenta de Clientes, Promedio de Deuda) tanto en la pantalla como en los formatos de impresión física o exportación CSV. Esta sincronización elimina por completo discrepancias de datos y brinda una experiencia de altísimo nivel técnico.
+**Learning:** Al añadir herramientas de segmentación avanzada (como la antigüedad de la deuda y filtros de búsqueda) en reportes financieros de gran volumen, es fundamental que la UI reaccione como un todo integrado. El usuario final espera que, al realizar un filtro de cohorte (ej. ver solo deudores con más de 30 días), no solo se filtre la tabla, sino que también se recalculen de inmediato las tarjetas KPI de resumen (Deuda Total, Cuenta de Clientes, Promedio de Deuda) tanto en pantalla como en el layout de impresión física o exportación CSV. Esta sincronización elimina por completo discrepancias de datos y brinda una experiencia de altísimo nivel técnico.
 **Action:** Al filtrar listados que cuenten con paneles de estadísticas o layouts de impresión integrados, utilizar siempre computaciones de useMemo para recalcular los resúmenes de manera reactiva e inyectar el dataset filtrado unificado a todas las vistas derivadas.
 
 ## 2026-07-30 - Historial de Transacciones como Estado de Cuenta Corriente Real
@@ -135,7 +147,7 @@
 **Action:** Mantener la simetría de exportaciones PDF imprimibles y exportaciones de listados en formato CSV con BOM compatible con Excel en todo el sistema.
 
 ## 2026-07-19 - Resúmenes de Cuenta Autocontenidos y Listos para Imprimir
-**Learning:** Ofrecer capacidades de exportación rápida a PDF sin añadir dependencias de backend o pesadas librerías de renderizado se puede lograr elegantemente combinando `window.print()` nativo con un bloque `<style media="print">` localizado. De esta manera, el navegador hace todo el trabajo pesado garantizando el renderizado exacto de fuentes y colores. Además, diseñar el documento impreso como un recibo formal o resumen de deudas de un vehículo estructurado (con firmas y disclaimers legales) añade un inmenso valor profesional para los operadores del taller.
+**Learning:** Ofrecer capacidades de exportación rápida a PDF sin añadir dependencias de backend o pesadas librerías de renderizado se puede lograr elegantemente combinando `window.print()` nativo con un bloque `<style media="print">` localizado. De esta manera, el navegador hace todo el trabajo pesado garantizando el renderizado exacto de fuentes y colores. Además, diseñar el documento impreso como un recibo formal o resumen de deudas de un vehículo de la forma de deudas del vehículo estructurado (con firmas y disclaimers legales) añade un inmenso valor profesional para los operadores del taller.
 **Action:** Usar estilos autocontenidos `@media print` y contenedores semánticos listos para impresión en módulos de informes u hojas de detalles.
 
 ## 2026-07-18 - Consolidación de Historial Visual de Entidades Relacionadas

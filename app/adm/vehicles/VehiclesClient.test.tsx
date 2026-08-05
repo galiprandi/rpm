@@ -4,10 +4,42 @@ import React from "react";
 import VehiclesClient from "./VehiclesClient";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
+const mockAlert = vi.fn();
 // Mock next/navigation
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), back: vi.fn() }),
 }));
+
+// Mock useUI
+vi.mock("@/components/ui/UIProvider", () => ({
+  useUI: () => ({
+    alert: mockAlert,
+    confirm: vi.fn(),
+  }),
+}));
+
+// Mock Select component because standard select interaction under JSDOM
+// might get complicated with Radix select.
+vi.mock("@/components/ui/select", () => {
+  return {
+    Select: ({ value, onValueChange }: any) => (
+      <select
+        value={value}
+        onChange={(e) => onValueChange(e.target.value)}
+        data-testid="mock-select"
+      >
+        <option value="CASH">Efectivo</option>
+        <option value="TRANSFER">Transferencia</option>
+        <option value="CARD">Tarjeta</option>
+        <option value="CHECK">Cheque</option>
+      </select>
+    ),
+    SelectTrigger: ({ children }: any) => <div>{children}</div>,
+    SelectValue: ({ placeholder }: any) => <span>{placeholder}</span>,
+    SelectContent: ({ children }: any) => <div>{children}</div>,
+    SelectItem: ({ children, value }: any) => <option value={value}>{children}</option>,
+  };
+});
 
 // Mock Header and CrudStats
 vi.mock("@/components/adm", () => ({
@@ -31,7 +63,7 @@ vi.mock("@/components/adm", () => ({
       ))}
     </div>
   ),
-  CrudAdmin: ({ items, onExport, onCreate }: any) => (
+  CrudAdmin: ({ items, onExport, onCreate, rowActions }: any) => (
     <div data-testid="crud-admin">
       <button onClick={onExport} data-testid="export-btn">Exportar CSV</button>
       {onCreate && <button onClick={onCreate} data-testid="create-btn">Nuevo Vehículo</button>}
@@ -49,6 +81,7 @@ vi.mock("@/components/adm", () => ({
               <span className="id">{item.identifier}</span>
               <span className="owner">{item.customer?.name}</span>
               <span className="debt">{debt}</span>
+              {rowActions && <div data-testid={`actions-${item.id}`}>{rowActions(item)}</div>}
             </li>
           );
         })}
@@ -237,5 +270,83 @@ describe("VehiclesClient", () => {
 
     // Dialog should be closed
     expect(screen.queryByTestId("vehicle-dialog")).not.toBeInTheDocument();
+  });
+
+  it("opens the payment registration dialog, handles input, and registers a payment successfully", async () => {
+    // Mock fetch globally based on URL
+    const mockFetch = vi.fn().mockImplementation((url) => {
+      if (url.includes("/api/vehicles")) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ vehicles: mockVehicles, total: 2 }),
+        });
+      }
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ success: true }),
+      });
+    });
+    global.fetch = mockFetch;
+
+    render(
+      <TooltipProvider>
+        <VehiclesClient initialVehicles={mockVehicles} totalVehicles={2} />
+      </TooltipProvider>
+    );
+
+    // v-1 has a ready work order (total 15000), so debt > 0.
+    // It should have the ArrowDownLeft button inside its row actions.
+    const payBtn = screen.getByRole("button", {
+      name: /Registrar pago para vehículo AF719HZ/i,
+    });
+    expect(payBtn).toBeInTheDocument();
+
+    // Click pay button to open dialog
+    fireEvent.click(payBtn);
+
+    // Dialog title should be present
+    expect(screen.getByText("Registrar Pago")).toBeInTheDocument();
+    expect(screen.getByText(/Propietario: Juan Pérez/i)).toBeInTheDocument();
+    expect(screen.getByText(/Deuda de este vehículo:.*15/i)).toBeInTheDocument();
+
+    // Input amount should contain the default debt amount
+    const amountInput = screen.getByLabelText(/Monto a Abonar/i) as HTMLInputElement;
+    expect(amountInput.value).toBe("15000");
+
+    // Change amount to 10000
+    fireEvent.change(amountInput, { target: { value: "10000" } });
+    expect(amountInput.value).toBe("10000");
+
+    // Change payment method to TRANSFER
+    const select = screen.getByTestId("mock-select") as HTMLSelectElement;
+    fireEvent.change(select, { target: { value: "TRANSFER" } });
+    expect(select.value).toBe("TRANSFER");
+
+    // Click Confirmar Pago
+    const confirmBtn = screen.getByRole("button", { name: /Confirmar Pago/i });
+    fireEvent.click(confirmBtn);
+
+    // Expect fetch to be called with correct payload
+    await waitFor(() => {
+      expect(mockFetch).toHaveBeenCalledWith(
+        "/api/customers/cust-1/payments",
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({
+            amount: 10000,
+            method: "TRANSFER",
+            notes: "Pago de saldo deudor del vehículo AF719HZ",
+          }),
+        })
+      );
+    });
+
+    // Expect alert to be called with success variant
+    expect(mockAlert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "Pago registrado",
+        variant: "success",
+      })
+    );
   });
 });

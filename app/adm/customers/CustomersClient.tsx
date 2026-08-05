@@ -13,8 +13,25 @@ import {
   Plus,
   MessageSquare,
   Download,
+  ArrowDownLeft,
 } from "lucide-react";
 import Link from "next/link";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { type ColumnDef, type FilterFn } from "@tanstack/react-table";
 import { formatARS } from "@/lib/utils/format";
 import { CustomerDialog } from "@/components/customers/CustomerDialog";
@@ -75,6 +92,13 @@ export default function CustomersClient({
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [showOnlyWithBalance, setShowOnlyWithBalance] = useState(false);
+
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [paymentAmount, setPaymentAmount] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("CASH");
+  const [paymentNotes, setPaymentNotes] = useState("");
+  const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
 
   // Filter customers based on balance
   const filteredCustomers = useMemo(() => {
@@ -466,20 +490,44 @@ export default function CustomersClient({
         searchPlaceholder="Buscar por nombre, CUIT, vehículo o patente..."
         onExport={exportToCSV}
         rowActions={(customer) => (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Link href={`/adm/customers/${customer.id}`}>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  aria-label="Ver detalle del cliente"
-                >
-                  <Eye className="h-4 w-4" aria-hidden="true" />
-                </Button>
-              </Link>
-            </TooltipTrigger>
-            <TooltipContent>Ver detalle del cliente</TooltipContent>
-          </Tooltip>
+          <div className="flex items-center gap-1">
+            {customer.balance > 0 && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50"
+                    onClick={() => {
+                      setSelectedCustomer(customer);
+                      setPaymentAmount(customer.balance.toString());
+                      setPaymentNotes("Pago registrado desde Listado de Clientes");
+                      setPaymentMethod("CASH");
+                      setIsPaymentModalOpen(true);
+                    }}
+                    aria-label={`Registrar pago para ${customer.name}`}
+                  >
+                    <ArrowDownLeft className="h-4 w-4 pointer-events-none" aria-hidden="true" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Registrar Pago</TooltipContent>
+              </Tooltip>
+            )}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link href={`/adm/customers/${customer.id}`}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    aria-label="Ver detalle del cliente"
+                  >
+                    <Eye className="h-4 w-4" aria-hidden="true" />
+                  </Button>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent>Ver detalle del cliente</TooltipContent>
+            </Tooltip>
+          </div>
         )}
       />
 
@@ -492,6 +540,147 @@ export default function CustomersClient({
         submitLabel="Crear Cliente"
         isSubmitting={isCreating}
       />
+
+      {/* Modal de Pago */}
+      <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Registrar Pago</DialogTitle>
+            <DialogDescription>
+              Cliente: {selectedCustomer?.name}
+              <br />
+              Saldo actual: {selectedCustomer && formatARS(selectedCustomer.balance, 2)}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <Label htmlFor="payment-amount">Monto a Abonar *</Label>
+                {selectedCustomer && selectedCustomer.balance > 0 && (
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="h-auto p-0 text-xs"
+                    onClick={() => setPaymentAmount(selectedCustomer.balance.toString())}
+                  >
+                    Saldar total
+                  </Button>
+                )}
+              </div>
+              <Input
+                id="payment-amount"
+                type="number"
+                step="0.01"
+                min="0.01"
+                placeholder="Ej: 5000"
+                value={paymentAmount}
+                onChange={(e) => setPaymentAmount(e.target.value)}
+                className="font-mono"
+              />
+            </div>
+            <div>
+              <Label htmlFor="payment-method">Método de Pago *</Label>
+              <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                <SelectTrigger id="payment-method">
+                  <SelectValue placeholder="Seleccione método" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="CASH">Efectivo</SelectItem>
+                  <SelectItem value="TRANSFER">Transferencia</SelectItem>
+                  <SelectItem value="CARD">Tarjeta</SelectItem>
+                  <SelectItem value="CHECK">Cheque</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="payment-notes">Notas (opcional)</Label>
+              <Input
+                id="payment-notes"
+                placeholder="Referencia, comprobante, etc."
+                value={paymentNotes}
+                onChange={(e) => setPaymentNotes(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsPaymentModalOpen(false);
+                setPaymentAmount("");
+                setPaymentNotes("");
+                setSelectedCustomer(null);
+              }}
+              disabled={isSubmittingPayment}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={async () => {
+                const amount = parseFloat(paymentAmount);
+                if (!amount || amount <= 0) {
+                  await alert({
+                    title: "Error",
+                    description: "Ingrese un monto válido",
+                    variant: "error",
+                  });
+                  return;
+                }
+
+                if (!selectedCustomer) return;
+
+                setIsSubmittingPayment(true);
+                try {
+                  const res = await fetch(
+                    `/api/customers/${selectedCustomer.id}/payments`,
+                    {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        amount,
+                        method: paymentMethod,
+                        notes: paymentNotes,
+                      }),
+                    },
+                  );
+
+                  if (res.ok) {
+                    setIsPaymentModalOpen(false);
+                    setPaymentAmount("");
+                    setPaymentNotes("");
+                    setSelectedCustomer(null);
+                    fetchCustomers(); // Refresh customers list
+                    await alert({
+                      title: "Pago registrado",
+                      description: "El pago se ha registrado correctamente",
+                      variant: "success",
+                    });
+                  } else {
+                    const error = await res.json();
+                    await alert({
+                      title: "Error",
+                      description: error.error || "Error al registrar pago",
+                      variant: "error",
+                    });
+                  }
+                } catch (error) {
+                  console.error("Error:", error);
+                  await alert({
+                    title: "Error",
+                    description: "Error al registrar pago",
+                    variant: "error",
+                  });
+                } finally {
+                  setIsSubmittingPayment(false);
+                }
+              }}
+              disabled={isSubmittingPayment || !paymentAmount}
+            >
+              {isSubmittingPayment ? "Procesando..." : "Confirmar Pago"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
