@@ -47,17 +47,20 @@ const mockSendMessage = vi.fn();
 const mockStop = vi.fn();
 const mockSetMessages = vi.fn();
 const mockClearError = vi.fn();
+const mockReload = vi.fn();
 let mockMessages: any[] = [];
+let mockError: any = null;
 
 vi.mock("@ai-sdk/react", () => ({
   useChat: () => ({
     messages: mockMessages,
     sendMessage: mockSendMessage,
     status: "idle",
-    error: null,
+    error: mockError,
     stop: mockStop,
     setMessages: mockSetMessages,
     clearError: mockClearError,
+    reload: mockReload,
   }),
 }));
 
@@ -86,6 +89,7 @@ describe("ChatFloating Component", () => {
     mockCreateObjectURL.mockClear();
     mockRevokeObjectURL.mockClear();
     mockMessages = [];
+    mockError = null;
     mockPathname = "/adm/dashboard";
     // Clear global speech recognition mocks
     if (typeof window !== "undefined") {
@@ -475,5 +479,24 @@ describe("ChatFloating Component", () => {
 
     expect(mockStop).toHaveBeenCalled();
     expect(mockSetMessages).toHaveBeenCalledWith([]);
+  });
+
+  it("displays retry button when there is an error, and clicking it invokes reload and clearError", async () => {
+    mockError = new Error("Failed to fetch");
+
+    render(<ChatFloating isOpen={true} />);
+
+    // Check if the error message is displayed
+    expect(screen.getByText("No se pudo conectar con el servidor. Por favor, verifica tu conexión a internet.")).toBeInTheDocument();
+
+    // Verify retry button is rendered
+    const retryBtn = screen.getByRole("button", { name: /reintentar enviar el último mensaje/i });
+    expect(retryBtn).toBeInTheDocument();
+
+    // Click retry button
+    fireEvent.click(retryBtn);
+
+    expect(mockClearError).toHaveBeenCalled();
+    expect(mockReload).toHaveBeenCalled();
   });
 });
