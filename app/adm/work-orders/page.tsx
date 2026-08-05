@@ -89,6 +89,7 @@ import {
 } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { useUser } from "@/components/ui/UserProvider";
 
 interface WorkOrder {
   id: string;
@@ -204,7 +205,7 @@ function KanbanCard({
   onTechnicianUpdate?: (woId: string, techId: string | null) => Promise<void>;
   onStatusUpdate?: (woId: string, newStatus: string) => Promise<void>;
 }) {
-  const { data: session } = authClient.useSession();
+  const user = useUser();
   const {
     attributes,
     listeners,
@@ -483,15 +484,15 @@ function KanbanCard({
                 Asignar Responsable
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {session?.user?.id && technicians.some((t) => t.id === session.user.id) && (
+              {user.id && technicians.some((t) => t.id === user.id) && (
                 <>
                   <DropdownMenuItem
                     className="text-xs font-semibold text-purple-700 hover:text-purple-800"
-                    onClick={() => onTechnicianUpdate?.(wo.id, session.user.id)}
+                    onClick={() => onTechnicianUpdate?.(wo.id, user.id)}
                   >
                     <UserCog className="h-3.5 w-3.5 mr-2 text-purple-600" />
                     Asignarme a mí
-                    {wo.technician?.id === session.user.id && (
+                    {wo.technician?.id === user.id && (
                       <Check className="h-3.5 w-3.5 ml-auto text-primary" />
                     )}
                   </DropdownMenuItem>
@@ -665,7 +666,7 @@ function KanbanColumn({
 // --- Main Page Component ---
 
 export default function WorkOrdersPage() {
-  const { data: session } = authClient.useSession();
+  const user = useUser();
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const isMobile = useIsMobile();
@@ -676,6 +677,7 @@ export default function WorkOrdersPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [technicianFilter, setTechnicianFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [myOrdersFilter, setMyOrdersFilter] = useState(false);
 
   const [technicians, setTechnicians] = useState<
     Array<{ id: string; name: string }>
@@ -764,18 +766,25 @@ export default function WorkOrdersPage() {
     }).length;
   }, [workOrders]);
 
+  const countMyOrders = useMemo(() => {
+    if (!user.id) return 0;
+    return workOrders.filter((wo) => wo.technicianId === user.id).length;
+  }, [workOrders, user.id]);
+
   const activeFiltersCount = useMemo(() => {
     let count = 0;
     if (paymentFilter !== "all") count++;
+    if (myOrdersFilter) count++;
     if (delayedFilter !== "all") count++;
     if (todayFilter !== "all") count++;
     if (statusFilter !== "all") count++;
     if (technicianFilter !== "all") count++;
     return count;
-  }, [paymentFilter, delayedFilter, todayFilter, statusFilter, technicianFilter]);
+  }, [paymentFilter, myOrdersFilter, delayedFilter, todayFilter, statusFilter, technicianFilter]);
 
   const clearAllFilters = useCallback(() => {
     setPaymentFilter("all");
+    setMyOrdersFilter(false);
     setDelayedFilter("all");
     setTodayFilter("all");
     setStatusFilter("all");
@@ -789,6 +798,7 @@ export default function WorkOrdersPage() {
         statusFilter === "all" || wo.status === statusFilter;
       const matchesTechnician =
         technicianFilter === "all" || wo.technicianId === technicianFilter;
+      const matchesMyOrders = !myOrdersFilter || wo.technicianId === user.id;
 
       const isDelayedWO = isDelayed(wo);
       const matchesDelayed = delayedFilter === "all" || isDelayedWO;
@@ -816,6 +826,7 @@ export default function WorkOrdersPage() {
         matchesPayment &&
         matchesStatus &&
         matchesTechnician &&
+        matchesMyOrders &&
         matchesSearch &&
         matchesDelayed &&
         matchesToday
@@ -824,11 +835,13 @@ export default function WorkOrdersPage() {
   }, [
     workOrders,
     paymentFilter,
+    myOrdersFilter,
     statusFilter,
     technicianFilter,
     searchQuery,
     delayedFilter,
     todayFilter,
+    user.id,
   ]);
 
   const exportToCSV = useCallback(() => {
@@ -1214,6 +1227,29 @@ export default function WorkOrdersPage() {
             )}
           </div>
 
+          {user.id && (
+            <Button
+              variant={myOrdersFilter ? "default" : "outline"}
+              size="sm"
+              onClick={() => setMyOrdersFilter(!myOrdersFilter)}
+              className={cn(
+                "h-8 text-xs flex items-center gap-1.5 transition-all select-none",
+                myOrdersFilter
+                  ? "bg-purple-600 hover:bg-purple-700 text-white border-purple-700 shadow-sm"
+                  : "hover:bg-purple-50 hover:text-purple-700 border-purple-200"
+              )}
+            >
+              <UserCog className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+              <span>Mis OTs</span>
+              <span className={cn(
+                "text-[10px] font-mono px-1.5 py-0.5 rounded-full leading-none font-bold shadow-sm",
+                myOrdersFilter ? "bg-purple-800 text-purple-100" : "bg-purple-100 text-purple-700"
+              )}>
+                {countMyOrders}
+              </span>
+            </Button>
+          )}
+
           <Popover>
             <PopoverTrigger asChild>
               <Button
@@ -1589,15 +1625,15 @@ export default function WorkOrdersPage() {
                                   Asignar Responsable
                                 </DropdownMenuLabel>
                                 <DropdownMenuSeparator />
-                                {session?.user?.id && technicians.some((t) => t.id === session.user.id) && (
+                                {user.id && technicians.some((t) => t.id === user.id) && (
                                   <>
                                     <DropdownMenuItem
                                       className="text-xs font-semibold text-purple-700 hover:text-purple-800"
-                                      onClick={() => handleTechnicianUpdate(wo.id, session.user.id)}
+                                      onClick={() => handleTechnicianUpdate(wo.id, user.id)}
                                     >
                                       <UserCog className="h-3.5 w-3.5 mr-2 text-purple-600" />
                                       Asignarme a mí
-                                      {wo.technician?.id === session.user.id && (
+                                      {wo.technician?.id === user.id && (
                                         <Check className="h-3.5 w-3.5 ml-auto text-primary" />
                                       )}
                                     </DropdownMenuItem>

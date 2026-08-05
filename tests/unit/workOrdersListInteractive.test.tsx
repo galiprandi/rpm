@@ -13,6 +13,19 @@ vi.mock('next/navigation', () => ({
   usePathname: () => '/adm/work-orders',
 }));
 
+// Mock useUser
+vi.mock("@/components/ui/UserProvider", () => ({
+  useUser: () => ({
+    id: "tech_1",
+    name: "Carlos",
+    email: "carlos@tech.com",
+    role: "ADMIN",
+    permissions: ["*"],
+    can: () => true,
+    isAdmin: true,
+  }),
+}));
+
 // Mock authClient
 vi.mock("@/lib/auth-client", () => ({
   authClient: {
