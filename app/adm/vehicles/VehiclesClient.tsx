@@ -15,6 +15,7 @@ import {
   Download,
   Wallet,
   TrendingDown,
+  ArrowDownLeft,
 } from "lucide-react";
 import Link from "next/link";
 import { type ColumnDef, type FilterFn } from "@tanstack/react-table";
@@ -38,6 +39,16 @@ import { getWhatsAppLink } from "@/lib/utils/whatsapp";
 import { formatARS } from "@/lib/utils/format";
 import { getCategoryIcon } from "@/components/vehicles/CategoryIcon";
 import { VehicleDialog } from "@/components/vehicles/VehicleDialog";
+import { useUI } from "@/components/ui/UIProvider";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface WorkOrder {
   id: string;
@@ -76,12 +87,20 @@ export default function VehiclesClient({
   initialVehicles,
   totalVehicles,
 }: VehiclesClientProps) {
+  const { alert } = useUI();
   const [vehicles, setVehicles] = useState<Vehicle[]>(initialVehicles);
   const [total, setTotal] = useState(totalVehicles);
   const [loading, setLoading] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [showOnlyWithDebt, setShowOnlyWithDebt] = useState<boolean>(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
+  const [paymentAmount, setPaymentAmount] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("CASH");
+  const [paymentNotes, setPaymentNotes] = useState("");
+  const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
 
   const getVehicleDebt = (v: Vehicle) => {
     if (!v.workOrders) return 0;
@@ -431,41 +450,66 @@ export default function VehiclesClient({
         createButtonText="Nuevo Vehículo"
         searchPlaceholder="Buscar por patente o dueño..."
         onExport={exportToCSV}
-        rowActions={(vehicle) => (
-          <div className="flex items-center gap-1">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link href={`/adm/vehicles/${vehicle.id}`}>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    aria-label="Ver detalle del vehículo"
-                  >
-                    <Eye className="h-4 w-4" aria-hidden="true" />
-                  </Button>
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent>Ver detalle</TooltipContent>
-            </Tooltip>
+        rowActions={(vehicle) => {
+          const debt = getVehicleDebt(vehicle);
+          return (
+            <div className="flex items-center gap-1">
+              {debt > 0 && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50"
+                      onClick={() => {
+                        setSelectedVehicle(vehicle);
+                        setPaymentAmount(debt.toString());
+                        setPaymentNotes(`Pago de saldo deudor del vehículo ${vehicle.identifier}`);
+                        setPaymentMethod("CASH");
+                        setIsPaymentModalOpen(true);
+                      }}
+                      aria-label={`Registrar pago para vehículo ${vehicle.identifier}`}
+                    >
+                      <ArrowDownLeft className="h-4 w-4" aria-hidden="true" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Registrar Pago</TooltipContent>
+                </Tooltip>
+              )}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link href={`/adm/vehicles/${vehicle.id}`}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      aria-label="Ver detalle del vehículo"
+                    >
+                      <Eye className="h-4 w-4" aria-hidden="true" />
+                    </Button>
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent>Ver detalle</TooltipContent>
+              </Tooltip>
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link href={`/adm/work-orders/new?vehicleId=${vehicle.id}`}>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/10"
-                    aria-label="Crear nueva Orden de Trabajo"
-                  >
-                    <Plus className="h-4 w-4" aria-hidden="true" />
-                  </Button>
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent>Nueva OT</TooltipContent>
-            </Tooltip>
-          </div>
-        )}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link href={`/adm/work-orders/new?vehicleId=${vehicle.id}`}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/10"
+                      aria-label="Crear nueva Orden de Trabajo"
+                    >
+                      <Plus className="h-4 w-4" aria-hidden="true" />
+                    </Button>
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent>Nueva OT</TooltipContent>
+              </Tooltip>
+            </div>
+          );
+        }}
       />
 
       <VehicleDialog
@@ -473,6 +517,147 @@ export default function VehiclesClient({
         onOpenChange={setIsCreateModalOpen}
         onSuccess={fetchVehicles}
       />
+
+      {/* Modal de Pago */}
+      <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Registrar Pago</DialogTitle>
+            <DialogDescription>
+              Propietario: {selectedVehicle?.customer?.name}
+              <br />
+              Deuda de este vehículo: {selectedVehicle && formatARS(getVehicleDebt(selectedVehicle), 2)}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <Label htmlFor="payment-amount">Monto a Abonar *</Label>
+                {selectedVehicle && (
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="h-auto p-0 text-xs"
+                    onClick={() => setPaymentAmount(getVehicleDebt(selectedVehicle).toString())}
+                  >
+                    Saldar total
+                  </Button>
+                )}
+              </div>
+              <Input
+                id="payment-amount"
+                type="number"
+                step="0.01"
+                min="0.01"
+                placeholder="Ej: 5000"
+                value={paymentAmount}
+                onChange={(e) => setPaymentAmount(e.target.value)}
+                className="font-mono"
+              />
+            </div>
+            <div>
+              <Label htmlFor="payment-method">Método de Pago *</Label>
+              <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                <SelectTrigger id="payment-method">
+                  <SelectValue placeholder="Seleccione método" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="CASH">Efectivo</SelectItem>
+                  <SelectItem value="TRANSFER">Transferencia</SelectItem>
+                  <SelectItem value="CARD">Tarjeta</SelectItem>
+                  <SelectItem value="CHECK">Cheque</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="payment-notes">Notas (opcional)</Label>
+              <Input
+                id="payment-notes"
+                placeholder="Referencia, comprobante, etc."
+                value={paymentNotes}
+                onChange={(e) => setPaymentNotes(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsPaymentModalOpen(false);
+                setPaymentAmount("");
+                setPaymentNotes("");
+                setSelectedVehicle(null);
+              }}
+              disabled={isSubmittingPayment}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={async () => {
+                const amount = parseFloat(paymentAmount);
+                if (!amount || amount <= 0) {
+                  await alert({
+                    title: "Error",
+                    description: "Ingrese un monto válido",
+                    variant: "error",
+                  });
+                  return;
+                }
+
+                if (!selectedVehicle?.customer) return;
+
+                setIsSubmittingPayment(true);
+                try {
+                  const res = await fetch(
+                    `/api/customers/${selectedVehicle.customer.id}/payments`,
+                    {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        amount,
+                        method: paymentMethod,
+                        notes: paymentNotes,
+                      }),
+                    },
+                  );
+
+                  if (res.ok) {
+                    setIsPaymentModalOpen(false);
+                    setPaymentAmount("");
+                    setPaymentNotes("");
+                    setSelectedVehicle(null);
+                    fetchVehicles(); // Refresh vehicles list
+                    await alert({
+                      title: "Pago registrado",
+                      description: "El pago se ha registrado correctamente",
+                      variant: "success",
+                    });
+                  } else {
+                    const error = await res.json();
+                    await alert({
+                      title: "Error",
+                      description: error.error || "Error al registrar pago",
+                      variant: "error",
+                    });
+                  }
+                } catch (error) {
+                  console.error("Error:", error);
+                  await alert({
+                    title: "Error",
+                    description: "Error al registrar pago",
+                    variant: "error",
+                  });
+                } finally {
+                  setIsSubmittingPayment(false);
+                }
+              }}
+              disabled={isSubmittingPayment || !paymentAmount}
+            >
+              {isSubmittingPayment ? "Procesando..." : "Confirmar Pago"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
