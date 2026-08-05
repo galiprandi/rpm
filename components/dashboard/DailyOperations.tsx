@@ -226,7 +226,7 @@ export function DailyOperations() {
           const href =
             relatedType === "work_order"
               ? `/adm/work-orders/${relatedId}`
-              : `/adm/customers?id=${relatedId}`;
+              : `/adm/direct-sales/${relatedId}`;
 
           return (
             <Tooltip>
