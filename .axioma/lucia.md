@@ -1,6 +1,12 @@
 ## 📋 BACKLOG
 
 ## ✅ DONE
+- [x] 2026-08-04 — Ordenamiento Inteligente y Robusto en Grillas de Clientes, Vehículos y Transacciones
+  - Implementación de `accessorFn` explícitos y estables para columnas anidadas y dinámicas en el dashboard de vehículos (`VehiclesClient.tsx`) y detalle de cliente (`app/adm/customers/[id]/page.tsx`).
+  - Habilitado el ordenamiento dinámico por "Deuda", "Marca/Modelo" y "Propietario" en el listado de vehículos.
+  - Normalizado el ordenamiento por "Marca/Modelo/Equipo", "Vehículo" y "Concepto/Items" en las tablas de vehículos, órdenes de trabajo e historial de transacciones de la ficha de cliente.
+  - Conversión numérica de montos en `directSales`, `creditNotes` y `payments` para garantizar que la columna "Total" se ordene con precisión matemática matemática y no alfabética.
+  - Corrección de riesgos de excepciones de tipo `TypeError` al usar navegación opcional segura (`?.`) en todas las columnas complejas.
 - [x] 2026-07-31 — Validación y Formateo de Teléfono en Creación de Cliente Inline en Diálogo de Vehículo
   - Integración de validación de teléfonos argentinos en tiempo real y en blur en la creación de clientes inline dentro de `VehicleDialog.tsx`.
   - Añadidos chips de autocompletado de prefijos rápidos de Argentina (AMBA, Córdoba, Rosario, Mendoza, Tucumán) con re-enfoque automático del cursor.
@@ -92,6 +98,10 @@
   - Mejora de navegación con botón de "Volver" en el detalle del cliente.
 
 ## 🧠 LEARNINGS
+## 2026-08-04 - Ordenamiento de Campos Calculados y Complejos en TanStack Table
+**Learning:** En tablas de datos avanzadas como las de vehículos y transacciones, es común tener columnas basadas en datos compuestos (como la combinación de marca y modelo o el nombre del equipamiento técnico) o calculados al vuelo (como la deuda acumulada de un vehículo). Si estas columnas se renderizan sin un `accessorFn` explícito, TanStack Table pierde la capacidad de ordenarlas y filtrarlas de forma predecible o directamente omite la funcionalidad. Al definir funciones accesoras explícitas (`accessorFn`) para transformar y normalizar estos campos complejos (incluyendo la conversión explícita de montos decimales a tipo numérico de JavaScript), garantizamos un ordenamiento preciso y un filtrado fluido que mejora drásticamente la usabilidad y evita excepciones por valores nulos.
+**Action:** Usar siempre `accessorFn` estables y tipados en TanStack Table para columnas compuestas, anidadas o de montos financieros calculados para asegurar la capacidad de ordenamiento completo de la grilla.
+
 ## 2026-07-31 - Validación de Teléfono en Modales Inline
 **Learning:** Al simplificar los flujos para permitir crear entidades relacionadas en el lugar (como crear un cliente directamente desde el modal para agregar vehículos), es común descuidar la validación y normalización de los datos. Esta inconsistencia no solo daña la UX sino que ensucia la base de datos con formatos inconsistentes de teléfonos que luego pueden fallar en integraciones automatizadas (como envíos de notificaciones de WhatsApp). Trasplantar el mismo motor inteligente de validación, formateo y chips de prefijos geográficos de la pantalla principal a los formularios inline garantiza coherencia visual absoluta, consistencia de datos y deleita al usuario.
 **Action:** Mantener siempre la misma fidelidad de validación y enriquecimiento de campos de datos estructurados (como teléfonos, CUIT o patentes) en formularios de creación rápida/inline que en las vistas completas dedicadas.
