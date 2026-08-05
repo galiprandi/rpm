@@ -20,6 +20,7 @@ import {
   Trash2,
   Mic,
   MicOff,
+  RotateCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -256,11 +257,13 @@ export function ChatFloating({
     router.refresh();
   }, [router]);
 
-  const { messages, sendMessage, status, error, stop, setMessages, clearError } = useChat({
+  const chatHelpers = useChat({
     id: chatId,
     transport,
     onFinish,
   });
+  const { messages, sendMessage, status, error, stop, setMessages, clearError } = chatHelpers;
+  const reload = (chatHelpers as any).reload;
 
   const lastLoadedUserIdRef = useRef<string | null>(null);
 
@@ -1031,11 +1034,31 @@ export function ChatFloating({
               {/* Error message */}
               {friendlyErrorMessage && (
                 <div className="flex justify-start">
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center gap-2">
-                    <X className="h-4 w-4 text-red-700" aria-hidden="true" />
-                    <span className="text-sm text-red-700 font-medium">
-                      {friendlyErrorMessage}
-                    </span>
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex flex-col gap-2 max-w-[85%]">
+                    <div className="flex items-start gap-2">
+                      <X className="h-4 w-4 text-red-700 mt-0.5 shrink-0" aria-hidden="true" />
+                      <span className="text-sm text-red-700 font-medium leading-normal">
+                        {friendlyErrorMessage}
+                      </span>
+                    </div>
+                    {!isSubmitting && (
+                      <div className="flex justify-end pt-1">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            clearError();
+                            reload();
+                          }}
+                          className="h-7 text-xs font-semibold bg-white border-red-200 text-red-700 hover:bg-red-100/50 hover:text-red-800 focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-1 flex items-center gap-1.5 transition-all shadow-xs"
+                          aria-label="Reintentar enviar el último mensaje"
+                        >
+                          <RotateCw className="h-3 w-3 shrink-0" />
+                          Reintentar
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
