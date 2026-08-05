@@ -203,6 +203,13 @@ export default function ProfitabilityReportClient() {
     return `${change > 0 ? "+" : change < 0 ? "-" : ""}${value}% vs período anterior`;
   };
 
+  const formatMarginChange = (change: number, current?: number, previous?: number) => {
+    if (previous === 0 && current === 0) return "Sin datos";
+    if (previous === 0) return "Nuevo período con datos";
+    const value = Math.abs(change).toFixed(1);
+    return `${change > 0 ? "+" : change < 0 ? "-" : ""}${value} p.p. vs período anterior`;
+  };
+
   const exportToCSV = () => {
     if (!data) return;
 
@@ -362,7 +369,7 @@ export default function ProfitabilityReportClient() {
                 value={`${data.grossMargin.current.toFixed(1)}%`}
                 icon={Target}
                 trend={{
-                  value: formatChange(
+                  value: formatMarginChange(
                     data.grossMargin.change,
                     data.grossMargin.current,
                     data.grossMargin.previous,
