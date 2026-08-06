@@ -60,6 +60,8 @@ interface Vehicle {
   id: string;
   identifier: string;
   category: string;
+  createdAt: string;
+  updatedAt: string;
   customer: {
     id: string;
     name: string;
@@ -93,6 +95,8 @@ export default function VehiclesClient({
   const [loading, setLoading] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [showOnlyWithDebt, setShowOnlyWithDebt] = useState<boolean>(false);
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -117,8 +121,24 @@ export default function VehiclesClient({
     if (showOnlyWithDebt) {
       result = result.filter((v) => getVehicleDebt(v) > 0);
     }
+    if (startDate) {
+      const start = new Date(startDate + "T00:00:00");
+      result = result.filter((v) => {
+        if (!v.createdAt) return false;
+        const vDate = new Date(v.createdAt);
+        return vDate >= start;
+      });
+    }
+    if (endDate) {
+      const end = new Date(endDate + "T23:59:59");
+      result = result.filter((v) => {
+        if (!v.createdAt) return false;
+        const vDate = new Date(v.createdAt);
+        return vDate <= end;
+      });
+    }
     return result;
-  }, [vehicles, categoryFilter, showOnlyWithDebt]);
+  }, [vehicles, categoryFilter, showOnlyWithDebt, startDate, endDate]);
 
   const exportToCSV = useCallback(() => {
     if (!filteredVehicles || filteredVehicles.length === 0) return;
@@ -130,6 +150,7 @@ export default function VehiclesClient({
       "Modelo",
       "Nombre de Equipo",
       "Propietario",
+      "Fecha de Ingreso",
       "Deuda",
       "Cantidad de OTs",
     ];
@@ -146,6 +167,7 @@ export default function VehiclesClient({
       const modelName = !isEquipment && v.vehicleModel ? v.vehicleModel.name : "";
       const equipmentName = isEquipment ? (v.equipmentName || "") : "";
       const debt = getVehicleDebt(v);
+      const entryDate = v.createdAt ? new Date(v.createdAt).toLocaleDateString("es-AR") : "";
 
       return [
         v.identifier,
@@ -154,6 +176,7 @@ export default function VehiclesClient({
         modelName,
         equipmentName,
         v.customer?.name || "",
+        entryDate,
         debt.toString(),
         v._count.workOrders.toString(),
       ];
@@ -302,6 +325,20 @@ export default function VehiclesClient({
         ),
       },
       {
+        id: "createdAt",
+        header: "Fecha Ingreso",
+        accessorFn: (row) => row.createdAt,
+        cell: ({ row }) => {
+          const date = row.original.createdAt;
+          if (!date) return <span className="text-muted-foreground">-</span>;
+          return (
+            <span className="font-mono text-xs text-muted-foreground">
+              {new Date(date).toLocaleDateString("es-AR")}
+            </span>
+          );
+        },
+      },
+      {
         id: "debt",
         header: "Deuda",
         cell: ({ row }) => {
@@ -389,7 +426,7 @@ export default function VehiclesClient({
         description="Gestión centralizada de vehículos de clientes y equipamiento técnico"
         secondaryActions={headerSecondaryActions}
       >
-        <div className="flex items-center gap-2 mt-4">
+        <div className="flex flex-wrap items-center gap-3 mt-4">
           <div className="relative group">
             <Filter
               className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10"
@@ -414,13 +451,34 @@ export default function VehiclesClient({
             </Select>
           </div>
 
-          {(categoryFilter !== "all" || showOnlyWithDebt) && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">Ingreso desde:</span>
+            <Input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="h-9 w-[140px] bg-background text-xs"
+              aria-label="Fecha de ingreso desde"
+            />
+            <span className="text-xs text-muted-foreground">hasta:</span>
+            <Input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="h-9 w-[140px] bg-background text-xs"
+              aria-label="Fecha de ingreso hasta"
+            />
+          </div>
+
+          {(categoryFilter !== "all" || showOnlyWithDebt || !!startDate || !!endDate) && (
             <Button
               variant="ghost"
               size="sm"
               onClick={() => {
                 setCategoryFilter("all");
                 setShowOnlyWithDebt(false);
+                setStartDate("");
+                setEndDate("");
               }}
               className="h-9 px-2 text-muted-foreground hover:text-foreground"
             >
@@ -441,7 +499,7 @@ export default function VehiclesClient({
         onCreate={() => setIsCreateModalOpen(true)}
         columns={columns}
         filterFn={vehicleFilterFn as any}
-        hasActiveFilters={categoryFilter !== "all" || showOnlyWithDebt}
+        hasActiveFilters={categoryFilter !== "all" || showOnlyWithDebt || !!startDate || !!endDate}
         emptyIcon={
           <Car className="h-12 w-12 mx-auto text-muted-foreground/20 mb-4" />
         }

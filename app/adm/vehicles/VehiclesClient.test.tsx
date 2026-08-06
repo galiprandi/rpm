@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import React from "react";
 import VehiclesClient from "./VehiclesClient";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -43,7 +43,7 @@ vi.mock("@/components/ui/select", () => {
 
 // Mock Header and CrudStats
 vi.mock("@/components/adm", () => ({
-  Header: ({ title, description, secondaryActions }: any) => (
+  Header: ({ title, description, secondaryActions, children }: any) => (
     <div data-testid="header">
       <h1>{title}</h1>
       <p>{description}</p>
@@ -52,6 +52,7 @@ vi.mock("@/components/adm", () => ({
           {action.label}
         </button>
       ))}
+      {children}
     </div>
   ),
   CrudStats: ({ stats }: any) => (
@@ -107,6 +108,8 @@ describe("VehiclesClient", () => {
       id: "v-1",
       identifier: "AF719HZ",
       category: "CAR",
+      createdAt: "2026-07-21T12:00:00.000Z",
+      updatedAt: "2026-07-21T12:00:00.000Z",
       customer: {
         id: "cust-1",
         name: "Juan Pérez",
@@ -124,6 +127,8 @@ describe("VehiclesClient", () => {
       id: "v-2",
       identifier: "AE123CD",
       category: "CAR",
+      createdAt: "2026-07-25T12:00:00.000Z",
+      updatedAt: "2026-07-25T12:00:00.000Z",
       customer: {
         id: "cust-2",
         name: "María Gómez",
@@ -318,7 +323,8 @@ describe("VehiclesClient", () => {
     expect(amountInput.value).toBe("10000");
 
     // Change payment method to TRANSFER
-    const select = screen.getByTestId("mock-select") as HTMLSelectElement;
+    const dialog = screen.getByRole("dialog");
+    const select = within(dialog).getByTestId("mock-select") as HTMLSelectElement;
     fireEvent.change(select, { target: { value: "TRANSFER" } });
     expect(select.value).toBe("TRANSFER");
 
@@ -348,5 +354,66 @@ describe("VehiclesClient", () => {
         variant: "success",
       })
     );
+  });
+
+  it("filters vehicles by start date correctly", () => {
+    render(
+      <TooltipProvider>
+        <VehiclesClient initialVehicles={mockVehicles} totalVehicles={2} />
+      </TooltipProvider>
+    );
+
+    // Both should be visible initially
+    expect(screen.getAllByRole("listitem").length).toBe(2);
+
+    // Set start date to 2026-07-23 (v-1 is 2026-07-21, v-2 is 2026-07-25)
+    const startDateInput = screen.getByLabelText("Fecha de ingreso desde");
+    fireEvent.change(startDateInput, { target: { value: "2026-07-23" } });
+
+    // Only v-2 should be visible
+    const items = screen.getAllByRole("listitem");
+    expect(items.length).toBe(1);
+    expect(screen.getByTestId("item-v-2")).toBeInTheDocument();
+    expect(screen.queryByTestId("item-v-1")).not.toBeInTheDocument();
+  });
+
+  it("filters vehicles by end date correctly", () => {
+    render(
+      <TooltipProvider>
+        <VehiclesClient initialVehicles={mockVehicles} totalVehicles={2} />
+      </TooltipProvider>
+    );
+
+    // Set end date to 2026-07-23
+    const endDateInput = screen.getByLabelText("Fecha de ingreso hasta");
+    fireEvent.change(endDateInput, { target: { value: "2026-07-23" } });
+
+    // Only v-1 should be visible
+    const items = screen.getAllByRole("listitem");
+    expect(items.length).toBe(1);
+    expect(screen.getByTestId("item-v-1")).toBeInTheDocument();
+    expect(screen.queryByTestId("item-v-2")).not.toBeInTheDocument();
+  });
+
+  it("clears date filters and restores all vehicles when reset button is clicked", () => {
+    render(
+      <TooltipProvider>
+        <VehiclesClient initialVehicles={mockVehicles} totalVehicles={2} />
+      </TooltipProvider>
+    );
+
+    // Apply some filters
+    const startDateInput = screen.getByLabelText("Fecha de ingreso desde") as HTMLInputElement;
+    fireEvent.change(startDateInput, { target: { value: "2026-07-23" } });
+    expect(screen.getAllByRole("listitem").length).toBe(1);
+
+    // Click "Limpiar filtros" button
+    const clearBtn = screen.getByRole("button", { name: /Limpiar filtros/i });
+    expect(clearBtn).toBeInTheDocument();
+    fireEvent.click(clearBtn);
+
+    // Both should be restored, and inputs cleared
+    expect(screen.getAllByRole("listitem").length).toBe(2);
+    expect(startDateInput.value).toBe("");
   });
 });
