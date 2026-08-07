@@ -12,6 +12,17 @@ if (typeof window !== "undefined") {
   window.URL.revokeObjectURL = mockRevokeObjectURL;
 }
 
+// Mock navigator.clipboard
+const mockWriteText = vi.fn().mockResolvedValue(undefined);
+if (typeof navigator !== "undefined") {
+  Object.defineProperty(navigator, "clipboard", {
+    value: {
+      writeText: mockWriteText,
+    },
+    writable: true,
+  });
+}
+
 // Mock scrollIntoView for HTMLElement in JSDOM
 HTMLElement.prototype.scrollIntoView = vi.fn();
 
@@ -88,6 +99,7 @@ describe("ChatFloating Component", () => {
     vi.clearAllMocks();
     mockCreateObjectURL.mockClear();
     mockRevokeObjectURL.mockClear();
+    mockWriteText.mockClear();
     mockMessages = [];
     mockError = null;
     mockPathname = "/adm/dashboard";

@@ -33,6 +33,27 @@ export function PublicHeader() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Keyboard shortcut Ctrl+K / Cmd+K to open Search
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        const target = e.target as HTMLElement;
+        if (
+          target &&
+          (target.tagName === 'INPUT' ||
+            target.tagName === 'TEXTAREA' ||
+            target.isContentEditable)
+        ) {
+          return;
+        }
+        e.preventDefault();
+        setIsSearchOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   return (
     <header 
       className={cn(
@@ -78,14 +99,17 @@ export function PublicHeader() {
               <TooltipTrigger asChild>
                 <button
                   onClick={() => setIsSearchOpen(true)}
-                  className="p-2 text-gray-400 hover:text-brand transition-colors duration-300 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none rounded-lg"
-                  aria-label="Buscar"
+                  className="group p-2 text-gray-400 hover:text-brand transition-colors duration-300 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none rounded-lg flex items-center gap-1.5"
+                  aria-label="Buscar (Presione Ctrl+K o Cmd+K)"
                 >
                   <Search className="h-5 w-5 pointer-events-none" aria-hidden="true" />
+                  <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border border-white/10 bg-white/5 px-1.5 font-mono text-[10px] font-medium text-gray-400 opacity-100 group-hover:text-brand">
+                    <span className="text-xs">⌘</span>K
+                  </kbd>
                 </button>
               </TooltipTrigger>
               <TooltipContent className="bg-zinc-900 border-white/10 text-white text-xs font-bold uppercase tracking-widest">
-                Buscar
+                Buscar (⌘K)
               </TooltipContent>
             </Tooltip>
             <Link href="/login" className="text-[13px] font-medium text-gray-400 hover:text-white transition-all duration-300 uppercase tracking-widest focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none rounded px-2 py-1">
