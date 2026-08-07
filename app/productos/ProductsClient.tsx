@@ -203,7 +203,17 @@ export default function ProductsClient({ initialProducts, initialCategories }: P
               {filteredProducts.map((product, index) => (
                 <div
                   key={product.id}
-                  className="group relative aspect-[3/4] bg-zinc-900 overflow-hidden rounded-3xl border border-white/5 hover:border-brand/20 transition-all duration-700 animate-fade-up"
+                  tabIndex={0}
+                  role="button"
+                  aria-label={`Ver detalles de ${product.name}`}
+                  onClick={() => setSelectedProduct(product)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setSelectedProduct(product);
+                    }
+                  }}
+                  className="group relative aspect-[3/4] bg-zinc-900 overflow-hidden rounded-3xl border border-white/5 hover:border-brand/20 transition-all duration-700 animate-fade-up cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-black"
                   style={{ animationDelay: `${0.1 * (index % 4)}s` }}
                 >
                 {product.imageUrl ? (
@@ -253,13 +263,11 @@ export default function ProductsClient({ initialProducts, initialCategories }: P
                   </div>
                   <div className="flex items-center justify-between opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 group-focus-within:opacity-100 group-focus-within:translate-y-0 transition-all duration-500">
                     <span className="text-white font-mono font-semibold">{formatARS(product.price)}</span>
-                    <button
-                      onClick={() => setSelectedProduct(product)}
-                      className="flex items-center text-xs font-bold text-brand hover:text-white transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-lg cursor-pointer"
-                      aria-label={`Ver detalles del producto ${product.name}`}
+                    <span
+                      className="flex items-center text-xs font-bold text-brand hover:text-white transition-colors rounded-lg cursor-pointer"
                     >
                       DETALLES <ArrowRight className="ml-2 h-3 w-3 pointer-events-none" aria-hidden="true" />
-                    </button>
+                    </span>
                   </div>
                 </div>
               </div>

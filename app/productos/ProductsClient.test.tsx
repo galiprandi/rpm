@@ -173,4 +173,50 @@ describe('ProductsClient Public Catalog', () => {
     // Input should change
     expect(searchInput).toHaveValue('PPF');
   });
+
+  it('provides a highly accessible and interactive card container with focus/click/key capabilities', () => {
+    render(
+      <TooltipProvider>
+        <ProductsClient initialProducts={mockProducts} initialCategories={mockCategories} />
+      </TooltipProvider>
+    );
+
+    // Find the product card for "Proyector Bi-LED Laser"
+    const cardElement = screen.getByRole('button', { name: /Ver detalles de Proyector Bi-LED Laser/i });
+    expect(cardElement).toBeInTheDocument();
+    expect(cardElement).toHaveAttribute('tabIndex', '0');
+
+    // Confirm that the "DETALLES" text is present inside the card, but it is not a button tag
+    const detallesTextList = screen.getAllByText(/DETALLES/i);
+    expect(detallesTextList.length).toBeGreaterThan(0);
+    expect(detallesTextList[0]).toBeInTheDocument();
+    expect(detallesTextList[0].tagName).not.toBe('BUTTON');
+
+    // Quick View modal should not be open yet
+    expect(screen.queryByTestId('quick-view')).not.toBeInTheDocument();
+
+    // Click the entire card container
+    fireEvent.click(cardElement);
+
+    // It should trigger opening the product view modal
+    expect(screen.getByTestId('quick-view')).toBeInTheDocument();
+    expect(screen.getByText('Proyector Bi-LED Laser - Quick View')).toBeInTheDocument();
+
+    // Close the modal
+    const closeBtn = screen.getByRole('button', { name: /Close/i });
+    fireEvent.click(closeBtn);
+    expect(screen.queryByTestId('quick-view')).not.toBeInTheDocument();
+
+    // Focus and press 'Enter' on the card
+    fireEvent.keyDown(cardElement, { key: 'Enter', code: 'Enter' });
+    expect(screen.getByTestId('quick-view')).toBeInTheDocument();
+
+    // Close again
+    const closeBtn2 = screen.getByRole('button', { name: /Close/i });
+    fireEvent.click(closeBtn2);
+
+    // Focus and press 'Space' on the card
+    fireEvent.keyDown(cardElement, { key: ' ', code: 'Space' });
+    expect(screen.getByTestId('quick-view')).toBeInTheDocument();
+  });
 });
