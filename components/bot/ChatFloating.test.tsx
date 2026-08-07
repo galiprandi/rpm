@@ -512,30 +512,38 @@ describe("ChatFloating Component", () => {
     expect(mockReload).toHaveBeenCalled();
   });
 
-  it("displays copy button on assistant text messages and triggers clipboard write on click", async () => {
-    mockMessages = [
-      {
-        id: "msg-assistant-1",
-        role: "assistant",
-        parts: [{ type: "text", text: "Este es un mensaje del asistente para copiar." }],
-      },
-    ];
+  it("renders compact follow-up suggestion pills only when messages are present and chatbot is not submitting", () => {
+    // 1. Empty conversation - should not render follow-up pills
+    mockMessages = [];
+    const { rerender } = render(<ChatFloating isOpen={true} />);
+    expect(screen.queryByRole("button", { name: /^📦 Stock$/i })).not.toBeInTheDocument();
 
+    // 2. Active conversation - should render follow-up pills
+    mockMessages = [{ id: "1", role: "user", parts: [{ type: "text", text: "hello" }] }];
+    rerender(<ChatFloating isOpen={true} />);
+    expect(screen.getByRole("button", { name: /^📦 Stock$/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^🔧 OTs hoy$/i })).toBeInTheDocument();
+  });
+
+  it("triggers sendMessage when a compact follow-up pill is clicked", () => {
+    mockMessages = [{ id: "1", role: "user", parts: [{ type: "text", text: "hello" }] }];
     render(<ChatFloating isOpen={true} />);
 
-    // The copy button should be found by its aria-label
-    const copyBtn = screen.getByRole("button", { name: /copiar mensaje al portapapeles/i });
-    expect(copyBtn).toBeInTheDocument();
+    const stockPill = screen.getByRole("button", { name: /^📦 Stock$/i });
+    fireEvent.click(stockPill);
 
-    // Click the copy button
-    await act(async () => {
-      fireEvent.click(copyBtn);
-    });
+    expect(mockSendMessage).toHaveBeenCalledWith({ text: "¿Hay stock de luces LED?" });
+  });
 
-    // Check that navigator.clipboard.writeText was called with the correct text content
-    expect(mockWriteText).toHaveBeenCalledWith("Este es un mensaje del asistente para copiar.");
+  it("adjusts follow-up suggestion labels dynamically based on pathname", () => {
+    mockMessages = [{ id: "1", role: "user", parts: [{ type: "text", text: "hello" }] }];
+    mockPathname = "/adm/cash";
 
-    // The button's aria-label should change to show success feedback "Copiado al portapapeles"
-    expect(screen.getByRole("button", { name: /copiado al portapapeles/i })).toBeInTheDocument();
+    const { rerender } = render(<ChatFloating isOpen={true} />);
+    expect(screen.getByRole("button", { name: /^💸 Mov\. Caja$/i })).toBeInTheDocument();
+
+    mockPathname = "/adm/work-orders";
+    rerender(<ChatFloating isOpen={true} />);
+    expect(screen.getByRole("button", { name: /^🔧 Nueva OT$/i })).toBeInTheDocument();
   });
 });

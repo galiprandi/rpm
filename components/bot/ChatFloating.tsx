@@ -385,6 +385,39 @@ export function ChatFloating({
     return base;
   }, [pathname]);
 
+  const followUpSuggestions = useMemo(() => {
+    const base = [
+      { label: "📦 Stock", text: "¿Hay stock de luces LED?" },
+      { label: "🔧 OTs hoy", text: "Ver órdenes de trabajo de hoy" },
+      { label: "💰 Caja hoy", text: "Ver estado de caja de hoy" },
+      { label: "❓ Ayuda", text: "ayuda" },
+    ];
+
+    if (pathname.includes("/work-orders")) {
+      base[1] = { label: "🔧 Nueva OT", text: "Quiero crear una nueva orden de trabajo" };
+    } else if (pathname.includes("/customers")) {
+      base[1] = { label: "👥 Clientes", text: "Buscar clientes por teléfono o patente" };
+    } else if (pathname.includes("/vehicles")) {
+      base[1] = { label: "🚗 Vehículo", text: "Quiero registrar un vehículo para un cliente" };
+    } else if (pathname.includes("/products")) {
+      base[0] = { label: "📦 Nuevo Prod.", text: "Quiero crear un nuevo producto en catálogo" };
+    } else if (pathname.includes("/invoices")) {
+      base[2] = { label: "🧾 Facturas", text: "Ver estado de las facturas de hoy" };
+    } else if (pathname.includes("/cash")) {
+      base[2] = { label: "💸 Mov. Caja", text: "Quiero registrar un movimiento de caja" };
+    } else if (pathname.includes("/purchase-vouchers")) {
+      base[1] = { label: "🧾 Factura Compra", text: "Quiero procesar una factura de compra" };
+    } else if (pathname.includes("/suppliers")) {
+      base[1] = { label: "👥 Proveedores", text: "Buscar proveedores" };
+    } else if (pathname.includes("/settings")) {
+      base[1] = { label: "⚙️ Roles", text: "Ver los roles y permisos de los usuarios" };
+    } else if (pathname.includes("/reports")) {
+      base[1] = { label: "📊 Resumen", text: "Ver resumen del día" };
+    }
+
+    return base;
+  }, [pathname]);
+
   const handleSuggestionClick = useCallback(async (text: string) => {
     if (isSubmitting) return;
     if (recognitionRef.current) {
@@ -1118,6 +1151,22 @@ export function ChatFloating({
               <div ref={messagesEndRef} />
             </div>
           </div>
+
+          {/* Compact Follow-up Suggestions Row */}
+          {messages.length > 0 && !isSubmitting && (
+            <div className="px-4 py-2 border-t bg-muted/20 flex gap-1.5 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth shrink-0">
+              {followUpSuggestions.map((s, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => handleSuggestionClick(s.text)}
+                  className="whitespace-nowrap text-[11px] font-medium bg-background hover:bg-primary/5 hover:text-primary border hover:border-primary/20 rounded-full px-2.5 py-1 transition-all duration-150 cursor-pointer active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 text-muted-foreground shrink-0"
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* Input */}
           <form onSubmit={onSubmit} className="p-4 border-t">
