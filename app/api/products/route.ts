@@ -138,9 +138,14 @@ export const POST = withPermission('can_edit_products', async (request: NextRequ
       return NextResponse.json(product, { status: 201 });
     } catch (error: unknown) {
       // Handle unique constraint violations (PostgreSQL code 23505)
-      if (error && typeof error === 'object' && 'code' in error && error.code === '23505') {
-        const detail = (error as { detail?: string }).detail;
-        if (detail?.includes('sku')) {
+      // Drizzle wraps PG errors in error.cause, so check both levels
+      const cause = error && typeof error === 'object' && 'cause' in error ? error.cause : null;
+      const pgError = cause && typeof cause === 'object' && 'code' in cause
+        ? cause as { code?: string; detail?: string }
+        : error as { code?: string; detail?: string };
+
+      if (pgError.code === '23505') {
+        if (pgError.detail?.includes('sku')) {
           return NextResponse.json(
             { error: 'Ya existe un producto con ese SKU' },
             { status: 409 }

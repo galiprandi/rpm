@@ -148,6 +148,38 @@ Cada modificación deja el archivo en mejor estado: legibilidad, comentarios, no
 
 ---
 
+# Vercel CLI
+
+Logs de runtime y deploys para monitoreo de errores en producción.
+
+- **Auth:** `VERCEL_TOKEN` exportado por direnv desde `.envrc.local` (pisa el token global de galiprandi)
+- **Scope:** `rpmsysadim-5965s-projects` — el proyecto vive en la cuenta rpm, no en galiprandi
+- **Project:** `.vercel/project.json` linkeado a `rpmsysadim-5965s-projects/rpm`
+
+## Comandos útiles
+
+```bash
+# Errores 5xx en las últimas 24h
+source .envrc.local && vercel logs --status-code 5xx --limit 50 --since 24h
+
+# Errores 4xx (bugs de routing o auth)
+vercel logs --status-code 4xx --limit 50 --since 24h
+
+# Filtrar por nivel de log
+vercel logs --level error --limit 50 --since 24h
+
+# Logs en vivo (streaming)
+vercel logs --follow
+
+# Últimos deploys
+vercel ls --scope rpmsysadim-5965s-projects --format json
+```
+
+## Regla crítica
+SIEMPRE hacer `source .envrc.local` antes de comandos vercel en este repo, para usar el token correcto del scope `rpmsysadim-5965s-projects`.
+
+---
+
 # Sentry CLI
 
 Error monitoring con Sentry. SDK integrado via `@sentry/nextjs` (client/server/edge configs).
