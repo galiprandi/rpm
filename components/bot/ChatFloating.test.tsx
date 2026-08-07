@@ -12,6 +12,17 @@ if (typeof window !== "undefined") {
   window.URL.revokeObjectURL = mockRevokeObjectURL;
 }
 
+// Mock navigator.clipboard
+const mockWriteText = vi.fn().mockResolvedValue(undefined);
+if (typeof navigator !== "undefined") {
+  Object.defineProperty(navigator, "clipboard", {
+    value: {
+      writeText: mockWriteText,
+    },
+    writable: true,
+  });
+}
+
 // Mock scrollIntoView for HTMLElement in JSDOM
 HTMLElement.prototype.scrollIntoView = vi.fn();
 
@@ -88,6 +99,7 @@ describe("ChatFloating Component", () => {
     vi.clearAllMocks();
     mockCreateObjectURL.mockClear();
     mockRevokeObjectURL.mockClear();
+    mockWriteText.mockClear();
     mockMessages = [];
     mockError = null;
     mockPathname = "/adm/dashboard";
@@ -498,5 +510,40 @@ describe("ChatFloating Component", () => {
 
     expect(mockClearError).toHaveBeenCalled();
     expect(mockReload).toHaveBeenCalled();
+  });
+
+  it("renders compact follow-up suggestion pills only when messages are present and chatbot is not submitting", () => {
+    // 1. Empty conversation - should not render follow-up pills
+    mockMessages = [];
+    const { rerender } = render(<ChatFloating isOpen={true} />);
+    expect(screen.queryByRole("button", { name: /^📦 Stock$/i })).not.toBeInTheDocument();
+
+    // 2. Active conversation - should render follow-up pills
+    mockMessages = [{ id: "1", role: "user", parts: [{ type: "text", text: "hello" }] }];
+    rerender(<ChatFloating isOpen={true} />);
+    expect(screen.getByRole("button", { name: /^📦 Stock$/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^🔧 OTs hoy$/i })).toBeInTheDocument();
+  });
+
+  it("triggers sendMessage when a compact follow-up pill is clicked", () => {
+    mockMessages = [{ id: "1", role: "user", parts: [{ type: "text", text: "hello" }] }];
+    render(<ChatFloating isOpen={true} />);
+
+    const stockPill = screen.getByRole("button", { name: /^📦 Stock$/i });
+    fireEvent.click(stockPill);
+
+    expect(mockSendMessage).toHaveBeenCalledWith({ text: "¿Hay stock de luces LED?" });
+  });
+
+  it("adjusts follow-up suggestion labels dynamically based on pathname", () => {
+    mockMessages = [{ id: "1", role: "user", parts: [{ type: "text", text: "hello" }] }];
+    mockPathname = "/adm/cash";
+
+    const { rerender } = render(<ChatFloating isOpen={true} />);
+    expect(screen.getByRole("button", { name: /^💸 Mov\. Caja$/i })).toBeInTheDocument();
+
+    mockPathname = "/adm/work-orders";
+    rerender(<ChatFloating isOpen={true} />);
+    expect(screen.getByRole("button", { name: /^🔧 Nueva OT$/i })).toBeInTheDocument();
   });
 });

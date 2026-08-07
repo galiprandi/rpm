@@ -3,6 +3,8 @@
 ## 📋 BACKLOG
 
 ## ✅ DONE
+- [x] 2026-08-07 — Implement context-aware, compact follow-up suggestion pills rendered horizontally above the chat input box when the conversation is active (messages.length > 0) and the assistant is not submitting, dynamically shifting suggested actions based on the current page route to streamline operations for workshop technicians and staff. Fully tested in Vitest.
+- [x] 2026-08-06 — Implement the chatbot "Copy to Clipboard" interaction for assistant text messages inside components/bot/ChatFloating.tsx. Promotes frictionless sharing and copying of WhatsApp templates, summaries, or checklists with hover/focus group absolute controls, a custom Radix Tooltip, and instant checkmark feedback. Fully tested under components/bot/ChatFloating.test.tsx.
 - [x] 2026-08-05 — Implement the chatbot error retry interaction standard. When an API or network error occurs, render a beautifully styled, accessible, and fully keyboard-focusable "Reintentar" button inside the error block (in components/bot/ChatFloating.tsx) that clears the active error and re-runs useChat's reload() method. Thoroughly validated via Vitest (components/bot/ChatFloating.test.tsx) and Playwright visual screenshots.
 - [x] 2026-08-04 — Implement the assignWorkOrderTechnician tool for the virtual assistant (Nitro) enabling workshop staff to assign or change the responsible technician/mechanic of a work order directly from the chat panel. Features smart partial matching on name, active role validation/disambiguation, and automatic audit logging via the updateWorkOrder service, with comprehensive unit tests, system prompt documentation, and UI status label mapping.
 - [x] 2026-08-03 — Implement the attachPhotoToChecklistItem tool for the virtual assistant (Nitro) enabling workshop staff to upload and associate photos directly with specific ENTRY/EXIT checklist items via the chat panel. Features smart partial label matching, automatic JSONB checklist status updating, photo registration, and work order gallery integration, with comprehensive unit tests and user instruction updates (PR #317).
@@ -24,6 +26,10 @@
 - [x] 2026-03-28 — Initial audit of bot tools, removal of mock tools, fixing conversation history unit tests, and implementing major UI/UX improvements (smart scrolling, success states for tool execution, empty-state quick start suggestion chips, and full WCAG accessibility).
 
 ## 🧠 LEARNINGS
+### 2026-08-07 — Chatbot Contextual Follow-up Suggestion Pills
+**Learning:** During active conversations, workshop staff and administrative operators frequently require repeating operations (e.g., checking stock or viewing today's summary) but typing these queries each time creates excessive friction. Displaying compact, route-specific follow-up pills right above the chat input streamlines the interaction pattern immensely. Ensuring they hide default browser scrollbars while retaining touch-based scrollability on mobile provides a premium, responsive touch.
+**Action:** Always provide compact, contextual action shortcuts during active interactive session modes to minimize user cognitive and typing load.
+
 ### 2026-08-05 — Chatbot Error Retry Interaction Standard
 **Learning:** Transient internet/API drops or token/rate limit exhaustion are common in virtual assistant panels. Presenting a highly styled, accessible, and focusable "Reintentar" button that clears the error and automatically triggers useChat's `reload()` mechanism eliminates manual user retries, copying-and-pasting of long messages, and general UX friction.
 **Action:** Always provide explicit, accessible, and fast retry hooks in any communication-dependent admin widgets.

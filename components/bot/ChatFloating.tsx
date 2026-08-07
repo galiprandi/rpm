@@ -21,6 +21,7 @@ import {
   Mic,
   MicOff,
   RotateCw,
+  Copy,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -70,6 +71,19 @@ export function ChatFloating({
   const confirmClearTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<any>(null);
+  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
+
+  const handleCopyMessage = async (messageId: string, text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedMessageId(messageId);
+      setTimeout(() => {
+        setCopiedMessageId(null);
+      }, 2000);
+    } catch (err) {
+      console.error("Failed to copy text: ", err);
+    }
+  };
 
   // Compute file extension for non-image file uploads fallback badge
   const fileExtension = useMemo(() => {
@@ -366,6 +380,39 @@ export function ChatFloating({
       base[1] = { label: "⚙️ Roles y Permisos", text: "Ver los roles y permisos de los usuarios" };
     } else if (pathname.includes("/reports")) {
       base[1] = { label: "📊 Resumen diario", text: "Ver resumen del día" };
+    }
+
+    return base;
+  }, [pathname]);
+
+  const followUpSuggestions = useMemo(() => {
+    const base = [
+      { label: "📦 Stock", text: "¿Hay stock de luces LED?" },
+      { label: "🔧 OTs hoy", text: "Ver órdenes de trabajo de hoy" },
+      { label: "💰 Caja hoy", text: "Ver estado de caja de hoy" },
+      { label: "❓ Ayuda", text: "ayuda" },
+    ];
+
+    if (pathname.includes("/work-orders")) {
+      base[1] = { label: "🔧 Nueva OT", text: "Quiero crear una nueva orden de trabajo" };
+    } else if (pathname.includes("/customers")) {
+      base[1] = { label: "👥 Clientes", text: "Buscar clientes por teléfono o patente" };
+    } else if (pathname.includes("/vehicles")) {
+      base[1] = { label: "🚗 Vehículo", text: "Quiero registrar un vehículo para un cliente" };
+    } else if (pathname.includes("/products")) {
+      base[0] = { label: "📦 Nuevo Prod.", text: "Quiero crear un nuevo producto en catálogo" };
+    } else if (pathname.includes("/invoices")) {
+      base[2] = { label: "🧾 Facturas", text: "Ver estado de las facturas de hoy" };
+    } else if (pathname.includes("/cash")) {
+      base[2] = { label: "💸 Mov. Caja", text: "Quiero registrar un movimiento de caja" };
+    } else if (pathname.includes("/purchase-vouchers")) {
+      base[1] = { label: "🧾 Factura Compra", text: "Quiero procesar una factura de compra" };
+    } else if (pathname.includes("/suppliers")) {
+      base[1] = { label: "👥 Proveedores", text: "Buscar proveedores" };
+    } else if (pathname.includes("/settings")) {
+      base[1] = { label: "⚙️ Roles", text: "Ver los roles y permisos de los usuarios" };
+    } else if (pathname.includes("/reports")) {
+      base[1] = { label: "📊 Resumen", text: "Ver resumen del día" };
     }
 
     return base;
@@ -869,11 +916,12 @@ export function ChatFloating({
                       className={`max-w-[80%] rounded-lg p-3 ${
                         message.role === "user"
                           ? "bg-primary text-primary-foreground"
-                          : "bg-muted"
-                      }`}
+                          : "bg-muted text-foreground"
+                      } relative group`}
                     >
                       {message.role === "assistant" ? (
-                        <div className="text-sm space-y-2">
+                        <>
+                          <div className="text-sm space-y-2 pr-7">
                           {message.parts.map((part, i) => {
                             if (part.type === "text") {
                               return (
@@ -992,6 +1040,44 @@ export function ChatFloating({
                             return null;
                           })}
                         </div>
+                        {message.parts.some((p) => p.type === "text" && p.text?.trim()) && (
+                          <div className="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => {
+                                    const textToCopy = message.parts
+                                      .filter((p) => p.type === "text")
+                                      .map((p) => p.text)
+                                      .join("\n");
+                                    handleCopyMessage(message.id, textToCopy);
+                                  }}
+                                  className="h-6 w-6 rounded-full hover:bg-background/80 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1"
+                                  aria-label={
+                                    copiedMessageId === message.id
+                                      ? "Copiado al portapapeles"
+                                      : "Copiar mensaje al portapapeles"
+                                  }
+                                >
+                                  {copiedMessageId === message.id ? (
+                                    <Check className="h-3 w-3 text-emerald-700" />
+                                  ) : (
+                                    <Copy className="h-3 w-3" />
+                                  )}
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent
+                                side="top"
+                                className="bg-slate-900 text-white border-slate-800"
+                              >
+                                {copiedMessageId === message.id ? "¡Copiado!" : "Copiar"}
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
+                        )}
+                        </>
                       ) : (
                         <div className="text-sm space-y-2">
                           {message.parts.map((part, i) => {
@@ -1065,6 +1151,22 @@ export function ChatFloating({
               <div ref={messagesEndRef} />
             </div>
           </div>
+
+          {/* Compact Follow-up Suggestions Row */}
+          {messages.length > 0 && !isSubmitting && (
+            <div className="px-4 py-2 border-t bg-muted/20 flex gap-1.5 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth shrink-0">
+              {followUpSuggestions.map((s, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => handleSuggestionClick(s.text)}
+                  className="whitespace-nowrap text-[11px] font-medium bg-background hover:bg-primary/5 hover:text-primary border hover:border-primary/20 rounded-full px-2.5 py-1 transition-all duration-150 cursor-pointer active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 text-muted-foreground shrink-0"
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* Input */}
           <form onSubmit={onSubmit} className="p-4 border-t">
