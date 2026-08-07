@@ -1,14 +1,18 @@
 ## 📋 BACKLOG
-- [ ] Incorporación de un filtro por rango de fechas de ingreso en el listado de vehículos.
 - [ ] Exportación resumida de transacciones filtradas por tipo en formato PDF en la ficha del cliente.
 
 ## ✅ DONE
+- [x] 2026-08-06 — Filtrado por Rango de Fechas de Registro/Ingreso en Listado de Vehículos
+  - Implementación de controles de entrada de tipo `date` para filtrar vehículos client-side por un rango de fechas de ingreso ("Ingreso desde / hasta").
+  - Adición de la columna "Fecha Ingreso" en la grilla principal con un `accessorFn` explícito y ordenamiento de TanStack Table, formateado con la localización local `es-AR`.
+  - Integración del campo "Fecha de Ingreso" en la exportación a CSV para mantener compatibilidad e integridad en reportes externos.
+  - Resolución de conflictos de selectores de tests en JSDOM mediante el uso de `within(dialog)` para aislar el select del modal de pagos, previniendo falsos positivos con el select de categorías de cabecera.
 - [x] 2026-08-04 — Cobros Rápidos e Inline en Fichas de Clientes y Vehículos desde Listados de Directorio
   - Implementación de botones de acción rápida con el icono `ArrowDownLeft` ("Registrar Pago") directamente en cada fila de las grillas de Clientes (`CustomersClient.tsx`) y Vehículos (`VehiclesClient.tsx`).
   - El botón es dinámico y condicionado a la existencia de deudas (`customer.balance > 0` para clientes, y `getVehicleDebt(vehicle) > 0` para vehículos).
   - Integración de modales autocontenidos y pulidos de cobro que permiten pre-cargar el monto de deuda, usar atajos de "Saldar total", elegir el medio de cobro (Efectivo, Transferencia, Tarjeta, Cheque), y agregar notas de comprobante.
   - Protección de doble-click (`isSubmittingPayment`) en la confirmación de pago y actualización en tiempo real de la grilla principal tras re-fetching asíncrono asíncrono.
-  - Desarrollo de suites de pruebas unitarias robustas en `app/adm/customers/CustomersClient.test.tsx` y `app/adm/vehicles/VehiclesClient.test.tsx` para cobertura total del flujo con interceptación de fetch dinámico por URL.
+  - Desarrollo de suites de pruebas unitarias robustas en `app/adm/customers/CustomersClient.test.tsx` and `app/adm/vehicles/VehiclesClient.test.tsx` para cobertura total del flujo con interceptación de fetch dinámico por URL.
 - [x] 2026-08-04 — Ordenamiento Inteligente y Robusto en Grillas de Clientes, Vehículos y Transacciones
   - Implementación de `accessorFn` explísitos y estables para columnas anidadas y dinámicas en el dashboard de vehículos (`VehiclesClient.tsx`) y detalle de cliente (`app/adm/customers/[id]/page.tsx`).
   - Habilitado el ordenamiento dinámico por "Deuda", "Marca/Modelo" y "Propietario" en el listado de vehículos.
@@ -53,7 +57,7 @@
   - Implementación del patrón de validación híbrido de patentes argentinas en tiempo real en `VehicleForm.tsx`.
   - Validación algorítmica inmediata cuando la patente sanitizada (sin espacios ni guiones) alcanza la longitud esperada por categoría (6-7 caracteres para autos/motos, 9-10 para trailers).
   - Alerta de longitud corta y mensajes descriptivos en eventos `onBlur` y de envío, previniendo guardar identificadores truncados o inválidos en la base de datos.
-  - Diseño de feedback visual semántico con borde verde esmeralda (`border-emerald-500`) y punto pulsante junto al texto "Patente válida" de forma simétrica a la validación de CUIT.
+  - Diseño de feedback visual semántico con borde verde esmeralda (`border-emerald-500`) and punto pulsante junto al texto "Patente válida" de forma simétrica a la validación de CUIT.
   - Expansión de la suite de pruebas unitarias en `VehicleForm.test.tsx` con 4 nuevos casos de prueba robustos logrando cobertura total de estados de validación y de bloqueo de formularios.
 - [x] 2026-07-29 — Acción de Recalcular Saldos para Administradores en Listado de Clientes
   - Implementación de un botón de acción "Recalcular Saldos" en la cabecera del listado de clientes (`CustomersClient.tsx`), visible únicamente para usuarios con rol de Administrador (`isAdmin={userRole === UserRole.ADMIN}`).
@@ -106,6 +110,10 @@
   - Mejora de navegación con botón de "Volver" en el detalle del cliente.
 
 ## 🧠 LEARNINGS
+## 2026-08-06 - Evitar Colisiones de Elementos de Test en JSDOM con `within()`
+**Learning:** En entornos de pruebas unitarias/integración de React que utilizan mocks globales para componentes de UI repetitivos (como un selector de opciones `<Select>`), es muy común tener colisiones si múltiples instancias del mismo componente se renderizan concurrentemente en el DOM (por ejemplo, un selector de filtros de cabecera y un selector de métodos de cobro en un modal). Realizar búsquedas globales con `screen.getByTestId` genera ambigüedades y fallas de "Found multiple elements". Utilizar `within(container)` (donde container es el modal activo) permite acotar el contexto de búsqueda con precisión milimétrica, garantizando que el selector correcto sea manipulado.
+**Action:** Al interactuar con elementos que pueden estar duplicados en la página (como selects o botones estándar), buscar primero su contenedor directo (por ejemplo, `screen.getByRole("dialog")`) y utilizar `within` para realizar consultas seguras.
+
 ## 2026-08-04 - Cobros Directos e Inline desde Grillas de Listados de Directorio
 **Learning:** En sistemas de gestión del taller donde los operadores administran constantemente un gran volumen de clientes y vehículos, forzar la navegación completa al detalle de la ficha (con la consecuente espera de carga de red y renderizado de la página) únicamente para asentar un pago rápido de cuenta corriente genera una fricción innecesaria. Proporcionar un botón semántico de cobro (`ArrowDownLeft`) directamente en las filas de Clientes y Vehículos con deudas pendientes, acoplado a un diálogo modal autocontenido de pagos, ahorra valiosos clics y tiempo en el punto de atención. Adicionalmente, estructurar las llamadas de fetch asíncronas con interceptaciones de tests unitarios específicos previene regresiones operativas en producción.
 **Action:** Integrar siempre atajos de cobros y registro de pagos rápidos allí donde se presenten listados con deudas de clientes o activos del taller.
