@@ -3,6 +3,7 @@
 ## 📋 BACKLOG
 
 ## ✅ DONE
+- [x] 2026-08-06 — Cobertura de Pruebas Unitarias Robustas para el Servicio de Reportes de Ventas: Diseñada e implementada una suite de pruebas unitarias exhaustiva para `salesReportService.ts` en `tests/unit/salesReportService.test.ts`, asegurando la verificación de cálculos complejos, promedios de tickets, agrupaciones por hora, día y mes alineadas con la zona horaria argentina (America/Argentina/Buenos_Aires o UTC-3), desgloses de productos y categorías con resiliencia ante valores nulos/vacíos sin división por cero. (PR #diego/reports/sales-report-unit-tests)
 - [x] 2026-08-05 — Estandarización de Comparativo y Visualización de Margen de Rentabilidad: Modificado el cálculo de cambio de margen bruto en `profitabilityReportService.ts` para computar la diferencia absoluta en puntos porcentuales (`p.p.`) en lugar del cambio porcentual relativo, y actualizada la visualización en `ProfitabilityReportClient.tsx` para utilizar `p.p. vs período anterior`. (PR #diego/reports/profitability-report-margins-fix)
 - [x] 2026-08-04 — Cobertura de Pruebas Unitarias Robustas para el Servicio de Reportes de Rentabilidad: Diseñada e implementada una suite de pruebas unitarias exhaustiva para `profitabilityReportService.ts` en `tests/unit/profitabilityReportService.test.ts`, asegurando la verificación de cálculos complejos, agrupaciones por hora, día y mes con consideraciones horarias de Argentina (UTC-3), desgloses por categoría y técnicos, y resiliencia ante valores nulos/vacíos sin división por cero. (PR #diego/reports/profitability-report-unit-tests)
 - [x] 2026-08-03 — Vista de Impresión de Alta Fidelidad y Accesibilidad WCAG AA en Reporte de Resumen (Overview): Añadida la acción secundaria "Imprimir" en el panel general de reportes (Overview / Centro de Reportes), diseñando una plantilla de impresión de alta fidelidad con KPIs de control corporativo, distribución de estado de inventario, tabla comparativa de rendimiento interperíodo, y bloques de firmas para control de calidad y auditoría gerencial. Elevado el contraste de colores para satisfacer WCAG AA (4.5:1). (PR #diego/reports/overview-print-layout)
@@ -33,6 +34,10 @@
 - [x] 2025-07-09 — Implementación de reporte de Clientes (adquisición, recurrencia y ranking) (PR #diego/reports/customer-report)
 
 ## 🧠 LEARNINGS
+## 2026-08-06 - Cobertura de Pruebas Unitarias Robustas para el Servicio de Reportes de Ventas
+**Learning:** El testeo unitario de reportes de ventas que agrupan métricas por hora, día o mes requiere una configuración precisa de las fechas para alinearse con los desplazamientos de zona horaria local (`America/Argentina/Buenos_Aires`). El uso de un Proxy para simular las llamadas encadenadas de Drizzle ORM permite emular bases de datos en memoria complejas de manera predecible, validando promedios de tickets y cambios interperíodo sin dependencias externas.
+**Action:** Continuar utilizando Proxy mocks encadenados para probar servicios con queries complejas de Drizzle ORM y validar siempre la precisión de cálculos contra valores nulos o vacíos.
+
 ## 2026-08-05 - Estandarización de Comparativo y Visualización de Margen de Rentabilidad
 **Learning:** En el análisis financiero y de Business Intelligence, comparar porcentajes (márgenes) utilizando cambios porcentuales relativos puede resultar confuso y matemáticamente erróneo. Lo correcto para comparar variaciones entre dos márgenes es calcular y reportar la diferencia absoluta en puntos porcentuales (`p.p.`).
 **Action:** Al implementar tendencias o comparativos temporales de indicadores de porcentaje (márgenes, tasas de conversión, etc.), calcular siempre la diferencia aritmética y utilizar el sufijo de puntos porcentuales (`p.p.`) para su visualización.
