@@ -12,6 +12,17 @@ if (typeof window !== "undefined") {
   window.URL.revokeObjectURL = mockRevokeObjectURL;
 }
 
+// Mock navigator.clipboard
+const mockWriteText = vi.fn().mockResolvedValue(undefined);
+if (typeof navigator !== "undefined") {
+  Object.defineProperty(navigator, "clipboard", {
+    value: {
+      writeText: mockWriteText,
+    },
+    writable: true,
+  });
+}
+
 // Mock scrollIntoView for HTMLElement in JSDOM
 HTMLElement.prototype.scrollIntoView = vi.fn();
 
@@ -88,6 +99,7 @@ describe("ChatFloating Component", () => {
     vi.clearAllMocks();
     mockCreateObjectURL.mockClear();
     mockRevokeObjectURL.mockClear();
+    mockWriteText.mockClear();
     mockMessages = [];
     mockError = null;
     mockPathname = "/adm/dashboard";
@@ -498,5 +510,32 @@ describe("ChatFloating Component", () => {
 
     expect(mockClearError).toHaveBeenCalled();
     expect(mockReload).toHaveBeenCalled();
+  });
+
+  it("displays copy button on assistant text messages and triggers clipboard write on click", async () => {
+    mockMessages = [
+      {
+        id: "msg-assistant-1",
+        role: "assistant",
+        parts: [{ type: "text", text: "Este es un mensaje del asistente para copiar." }],
+      },
+    ];
+
+    render(<ChatFloating isOpen={true} />);
+
+    // The copy button should be found by its aria-label
+    const copyBtn = screen.getByRole("button", { name: /copiar mensaje al portapapeles/i });
+    expect(copyBtn).toBeInTheDocument();
+
+    // Click the copy button
+    await act(async () => {
+      fireEvent.click(copyBtn);
+    });
+
+    // Check that navigator.clipboard.writeText was called with the correct text content
+    expect(mockWriteText).toHaveBeenCalledWith("Este es un mensaje del asistente para copiar.");
+
+    // The button's aria-label should change to show success feedback "Copiado al portapapeles"
+    expect(screen.getByRole("button", { name: /copiado al portapapeles/i })).toBeInTheDocument();
   });
 });
