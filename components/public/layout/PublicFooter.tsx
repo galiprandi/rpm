@@ -9,7 +9,11 @@ export function PublicFooter() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
           {/* Brand */}
           <div className="space-y-6">
-            <Link href="/" className="text-2xl font-bold tracking-tighter text-white">
+            <Link
+              href="/"
+              className="inline-block text-2xl font-bold tracking-tighter text-white hover:text-brand focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none rounded-lg px-2 py-1 transition-colors"
+              aria-label="RPM Accesorios - Volver al inicio"
+            >
               RPM<span className="text-[#FF4B00]">ACCESORIOS</span>
             </Link>
             <p className="text-sm leading-relaxed">
@@ -20,9 +24,9 @@ export function PublicFooter() {
                 href={PUBLIC_SITE_CONFIG.instagramUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none rounded"
+                className="hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none rounded-lg p-2"
                 title="Instagram"
-                aria-label="Instagram de RPM Accesorios"
+                aria-label="Instagram de RPM Accesorios (se abre en una nueva pestaña)"
               >
                 <Camera className="h-5 w-5 pointer-events-none" aria-hidden="true" />
               </a>
@@ -30,9 +34,9 @@ export function PublicFooter() {
                 href={PUBLIC_SITE_CONFIG.links.whatsapp(DEFAULT_WHATSAPP_MESSAGE)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none rounded"
+                className="hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none rounded-lg p-2"
                 title="WhatsApp"
-                aria-label="WhatsApp de RPM Accesorios"
+                aria-label="WhatsApp de RPM Accesorios (se abre en una nueva pestaña)"
               >
                 <MessageCircle className="h-5 w-5 pointer-events-none" aria-hidden="true" />
               </a>
@@ -43,10 +47,38 @@ export function PublicFooter() {
           <div>
             <h4 className="text-white font-semibold mb-6 uppercase tracking-wider text-sm">Navegación</h4>
             <ul className="space-y-4 text-sm">
-              <li><Link href="/productos" className="hover:text-white transition-colors">Catálogo de Productos</Link></li>
-              <li><Link href="/servicios" className="hover:text-white transition-colors">Nuestros Servicios</Link></li>
-              <li><Link href="/contacto" className="hover:text-white transition-colors">Contacto</Link></li>
-              <li><Link href="/nosotros" className="hover:text-white transition-colors">Sobre Nosotros</Link></li>
+              <li>
+                <Link
+                  href="/productos"
+                  className="inline-block hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none rounded-lg px-2 py-1"
+                >
+                  Catálogo de Productos
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/servicios"
+                  className="inline-block hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none rounded-lg px-2 py-1"
+                >
+                  Nuestros Servicios
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/contacto"
+                  className="inline-block hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none rounded-lg px-2 py-1"
+                >
+                  Contacto
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/nosotros"
+                  className="inline-block hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none rounded-lg px-2 py-1"
+                >
+                  Sobre Nosotros
+                </Link>
+              </li>
             </ul>
           </div>
 
@@ -64,15 +96,21 @@ export function PublicFooter() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center space-x-3 hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none rounded-lg px-2 py-1"
-                  aria-label={`Llamar o enviar WhatsApp al ${PUBLIC_SITE_CONFIG.phone}`}
+                  aria-label={`Llamar o enviar WhatsApp al ${PUBLIC_SITE_CONFIG.phone} (se abre en una nueva pestaña)`}
                 >
                   <Phone className="h-5 w-5 text-[#FF4B00] shrink-0 pointer-events-none" aria-hidden="true" />
                   <span>{PUBLIC_SITE_CONFIG.phone}</span>
                 </a>
               </li>
               <li className="flex items-center space-x-3">
-                <Mail className="h-5 w-5 text-[#FF4B00] shrink-0 pointer-events-none" aria-hidden="true" />
-                <span>{PUBLIC_SITE_CONFIG.email}</span>
+                <a
+                  href={`mailto:${PUBLIC_SITE_CONFIG.email}`}
+                  className="flex items-center space-x-3 hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none rounded-lg px-2 py-1"
+                  aria-label={`Enviar correo electrónico a ${PUBLIC_SITE_CONFIG.email}`}
+                >
+                  <Mail className="h-5 w-5 text-[#FF4B00] shrink-0 pointer-events-none" aria-hidden="true" />
+                  <span>{PUBLIC_SITE_CONFIG.email}</span>
+                </a>
               </li>
             </ul>
           </div>
