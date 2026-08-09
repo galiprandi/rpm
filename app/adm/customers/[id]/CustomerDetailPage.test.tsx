@@ -199,4 +199,37 @@ describe("CustomerDetailPage", () => {
     fireEvent.change(select, { target: { value: "ALL" } });
     expect(screen.getByText(/Historial de Transacciones \(3\)/i)).toBeInTheDocument();
   });
+
+  it("renders Imprimir Historial button and changes print layout title when clicked", async () => {
+    // Spy on window.print
+    const printSpy = vi.spyOn(window, "print").mockImplementation(() => {});
+
+    render(
+      <TooltipProvider>
+        <CustomerDetailPage />
+      </TooltipProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.queryByText("Cargando...")).not.toBeInTheDocument();
+    });
+
+    // Check for the "Imprimir Historial" button
+    const printBtn = screen.getByRole("button", { name: /Imprimir Historial/i });
+    expect(printBtn).toBeInTheDocument();
+
+    // Prior to clicking, the print layout title should be "RESUMEN DE CUENTA CLIENTE"
+    expect(screen.getByText("RESUMEN DE CUENTA CLIENTE")).toBeInTheDocument();
+    expect(screen.queryByText("HISTORIAL DE TRANSACCIONES")).not.toBeInTheDocument();
+
+    // Click the print button
+    fireEvent.click(printBtn);
+
+    // After clicking, the state switches printMode to TRANSACTIONS, rendering HISTORIAL DE TRANSACCIONES
+    expect(screen.getByText("HISTORIAL DE TRANSACCIONES")).toBeInTheDocument();
+    expect(screen.queryByText("RESUMEN DE CUENTA CLIENTE")).not.toBeInTheDocument();
+
+    // Cleanup print spy
+    printSpy.mockRestore();
+  });
 });
