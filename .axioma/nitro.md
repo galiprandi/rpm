@@ -3,6 +3,9 @@
 ## 📋 BACKLOG
 
 ## ✅ DONE
+- [x] 2026-08-10 — Implement dynamic auto-resizing height for the chatbot input `<Textarea>` in `components/bot/ChatFloating.tsx` so that it expands and shrinks dynamically to fit content. Concurrently, expand context-aware empty-state and active follow-up suggestions for `/services`, `/direct-sales`, `/categories`, and `/users` routes. Fully tested in Vitest and end-to-end verified with Playwright screenshots.
+- [x] 2026-08-08 — Conducted a comprehensive audit of the active chatbot tools in `lib/agents/unified-tools.ts` and system prompt instructions in `lib/agents/unified-instructions.md`. Confirmed total of 20 active, high-utility tools matching exactly with the base prompt. All tool schemas and configurations are perfectly optimized and aligned.
+- [x] 2026-08-09 — Implement the chatbot multi-line text entry standard. Replace the single-line input box inside `components/bot/ChatFloating.tsx` with a beautifully styled, auto-expanding `<Textarea>` component. Added keyboard handlers so that pressing `Enter` without `Shift` triggers form submission, while `Shift+Enter` inserts a new line. Fully tested in Vitest and end-to-end verified using Playwright.
 - [x] 2026-08-07 — Implement context-aware, compact follow-up suggestion pills rendered horizontally above the chat input box when the conversation is active (messages.length > 0) and the assistant is not submitting, dynamically shifting suggested actions based on the current page route to streamline operations for workshop technicians and staff. Fully tested in Vitest.
 - [x] 2026-08-06 — Implement the chatbot "Copy to Clipboard" interaction for assistant text messages inside components/bot/ChatFloating.tsx. Promotes frictionless sharing and copying of WhatsApp templates, summaries, or checklists with hover/focus group absolute controls, a custom Radix Tooltip, and instant checkmark feedback. Fully tested under components/bot/ChatFloating.test.tsx.
 - [x] 2026-08-05 — Implement the chatbot error retry interaction standard. When an API or network error occurs, render a beautifully styled, accessible, and fully keyboard-focusable "Reintentar" button inside the error block (in components/bot/ChatFloating.tsx) that clears the active error and re-runs useChat's reload() method. Thoroughly validated via Vitest (components/bot/ChatFloating.test.tsx) and Playwright visual screenshots.
@@ -26,6 +29,17 @@
 - [x] 2026-03-28 — Initial audit of bot tools, removal of mock tools, fixing conversation history unit tests, and implementing major UI/UX improvements (smart scrolling, success states for tool execution, empty-state quick start suggestion chips, and full WCAG accessibility).
 
 ## 🧠 LEARNINGS
+### 2026-08-10 — Dynamic Auto-Resizing Chat Input and Contextual Route Suggestion Pills
+**Learning:** Modern premium chat interfaces expect the text input box to scale smoothly without vertical scrollbars until reaching a reasonable limit. Utilizing React `useEffect` to programmatically synchronize the `<Textarea>` element height with its `scrollHeight` delivers a flawless, fluid UX. Concurrently, extending route-specific suggestion pills to other core workshop areas (services, categories, users, direct sales) reduces cognitive friction for operators by anticipating their natural workflow actions on those pages.
+**Action:** Always employ scrollHeight-based styling on auto-expanding text areas, and map specific suggestions for all administrative listing pages.
+
+### 2026-08-08 — Chatbot Active Tools Audit
+**Learning:** Performing scheduled, systematic audits of chatbot system tools (`unified-tools.ts`) and prompt instructions (`unified-instructions.md`) is vital to maintain semantic clarity for the LLM. Keeping the tool count strictly capped at 20 prevents model confusion/hallucination, minimizes latency, and reduces prompt-token consumption while maintaining highly functional capabilities.
+**Action:** Always verify that every registered tool is fully mapped in both the code registry and the system instruction prompt file.
+### 2026-08-09 — Chatbot Multi-line Text Entry and Keyboard Submission Standard
+**Learning:** Transitioning a chatbot input field from a single-line `<Input>` to a multi-line `<Textarea>` greatly enhances usability when users want to type detailed requests or paste copied text. By utilizing `@/components/ui/textarea` and custom key event handling (Enter to submit, Shift+Enter to newline), we emulate the precise standard of premium, modern chat interfaces. Ensuring this is coupled with a clean JSDOM/Vitest suite with proper `act(...)` state wrapper protections keeps tests robust and warning-free.
+**Action:** Always provide auto-expanding, multi-line capable entry boxes for chatbots, and implement natural keyboard behaviors (Enter triggers form submission, Shift+Enter breaks lines).
+
 ### 2026-08-07 — Chatbot Contextual Follow-up Suggestion Pills
 **Learning:** During active conversations, workshop staff and administrative operators frequently require repeating operations (e.g., checking stock or viewing today's summary) but typing these queries each time creates excessive friction. Displaying compact, route-specific follow-up pills right above the chat input streamlines the interaction pattern immensely. Ensuring they hide default browser scrollbars while retaining touch-based scrollability on mobile provides a premium, responsive touch.
 **Action:** Always provide compact, contextual action shortcuts during active interactive session modes to minimize user cognitive and typing load.

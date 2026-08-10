@@ -343,6 +343,26 @@ describe("ChatFloating Component", () => {
     mockPathname = "/adm/reports";
     rerender(<ChatFloating isOpen={true} />);
     expect(screen.getByRole("button", { name: /📊 Resumen diario/i })).toBeInTheDocument();
+
+    // 6. Services route
+    mockPathname = "/adm/services";
+    rerender(<ChatFloating isOpen={true} />);
+    expect(screen.getByRole("button", { name: /🛠️ Buscar Servicios/i })).toBeInTheDocument();
+
+    // 7. Direct Sales route
+    mockPathname = "/adm/direct-sales";
+    rerender(<ChatFloating isOpen={true} />);
+    expect(screen.getByRole("button", { name: /📝 Nueva Venta Directa/i })).toBeInTheDocument();
+
+    // 8. Categories route
+    mockPathname = "/adm/categories";
+    rerender(<ChatFloating isOpen={true} />);
+    expect(screen.getByRole("button", { name: /📦 Buscar Productos/i })).toBeInTheDocument();
+
+    // 9. Users route
+    mockPathname = "/adm/users";
+    rerender(<ChatFloating isOpen={true} />);
+    expect(screen.getByRole("button", { name: /👥 Buscar Técnicos/i })).toBeInTheDocument();
   });
 
   it("renders a thumbnail image preview for attached image files", async () => {
@@ -545,5 +565,54 @@ describe("ChatFloating Component", () => {
     mockPathname = "/adm/work-orders";
     rerender(<ChatFloating isOpen={true} />);
     expect(screen.getByRole("button", { name: /^🔧 Nueva OT$/i })).toBeInTheDocument();
+
+    mockPathname = "/adm/services";
+    rerender(<ChatFloating isOpen={true} />);
+    expect(screen.getByRole("button", { name: /^🛠️ Servicios$/i })).toBeInTheDocument();
+
+    mockPathname = "/adm/direct-sales";
+    rerender(<ChatFloating isOpen={true} />);
+    expect(screen.getByRole("button", { name: /^📝 Venta Directa$/i })).toBeInTheDocument();
+
+    mockPathname = "/adm/categories";
+    rerender(<ChatFloating isOpen={true} />);
+    expect(screen.getByRole("button", { name: /^📦 Productos$/i })).toBeInTheDocument();
+
+    mockPathname = "/adm/users";
+    rerender(<ChatFloating isOpen={true} />);
+    expect(screen.getByRole("button", { name: /^👥 Técnicos$/i })).toBeInTheDocument();
+  });
+
+  it("automatically adjusts textarea height dynamically when input text changes", async () => {
+    render(<ChatFloating isOpen={true} />);
+    const textarea = screen.getByPlaceholderText(/Escribe tu mensaje.../i) as HTMLTextAreaElement;
+
+    const heightSpy = vi.spyOn(textarea.style, "height", "set");
+
+    await act(async () => {
+      fireEvent.change(textarea, { target: { value: "A new long text value" } });
+    });
+
+    expect(heightSpy).toHaveBeenCalled();
+  });
+
+  it("submits the form when Enter is pressed without Shift on the textarea, and does not submit when Shift+Enter is pressed", async () => {
+    render(<ChatFloating isOpen={true} />);
+    const textarea = screen.getByPlaceholderText(/Escribe tu mensaje.../i);
+
+    // 1. Press Shift+Enter - should NOT trigger sendMessage
+    await act(async () => {
+      fireEvent.keyDown(textarea, { key: "Enter", shiftKey: true });
+    });
+    expect(mockSendMessage).not.toHaveBeenCalled();
+
+    // 2. Type some text and press Enter without Shift - should trigger sendMessage
+    await act(async () => {
+      fireEvent.change(textarea, { target: { value: "Test prompt message" } });
+    });
+    await act(async () => {
+      fireEvent.keyDown(textarea, { key: "Enter", shiftKey: false });
+    });
+    expect(mockSendMessage).toHaveBeenCalledWith({ text: "Test prompt message" });
   });
 });

@@ -139,6 +139,7 @@ export default function CustomerDetailPage() {
   const router = useRouter();
   const { alert, confirm } = useUI();
   const [loading, setLoading] = useState(true);
+  const [printMode, setPrintMode] = useState<"DEBT" | "TRANSACTIONS">("DEBT");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
@@ -194,6 +195,16 @@ export default function CustomerDetailPage() {
   useEffect(() => {
     fetchCustomer();
   }, [fetchCustomer]);
+
+  useEffect(() => {
+    const handleAfterPrint = () => {
+      setPrintMode("DEBT");
+    };
+    window.addEventListener("afterprint", handleAfterPrint);
+    return () => {
+      window.removeEventListener("afterprint", handleAfterPrint);
+    };
+  }, []);
 
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { color: string; label: string }> = {
@@ -1086,6 +1097,20 @@ export default function CustomerDetailPage() {
               </div>
             </div>
           }
+          headerActions={[
+            {
+              label: "Imprimir Historial",
+              onClick: () => {
+                setPrintMode("TRANSACTIONS");
+                // Wait for state to apply before triggering print
+                setTimeout(() => {
+                  window.print();
+                }, 100);
+              },
+              icon: Printer,
+              variant: "outline",
+            },
+          ]}
           headerFilter={
             <Select value={transactionTypeFilter} onValueChange={setTransactionTypeFilter}>
               <SelectTrigger className="w-[180px] h-9" aria-label="Filtrar transacciones por tipo">

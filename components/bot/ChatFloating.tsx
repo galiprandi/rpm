@@ -24,7 +24,7 @@ import {
   Copy,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -65,9 +65,18 @@ export function ChatFloating({
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const [localInput, setLocalInput] = useState("");
   const [isConfirmingClear, setIsConfirmingClear] = useState(false);
+
+  // Dynamically auto-resize the input textarea height based on content
+  useEffect(() => {
+    const textarea = inputRef.current;
+    if (!textarea) return;
+
+    textarea.style.height = "auto";
+    textarea.style.height = `${textarea.scrollHeight}px`;
+  }, [localInput]);
   const confirmClearTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<any>(null);
@@ -380,6 +389,14 @@ export function ChatFloating({
       base[1] = { label: "⚙️ Roles y Permisos", text: "Ver los roles y permisos de los usuarios" };
     } else if (pathname.includes("/reports")) {
       base[1] = { label: "📊 Resumen diario", text: "Ver resumen del día" };
+    } else if (pathname.includes("/services")) {
+      base[0] = { label: "🛠️ Buscar Servicios", text: "Buscar servicios del taller" };
+    } else if (pathname.includes("/direct-sales")) {
+      base[1] = { label: "📝 Nueva Venta Directa", text: "Quiero registrar una venta directa de mostrador" };
+    } else if (pathname.includes("/categories")) {
+      base[0] = { label: "📦 Buscar Productos", text: "Buscar productos en el catálogo" };
+    } else if (pathname.includes("/users")) {
+      base[1] = { label: "👥 Buscar Técnicos", text: "Buscar usuarios o técnicos" };
     }
 
     return base;
@@ -413,6 +430,14 @@ export function ChatFloating({
       base[1] = { label: "⚙️ Roles", text: "Ver los roles y permisos de los usuarios" };
     } else if (pathname.includes("/reports")) {
       base[1] = { label: "📊 Resumen", text: "Ver resumen del día" };
+    } else if (pathname.includes("/services")) {
+      base[0] = { label: "🛠️ Servicios", text: "Buscar servicios del taller" };
+    } else if (pathname.includes("/direct-sales")) {
+      base[1] = { label: "📝 Venta Directa", text: "Quiero registrar una venta directa de mostrador" };
+    } else if (pathname.includes("/categories")) {
+      base[0] = { label: "📦 Productos", text: "Buscar productos" };
+    } else if (pathname.includes("/users")) {
+      base[1] = { label: "👥 Técnicos", text: "Buscar usuarios o técnicos" };
     }
 
     return base;
@@ -1292,16 +1317,23 @@ export function ChatFloating({
                   Adjuntar archivos
                 </TooltipContent>
               </Tooltip>
-              <Input
+              <Textarea
                 ref={inputRef}
                 value={localInput}
                 onChange={(e) => setLocalInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    onSubmit(e);
+                  }
+                }}
                 placeholder={
                   isListening
                     ? "Escuchando... Hablá ahora"
                     : `Escribe tu mensaje... (${shortcutLabel} para cerrar)`
                 }
-                className={`flex-1 transition-all ${
+                rows={1}
+                className={`flex-1 min-h-[40px] max-h-32 py-2.5 resize-none transition-all ${
                   isListening
                     ? "border-red-500 focus-visible:ring-red-500 bg-red-50/10 focus-visible:ring-offset-0 placeholder:text-red-400"
                     : ""
