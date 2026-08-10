@@ -27,8 +27,10 @@ import { WorkshopReportData, type WorkshopGroupBy } from "@/lib/services/worksho
 
 type Period =
   | "today"
+  | "yesterday"
   | "last7days"
   | "last30days"
+  | "last90days"
   | "thisMonth"
   | "lastMonth"
   | "last12months"
@@ -37,8 +39,10 @@ type Period =
 
 const periodLabels: Record<Period, string> = {
   today: "Hoy",
+  yesterday: "Ayer",
   last7days: "Últimos 7 días",
   last30days: "Últimos 30 días",
+  last90days: "Últimos 90 días",
   thisMonth: "Este mes",
   lastMonth: "Mes pasado",
   last12months: "Últimos 12 meses",
@@ -61,7 +65,7 @@ export default function WorkshopReportClient() {
   });
 
   const getGroupByForPeriod = (p: Period): WorkshopGroupBy => {
-    if (p === "today") return "hour";
+    if (p === "today" || p === "yesterday") return "hour";
     if (p === "thisYear" || p === "last12months") return "month";
     if (p === "custom" && customStartDate && customEndDate) {
       const start = new Date(customStartDate + "T00:00:00");
@@ -102,6 +106,16 @@ export default function WorkshopReportClient() {
         comparisonEndDate = new Date(endDate);
         comparisonEndDate.setDate(comparisonEndDate.getDate() - 1);
         break;
+      case "yesterday":
+        startDate.setDate(startDate.getDate() - 1);
+        startDate.setHours(0, 0, 0, 0);
+        endDate.setDate(endDate.getDate() - 1);
+        endDate.setHours(23, 59, 59, 999);
+        comparisonStartDate = new Date(startDate);
+        comparisonStartDate.setDate(comparisonStartDate.getDate() - 1);
+        comparisonEndDate = new Date(endDate);
+        comparisonEndDate.setDate(comparisonEndDate.getDate() - 1);
+        break;
       case "last7days":
         startDate.setDate(startDate.getDate() - 6);
         startDate.setHours(0, 0, 0, 0);
@@ -116,6 +130,15 @@ export default function WorkshopReportClient() {
         startDate.setHours(0, 0, 0, 0);
         comparisonStartDate = new Date(startDate);
         comparisonStartDate.setDate(comparisonStartDate.getDate() - 30);
+        comparisonEndDate = new Date(startDate);
+        comparisonEndDate.setDate(comparisonEndDate.getDate() - 1);
+        comparisonEndDate.setHours(23, 59, 59, 999);
+        break;
+      case "last90days":
+        startDate.setDate(startDate.getDate() - 89);
+        startDate.setHours(0, 0, 0, 0);
+        comparisonStartDate = new Date(startDate);
+        comparisonStartDate.setDate(comparisonStartDate.getDate() - 90);
         comparisonEndDate = new Date(startDate);
         comparisonEndDate.setDate(comparisonEndDate.getDate() - 1);
         comparisonEndDate.setHours(23, 59, 59, 999);
@@ -289,8 +312,10 @@ export default function WorkshopReportClient() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="today">Hoy</SelectItem>
+                  <SelectItem value="yesterday">Ayer</SelectItem>
                   <SelectItem value="last7days">Últimos 7 días</SelectItem>
                   <SelectItem value="last30days">Últimos 30 días</SelectItem>
+                  <SelectItem value="last90days">Últimos 90 días</SelectItem>
                   <SelectItem value="thisMonth">Este mes</SelectItem>
                   <SelectItem value="lastMonth">Mes pasado</SelectItem>
                   <SelectItem value="last12months">Últimos 12 meses</SelectItem>

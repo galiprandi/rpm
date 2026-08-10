@@ -2,6 +2,12 @@
 - [ ] Exportación resumida de transacciones filtradas por tipo en formato PDF en la ficha del cliente.
 
 ## ✅ DONE
+- [x] 2026-08-08 — Imprimir Historial de Transacciones (Ledger) en la Ficha del Cliente (PR #344)
+  - Implementación de un doble mecanismo de impresión mediante el estado local `printMode: "DEBT" | "TRANSACTIONS"`.
+  - Añadido un nuevo botón de acción "Imprimir Historial" dentro de las acciones de cabecera de la tabla de Transacciones que cambia el modo a `"TRANSACTIONS"` y dispara la impresión.
+  - Diseñado un layout de impresión premium (`HISTORIAL DE TRANSACCIONES`) que separa débitos y créditos en columnas, muestra conceptos limpios y calcula el total de débitos, créditos y saldo neto para la selección actual.
+  - Suscrito un listener global en el evento `afterprint` para restaurar el estado por defecto (`"DEBT"`) de forma limpia una vez completada o cancelada la impresión.
+  - Cobertura completa de pruebas unitarias en `CustomerDetailPage.test.tsx` verificando la renderización de la acción, el cambio reactivo de títulos en el layout imprimible y el comportamiento interactivo del flujo.
 - [x] 2026-08-06 — Filtrado por Rango de Fechas de Registro/Ingreso en Listado de Vehículos
   - Implementación de controles de entrada de tipo `date` para filtrar vehículos client-side por un rango de fechas de ingreso ("Ingreso desde / hasta").
   - Adición de la columna "Fecha Ingreso" en la grilla principal con un `accessorFn` explícito y ordenamiento de TanStack Table, formateado con la localización local `es-AR`.
@@ -110,6 +116,10 @@
   - Mejora de navegación con botón de "Volver" en el detalle del cliente.
 
 ## 🧠 LEARNINGS
+## 2026-08-08 - Doble Mecanismo de Impresión bajo un Mismo Layout Imprimible
+**Learning:** En fichas complejas de clientes donde conviven estados agregados de deudas y listados cronológicos completos de transacciones históricas, los usuarios suelen requerir reportes físicos de ambos módulos de forma independiente. Implementar una variable de estado como `printMode` y controlarla condicionalmente dentro del mismo contenedor con estilos de impresión (`id="print-section"`) permite dar soporte a múltiples diseños de informes físicos de alta fidelidad con cero duplicación de código de impresión base, ahorrando recursos y garantizando una experiencia de usuario sumamente pulida y limpia.
+**Action:** Usar un estado condicional de tipo de reporte de impresión acoplado a un timeout breve previo a `window.print()` y resetear la selección mediante el evento global `afterprint` para ofrecer una experiencia fluida y consistente en el navegador.
+
 ## 2026-08-06 - Evitar Colisiones de Elementos de Test en JSDOM con `within()`
 **Learning:** En entornos de pruebas unitarias/integración de React que utilizan mocks globales para componentes de UI repetitivos (como un selector de opciones `<Select>`), es muy común tener colisiones si múltiples instancias del mismo componente se renderizan concurrentemente en el DOM (por ejemplo, un selector de filtros de cabecera y un selector de métodos de cobro en un modal). Realizar búsquedas globales con `screen.getByTestId` genera ambigüedades y fallas de "Found multiple elements". Utilizar `within(container)` (donde container es el modal activo) permite acotar el contexto de búsqueda con precisión milimétrica, garantizando que el selector correcto sea manipulado.
 **Action:** Al interactuar con elementos que pueden estar duplicados en la página (como selects o botones estándar), buscar primero su contenedor directo (por ejemplo, `screen.getByRole("dialog")`) y utilizar `within` para realizar consultas seguras.
@@ -151,11 +161,11 @@
 **Action:** Utilizar siempre visualizaciones adaptativas basadas en la categoría del activo e inyectar métricas financieras agregadas en la tabla de listado de sub-entidades para reducir fricción.
 
 ## 2026-07-20 - Resumen de Cuenta Corriente del Cliente Impreso y Exportación CSV
-**Learning:** Ofrecer un resumen de cuenta corriente de cliente con soporte para impresión física o PDF permite una experiencia administrativa del taller sin fisuras. Mediante window.print() y estilos `@media print` scoped, se genera un documento elegante que reúne la deuda total y el detalle de OTs impagas. Asimismo, la exportación de listados de Clientes y Vehículos a formato CSV que respeta el filtrado y búsqueda del usuario actual con BOM UTF-8 y entrecomillado adecuado de campos simplifica enormemente la reportería en Excel.
+**Learning:** Ofrecer un resumen de cuenta corriente de cliente con soporte para impresión física o PDF permite una experiencia administrativa del taller sin fisuras. Mediante window.print() and estilos `@media print` scoped, se genera un documento elegante que reúne la deuda total y el detalle de OTs impagas. Asimismo, la exportación de listados de Clientes y Vehículos a formato CSV que respeta el filtrado y búsqueda del usuario actual con BOM UTF-8 y entrecomillado adecuado de campos simplifica enormemente la reportería en Excel.
 **Action:** Mantener la simetría de exportaciones PDF imprimibles y exportaciones de listados en formato CSV con BOM compatible con Excel en todo el sistema.
 
 ## 2026-07-19 - Resúmenes de Cuenta Autocontenidos y Listos para Imprimir
-**Learning:** Ofrecer capacidades de exportación rápida a PDF sin añadir dependencias de backend o pesadas librerías de renderizado se puede lograr elegantemente combinando `window.print()` nativo con un bloque `<style media="print">` localizado. De esta manera, el navegador hace todo el trabajo pesado garantizando el renderizado exacto de fuentes y colores. Además, diseñar el documento impreso como un recibo formal o resumen de deudas de un vehículo de la forma de deudas del vehículo estructurado (con firmas y disclaimers legales) añade un inmenso valor profesional para los operadores del taller.
+**Learning:** Ofrecer capacidades de exportación rápida a PDF sin añadir dependencias de backend o pesadas librerías de renderizado se puede lograr elegantemente combinando `window.print()` nativo con un bloque `<style media="print">` localizado. De esta manera, el navegador hace todo el trabajo pesado garantizando el renderizado exacto de fuentes y colores. Además, diseñar el documento impreso como un recibo formal o resumen de deudas de un vehículo de la forma de deudas del vehículo de la forma de deudas del vehículo estructurado (con firmas y disclaimers legales) añade un inmenso valor profesional para los operadores del taller.
 **Action:** Usar estilos autocontenidos `@media print` y contenedores semánticos listos para impresión en módulos de informes u hojas de detalles.
 
 ## 2026-07-18 - Consolidación de Historial Visual de Entidades Relacionadas

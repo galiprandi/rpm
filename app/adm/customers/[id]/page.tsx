@@ -138,6 +138,7 @@ export default function CustomerDetailPage() {
   const router = useRouter();
   const { alert, confirm } = useUI();
   const [loading, setLoading] = useState(true);
+  const [printMode, setPrintMode] = useState<"DEBT" | "TRANSACTIONS">("DEBT");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
@@ -185,6 +186,16 @@ export default function CustomerDetailPage() {
   useEffect(() => {
     fetchCustomer();
   }, [fetchCustomer]);
+
+  useEffect(() => {
+    const handleAfterPrint = () => {
+      setPrintMode("DEBT");
+    };
+    window.addEventListener("afterprint", handleAfterPrint);
+    return () => {
+      window.removeEventListener("afterprint", handleAfterPrint);
+    };
+  }, []);
 
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { color: string; label: string }> = {
@@ -984,6 +995,20 @@ export default function CustomerDetailPage() {
               Historial de Transacciones ({filteredTransactions.length})
             </span>
           }
+          headerActions={[
+            {
+              label: "Imprimir Historial",
+              onClick: () => {
+                setPrintMode("TRANSACTIONS");
+                // Wait for state to apply before triggering print
+                setTimeout(() => {
+                  window.print();
+                }, 100);
+              },
+              icon: Printer,
+              variant: "outline",
+            },
+          ]}
           headerFilter={
             <Select value={transactionTypeFilter} onValueChange={setTransactionTypeFilter}>
               <SelectTrigger className="w-[180px] h-9" aria-label="Filtrar transacciones por tipo">
@@ -1497,7 +1522,7 @@ export default function CustomerDetailPage() {
           </div>
           <div className="text-right">
             <Badge variant="outline" className="border-zinc-900 text-zinc-900 font-semibold text-xs py-1 px-3">
-              RESUMEN DE CUENTA CLIENTE
+              {printMode === "TRANSACTIONS" ? "HISTORIAL DE TRANSACCIONES" : "RESUMEN DE CUENTA CLIENTE"}
             </Badge>
             <p className="text-xs text-zinc-500 font-mono mt-2">
               Fecha: {new Date().toLocaleDateString("es-AR")}
@@ -1571,70 +1596,183 @@ export default function CustomerDetailPage() {
           </div>
         </div>
 
-        {/* Detalle de Órdenes de Trabajo Impagas */}
-        <div className="mb-6">
-          <h2 className="text-sm font-bold text-zinc-800 uppercase tracking-wider mb-3">
-            Órdenes de Trabajo Pendientes de Pago
-          </h2>
-          <table className="w-full border-collapse border border-zinc-300 text-sm">
-            <thead>
-              <tr className="bg-zinc-100 text-zinc-700 border-b border-zinc-300">
-                <th className="py-2.5 px-3 text-left font-bold border-r border-zinc-300">Nro. OT</th>
-                <th className="py-2.5 px-3 text-left font-bold border-r border-zinc-300">Vehículo / Patente</th>
-                <th className="py-2.5 px-3 text-left font-bold border-r border-zinc-300">Fecha de Ingreso</th>
-                <th className="py-2.5 px-3 text-left font-bold border-r border-zinc-300">Estado de OT</th>
-                <th className="py-2.5 px-3 text-right font-bold">Monto Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {customer.workOrders.filter(
-                (wo) => wo.status !== "PAID" && wo.status !== "CANCELLED",
-              ).length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="py-4 px-3 text-center text-zinc-500 italic">
-                    No hay órdenes de trabajo pendientes de pago.
+        {/* Conditional render based on printMode */}
+        {printMode === "TRANSACTIONS" ? (
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-bold text-zinc-800 uppercase tracking-wider">
+                Libro de Movimientos y Cuenta Corriente
+              </h2>
+              {transactionTypeFilter !== "ALL" && (
+                <Badge variant="secondary" className="text-xs uppercase font-medium">
+                  Filtrado: {
+                    transactionTypeFilter === "DIRECT_SALE" ? "Ventas Directas" :
+                    transactionTypeFilter === "CREDIT_NOTE" ? "Notas de Crédito" :
+                    transactionTypeFilter === "PAYMENT" ? "Pagos" :
+                    transactionTypeFilter === "INVOICE" ? "Facturas / OTs" : transactionTypeFilter
+                  }
+                </Badge>
+              )}
+            </div>
+            <table className="w-full border-collapse border border-zinc-300 text-sm">
+              <thead>
+                <tr className="bg-zinc-100 text-zinc-700 border-b border-zinc-300">
+                  <th className="py-2.5 px-3 text-left font-bold border-r border-zinc-300 w-20">Fecha</th>
+                  <th className="py-2.5 px-3 text-left font-bold border-r border-zinc-300 w-24">Tipo</th>
+                  <th className="py-2.5 px-3 text-left font-bold border-r border-zinc-300 w-16">ID</th>
+                  <th className="py-2.5 px-3 text-left font-bold border-r border-zinc-300">Concepto / Items</th>
+                  <th className="py-2.5 px-3 text-right font-bold border-r border-zinc-300 w-28">Débito (+)</th>
+                  <th className="py-2.5 px-3 text-right font-bold w-28">Crédito (-)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredTransactions.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-4 px-3 text-center text-zinc-500 italic">
+                      No hay transacciones registradas para este filtro.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredTransactions.map((t) => {
+                    const isDebit = t.type === "DIRECT_SALE" || t.type === "INVOICE";
+                    const isCredit = t.type === "PAYMENT" || t.type === "CREDIT_NOTE";
+                    const concept = t.type === "PAYMENT"
+                      ? `Pago Recibido (${t.method || ""}) ${t.notes || ""}`.trim()
+                      : t.items?.map((i) => i.name).join(", ") || "-";
+
+                    return (
+                      <tr key={t.id} className="border-b border-zinc-300">
+                        <td className="py-2 px-3 font-mono border-r border-zinc-300 text-zinc-600">
+                          {new Date(t.createdAt).toLocaleDateString("es-AR")}
+                        </td>
+                        <td className="py-2 px-3 border-r border-zinc-300 text-zinc-700 uppercase font-medium text-xs">
+                          {t.type === "DIRECT_SALE" ? "Venta" :
+                           t.type === "CREDIT_NOTE" ? "Nota Crédito" :
+                           t.type === "PAYMENT" ? "Pago" :
+                           t.type === "INVOICE" ? "Factura (OT)" : t.type}
+                        </td>
+                        <td className="py-2 px-3 font-mono border-r border-zinc-300 text-zinc-500 text-xs">
+                          #{t.id.slice(-6).toUpperCase()}
+                        </td>
+                        <td className="py-2 px-3 border-r border-zinc-300 text-zinc-800 text-xs truncate max-w-[250px]">
+                          {concept}
+                        </td>
+                        <td className="py-2 px-3 text-right font-mono font-medium border-r border-zinc-300 text-zinc-900">
+                          {isDebit ? formatARS(t.total, 2) : "-"}
+                        </td>
+                        <td className="py-2 px-3 text-right font-mono font-medium text-zinc-900">
+                          {isCredit ? formatARS(t.total, 2) : "-"}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+                {/* Resúmenes Financieros de la Selección */}
+                <tr className="bg-zinc-50 border-t-2 border-zinc-900 font-bold">
+                  <td colSpan={4} className="py-2 px-3 text-right text-zinc-700 text-xs">
+                    TOTALES DE SELECCIÓN:
+                  </td>
+                  <td className="py-2 px-3 text-right font-mono border-r border-zinc-300 text-zinc-900 text-xs">
+                    {formatARS(
+                      filteredTransactions
+                        .filter((t) => t.type === "DIRECT_SALE" || t.type === "INVOICE")
+                        .reduce((sum, t) => sum + t.total, 0),
+                      2
+                    )}
+                  </td>
+                  <td className="py-2 px-3 text-right font-mono text-zinc-900 text-xs">
+                    {formatARS(
+                      filteredTransactions
+                        .filter((t) => t.type === "PAYMENT" || t.type === "CREDIT_NOTE")
+                        .reduce((sum, t) => sum + t.total, 0),
+                      2
+                    )}
                   </td>
                 </tr>
-              ) : (
-                customer.workOrders
-                  .filter((wo) => wo.status !== "PAID" && wo.status !== "CANCELLED")
-                  .map((wo) => (
-                    <tr key={wo.id} className="border-b border-zinc-300">
-                      <td className="py-2 px-3 font-mono font-semibold border-r border-zinc-300 text-zinc-900">
-                        #{wo.id.slice(-6).toUpperCase()}
-                      </td>
-                      <td className="py-2 px-3 font-mono border-r border-zinc-300 text-zinc-800">
-                        {wo.vehicle?.identifier || "-"}
-                      </td>
-                      <td className="py-2 px-3 font-mono border-r border-zinc-300 text-zinc-600">
-                        {new Date(wo.createdAt).toLocaleDateString("es-AR")}
-                      </td>
-                      <td className="py-2 px-3 border-r border-zinc-300 text-zinc-700">
-                        {wo.status === "CONFIRMED" ? "Confirmada" :
-                         wo.status === "WAITING" ? "En espera" :
-                         wo.status === "IN_PROGRESS" ? "En progreso" :
-                         wo.status === "QC_CHECK" ? "Control de Calidad" :
-                         wo.status === "READY" ? "Listo" :
-                         wo.status === "DELIVERED" ? "Entregado" : wo.status}
-                      </td>
-                      <td className="py-2 px-3 text-right font-mono font-semibold text-zinc-900">
-                        {formatARS(Number(wo.total), 2)}
-                      </td>
-                    </tr>
-                  ))
-              )}
-              {/* Fila del Total Acumulado */}
-              <tr className="bg-zinc-50 border-t-2 border-zinc-900 font-bold">
-                <td colSpan={4} className="py-3 px-3 text-right text-zinc-700">
-                  TOTAL SALDO DEUDOR:
-                </td>
-                <td className="py-3 px-3 text-right text-lg text-zinc-900 font-mono">
-                  {formatARS(customer.balance, 2)}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+                {/* Saldo de la Selección */}
+                <tr className="bg-zinc-100 font-bold border-t border-zinc-300">
+                  <td colSpan={4} className="py-2.5 px-3 text-right text-zinc-800">
+                    SALDO NETO SELECCIÓN:
+                  </td>
+                  <td colSpan={2} className="py-2.5 px-3 text-right text-base text-zinc-900 font-mono">
+                    {formatARS(
+                      filteredTransactions
+                        .reduce((sum, t) => {
+                          const isDebit = t.type === "DIRECT_SALE" || t.type === "INVOICE";
+                          return sum + (isDebit ? t.total : -t.total);
+                        }, 0),
+                      2
+                    )}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="mb-6">
+            <h2 className="text-sm font-bold text-zinc-800 uppercase tracking-wider mb-3">
+              Órdenes de Trabajo Pendientes de Pago
+            </h2>
+            <table className="w-full border-collapse border border-zinc-300 text-sm">
+              <thead>
+                <tr className="bg-zinc-100 text-zinc-700 border-b border-zinc-300">
+                  <th className="py-2.5 px-3 text-left font-bold border-r border-zinc-300">Nro. OT</th>
+                  <th className="py-2.5 px-3 text-left font-bold border-r border-zinc-300">Vehículo / Patente</th>
+                  <th className="py-2.5 px-3 text-left font-bold border-r border-zinc-300">Fecha de Ingreso</th>
+                  <th className="py-2.5 px-3 text-left font-bold border-r border-zinc-300">Estado de OT</th>
+                  <th className="py-2.5 px-3 text-right font-bold">Monto Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {customer.workOrders.filter(
+                  (wo) => wo.status !== "PAID" && wo.status !== "CANCELLED",
+                ).length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-4 px-3 text-center text-zinc-500 italic">
+                      No hay órdenes de trabajo pendientes de pago.
+                    </td>
+                  </tr>
+                ) : (
+                  customer.workOrders
+                    .filter((wo) => wo.status !== "PAID" && wo.status !== "CANCELLED")
+                    .map((wo) => (
+                      <tr key={wo.id} className="border-b border-zinc-300">
+                        <td className="py-2 px-3 font-mono font-semibold border-r border-zinc-300 text-zinc-900">
+                          #{wo.id.slice(-6).toUpperCase()}
+                        </td>
+                        <td className="py-2 px-3 font-mono border-r border-zinc-300 text-zinc-800">
+                          {wo.vehicle?.identifier || "-"}
+                        </td>
+                        <td className="py-2 px-3 font-mono border-r border-zinc-300 text-zinc-600">
+                          {new Date(wo.createdAt).toLocaleDateString("es-AR")}
+                        </td>
+                        <td className="py-2 px-3 border-r border-zinc-300 text-zinc-700">
+                          {wo.status === "CONFIRMED" ? "Confirmada" :
+                           wo.status === "WAITING" ? "En espera" :
+                           wo.status === "IN_PROGRESS" ? "En progreso" :
+                           wo.status === "QC_CHECK" ? "Control de Calidad" :
+                           wo.status === "READY" ? "Listo" :
+                           wo.status === "DELIVERED" ? "Entregado" : wo.status}
+                        </td>
+                        <td className="py-2 px-3 text-right font-mono font-semibold text-zinc-900">
+                          {formatARS(Number(wo.total), 2)}
+                        </td>
+                      </tr>
+                    ))
+                )}
+                {/* Fila del Total Acumulado */}
+                <tr className="bg-zinc-50 border-t-2 border-zinc-900 font-bold">
+                  <td colSpan={4} className="py-3 px-3 text-right text-zinc-700">
+                    TOTAL SALDO DEUDOR:
+                  </td>
+                  <td className="py-3 px-3 text-right text-lg text-zinc-900 font-mono">
+                    {formatARS(customer.balance, 2)}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        )}
 
         {/* Términos y Firmas */}
         <div className="mt-12">
