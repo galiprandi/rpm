@@ -232,4 +232,65 @@ describe("CustomerDetailPage", () => {
     // Cleanup print spy
     printSpy.mockRestore();
   });
+
+  it("renders on-screen transaction summaries with correct count and values", async () => {
+    render(
+      <TooltipProvider>
+        <CustomerDetailPage />
+      </TooltipProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.queryByText("Cargando...")).not.toBeInTheDocument();
+    });
+
+    // Check on-screen summaries are rendered
+    expect(screen.getAllByText("Ventas Directas")[0]).toBeInTheDocument();
+    expect(screen.getAllByText("Facturas / OTs")[0]).toBeInTheDocument();
+    expect(screen.getAllByText("Notas de Crédito")[0]).toBeInTheDocument();
+    expect(screen.getAllByText("Pagos Recibidos")[0]).toBeInTheDocument();
+
+    // Check specific summary values/trans. counts
+    expect(screen.getAllByText("1 transacción").length).toBe(2);
+    expect(screen.getByText("1 pago")).toBeInTheDocument();
+    expect(screen.getByText("0 notas")).toBeInTheDocument();
+  });
+
+  it("renders the summarized section in the print layout correctly", async () => {
+    render(
+      <TooltipProvider>
+        <CustomerDetailPage />
+      </TooltipProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.queryByText("Cargando...")).not.toBeInTheDocument();
+    });
+
+    // Initially printMode is DEBT, so TRANSACTIONS layout is not rendered
+    expect(screen.queryByText("Resumen de Movimientos por Tipo (Selección Activa)")).not.toBeInTheDocument();
+
+    // Click "Imprimir Historial" to set printMode to TRANSACTIONS
+    const printBtn = screen.getByRole("button", { name: /Imprimir Historial/i });
+    fireEvent.click(printBtn);
+
+    // Now printed summary section title must be rendered
+    expect(screen.getByText("Resumen de Movimientos por Tipo (Selección Activa)")).toBeInTheDocument();
+  });
+
+  it("renders Exportar CSV button", async () => {
+    render(
+      <TooltipProvider>
+        <CustomerDetailPage />
+      </TooltipProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.queryByText("Cargando...")).not.toBeInTheDocument();
+    });
+
+    // Verify "Exportar CSV" button is present
+    const csvBtn = screen.getByRole("button", { name: /Exportar CSV/i });
+    expect(csvBtn).toBeInTheDocument();
+  });
 });

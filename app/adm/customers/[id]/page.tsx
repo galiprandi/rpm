@@ -32,6 +32,7 @@ import {
   MessageSquare,
   Tag,
   Printer,
+  Download,
 } from "lucide-react";
 import Link from "next/link";
 import { Header } from "@/components/adm/Header";
@@ -434,6 +435,84 @@ export default function CustomerDetailPage() {
     if (transactionTypeFilter === "ALL") return transactions;
     return transactions.filter((t) => t.type === transactionTypeFilter);
   }, [transactions, transactionTypeFilter]);
+
+  const summaryByType = useMemo(() => {
+    const summary = {
+      DIRECT_SALE: { count: 0, total: 0 },
+      CREDIT_NOTE: { count: 0, total: 0 },
+      PAYMENT: { count: 0, total: 0 },
+      INVOICE: { count: 0, total: 0 },
+    };
+
+    filteredTransactions.forEach((t) => {
+      if (summary[t.type]) {
+        summary[t.type].count += 1;
+        summary[t.type].total += Number(t.total);
+      }
+    });
+
+    return summary;
+  }, [filteredTransactions]);
+
+  const exportTransactionsToCSV = useCallback(() => {
+    if (!filteredTransactions || filteredTransactions.length === 0) return;
+
+    const headers = [
+      "Fecha",
+      "Tipo",
+      "ID",
+      "Concepto",
+      "Monto",
+      "Débito (+)",
+      "Crédito (-)",
+    ];
+
+    const rows = filteredTransactions.map((t) => {
+      const isDebit = t.type === "DIRECT_SALE" || t.type === "INVOICE";
+      const isCredit = t.type === "PAYMENT" || t.type === "CREDIT_NOTE";
+      const concept = t.type === "PAYMENT"
+        ? `Pago Recibido (${t.method || ""}) ${t.notes || ""}`.trim()
+        : t.items?.map((i) => i.name).join(", ") || "-";
+
+      const formattedDate = new Date(t.createdAt).toLocaleDateString("es-AR");
+      const typeLabel = t.type === "DIRECT_SALE" ? "Venta" :
+                        t.type === "CREDIT_NOTE" ? "Nota de Crédito" :
+                        t.type === "PAYMENT" ? "Pago" :
+                        t.type === "INVOICE" ? "Factura (OT)" : t.type;
+
+      const totalValue = Number(t.total);
+      const debitVal = isDebit ? totalValue.toFixed(2) : "";
+      const creditVal = isCredit ? totalValue.toFixed(2) : "";
+
+      return [
+        formattedDate,
+        typeLabel,
+        t.id.slice(-6).toUpperCase(),
+        concept,
+        (isCredit ? -totalValue : totalValue).toFixed(2),
+        debitVal,
+        creditVal,
+      ];
+    });
+
+    const csvContent = "\ufeff" + [
+      headers.join(","),
+      ...rows.map((r) => r.map((field) => `"${field.replace(/"/g, '""')}"`).join(",")),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `transacciones_${customer?.name.toLowerCase().replace(/\s+/g, "_")}_${new Date().toISOString().split("T")[0]}.csv`,
+    );
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, [filteredTransactions, customer]);
 
   // Columnas para DataTable de Transacciones
   const transactionColumns: ColumnDef<Transaction>[] = useMemo(
@@ -983,60 +1062,116 @@ export default function CustomerDetailPage() {
           </CardContent>
         </Card>
       ) : (
-        <DataTable
-          data={filteredTransactions}
-          columns={transactionColumns}
-          enableGlobalFilter={true}
-          globalFilterPlaceholder="Buscar transacción..."
-          pageSize={5}
-          title={
-            <span className="flex items-center gap-2">
-              <Receipt className="h-5 w-5" />
-              Historial de Transacciones ({filteredTransactions.length})
-            </span>
-          }
-          headerActions={[
-            {
-              label: "Imprimir Historial",
-              onClick: () => {
-                setPrintMode("TRANSACTIONS");
-                // Wait for state to apply before triggering print
-                setTimeout(() => {
-                  window.print();
-                }, 100);
+        <div className="space-y-4">
+          {/* Resumen de Transacciones por Tipo en Pantalla */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Card className="bg-white/50 border shadow-sm">
+              <CardContent className="p-4">
+                <div className="text-xs font-semibold text-muted-foreground uppercase">Ventas Directas</div>
+                <div className="text-lg font-bold font-mono text-zinc-900 mt-1">
+                  {formatARS(summaryByType.DIRECT_SALE.total, 2)}
+                </div>
+                <div className="text-xs text-muted-foreground mt-0.5">
+                  {summaryByType.DIRECT_SALE.count} {summaryByType.DIRECT_SALE.count === 1 ? "transacción" : "transacciones"}
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-white/50 border shadow-sm">
+              <CardContent className="p-4">
+                <div className="text-xs font-semibold text-muted-foreground uppercase">Facturas / OTs</div>
+                <div className="text-lg font-bold font-mono text-zinc-900 mt-1">
+                  {formatARS(summaryByType.INVOICE.total, 2)}
+                </div>
+                <div className="text-xs text-muted-foreground mt-0.5">
+                  {summaryByType.INVOICE.count} {summaryByType.INVOICE.count === 1 ? "transacción" : "transacciones"}
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-white/50 border shadow-sm">
+              <CardContent className="p-4">
+                <div className="text-xs font-semibold text-muted-foreground uppercase">Notas de Crédito</div>
+                <div className="text-lg font-bold font-mono text-orange-700 mt-1">
+                  -{formatARS(summaryByType.CREDIT_NOTE.total, 2)}
+                </div>
+                <div className="text-xs text-muted-foreground mt-0.5">
+                  {summaryByType.CREDIT_NOTE.count} {summaryByType.CREDIT_NOTE.count === 1 ? "nota" : "notas"}
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-white/50 border shadow-sm">
+              <CardContent className="p-4">
+                <div className="text-xs font-semibold text-emerald-700 uppercase">Pagos Recibidos</div>
+                <div className="text-lg font-bold font-mono text-emerald-700 mt-1">
+                  {formatARS(summaryByType.PAYMENT.total, 2)}
+                </div>
+                <div className="text-xs text-muted-foreground mt-0.5">
+                  {summaryByType.PAYMENT.count} {summaryByType.PAYMENT.count === 1 ? "pago" : "pagos"}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <DataTable
+            data={filteredTransactions}
+            columns={transactionColumns}
+            enableGlobalFilter={true}
+            globalFilterPlaceholder="Buscar transacción..."
+            pageSize={5}
+            title={
+              <span className="flex items-center gap-2">
+                <Receipt className="h-5 w-5" />
+                Historial de Transacciones ({filteredTransactions.length})
+              </span>
+            }
+            headerActions={[
+              {
+                label: "Imprimir Historial",
+                onClick: () => {
+                  setPrintMode("TRANSACTIONS");
+                  // Wait for state to apply before triggering print
+                  setTimeout(() => {
+                    window.print();
+                  }, 100);
+                },
+                icon: Printer,
+                variant: "outline",
               },
-              icon: Printer,
-              variant: "outline",
-            },
-          ]}
-          headerFilter={
-            <Select value={transactionTypeFilter} onValueChange={setTransactionTypeFilter}>
-              <SelectTrigger className="w-[180px] h-9" aria-label="Filtrar transacciones por tipo">
-                <SelectValue placeholder="Filtrar por tipo" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">Todos los tipos</SelectItem>
-                <SelectItem value="DIRECT_SALE">Ventas</SelectItem>
-                <SelectItem value="CREDIT_NOTE">Notas de Crédito</SelectItem>
-                <SelectItem value="PAYMENT">Pagos</SelectItem>
-                <SelectItem value="INVOICE">Facturas (OTs)</SelectItem>
-              </SelectContent>
-            </Select>
-          }
-          rowActions={(transaction) => (
-            <Button
-              variant="ghost"
-              size="sm"
-              aria-label="Ver detalle de la transacción"
-              onClick={() => {
-                setSelectedTransaction(transaction);
-                setIsTransactionModalOpen(true);
-              }}
-            >
-              <Eye className="h-4 w-4" aria-hidden="true" />
-            </Button>
-          )}
-        />
+              {
+                label: "Exportar CSV",
+                onClick: exportTransactionsToCSV,
+                icon: Download,
+                variant: "outline",
+              },
+            ]}
+            headerFilter={
+              <Select value={transactionTypeFilter} onValueChange={setTransactionTypeFilter}>
+                <SelectTrigger className="w-[180px] h-9" aria-label="Filtrar transacciones por tipo">
+                  <SelectValue placeholder="Filtrar por tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">Todos los tipos</SelectItem>
+                  <SelectItem value="DIRECT_SALE">Ventas</SelectItem>
+                  <SelectItem value="CREDIT_NOTE">Notas de Crédito</SelectItem>
+                  <SelectItem value="PAYMENT">Pagos</SelectItem>
+                  <SelectItem value="INVOICE">Facturas (OTs)</SelectItem>
+                </SelectContent>
+              </Select>
+            }
+            rowActions={(transaction) => (
+              <Button
+                variant="ghost"
+                size="sm"
+                aria-label="Ver detalle de la transacción"
+                onClick={() => {
+                  setSelectedTransaction(transaction);
+                  setIsTransactionModalOpen(true);
+                }}
+              >
+                <Eye className="h-4 w-4" aria-hidden="true" />
+              </Button>
+            )}
+          />
+        </div>
       )}
 
       {/* Modal de Pago */}
@@ -1614,6 +1749,44 @@ export default function CustomerDetailPage() {
                 </Badge>
               )}
             </div>
+
+            {/* Resumen por Tipo de Transacción en Impresión */}
+            <div className="mb-4 border border-zinc-300 rounded-lg p-3 bg-zinc-50/50">
+              <h3 className="text-xs font-bold text-zinc-700 uppercase tracking-wider mb-2">
+                Resumen de Movimientos por Tipo (Selección Activa)
+              </h3>
+              <div className="grid grid-cols-4 gap-4 text-xs">
+                <div className="p-2 border border-zinc-200 rounded bg-white">
+                  <div className="font-semibold text-zinc-500">Ventas Directas</div>
+                  <div className="text-sm font-bold font-mono text-zinc-950 mt-1">
+                    {formatARS(summaryByType.DIRECT_SALE.total, 2)}
+                  </div>
+                  <div className="text-[10px] text-zinc-400 mt-0.5">{summaryByType.DIRECT_SALE.count} trans.</div>
+                </div>
+                <div className="p-2 border border-zinc-200 rounded bg-white">
+                  <div className="font-semibold text-zinc-500">Facturas / OTs</div>
+                  <div className="text-sm font-bold font-mono text-zinc-950 mt-1">
+                    {formatARS(summaryByType.INVOICE.total, 2)}
+                  </div>
+                  <div className="text-[10px] text-zinc-400 mt-0.5">{summaryByType.INVOICE.count} trans.</div>
+                </div>
+                <div className="p-2 border border-zinc-200 rounded bg-white">
+                  <div className="font-semibold text-zinc-500">Notas de Crédito</div>
+                  <div className="text-sm font-bold font-mono text-orange-700 mt-1">
+                    -{formatARS(summaryByType.CREDIT_NOTE.total, 2)}
+                  </div>
+                  <div className="text-[10px] text-zinc-400 mt-0.5">{summaryByType.CREDIT_NOTE.count} trans.</div>
+                </div>
+                <div className="p-2 border border-zinc-200 rounded bg-white">
+                  <div className="font-semibold text-zinc-500">Pagos Recibidos</div>
+                  <div className="text-sm font-bold font-mono text-emerald-700 mt-1">
+                    {formatARS(summaryByType.PAYMENT.total, 2)}
+                  </div>
+                  <div className="text-[10px] text-zinc-400 mt-0.5">{summaryByType.PAYMENT.count} trans.</div>
+                </div>
+              </div>
+            </div>
+
             <table className="w-full border-collapse border border-zinc-300 text-sm">
               <thead>
                 <tr className="bg-zinc-100 text-zinc-700 border-b border-zinc-300">

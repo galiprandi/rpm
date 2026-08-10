@@ -1,7 +1,10 @@
 ## 📋 BACKLOG
-- [ ] Exportación resumida de transacciones filtradas por tipo en formato PDF en la ficha del cliente.
 
 ## ✅ DONE
+- [x] 2026-08-09 — Resumen por Tipo de Transacciones y Exportación CSV en Ficha de Detalle de Cliente (PR #345)
+  - Implementación de un grid interactivo en pantalla y sección unificada de impresión ("RESUMEN DE MOVIMIENTOS POR TIPO") que calcula en tiempo real cantidades y montos totales por tipo de transacción (Ventas Directas, Facturas/OTs, Notas de Crédito, Pagos Recibidos) para el conjunto filtrado por el usuario.
+  - Integración del botón de acción "Exportar CSV" en la cabecera de la tabla de transacciones generales, permitiendo descargar los registros filtrados en formato CSV con BOM compatible con Excel y escapes adecuados de campos.
+  - Adición de pruebas unitarias robustas en `CustomerDetailPage.test.tsx` garantizando el comportamiento interactivo del flujo, exactitud de cálculos y presencia de la sección de impresión y descarga.
 - [x] 2026-08-08 — Imprimir Historial de Transacciones (Ledger) en la Ficha del Cliente (PR #344)
   - Implementación de un doble mecanismo de impresión mediante el estado local `printMode: "DEBT" | "TRANSACTIONS"`.
   - Añadido un nuevo botón de acción "Imprimir Historial" dentro de las acciones de cabecera de la tabla de Transacciones que cambia el modo a `"TRANSACTIONS"` y dispara la impresión.
@@ -116,6 +119,10 @@
   - Mejora de navegación con botón de "Volver" en el detalle del cliente.
 
 ## 🧠 LEARNINGS
+## 2026-08-09 - Resumen y Agrupación de Transacciones por Tipo en Ficha y Layout de Impresión
+**Learning:** Al presentar un historial de transacciones consolidado de deudas, créditos, facturas de órdenes de trabajo y pagos, los usuarios necesitan de manera constante resúmenes que les permitan comprender el volumen y montos por tipo de actividad. Al implementar cálculos dinámicos basados en useMemo de los elementos filtrados activamente por el usuario, podemos ofrecer indicadores interactivos tanto en pantalla como en el layout imprimible en formato PDF sin fricción adicional. Esto eleva de manera inmediata la calidad analítica de la ficha de cuenta corriente del cliente.
+**Action:** Utilizar siempre useMemo para calcular resúmenes de transacciones e integrarlos tanto en vistas de pantalla como en layouts de impresión scoped para máxima fidelidad visual y de reporte.
+
 ## 2026-08-08 - Doble Mecanismo de Impresión bajo un Mismo Layout Imprimible
 **Learning:** En fichas complejas de clientes donde conviven estados agregados de deudas y listados cronológicos completos de transacciones históricas, los usuarios suelen requerir reportes físicos de ambos módulos de forma independiente. Implementar una variable de estado como `printMode` y controlarla condicionalmente dentro del mismo contenedor con estilos de impresión (`id="print-section"`) permite dar soporte a múltiples diseños de informes físicos de alta fidelidad con cero duplicación de código de impresión base, ahorrando recursos y garantizando una experiencia de usuario sumamente pulida y limpia.
 **Action:** Usar un estado condicional de tipo de reporte de impresión acoplado a un timeout breve previo a `window.print()` y resetear la selección mediante el evento global `afterprint` para ofrecer una experiencia fluida y consistente en el navegador.
