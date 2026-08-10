@@ -68,6 +68,15 @@ export function ChatFloating({
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [localInput, setLocalInput] = useState("");
   const [isConfirmingClear, setIsConfirmingClear] = useState(false);
+
+  // Dynamically auto-resize the input textarea height based on content
+  useEffect(() => {
+    const textarea = inputRef.current;
+    if (!textarea) return;
+
+    textarea.style.height = "auto";
+    textarea.style.height = `${textarea.scrollHeight}px`;
+  }, [localInput]);
   const confirmClearTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<any>(null);
@@ -380,6 +389,14 @@ export function ChatFloating({
       base[1] = { label: "⚙️ Roles y Permisos", text: "Ver los roles y permisos de los usuarios" };
     } else if (pathname.includes("/reports")) {
       base[1] = { label: "📊 Resumen diario", text: "Ver resumen del día" };
+    } else if (pathname.includes("/services")) {
+      base[0] = { label: "🛠️ Buscar Servicios", text: "Buscar servicios del taller" };
+    } else if (pathname.includes("/direct-sales")) {
+      base[1] = { label: "📝 Nueva Venta Directa", text: "Quiero registrar una venta directa de mostrador" };
+    } else if (pathname.includes("/categories")) {
+      base[0] = { label: "📦 Buscar Productos", text: "Buscar productos en el catálogo" };
+    } else if (pathname.includes("/users")) {
+      base[1] = { label: "👥 Buscar Técnicos", text: "Buscar usuarios o técnicos" };
     }
 
     return base;
@@ -413,6 +430,14 @@ export function ChatFloating({
       base[1] = { label: "⚙️ Roles", text: "Ver los roles y permisos de los usuarios" };
     } else if (pathname.includes("/reports")) {
       base[1] = { label: "📊 Resumen", text: "Ver resumen del día" };
+    } else if (pathname.includes("/services")) {
+      base[0] = { label: "🛠️ Servicios", text: "Buscar servicios del taller" };
+    } else if (pathname.includes("/direct-sales")) {
+      base[1] = { label: "📝 Venta Directa", text: "Quiero registrar una venta directa de mostrador" };
+    } else if (pathname.includes("/categories")) {
+      base[0] = { label: "📦 Productos", text: "Buscar productos" };
+    } else if (pathname.includes("/users")) {
+      base[1] = { label: "👥 Técnicos", text: "Buscar usuarios o técnicos" };
     }
 
     return base;
