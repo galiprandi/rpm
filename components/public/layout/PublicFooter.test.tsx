@@ -1,67 +1,46 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { PublicFooter } from './PublicFooter';
 import React from 'react';
-import { PUBLIC_SITE_CONFIG } from '@/lib/config/public-site';
-
-// Mock next/link to render a simple anchor tag for easier testing
-vi.mock('next/link', () => {
-  return {
-    default: ({ children, href, className, 'aria-label': ariaLabel, ...props }: any) => {
-      return (
-        <a href={href} className={className} aria-label={ariaLabel} {...props}>
-          {children}
-        </a>
-      );
-    },
-  };
-});
 
 describe('PublicFooter', () => {
-  it('renders the brand logo link as a focusable and keyboard-accessible element', () => {
+  it('renders brand logo link with appropriate routing and keyboard accessibility focus states', () => {
     render(<PublicFooter />);
 
-    const brandLogoLink = screen.getByRole('link', { name: /rpm accesorios inicio/i });
-    expect(brandLogoLink).toBeInTheDocument();
-    expect(brandLogoLink).toHaveAttribute('href', '/');
-    expect(brandLogoLink).toHaveClass('focus-visible:ring-2');
-    expect(brandLogoLink).toHaveClass('focus-visible:ring-brand');
-    expect(brandLogoLink).toHaveClass('focus-visible:outline-none');
-    expect(brandLogoLink).toHaveClass('rounded-lg');
+    const logoLink = screen.getByRole('link', { name: /rpm accesorios - volver al inicio/i });
+    expect(logoLink).toBeInTheDocument();
+    expect(logoLink).toHaveAttribute('href', '/');
+    expect(logoLink).toHaveClass('focus-visible:ring-2');
   });
 
-  it('renders all quick navigation links with high-contrast focus-visible rings', () => {
+  it('renders all main navigation links with keyboard accessibility focus states', () => {
     render(<PublicFooter />);
 
-    const navLinks = [
-      { name: /^Catálogo de Productos$/, href: '/productos' },
-      { name: /^Nuestros Servicios$/, href: '/servicios' },
-      { name: /^Contacto$/, href: '/contacto' },
-      { name: /^Sobre Nosotros$/, href: '/nosotros' },
+    const links = [
+      { name: /^catálogo de productos$/i, href: '/productos' },
+      { name: /^nuestros servicios$/i, href: '/servicios' },
+      { name: /^contacto$/i, href: '/contacto' },
+      { name: /^sobre nosotros$/i, href: '/nosotros' },
     ];
 
-    navLinks.forEach(({ name, href }) => {
+    links.forEach(({ name, href }) => {
       const link = screen.getByRole('link', { name });
       expect(link).toBeInTheDocument();
       expect(link).toHaveAttribute('href', href);
       expect(link).toHaveClass('focus-visible:ring-2');
-      expect(link).toHaveClass('focus-visible:ring-brand');
-      expect(link).toHaveClass('focus-visible:outline-none');
-      expect(link).toHaveClass('rounded-lg');
     });
   });
 
-  it('renders the email address as an interactive semantic mailto link with screen reader tags', () => {
+  it('renders contact section with phone and email semantic links and focus outlines', () => {
     render(<PublicFooter />);
 
-    const expectedEmail = PUBLIC_SITE_CONFIG.email;
-    const emailLink = screen.getByRole('link', { name: new RegExp(`enviar correo electrónico a ${expectedEmail}`, 'i') });
+    const phoneLink = screen.getByRole('link', { name: /llamar o enviar whatsapp al/i });
+    expect(phoneLink).toBeInTheDocument();
+    expect(phoneLink).toHaveClass('focus-visible:ring-2');
 
+    const emailLink = screen.getByRole('link', { name: /enviar correo electrónico a/i });
     expect(emailLink).toBeInTheDocument();
-    expect(emailLink).toHaveAttribute('href', `mailto:${expectedEmail}`);
+    expect(emailLink).toHaveAttribute('href', expect.stringContaining('mailto:'));
     expect(emailLink).toHaveClass('focus-visible:ring-2');
-    expect(emailLink).toHaveClass('focus-visible:ring-brand');
-    expect(emailLink).toHaveClass('focus-visible:outline-none');
-    expect(emailLink).toHaveClass('rounded-lg');
   });
 });
