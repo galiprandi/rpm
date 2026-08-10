@@ -32,6 +32,7 @@ import {
   Clock,
   UserCog,
   AlertCircle,
+  X,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -47,6 +48,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
 // Storage key for wizard persistence
 const WIZARD_STORAGE_KEY = "work-order-wizard-state";
@@ -186,7 +188,13 @@ export default function NewWorkOrderPage() {
   const [showQuickServiceDialog, setShowQuickServiceDialog] = useState(false);
 
   // Step 3: Checklist & Notes
-  const [checklist, setChecklist] = useState<Record<string, boolean>>({});
+  interface ChecklistItem {
+    id: string;
+    label: string;
+    checked: boolean;
+  }
+  const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
+  const [customItemName, setCustomItemName] = useState("");
   const [odometerValue, setOdometerValue] = useState<string>("");
   const [fuelLevel, setFuelLevel] = useState<number>(50);
   const [notes, setNotes] = useState("");
@@ -196,6 +204,17 @@ export default function NewWorkOrderPage() {
   >([]);
   const [selectedTechnicianId, setSelectedTechnicianId] =
     useState<string>("unassigned");
+
+  const handleAddCustomItem = () => {
+    if (!customItemName.trim()) return;
+    const newItem = {
+      id: `custom-${Date.now()}`,
+      label: customItemName.trim(),
+      checked: false,
+    };
+    setChecklist((prev) => [...prev, newItem]);
+    setCustomItemName("");
+  };
 
   const setQuickDate = (type: "2h" | "tomorrow" | "monday") => {
     const date = new Date();
@@ -239,7 +258,7 @@ export default function NewWorkOrderPage() {
     setCustomerSearchResults([]);
     setCustomerSearchQuery("");
     setItems([]);
-    setChecklist({});
+    setChecklist(DEFAULT_ENTRY_CHECKLIST.map(item => ({ ...item })));
     setOdometerValue("");
     setFuelLevel(50);
     setNotes("");
@@ -261,7 +280,22 @@ export default function NewWorkOrderPage() {
         if (saved) {
           const parsed = JSON.parse(saved);
           if (parsed.step) setStep(parsed.step);
-          if (parsed.checklist) setChecklist(parsed.checklist);
+
+          if (parsed.checklist) {
+            if (Array.isArray(parsed.checklist)) {
+              setChecklist(parsed.checklist);
+            } else if (typeof parsed.checklist === "object" && parsed.checklist !== null) {
+              const migrated = DEFAULT_ENTRY_CHECKLIST.map((item) => ({
+                id: item.id,
+                label: item.label,
+                checked: !!parsed.checklist[item.id],
+              }));
+              setChecklist(migrated);
+            }
+          } else {
+            setChecklist(DEFAULT_ENTRY_CHECKLIST.map(item => ({ ...item })));
+          }
+
           if (parsed.odometerValue) setOdometerValue(parsed.odometerValue);
           if (parsed.fuelLevel !== undefined) setFuelLevel(parsed.fuelLevel);
           if (parsed.notes) setNotes(parsed.notes);
@@ -269,9 +303,11 @@ export default function NewWorkOrderPage() {
           if (parsed.items) setItems(parsed.items);
           if (parsed.foundVehicle) setFoundVehicle(parsed.foundVehicle);
           if (parsed.selectedCustomer) setSelectedCustomer(parsed.selectedCustomer);
+        } else {
+          setChecklist(DEFAULT_ENTRY_CHECKLIST.map(item => ({ ...item })));
         }
       } catch {
-        // Ignore parse errors
+        setChecklist(DEFAULT_ENTRY_CHECKLIST.map(item => ({ ...item })));
       } finally {
         setIsLoaded(true);
       }
@@ -543,10 +579,7 @@ export default function NewWorkOrderPage() {
           unitPrice: item.unitPrice,
         })),
         entryChecklist: {
-          items: DEFAULT_ENTRY_CHECKLIST.map((item) => ({
-            ...item,
-            checked: checklist[item.id] || false,
-          })),
+          items: checklist,
           completedAt: new Date().toISOString(),
         },
         odometerValue: odometerValue ? parseInt(odometerValue) : undefined,
@@ -1366,34 +1399,81 @@ export default function NewWorkOrderPage() {
                     size="sm"
                     className="h-7 text-xs text-primary hover:text-primary/80 px-2"
                     onClick={() => {
-                      const allChecked = DEFAULT_ENTRY_CHECKLIST.every((item) => checklist[item.id]);
-                      const newChecklist: Record<string, boolean> = {};
-                      DEFAULT_ENTRY_CHECKLIST.forEach((item) => {
-                        newChecklist[item.id] = !allChecked;
-                      });
-                      setChecklist(newChecklist);
+                      const allChecked = checklist.every((item) => item.checked);
+                      setChecklist((prev) =>
+                        prev.map((item) => ({ ...item, checked: !allChecked }))
+                      );
                     }}
                   >
-                    {DEFAULT_ENTRY_CHECKLIST.every((item) => checklist[item.id])
+                    {checklist.every((item) => item.checked)
                       ? "Desmarcar todos"
                       : "Marcar todos como OK"}
                   </Button>
                 </div>
-                <div className="space-y-3 border rounded-md p-4">
-                  {DEFAULT_ENTRY_CHECKLIST.map((item) => (
-                    <Checkbox
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 border rounded-md p-4">
+                  {checklist.map((item) => (
+                    <div
                       key={item.id}
-                      id={`checklist-${item.id}`}
-                      checked={checklist[item.id] || false}
-                      onCheckedChange={(checked: boolean) =>
-                        setChecklist((prev) => ({
-                          ...prev,
-                          [item.id]: checked,
-                        }))
-                      }
-                      label={item.label}
-                    />
+                      className={cn(
+                        "flex items-center justify-between p-2 rounded-md transition-colors hover:bg-muted/30",
+                        item.checked && "bg-blue-50/50"
+                      )}
+                    >
+                      <div className="flex items-start gap-3">
+                        <Checkbox
+                          id={`checklist-${item.id}`}
+                          checked={item.checked}
+                          onCheckedChange={(checked: boolean) =>
+                            setChecklist((prev) =>
+                              prev.map((i) =>
+                                i.id === item.id ? { ...i, checked } : i
+                              )
+                            )
+                          }
+                          label={item.label}
+                        />
+                      </div>
+                      {item.id.startsWith("custom-") && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full shrink-0"
+                          onClick={() => {
+                            setChecklist((prev) => prev.filter((i) => i.id !== item.id));
+                          }}
+                          title="Eliminar ítem personalizado"
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
                   ))}
+                </div>
+
+                {/* Add Custom Item */}
+                <div className="flex gap-2 pt-3 border-t border-dashed border-zinc-200">
+                  <Input
+                    placeholder="Agregar ítem personalizado... (ej: Casco en baúl)"
+                    value={customItemName}
+                    onChange={(e) => setCustomItemName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAddCustomItem();
+                      }
+                    }}
+                    className="h-8 text-xs flex-1"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleAddCustomItem}
+                    className="h-8 text-xs shrink-0"
+                  >
+                    Agregar
+                  </Button>
                 </div>
               </div>
 
