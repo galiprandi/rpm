@@ -2,6 +2,7 @@
 - [ ] Idea pendiente — breve descripción
 
 ## ✅ COMPLETADO
+- [x] 2026-08-09 — Checklist Dinámico de Ingreso e Ítems Personalizados en el Asistente de Creación de OT (PR #jorge/work-orders/wizard-dynamic-checklists)
 - [x] 2026-08-05 — Filtro Rápido "Mis OTs" y unificación de sesión de cliente con useUser (PR #jorge/work-orders/my-orders-quick-filter)
 - [x] 2026-08-03 — Búsqueda por Ítems y Bloqueo Terminal de Técnicos en Lista de OT (PR #jorge/work-orders/items-search-terminal-technician)
 - [x] 2026-08-02 — Estadísticas y Barras de Progreso de Checklists e Ítems Personalizados en Taller (PR #jorge/work-orders/checklist-progress-custom-items)
@@ -23,6 +24,10 @@
 - [x] 2025-07-08 — Servicio Centralizado de OT y Timeline Unificado (PR #jorge/work-orders/centralized-updates)
 
 ## 🧠 APRENDIZAJES
+
+## 2026-08-09 - Checklist Dinámico de Ingreso e Ítems Personalizados en el Asistente de Creación de OT
+**Aprendizaje 1:** Sincronizar el comportamiento de checklists entre la vista de detalle y el asistente de creación disminuye drásticamente la fricción inicial de alta de vehículos en taller. Permitir que los técnicos carguen ítems de inspección únicos en la entrada del vehículo (ej: "equipo de audio caro", "rayaduras", "llaves") desde el primer momento evita descuidos y reclamos.
+**Aprendizaje 2:** Al persistir flujos asíncronos complejos como asistentes de varios pasos en localStorage, es crucial soportar transformaciones y migraciones de datos defensivas (de un Record legacía a una estructura de array dinámico de objetos). Esto previene que los usuarios con borradores viejos sufran crashes o inconsistencias al actualizarse el software de taller.
 
 ## 2026-08-05 - Filtro Rápido "Mis OTs" y unificación de sesión de cliente con useUser
 **Aprendizaje 1:** En talleres de servicios con alta carga diaria, los mecánicos y técnicos necesitan acceder a sus tareas asignadas con un solo toque (1-click), sin tener que navegar por popovers de filtrado complejos. Ofrecer un botón prominente "Mis OTs" directamente en la barra de herramientas principal, con estilos condicionales llamativos y un contador de tareas activas integrado, mejora enormemente la velocidad y la adopción de la herramienta de taller.
