@@ -24,7 +24,7 @@ import {
   Copy,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -65,7 +65,7 @@ export function ChatFloating({
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const [localInput, setLocalInput] = useState("");
   const [isConfirmingClear, setIsConfirmingClear] = useState(false);
   const confirmClearTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -1292,16 +1292,23 @@ export function ChatFloating({
                   Adjuntar archivos
                 </TooltipContent>
               </Tooltip>
-              <Input
+              <Textarea
                 ref={inputRef}
                 value={localInput}
                 onChange={(e) => setLocalInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    onSubmit(e);
+                  }
+                }}
                 placeholder={
                   isListening
                     ? "Escuchando... Hablá ahora"
                     : `Escribe tu mensaje... (${shortcutLabel} para cerrar)`
                 }
-                className={`flex-1 transition-all ${
+                rows={1}
+                className={`flex-1 min-h-[40px] max-h-32 py-2.5 resize-none transition-all ${
                   isListening
                     ? "border-red-500 focus-visible:ring-red-500 bg-red-50/10 focus-visible:ring-offset-0 placeholder:text-red-400"
                     : ""

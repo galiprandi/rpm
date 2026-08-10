@@ -546,4 +546,24 @@ describe("ChatFloating Component", () => {
     rerender(<ChatFloating isOpen={true} />);
     expect(screen.getByRole("button", { name: /^🔧 Nueva OT$/i })).toBeInTheDocument();
   });
+
+  it("submits the form when Enter is pressed without Shift on the textarea, and does not submit when Shift+Enter is pressed", async () => {
+    render(<ChatFloating isOpen={true} />);
+    const textarea = screen.getByPlaceholderText(/Escribe tu mensaje.../i);
+
+    // 1. Press Shift+Enter - should NOT trigger sendMessage
+    await act(async () => {
+      fireEvent.keyDown(textarea, { key: "Enter", shiftKey: true });
+    });
+    expect(mockSendMessage).not.toHaveBeenCalled();
+
+    // 2. Type some text and press Enter without Shift - should trigger sendMessage
+    await act(async () => {
+      fireEvent.change(textarea, { target: { value: "Test prompt message" } });
+    });
+    await act(async () => {
+      fireEvent.keyDown(textarea, { key: "Enter", shiftKey: false });
+    });
+    expect(mockSendMessage).toHaveBeenCalledWith({ text: "Test prompt message" });
+  });
 });
