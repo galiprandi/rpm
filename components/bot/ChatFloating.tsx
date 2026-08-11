@@ -121,6 +121,8 @@ export function ChatFloating({
     if (!isOpen) {
       setAttachedFile(null);
       setDetectedBarcode(null);
+      setIsDragging(false);
+      dragCounterRef.current = 0;
       if (fileInputRef.current) fileInputRef.current.value = "";
       if (cameraInputRef.current) cameraInputRef.current.value = "";
     }
@@ -746,6 +748,45 @@ export function ChatFloating({
     }
   };
 
+  const [isDragging, setIsDragging] = useState(false);
+  const dragCounterRef = useRef(0);
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer.types?.includes("Files")) {
+      dragCounterRef.current++;
+      setIsDragging(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current--;
+    if (dragCounterRef.current <= 0) {
+      setIsDragging(false);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    dragCounterRef.current = 0;
+
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      setAttachedFile(file);
+    }
+  };
+
   return (
     <>
       {/* Toggle Button */}
@@ -779,14 +820,33 @@ export function ChatFloating({
       {/* Chat Window */}
       {isOpen && (
         <div
+          onDragEnter={handleDragEnter}
+          onDragLeave={handleDragLeave}
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
           className={`${
             isMobile
               ? "fixed inset-0 w-full h-[100dvh] rounded-none"
               : `fixed bottom-24 right-6 bg-background border rounded-lg shadow-xl z-50 flex flex-col transition-all duration-300 ${
                   isExpanded ? "w-[600px] h-[700px]" : "w-[500px] h-[600px]"
                 }`
-          } bg-background z-50 flex flex-col`}
+          } bg-background z-50 flex flex-col relative`}
         >
+          {isDragging && (
+            <div
+              data-testid="drag-overlay"
+              className="absolute inset-0 bg-background/90 backdrop-blur-xs border-2 border-dashed border-primary rounded-lg z-[60] flex flex-col items-center justify-center p-6 text-center animate-in fade-in zoom-in duration-200"
+            >
+              <Plus className="h-12 w-12 text-primary animate-bounce mb-2" />
+              <p className="font-semibold text-foreground text-base">
+                Soltá el archivo aquí
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Se adjuntará a tu próximo mensaje automáticamente
+              </p>
+            </div>
+          )}
+
           {/* Header */}
           <div className="p-4 border-b flex items-center justify-between">
             <div>

@@ -215,7 +215,7 @@ describe("CustomerDetailPage", () => {
     });
 
     // Check for the "Imprimir Historial" button
-    const printBtn = screen.getByRole("button", { name: /Imprimir Historial/i });
+    const printBtn = screen.getAllByRole("button", { name: /Imprimir Historial/i })[0];
     expect(printBtn).toBeInTheDocument();
 
     // Prior to clicking, the print layout title should be "RESUMEN DE CUENTA CLIENTE"
@@ -226,7 +226,7 @@ describe("CustomerDetailPage", () => {
     fireEvent.click(printBtn);
 
     // After clicking, the state switches printMode to TRANSACTIONS, rendering HISTORIAL DE TRANSACCIONES
-    expect(screen.getByText("HISTORIAL DE TRANSACCIONES")).toBeInTheDocument();
+    expect(screen.getByText("HISTORIAL DE TRANSACCIONES - LIBRO AUXILIAR")).toBeInTheDocument();
     expect(screen.queryByText("RESUMEN DE CUENTA CLIENTE")).not.toBeInTheDocument();
 
     // Cleanup print spy
