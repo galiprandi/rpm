@@ -615,4 +615,67 @@ describe("ChatFloating Component", () => {
     });
     expect(mockSendMessage).toHaveBeenCalledWith({ text: "Test prompt message" });
   });
+
+  describe("Drag and Drop File Attachment", () => {
+    it("renders drag overlay on dragEnter and hides on dragLeave", async () => {
+      render(<ChatFloating isOpen={true} />);
+
+      const chatContainer = screen.getByText("Nitro").closest(".flex-col")!;
+      expect(screen.queryByTestId("drag-overlay")).not.toBeInTheDocument();
+
+      // Trigger dragEnter
+      await act(async () => {
+        fireEvent.dragEnter(chatContainer, {
+          dataTransfer: {
+            types: ["Files"],
+          },
+        });
+      });
+
+      expect(screen.getByTestId("drag-overlay")).toBeInTheDocument();
+      expect(screen.getByText("Soltá el archivo aquí")).toBeInTheDocument();
+
+      // Trigger dragLeave
+      await act(async () => {
+        fireEvent.dragLeave(chatContainer);
+      });
+
+      expect(screen.queryByTestId("drag-overlay")).not.toBeInTheDocument();
+    });
+
+    it("attaches dropped file on drop event", async () => {
+      render(<ChatFloating isOpen={true} />);
+
+      const chatContainer = screen.getByText("Nitro").closest(".flex-col")!;
+
+      // Create a mock File
+      const file = new File(["dummy content"], "invoice.pdf", { type: "application/pdf" });
+
+      // Trigger dragEnter to show overlay
+      await act(async () => {
+        fireEvent.dragEnter(chatContainer, {
+          dataTransfer: {
+            types: ["Files"],
+          },
+        });
+      });
+      expect(screen.getByTestId("drag-overlay")).toBeInTheDocument();
+
+      // Trigger drop
+      await act(async () => {
+        fireEvent.drop(chatContainer, {
+          dataTransfer: {
+            files: [file],
+          },
+        });
+      });
+
+      // Overlay should be gone
+      expect(screen.queryByTestId("drag-overlay")).not.toBeInTheDocument();
+
+      // The file name should be rendered in the attached files list
+      expect(screen.getByText("invoice.pdf")).toBeInTheDocument();
+      expect(screen.getByText("PDF")).toBeInTheDocument(); // fallback badge
+    });
+  });
 });
