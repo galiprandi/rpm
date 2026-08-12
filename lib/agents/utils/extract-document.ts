@@ -1,12 +1,12 @@
 import { generateObject } from "ai";
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { createGroq } from "@ai-sdk/groq";
 import type { z } from "zod";
 
-const google = createGoogleGenerativeAI({
-  apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
+const groq = createGroq({
+  apiKey: process.env.GROQ_API_KEY,
 });
 
-const VISION_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash-lite";
+const VISION_MODEL = "qwen/qwen3.6-27b";
 
 /**
  * Supported media types for document extraction.
@@ -23,7 +23,7 @@ const SUPPORTED_IMAGE_TYPES = [
 ];
 
 /**
- * Generic document extraction agent using Google Gemini (vision).
+ * Generic document extraction agent using Groq Qwen 3.6 27B (vision).
  * Passes the image/PDF along with extraction instructions to the model.
  * Works with any document type: invoices, receipts, remits, cash exits, etc.
  *
@@ -54,7 +54,7 @@ export async function extractDocumentData<T>(
   }
 
   const { object: extracted } = await generateObject({
-    model: google(VISION_MODEL),
+    model: groq(VISION_MODEL),
     schema,
     messages: [
       {
