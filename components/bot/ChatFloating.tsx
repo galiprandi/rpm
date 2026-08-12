@@ -22,6 +22,7 @@ import {
   MicOff,
   RotateCw,
   Copy,
+  ArrowDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -68,6 +69,8 @@ export function ChatFloating({
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [localInput, setLocalInput] = useState("");
   const [isConfirmingClear, setIsConfirmingClear] = useState(false);
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
+  const [lastSeenMessageCount, setLastSeenMessageCount] = useState(0);
 
   // Dynamically auto-resize the input textarea height based on content
   useEffect(() => {
@@ -639,6 +642,39 @@ export function ChatFloating({
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
+  const handleScroll = useCallback(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    const isFarFromBottom = scrollHeight - scrollTop - clientHeight > 200;
+    setShowScrollToBottom(isFarFromBottom);
+
+    if (!isFarFromBottom) {
+      setLastSeenMessageCount(messages.length);
+    }
+  }, [messages.length]);
+
+  // Keep track of read/unread message counts
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (!container) {
+      setLastSeenMessageCount(messages.length);
+      return;
+    }
+
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    const isNearBottom = scrollHeight - scrollTop - clientHeight < 200;
+
+    if (isNearBottom) {
+      setLastSeenMessageCount(messages.length);
+    }
+  }, [messages.length]);
+
+  useEffect(() => {
+    handleScroll();
+  }, [messages.length, isOpen, handleScroll]);
+
   // Smart auto-scroll to bottom
   useEffect(() => {
     const container = messagesContainerRef.current;
@@ -941,13 +977,16 @@ export function ChatFloating({
             </div>
           </div>
 
-          {/* Messages */}
-          <div
-            ref={messagesContainerRef}
-            className="flex-1 p-4 overflow-y-auto"
-          >
-            <div className="space-y-4">
-              {messages.length === 0 && (
+          {/* Messages Wrapper */}
+          <div className="flex-1 relative overflow-hidden flex flex-col">
+            {/* Messages Scroll Area */}
+            <div
+              ref={messagesContainerRef}
+              onScroll={handleScroll}
+              className="flex-1 p-4 overflow-y-auto"
+            >
+              <div className="space-y-4">
+                {messages.length === 0 && (
                 <div className="text-center text-muted-foreground py-6 px-2">
                   <MessageSquare
                     className="h-12 w-12 mx-auto mb-2 opacity-30 text-primary"
@@ -1233,8 +1272,26 @@ export function ChatFloating({
                   </div>
                 </div>
               )}
-              <div ref={messagesEndRef} />
+                <div ref={messagesEndRef} />
+              </div>
             </div>
+
+            {showScrollToBottom && (
+              <Button
+                type="button"
+                onClick={() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })}
+                className="absolute bottom-4 right-4 rounded-full shadow-lg z-40 bg-background hover:bg-muted border p-2 h-9 w-9 flex items-center justify-center transition-all animate-in fade-in slide-in-from-bottom-2 duration-200 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1"
+                aria-label="Desplazarse al final"
+              >
+                <ArrowDown className="h-4.5 w-4.5" />
+                {messages.length > lastSeenMessageCount && (
+                  <span className="absolute -top-1 -right-1 flex h-3 w-3" data-testid="unread-badge">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
+                  </span>
+                )}
+              </Button>
+            )}
           </div>
 
           {/* Compact Follow-up Suggestions Row */}
