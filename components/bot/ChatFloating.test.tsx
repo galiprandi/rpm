@@ -678,4 +678,93 @@ describe("ChatFloating Component", () => {
       expect(screen.getByText("PDF")).toBeInTheDocument(); // fallback badge
     });
   });
+
+  describe("Scroll-to-Bottom Button", () => {
+    it("renders scroll-to-bottom button when scrolled up, and hides when scrolled down", async () => {
+      mockMessages = [
+        { id: "1", role: "user", parts: [{ type: "text", text: "msg 1" }] },
+      ];
+
+      const { container } = render(<ChatFloating isOpen={true} />);
+      const scrollContainer = container.querySelector(".overflow-y-auto")!;
+
+      // Verify button is not initially present (because scrollTop is 0, i.e. near bottom)
+      expect(screen.queryByRole("button", { name: /desplazarse al final/i })).not.toBeInTheDocument();
+
+      // Simulate scrolling up (scrollHeight: 1000, clientHeight: 400, scrollTop: 100 => distance to bottom: 500 > 200)
+      Object.defineProperty(scrollContainer, "scrollHeight", { value: 1000, configurable: true });
+      Object.defineProperty(scrollContainer, "clientHeight", { value: 400, configurable: true });
+      Object.defineProperty(scrollContainer, "scrollTop", { value: 100, configurable: true });
+      fireEvent.scroll(scrollContainer);
+
+      // Scroll to bottom button should now be rendered
+      expect(screen.getByRole("button", { name: /desplazarse al final/i })).toBeInTheDocument();
+
+      // Simulate scrolling back down (scrollTop: 600 => distance to bottom: 0 < 200)
+      Object.defineProperty(scrollContainer, "scrollTop", { value: 600, configurable: true });
+      fireEvent.scroll(scrollContainer);
+
+      // Button should be removed
+      expect(screen.queryByRole("button", { name: /desplazarse al final/i })).not.toBeInTheDocument();
+    });
+
+    it("triggers smooth scroll into view when the scroll-to-bottom button is clicked", async () => {
+      mockMessages = [
+        { id: "1", role: "user", parts: [{ type: "text", text: "msg 1" }] },
+      ];
+
+      const { container } = render(<ChatFloating isOpen={true} />);
+      const scrollContainer = container.querySelector(".overflow-y-auto")!;
+
+      // Scroll up to show the button
+      Object.defineProperty(scrollContainer, "scrollHeight", { value: 1000, configurable: true });
+      Object.defineProperty(scrollContainer, "clientHeight", { value: 400, configurable: true });
+      Object.defineProperty(scrollContainer, "scrollTop", { value: 100, configurable: true });
+      fireEvent.scroll(scrollContainer);
+
+      const scrollBtn = await screen.findByRole("button", { name: /desplazarse al final/i });
+      expect(scrollBtn).toBeInTheDocument();
+
+      const scrollSpy = vi.spyOn(HTMLElement.prototype, "scrollIntoView");
+
+      fireEvent.click(scrollBtn);
+
+      expect(scrollSpy).toHaveBeenCalledWith({ behavior: "smooth" });
+    });
+
+    it("displays a pulsing unread indicator badge on the button when a new message arrives while scrolled up", async () => {
+      mockMessages = [
+        { id: "1", role: "user", parts: [{ type: "text", text: "msg 1" }] },
+      ];
+
+      const { container, rerender } = render(<ChatFloating isOpen={true} />);
+      const scrollContainer = container.querySelector(".overflow-y-auto")!;
+
+      // Scroll up
+      Object.defineProperty(scrollContainer, "scrollHeight", { value: 1000, configurable: true });
+      Object.defineProperty(scrollContainer, "clientHeight", { value: 400, configurable: true });
+      Object.defineProperty(scrollContainer, "scrollTop", { value: 100, configurable: true });
+      fireEvent.scroll(scrollContainer);
+
+      // At this point, the button is shown, but no new messages have arrived (lastSeenMessageCount matches initial message length 1)
+      expect(screen.queryByTestId("unread-badge")).not.toBeInTheDocument();
+
+      // Now a new message arrives (length becomes 2)
+      mockMessages = [
+        { id: "1", role: "user", parts: [{ type: "text", text: "msg 1" }] },
+        { id: "2", role: "assistant", parts: [{ type: "text", text: "msg 2" }] },
+      ];
+      rerender(<ChatFloating isOpen={true} />);
+
+      // Unread badge should be rendered
+      expect(screen.getByTestId("unread-badge")).toBeInTheDocument();
+
+      // Scroll back down to the bottom
+      Object.defineProperty(scrollContainer, "scrollTop", { value: 600, configurable: true });
+      fireEvent.scroll(scrollContainer);
+
+      // Unread badge should be removed
+      expect(screen.queryByTestId("unread-badge")).not.toBeInTheDocument();
+    });
+  });
 });
