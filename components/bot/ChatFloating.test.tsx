@@ -58,7 +58,6 @@ const mockSendMessage = vi.fn();
 const mockStop = vi.fn();
 const mockSetMessages = vi.fn();
 const mockClearError = vi.fn();
-const mockReload = vi.fn();
 let mockMessages: any[] = [];
 let mockError: any = null;
 
@@ -71,7 +70,6 @@ vi.mock("@ai-sdk/react", () => ({
     stop: mockStop,
     setMessages: mockSetMessages,
     clearError: mockClearError,
-    reload: mockReload,
   }),
 }));
 
@@ -513,8 +511,12 @@ describe("ChatFloating Component", () => {
     expect(mockSetMessages).toHaveBeenCalledWith([]);
   });
 
-  it("displays retry button when there is an error, and clicking it invokes reload and clearError", async () => {
+  it("displays retry button when there is an error, and clicking it re-sends the last user message and clears error", async () => {
     mockError = new Error("Failed to fetch");
+    mockMessages = [
+      { id: "1", role: "user", parts: [{ type: "text", text: "Buscar producto" }] },
+      { id: "2", role: "assistant", parts: [{ type: "text", text: "Resultado..." }] },
+    ];
 
     render(<ChatFloating isOpen={true} />);
 
@@ -529,7 +531,7 @@ describe("ChatFloating Component", () => {
     fireEvent.click(retryBtn);
 
     expect(mockClearError).toHaveBeenCalled();
-    expect(mockReload).toHaveBeenCalled();
+    expect(mockSendMessage).toHaveBeenCalledWith({ text: "Buscar producto" });
   });
 
   it("renders compact follow-up suggestion pills only when messages are present and chatbot is not submitting", () => {

@@ -291,7 +291,6 @@ export function ChatFloating({
     onFinish,
   });
   const { messages, sendMessage, status, error, stop, setMessages, clearError } = chatHelpers;
-  const reload = (chatHelpers as any).reload;
 
   const lastLoadedUserIdRef = useRef<string | null>(null);
 
@@ -447,6 +446,18 @@ export function ChatFloating({
 
     return base;
   }, [pathname]);
+
+  const retryLastMessage = useCallback(async () => {
+    clearError();
+    const lastUserMessage = [...messages].reverse().find((m) => m.role === "user");
+    if (!lastUserMessage) return;
+    const text = lastUserMessage.parts
+      .filter((p) => p.type === "text")
+      .map((p) => p.text)
+      .join("\n");
+    if (!text) return;
+    await sendMessage({ text });
+  }, [clearError, messages, sendMessage]);
 
   const handleSuggestionClick = useCallback(async (text: string) => {
     if (isSubmitting) return;
@@ -624,7 +635,13 @@ export function ChatFloating({
 
     if (attachedFile) {
       const arrayBuffer = await attachedFile.arrayBuffer();
-      const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+      const bytes = new Uint8Array(arrayBuffer);
+      let binary = "";
+      const chunkSize = 8192;
+      for (let i = 0; i < bytes.length; i += chunkSize) {
+        binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+      }
+      const base64 = btoa(binary);
       const dataUrl = `data:${attachedFile.type || "application/octet-stream"};base64,${base64}`;
       const filePart: FileUIPart = {
         type: "file",
@@ -1258,8 +1275,7 @@ export function ChatFloating({
                           variant="outline"
                           size="sm"
                           onClick={() => {
-                            clearError();
-                            reload();
+                            retryLastMessage();
                           }}
                           className="h-7 text-xs font-semibold bg-white border-red-200 text-red-700 hover:bg-red-100/50 hover:text-red-800 focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-1 flex items-center gap-1.5 transition-all shadow-xs"
                           aria-label="Reintentar enviar el último mensaje"
@@ -1280,7 +1296,7 @@ export function ChatFloating({
               <Button
                 type="button"
                 onClick={() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })}
-                className="absolute bottom-4 right-4 rounded-full shadow-lg z-40 bg-background hover:bg-muted border p-2 h-9 w-9 flex items-center justify-center transition-all animate-in fade-in slide-in-from-bottom-2 duration-200 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1"
+                className="absolute bottom-4 right-4 rounded-full shadow-lg z-40 bg-background text-foreground hover:bg-muted border p-2 h-9 w-9 flex items-center justify-center transition-all animate-in fade-in slide-in-from-bottom-2 duration-200 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1"
                 aria-label="Desplazarse al final"
               >
                 <ArrowDown className="h-4.5 w-4.5" />
