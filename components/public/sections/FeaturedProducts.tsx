@@ -127,7 +127,7 @@ export function FeaturedProducts({ initialProducts }: FeaturedProductsProps) {
                       <Eye className="h-4 w-4 pointer-events-none" aria-hidden="true" />
                     </button>
                   </TooltipTrigger>
-                  <TooltipContent side="left" className="bg-zinc-900 border-white/10 text-white text-xs font-bold uppercase tracking-widest">
+                  <TooltipContent side="left" className="bg-foreground border-border text-background text-xs font-bold uppercase tracking-widest">
                     Vista Rápida
                   </TooltipContent>
                 </Tooltip>

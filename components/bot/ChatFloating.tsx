@@ -846,7 +846,7 @@ export function ChatFloating({
           </TooltipTrigger>
           <TooltipContent
             side="left"
-            className="bg-slate-900 text-white border-slate-800"
+            className="bg-foreground text-background"
           >
             {isOpen ? "Cerrar chat (Esc)" : `Abrir chat (${shortcutLabel})`}
           </TooltipContent>
@@ -863,10 +863,10 @@ export function ChatFloating({
           className={`${
             isMobile
               ? "fixed inset-0 w-full h-[100dvh] rounded-none"
-              : `fixed bottom-24 right-6 bg-background border rounded-lg shadow-xl z-50 flex flex-col transition-all duration-300 ${
+              : `fixed bottom-20 right-6 bg-background border rounded-lg shadow-xl z-50 flex flex-col transition-all duration-300 ${
                   isExpanded ? "w-[600px] h-[700px]" : "w-[500px] h-[600px]"
                 }`
-          } bg-background z-50 flex flex-col relative`}
+          } bg-background z-50 flex flex-col`}
         >
           {isDragging && (
             <div
@@ -919,7 +919,7 @@ export function ChatFloating({
                 </TooltipTrigger>
                 <TooltipContent
                   side="bottom"
-                  className="bg-slate-900 text-white border-slate-800"
+                  className="bg-foreground text-background"
                 >
                   {isConfirmingClear
                     ? "Presiona Alt+C para confirmar"
@@ -949,7 +949,7 @@ export function ChatFloating({
                   </TooltipTrigger>
                   <TooltipContent
                     side="bottom"
-                    className="bg-slate-900 text-white border-slate-800"
+                    className="bg-foreground text-background"
                   >
                     {isExpanded ? "Reducir" : "Expandir"}
                   </TooltipContent>
@@ -969,7 +969,7 @@ export function ChatFloating({
                 </TooltipTrigger>
                 <TooltipContent
                   side="bottom"
-                  className="bg-slate-900 text-white border-slate-800"
+                  className="bg-foreground text-background"
                 >
                   Cerrar chat
                 </TooltipContent>
@@ -1194,7 +1194,7 @@ export function ChatFloating({
                               </TooltipTrigger>
                               <TooltipContent
                                 side="top"
-                                className="bg-slate-900 text-white border-slate-800"
+                                className="bg-foreground text-background"
                               >
                                 {copiedMessageId === message.id ? "¡Copiado!" : "Copiar"}
                               </TooltipContent>
@@ -1347,7 +1347,7 @@ export function ChatFloating({
                     </TooltipTrigger>
                     <TooltipContent
                       side="top"
-                      className="bg-slate-900 text-white border-slate-800"
+                      className="bg-foreground text-background"
                     >
                       Quitar archivo adjunto
                     </TooltipContent>
@@ -1429,7 +1429,7 @@ export function ChatFloating({
                 </DropdownMenu>
                 <TooltipContent
                   side="top"
-                  className="bg-slate-900 text-white border-slate-800"
+                  className="bg-foreground text-background"
                 >
                   Adjuntar archivos
                 </TooltipContent>
@@ -1484,7 +1484,7 @@ export function ChatFloating({
                   </TooltipTrigger>
                   <TooltipContent
                     side="top"
-                    className="bg-slate-900 text-white border-slate-800"
+                    className="bg-foreground text-background"
                   >
                     {isListening ? "Detener dictado (Alt+V)" : "Dictar por voz (Alt+V)"}
                   </TooltipContent>
@@ -1506,7 +1506,7 @@ export function ChatFloating({
                   </TooltipTrigger>
                   <TooltipContent
                     side="top"
-                    className="bg-slate-900 text-white border-slate-800"
+                    className="bg-foreground text-background"
                   >
                     Detener respuesta
                   </TooltipContent>
@@ -1525,7 +1525,7 @@ export function ChatFloating({
                   </TooltipTrigger>
                   <TooltipContent
                     side="top"
-                    className="bg-slate-900 text-white border-slate-800"
+                    className="bg-foreground text-background"
                   >
                     Enviar mensaje
                   </TooltipContent>

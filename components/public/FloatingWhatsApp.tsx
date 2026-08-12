@@ -223,7 +223,7 @@ export function FloatingWhatsApp() {
             )}
           </button>
         </TooltipTrigger>
-        <TooltipContent side="left" className="bg-zinc-900 text-white border-white/10 px-4 py-2 font-bold tracking-tight">
+        <TooltipContent side="left" className="bg-foreground text-background border-border px-4 py-2 font-bold tracking-tight">
           {isOpen ? "Cerrar chat" : "¿En qué podemos ayudarte?"}
         </TooltipContent>
       </Tooltip>

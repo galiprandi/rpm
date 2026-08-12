@@ -108,7 +108,7 @@ export function PublicHeader() {
                   </kbd>
                 </button>
               </TooltipTrigger>
-              <TooltipContent className="bg-zinc-900 border-white/10 text-white text-xs font-bold uppercase tracking-widest">
+              <TooltipContent className="bg-foreground border-border text-background text-xs font-bold uppercase tracking-widest">
                 Buscar (⌘K)
               </TooltipContent>
             </Tooltip>
