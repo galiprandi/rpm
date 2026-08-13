@@ -23,6 +23,26 @@ if (typeof navigator !== "undefined") {
   });
 }
 
+// Mock speechSynthesis and SpeechSynthesisUtterance globally
+const mockSpeak = vi.fn();
+const mockCancel = vi.fn();
+if (typeof window !== "undefined") {
+  Object.defineProperty(window, "speechSynthesis", {
+    value: {
+      speak: mockSpeak,
+      cancel: mockCancel,
+      speaking: false,
+    },
+    writable: true,
+  });
+  (window as any).SpeechSynthesisUtterance = vi.fn().mockImplementation(function (this: any, text: string) {
+    this.text = text;
+    this.lang = "es-AR";
+    this.onend = null;
+    this.onerror = null;
+  });
+}
+
 // Mock scrollIntoView for HTMLElement in JSDOM
 HTMLElement.prototype.scrollIntoView = vi.fn();
 
@@ -95,9 +115,14 @@ vi.mock("@/components/ui/tooltip", () => ({
 describe("ChatFloating Component", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    if (typeof window !== "undefined" && window.sessionStorage) {
+      window.sessionStorage.clear();
+    }
     mockCreateObjectURL.mockClear();
     mockRevokeObjectURL.mockClear();
     mockWriteText.mockClear();
+    mockSpeak.mockClear();
+    mockCancel.mockClear();
     mockMessages = [];
     mockError = null;
     mockPathname = "/adm/dashboard";
@@ -767,6 +792,95 @@ describe("ChatFloating Component", () => {
 
       // Unread badge should be removed
       expect(screen.queryByTestId("unread-badge")).not.toBeInTheDocument();
+    });
+  });
+
+  describe("Speech Synthesis (Text-to-Speech) Read-Aloud Support", () => {
+    it("renders speak button on assistant messages and triggers speaking on click", async () => {
+      mockMessages = [
+        { id: "assistant-msg-1", role: "assistant", parts: [{ type: "text", text: "¡Hola! ¿En qué puedo ayudarte hoy?" }] },
+      ];
+
+      render(<ChatFloating isOpen={true} />);
+
+      // Verify the speak button is rendered with proper aria-label
+      const speakBtn = screen.getByRole("button", { name: /Escuchar mensaje en voz alta/i });
+      expect(speakBtn).toBeInTheDocument();
+
+      // Click to start speaking
+      await act(async () => {
+        fireEvent.click(speakBtn);
+      });
+
+      // It should cancel any ongoing speech first, then call speak
+      expect(mockCancel).toHaveBeenCalled();
+      expect(mockSpeak).toHaveBeenCalled();
+      expect(window.SpeechSynthesisUtterance).toHaveBeenCalledWith("¡Hola! ¿En qué puedo ayudarte hoy?");
+
+      // Button should now toggle to stop/pause speaking state with VolumeX icon representation
+      expect(screen.getByRole("button", { name: /Detener lectura en voz alta/i })).toBeInTheDocument();
+
+      // Click again to stop speaking
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: /Detener lectura en voz alta/i }));
+      });
+
+      // It should call cancel and reset button back to standard speak state
+      expect(mockCancel).toHaveBeenCalledTimes(2);
+      expect(screen.getByRole("button", { name: /Escuchar mensaje en voz alta/i })).toBeInTheDocument();
+    });
+
+    it("cancels active speech when clear conversation is triggered", async () => {
+      mockMessages = [
+        { id: "assistant-msg-1", role: "assistant", parts: [{ type: "text", text: "Texto de prueba" }] },
+      ];
+
+      render(<ChatFloating isOpen={true} />);
+      const speakBtn = screen.getByRole("button", { name: /Escuchar mensaje en voz alta/i });
+
+      // Start speaking
+      await act(async () => {
+        fireEvent.click(speakBtn);
+      });
+      expect(screen.getByRole("button", { name: /Detener lectura en voz alta/i })).toBeInTheDocument();
+
+      // Trigger clear conversation
+      const clearBtn = screen.getByRole("button", { name: /limpiar conversación/i });
+      await act(async () => {
+        fireEvent.click(clearBtn); // first click
+        fireEvent.click(clearBtn); // second click to confirm
+      });
+
+      // It should call cancel to stop the active reading aloud
+      expect(mockCancel).toHaveBeenCalled();
+      expect(mockSetMessages).toHaveBeenCalledWith([]);
+    });
+
+    it("triggers speech synthesis via Alt+S keyboard shortcut on the last assistant message", async () => {
+      mockMessages = [
+        { id: "user-msg-1", role: "user", parts: [{ type: "text", text: "hola" }] },
+        { id: "assistant-msg-last", role: "assistant", parts: [{ type: "text", text: "Respuesta del bot" }] },
+      ];
+
+      render(<ChatFloating isOpen={true} />);
+
+      // Trigger Alt+S keydown event
+      await act(async () => {
+        window.dispatchEvent(new KeyboardEvent("keydown", { altKey: true, key: "s" }));
+      });
+
+      // Verified that it spoke the text of the last assistant message
+      expect(mockSpeak).toHaveBeenCalled();
+      expect(window.SpeechSynthesisUtterance).toHaveBeenCalledWith("Respuesta del bot");
+      expect(screen.getByRole("button", { name: /Detener lectura en voz alta/i })).toBeInTheDocument();
+
+      // Press Alt+S again to stop speaking
+      await act(async () => {
+        window.dispatchEvent(new KeyboardEvent("keydown", { altKey: true, key: "s" }));
+      });
+
+      expect(mockCancel).toHaveBeenCalledTimes(2);
+      expect(screen.getByRole("button", { name: /Escuchar mensaje en voz alta/i })).toBeInTheDocument();
     });
   });
 });
