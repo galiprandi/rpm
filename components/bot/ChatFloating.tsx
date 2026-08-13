@@ -23,6 +23,8 @@ import {
   RotateCw,
   Copy,
   ArrowDown,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -71,6 +73,14 @@ export function ChatFloating({
   const [isConfirmingClear, setIsConfirmingClear] = useState(false);
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const [lastSeenMessageCount, setLastSeenMessageCount] = useState(0);
+
+  const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
+
+  // Check if speech synthesis is supported in the current environment/browser
+  const isSpeechSynthesisSupported = useMemo(() => {
+    if (typeof window === "undefined") return false;
+    return !!window.speechSynthesis;
+  }, []);
 
   // Dynamically auto-resize the input textarea height based on content
   useEffect(() => {
@@ -128,6 +138,10 @@ export function ChatFloating({
       dragCounterRef.current = 0;
       if (fileInputRef.current) fileInputRef.current.value = "";
       if (cameraInputRef.current) cameraInputRef.current.value = "";
+      if (typeof window !== "undefined" && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+      setSpeakingMessageId(null);
     }
   }, [isOpen]);
 
@@ -135,6 +149,15 @@ export function ChatFloating({
     return () => {
       if (confirmClearTimerRef.current) {
         clearTimeout(confirmClearTimerRef.current);
+      }
+    };
+  }, []);
+
+  // Stop active speech synthesis on unmount
+  useEffect(() => {
+    return () => {
+      if (typeof window !== "undefined" && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
       }
     };
   }, []);
@@ -291,6 +314,43 @@ export function ChatFloating({
     onFinish,
   });
   const { messages, sendMessage, status, error, stop, setMessages, clearError } = chatHelpers;
+
+  const handleToggleSpeak = useCallback((messageId: string, parts?: any[]) => {
+    if (!isSpeechSynthesisSupported) return;
+
+    if (speakingMessageId === messageId) {
+      window.speechSynthesis.cancel();
+      setSpeakingMessageId(null);
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+
+    // Resolve parts if not passed directly (e.g., from Alt+S keyboard listener)
+    const activeParts = parts || messages.find(m => m.id === messageId)?.parts;
+    if (!activeParts) return;
+
+    const textToSpeak = activeParts
+      .filter((p) => p.type === "text")
+      .map((p) => p.text)
+      .join("\n");
+
+    if (!textToSpeak.trim()) return;
+
+    const utterance = new SpeechSynthesisUtterance(textToSpeak);
+    utterance.lang = "es-AR";
+
+    utterance.onend = () => {
+      setSpeakingMessageId(null);
+    };
+
+    utterance.onerror = () => {
+      setSpeakingMessageId(null);
+    };
+
+    window.speechSynthesis.speak(utterance);
+    setSpeakingMessageId(messageId);
+  }, [speakingMessageId, messages, isSpeechSynthesisSupported]);
 
   const lastLoadedUserIdRef = useRef<string | null>(null);
 
@@ -514,6 +574,10 @@ export function ChatFloating({
     clearError();
     if (fileInputRef.current) fileInputRef.current.value = "";
     if (cameraInputRef.current) cameraInputRef.current.value = "";
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+    setSpeakingMessageId(null);
   }, [messages.length, isConfirmingClear, stop, setMessages, clearError]);
 
   // Automatically run native BarcodeDetector on image files
@@ -770,6 +834,15 @@ export function ChatFloating({
         }
         return;
       }
+
+      // Alt+S to toggle speaking of the last assistant message
+      if (e.altKey && e.key?.toLowerCase() === "s") {
+        if (isSpeechSynthesisSupported && lastAssistantMessageId) {
+          e.preventDefault();
+          handleToggleSpeak(lastAssistantMessageId);
+        }
+        return;
+      }
     };
 
     window.addEventListener("keydown", handleKeyDown);
@@ -784,6 +857,9 @@ export function ChatFloating({
     isSubmitting,
     toggleListening,
     handleClearConversation,
+    isSpeechSynthesisSupported,
+    lastAssistantMessageId,
+    handleToggleSpeak,
   ]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1062,7 +1138,7 @@ export function ChatFloating({
                     >
                       {message.role === "assistant" ? (
                         <>
-                          <div className="text-sm space-y-2 pr-7">
+                          <div className="text-sm space-y-2 pr-14">
                           {message.parts.map((part, i) => {
                             if (part.type === "text") {
                               return (
@@ -1182,7 +1258,38 @@ export function ChatFloating({
                           })}
                         </div>
                         {message.parts.some((p) => p.type === "text" && p.text?.trim()) && (
-                          <div className="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
+                          <div className="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200 flex items-center gap-1">
+                            {isSpeechSynthesisSupported && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => handleToggleSpeak(message.id, message.parts)}
+                                    className="h-6 w-6 rounded-full hover:bg-background/80 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1 text-muted-foreground"
+                                    aria-label={
+                                      speakingMessageId === message.id
+                                        ? "Detener lectura en voz alta"
+                                        : "Escuchar mensaje en voz alta"
+                                    }
+                                  >
+                                    {speakingMessageId === message.id ? (
+                                      <VolumeX className="h-3 w-3 text-red-500 animate-pulse" />
+                                    ) : (
+                                      <Volume2 className="h-3 w-3" />
+                                    )}
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent
+                                  side="top"
+                                  className="bg-foreground text-background"
+                                >
+                                  {speakingMessageId === message.id
+                                    ? "Detener (Alt+S)"
+                                    : "Escuchar (Alt+S)"}
+                                </TooltipContent>
+                              </Tooltip>
+                            )}
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button
@@ -1195,7 +1302,7 @@ export function ChatFloating({
                                       .join("\n");
                                     handleCopyMessage(message.id, textToCopy);
                                   }}
-                                  className="h-6 w-6 rounded-full hover:bg-background/80 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1"
+                                  className="h-6 w-6 rounded-full hover:bg-background/80 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1 text-muted-foreground"
                                   aria-label={
                                     copiedMessageId === message.id
                                       ? "Copiado al portapapeles"
