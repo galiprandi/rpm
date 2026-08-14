@@ -3,6 +3,41 @@ import { render, screen, fireEvent, act } from "@testing-library/react";
 import { ChatFloating } from "./ChatFloating";
 import React from "react";
 
+// Mock sonner toast
+const mockToastError = vi.fn();
+vi.mock("sonner", () => ({
+  toast: {
+    error: (msg: string) => mockToastError(msg),
+    success: vi.fn(),
+  },
+}));
+
+// Mock AudioContext and its nodes for chime synthesis testing
+const mockCreateOscillator = vi.fn().mockReturnValue({
+  type: "sine",
+  frequency: { setValueAtTime: vi.fn() },
+  connect: vi.fn(),
+  start: vi.fn(),
+  stop: vi.fn(),
+});
+const mockCreateGain = vi.fn().mockReturnValue({
+  gain: {
+    setValueAtTime: vi.fn(),
+    exponentialRampToValueAtTime: vi.fn(),
+  },
+  connect: vi.fn(),
+});
+const mockAudioContext = vi.fn().mockImplementation(function (this: any) {
+  this.currentTime = 0;
+  this.createOscillator = mockCreateOscillator;
+  this.createGain = mockCreateGain;
+  this.destination = {};
+});
+
+if (typeof window !== "undefined") {
+  (window as any).AudioContext = mockAudioContext;
+}
+
 // Mock URL createObjectURL and revokeObjectURL for memory management testing
 const mockCreateObjectURL = vi.fn().mockReturnValue("blob:mock-url");
 const mockRevokeObjectURL = vi.fn();
@@ -80,12 +115,13 @@ const mockSetMessages = vi.fn();
 const mockClearError = vi.fn();
 let mockMessages: any[] = [];
 let mockError: any = null;
+let mockStatus = "ready";
 
 vi.mock("@ai-sdk/react", () => ({
   useChat: () => ({
     messages: mockMessages,
     sendMessage: mockSendMessage,
-    status: "idle",
+    status: mockStatus,
     error: mockError,
     stop: mockStop,
     setMessages: mockSetMessages,
@@ -123,8 +159,12 @@ describe("ChatFloating Component", () => {
     mockWriteText.mockClear();
     mockSpeak.mockClear();
     mockCancel.mockClear();
+    mockToastError.mockClear();
+    mockAudioContext.mockClear();
+    mockCreateOscillator.mockClear();
     mockMessages = [];
     mockError = null;
+    mockStatus = "ready";
     mockPathname = "/adm/dashboard";
     // Clear global speech recognition mocks
     if (typeof window !== "undefined") {
@@ -881,6 +921,91 @@ describe("ChatFloating Component", () => {
 
       expect(mockCancel).toHaveBeenCalledTimes(2);
       expect(screen.getByRole("button", { name: /Escuchar mensaje en voz alta/i })).toBeInTheDocument();
+    });
+
+    it("supports toggling sound notifications via UI and Alt+N keyboard shortcut", async () => {
+      render(<ChatFloating isOpen={true} />);
+
+      // Verify toggle button is in initial state (BellOff by default, which means "Activar notificaciones sonoras")
+      const toggleBtn = screen.getByRole("button", { name: /Activar notificaciones sonoras/i });
+      expect(toggleBtn).toBeInTheDocument();
+
+      // Click button to enable sound
+      await act(async () => {
+        fireEvent.click(toggleBtn);
+      });
+
+      // Verify it toggled to active state (should show Bell, meaning "Desactivar notificaciones sonoras")
+      expect(screen.getByRole("button", { name: /Desactivar notificaciones sonoras/i })).toBeInTheDocument();
+
+      // Click again to disable sound
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: /Desactivar notificaciones sonoras/i }));
+      });
+
+      expect(screen.getByRole("button", { name: /Activar notificaciones sonoras/i })).toBeInTheDocument();
+
+      // Toggle via Alt+N keyboard shortcut
+      await act(async () => {
+        window.dispatchEvent(new KeyboardEvent("keydown", { altKey: true, key: "n" }));
+      });
+
+      expect(screen.getByRole("button", { name: /Desactivar notificaciones sonoras/i })).toBeInTheDocument();
+    });
+
+    it("plays synthesized notification chime when chat status changes from streaming to ready if sound notifications are enabled", async () => {
+      mockStatus = "streaming";
+      const { rerender } = render(<ChatFloating isOpen={true} />);
+
+      // Enable sound
+      const toggleBtn = screen.getByRole("button", { name: /Activar notificaciones sonoras/i });
+      await act(async () => {
+        fireEvent.click(toggleBtn);
+      });
+
+      // Transition status from "streaming" to "ready"
+      mockStatus = "ready";
+      await act(async () => {
+        rerender(<ChatFloating isOpen={true} />);
+      });
+
+      // Verify that AudioContext was instantiated to play the chime
+      expect(mockAudioContext).toHaveBeenCalled();
+      expect(mockCreateOscillator).toHaveBeenCalled();
+    });
+
+    it("prevents attaching files larger than 10MB and shows toast error", async () => {
+      const { container } = render(<ChatFloating isOpen={true} />);
+      const fileInput = container.querySelector('input[type="file"]');
+      expect(fileInput).toBeInTheDocument();
+
+      // Create a simulated 11MB file
+      const hugeFile = new File([new ArrayBuffer(11 * 1024 * 1024)], "massive-document.pdf", { type: "application/pdf" });
+
+      await act(async () => {
+        fireEvent.change(fileInput!, { target: { files: [hugeFile] } });
+      });
+
+      // It should call toast.error and NOT render the file attachment in UI
+      expect(mockToastError).toHaveBeenCalledWith("El archivo supera el límite de 10MB. Por favor, selecciona un archivo más pequeño.");
+      expect(screen.queryByText("massive-document.pdf")).not.toBeInTheDocument();
+
+      // Reset mockToastError
+      mockToastError.mockClear();
+
+      // Test drag-and-drop size enforcement
+      const chatContainer = screen.getByText("Nitro").closest(".flex-col")!;
+
+      await act(async () => {
+        fireEvent.drop(chatContainer, {
+          dataTransfer: {
+            files: [hugeFile],
+          },
+        });
+      });
+
+      expect(mockToastError).toHaveBeenCalledWith("El archivo supera el límite de 10MB. Por favor, selecciona un archivo más pequeño.");
+      expect(screen.queryByText("massive-document.pdf")).not.toBeInTheDocument();
     });
   });
 });

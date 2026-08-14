@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type FileUIPart } from "ai";
 import { BotMessageContent } from "./BotMessageContent";
+import { toast } from "sonner";
 import {
   MessageSquare,
   X,
@@ -25,6 +26,8 @@ import {
   ArrowDown,
   Volume2,
   VolumeX,
+  Bell,
+  BellOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -63,6 +66,56 @@ export function ChatFloating({
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const [attachedPreviewUrl, setAttachedPreviewUrl] = useState<string | null>(null);
   const [detectedBarcode, setDetectedBarcode] = useState<{ value: string; format: string } | null>(null);
+
+  const [soundEnabled, setSoundEnabled] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("nitro-sound-notifications") === "true";
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("nitro-sound-notifications", String(soundEnabled));
+    }
+  }, [soundEnabled]);
+
+  const playNotificationSound = useCallback(() => {
+    if (typeof window === "undefined") return;
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContextClass) return;
+    try {
+      const ctx = new AudioContextClass();
+      const now = ctx.currentTime;
+
+      // Note 1 (D5, 587.33 Hz)
+      const osc1 = ctx.createOscillator();
+      const gain1 = ctx.createGain();
+      osc1.type = "sine";
+      osc1.frequency.setValueAtTime(587.33, now);
+      gain1.gain.setValueAtTime(0.12, now);
+      gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+      osc1.connect(gain1);
+      gain1.connect(ctx.destination);
+      osc1.start(now);
+      osc1.stop(now + 0.15);
+
+      // Note 2 (G5, 783.99 Hz)
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.type = "sine";
+      osc2.frequency.setValueAtTime(783.99, now + 0.08);
+      gain2.gain.setValueAtTime(0, now);
+      gain2.gain.setValueAtTime(0.12, now + 0.08);
+      gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+      osc2.start(now + 0.08);
+      osc2.stop(now + 0.3);
+    } catch (e) {
+      console.error("Failed to play notification sound:", e);
+    }
+  }, []);
   const [isExpanded, setIsExpanded] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -314,6 +367,16 @@ export function ChatFloating({
     onFinish,
   });
   const { messages, sendMessage, status, error, stop, setMessages, clearError } = chatHelpers;
+
+  const prevStatusRef = useRef(status);
+  useEffect(() => {
+    if (prevStatusRef.current === "streaming" && status === "ready") {
+      if (soundEnabled) {
+        playNotificationSound();
+      }
+    }
+    prevStatusRef.current = status;
+  }, [status, soundEnabled, playNotificationSound]);
 
   const handleToggleSpeak = useCallback((messageId: string, parts?: any[]) => {
     if (!isSpeechSynthesisSupported) return;
@@ -804,6 +867,13 @@ export function ChatFloating({
         return;
       }
 
+      // Alt+N to toggle sound notifications
+      if (e.altKey && e.key?.toLowerCase() === "n") {
+        e.preventDefault();
+        setSoundEnabled((prev) => !prev);
+        return;
+      }
+
       // Alt+1 to Alt+4 to trigger quick suggestions when conversation is empty
       if (e.altKey && messages.length === 0) {
         const num = parseInt(e.key);
@@ -865,6 +935,10 @@ export function ChatFloating({
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error("El archivo supera el límite de 10MB. Por favor, selecciona un archivo más pequeño.");
+        return;
+      }
       setAttachedFile(file);
     }
   };
@@ -912,6 +986,10 @@ export function ChatFloating({
     const files = e.dataTransfer.files;
     if (files && files.length > 0) {
       const file = files[0];
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error("El archivo supera el límite de 10MB. Por favor, selecciona un archivo más pequeño.");
+        return;
+      }
       setAttachedFile(file);
     }
   };
@@ -985,6 +1063,33 @@ export function ChatFloating({
               </p>
             </div>
             <div className="flex items-center gap-1">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setSoundEnabled(!soundEnabled)}
+                    aria-label={
+                      soundEnabled
+                        ? "Desactivar notificaciones sonoras (Alt+N)"
+                        : "Activar notificaciones sonoras (Alt+N)"
+                    }
+                    className="focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1 rounded-full p-0.5 text-muted-foreground"
+                  >
+                    {soundEnabled ? (
+                      <Bell className="h-4 w-4 text-primary" />
+                    ) : (
+                      <BellOff className="h-4 w-4" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="bottom"
+                  className="bg-foreground text-background"
+                >
+                  {soundEnabled ? "Desactivar sonido (Alt+N)" : "Activar sonido (Alt+N)"}
+                </TooltipContent>
+              </Tooltip>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
