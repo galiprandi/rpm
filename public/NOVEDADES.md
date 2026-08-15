@@ -4,6 +4,366 @@ Mantente al día con las últimas actualizaciones y mejoras
 
 ---
 
+### 🗓️ 15 de Agosto de 2026
+
+**🎉 Asistente**: Notificaciones sonoras al finalizar las respuestas del asistente, con botón para activar/desactivar y atajo Alt+N. También se limitó el tamaño de adjuntos a 10MB.
+
+---
+
+### 🗓️ 13 de Agosto de 2026
+
+**🎉 Asistente**: Ahora puedes escuchar los mensajes del asistente en voz alta con el atajo Alt+S.
+
+---
+
+### 🗓️ 12 de Agosto de 2026
+
+**✨ Asistente**: Botón flotante para ir al final del chat e indicador de mensajes no leídos.
+
+**🐛 Asistente**: Correcciones en scroll, arrastrar y soltar archivos, y botón de reintento.
+
+**🐛 Sistema**: Corrección en posición del panel del asistente y tooltips.
+
+---
+
+### 🗓️ 11 de Agosto de 2026
+
+**🎉 Asistente**: Ahora puedes arrastrar y soltar archivos directamente en el chat para adjuntarlos.
+
+---
+
+### 🗓️ 10 de Agosto de 2026
+
+**🎉 Clientes**: Exportación CSV de transacciones y libro de cuentas imprimible con diseño profesional.
+
+**✨ Órdenes de Trabajo**: Historial del vehículo y duplicación de ítems previos al crear una orden.
+
+**✨ Asistente**: Entrada de texto multilínea que se expande sola y sugerencias según la página.
+
+**🎨 Sitio Web**: Accesibilidad en tarjetas de hitos de la página "Sobre Nosotros".
+
+---
+
+### 🗓️ 9 de Agosto de 2026
+
+**🎉 Órdenes de Trabajo**: Checklist dinámico con elementos personalizados al crear una orden.
+
+**✨ Reportes**: Presets de "Ayer" y "Últimos 90 días" en reportes cronológicos.
+
+**✨ Clientes**: Vista de libro de transacciones imprimible desde la ficha del cliente.
+
+**✨ Asistente**: Entrada multilínea con envío por Enter (sin Shift).
+
+**🎨 Sitio Web**: Accesibilidad por teclado y enlaces semánticos en el pie de página.
+
+---
+
+### 🗓️ 7 de Agosto de 2026
+
+**✨ Vehículos**: Filtro por rango de fechas y columna de fecha de ingreso.
+
+**✨ Asistente**: Sugerencias contextuales en conversaciones activas y copiar mensajes al portapapeles.
+
+**✨ Sitio Web**: Atajo Cmd+K/Ctrl+K para búsqueda global y navegación por teclado en catálogo.
+
+**🐛 Productos**: Detección correcta de SKU duplicado al crear productos.
+
+---
+
+### 🗓️ 5 de Agosto de 2026
+
+**✨ Clientes y Vehículos**: Pagos rápidos directamente desde los listados.
+
+**✨ Reportes**: Margen de ganancia estandarizado en puntos porcentuales.
+
+**✨ Asistente**: Botón de reintentar tras errores.
+
+---
+
+### 🗓️ 4 de Agosto de 2026
+
+**✨ Órdenes de Trabajo**: Filtro "Mis OTs", búsqueda de ítems y bloqueo de asignación de técnico en estados terminales.
+
+**✨ Asistente**: Herramienta para asignar técnico responsable.
+
+**✨ Clientes y Vehículos**: Ordenamiento inteligente mejorado en grillas.
+
+**🐛 Operaciones**: Corrección en redirección del botón de detalle de venta.
+
+**🎨 Sitio Web**: Enlaces semánticos de WhatsApp y contador de caracteres en widget.
+
+---
+
+### 🗓️ 3 de Agosto de 2026
+
+**🎉 Clientes**: Selector de plantillas personalizables para mensajes de WhatsApp.
+
+**✨ Asistente**: Adjuntar fotos directamente a ítems del checklist de órdenes de trabajo.
+
+**✨ Reportes**: Layout de impresión profesional en el dashboard de reportes.
+
+**🎨 Sitio Web**: Accesibilidad y foco automático en vistas rápidas del catálogo.
+
+---
+
+### 🗓️ 2 de Agosto de 2026
+
+**✨ Órdenes de Trabajo**: Estadísticas, barras de progreso en checklists e ítems personalizados.
+
+**✨ Asistente**: Atajos Alt+V (voz) y Alt+C (copiar).
+
+**🎨 Sitio Web**: Accesibilidad en búsqueda y filtros del catálogo público.
+
+---
+
+### 🗓️ 1 de Agosto de 2026
+
+**✨ Vehículos**: Creación global de vehículos desde el listado de administración.
+
+**✨ Órdenes de Trabajo**: Auto-asignación de técnico con atajos en todas las vistas.
+
+**✨ Asistente**: Herramienta de búsqueda de servicios.
+
+**✨ Reportes**: Layout de impresión profesional en reportes de clientes y stock.
+
+**🎨 Sitio Web**: Etiquetas y foco de teclado mejorados en formulario de contacto.
+
+---
+
+### 🗓️ 31 de Julio de 2026
+
+**✨ Precios**: Las listas de precios ahora pueden calcularse sobre otras listas.
+
+**✨ Órdenes de Trabajo**: Dropdowns interactivos de estado y técnico en la lista.
+
+**✨ Reportes**: Layout de impresión profesional en reporte de servicios.
+
+**✨ Vehículos**: Validación de teléfono argentino en formulario.
+
+**🎨 Sistema**: Accesibilidad de foco de teclado en elementos interactivos.
+
+---
+
+### 🗓️ 30 de Julio de 2026
+
+**✨ Órdenes de Trabajo**: Atajos de fecha programada y resumen de ítems en tarjetas.
+
+**✨ Clientes**: Filtro por tipo de transacción en la ficha del cliente.
+
+**✨ Asistente**: Vista previa con miniatura de imagen para adjuntos.
+
+**✨ Reportes**: Layout de impresión profesional en reporte de taller.
+
+**🎨 Sitio Web**: Foco de teclado en encabezado público.
+
+---
+
+### 🗓️ 29 de Julio de 2026
+
+**🔒 Sistema**: Integración de Sentry para monitoreo de errores en producción.
+
+**✨ Reportes**: Filtros avanzados de antigüedad de deuda en reporte de deudores. Layout de impresión en reporte de compras.
+
+**✨ Asistente**: Vista previa visual dinámica de adjuntos.
+
+**🐛 Órdenes de Trabajo**: Las órdenes ya no desaparecen del Kanban al registrar un pago.
+
+**🐛 Precios**: Corrección en edición de ítems de listas de precios.
+
+**🔒 Sistema**: Corrección de acceso para usuarios con rol Vendedor.
+
+---
+
+### 🗓️ 28 de Julio de 2026
+
+**🎉 Órdenes de Trabajo**: Ahora puedes duplicar órdenes de trabajo existentes.
+
+**🎉 Facturación**: Auto-anulación de facturas originales al oficializar notas de crédito, con diálogo educativo.
+
+**✨ Clientes**: Órdenes unificadas en la lista de transacciones del cliente.
+
+**✨ Órdenes de Trabajo**: Toggle masivo en checklists.
+
+**✨ Reportes**: Layout de impresión profesional en reporte de ventas.
+
+**✨ Sitio Web**: Filtros de catálogo mejorados con deep linking y sugerencias.
+
+**🐛 Sistema**: Corrección de etiquetas de rol de usuario en la tabla.
+
+---
+
+### 🗓️ 27 de Julio de 2026
+
+**🎉 Sistema**: Nuevo control de acceso por roles con rol Vendedor configurable.
+
+**✨ Clientes y Vehículos**: Acción de imprimir unificada en encabezados de fichas.
+
+**✨ Reportes**: Layout de impresión profesional en reporte de finanzas.
+
+**✨ Órdenes de Trabajo**: Selector de estado interactivo en encabezado de detalle.
+
+**✨ Asistente**: Herramienta para registrar pagos de órdenes de trabajo.
+
+---
+
+### 🗓️ 26 de Julio de 2026
+
+**✨ Productos**: Filtro de stock bajo y confirmación antes de acciones.
+
+**✨ Vehículos**: Deuda específica por vehículo con estadísticas y filtros.
+
+**✨ Facturación**: Cálculo detallado de impuestos multi-tasa para productos y servicios.
+
+**✨ Reportes**: Layout de impresión profesional en reporte de rentabilidad.
+
+**✨ Sistema**: Sugerencias de búsqueda globales.
+
+**🎨 Sistema**: Refinamiento visual y accesibilidad en todo el panel de administración.
+
+---
+
+### 🗓️ 25 de Julio de 2026
+
+**✨ Órdenes de Trabajo**: Historial del vehículo en detalle, estado cancelado con reversión de saldo, y guardado de borrador en el asistente de creación.
+
+**✨ Vehículos**: Validación de patentes en tiempo real con interfaz híbrida.
+
+**✨ Facturación**: Auto-anulación de facturas originales al oficializar notas de crédito.
+
+**✨ Clientes**: Validación de teléfono argentino.
+
+**✨ Asistente**: Detección contextual de códigos de barras y sugerencias según la ruta.
+
+**✨ Reportes**: Layout de impresión profesional en reporte de deudores.
+
+**🎨 Sitio Web y Reportes**: Mejoras de accesibilidad y contraste WCAG AA.
+
+---
+
+### 🗓️ 24 de Julio de 2026
+
+**✨ Asistente**: Botón lateral para abrir el asistente y correcciones de viewport en móvil.
+
+**🎨 Sistema**: Accesibilidad de foco en búsqueda y contraste.
+
+---
+
+### 🗓️ 23 de Julio de 2026
+
+**✨ Sitio Web**: Formulario de contacto multi-paso con experiencia premium.
+
+**✨ Órdenes de Trabajo**: Búsqueda por cliente al crear OT con pre-carga de cuenta.
+
+**✨ Compras**: Atajo contextual para adjuntar archivos en facturas de compra.
+
+**🐛 Facturación**: Corrección en filtro de fechas inclusivo para facturas.
+
+**🐛 Sistema**: Paginación preservada al cerrar modales y búsqueda visible sin resultados.
+
+**🎨 Sistema**: Accesibilidad en paleta de comandos.
+
+---
+
+### 🗓️ 22 de Julio de 2026
+
+**🎉 Asistente**: Dictado por voz nativo del navegador en el chat.
+
+**🎉 Sitio Web**: Widget de chat de WhatsApp interactivo en la web pública.
+
+**✨ Clientes**: Visualización de equipos y alertas de deuda por vehículo.
+
+**✨ Productos**: Ubicación física visible en venta rápida y exportación CSV. Mejor legibilidad de SKU.
+
+**✨ Facturación**: Estadísticas dinámicas en el dashboard de facturas.
+
+**⚡ Sitio Web**: Optimización de LCP en imágenes públicas.
+
+**🎨 Sistema y Reportes**: Mejoras de accesibilidad en tooltips y contraste WCAG AA.
+
+---
+
+### 🗓️ 21 de Julio de 2026
+
+**✨ Órdenes de Trabajo**: Indicadores de checklist/fotos, exportación CSV, y filtros rápidos de retrasadas y de hoy.
+
+**✨ Facturación**: Búsqueda de documentos y validación preventiva de CUIT.
+
+**✨ Reportes**: Filtro de rango de fechas personalizado y pagos directos en reporte de deudores.
+
+**✨ Asistente**: Sugerencias dinámicas, protección contra borrado accidental y persistencia de sesión.
+
+**🎨 Sitio Web**: Catálogo dinámico con búsqueda integrada y optimización de imágenes.
+
+---
+
+### 🗓️ 20 de Julio de 2026
+
+**🎉 Órdenes de Trabajo**: Carga, eliminación y visor de fotos de entrada y salida.
+
+**✨ Clientes**: Resumen impreso de cuenta corriente y exportación CSV de clientes y vehículos.
+
+**✨ Facturación**: Filtros de fecha y exportación CSV en listado de facturas.
+
+**✨ Reportes**: Exportación CSV estandarizada en todos los reportes.
+
+**✨ Asistente**: Acciones inline compactas, salvaguardas y atajos Alt+N.
+
+**🎨 Ventas Rápidas**: Mejoras de UX y accesibilidad en el modal.
+
+---
+
+### 🗓️ 19 de Julio de 2026
+
+**✨ Vehículos**: Exportación PDF de cuenta corriente y resumen imprimible.
+
+**✨ Asistente**: Búsqueda de vehículos y clientes expandida.
+
+**✨ Productos**: Exportación CSV personalizable para catálogo activo e inactivo.
+
+**🐛 Órdenes de Trabajo**: Corrección de filtrado en lista y mejora de búsqueda.
+
+**⚡ Sitio Web**: Optimización de imágenes en servicios y galería "Sobre Nosotros".
+
+---
+
+### 🗓️ 18 de Julio de 2026
+
+**✨ Vehículos**: Galería consolidada de fotos y adjuntos en la ficha.
+
+**✨ Órdenes de Trabajo**: Layout de impresión profesional para remitos y presupuestos.
+
+**✨ Facturación**: Validación CUIT/CUIL en tiempo real en edición de facturas.
+
+**✨ Asistente**: Herramienta para registrar vehículos y botón de limpiar conversación.
+
+**✨ Reportes**: Estandarización de tablas con componentes modernos.
+
+**⚡ Sitio Web**: Catálogo del lado del servidor con cache y rate limiting.
+
+---
+
+### 🗓️ 17 de Julio de 2026
+
+**✨ Precios**: Tipo de ajuste "Fijar valor" en gestión masiva de precios.
+
+**✨ Vehículos**: Cuenta corriente y acciones de pago rápido en la ficha del vehículo.
+
+**✨ Facturación**: Corrección de datos en borradores y rechazadas, y validación CUIT en tiempo real.
+
+**✨ Productos**: Vistas separadas de inactivos y filtro por categoría en el listado.
+
+**✨ Órdenes de Trabajo**: Descripción editable de servicios y checklists estandarizados.
+
+**✨ Reportes**: Widget de comparación multi-período y paridad de exportación CSV.
+
+**✨ Asistente**: Botones de confirmación interactivos, conciencia del contenido de la página, y actualización de productos.
+
+**✨ Sitio Web**: Catálogo dinámico desde base de datos.
+
+**🐛 Facturación**: Corrección de colisión de numeración de pre-facturas.
+
+---
+
 ### 🗓️ 16 de Julio de 2026
 
 **🎉 Precios**: Las listas de precios ahora pueden calcularse sobre otras listas. Por ejemplo, "Tarjetas" puede basarse en "Contado", que a su vez se calcula sobre el costo de reposición. El margen mínimo siempre se valida contra el costo real del producto.
