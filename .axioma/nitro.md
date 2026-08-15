@@ -3,6 +3,7 @@
 ## 📋 BACKLOG
 
 ## ✅ DONE
+- [x] 2026-08-11 — Implement user-friendly sound notifications controls (Web Audio API synthesized chime, localStorage persistence, Bell/BellOff header toggle, Alt+N shortcut) and enforce strict 10MB file attachment size limit in `components/bot/ChatFloating.tsx` with sonner toast warnings and full unit test coverage under Vitest.
 - [x] 2026-08-10 — Implement dynamic auto-resizing height for the chatbot input `<Textarea>` in `components/bot/ChatFloating.tsx` so that it expands and shrinks dynamically to fit content. Concurrently, expand context-aware empty-state and active follow-up suggestions for `/services`, `/direct-sales`, `/categories`, and `/users` routes. Fully tested in Vitest and end-to-end verified with Playwright screenshots.
 - [x] 2026-08-08 — Conducted a comprehensive audit of the active chatbot tools in `lib/agents/unified-tools.ts` and system prompt instructions in `lib/agents/unified-instructions.md`. Confirmed total of 20 active, high-utility tools matching exactly with the base prompt. All tool schemas and configurations are perfectly optimized and aligned.
 - [x] 2026-08-09 — Implement the chatbot multi-line text entry standard. Replace the single-line input box inside `components/bot/ChatFloating.tsx` with a beautifully styled, auto-expanding `<Textarea>` component. Added keyboard handlers so that pressing `Enter` without `Shift` triggers form submission, while `Shift+Enter` inserts a new line. Fully tested in Vitest and end-to-end verified using Playwright.
@@ -29,6 +30,10 @@
 - [x] 2026-03-28 — Initial audit of bot tools, removal of mock tools, fixing conversation history unit tests, and implementing major UI/UX improvements (smart scrolling, success states for tool execution, empty-state quick start suggestion chips, and full WCAG accessibility).
 
 ## 🧠 LEARNINGS
+### 2026-08-11 — Sound Notifications and Attachment Size Limit Standards
+**Learning:** Sound notifications generated via Web Audio API double-chime synthesis provide immediate auditory feedback to operators without loading external MP3 files. Persisting user preferences in `localStorage` alongside accessible header toggle controls and keyboard shortcuts (`Alt+N`) ensures a personalized experience. Validating attachment size (capped at 10MB) before processing prevents browser memory exhaustion and informs the user with clear toast alerts.
+**Action:** Always utilize native Web Audio API oscillators for UI audio feedback and validate attachment file size limits prior to state updates.
+
 ### 2026-08-10 — Dynamic Auto-Resizing Chat Input and Contextual Route Suggestion Pills
 **Learning:** Modern premium chat interfaces expect the text input box to scale smoothly without vertical scrollbars until reaching a reasonable limit. Utilizing React `useEffect` to programmatically synchronize the `<Textarea>` element height with its `scrollHeight` delivers a flawless, fluid UX. Concurrently, extending route-specific suggestion pills to other core workshop areas (services, categories, users, direct sales) reduces cognitive friction for operators by anticipating their natural workflow actions on those pages.
 **Action:** Always employ scrollHeight-based styling on auto-expanding text areas, and map specific suggestions for all administrative listing pages.

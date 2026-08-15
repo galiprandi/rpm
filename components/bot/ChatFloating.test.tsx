@@ -12,6 +12,30 @@ if (typeof window !== "undefined") {
   window.URL.revokeObjectURL = mockRevokeObjectURL;
 }
 
+// Mock localStorage globally
+const localStorageStore: Record<string, string> = {};
+const localStorageMock = {
+  getItem: vi.fn((key: string) => localStorageStore[key] ?? null),
+  setItem: vi.fn((key: string, value: string) => {
+    localStorageStore[key] = String(value);
+  }),
+  removeItem: vi.fn((key: string) => {
+    delete localStorageStore[key];
+  }),
+  clear: vi.fn(() => {
+    for (const k in localStorageStore) {
+      delete localStorageStore[k];
+    }
+  }),
+};
+
+if (typeof window !== "undefined") {
+  Object.defineProperty(window, "localStorage", {
+    value: localStorageMock,
+    writable: true,
+  });
+}
+
 // Mock navigator.clipboard
 const mockWriteText = vi.fn().mockResolvedValue(undefined);
 if (typeof navigator !== "undefined") {
@@ -104,6 +128,15 @@ vi.mock("@/lib/auth-client", () => ({
   },
 }));
 
+// Mock sonner
+const mockToastError = vi.fn();
+vi.mock("sonner", () => ({
+  toast: {
+    error: (...args: any[]) => mockToastError(...args),
+    success: vi.fn(),
+  },
+}));
+
 // Mock Radix tooltip to render children inline
 vi.mock("@/components/ui/tooltip", () => ({
   TooltipProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
@@ -115,6 +148,8 @@ vi.mock("@/components/ui/tooltip", () => ({
 describe("ChatFloating Component", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockToastError.mockClear();
+    localStorageMock.clear();
     if (typeof window !== "undefined" && window.sessionStorage) {
       window.sessionStorage.clear();
     }
@@ -881,6 +916,67 @@ describe("ChatFloating Component", () => {
 
       expect(mockCancel).toHaveBeenCalledTimes(2);
       expect(screen.getByRole("button", { name: /Escuchar mensaje en voz alta/i })).toBeInTheDocument();
+    });
+  });
+
+  describe("Sound Notifications & 10MB Attachment Size Limit", () => {
+    it("toggles sound notifications state, persists preference in localStorage, and responds to Alt+N keyboard shortcut", async () => {
+      render(<ChatFloating isOpen={true} />);
+
+      // Initially sound is enabled
+      const soundBtn = screen.getByRole("button", { name: /Notificaciones de sonido activadas/i });
+      expect(soundBtn).toBeInTheDocument();
+
+      // Click button to disable sound
+      await act(async () => {
+        fireEvent.click(soundBtn);
+      });
+
+      expect(screen.getByRole("button", { name: /Notificaciones de sonido desactivadas/i })).toBeInTheDocument();
+      expect(localStorage.getItem("nitro-sound-notifications")).toBe("false");
+
+      // Press Alt+N to toggle back on
+      await act(async () => {
+        window.dispatchEvent(new KeyboardEvent("keydown", { altKey: true, key: "n" }));
+      });
+
+      expect(screen.getByRole("button", { name: /Notificaciones de sonido activadas/i })).toBeInTheDocument();
+      expect(localStorage.getItem("nitro-sound-notifications")).toBe("true");
+    });
+
+    it("rejects files larger than 10MB and shows toast error notification", async () => {
+      const { container } = render(<ChatFloating isOpen={true} />);
+      const fileInput = container.querySelector('input[type="file"]');
+
+      // Create a dummy file larger than 10MB (11MB = 11 * 1024 * 1024 bytes)
+      const largeFile = new File(["a".repeat(1024)], "large_document.pdf", { type: "application/pdf" });
+      Object.defineProperty(largeFile, "size", { value: 11 * 1024 * 1024 });
+
+      await act(async () => {
+        fireEvent.change(fileInput!, { target: { files: [largeFile] } });
+      });
+
+      expect(mockToastError).toHaveBeenCalledWith("El archivo supera el límite de 10MB");
+      expect(screen.queryByText("large_document.pdf")).not.toBeInTheDocument();
+    });
+
+    it("rejects dropped files larger than 10MB during drag and drop", async () => {
+      render(<ChatFloating isOpen={true} />);
+      const chatContainer = screen.getByText("Nitro").closest(".flex-col")!;
+
+      const largeFile = new File(["a"], "huge_image.png", { type: "image/png" });
+      Object.defineProperty(largeFile, "size", { value: 12 * 1024 * 1024 });
+
+      await act(async () => {
+        fireEvent.drop(chatContainer, {
+          dataTransfer: {
+            files: [largeFile],
+          },
+        });
+      });
+
+      expect(mockToastError).toHaveBeenCalledWith("El archivo supera el límite de 10MB");
+      expect(screen.queryByText("huge_image.png")).not.toBeInTheDocument();
     });
   });
 });

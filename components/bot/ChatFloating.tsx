@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type FileUIPart } from "ai";
+import { toast } from "sonner";
 import { BotMessageContent } from "./BotMessageContent";
 import {
   MessageSquare,
@@ -25,6 +26,8 @@ import {
   ArrowDown,
   Volume2,
   VolumeX,
+  Bell,
+  BellOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -75,6 +78,61 @@ export function ChatFloating({
   const [lastSeenMessageCount, setLastSeenMessageCount] = useState(0);
 
   const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
+
+  const [soundEnabled, setSoundEnabled] = useState<boolean>(() => {
+    if (typeof window === "undefined") return true;
+    try {
+      const stored = localStorage.getItem("nitro-sound-notifications");
+      return stored ? stored === "true" : true;
+    } catch {
+      return true;
+    }
+  });
+
+  const toggleSoundEnabled = useCallback(() => {
+    setSoundEnabled((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem("nitro-sound-notifications", String(next));
+      } catch (e) {
+        console.error("Error saving sound preference", e);
+      }
+      return next;
+    });
+  }, []);
+
+  const playNotificationSound = useCallback(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const AudioContextClass =
+        window.AudioContext ||
+        (window as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!AudioContextClass) return;
+      const ctx = new AudioContextClass();
+
+      const playChime = (freq: number, startTime: number, duration: number) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(freq, ctx.currentTime + startTime);
+
+        gain.gain.setValueAtTime(0.15, ctx.currentTime + startTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + startTime + duration);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(ctx.currentTime + startTime);
+        osc.stop(ctx.currentTime + startTime + duration);
+      };
+
+      // Synthesize a double-chime notification sound: E5 (659.25Hz) & B5 (987.77Hz)
+      playChime(659.25, 0, 0.15);
+      playChime(987.77, 0.12, 0.25);
+    } catch (e) {
+      console.error("Failed to play notification sound", e);
+    }
+  }, []);
 
   // Check if speech synthesis is supported in the current environment/browser
   const isSpeechSynthesisSupported = useMemo(() => {
@@ -314,6 +372,14 @@ export function ChatFloating({
     onFinish,
   });
   const { messages, sendMessage, status, error, stop, setMessages, clearError } = chatHelpers;
+
+  const prevStatusRef = useRef(status);
+  useEffect(() => {
+    if (prevStatusRef.current === "streaming" && status === "ready" && soundEnabled) {
+      playNotificationSound();
+    }
+    prevStatusRef.current = status;
+  }, [status, soundEnabled, playNotificationSound]);
 
   const handleToggleSpeak = useCallback((messageId: string, parts?: any[]) => {
     if (!isSpeechSynthesisSupported) return;
@@ -843,6 +909,13 @@ export function ChatFloating({
         }
         return;
       }
+
+      // Alt+N to toggle sound notifications
+      if (e.altKey && e.key?.toLowerCase() === "n") {
+        e.preventDefault();
+        toggleSoundEnabled();
+        return;
+      }
     };
 
     window.addEventListener("keydown", handleKeyDown);
@@ -862,10 +935,27 @@ export function ChatFloating({
     handleToggleSpeak,
   ]);
 
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+  const validateAndSetFile = (file: File | null) => {
+    if (!file) {
+      setAttachedFile(null);
+      return false;
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      toast.error("El archivo supera el límite de 10MB");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      if (cameraInputRef.current) cameraInputRef.current.value = "";
+      return false;
+    }
+    setAttachedFile(file);
+    return true;
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setAttachedFile(file);
+      validateAndSetFile(file);
     }
   };
 
@@ -912,7 +1002,7 @@ export function ChatFloating({
     const files = e.dataTransfer.files;
     if (files && files.length > 0) {
       const file = files[0];
-      setAttachedFile(file);
+      validateAndSetFile(file);
     }
   };
 
@@ -985,6 +1075,30 @@ export function ChatFloating({
               </p>
             </div>
             <div className="flex items-center gap-1">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={toggleSoundEnabled}
+                    aria-label={
+                      soundEnabled
+                        ? "Notificaciones de sonido activadas (Alt+N)"
+                        : "Notificaciones de sonido desactivadas (Alt+N)"
+                    }
+                    className="focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1 rounded-full p-0.5 text-muted-foreground"
+                  >
+                    {soundEnabled ? (
+                      <Bell className="h-4 w-4" />
+                    ) : (
+                      <BellOff className="h-4 w-4 text-muted-foreground/60" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="bg-foreground text-background">
+                  {soundEnabled ? "Sonido activado (Alt+N)" : "Sonido desactivado (Alt+N)"}
+                </TooltipContent>
+              </Tooltip>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
