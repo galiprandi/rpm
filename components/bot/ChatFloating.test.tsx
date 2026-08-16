@@ -919,6 +919,37 @@ describe("ChatFloating Component", () => {
     });
   });
 
+  describe("Copy Full Conversation Transcript Feature", () => {
+    it("disables copy conversation button when messages list is empty", () => {
+      mockMessages = [];
+      render(<ChatFloating isOpen={true} />);
+
+      const copyBtn = screen.getByRole("button", { name: /Copiar conversación completa/i });
+      expect(copyBtn).toBeDisabled();
+    });
+
+    it("copies formatted conversation transcript and shows success toast when clicked", async () => {
+      mockMessages = [
+        { id: "1", role: "user", parts: [{ type: "text", text: "¿Tienen stock de luces LED?" }] },
+        { id: "2", role: "assistant", parts: [{ type: "text", text: "Sí, tenemos 5 unidades en stock." }] },
+      ];
+
+      render(<ChatFloating isOpen={true} />);
+
+      const copyBtn = screen.getByRole("button", { name: /Copiar conversación completa/i });
+      expect(copyBtn).not.toBeDisabled();
+
+      await act(async () => {
+        fireEvent.click(copyBtn);
+      });
+
+      const expectedTranscript =
+        "👤 Usuario:\n¿Tienen stock de luces LED?\n\n🤖 Nitro:\nSí, tenemos 5 unidades en stock.";
+
+      expect(mockWriteText).toHaveBeenCalledWith(expectedTranscript);
+    });
+  });
+
   describe("Sound Notifications & 10MB Attachment Size Limit", () => {
     it("toggles sound notifications state, persists preference in localStorage, and responds to Alt+N keyboard shortcut", async () => {
       render(<ChatFloating isOpen={true} />);

@@ -3,6 +3,7 @@
 ## 📋 BACKLOG
 
 ## ✅ DONE
+- [x] 2026-08-16 — Implement Copy Full Conversation Transcript feature in `components/bot/ChatFloating.tsx` with header action button, clean transcript formatting, sonner toast feedback, and comprehensive unit tests in `components/bot/ChatFloating.test.tsx`.
 - [x] 2026-08-11 — Implement user-friendly sound notifications controls (Web Audio API synthesized chime, localStorage persistence, Bell/BellOff header toggle, Alt+N shortcut) and enforce strict 10MB file attachment size limit in `components/bot/ChatFloating.tsx` with sonner toast warnings and full unit test coverage under Vitest.
 - [x] 2026-08-10 — Implement dynamic auto-resizing height for the chatbot input `<Textarea>` in `components/bot/ChatFloating.tsx` so that it expands and shrinks dynamically to fit content. Concurrently, expand context-aware empty-state and active follow-up suggestions for `/services`, `/direct-sales`, `/categories`, and `/users` routes. Fully tested in Vitest and end-to-end verified with Playwright screenshots.
 - [x] 2026-08-08 — Conducted a comprehensive audit of the active chatbot tools in `lib/agents/unified-tools.ts` and system prompt instructions in `lib/agents/unified-instructions.md`. Confirmed total of 20 active, high-utility tools matching exactly with the base prompt. All tool schemas and configurations are perfectly optimized and aligned.
