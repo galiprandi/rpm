@@ -611,6 +611,32 @@ export function ChatFloating({
     await sendMessage({ text: action });
   };
 
+  const handleCopyConversation = useCallback(async () => {
+    if (messages.length === 0) return;
+
+    const transcript = messages
+      .map((msg) => {
+        const roleLabel = msg.role === "user" ? "👤 Usuario" : "🤖 Nitro";
+        const textParts = msg.parts
+          .filter((p) => p.type === "text" && p.text?.trim())
+          .map((p) => (p as { text: string }).text.trim())
+          .join("\n");
+        return textParts ? `${roleLabel}:\n${textParts}` : null;
+      })
+      .filter(Boolean)
+      .join("\n\n");
+
+    if (!transcript) return;
+
+    try {
+      await navigator.clipboard.writeText(transcript);
+      toast.success("Transcripción copiada al portapapeles");
+    } catch (err) {
+      console.error("Failed to copy transcript: ", err);
+      toast.error("No se pudo copiar la transcripción");
+    }
+  }, [messages]);
+
   const handleClearConversation = useCallback(() => {
     if (messages.length === 0) return;
 
@@ -1075,6 +1101,23 @@ export function ChatFloating({
               </p>
             </div>
             <div className="flex items-center gap-1">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleCopyConversation}
+                    disabled={messages.length === 0}
+                    aria-label="Copiar conversación completa"
+                    className="focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1 rounded-full p-0.5 text-muted-foreground"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="bg-foreground text-background">
+                  Copiar conversación
+                </TooltipContent>
+              </Tooltip>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
