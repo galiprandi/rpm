@@ -6,6 +6,8 @@ Mantente al día con las últimas actualizaciones y mejoras
 
 ### 🗓️ 15 de Agosto de 2026
 
+**🔧 Facturación**: Hardening de la integración AFIP para producción en Vercel. Degradación controlada: el sistema detecta automáticamente si el certificado está ausente, vencido, o corrupto y opera en modo simulación sin crashear. Certificados guardados cifrados en base de datos (AES-256-GCM) con subida desde la interfaz de configuración, detección de vencimiento con alerta anticipada, y estado granular en la UI. Sistema de reconciliación para comprobantes que quedaron en estado pendiente. Log auditable de cada interacción con AFIP.
+
 **🎉 Asistente**: Notificaciones sonoras al finalizar las respuestas del asistente, con botón para activar/desactivar y atajo Alt+N. También se limitó el tamaño de adjuntos a 10MB.
 
 ---

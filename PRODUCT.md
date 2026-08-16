@@ -32,7 +32,7 @@ Lo que un vecino no podría copiar con veracidad: la integración entre el catá
 
 - **Local físico:** San Lorenzo 1462, San Miguel de Tucumán. Horario Lun–Vie 09:00–19:00, Sáb 09:00–13:00.
 - **Canal de venta dominante:** WhatsApp (`+54 381 319-9647`, `@rpm.accesorios` en Instagram). El sitio público deriva a WhatsApp para agendar turnos y consultas.
-- **Régimen fiscal argentino:** facturación electrónica AFIP con CAE vía wsfe; tipos de comprobante, pre-factura → oficialización → PDF fiscal.
+- **Régimen fiscal argentino:** facturación electrónica AFIP con CAE vía wsfe; tipos de comprobante, pre-factura → oficialización → PDF fiscal. Infraestructura completa con degradación controlada: strategy mock/real con health check granular (ready/missing/expired/invalid/no-master-key), certificados cifrados en DB (AES-256-GCM) con detección de vencimiento, flujo PENDING con reconciliación, log auditable. El sistema nunca crashea por cert faltante o vencido — degrada a mock. Wiring real con `afip.js` pendiente.
 - **Moneda:** ARS. Formateo estricto con `formatARS`.
 - **Stack operativo:** Next.js 16+ App Router, TypeScript estricto, Drizzle ORM + PostgreSQL (Neon en producción), Better Auth + Google OAuth, Vercel para deploy.
 - **Roles:** `USER` · `STAFF` · `ADMIN` (RBAC en middleware y servicios).

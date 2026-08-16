@@ -111,6 +111,11 @@ RPM_DEV_BYPASS_ROLE="ADMIN"      # USER | STAFF | ADMIN
 RPM_DEV_BYPASS_USER_ID="dev-user"
 RPM_DEV_BYPASS_NAME="Developer"
 RPM_DEV_BYPASS_EMAIL="dev@localhost"
+
+# AFIP - Master key para cifrado de certificados (32 bytes en base64)
+# Si no está seteada, el sistema opera en modo mock (sin llamadas reales a AFIP)
+# Generar con: openssl rand -base64 32
+AFIP_CERT_MASTER_KEY=""
 ```
 
 ### Base de Datos
@@ -260,6 +265,7 @@ vercel env ls
 - `GOOGLE_CLIENT_ID` - Google OAuth client
 - `GOOGLE_CLIENT_SECRET` - Google OAuth secret
 - `NEXT_PUBLIC_URL` - `https://rpm-wheat.vercel.app`
+- `AFIP_CERT_MASTER_KEY` - Master key para cifrado de certificados AFIP (32 bytes base64). Sin esta variable, el sistema opera en modo mock.
 
 ## 🧪 Testing
 

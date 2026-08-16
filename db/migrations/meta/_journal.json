@@ -43,6 +43,13 @@
       "when": 1785501797065,
       "tag": "0005_aromatic_lyja",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1786796161141,
+      "tag": "0006_worried_guardian",
+      "breakpoints": true
     }
   ]
 }

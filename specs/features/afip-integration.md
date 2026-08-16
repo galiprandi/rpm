@@ -1,4 +1,4 @@
-🚦 Estado: 🔴 No iniciado
+🚦 Estado: 🟡 En progreso — infraestructura completa, integración real pendiente de wiring con afip.js
 
 # Integración AFIP y Comprobantes Fiscales
 
@@ -7,6 +7,83 @@
 Este módulo gestiona el ciclo completo de comprobantes del sistema: desde la generación automática de comprobantes preliminares (pre-facturas) en cada venta u OT, hasta la oficialización fiscal ante AFIP mediante el Web Service de Facturación Electrónica (wsfe).
 
 El sistema permite al usuario mantener visibilidad sobre qué comprobantes han sido oficializados y cuáles no, enviar comprobantes a AFIP individualmente o en lote, y gestionar la totalidad del ciclo de vida de cada comprobante.
+
+## Arquitectura de integración (actualizada)
+
+### Strategy pattern: Mock vs Real con degradación controlada
+
+El servicio AFIP usa un factory (`getAfipService()`) que selecciona la implementación según el estado de salud del certificado (`getCertHealth()`):
+
+- **RealAfipService**: solo si `state === 'ready'` (cert descifrable + no vencido + master key presente)
+- **MockAfipService**: cualquier otro estado — el sistema nunca crashea por cert faltante/vencido/corrupto
+
+Estados de salud (`CertHealthState`):
+- `ready`: cert configurado, descifrable, no vencido → AFIP real
+- `missing`: no hay cert en DB → mock
+- `no-master-key`: falta `AFIP_CERT_MASTER_KEY` → mock
+- `expired`: cert vencido (notAfter en el pasado) → mock
+- `invalid`: cert corrupto o master key rotada (descifrado falla) → mock
+
+El factory cachea la instancia por estado de salud para evitar re-evaluar en cada llamada dentro del mismo request.
+
+### Certificados en DB (cifrados)
+
+Los certificados `.p12` se guardan cifrados con AES-256-GCM en la tabla `setting`:
+- `AFIP_CERT_DATA` (certificado cifrado en base64)
+- `AFIP_CERT_IV`, `AFIP_CERT_AUTH_TAG` (vectores de cifrado)
+- `AFIP_CERT_PASS_DATA` (password del certificado cifrado)
+- `AFIP_CERT_UPLOADED_AT` (timestamp de subida)
+- `AFIP_CERT_EXPIRES_AT` (fecha de vencimiento extraída del .p12 con node-forge)
+
+La master key vive en env var `AFIP_CERT_MASTER_KEY` (32 bytes en base64). Si no está configurada, el sistema opera en modo mock automáticamente.
+
+Al subir un certificado, se parsea con `node-forge` (pure JS, sin openssl CLI) para extraer la fecha de vencimiento (`notAfter`). Esta fecha se guarda como setting y se usa en el health check para detectar vencimiento.
+
+La UI de settings muestra 5 estados granulares:
+- **Listo** (emerald): cert válido, muestra fecha de subida y vencimiento
+- **Listo, vence pronto** (amber): faltan ≤30 días para vencer, muestra countdown
+- **Vencido** (red): cert vencido, botón "Renovar certificado"
+- **Inválido/corrupto** (red): descifrado falla, botón "Reemplazar"
+- **Sin master key** (amber): falta env var, botón de upload deshabilitado
+- **Sin certificado** (amber): no hay cert subido, botón "Subir certificado"
+
+### Flujo PENDING con reconciliación
+
+El endpoint `officialize` setea `PENDING` **antes** de llamar a AFIP (commit inmediato). Si el request se interrumpe (timeout de Vercel, error de red), el comprobante queda en `PENDING` y puede ser reconciliado:
+
+- **Endpoint `/api/invoices/[id]/reconcile`**: consulta AFIP (`FECompConsultar`) para verificar si el comprobante fue emitido.
+  - Si AFIP lo tiene → hidrata CAE + pasa a `ISSUED`.
+  - Si AFIP no lo tiene → revierte a `DRAFT` (safe to retry).
+- **Doble-submit protection**: el endpoint `officialize` rechaza comprobantes en `PENDING` con HTTP 409.
+
+### Log de interacciones (tabla `afip_log`)
+
+Cada interacción con AFIP se persiste en `afip_log`:
+- `direction`: `request` | `response`
+- `method`: `FECAESolicitar` | `FECompUltimoAutorizado` | `FEDummy` | `FECompConsultar`
+- `payload`, `response`, `resultCode`, `errorCode`, `errorMessage`
+- `attempt`: número de intento (incremental por comprobante)
+
+### Numeración con advisory lock
+
+`getNextInvoiceNumber` usa `pg_advisory_xact_lock` keyed por hash del tipo de comprobante, dentro de la misma transacción. Previene race conditions en serverless (Vercel).
+
+### Payload AFIP completo
+
+El endpoint `officialize` construye el payload con todos los campos obligatorios de wsfe:
+- `concepto` (1=productos, 2=servicios, 3=mixto)
+- `cbteFch` (YYYYMMDD)
+- `docTipo` (80=CUIT, 96=DNI, 99=sin doc)
+- `docNro` (sin guiones)
+- `impOpEx`, `impTrib` (default 0)
+
+### Observaciones vs errores
+
+AFIP puede devolver `resultado: 'A'` (aprobado) con observaciones. El sistema guarda las observaciones en `afipData.observaciones` sin fallar el flujo.
+
+---
+
+## 2. Configuración del Emisor
 
 **Emisor:** Responsable Inscripto (RI)
 **Punto de venta:** Único

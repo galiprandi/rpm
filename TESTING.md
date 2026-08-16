@@ -37,6 +37,16 @@ Acceso directo desde el menú lateral:
 | `/adm/payment-methods` | Link "Métodos de Pago" dentro de `/adm/settings` |
 | `/adm/operations` | Links "Ver operaciones" en Dashboard (`CashMovementsCard`) |
 
+### Rutas de API AFIP
+| Ruta | Método | Propósito |
+|------|--------|-----------|
+| `/api/afip/certificate` | GET | Estado del certificado (hasCert, uploadedAt) |
+| `/api/afip/certificate` | POST | Subir certificado .p12 (multipart form) |
+| `/api/afip/certificate` | DELETE | Eliminar certificado |
+| `/api/afip/test-connection` | POST | Test de conexión con AFIP (mock o real) |
+| `/api/invoices/[id]/officialize` | POST | Oficializar comprobante ante AFIP |
+| `/api/invoices/[id]/reconcile` | POST | Reconciliar comprobante PENDING con AFIP |
+
 ### Rutas de detalle (desde listados)
 | Ruta de detalle | Se accede desde... |
 |-----------------|-------------------|

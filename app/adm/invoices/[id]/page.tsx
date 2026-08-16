@@ -30,6 +30,8 @@ import {
   CheckCircle2,
   Undo2,
   Pencil,
+  RotateCcw,
+  Clock,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -224,6 +226,7 @@ export default function InvoiceDetailPage() {
     customerDoc: "",
   });
   const [isSaving, setIsSaving] = useState(false);
+  const [reconciling, setReconciling] = useState(false);
 
   const [cuitError, setCuitError] = useState<string | null>(null);
   const [cuitSuccess, setCuitSuccess] = useState<boolean>(false);
@@ -468,6 +471,39 @@ export default function InvoiceDetailPage() {
     }
   };
 
+  const handleReconcile = async () => {
+    setReconciling(true);
+    const toastId = toast.loading("Reconciliando con AFIP...");
+    try {
+      const response = await fetch(`/api/invoices/${id}/reconcile`, {
+        method: "POST",
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (response.ok) {
+        if (data.status === "ISSUED") {
+          toast.success("Comprobante confirmado como emitido en AFIP", { id: toastId });
+        } else if (data.status === "DRAFT") {
+          toast.success("AFIP no tiene registro del comprobante. Revertido a DRAFT.", { id: toastId });
+        } else {
+          toast.success("Reconciliación completada", { id: toastId });
+        }
+        // Re-fetch to update UI state
+        const updatedResponse = await fetch(`/api/invoices/${id}`);
+        if (updatedResponse.ok) {
+          setInvoice(await updatedResponse.json());
+        }
+      } else {
+        toast.error(data.error || "Error al reconciliar", { id: toastId });
+      }
+    } catch {
+      toast.error("Error de red al reconciliar", { id: toastId });
+    } finally {
+      setReconciling(false);
+    }
+  };
+
   return (
     <div className="container mx-auto py-6 space-y-6 print:py-0 print:space-y-0 max-w-5xl">
       <div className="print:hidden">
@@ -548,6 +584,32 @@ export default function InvoiceDetailPage() {
               ))}
             </ul>
           )}
+        </div>
+      )}
+
+      {invoice.status === "PENDING" && (
+        <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg flex flex-col gap-2 text-blue-800 print:hidden">
+          <div className="flex items-center gap-3">
+            <Clock className="h-5 w-5" />
+            <span className="font-bold uppercase tracking-tight">
+              Envío a AFIP en curso
+            </span>
+          </div>
+          <p className="text-sm ml-8">
+            Este comprobante fue enviado a AFIP pero no recibimos confirmación.
+            Esto puede ocurrir si la conexión se interrumpió durante el envío.
+          </p>
+          <div className="ml-8 mt-1">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleReconcile}
+              loading={reconciling}
+            >
+              <RotateCcw className="h-4 w-4 mr-1" />
+              Reconciliar con AFIP
+            </Button>
+          </div>
         </div>
       )}
 

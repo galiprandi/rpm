@@ -467,6 +467,28 @@ export const stockMovement = pgTable("stock_movement", {
 		}).onUpdate("cascade").onDelete("cascade"),
 ]);
 
+export const afipLog = pgTable("afip_log", {
+	id: text().primaryKey().default(sql`gen_random_uuid()`).notNull(),
+	invoiceId: text().notNull(),
+	attempt: integer().notNull().default(1),
+	direction: text().notNull(),
+	method: text().notNull(),
+	payload: jsonb(),
+	response: jsonb(),
+	resultCode: text(),
+	errorCode: text(),
+	errorMessage: text(),
+	createdAt: timestamp({ precision: 3, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+}, (table) => [
+	index("afip_log_invoiceId_idx").using("btree", table.invoiceId.asc().nullsLast().op("text_ops")),
+	index("afip_log_createdAt_idx").using("btree", table.createdAt.asc().nullsLast().op("timestamp_ops")),
+	foreignKey({
+			columns: [table.invoiceId],
+			foreignColumns: [invoice.id],
+			name: "afip_log_invoiceId_fkey"
+		}).onUpdate("cascade").onDelete("cascade"),
+]);
+
 export const setting = pgTable("setting", {
 	id: text().primaryKey().default(sql`gen_random_uuid()`).notNull(),
 	key: text().notNull(),

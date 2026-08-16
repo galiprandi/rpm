@@ -5,6 +5,7 @@ import { setting } from '@/db/schema';
 import { inArray } from 'drizzle-orm';
 import { requireAuth } from '@/lib/auth-server';
 import { UserRole } from '@/lib/auth/roles';
+import { getCertHealth } from '@/lib/services/certService';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 60;
@@ -24,7 +25,6 @@ export default async function SettingsPage() {
       'AFIP_PUNTO_VENTA',
       'AFIP_RESPONSABLE',
       'AFIP_PRODUCTION',
-      'AFIP_CERT_PATH',
     ]),
   });
 
@@ -42,13 +42,15 @@ export default async function SettingsPage() {
     puntoVenta: settingsMap['AFIP_PUNTO_VENTA'] || '1',
     responsable: settingsMap['AFIP_RESPONSABLE'] || 'RI',
     production: settingsMap['AFIP_PRODUCTION'] === 'true',
-    certPath: settingsMap['AFIP_CERT_PATH'] || '',
   };
+
+  const certHealth = await getCertHealth();
 
   return (
     <SettingsClient
       initialMinimumMargin={initialMinimumMargin}
       initialAfipSettings={initialAfipSettings}
+      initialCertHealth={certHealth}
     />
   );
 }

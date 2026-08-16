@@ -1,6 +1,6 @@
 import { db, type Database } from "@/lib/db";
 import { invoice, workOrderItem, directSaleItem, creditNoteItem, creditNote } from "@/db/schema";
-import { eq, and, or, gte, lte, ilike, like, desc, type SQL } from "drizzle-orm";
+import { eq, and, or, gte, lte, ilike, like, desc, sql, type SQL } from "drizzle-orm";
 
 type DbOrTx = Database | Parameters<Parameters<Database["transaction"]>[0]>[0];
 
@@ -420,7 +420,8 @@ export async function markInvoiceAsOfficial(
 
 /**
  * Calculates and returns the next invoice number for a given type.
- * Uses a transaction to ensure no duplicates.
+ * Uses a Postgres advisory lock to prevent race conditions when two
+ * concurrent requests try to generate the same number.
  */
 export async function getNextInvoiceNumber(
   type: string,
@@ -435,6 +436,12 @@ export async function getNextInvoiceNumber(
   } else if (type === "REMITO") {
     prefix = "REM";
   }
+
+  // Acquire a transaction-scoped advisory lock keyed by a stable hash of the type.
+  // This prevents two concurrent transactions from reading the same last number
+  // and generating duplicates. The lock is automatically released on commit/rollback.
+  const lockKey = hashTypeToLockKey(type);
+  await tx.execute(sql`SELECT pg_advisory_xact_lock(${lockKey})`);
 
   // For pre-invoices, since the number format is "X-0001-XXXXXXXX" and the number field is globally @unique,
   // we must query by prefix rather than the specific type to avoid duplicate sequence collisions in the DB.
@@ -600,4 +607,18 @@ export async function updateInvoiceBillingData(
 
     return updated;
   });
+}
+
+/**
+ * Hashes an invoice type string to a stable int32 for use as a Postgres
+ * advisory lock key. Uses a simple DJB2 hash to keep it deterministic and
+ * collision-resistant across the small set of known types.
+ */
+function hashTypeToLockKey(type: string): number {
+  let hash = 5381;
+  for (let i = 0; i < type.length; i++) {
+    hash = ((hash << 5) + hash + type.charCodeAt(i)) | 0;
+  }
+  // Ensure positive int32 for pg_advisory_xact_lock (bigint input)
+  return Math.abs(hash);
 }

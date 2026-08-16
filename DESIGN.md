@@ -261,3 +261,32 @@ Para que `truncate` funcione en flex/grid children, el contenedor padre debe ten
 - **Fix**: Agregar `min-w-0` al contenedor padre (Card, CardContent, o el flex item más cercano).
 - **Cadena**: Si el truncate está anidado profundo (Card → CardContent → Tooltip → p), agregar `min-w-0` en cada nivel de la cadena hasta que funcione.
 - **Regla**: Todo `<p className="truncate">` dentro de un grid/flex necesita `min-w-0` en su ancestro más cercano.
+
+## 28. AFIP Status Banner Pattern
+
+Los comprobantes con estados AFIP intermedios o de error deben mostrar banners contextuales en el detalle (`/adm/invoices/[id]`):
+
+- **PENDING** (azul): `bg-blue-50 border-blue-200 text-blue-800` + icono `Clock` + botón "Reconciliar con AFIP" (`RotateCcw`). Indica que el envío a AFIP está en curso o fue interrumpido.
+- **REJECTED** (rojo): `bg-red-50 border-red-200 text-red-800` + icono `XCircle` + detalle del error y observaciones de AFIP.
+- **Pre-invoice** (naranja): `bg-orange-50 border-orange-200 text-orange-800` + texto "No válido como comprobante fiscal". Visible también en print (`print:bg-white print:border-black`).
+
+**Reglas:**
+- Los banners PENDING y REJECTED son `print:hidden` (no aparecen en el PDF impreso).
+- El banner de pre-invoice SÍ aparece en print con estilos adaptados.
+- El botón "Reconciliar" solo aparece si el estado es `PENDING`.
+- En el listado (`/adm/invoices`), el badge `PENDING` usa `text-blue-600 border-blue-200 bg-blue-50` con texto "Enviando...".
+
+## 29. Certificate Upload UI Pattern
+
+La subida de certificados en `/adm/settings` muestra 5 estados granulares de salud (`CertHealthState`):
+
+- **ready** (emerald): Contenedor `bg-emerald-100 border-emerald-200` + icono `CheckCircle2` + "Certificado configurado" + fecha subida + vencimiento. Botones "Reemplazar" / "Eliminar".
+- **ready, vence pronto** (amber): Si faltan ≤30 días para vencer, cambia a `bg-amber-100 border-amber-200` + icono `AlertTriangle` + "Certificado vence en N días".
+- **expired** (red): Contenedor `bg-red-100 border-red-200` + icono `XCircle` + "Certificado vencido" + detalle. Botón "Renovar certificado".
+- **invalid** (red): Contenedor `bg-red-100 border-red-200` + icono `XCircle` + "Certificado inválido o corrupto" + detalle. Botones "Reemplazar" / "Eliminar".
+- **no-master-key** (amber): Contenedor amber + icono `AlertCircle` + "Modo simulación (sin master key)" + mención de `AFIP_CERT_MASTER_KEY` en `font-mono`. Botón upload deshabilitado.
+- **missing** (amber): Contenedor amber + icono `AlertCircle` + "Sin certificado" + "Modo simulación (mock)". Botón "Subir certificado".
+- **Form de subida**: Panel colapsable con `border bg-muted/30`, input file (`.p12`/`.pfx`), input password, botones "Cancelar" y "Confirmar".
+- **Seguridad**: Nunca mostrar el contenido del certificado ni el password en la UI. Solo exponer `state`, `uploadedAt`, `expiresAt`, y `detail`.
+- **Loading states**: `Loader2` con `animate-spin` durante subida, `loading` prop en botones durante eliminación.
+- **Countdown**: Usar `differenceInDays` de `date-fns` para calcular días restantes. Warning si ≤30 días.

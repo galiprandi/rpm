@@ -565,6 +565,32 @@ export default function InvoicesPage() {
     fetchInvoices();
   };
 
+  const handleReconcile = async (id: string) => {
+    const toastId = toast.loading('Reconciliando con AFIP...');
+    try {
+      const response = await fetch(`/api/invoices/${id}/reconcile`, {
+        method: 'POST',
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (response.ok) {
+        if (data.status === 'ISSUED') {
+          toast.success('Comprobante confirmado como emitido en AFIP', { id: toastId });
+        } else if (data.status === 'DRAFT') {
+          toast.success('AFIP no tiene registro del comprobante. Revertido a DRAFT.', { id: toastId });
+        } else {
+          toast.success('Reconciliación completada', { id: toastId });
+        }
+        fetchInvoices();
+      } else {
+        toast.error(data.error || 'Error al reconciliar', { id: toastId });
+      }
+    } catch {
+      toast.error('Error de red al reconciliar', { id: toastId });
+    }
+  };
+
   const rowActions = (row: any) => (
     <div className="flex items-center gap-1">
       <TooltipProvider>
@@ -607,6 +633,20 @@ export default function InvoicesPage() {
               </button>
             </TooltipTrigger>
             <TooltipContent>Enviar a AFIP</TooltipContent>
+          </Tooltip>
+        )}
+        {row.status === 'PENDING' && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                className="p-2 hover:bg-blue-50 rounded-md transition-colors text-blue-600"
+                onClick={() => handleReconcile(row.id)}
+              >
+                <RotateCcw className="h-4 w-4" />
+                <span className="sr-only">Reconciliar con AFIP</span>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>Reconciliar con AFIP</TooltipContent>
           </Tooltip>
         )}
       </TooltipProvider>

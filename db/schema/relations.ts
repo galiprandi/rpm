@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm/relations";
-import { creditNote, creditNoteItem, product, service, customer, directSale, directSaleItem, directSalePayment, paymentMethod, inventoryCountOperative, inventoryCountItem, user, account, workOrder, photo, payment, invoice, category, supplier, purchaseVoucher, stockMovement, vehicle, vehicleMake, vehicleModel, purchaseVoucherItem, session, workOrderItem, workOrderAuditLog, priceList, priceListItem, balanceAudit } from "./schema";
+import { creditNote, creditNoteItem, product, service, customer, directSale, directSaleItem, directSalePayment, paymentMethod, inventoryCountOperative, inventoryCountItem, user, account, workOrder, photo, payment, invoice, category, supplier, purchaseVoucher, stockMovement, vehicle, vehicleMake, vehicleModel, purchaseVoucherItem, session, workOrderItem, workOrderAuditLog, priceList, priceListItem, balanceAudit, afipLog } from "./schema";
 
 export const creditNoteItemRelations = relations(creditNoteItem, ({one}) => ({
 	creditNote: one(creditNote, {
@@ -177,6 +177,14 @@ export const invoiceRelations = relations(invoice, ({one, many}) => ({
 		references: [customer.id]
 	}),
 	creditNotes: many(creditNote),
+	afipLogs: many(afipLog),
+}));
+
+export const afipLogRelations = relations(afipLog, ({one}) => ({
+	invoice: one(invoice, {
+		fields: [afipLog.invoiceId],
+		references: [invoice.id]
+	}),
 }));
 
 export const categoryRelations = relations(category, ({many}) => ({

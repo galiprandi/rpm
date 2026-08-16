@@ -22,7 +22,14 @@ export type SettingKey =
   | 'AFIP_PUNTO_VENTA'
   | 'AFIP_RESPONSABLE'
   | 'AFIP_PRODUCTION'
-  | 'AFIP_CERT_PATH';
+  | 'AFIP_CERT_DATA'
+  | 'AFIP_CERT_IV'
+  | 'AFIP_CERT_AUTH_TAG'
+  | 'AFIP_CERT_UPLOADED_AT'
+  | 'AFIP_CERT_EXPIRES_AT'
+  | 'AFIP_CERT_PASS_DATA'
+  | 'AFIP_CERT_PASS_IV'
+  | 'AFIP_CERT_PASS_AUTH_TAG';
 
 const DEFAULT_SETTINGS: Record<SettingKey, string> = {
   MINIMUM_MARGIN_PERCENTAGE: '15.0',
@@ -30,7 +37,14 @@ const DEFAULT_SETTINGS: Record<SettingKey, string> = {
   AFIP_PUNTO_VENTA: '1',
   AFIP_RESPONSABLE: 'RI',
   AFIP_PRODUCTION: 'false',
-  AFIP_CERT_PATH: '',
+  AFIP_CERT_DATA: '',
+  AFIP_CERT_IV: '',
+  AFIP_CERT_AUTH_TAG: '',
+  AFIP_CERT_UPLOADED_AT: '',
+  AFIP_CERT_EXPIRES_AT: '',
+  AFIP_CERT_PASS_DATA: '',
+  AFIP_CERT_PASS_IV: '',
+  AFIP_CERT_PASS_AUTH_TAG: '',
 };
 
 /**
@@ -102,4 +116,26 @@ export async function initializeDefaultSettings(): Promise<void> {
       });
     }
   }
+}
+
+/**
+ * Returns whether an AFIP certificate has been uploaded, without exposing its content.
+ * Includes expiry date for UI countdown display.
+ */
+export async function getAfipCertStatus(): Promise<{
+  hasCert: boolean;
+  uploadedAt: string | null;
+  expiresAt: string | null;
+}> {
+  const [certData, uploadedAt, expiresAt] = await Promise.all([
+    getSetting('AFIP_CERT_DATA'),
+    getSetting('AFIP_CERT_UPLOADED_AT'),
+    getSetting('AFIP_CERT_EXPIRES_AT'),
+  ]);
+
+  return {
+    hasCert: certData.length > 0,
+    uploadedAt: uploadedAt.length > 0 ? uploadedAt : null,
+    expiresAt: expiresAt.length > 0 ? expiresAt : null,
+  };
 }

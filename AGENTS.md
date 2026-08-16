@@ -123,6 +123,49 @@ Todo formulario de creación/edición debe implementar estado `isSubmitting`:
 - NUNCA hardcodear credenciales — SIEMPRE usar env vars
 - NUNCA commitear `.env` con datos reales — validar `.gitignore`
 
+# AFIP / Facturación Electrónica
+
+## Arquitectura
+
+- **Strategy pattern con degradación controlada**: `getAfipService()` factory en `lib/services/afip/index.ts` selecciona `MockAfipService` o `RealAfipService` según `getCertHealth().state`
+- **Solo usa RealAfipService si `state === 'ready'`** (cert descifrable + no vencido + master key presente)
+- **Cualquier otro estado** (missing, no-master-key, expired, invalid) → MockAfipService — el sistema nunca crashea
+- **Mock**: simula CAE aleatorio, número desde DB local
+- **Real**: usa `afip.js` (pendiente de instalación — stub estructural completo en `lib/services/afip/real.ts`)
+- **Funciones puras** (`validateCUIT`, `mapInternalToAFIPType`) viven en `lib/services/afipService.ts` (thin wrapper)
+
+## Certificados
+
+- **NO se guardan en filesystem** — Vercel tiene filesystem efímero y read-only
+- **Se guardan cifrados (AES-256-GCM) en tabla `setting`**: `AFIP_CERT_DATA`, `AFIP_CERT_IV`, `AFIP_CERT_AUTH_TAG`, `AFIP_CERT_PASS_*`, `AFIP_CERT_EXPIRES_AT`
+- **Master key** en env var `AFIP_CERT_MASTER_KEY` (32 bytes en base64). Si no está, el sistema opera en modo mock automáticamente
+- **Vencimiento**: al subir, se parsea el .p12 con `node-forge` (pure JS) para extraer `notAfter`. Se guarda en `AFIP_CERT_EXPIRES_AT`
+- **Health check**: `getCertHealth()` en `certService.ts` devuelve `{ state, uploadedAt, expiresAt, detail }` con 5 estados: `ready`, `missing`, `no-master-key`, `expired`, `invalid`
+- **UI de subida** en `/adm/settings` — upload/reemplazar/eliminar sin tocar terminal, muestra estado granular con countdown si faltan ≤30 días
+- **Endpoint**: `app/api/afip/certificate/route.ts` (GET/POST/DELETE, admin only)
+- **Servicio de cifrado**: `lib/services/certService.ts`
+- **Errores tipados**: `AfipCertError` (cert rechazado por AFIP en runtime) y `AfipNotWiredError` (afip.js no instalado) en `real.ts`
+
+## Flujo de oficialización
+
+- **PENDING antes de AFIP**: el endpoint `officialize` setea `PENDING` (commit) antes de llamar a AFIP. Si el request se interrumpe (timeout Vercel), el comprobante queda `PENDING`
+- **Doble-submit protection**: `officialize` rechaza comprobantes en `PENDING` con HTTP 409
+- **Reconciliación**: endpoint `/api/invoices/[id]/reconcile` consulta AFIP (`FECompConsultar`). Si AFIP lo tiene → ISSUED. Si no → DRAFT
+- **Log auditable**: tabla `afip_log` registra cada request/response con attempt number
+
+## Numeración
+
+- **Advisory lock**: `getNextInvoiceNumber` usa `pg_advisory_xact_lock` keyed por hash del tipo. Previene race conditions en serverless
+- **Número oficial**: viene de AFIP (`FECompUltimoAutorizado` + 1), no se genera localmente
+
+## Payload AFIP
+
+El endpoint `officialize` construye el payload completo: `concepto`, `cbteFch`, `docTipo`, `docNro`, `impOpEx`, `impTrib`. Sin estos campos AFIP rechaza
+
+## Spec
+
+- `specs/features/afip-integration.md` — semáforo 🟡 (infraestructura completa, wiring pendiente)
+
 ---
 
 # UI/UX Rules

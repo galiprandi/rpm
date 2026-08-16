@@ -14,7 +14,6 @@ const updateSettingsSchema = z.object({
   afipPuntoVenta: z.string().optional(),
   afipResponsable: z.string().optional(),
   afipProduction: z.boolean().optional(),
-  afipCertPath: z.string().optional(),
 });
 
 // GET /api/settings - Get global settings (requiere can_manage_settings)
@@ -27,14 +26,12 @@ export const GET = withPermission('can_manage_settings', async (request: NextReq
       afipPuntoVenta,
       afipResponsable,
       afipProduction,
-      afipCertPath,
     ] = await Promise.all([
       getMinimumMargin(),
       getSetting('AFIP_CUIT'),
       getSetting('AFIP_PUNTO_VENTA'),
       getSetting('AFIP_RESPONSABLE'),
       getSetting('AFIP_PRODUCTION'),
-      getSetting('AFIP_CERT_PATH'),
     ]);
 
     return NextResponse.json({
@@ -43,7 +40,6 @@ export const GET = withPermission('can_manage_settings', async (request: NextReq
       afipPuntoVenta,
       afipResponsable,
       afipProduction: afipProduction === 'true',
-      afipCertPath,
     });
   } catch (error) {
     console.error('Error fetching settings:', error);
@@ -74,7 +70,6 @@ export const PUT = withPermission('can_manage_settings', async (request: NextReq
       afipPuntoVenta,
       afipResponsable,
       afipProduction,
-      afipCertPath,
     } = result.data;
 
     if (minimumMarginPercentage !== undefined) {
@@ -100,17 +95,12 @@ export const PUT = withPermission('can_manage_settings', async (request: NextReq
       await setSetting('AFIP_PRODUCTION', afipProduction.toString());
     }
 
-    if (afipCertPath !== undefined) {
-      await setSetting('AFIP_CERT_PATH', afipCertPath);
-    }
-
     return NextResponse.json({
       minimumMarginPercentage,
       afipCuit: afipCuit ?? '',
       afipPuntoVenta: afipPuntoVenta ?? '1',
       afipResponsable: afipResponsable ?? 'RI',
       afipProduction: !!afipProduction,
-      afipCertPath: afipCertPath ?? '',
     });
   } catch (error) {
     console.error('Error updating settings:', error);

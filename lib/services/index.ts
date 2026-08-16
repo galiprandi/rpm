@@ -57,6 +57,7 @@ export {
   getMinimumMargin,
   setSetting,
   initializeDefaultSettings,
+  getAfipCertStatus,
   type Setting,
   type SettingKey,
 } from './settingsService';
