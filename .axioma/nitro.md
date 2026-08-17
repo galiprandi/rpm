@@ -3,6 +3,7 @@
 ## 📋 BACKLOG
 
 ## ✅ DONE
+- [x] 2026-08-17 — Implement `Alt+1` to `Alt+4` keyboard shortcut triggers and visual `<kbd>` badges for active chatbot follow-up suggestion pills in `components/bot/ChatFloating.tsx` with updated `aria-label` accessibility hints and comprehensive unit tests in `components/bot/ChatFloating.test.tsx`.
 - [x] 2026-08-16 — Implement Copy Full Conversation Transcript feature in `components/bot/ChatFloating.tsx` with header action button, clean transcript formatting, sonner toast feedback, and comprehensive unit tests in `components/bot/ChatFloating.test.tsx`.
 - [x] 2026-08-11 — Implement user-friendly sound notifications controls (Web Audio API synthesized chime, localStorage persistence, Bell/BellOff header toggle, Alt+N shortcut) and enforce strict 10MB file attachment size limit in `components/bot/ChatFloating.tsx` with sonner toast warnings and full unit test coverage under Vitest.
 - [x] 2026-08-10 — Implement dynamic auto-resizing height for the chatbot input `<Textarea>` in `components/bot/ChatFloating.tsx` so that it expands and shrinks dynamically to fit content. Concurrently, expand context-aware empty-state and active follow-up suggestions for `/services`, `/direct-sales`, `/categories`, and `/users` routes. Fully tested in Vitest and end-to-end verified with Playwright screenshots.
@@ -31,6 +32,10 @@
 - [x] 2026-03-28 — Initial audit of bot tools, removal of mock tools, fixing conversation history unit tests, and implementing major UI/UX improvements (smart scrolling, success states for tool execution, empty-state quick start suggestion chips, and full WCAG accessibility).
 
 ## 🧠 LEARNINGS
+### 2026-08-17 — Active Follow-up Suggestions Keyboard Shortcuts and Visual Badges
+**Learning:** Workshop staff operating the chatbot during active conversations benefit greatly from keyboard shortcuts for follow-up suggestions (matching the empty-state shortcuts `Alt+1` to `Alt+4`). Adding embedded `<kbd>` badges inside the pill buttons and appending shortcut hints in `aria-label` attributes ensures high discoverability for keyboard and screen-reader users without cluttering the compact UI layout.
+**Action:** Always maintain consistent keyboard shortcut behaviors across empty and active states for contextual suggestion widgets.
+
 ### 2026-08-11 — Sound Notifications and Attachment Size Limit Standards
 **Learning:** Sound notifications generated via Web Audio API double-chime synthesis provide immediate auditory feedback to operators without loading external MP3 files. Persisting user preferences in `localStorage` alongside accessible header toggle controls and keyboard shortcuts (`Alt+N`) ensures a personalized experience. Validating attachment size (capped at 10MB) before processing prevents browser memory exhaustion and informs the user with clear toast alerts.
 **Action:** Always utilize native Web Audio API oscillators for UI audio feedback and validate attachment file size limits prior to state updates.

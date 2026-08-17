@@ -896,12 +896,13 @@ export function ChatFloating({
         return;
       }
 
-      // Alt+1 to Alt+4 to trigger quick suggestions when conversation is empty
-      if (e.altKey && messages.length === 0) {
+      // Alt+1 to Alt+4 to trigger suggestions (empty state quick suggestions or active follow-ups)
+      if (e.altKey && !isSubmitting) {
         const num = parseInt(e.key);
         if (num >= 1 && num <= 4) {
           e.preventDefault();
-          const suggestion = quickSuggestions[num - 1];
+          const targetList = messages.length === 0 ? quickSuggestions : followUpSuggestions;
+          const suggestion = targetList[num - 1];
           if (suggestion) {
             handleSuggestionClick(suggestion.text);
           }
@@ -951,6 +952,7 @@ export function ChatFloating({
     setIsOpen,
     messages.length,
     quickSuggestions,
+    followUpSuggestions,
     handleSuggestionClick,
     isSpeechSupported,
     isSubmitting,
@@ -1582,9 +1584,13 @@ export function ChatFloating({
                   key={idx}
                   type="button"
                   onClick={() => handleSuggestionClick(s.text)}
-                  className="whitespace-nowrap text-[11px] font-medium bg-background hover:bg-primary/5 hover:text-primary border hover:border-primary/20 rounded-full px-2.5 py-1 transition-all duration-150 cursor-pointer active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 text-muted-foreground shrink-0"
+                  aria-label={`${s.label} (Alt+${idx + 1})`}
+                  className="whitespace-nowrap text-[11px] font-medium bg-background hover:bg-primary/5 hover:text-primary border hover:border-primary/20 rounded-full px-2.5 py-1 transition-all duration-150 cursor-pointer active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 text-muted-foreground shrink-0 flex items-center gap-1.5"
                 >
-                  {s.label}
+                  <span>{s.label}</span>
+                  <kbd className="px-1 text-[9px] font-mono rounded bg-muted border border-muted-foreground/20 text-muted-foreground select-none">
+                    Alt+{idx + 1}
+                  </kbd>
                 </button>
               ))}
             </div>
