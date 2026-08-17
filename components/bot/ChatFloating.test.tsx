@@ -598,23 +598,44 @@ describe("ChatFloating Component", () => {
     // 1. Empty conversation - should not render follow-up pills
     mockMessages = [];
     const { rerender } = render(<ChatFloating isOpen={true} />);
-    expect(screen.queryByRole("button", { name: /^📦 Stock$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /📦 Stock/i })).not.toBeInTheDocument();
 
     // 2. Active conversation - should render follow-up pills
     mockMessages = [{ id: "1", role: "user", parts: [{ type: "text", text: "hello" }] }];
     rerender(<ChatFloating isOpen={true} />);
-    expect(screen.getByRole("button", { name: /^📦 Stock$/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /^🔧 OTs hoy$/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /📦 Stock/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /🔧 OTs hoy/i })).toBeInTheDocument();
   });
 
   it("triggers sendMessage when a compact follow-up pill is clicked", () => {
     mockMessages = [{ id: "1", role: "user", parts: [{ type: "text", text: "hello" }] }];
     render(<ChatFloating isOpen={true} />);
 
-    const stockPill = screen.getByRole("button", { name: /^📦 Stock$/i });
+    const stockPill = screen.getByRole("button", { name: /📦 Stock \(Alt\+1\)/i });
     fireEvent.click(stockPill);
 
     expect(mockSendMessage).toHaveBeenCalledWith({ text: "¿Hay stock de luces LED?" });
+  });
+
+  it("triggers follow-up suggestion via Alt+1 to Alt+4 keyboard shortcuts during active conversation and renders <kbd> badges", async () => {
+    mockMessages = [{ id: "1", role: "user", parts: [{ type: "text", text: "hello" }] }];
+    render(<ChatFloating isOpen={true} />);
+
+    // Verify <kbd> badges are rendered inside the pill buttons
+    const kbdBadges = screen.getAllByText(/^Alt\+[1-4]$/);
+    expect(kbdBadges.length).toBeGreaterThanOrEqual(4);
+
+    // Press Alt+1
+    await act(async () => {
+      window.dispatchEvent(new KeyboardEvent("keydown", { altKey: true, key: "1" }));
+    });
+    expect(mockSendMessage).toHaveBeenCalledWith({ text: "¿Hay stock de luces LED?" });
+
+    // Press Alt+2
+    await act(async () => {
+      window.dispatchEvent(new KeyboardEvent("keydown", { altKey: true, key: "2" }));
+    });
+    expect(mockSendMessage).toHaveBeenCalledWith({ text: "Ver órdenes de trabajo de hoy" });
   });
 
   it("adjusts follow-up suggestion labels dynamically based on pathname", () => {
@@ -622,27 +643,27 @@ describe("ChatFloating Component", () => {
     mockPathname = "/adm/cash";
 
     const { rerender } = render(<ChatFloating isOpen={true} />);
-    expect(screen.getByRole("button", { name: /^💸 Mov\. Caja$/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /💸 Mov\. Caja/i })).toBeInTheDocument();
 
     mockPathname = "/adm/work-orders";
     rerender(<ChatFloating isOpen={true} />);
-    expect(screen.getByRole("button", { name: /^🔧 Nueva OT$/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /🔧 Nueva OT/i })).toBeInTheDocument();
 
     mockPathname = "/adm/services";
     rerender(<ChatFloating isOpen={true} />);
-    expect(screen.getByRole("button", { name: /^🛠️ Servicios$/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /🛠️ Servicios/i })).toBeInTheDocument();
 
     mockPathname = "/adm/direct-sales";
     rerender(<ChatFloating isOpen={true} />);
-    expect(screen.getByRole("button", { name: /^📝 Venta Directa$/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /📝 Venta Directa/i })).toBeInTheDocument();
 
     mockPathname = "/adm/categories";
     rerender(<ChatFloating isOpen={true} />);
-    expect(screen.getByRole("button", { name: /^📦 Productos$/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /📦 Productos/i })).toBeInTheDocument();
 
     mockPathname = "/adm/users";
     rerender(<ChatFloating isOpen={true} />);
-    expect(screen.getByRole("button", { name: /^👥 Técnicos$/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /👥 Técnicos/i })).toBeInTheDocument();
   });
 
   it("automatically adjusts textarea height dynamically when input text changes", async () => {
