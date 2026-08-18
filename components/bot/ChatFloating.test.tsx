@@ -102,6 +102,7 @@ const mockSendMessage = vi.fn();
 const mockStop = vi.fn();
 const mockSetMessages = vi.fn();
 const mockClearError = vi.fn();
+const mockRegenerate = vi.fn();
 let mockMessages: any[] = [];
 let mockError: any = null;
 
@@ -114,6 +115,7 @@ vi.mock("@ai-sdk/react", () => ({
     stop: mockStop,
     setMessages: mockSetMessages,
     clearError: mockClearError,
+    regenerate: mockRegenerate,
   }),
 }));
 
@@ -848,6 +850,40 @@ describe("ChatFloating Component", () => {
 
       // Unread badge should be removed
       expect(screen.queryByTestId("unread-badge")).not.toBeInTheDocument();
+    });
+  });
+
+  describe("Regenerate Response Support", () => {
+    it("renders regenerate button on the last assistant message and triggers regenerate on click", async () => {
+      mockMessages = [
+        { id: "assistant-msg-1", role: "assistant", parts: [{ type: "text", text: "Respuesta 1" }] },
+      ];
+
+      render(<ChatFloating isOpen={true} />);
+
+      const regenerateBtn = screen.getByRole("button", { name: /Regenerar respuesta del asistente/i });
+      expect(regenerateBtn).toBeInTheDocument();
+
+      await act(async () => {
+        fireEvent.click(regenerateBtn);
+      });
+
+      expect(mockRegenerate).toHaveBeenCalled();
+    });
+
+    it("triggers regenerate via Alt+R keyboard shortcut when chat is open and an assistant message exists", async () => {
+      mockMessages = [
+        { id: "user-msg-1", role: "user", parts: [{ type: "text", text: "hola" }] },
+        { id: "assistant-msg-1", role: "assistant", parts: [{ type: "text", text: "Hola!" }] },
+      ];
+
+      render(<ChatFloating isOpen={true} />);
+
+      await act(async () => {
+        window.dispatchEvent(new KeyboardEvent("keydown", { altKey: true, key: "r" }));
+      });
+
+      expect(mockRegenerate).toHaveBeenCalled();
     });
   });
 

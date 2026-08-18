@@ -371,7 +371,7 @@ export function ChatFloating({
     transport,
     onFinish,
   });
-  const { messages, sendMessage, status, error, stop, setMessages, clearError } = chatHelpers;
+  const { messages, sendMessage, status, error, stop, setMessages, clearError, regenerate } = chatHelpers;
 
   const prevStatusRef = useRef(status);
   useEffect(() => {
@@ -892,6 +892,15 @@ export function ChatFloating({
           stop();
         } else {
           setIsOpen(false);
+        }
+        return;
+      }
+
+      // Alt+R to regenerate last assistant response
+      if (e.altKey && e.key?.toLowerCase() === "r") {
+        if (lastAssistantMessageId && !isSubmitting) {
+          e.preventDefault();
+          regenerate();
         }
         return;
       }
@@ -1418,6 +1427,27 @@ export function ChatFloating({
                         </div>
                         {message.parts.some((p) => p.type === "text" && p.text?.trim()) && (
                           <div className="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200 flex items-center gap-1">
+                            {message.id === lastAssistantMessageId && !isSubmitting && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => regenerate()}
+                                    className="h-6 w-6 rounded-full hover:bg-background/80 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1 text-muted-foreground"
+                                    aria-label="Regenerar respuesta del asistente"
+                                  >
+                                    <RotateCw className="h-3 w-3" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent
+                                  side="top"
+                                  className="bg-foreground text-background"
+                                >
+                                  Regenerar respuesta (Alt+R)
+                                </TooltipContent>
+                              </Tooltip>
+                            )}
                             {isSpeechSynthesisSupported && (
                               <Tooltip>
                                 <TooltipTrigger asChild>

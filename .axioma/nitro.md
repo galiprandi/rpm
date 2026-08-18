@@ -3,6 +3,7 @@
 ## 📋 BACKLOG
 
 ## ✅ DONE
+- [x] 2026-08-18 — Implement "Regenerate Response" action button on last assistant message and `Alt+R` global keyboard shortcut in `components/bot/ChatFloating.tsx` using `@ai-sdk/react`'s `regenerate()` method, with Radix Tooltip accessibility hints and comprehensive Vitest unit tests in `components/bot/ChatFloating.test.tsx`.
 - [x] 2026-08-17 — Implement `Alt+1` to `Alt+4` keyboard shortcut triggers and visual `<kbd>` badges for active chatbot follow-up suggestion pills in `components/bot/ChatFloating.tsx` with updated `aria-label` accessibility hints and comprehensive unit tests in `components/bot/ChatFloating.test.tsx`.
 - [x] 2026-08-16 — Implement Copy Full Conversation Transcript feature in `components/bot/ChatFloating.tsx` with header action button, clean transcript formatting, sonner toast feedback, and comprehensive unit tests in `components/bot/ChatFloating.test.tsx`.
 - [x] 2026-08-11 — Implement user-friendly sound notifications controls (Web Audio API synthesized chime, localStorage persistence, Bell/BellOff header toggle, Alt+N shortcut) and enforce strict 10MB file attachment size limit in `components/bot/ChatFloating.tsx` with sonner toast warnings and full unit test coverage under Vitest.
@@ -32,6 +33,10 @@
 - [x] 2026-03-28 — Initial audit of bot tools, removal of mock tools, fixing conversation history unit tests, and implementing major UI/UX improvements (smart scrolling, success states for tool execution, empty-state quick start suggestion chips, and full WCAG accessibility).
 
 ## 🧠 LEARNINGS
+### 2026-08-18 — Chatbot Response Regeneration Standard
+**Learning:** Workshop technicians and administrative staff using the chatbot occasionally need to regenerate the assistant's last response if network lag or incomplete generation occurs. Providing a dedicated "Regenerar respuesta" action button on the last assistant message bubble alongside a global `Alt+R` keyboard shortcut creates an intuitive, fast recovery mechanism. Note that `@ai-sdk/react` in AI SDK v4 exports `regenerate` on `useChat` helpers rather than `reload`.
+**Action:** Use `regenerate()` from `useChat` for regenerating assistant responses and pair action controls with accessible `Alt` keyboard shortcuts and tooltips.
+
 ### 2026-08-17 — Active Follow-up Suggestions Keyboard Shortcuts and Visual Badges
 **Learning:** Workshop staff operating the chatbot during active conversations benefit greatly from keyboard shortcuts for follow-up suggestions (matching the empty-state shortcuts `Alt+1` to `Alt+4`). Adding embedded `<kbd>` badges inside the pill buttons and appending shortcut hints in `aria-label` attributes ensures high discoverability for keyboard and screen-reader users without cluttering the compact UI layout.
 **Action:** Always maintain consistent keyboard shortcut behaviors across empty and active states for contextual suggestion widgets.
