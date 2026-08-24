@@ -7,9 +7,6 @@ import { QuickSaleModal } from "@/components/dashboard/QuickSaleModal";
 import { ShoppingCart, Wrench } from "lucide-react";
 import { UserRole } from "@/lib/auth/roles-client";
 
-// Poll every 30 seconds instead of on every mount to reduce auth queries
-const CASH_STATUS_POLL_INTERVAL = 30000;
-
 export function DashboardClient({
   role = UserRole.STAFF,
   onQuickSaleSuccess,
@@ -23,17 +20,25 @@ export function DashboardClient({
 
   // Quick sale (Venta Rápida) is a counter-sales tool — relevant for ADMIN
   // and STAFF. Technicians (USER) don't sell, so they don't get the button
-  // nor the cash-status polling that gates it.
+  // nor the cash-status check that gates it.
   const canQuickSale = role !== UserRole.USER;
   // "Nueva OT" is workshop-facing — useful for everyone, but especially the
   // technician. Keep it for all roles that can reach the dashboard.
   const canCreateOT = true;
 
+  // No polling — fetch cash status only on mount and when the tab becomes
+  // visible again. Cash status changes only via explicit user action (open/
+  // close cash), which already triggers revalidation server-side. This
+  // eliminates ~2880 background queries/day per active session.
   useEffect(() => {
     if (!canQuickSale) return;
+    let cancelled = false;
+
     const checkCashStatus = async () => {
+      if (cancelled) return;
       try {
         const res = await fetch("/api/cash/status");
+        if (cancelled) return;
         if (res.ok) {
           const data = await res.json();
           setIsCashOpen(data.status === "OPEN");
@@ -46,10 +51,16 @@ export function DashboardClient({
     // Initial check on mount
     checkCashStatus();
 
-    // Set up polling interval to reduce auth queries vs checking on every mount
-    const interval = setInterval(checkCashStatus, CASH_STATUS_POLL_INTERVAL);
+    // Re-check when the tab becomes visible again (user returns to the page)
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") checkCashStatus();
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
 
-    return () => clearInterval(interval);
+    return () => {
+      cancelled = true;
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
   }, [canQuickSale]);
 
   const handleSuccess = () => {

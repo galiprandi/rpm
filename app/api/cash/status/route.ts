@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
+import { unstable_cache } from "next/cache";
 import { withStaff } from "@/lib/api-middleware";
 import { db } from "@/lib/db";
 import { cashMovement, paymentMethod } from "@/db/schema";
 import { eq, desc, gte, inArray, and } from "drizzle-orm";
+import { CACHE_TAGS, CACHE_DURATIONS } from "@/lib/cache";
 
 // Helper para convertir Decimal a number
 function decimalToNumber(decimal: unknown): number {
@@ -24,8 +26,12 @@ interface CashMovement {
   createdAt: string;
 }
 
-// Direct DB query - no cache to avoid stale data issues after cash movements
-async function getCashStatus() {
+// Cached DB query — shares the result across concurrent clients so multiple
+// sessions hitting /api/cash/status within the cache window produce a single
+// DB roundtrip. Invalidated via revalidateTag('cash-status') on every cash
+// mutation (open/close/income/expense/payment), so stale data is impossible.
+const getCashStatus = unstable_cache(
+  async () => {
   // Find the absolute latest OPENING or CLOSING movement
   const lastMovement = await db.query.cashMovement.findFirst({
     where: inArray(cashMovement.type, ["OPENING", "CLOSING"]),
@@ -132,7 +138,13 @@ async function getCashStatus() {
       ? decimalToNumber(lastClosing.amount)
       : 0,
   };
-}
+  },
+  ["cash-status"],
+  {
+    tags: [CACHE_TAGS.CASH_STATUS],
+    revalidate: CACHE_DURATIONS.CASH_STATUS,
+  },
+);
 
 // GET /api/cash/status - Get current cash register status
 export const GET = withStaff(async () => {
