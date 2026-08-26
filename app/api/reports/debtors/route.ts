@@ -62,6 +62,11 @@ export async function GET(request: NextRequest) {
             total: true,
             status: true,
           },
+          with: {
+            payments: {
+              columns: { amount: true },
+            },
+          },
           orderBy: asc(workOrder.createdAt),
         },
         directSales: {
@@ -94,13 +99,25 @@ export async function GET(request: NextRequest) {
         // Get full breakdown from balanceService
         const breakdown = await getBalanceBreakdown(customerRecord.id);
 
-        const workOrderCount = customerRecord.workOrders.length;
+        // Filter out fully-paid work orders (total - payments <= 0)
+        // The system never sets status to PAID, so we must check payments
+        const unpaidWorkOrders = customerRecord.workOrders.filter((wo) => {
+          const total = decimalToNumber(wo.total);
+          const paid = (wo.payments || []).reduce(
+            (sum: number, p: { amount: unknown }) =>
+              sum + decimalToNumber(p.amount),
+            0,
+          );
+          return total - paid > 0.01;
+        });
+
+        const workOrderCount = unpaidWorkOrders.length;
         const directSaleCount = customerRecord.directSales.length;
 
         // Find oldest pending work order or direct sale
         let oldestDebtDate: string | null = null;
         const allDates: string[] = [
-          ...customerRecord.workOrders.map((wo) => wo.createdAt),
+          ...unpaidWorkOrders.map((wo) => wo.createdAt),
           ...customerRecord.directSales.map((ds) => ds.createdAt),
         ];
         if (allDates.length > 0) {
@@ -109,10 +126,17 @@ export async function GET(request: NextRequest) {
           ).toISOString();
         }
 
-        // Calculate total from pending work orders
-        const pendingWorkOrdersTotal = customerRecord.workOrders.reduce(
-          (sum: number, wo: { total: unknown }) =>
-            sum + decimalToNumber(wo.total),
+        // Calculate total from pending work orders (total minus payments)
+        const pendingWorkOrdersTotal = unpaidWorkOrders.reduce(
+          (sum: number, wo: { total: unknown; payments?: { amount: unknown }[] }) => {
+            const total = decimalToNumber(wo.total);
+            const paid = (wo.payments || []).reduce(
+              (s: number, p: { amount: unknown }) =>
+                s + decimalToNumber(p.amount),
+              0,
+            );
+            return sum + Math.max(0, total - paid);
+          },
           0,
         );
 
@@ -133,7 +157,7 @@ export async function GET(request: NextRequest) {
           vehicles: customerRecord.vehicles.map(
             (v: { identifier: string }) => v.identifier,
           ),
-          recentWorkOrders: customerRecord.workOrders
+          recentWorkOrders: unpaidWorkOrders
             .slice(0, 3)
             .map(
               (wo: {
@@ -141,12 +165,21 @@ export async function GET(request: NextRequest) {
                 createdAt: string;
                 total: unknown;
                 status: string;
-              }) => ({
-                id: wo.id,
-                createdAt: new Date(wo.createdAt).toISOString(),
-                total: decimalToNumber(wo.total),
-                status: wo.status,
-              }),
+                payments?: { amount: unknown }[];
+              }) => {
+                const total = decimalToNumber(wo.total);
+                const paid = (wo.payments || []).reduce(
+                  (s: number, p: { amount: unknown }) =>
+                    s + decimalToNumber(p.amount),
+                  0,
+                );
+                return {
+                  id: wo.id,
+                  createdAt: new Date(wo.createdAt).toISOString(),
+                  total: Math.max(0, total - paid),
+                  status: wo.status,
+                };
+              },
             ),
         };
       }),
