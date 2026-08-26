@@ -5,7 +5,7 @@ import { customer, cashMovement, payment, directSale, directSalePayment } from "
 import { eq, sql, inArray, and } from "drizzle-orm";
 import { UserRole } from "@/lib/auth/roles";
 import { revalidatePath } from "next/cache";
-import { invalidateCashStatus } from "@/lib/cache";
+import { invalidateCashStatus, invalidateCustomer } from "@/lib/cache";
 import { adjustBalanceAtomically } from "@/lib/services/balanceService";
 
 // Helper para convertir Decimal a number
@@ -143,6 +143,7 @@ export async function POST(
     revalidatePath("/adm/customers");
     revalidatePath("/adm/work-orders");
     invalidateCashStatus();
+    invalidateCustomer(id);
 
     const finalNewBalance = result.newBalance;
     const previousBalance = finalNewBalance + amount;

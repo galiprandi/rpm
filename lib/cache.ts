@@ -17,7 +17,26 @@ export const CACHE_DURATIONS = {
   CASH_STATUS: 300, // 5 minutes - caja no cambia tan frecuentemente
   DASHBOARD: 60,    // 1 minute - dashboard más dinámico
   PRICE_LISTS: 60,  // 1 minute - prices revalidate on mutation via tag
+  VEHICLE: 300,     // 5 minutes - vehicle data fallback
+  CUSTOMER: 300,    // 5 minutes - customer data fallback
 } as const;
+
+/**
+ * Generate a vehicle-specific cache tag.
+ * Used by unstable_cache on /api/vehicles/[id] to allow targeted invalidation.
+ */
+export function vehicleCacheTag(vehicleId: string): string {
+  return `vehicle-${vehicleId}`;
+}
+
+/**
+ * Generate a customer-specific cache tag.
+ * Used by unstable_cache on customer/vehicle routes to allow targeted invalidation
+ * after payments, work orders, direct sales, or credit notes.
+ */
+export function customerCacheTag(customerId: string): string {
+  return `customer-${customerId}`;
+}
 
 /**
  * Invalidate cash status cache
@@ -43,4 +62,22 @@ export function invalidateDashboard(): void {
  */
 export function invalidatePriceLists(): void {
   revalidateTag(CACHE_TAGS.PRICE_LISTS, 'default');
+}
+
+/**
+ * Invalidate cache for a specific vehicle.
+ * Call this after any mutation that affects a vehicle's data
+ * (work order created/updated, payment registered, etc.).
+ */
+export function invalidateVehicle(vehicleId: string): void {
+  revalidateTag(vehicleCacheTag(vehicleId), 'default');
+}
+
+/**
+ * Invalidate cache for a specific customer.
+ * Call this after any mutation that affects a customer's balance or data
+ * (payment, work order, direct sale, credit note, etc.).
+ */
+export function invalidateCustomer(customerId: string): void {
+  revalidateTag(customerCacheTag(customerId), 'default');
 }

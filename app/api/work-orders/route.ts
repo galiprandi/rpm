@@ -13,6 +13,7 @@ import { serializeDrizzleResult } from "@/lib/utils/serialization";
 import { randomUUID } from "crypto";
 import { capitalizeText, normalizeText } from "@/lib/utils/format";
 import { adjustBalanceAtomically } from "@/lib/services/balanceService";
+import { invalidateCustomer, invalidateVehicle } from "@/lib/cache";
 
 // GET /api/work-orders - List work orders with filters
 export async function GET(request: NextRequest) {
@@ -434,6 +435,10 @@ export async function POST(request: NextRequest) {
         },
       },
     });
+
+    // Invalidate cached customer and vehicle data
+    invalidateCustomer(customerId);
+    invalidateVehicle(vehicleRecord.id);
 
     return NextResponse.json({
       ...workOrderWithRelations,

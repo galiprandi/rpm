@@ -12,7 +12,7 @@ import {
   type InvoiceType,
 } from "./invoiceService";
 import { revalidatePath } from "next/cache";
-import { invalidateCashStatus } from "@/lib/cache";
+import { invalidateCashStatus, invalidateCustomer } from "@/lib/cache";
 import { getArgentinaStartOfDay, getArgentinaEndOfDay } from "@/lib/utils/date";
 import { adjustBalanceAtomically } from "./balanceService";
 
@@ -380,6 +380,7 @@ export async function createDirectSale(input: CreateDirectSaleInput) {
   // Invalidate dashboard cache to show fresh data
   revalidatePath("/adm");
   invalidateCashStatus();
+  if (customerId) invalidateCustomer(customerId);
 
   return result;
 }

@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { updateWorkOrder } from "@/lib/services/workOrderService";
 import { getSessionWithAuth } from "@/lib/api-middleware";
 import { adjustBalanceAtomically } from "@/lib/services/balanceService";
+import { invalidateCustomer, invalidateVehicle } from "@/lib/cache";
 import { toISODate } from "@/lib/utils/date";
 import { serializeDrizzleResult } from "@/lib/utils/serialization";
 
@@ -115,6 +116,10 @@ export async function PUT(
       userAgent,
     });
 
+    // Invalidate cached customer and vehicle data
+    if ((workOrderResult as any).customerId) invalidateCustomer((workOrderResult as any).customerId);
+    if ((workOrderResult as any).vehicleId) invalidateVehicle((workOrderResult as any).vehicleId);
+
     return NextResponse.json({
       ...workOrderResult,
       total: Number((workOrderResult as any).total),
@@ -154,6 +159,7 @@ export async function DELETE(
       where: eq(workOrder.id, id),
       columns: {
         customerId: true,
+        vehicleId: true,
         total: true,
         status: true,
       },
@@ -190,6 +196,10 @@ export async function DELETE(
     }
 
     await db.delete(workOrder).where(eq(workOrder.id, id));
+
+    // Invalidate cached customer and vehicle data
+    if (workOrderRecord.customerId) invalidateCustomer(workOrderRecord.customerId);
+    if (workOrderRecord.vehicleId) invalidateVehicle(workOrderRecord.vehicleId);
 
     return NextResponse.json({ success: true });
   } catch (error) {

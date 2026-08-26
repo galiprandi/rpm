@@ -1,10 +1,57 @@
 import { NextRequest, NextResponse } from "next/server";
+import { unstable_cache } from "next/cache";
 import { db } from "@/lib/db";
 import { vehicle, workOrder } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { capitalizeText } from "@/lib/utils/format";
 import { resolveMakeModel } from "@/lib/utils/vehicle-helpers";
 import { toISODate } from "@/lib/utils/date";
+import {
+  CACHE_DURATIONS,
+  vehicleCacheTag,
+  invalidateVehicle,
+} from "@/lib/cache";
+
+// Cached DB query for a single vehicle with relations.
+// Uses a dynamic tag (vehicle-${id}) so mutations can invalidate only
+// the affected vehicle instead of purging everything.
+// Mutations that affect a customer's balance also call invalidateVehicle
+// for each of the customer's vehicles (or invalidateCustomer which covers
+// the customer route). Fallback revalidate is 5 minutes as a safety net.
+const getVehicleCached = (id: string) =>
+  unstable_cache(
+    async () => {
+      const vehicleRecord = await db.query.vehicle.findFirst({
+        where: eq(vehicle.id, id),
+        with: {
+          customer: true,
+          vehicleMake: true,
+          vehicleModel: true,
+          workOrders: {
+            orderBy: desc(workOrder.createdAt),
+            limit: 50,
+            with: {
+              photos: true,
+            },
+          },
+        },
+      });
+
+      if (!vehicleRecord) return null;
+
+      return {
+        ...vehicleRecord,
+        createdAt: toISODate(vehicleRecord.createdAt),
+        updatedAt: toISODate(vehicleRecord.updatedAt),
+        workOrders: vehicleRecord.workOrders || [],
+      };
+    },
+    [`vehicle-${id}`],
+    {
+      tags: [vehicleCacheTag(id)],
+      revalidate: CACHE_DURATIONS.VEHICLE,
+    },
+  );
 
 // GET /api/vehicles/[id] - Get vehicle by ID
 export async function GET(
@@ -13,33 +60,12 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const vehicleRecord = await db.query.vehicle.findFirst({
-      where: eq(vehicle.id, id),
-      with: {
-        customer: true,
-        vehicleMake: true,
-        vehicleModel: true,
-        workOrders: {
-          orderBy: desc(workOrder.createdAt),
-          limit: 50,
-          with: {
-            photos: true,
-          },
-        },
-      },
-    });
+    const fetchVehicle = getVehicleCached(id);
+    const transformedVehicle = await fetchVehicle();
 
-    if (!vehicleRecord) {
+    if (!transformedVehicle) {
       return NextResponse.json({ error: "Vehicle not found" }, { status: 404 });
     }
-
-    // Drizzle returns camelCase relation names (vehicleMake, vehicleModel)
-    const transformedVehicle = {
-      ...vehicleRecord,
-      createdAt: toISODate(vehicleRecord.createdAt),
-      updatedAt: toISODate(vehicleRecord.updatedAt),
-      workOrders: vehicleRecord.workOrders || [],
-    };
 
     return NextResponse.json(transformedVehicle);
   } catch (error) {
@@ -92,6 +118,9 @@ export async function PUT(
       notes,
     }).where(eq(vehicle.id, id));
 
+    // Invalidate cached vehicle data
+    invalidateVehicle(id);
+
     // Fetch with relations
     const vehicleWithRelations = await db.query.vehicle.findFirst({
       where: eq(vehicle.id, id),
@@ -128,6 +157,9 @@ export async function DELETE(
   try {
     const { id } = await params;
     await db.delete(vehicle).where(eq(vehicle.id, id));
+
+    // Invalidate cached vehicle data
+    invalidateVehicle(id);
 
     return NextResponse.json({ success: true });
   } catch (error) {

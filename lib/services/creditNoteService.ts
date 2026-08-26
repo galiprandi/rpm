@@ -7,7 +7,7 @@ import { eq, and, gte, lte, desc, type SQL } from "drizzle-orm";
 import { createCashMovement } from "./cashMovementService";
 import { createInvoice, determineInvoiceType } from "./invoiceService";
 import { revalidatePath } from "next/cache";
-import { invalidateCashStatus } from "@/lib/cache";
+import { invalidateCashStatus, invalidateCustomer } from "@/lib/cache";
 import {
   validateCreditNoteCreation,
   type CreateCreditNoteInput,
@@ -291,6 +291,7 @@ export async function createCreditNote(input: CreateCreditNoteInput) {
   // Invalidate dashboard cache to show fresh data
   revalidatePath("/adm");
   invalidateCashStatus();
+  if (customerId) invalidateCustomer(customerId);
 
   return result;
 }
@@ -431,5 +432,6 @@ export async function cancelCreditNote(id: string, reason?: string) {
   });
 
   invalidateCashStatus();
+  if (result.customerId) invalidateCustomer(result.customerId);
   return result;
 }

@@ -15,6 +15,24 @@ vi.mock("next/cache", () => ({
 vi.mock("@/lib/cache", () => ({
   invalidateCashStatus: vi.fn(),
   getCachedCashStatus: vi.fn(),
+  invalidateDashboard: vi.fn(),
+  invalidatePriceLists: vi.fn(),
+  invalidateVehicle: vi.fn(),
+  invalidateCustomer: vi.fn(),
+  vehicleCacheTag: (id: string) => `vehicle-${id}`,
+  customerCacheTag: (id: string) => `customer-${id}`,
+  CACHE_TAGS: {
+    CASH_STATUS: 'cash-status',
+    DASHBOARD: 'dashboard-data',
+    PRICE_LISTS: 'price-lists',
+  },
+  CACHE_DURATIONS: {
+    CASH_STATUS: 300,
+    DASHBOARD: 60,
+    PRICE_LISTS: 60,
+    VEHICLE: 300,
+    CUSTOMER: 300,
+  },
 }));
 
 // Setup for Vitest tests

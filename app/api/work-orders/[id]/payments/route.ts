@@ -7,7 +7,7 @@ import {
   isCashRegisterOpen,
   createCashMovement,
 } from "@/lib/services/cashMovementService";
-import { invalidateCashStatus } from "@/lib/cache";
+import { invalidateCashStatus, invalidateCustomer, invalidateVehicle } from "@/lib/cache";
 import { adjustBalanceAtomically } from "@/lib/services/balanceService";
 import { toISODate } from "@/lib/utils/date";
 
@@ -107,7 +107,7 @@ export const POST = withPermissionDynamic('can_manage_cash', async (request: Nex
     // Verify work order exists
     const workOrderRecord = await db.query.workOrder.findFirst({
       where: eq(workOrder.id, workOrderId),
-      columns: { total: true, customerId: true },
+      columns: { total: true, customerId: true, vehicleId: true },
     });
 
     if (!workOrderRecord) {
@@ -208,6 +208,8 @@ export const POST = withPermissionDynamic('can_manage_cash', async (request: Nex
     // The OT should remain in its current workflow status until manually moved.
 
     invalidateCashStatus();
+    if (workOrderRecord.customerId) invalidateCustomer(workOrderRecord.customerId);
+    if (workOrderRecord.vehicleId) invalidateVehicle(workOrderRecord.vehicleId);
 
     return NextResponse.json(
       {
