@@ -82,6 +82,7 @@ interface WorkOrder {
     description?: string;
     createdAt?: string;
   }>;
+  payments?: Array<{ amount: number | string }>;
 }
 
 interface VehicleDetail {
@@ -142,7 +143,11 @@ export default function VehicleDetailPage() {
   }, [vehicle]);
 
   const vehicleDebt = useMemo(() => {
-    return unpaidWorkOrders.reduce((sum, wo) => sum + Number(wo.total), 0);
+    return unpaidWorkOrders.reduce((sum, wo) => {
+      const total = Number(wo.total);
+      const paid = (wo.payments || []).reduce((s, p) => s + Number(p.amount), 0);
+      return sum + Math.max(0, total - paid);
+    }, 0);
   }, [unpaidWorkOrders]);
 
   // Galería de fotos consolidada

@@ -37,6 +37,9 @@ const getCustomerCached = (id: string) =>
             limit: 50,
             with: {
               vehicle: true,
+              payments: {
+                columns: { amount: true },
+              },
             },
           },
           directSales: {
@@ -97,6 +100,9 @@ const getCustomerCached = (id: string) =>
           startedAt: toISODate(wo.startedAt),
           completedAt: toISODate(wo.completedAt),
           deliveredAt: toISODate(wo.deliveredAt),
+          payments: (wo.payments || []).map((p) => ({
+            amount: decimalToNumber(p.amount),
+          })),
         })),
         directSales: (cust.directSales || []).map((ds) => ({
           ...ds,

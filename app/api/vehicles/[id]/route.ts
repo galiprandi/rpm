@@ -32,6 +32,9 @@ const getVehicleCached = (id: string) =>
             limit: 50,
             with: {
               photos: true,
+              payments: {
+                columns: { amount: true },
+              },
             },
           },
         },

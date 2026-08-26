@@ -73,6 +73,7 @@ interface WorkOrder {
   createdAt: string;
   vehicle: { identifier: string };
   vehicleId: string;
+  payments?: Array<{ amount: number | string }>;
 }
 
 interface DirectSale {
@@ -243,7 +244,11 @@ export default function CustomerDetailPage() {
                 wo.status !== "PAID" &&
                 wo.status !== "CANCELLED"
             )
-            ?.reduce((sum, wo) => sum + Number(wo.total), 0) || 0;
+            ?.reduce((sum, wo) => {
+              const total = Number(wo.total);
+              const paid = (wo.payments || []).reduce((s, p) => s + Number(p.amount), 0);
+              return sum + Math.max(0, total - paid);
+            }, 0) || 0;
 
           return (
             <div className="flex items-center gap-3">
@@ -870,7 +875,11 @@ export default function CustomerDetailPage() {
                     .filter(
                       (wo) => wo.status !== "PAID" && wo.status !== "CANCELLED",
                     )
-                    .map((wo) => (
+                    .map((wo) => {
+                      const woTotal = Number(wo.total);
+                      const woPaid = (wo.payments || []).reduce((s, p) => s + Number(p.amount), 0);
+                      const woPending = Math.max(0, woTotal - woPaid);
+                      return (
                       <div
                         key={wo.id}
                         className="flex items-center justify-between p-2 bg-white rounded border"
@@ -888,20 +897,21 @@ export default function CustomerDetailPage() {
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-semibold font-mono">
-                            {formatARS(Number(wo.total), 2)}
+                            {formatARS(woPending, 2)}
                           </span>
                           {getStatusBadge(wo.status)}
                           <Button
                             size="sm"
                             variant="ghost"
                             className="h-8 px-2 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
-                            onClick={() => handleOpenPaymentForWO(Number(wo.total), wo.id)}
+                            onClick={() => handleOpenPaymentForWO(woPending, wo.id)}
                           >
                             Pagar
                           </Button>
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
                 </div>
               </div>
             )}
