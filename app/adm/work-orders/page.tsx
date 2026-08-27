@@ -308,7 +308,7 @@ function KanbanCard({
         </div>
       )}
       <CardContent className="p-2.5 space-y-1.5">
-        {/* Line 1: Category icon + Plate/SN */}
+        {/* Line 1: Category icon + Make + Model */}
         <div className="flex items-center gap-1.5">
           <TooltipProvider>
             <Tooltip>
@@ -322,13 +322,17 @@ function KanbanCard({
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
-          <span className="font-mono text-sm font-semibold tracking-tighter truncate">
-            {wo.vehicle.identifier}
+          <span className="text-sm font-semibold tracking-tight truncate">
+            {wo.vehicle.vehicleMake?.name || wo.vehicle.vehicleModel?.name
+              ? [wo.vehicle.vehicleMake?.name, wo.vehicle.vehicleModel?.name].filter(Boolean).join(" ")
+              : wo.vehicle.identifier}
           </span>
         </div>
-        {/* Line 2: Customer name (full width) */}
-        <p className="text-xs font-medium truncate leading-tight">
-          {wo.customer.name}
+        {/* Line 2: Customer name + Plate/SN */}
+        <p className="text-xs text-muted-foreground truncate leading-tight">
+          <span className="font-medium text-foreground">{wo.customer.name}</span>
+          {" "}
+          <span className="font-mono">{wo.vehicle.identifier}</span>
         </p>
         {/* Line 2.5: Items summary */}
         {wo.workOrderItems && wo.workOrderItems.length > 0 && (
