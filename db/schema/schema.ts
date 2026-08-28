@@ -707,7 +707,7 @@ export const creditNote = pgTable("credit_note", {
 	invoiceId: text(),
 	originalSaleId: text().notNull(),
 	originalSaleType: text().notNull(),
-	customerId: text().notNull(),
+	customerId: text(),
 	total: numeric({ precision: 10, scale:  2 }).notNull(),
 	refundMethod: text().notNull(),
 	cashAmount: numeric({ precision: 10, scale:  2 }),
@@ -727,7 +727,7 @@ export const creditNote = pgTable("credit_note", {
 			columns: [table.customerId],
 			foreignColumns: [customer.id],
 			name: "credit_note_customerId_fkey"
-		}).onUpdate("cascade").onDelete("restrict"),
+		}).onUpdate("cascade").onDelete("set null"),
 	foreignKey({
 			columns: [table.invoiceId],
 			foreignColumns: [invoice.id],

@@ -76,7 +76,7 @@ export async function validateCreditNoteInput(input: CreateCreditNoteInput): Pro
 export async function validateOriginalSaleExists(
   originalSaleId: string,
   originalSaleType: 'direct_sale' | 'work_order'
-): Promise<{ exists: boolean; customerId?: string;  
+): Promise<{ exists: boolean; customerId?: string | null;
 sale?: any }> {
   if (originalSaleType === 'direct_sale') {
     const sale = await db.query.directSale.findFirst({
@@ -86,7 +86,7 @@ sale?: any }> {
         customer: true,
       },
     });
-    return { exists: !!sale, customerId: sale?.customerId ?? undefined, sale: sale ?? undefined };
+    return { exists: !!sale, customerId: sale?.customerId ?? null, sale: sale ?? undefined };
   }
 
   const sale = await db.query.workOrder.findFirst({
@@ -96,7 +96,7 @@ sale?: any }> {
       customer: true,
     },
   });
-  return { exists: !!sale, customerId: sale?.customerId ?? undefined, sale: sale ?? undefined };
+  return { exists: !!sale, customerId: sale?.customerId ?? null, sale: sale ?? undefined };
 }
 
 export async function validateCashRegisterOpen(): Promise<ValidationResult> {

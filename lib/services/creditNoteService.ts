@@ -75,7 +75,7 @@ export async function createCreditNote(input: CreateCreditNoteInput) {
 
   // Fetch original sale
   let sale: any;
-  let customerId: string;
+  let customerId: string | null;
 
   if (originalSaleType === "direct_sale") {
     sale = await db.query.directSale.findFirst({
@@ -90,7 +90,7 @@ export async function createCreditNote(input: CreateCreditNoteInput) {
         customer: true,
       },
     });
-    customerId = sale.customerId;
+    customerId = sale.customerId ?? null;
   } else {
     sale = await db.query.workOrder.findFirst({
       where: eq(workOrder.id, originalSaleId),
@@ -104,7 +104,7 @@ export async function createCreditNote(input: CreateCreditNoteInput) {
         customer: true,
       },
     });
-    customerId = sale.customerId;
+    customerId = sale.customerId ?? null;
   }
 
   // Build credit note items with prices from original sale
@@ -144,8 +144,9 @@ export async function createCreditNote(input: CreateCreditNoteInput) {
     throw new Error("El total de la nota de credito no puede ser cero");
   }
 
-  if (!customerId) {
-    throw new Error("No se puede emitir una nota de credito para una venta sin cliente asociado (Consumidor Final)");
+  // Consumidor Final (no customer) can only get CASH refunds
+  if (!customerId && refundMethod === "ACCOUNT_CREDIT") {
+    throw new Error("No se puede acreditar a cuenta para una venta sin cliente (Consumidor Final). Seleccione reintegro en efectivo.");
   }
 
   // Transaction
@@ -157,7 +158,7 @@ export async function createCreditNote(input: CreateCreditNoteInput) {
         id: crypto.randomUUID(),
         originalSaleId,
         originalSaleType,
-        customerId,
+        customerId: customerId || null,
         total: total.toString(),
         refundMethod,
         paymentMethodId: refundMethod === "CASH" ? paymentMethodId || null : null,
@@ -169,11 +170,17 @@ export async function createCreditNote(input: CreateCreditNoteInput) {
 
     // --- Generate Pre-Invoice (Credit Note) ---
     try {
-      const foundCustomer = await tx.query.customer.findFirst({
-        where: eq(customer.id, customerId),
-        columns: { billingData: true, name: true },
-      });
-      const billingData = foundCustomer?.billingData;
+      let billingData: any = undefined;
+      let customerName = "Consumidor Final";
+
+      if (customerId) {
+        const foundCustomer = await tx.query.customer.findFirst({
+          where: eq(customer.id, customerId),
+          columns: { billingData: true, name: true },
+        });
+        billingData = foundCustomer?.billingData;
+        customerName = foundCustomer?.name || "Cliente";
+      }
 
       let customerDoc: string | undefined = undefined;
       let customerDocType: string | undefined = undefined;
@@ -195,8 +202,8 @@ export async function createCreditNote(input: CreateCreditNoteInput) {
           type: invoiceType,
           referenceId: createdCreditNote.id,
           referenceType: "credit_note",
-          customerId,
-          customerName: foundCustomer?.name || "Cliente",
+          customerId: customerId || undefined,
+          customerName,
           customerDoc,
           customerDocType,
           subtotal: Number(total),
@@ -281,7 +288,7 @@ export async function createCreditNote(input: CreateCreditNoteInput) {
     }
 
     // Update customer balance if ACCOUNT_CREDIT
-    if (refundMethod === "ACCOUNT_CREDIT") {
+    if (refundMethod === "ACCOUNT_CREDIT" && customerId) {
       await adjustBalanceAtomically(customerId, -total, "credit_note", tx);
     }
 
@@ -413,7 +420,7 @@ export async function cancelCreditNote(id: string, reason?: string) {
     }
 
     // Reverse customer balance if ACCOUNT_CREDIT
-    if (foundCreditNote.refundMethod === "ACCOUNT_CREDIT") {
+    if (foundCreditNote.refundMethod === "ACCOUNT_CREDIT" && foundCreditNote.customerId) {
       await adjustBalanceAtomically(
         foundCreditNote.customerId,
         Number(foundCreditNote.total),

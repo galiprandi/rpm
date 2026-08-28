@@ -6,11 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Receipt, User, Calendar, CreditCard, Package, Clock, DollarSign, FileText, RefreshCw, Eye, FileDown, Plus, Printer, Send } from "lucide-react";
+import { Receipt, User, Calendar, CreditCard, Package, Clock, DollarSign, FileText, RefreshCw, Eye, FileDown, Plus, Printer, Send, Undo2 } from "lucide-react";
 import Link from "next/link";
 import { Header } from "@/components/adm/Header";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { DirectSaleCreditNoteDialog } from "@/components/credit-notes/DirectSaleCreditNoteDialog";
 
 interface DirectSaleItem {
   id: string;
@@ -58,6 +59,7 @@ export default function DirectSaleDetailPage() {
   const [loadingInvoices, setLoadingInvoices] = useState(false);
   const [generatingDocument, setGeneratingDocument] = useState<string | null>(null);
   const [isOfficiallyzing, setIsOfficiallyzing] = useState(false);
+  const [isCreditNoteDialogOpen, setIsCreditNoteDialogOpen] = useState(false);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('es-AR', {
@@ -234,6 +236,17 @@ export default function DirectSaleDetailPage() {
         description={`Detalle de la venta realizada a ${sale.customerName}`}
         showBackButton
         onBack={() => window.history.back()}
+        secondaryActions={[
+          {
+            label: "Nota de crédito",
+            onClick: () => setIsCreditNoteDialogOpen(true),
+            variant: "ghost",
+            icon: Undo2,
+            iconOnly: true,
+            title: "Crear nota de crédito por devolución",
+            ariaLabel: "Crear nota de crédito por devolución",
+          },
+        ]}
       >
         <div className="flex flex-wrap items-center gap-2 mt-4">
           <Badge variant="outline" className="text-emerald-700 border-emerald-200 bg-emerald-50 font-mono font-bold text-sm">
@@ -537,6 +550,22 @@ export default function DirectSaleDetailPage() {
           </div>
         </TabsContent>
       </Tabs>
+
+      <DirectSaleCreditNoteDialog
+        open={isCreditNoteDialogOpen}
+        onOpenChange={setIsCreditNoteDialogOpen}
+        saleId={sale.id}
+        saleType="direct_sale"
+        customerName={sale.customer?.name || sale.customerName}
+        hasCustomer={!!sale.customer}
+        items={sale.items}
+        payments={sale.payments.map((p) => ({ paymentMethodId: p.paymentMethod.id, amount: p.amount }))}
+        onSuccess={() => {
+          setIsCreditNoteDialogOpen(false);
+          fetchSale();
+          fetchInvoices();
+        }}
+      />
     </div>
   );
 }

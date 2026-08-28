@@ -43,6 +43,13 @@
       "when": 1785501797065,
       "tag": "0005_aromatic_lyja",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1787944206060,
+      "tag": "0006_sad_hemingway",
+      "breakpoints": true
     }
   ]
 }

@@ -246,7 +246,7 @@ describe('CreditNoteValidationService', () => {
       const result = await validateOriginalSaleExists('nonexistent', 'direct_sale');
 
       expect(result.exists).toBe(false);
-      expect(result.customerId).toBeUndefined();
+      expect(result.customerId).toBeNull();
       expect(result.sale).toBeUndefined();
     });
 
@@ -256,7 +256,7 @@ describe('CreditNoteValidationService', () => {
       const result = await validateOriginalSaleExists('nonexistent', 'work_order');
 
       expect(result.exists).toBe(false);
-      expect(result.customerId).toBeUndefined();
+      expect(result.customerId).toBeNull();
       expect(result.sale).toBeUndefined();
     });
   });
