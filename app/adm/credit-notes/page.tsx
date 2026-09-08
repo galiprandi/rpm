@@ -5,7 +5,6 @@ import { requireAuth } from '@/lib/auth-server';
 import { UserRole } from '@/lib/auth/roles';
 import CreditNotesClient from './CreditNotesClient';
 
-export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export default async function CreditNotesPage() {

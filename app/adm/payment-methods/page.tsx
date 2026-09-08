@@ -7,7 +7,6 @@ import { requireAuth } from '@/lib/auth-server';
 import { UserRole } from '@/lib/auth/roles';
 import { toISODate } from '@/lib/utils/date';
 
-export const dynamic = 'force-dynamic';
 export const revalidate = 60;
 
 export default async function PaymentMethodsPage() {

@@ -2,7 +2,7 @@ import ProfitabilityReportClient from './ProfitabilityReportClient';
 import { requireAuth } from '@/lib/auth-server';
 import { UserRole } from '@/lib/auth/roles';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 export default async function ProfitabilityReportPage() {
   const session = await requireAuth();

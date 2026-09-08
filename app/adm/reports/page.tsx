@@ -2,7 +2,7 @@ import ReportsClient from './ReportsClient';
 import { requireAuth } from '@/lib/auth-server';
 import { UserRole } from '@/lib/auth/roles';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 export default async function ReportsPage() {
   const session = await requireAuth();

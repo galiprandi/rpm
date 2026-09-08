@@ -16,7 +16,6 @@ export const customer = pgTable("customer", {
 }, (table) => [
 	index("customer_balance_idx").using("btree", table.balance.asc().nullsLast().op("numeric_ops")),
 	index("customer_name_idx").using("btree", table.name.asc().nullsLast().op("text_ops")),
-	index("customer_phone_idx").using("btree", table.phone.asc().nullsLast().op("text_ops")),
 ]);
 
 export const cashMovement = pgTable("cash_movement", {
@@ -34,8 +33,6 @@ export const cashMovement = pgTable("cash_movement", {
 }, (table) => [
 	index("cash_movement_createdAt_idx").using("btree", table.createdAt.asc().nullsLast().op("timestamp_ops")),
 	index("cash_movement_referenceId_idx").using("btree", table.referenceId.asc().nullsLast().op("text_ops")),
-	index("cash_movement_responsibleId_idx").using("btree", table.responsibleId.asc().nullsLast().op("text_ops")),
-	index("cash_movement_type_idx").using("btree", table.type.asc().nullsLast().op("text_ops")),
 ]);
 
 export const costUpdateBatch = pgTable("cost_update_batch", {
@@ -165,7 +162,6 @@ export const inventoryCountOperative = pgTable("inventory_count_operative", {
 	approvedBy: text(),
 }, (table) => [
 	index("inventory_count_operative_createdAt_idx").using("btree", table.createdAt.asc().nullsLast().op("timestamp_ops")),
-	index("inventory_count_operative_status_idx").using("btree", table.status.asc().nullsLast().op("text_ops")),
 ]);
 
 export const inventoryCountItem = pgTable("inventory_count_item", {
@@ -290,8 +286,6 @@ export const priceList = pgTable("price_list", {
 	createdAt: timestamp({ precision: 3, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
 	updatedAt: timestamp({ precision: 3, mode: 'string' }).defaultNow().notNull(),
 }, (table) => [
-	index("price_list_isActive_idx").using("btree", table.isActive.asc().nullsLast().op("bool_ops")),
-	index("price_list_isPublic_idx").using("btree", table.isPublic.asc().nullsLast().op("bool_ops")),
 	index("price_list_basePriceListId_idx").using("btree", table.basePriceListId.asc().nullsLast().op("text_ops")),
 	// NOTE: The self-referencing FK (basePriceListId → price_list.id) is defined
 	// in the migration SQL only, not here. Drizzle's TypeScript inference cannot
@@ -322,11 +316,9 @@ export const invoice = pgTable("invoice", {
 	exemptions: jsonb(),
 	perceptions: jsonb(),
 }, (table) => [
-	index("invoice_issuedAt_idx").using("btree", table.issuedAt.asc().nullsLast().op("timestamp_ops")),
 	index("invoice_number_idx").using("btree", table.number.asc().nullsLast().op("text_ops")),
 	uniqueIndex("invoice_number_key").using("btree", table.number.asc().nullsLast().op("text_ops")),
 	index("invoice_referenceId_idx").using("btree", table.referenceId.asc().nullsLast().op("text_ops")),
-	index("invoice_status_idx").using("btree", table.status.asc().nullsLast().op("text_ops")),
 	index("invoice_type_idx").using("btree", table.type.asc().nullsLast().op("text_ops")),
 	foreignKey({
 			columns: [table.customerId],
@@ -346,9 +338,7 @@ export const paymentMethod = pgTable("payment_method", {
 	updatedAt: timestamp({ precision: 3, mode: 'string' }).defaultNow().notNull(),
 }, (table) => [
 	uniqueIndex("payment_method_code_key").using("btree", table.code.asc().nullsLast().op("text_ops")),
-	index("payment_method_isActive_idx").using("btree", table.isActive.asc().nullsLast().op("bool_ops")),
 	uniqueIndex("payment_method_name_key").using("btree", table.name.asc().nullsLast().op("text_ops")),
-	index("payment_method_sortOrder_idx").using("btree", table.sortOrder.asc().nullsLast().op("int4_ops")),
 ]);
 
 export const product = pgTable("product", {
@@ -374,9 +364,7 @@ export const product = pgTable("product", {
 	lastCountedAt: timestamp({ precision: 3, mode: 'string' }),
 }, (table) => [
 	index("product_categoryId_idx").using("btree", table.categoryId.asc().nullsLast().op("text_ops")),
-	index("product_imageUrl_idx").using("btree", table.imageUrl.asc().nullsLast().op("text_ops")),
 	index("product_isActive_idx").using("btree", table.isActive.asc().nullsLast().op("bool_ops")),
-	index("product_lastMovementAt_idx").using("btree", table.lastMovementAt.asc().nullsLast().op("timestamp_ops")),
 	index("product_name_idx").using("btree", table.name.asc().nullsLast().op("text_ops")),
 	index("product_sku_idx").using("btree", table.sku.asc().nullsLast().op("text_ops")),
 	uniqueIndex("product_sku_key").using("btree", table.sku.asc().nullsLast().op("text_ops")),
@@ -410,7 +398,6 @@ export const purchaseVoucher = pgTable("purchase_voucher", {
 	finalizedAt: timestamp({ precision: 3, mode: 'string' }),
 }, (table) => [
 	index("purchase_voucher_createdAt_idx").using("btree", table.createdAt.asc().nullsLast().op("timestamp_ops")),
-	index("purchase_voucher_status_idx").using("btree", table.status.asc().nullsLast().op("text_ops")),
 	index("purchase_voucher_supplierId_idx").using("btree", table.supplierId.asc().nullsLast().op("text_ops")),
 	uniqueIndex("purchase_voucher_supplierId_letter_number_key").using("btree", table.supplierId.asc().nullsLast().op("text_ops"), table.letter.asc().nullsLast().op("text_ops"), table.number.asc().nullsLast().op("text_ops")),
 	foreignKey({
@@ -438,7 +425,6 @@ export const supplier = pgTable("supplier", {
 	updatedAt: timestamp({ precision: 3, mode: 'string' }).defaultNow().notNull(),
 	cuit: text(),
 }, (table) => [
-	index("supplier_isActive_idx").using("btree", table.isActive.asc().nullsLast().op("bool_ops")),
 	index("supplier_name_idx").using("btree", table.name.asc().nullsLast().op("text_ops")),
 	uniqueIndex("supplier_name_key").using("btree", table.name.asc().nullsLast().op("text_ops")),
 ]);
@@ -459,7 +445,6 @@ export const stockMovement = pgTable("stock_movement", {
 }, (table) => [
 	index("stock_movement_createdAt_idx").using("btree", table.createdAt.asc().nullsLast().op("timestamp_ops")),
 	index("stock_movement_productId_idx").using("btree", table.productId.asc().nullsLast().op("text_ops")),
-	index("stock_movement_type_idx").using("btree", table.type.asc().nullsLast().op("text_ops")),
 	foreignKey({
 			columns: [table.productId],
 			foreignColumns: [product.id],
@@ -492,10 +477,8 @@ export const vehicle = pgTable("vehicle", {
 	createdAt: timestamp({ precision: 3, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
 	updatedAt: timestamp({ precision: 3, mode: 'string' }).defaultNow().notNull(),
 }, (table) => [
-	index("vehicle_category_idx").using("btree", table.category.asc().nullsLast().op("text_ops")),
 	index("vehicle_customerId_idx").using("btree", table.customerId.asc().nullsLast().op("text_ops")),
 	uniqueIndex("vehicle_identifier_customerId_key").using("btree", table.identifier.asc().nullsLast().op("text_ops"), table.customerId.asc().nullsLast().op("text_ops")),
-	index("vehicle_identifier_idx").using("btree", table.identifier.asc().nullsLast().op("text_ops")),
 	foreignKey({
 			columns: [table.customerId],
 			foreignColumns: [customer.id],
@@ -526,7 +509,6 @@ export const purchaseVoucherItem = pgTable("purchase_voucher_item", {
 	priceListData: jsonb(),
 }, (table) => [
 	index("purchase_voucher_item_productId_idx").using("btree", table.productId.asc().nullsLast().op("text_ops")),
-	index("purchase_voucher_item_voucherId_idx").using("btree", table.voucherId.asc().nullsLast().op("text_ops")),
 	uniqueIndex("purchase_voucher_item_voucherId_productId_key").using("btree", table.voucherId.asc().nullsLast().op("text_ops"), table.productId.asc().nullsLast().op("text_ops")),
 	foreignKey({
 			columns: [table.productId],
@@ -551,7 +533,6 @@ export const service = pgTable("service", {
 	createdAt: timestamp({ precision: 3, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
 	updatedAt: timestamp({ precision: 3, mode: 'string' }).defaultNow().notNull(),
 }, (table) => [
-	index("service_isActive_idx").using("btree", table.isActive.asc().nullsLast().op("bool_ops")),
 	uniqueIndex("service_name_key").using("btree", table.name.asc().nullsLast().op("text_ops")),
 ]);
 
@@ -569,7 +550,6 @@ export const userRole = pgTable("user_role", {
 }, (table) => [
 	index("user_role_email_idx").using("btree", table.email.asc().nullsLast().op("text_ops")),
 	uniqueIndex("user_role_email_key").using("btree", table.email.asc().nullsLast().op("text_ops")),
-	index("user_role_role_idx").using("btree", table.role.asc().nullsLast().op("text_ops")),
 ]);
 
 export const vehicleMake = pgTable("vehicle_make", {
@@ -691,9 +671,6 @@ export const workOrderAuditLog = pgTable("work_order_audit_log", {
 	ipAddress: text(),
 	userAgent: text(),
 }, (table) => [
-	index("work_order_audit_log_changedAt_idx").using("btree", table.changedAt.asc().nullsLast().op("timestamp_ops")),
-	index("work_order_audit_log_changedBy_idx").using("btree", table.changedBy.asc().nullsLast().op("text_ops")),
-	index("work_order_audit_log_fieldName_idx").using("btree", table.fieldName.asc().nullsLast().op("text_ops")),
 	index("work_order_audit_log_workOrderId_idx").using("btree", table.workOrderId.asc().nullsLast().op("text_ops")),
 	foreignKey({
 			columns: [table.workOrderId],
@@ -719,7 +696,6 @@ export const creditNote = pgTable("credit_note", {
 	paymentMethodId: text(),
 }, (table) => [
 	index("credit_note_customerId_idx").using("btree", table.customerId.asc().nullsLast().op("text_ops")),
-	index("credit_note_invoiceId_idx").using("btree", table.invoiceId.asc().nullsLast().op("text_ops")),
 	uniqueIndex("credit_note_invoiceId_key").using("btree", table.invoiceId.asc().nullsLast().op("text_ops")),
 	index("credit_note_originalSaleId_originalSaleType_idx").using("btree", table.originalSaleId.asc().nullsLast().op("text_ops"), table.originalSaleType.asc().nullsLast().op("text_ops")),
 	index("credit_note_status_idx").using("btree", table.status.asc().nullsLast().op("text_ops")),
@@ -764,7 +740,6 @@ export const workOrder = pgTable("work_order", {
 }, (table) => [
 	index("work_order_createdAt_idx").using("btree", table.createdAt.asc().nullsLast().op("timestamp_ops")),
 	index("work_order_customerId_idx").using("btree", table.customerId.asc().nullsLast().op("text_ops")),
-	index("work_order_scheduledDate_idx").using("btree", table.scheduledDate.asc().nullsLast().op("timestamp_ops")),
 	index("work_order_status_idx").using("btree", table.status.asc().nullsLast().op("text_ops")),
 	index("work_order_technicianId_idx").using("btree", table.technicianId.asc().nullsLast().op("text_ops")),
 	index("work_order_vehicleId_idx").using("btree", table.vehicleId.asc().nullsLast().op("text_ops")),
@@ -812,7 +787,6 @@ export const rolePermission = pgTable("role_permission", {
 	createdAt: timestamp({ precision: 3, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
 	updatedAt: timestamp({ precision: 3, mode: 'string' }).defaultNow().notNull(),
 }, (table) => [
-	index("role_permission_role_idx").using("btree", table.role.asc().nullsLast().op("text_ops")),
 	uniqueIndex("role_permission_role_permission_key").using("btree", table.role.asc().nullsLast().op("text_ops"), table.permission.asc().nullsLast().op("text_ops")),
 ]);
 
@@ -825,7 +799,6 @@ export const balanceAudit = pgTable("balance_audit", {
 	source: text().notNull(),
 	createdAt: timestamp({ precision: 3, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
 }, (table) => [
-	index("balance_audit_createdAt_idx").using("btree", table.createdAt.asc().nullsLast().op("timestamp_ops")),
 	index("balance_audit_customerId_idx").using("btree", table.customerId.asc().nullsLast().op("text_ops")),
 	foreignKey({
 			columns: [table.customerId],

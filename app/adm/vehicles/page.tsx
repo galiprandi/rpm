@@ -7,7 +7,7 @@ import { desc, count } from 'drizzle-orm';
 import { toISODate } from '@/lib/utils/date';
 import VehiclesClient from './VehiclesClient';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 export default async function VehiclesPage() {
   // Validate session and role

@@ -3,7 +3,6 @@ import { UserRole } from '@/lib/auth/roles';
 import { listVouchers } from '@/lib/services/purchaseVoucherService';
 import PurchaseVouchersClient from './PurchaseVouchersClient';
 
-export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export default async function PurchaseVouchersPage() {

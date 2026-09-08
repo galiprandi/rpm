@@ -2,7 +2,7 @@ import FinanceReportClient from './FinanceReportClient';
 import { requireAuth } from '@/lib/auth-server';
 import { UserRole } from '@/lib/auth/roles';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 export default async function FinanceReportPage() {
   const session = await requireAuth();
