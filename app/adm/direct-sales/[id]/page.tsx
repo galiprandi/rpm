@@ -73,7 +73,11 @@ export default function DirectSaleDetailPage() {
       const response = await fetch(`/api/direct-sales/${saleId}`);
       if (!response.ok) throw new Error("Failed to fetch");
       const data = await response.json();
-      setSale(data);
+      setSale({
+        ...data,
+        items: data.directSaleItems ?? data.items ?? [],
+        payments: data.directSalePayments ?? data.payments ?? [],
+      });
     } catch (error) {
       console.error("Error fetching sale:", error);
     } finally {
