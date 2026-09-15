@@ -60,6 +60,7 @@ export default function DirectSaleDetailPage() {
   const [generatingDocument, setGeneratingDocument] = useState<string | null>(null);
   const [isOfficiallyzing, setIsOfficiallyzing] = useState(false);
   const [isCreditNoteDialogOpen, setIsCreditNoteDialogOpen] = useState(false);
+  const [returnedQty, setReturnedQty] = useState<Record<string, number>>({});
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('es-AR', {
@@ -211,10 +212,23 @@ export default function DirectSaleDetailPage() {
       (inv.type.startsWith("X_") || inv.type.startsWith("NOTA_CREDITO_X_")),
   );
 
+  const fetchReturned = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/direct-sales/${saleId}/credit-notes`);
+      if (response.ok) {
+        const data = await response.json();
+        setReturnedQty(data.returned || {});
+      }
+    } catch (error) {
+      console.error("Error fetching returned quantities:", error);
+    }
+  }, [saleId]);
+
   useEffect(() => {
     fetchSale();
     fetchInvoices();
-  }, [fetchSale, fetchInvoices]);
+    fetchReturned();
+  }, [fetchSale, fetchInvoices, fetchReturned]);
 
   if (loading) {
     return (
@@ -239,23 +253,29 @@ export default function DirectSaleDetailPage() {
         titleClassName="font-mono"
         description={`Detalle de la venta realizada a ${sale.customerName}`}
         showBackButton
-        onBack={() => window.history.back()}
         secondaryActions={[
           {
             label: "Nota de crédito",
             onClick: () => setIsCreditNoteDialogOpen(true),
-            variant: "ghost",
+            variant: "outline",
             icon: Undo2,
-            iconOnly: true,
             title: "Crear nota de crédito por devolución",
             ariaLabel: "Crear nota de crédito por devolución",
           },
         ]}
       >
         <div className="flex flex-wrap items-center gap-2 mt-4">
-          <Badge variant="outline" className="text-emerald-700 border-emerald-200 bg-emerald-50 font-mono font-bold text-sm">
-            {formatCurrency(sale.total)}
-          </Badge>
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted/50 border text-xs font-medium text-muted-foreground">
+            Total <span className="font-mono font-bold text-foreground">{formatCurrency(sale.total)}</span>
+          </div>
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 border border-emerald-200 text-xs font-medium text-emerald-700">
+            Pagado <span className="font-mono font-bold">{formatCurrency(sale.payments.reduce((sum, p) => sum + p.amount, 0))}</span>
+          </div>
+          {sale.total - sale.payments.reduce((sum, p) => sum + p.amount, 0) > 0 && (
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-50 border border-amber-200 text-xs font-medium text-amber-700">
+              Pendiente <span className="font-mono font-bold">{formatCurrency(sale.total - sale.payments.reduce((sum, p) => sum + p.amount, 0))}</span>
+            </div>
+          )}
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted/50 border text-xs font-medium text-muted-foreground font-mono">
             <Calendar className="h-3.5 w-3.5 pointer-events-none" aria-hidden="true" />
             {new Date(sale.createdAt).toLocaleDateString('es-AR')}
@@ -284,7 +304,7 @@ export default function DirectSaleDetailPage() {
           <Card>
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
-                <Receipt className="h-4 w-4 text-primary pointer-events-none" aria-hidden="true" />
+                <User className="h-4 w-4 text-primary pointer-events-none" aria-hidden="true" />
                 Información del Cliente
               </CardTitle>
             </CardHeader>
@@ -345,16 +365,24 @@ export default function DirectSaleDetailPage() {
               <div className="space-y-3">
                 {sale.items.length > 0 ? (
                   <>
-                    {sale.items.map((item) => {
+                    {sale.items.map((item, index) => {
                       const Icon = item.serviceId ? Clock : Package;
+                      const returned = returnedQty[item.productId || item.serviceId || String(index)] || 0;
                       return (
                         <div key={item.id} className="flex items-center justify-between p-4 border rounded-xl hover:bg-muted/30 transition-colors group">
                           <div className="flex items-center gap-4 flex-1">
                             <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 shadow-sm flex items-center justify-center shrink-0">
                               <Icon className="h-4 w-4 text-primary pointer-events-none" aria-hidden="true" />
                             </div>
-                            <div>
-                              <div className="font-semibold tracking-tight">{item.name}</div>
+                            <div className="min-w-0">
+                              <div className="font-semibold tracking-tight flex items-center gap-2 flex-wrap">
+                                {item.name}
+                                {returned > 0 && (
+                                  <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-[11px] font-semibold">
+                                    Devuelto ×{returned}
+                                  </Badge>
+                                )}
+                              </div>
                               <div className="text-sm text-muted-foreground flex items-center gap-2 mt-0.5">
                                 <span className="font-mono bg-muted px-1.5 py-0.5 rounded text-xs">{item.quantity} u.</span>
                                 <span>×</span>
@@ -367,7 +395,7 @@ export default function DirectSaleDetailPage() {
                               )}
                             </div>
                           </div>
-                          <div className="font-mono font-bold text-lg">
+                          <div className="font-mono font-bold text-lg shrink-0">
                             {formatCurrency(item.totalPrice)}
                           </div>
                         </div>
@@ -408,9 +436,6 @@ export default function DirectSaleDetailPage() {
                           </div>
                           <div>
                             <div className="font-semibold tracking-tight">{payment.paymentMethod.name}</div>
-                            <Badge variant="outline" className="mt-1 font-mono text-[11px] uppercase tracking-tighter border-emerald-200 bg-emerald-50 text-emerald-700">
-                              {payment.paymentMethod.code}
-                            </Badge>
                             {payment.notes && (
                               <div className="text-xs text-muted-foreground mt-1 italic">
                                 {payment.notes}
@@ -469,7 +494,7 @@ export default function DirectSaleDetailPage() {
                               {getStatusBadge(inv.status)}
                             </div>
                             <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">
-                              {inv.type.replace('_', ' ')}
+                              {inv.type.replace(/_/g, ' ')}
                             </p>
                           </div>
                         </div>
@@ -498,6 +523,17 @@ export default function DirectSaleDetailPage() {
                   <div className="text-center py-8 text-muted-foreground flex flex-col items-center gap-2 border-2 border-dashed rounded-lg">
                     <FileText className="h-12 w-12 text-muted-foreground/20" aria-hidden="true" />
                     <p className="text-sm">No hay documentos generados para esta venta</p>
+                    <p className="text-xs text-muted-foreground/70">Generá un remito o presupuesto desde el panel de acciones</p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-2"
+                      onClick={() => generateDocument('REMITO')}
+                      disabled={!!generatingDocument}
+                    >
+                      {generatingDocument === 'REMITO' ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Printer className="h-4 w-4 mr-2" />}
+                      Generar Remito
+                    </Button>
                   </div>
                 )}
               </CardContent>
@@ -519,7 +555,7 @@ export default function DirectSaleDetailPage() {
                     loading={isOfficiallyzing}
                   >
                     <Send className="h-4 w-4 mr-2" />
-                    Oficializar {officializableInvoice.type.replace('_', ' ')}
+                    Oficializar {officializableInvoice.type.replace(/_/g, ' ')}
                   </Button>
                 )}
                 <Button
@@ -566,8 +602,10 @@ export default function DirectSaleDetailPage() {
         payments={sale.payments.map((p) => ({ paymentMethodId: p.paymentMethod.id, amount: p.amount }))}
         onSuccess={() => {
           setIsCreditNoteDialogOpen(false);
+          toast.success("Nota de crédito creada correctamente");
           fetchSale();
           fetchInvoices();
+          fetchReturned();
         }}
       />
     </div>

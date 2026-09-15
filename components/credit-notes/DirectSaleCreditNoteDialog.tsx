@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useUI } from '@/components/ui/UIProvider';
+import { Checkbox } from '@/components/ui/checkbox';
+import { formatARS } from '@/lib/utils/format';
 import { Undo2, DollarSign, FileText } from 'lucide-react';
 
 interface SaleItem {
@@ -172,11 +174,30 @@ export function DirectSaleCreditNoteDialog({
         <div className="space-y-6">
           <div className="p-4 bg-muted rounded space-y-1">
             <p className="text-sm"><strong>Cliente:</strong> {customerName}</p>
-            <p className="text-sm"><strong>Total a devolver:</strong> <span className="font-mono">${calculateRefundTotal().toFixed(2)}</span></p>
+            <p className="text-sm"><strong>Total a devolver:</strong> <span className="font-mono font-bold text-lg">{formatARS(calculateRefundTotal(), 2)}</span></p>
           </div>
 
           <div>
-            <Label className="text-base font-semibold mb-3 block">Productos a devolver</Label>
+            <div className="flex items-center justify-between mb-3">
+              <Label className="text-base font-semibold">Productos a devolver</Label>
+              {items.some((item, i) => item.quantity - (returnedQty[item.productId || item.serviceId || String(i)] || 0) > 1) && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    const all: Record<number, number> = {};
+                    items.forEach((item, i) => {
+                      const remaining = item.quantity - (returnedQty[item.productId || item.serviceId || String(i)] || 0);
+                      all[i] = Math.max(0, remaining);
+                    });
+                    setSelectedItems(all);
+                  }}
+                >
+                  Devolver todo
+                </Button>
+              )}
+            </div>
             <div className="border rounded-lg divide-y">
               {items.map((item, index) => {
                 const key = item.productId || item.serviceId || String(index);
@@ -186,17 +207,15 @@ export function DirectSaleCreditNoteDialog({
                 return (
                   <div key={index} className="p-4 flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3 flex-1">
-                      <input
-                        type="checkbox"
+                      <Checkbox
                         checked={selected > 0}
                         disabled={remaining <= 0}
-                        onChange={(e) => {
+                        onCheckedChange={(checked) => {
                           setSelectedItems(prev => ({
                             ...prev,
-                            [index]: e.target.checked ? Math.min(1, remaining) : 0,
+                            [index]: checked ? Math.min(1, remaining) : 0,
                           }));
                         }}
-                        className="w-4 h-4"
                         aria-label={`Devolver ${item.name}`}
                       />
                       <div className="flex-1">
@@ -277,7 +296,7 @@ export function DirectSaleCreditNoteDialog({
           <DialogFooter>
             <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting} aria-label="Cancelar">Cancelar</Button>
             <Button onClick={handleCreateCreditNote} disabled={isSubmitting || calculateRefundTotal() <= 0}>
-              {isSubmitting ? 'Creando...' : 'Crear Nota de Credito'}
+              {isSubmitting ? 'Creando...' : `Devolver ${formatARS(calculateRefundTotal(), 2)}`}
             </Button>
           </DialogFooter>
         </div>
