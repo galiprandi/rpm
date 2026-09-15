@@ -57,6 +57,7 @@ export interface Product {
   } | null;
   location: string | null;
   lastMovementAt: Date | null;
+  priceUpdatedAt: Date | null;
   isActive: boolean;
 }
 
@@ -117,6 +118,7 @@ type DrizzleProductWithRelations = {
   supplierId: string | null;
   location: string | null;
   lastMovementAt: string | null;
+  priceUpdatedAt?: string | null;
   isActive: boolean;
   category: { id: string; name: string; color: string | null } | null;
   supplier?: { id: string; name: string } | null;
@@ -145,6 +147,7 @@ function transformProduct(p: DrizzleProductWithRelations): Product {
     supplier: p.supplier || null,
     location: p.location,
     lastMovementAt: p.lastMovementAt ? new Date(p.lastMovementAt) : null,
+    priceUpdatedAt: p.priceUpdatedAt ? new Date(p.priceUpdatedAt) : null,
     isActive: p.isActive,
   };
 }
@@ -245,6 +248,7 @@ export async function createProduct(input: CreateProductInput): Promise<Product>
     supplierId: input.supplierId || null,
     location: input.location || null,
     isActive: true,
+    priceUpdatedAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   }).returning();
 
@@ -279,6 +283,21 @@ export async function updateProduct(id: string, input: UpdateProductInput): Prom
   if (input.location !== undefined) data.location = input.location || null;
   if (input.isActive !== undefined) data.isActive = input.isActive;
   data.updatedAt = new Date().toISOString();
+
+  // Mark priceUpdatedAt only when a cost field actually changes value
+  const touchesCosts = input.costPrice !== undefined || input.replacementCost !== undefined;
+  if (touchesCosts) {
+    const current = await db.query.product.findFirst({
+      where: eq(product.id, id),
+      columns: { costPrice: true, replacementCost: true },
+    });
+    const costChanged =
+      (input.costPrice !== undefined && input.costPrice !== Number(current?.costPrice)) ||
+      (input.replacementCost !== undefined && input.replacementCost !== Number(current?.replacementCost));
+    if (costChanged) {
+      data.priceUpdatedAt = new Date().toISOString();
+    }
+  }
 
   await db.update(product).set(data).where(eq(product.id, id));
 

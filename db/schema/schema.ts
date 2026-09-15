@@ -362,6 +362,7 @@ export const product = pgTable("product", {
 	imageCommit: text(),
 	imageUrl: text(),
 	lastCountedAt: timestamp({ precision: 3, mode: 'string' }),
+	priceUpdatedAt: timestamp({ precision: 3, mode: 'string' }),
 }, (table) => [
 	index("product_categoryId_idx").using("btree", table.categoryId.asc().nullsLast().op("text_ops")),
 	index("product_isActive_idx").using("btree", table.isActive.asc().nullsLast().op("bool_ops")),

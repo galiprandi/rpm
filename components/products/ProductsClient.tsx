@@ -55,6 +55,12 @@ import {
 } from "@/components/ui/dialog";
 import { type ColumnDef, type FilterFn } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
+import dayjs from "dayjs";
+import dayjsRelativeTime from "dayjs/plugin/relativeTime";
+import "dayjs/locale/es";
+
+dayjs.extend(dayjsRelativeTime);
+dayjs.locale("es");
 
 import {
   type Product,
@@ -691,6 +697,26 @@ export function ProductsClient({
           />
         </div>
       ),
+    },
+    {
+      accessorKey: "priceUpdatedAt",
+      header: "Precio actualizado",
+      size: 90,
+      cell: ({ row }) => {
+        const date = row.original.priceUpdatedAt;
+        if (!date) {
+          return <span className="text-muted-foreground">-</span>;
+        }
+        const d = dayjs(date);
+        return (
+          <span
+            className="text-muted-foreground text-sm whitespace-nowrap"
+            title={d.format("DD/MM/YYYY HH:mm")}
+          >
+            {d.fromNow()}
+          </span>
+        );
+      },
     },
   ];
 

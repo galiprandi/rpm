@@ -147,6 +147,7 @@ export async function finalizeVoucher(params: {
         stock: sql`${product.stock} + ${item.quantity}`,
         replacementCost: item.unitCost,
         lastMovementAt: new Date().toISOString(),
+        priceUpdatedAt: new Date().toISOString(),
       }).where(eq(product.id, item.productId));
 
       // Create stock movement record

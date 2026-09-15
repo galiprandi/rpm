@@ -61,6 +61,7 @@ describe('Schema Regression Tests', () => {
       expect(product.supplierId).toBeDefined();
       expect(product.isActive).toBeDefined();
       expect(product.lastMovementAt).toBeDefined();
+      expect(product.priceUpdatedAt).toBeDefined();
       expect(product.createdAt).toBeDefined();
       expect(product.updatedAt).toBeDefined();
     });

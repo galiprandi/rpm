@@ -23,6 +23,7 @@ export interface Product {
   } | null;
   margin: number;
   isLowStock: boolean;
+  priceUpdatedAt?: string | Date | null;
   imageUrl?: string | null;
   imageCommit?: string | null;
   imageBranch?: string | null;

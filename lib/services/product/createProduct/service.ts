@@ -28,6 +28,7 @@ export async function createProductService(input: CreateProductInput) {
     supplierId: input.supplierId || null,
     location: input.location || null,
     isActive: true,
+    priceUpdatedAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   }).returning();
 

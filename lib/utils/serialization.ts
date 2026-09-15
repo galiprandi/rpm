@@ -68,6 +68,7 @@ const TIMESTAMP_FIELDS = new Set([
   "finalizedAt",
   "date",
   "lastMovementAt",
+  "priceUpdatedAt",
   "completedAt",
   "openedAt",
   "closedAt",

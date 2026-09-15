@@ -307,6 +307,40 @@ describe('ProductService', () => {
       expect(result.id).toBe('min-id');
       expect(result.name).toBe('Minimal Product');
     });
+
+    it('should set priceUpdatedAt on creation', async () => {
+      const input = {
+        name: 'Priced Product',
+        categoryId: 'cat1',
+        costPrice: 10,
+        replacementCost: 15,
+        stock: 1,
+        minStock: 0,
+      };
+
+      mockFns.insertReturning.mockResolvedValue([{ id: 'priced-id' }]);
+      mockFns.productFindFirst.mockResolvedValue({
+        ...input,
+        id: 'priced-id',
+        sku: null,
+        description: null,
+        barcode: null,
+        supplierId: null,
+        supplier: null,
+        location: null,
+        lastMovementAt: null,
+        priceUpdatedAt: new Date().toISOString(),
+        costPrice: '10',
+        replacementCost: '15',
+        isActive: true,
+        category: { id: 'cat1', name: 'Category', color: null },
+      });
+
+      await createProduct(input);
+
+      const valuesArg = vi.mocked(db.insert).mock.results[0].value.values.mock.calls[0][0];
+      expect(valuesArg.priceUpdatedAt).toBeDefined();
+    });
   });
 
   describe('updateProduct', () => {
@@ -316,33 +350,44 @@ describe('ProductService', () => {
         replacementCost: 200,
       };
 
-      const mockUpdated = {
-        id: '1',
-        sku: 'TEST-001',
-        name: 'Updated Name',
-        description: null,
-        barcode: null,
-        categoryId: null,
-        category: null,
-        costPrice: '100',
-        replacementCost: '200',
-        stock: 50,
-        minStock: 10,
-        supplierId: null,
-        supplier: null,
-        location: null,
-        lastMovementAt: null,
-        isActive: true,
-      };
+      const mockExisting = { ...mockProduct, costPrice: '100', replacementCost: '150' };
+      const mockUpdated = { ...mockExisting, name: 'Updated Name', replacementCost: '200' };
 
       mockFns.updateSetWhere.mockResolvedValue(undefined);
-      mockFns.productFindFirst.mockResolvedValue(mockUpdated);
+      mockFns.productFindFirst
+        .mockResolvedValueOnce(mockExisting)
+        .mockResolvedValue(mockUpdated);
 
       const result = await updateProduct('1', input);
 
       expect(result.name).toBe('Updated Name');
       expect(result.replacementCost).toBe(200);
       expect(db.update).toHaveBeenCalled();
+    });
+
+    it('should set priceUpdatedAt when costPrice or replacementCost change', async () => {
+      const mockExisting = { ...mockProduct, costPrice: '100', replacementCost: '150' };
+      const mockUpdated = { ...mockExisting, replacementCost: '200' };
+
+      mockFns.updateSetWhere.mockResolvedValue(undefined);
+      mockFns.productFindFirst
+        .mockResolvedValueOnce(mockExisting)
+        .mockResolvedValue(mockUpdated);
+
+      await updateProduct('1', { replacementCost: 200 });
+
+      const setArg = vi.mocked(db.update).mock.results[0].value.set.mock.calls[0][0];
+      expect(setArg.priceUpdatedAt).toBeDefined();
+    });
+
+    it('should not set priceUpdatedAt when only non-price fields change', async () => {
+      mockFns.updateSetWhere.mockResolvedValue(undefined);
+      mockFns.productFindFirst.mockResolvedValue(mockProduct);
+
+      await updateProduct('1', { name: 'New Name Only' });
+
+      const setArg = vi.mocked(db.update).mock.results[0].value.set.mock.calls[0][0];
+      expect(setArg.priceUpdatedAt).toBeUndefined();
     });
   });
 

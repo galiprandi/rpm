@@ -351,7 +351,7 @@ export async function applyCostUpdate(
       const updatePromises = Array.from(costGroups.entries()).map(([newCost, productIds]) =>
         tx
           .update(product)
-          .set({ replacementCost: newCost.toString() })
+          .set({ replacementCost: newCost.toString(), priceUpdatedAt: new Date().toISOString() })
           .where(inArray(product.id, productIds))
       );
       await Promise.all(updatePromises);
@@ -399,6 +399,12 @@ export async function applyCostUpdate(
             },
           });
       }
+
+      // Mark priceUpdatedAt on all affected products
+      await tx
+        .update(product)
+        .set({ priceUpdatedAt: new Date().toISOString() })
+        .where(inArray(product.id, productsToUpdate.map((p) => p.id)));
     });
   }
 

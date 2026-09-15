@@ -112,6 +112,7 @@ async function processBatch(
           categoryId: finalCategoryId,
           supplierId: item.supplierId || defaultSupplierId || null,
           isActive: true,
+          priceUpdatedAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         })
         .returning();

@@ -13,10 +13,13 @@ import {
   updatePriceList,
   deletePriceList,
   createPriceListItem,
+  updatePriceListItem,
   deletePriceListItem,
   calculateProductPrice,
   type CreatePriceListInput,
 } from './priceListService';
+import { db } from '@/lib/db';
+import { product } from '@/db/schema';
 
 vi.mock('next/cache', () => ({
   revalidatePath: vi.fn(),
@@ -56,6 +59,8 @@ const { createChainable, mockFns } = vi.hoisted(() => {
       priceListFindFirst: vi.fn(),
       productFindFirst: vi.fn(),
       priceListItemFindFirst: vi.fn(),
+      priceListItemFindMany: vi.fn(),
+      productFindMany: vi.fn(),
       insertReturning: vi.fn(),
       updateWhere: vi.fn(),
       deleteWhere: vi.fn(),
@@ -73,12 +78,15 @@ vi.mock('@/lib/db', () => ({
         findMany: mockFns.priceListFindMany,
         findFirst: mockFns.priceListFindFirst,
       },
-      product: { findFirst: mockFns.productFindFirst },
-      priceListItem: { findFirst: mockFns.priceListItemFindFirst },
+      product: { findFirst: mockFns.productFindFirst, findMany: mockFns.productFindMany },
+      priceListItem: { findFirst: mockFns.priceListItemFindFirst, findMany: mockFns.priceListItemFindMany },
     },
     insert: vi.fn(() => ({
       values: vi.fn(() => ({
         returning: mockFns.insertReturning,
+        onConflictDoUpdate: vi.fn(() => ({
+          returning: mockFns.insertReturning,
+        })),
       })),
     })),
     update: vi.fn(() => ({
@@ -95,6 +103,20 @@ vi.mock('@/lib/db', () => ({
 describe('PriceList Service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Defaults for batch queries used by priceCalculationService
+    mockFns.productFindMany.mockResolvedValue([
+      { id: 'prod-1', replacementCost: '150', costPrice: '100' },
+    ]);
+    mockFns.priceListItemFindMany.mockResolvedValue([]);
+    mockFns.priceListFindMany.mockResolvedValue([
+      {
+        id: 'pl-1',
+        baseMarginPercentage: '40',
+        roundingRule: 'SMART_HUNDREDS',
+        basePriceListId: null,
+        isActive: true,
+      },
+    ]);
   });
 
   const mockPriceList = {
@@ -419,6 +441,12 @@ describe('PriceList Service', () => {
         updatedAt: '2025-01-01T00:00:00.000Z',
         product: { id: 'prod-1', name: 'Product 1', sku: 'SKU1', replacementCost: '150', costPrice: '100' },
       });
+      mockFns.priceListItemFindMany.mockResolvedValue([{
+        priceListId: 'pl-1',
+        productId: 'prod-1',
+        overrideMarginPercentage: null,
+        fixedPrice: '999.99',
+      }]);
 
       const item = await createPriceListItem('pl-1', {
         productId: 'prod-1',
@@ -436,11 +464,80 @@ describe('PriceList Service', () => {
         createPriceListItem('non-existent', { productId: 'prod-1' })
       ).rejects.toThrow('Price list not found');
     });
+
+    it('should mark product priceUpdatedAt', async () => {
+      mockFns.priceListFindFirst.mockResolvedValue(mockPriceList);
+      mockFns.productFindFirst.mockResolvedValue({
+        id: 'prod-1',
+        name: 'Product 1',
+        replacementCost: '150',
+        costPrice: '100',
+      });
+      mockFns.insertReturning.mockResolvedValue([{
+        id: 'item-1',
+        priceListId: 'pl-1',
+        productId: 'prod-1',
+        overrideMarginPercentage: null,
+        fixedPrice: '999',
+        createdAt: '2025-01-01T00:00:00.000Z',
+        updatedAt: '2025-01-01T00:00:00.000Z',
+      }]);
+      mockFns.priceListItemFindFirst.mockResolvedValue({
+        id: 'item-1',
+        priceListId: 'pl-1',
+        productId: 'prod-1',
+        fixedPrice: '999',
+        product: { id: 'prod-1', name: 'Product 1', sku: 'SKU1' },
+      });
+
+      await createPriceListItem('pl-1', { productId: 'prod-1', fixedPrice: 999 });
+
+      expect(db.update).toHaveBeenCalledWith(product);
+    });
+  });
+
+  describe('updatePriceListItem', () => {
+    it('should mark product priceUpdatedAt', async () => {
+      mockFns.priceListItemFindFirst
+        .mockResolvedValueOnce({
+          id: 'item-1',
+          priceListId: 'pl-1',
+          productId: 'prod-1',
+        })
+        .mockResolvedValue({
+          id: 'item-1',
+          priceListId: 'pl-1',
+          productId: 'prod-1',
+          fixedPrice: '500',
+          product: { id: 'prod-1', name: 'Product 1', sku: 'SKU1' },
+        });
+      mockFns.priceListFindFirst.mockResolvedValue(mockPriceList);
+      mockFns.productFindFirst.mockResolvedValue({
+        id: 'prod-1',
+        name: 'Product 1',
+        replacementCost: '150',
+        costPrice: '100',
+      });
+      const item = { id: 'item-1', priceListId: 'pl-1', productId: 'prod-1', fixedPrice: '500' };
+      mockFns.updateWhere.mockReturnValue({
+        returning: vi.fn().mockResolvedValue([item]),
+        then: (resolve: any) => Promise.resolve([item]).then(resolve),
+      });
+
+      await updatePriceListItem('item-1', { fixedPrice: 500 });
+
+      expect(db.update).toHaveBeenCalledWith(product);
+    });
   });
 
   describe('deletePriceListItem', () => {
     it('should delete item', async () => {
       mockFns.deleteWhere.mockResolvedValue(undefined);
+      mockFns.priceListItemFindFirst.mockResolvedValue({
+        id: 'item-1',
+        priceListId: 'pl-1',
+        productId: 'prod-1',
+      });
       mockFns.priceListFindFirst.mockResolvedValue({
         ...mockPriceList,
         priceListItems: [],
@@ -450,6 +547,19 @@ describe('PriceList Service', () => {
 
       const updated = await getPriceListById('pl-1');
       expect(updated?.items.length).toBe(0);
+    });
+
+    it('should mark product priceUpdatedAt', async () => {
+      mockFns.priceListItemFindFirst.mockResolvedValue({
+        id: 'item-1',
+        priceListId: 'pl-1',
+        productId: 'prod-1',
+      });
+      mockFns.deleteWhere.mockResolvedValue(undefined);
+
+      await deletePriceListItem('item-1');
+
+      expect(db.update).toHaveBeenCalledWith(product);
     });
   });
 
@@ -485,12 +595,13 @@ describe('PriceList Service', () => {
         replacementCost: '150',
         costPrice: '100',
       });
-      // First findFirst call returns the exception with fixedPrice
-      mockFns.priceListItemFindFirst.mockResolvedValue({
+      // Exception with fixedPrice resolved via batch exceptions query
+      mockFns.priceListItemFindMany.mockResolvedValue([{
+        priceListId: 'pl-1',
         productId: 'prod-1',
         overrideMarginPercentage: null,
         fixedPrice: '500',
-      });
+      }]);
 
       const result = await calculateProductPrice('prod-1', 'pl-1');
 
@@ -509,6 +620,13 @@ describe('PriceList Service', () => {
         ...mockPriceList,
         baseMarginPercentage: '5',
       });
+      mockFns.priceListFindMany.mockResolvedValue([{
+        id: 'pl-1',
+        baseMarginPercentage: '5',
+        roundingRule: 'SMART_HUNDREDS',
+        basePriceListId: null,
+        isActive: true,
+      }]);
       mockFns.productFindFirst.mockResolvedValue({
         id: 'prod-1',
         name: 'Product 1',

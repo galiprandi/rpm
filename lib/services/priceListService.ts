@@ -129,6 +129,14 @@ export interface CalculatedPrice {
   fixedPrice: number | null;
 }
 
+// Mark a product's priceUpdatedAt when its sell price changes via a list exception
+async function markProductPriceUpdated(productId: string | null): Promise<void> {
+  if (!productId) return;
+  await db.update(product)
+    .set({ priceUpdatedAt: new Date().toISOString() })
+    .where(eq(product.id, productId));
+}
+
 // Helper to count items for a price list
 async function countPriceListItems(plId: string): Promise<number> {
   const result = await db.select({ count: sql<number>`count(*)::int` })
@@ -442,6 +450,7 @@ export async function createPriceListItem(
   const actualMargin = calcResult?.actualMargin ?? calculateMarginPercentage(replacementCost, finalPrice);
   const isBelowMinimum = calcResult?.isBelowMinimum ?? false;
 
+  await markProductPriceUpdated(input.productId);
   revalidatePublicCatalog();
   return {
     id: item.id,
@@ -464,7 +473,14 @@ export async function createPriceListItem(
 
 // DELETE price list item
 export async function deletePriceListItem(id: string): Promise<void> {
+  const existing = await db.query.priceListItem.findFirst({
+    where: eq(priceListItem.id, id),
+    columns: { productId: true },
+  });
+
   await db.delete(priceListItem).where(eq(priceListItem.id, id));
+
+  await markProductPriceUpdated(existing?.productId ?? null);
   revalidatePublicCatalog();
 }
 
@@ -535,6 +551,7 @@ export async function updatePriceListItem(
   const actualMargin = calcResult?.actualMargin ?? calculateMarginPercentage(replacementCost, finalPrice);
   const isBelowMinimum = calcResult?.isBelowMinimum ?? false;
 
+  await markProductPriceUpdated(existing.productId ?? null);
   revalidatePublicCatalog();
 
   return {

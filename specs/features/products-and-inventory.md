@@ -17,6 +17,7 @@ Control integral del catálogo de productos, inventario (stock) e imágenes. Per
 
 ## 4. Comportamiento Esperado y Casos Límite
 - **Límite 1 - Archivos Grandes**: El importador procesa archivos en lotes para no bloquear la base de datos.
+- **Auditoría de precio**: `product.priceUpdatedAt` registra la última modificación del precio de venta. Se actualiza al cambiar `costPrice`/`replacementCost` (edición manual, actualización masiva de costos, comprobante de compra) y al crear/editar/eliminar excepciones en `price_list_item`. Es `null` para productos sin modificaciones de precio (se muestra "-"). La lista de productos lo muestra como tiempo relativo ("hace 2 horas"). NO se actualiza por cambios de `baseMarginPercentage` de una lista.
 - **Límite 2 - Auditoría de Costos**: Cada actualización masiva queda registrada en la tabla `cost_update_batch` para trazabilidad.
 - **Validación 1**: Los movimientos de stock son inmutables y siempre generan un registro en `stock_movement`.
 - **Auditoría**: Soporta auditorías de stock mediante el [Conteo Cíclico Inteligente](./cyclic-count.md).
