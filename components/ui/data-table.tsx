@@ -303,11 +303,10 @@ export function DataTable<TData>({
                       style={{ width: header.getSize() }}
                     >
                       {canSort ? (
-                        <Button
-                          variant="ghost"
-                          size="sm"
+                        <button
+                          type="button"
                           onClick={() => header.column.toggleSorting()}
-                          className="h-auto p-0 font-medium hover:bg-transparent"
+                          className="inline-flex items-center font-medium text-foreground hover:text-foreground/70 transition-colors"
                         >
                           {flexRender(
                             header.column.columnDef.header,
@@ -324,7 +323,7 @@ export function DataTable<TData>({
                               <ArrowUpDown className="h-3 w-3 text-muted-foreground/50" />
                             )}
                           </span>
-                        </Button>
+                        </button>
                       ) : (
                         flexRender(
                           header.column.columnDef.header,
