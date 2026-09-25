@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Header, CrudAdmin, CrudStats, type StatItem } from "@/components/adm";
 import {
@@ -92,6 +92,8 @@ export default function CustomersClient({
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [showOnlyWithBalance, setShowOnlyWithBalance] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const searchDebounceRef = useRef<NodeJS.Timeout | null>(null);
 
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
@@ -159,11 +161,12 @@ export default function CustomersClient({
     document.body.removeChild(link);
   }, [filteredCustomers]);
 
-  const fetchCustomers = useCallback(async () => {
+  const fetchCustomers = useCallback(async (search?: string) => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      params.set("limit", "1000");
+      params.set("limit", "50");
+      if (search) params.set("search", search);
 
       const response = await fetch(`/api/customers?${params}`);
       if (!response.ok) throw new Error("Failed to fetch");
@@ -177,6 +180,25 @@ export default function CustomersClient({
     }
   }, []);
 
+  // Server-side search with debounce — the list only loads the most recent
+  // 50 customers, so the table filter must query the API to find older ones.
+  const handleSearchChange = useCallback(
+    (value: string) => {
+      setSearchQuery(value);
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+      searchDebounceRef.current = setTimeout(() => {
+        fetchCustomers(value || undefined);
+      }, 300);
+    },
+    [fetchCustomers],
+  );
+
+  useEffect(() => {
+    return () => {
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    };
+  }, []);
+
   const customerFilterFn = useCallback<FilterFn<Customer>>((row, id, value) => {
     if (!value) return true;
     const terms = String(value).toLowerCase().split(/[\s+]+/).filter(Boolean);
@@ -188,6 +210,7 @@ export default function CustomersClient({
         (customer.phone?.toLowerCase() ?? "").includes(search) ||
         (customer.phoneAlt?.toLowerCase() ?? "").includes(search) ||
         (customer.email?.toLowerCase() ?? "").includes(search) ||
+        (customer.address?.toLowerCase() ?? "").includes(search) ||
         customer.vehicles?.some((v) =>
           (v.identifier?.toLowerCase() ?? "").includes(search),
         ) ||
@@ -480,7 +503,9 @@ export default function CustomersClient({
         hideCreateAction
         columns={columns}
         filterFn={customerFilterFn}
-        hasActiveFilters={showOnlyWithBalance}
+        hasActiveFilters={showOnlyWithBalance || searchQuery !== ""}
+        externalGlobalFilter={searchQuery}
+        onExternalGlobalFilterChange={handleSearchChange}
         emptyIcon={
           <User className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
         }
