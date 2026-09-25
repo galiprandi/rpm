@@ -162,8 +162,8 @@ export default function CustomersClient({
     document.body.removeChild(link);
   }, [filteredCustomers]);
 
-  const fetchCustomers = useCallback(async (search?: string) => {
-    setLoading(true);
+  const fetchCustomers = useCallback(async (search?: string, silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const params = new URLSearchParams();
       params.set("limit", "50");
@@ -182,9 +182,10 @@ export default function CustomersClient({
   }, []);
 
   // Server-side search — the list only loads the most recent 50 customers,
-  // so the table filter must query the API to find older ones.
+  // so the table filter must query the API to find older ones. Silent fetch
+  // avoids remounting the table (and losing the search input) while typing.
   useEffect(() => {
-    fetchCustomers(debouncedSearch || undefined);
+    fetchCustomers(debouncedSearch || undefined, true);
   }, [debouncedSearch, fetchCustomers]);
 
   const customerFilterFn = useCallback<FilterFn<Customer>>((row, id, value) => {
