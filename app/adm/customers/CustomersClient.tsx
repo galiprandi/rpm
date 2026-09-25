@@ -163,7 +163,7 @@ export default function CustomersClient({
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      params.set("limit", "50");
+      params.set("limit", "1000");
 
       const response = await fetch(`/api/customers?${params}`);
       if (!response.ok) throw new Error("Failed to fetch");
