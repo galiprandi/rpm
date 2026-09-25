@@ -137,6 +137,7 @@ export default function CustomerDetailPage() {
   const customerId = params.id as string;
 
   const [customer, setCustomer] = useState<CustomerDetail | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const router = useRouter();
   const { alert, confirm } = useUI();
   const [loading, setLoading] = useState(true);
@@ -183,7 +184,16 @@ export default function CustomerDetailPage() {
   const fetchCustomer = useCallback(async () => {
     try {
       const response = await fetch(`/api/customers/${customerId}`);
-      if (!response.ok) throw new Error("Failed to fetch");
+      if (!response.ok) {
+        setFetchError(
+          response.status === 403
+            ? "No tenés permisos para ver este cliente"
+            : response.status === 404
+              ? "Cliente no encontrado"
+              : "Error al cargar el cliente",
+        );
+        throw new Error("Failed to fetch");
+      }
       const data = await response.json();
       setCustomer(data);
     } catch (error) {
@@ -668,7 +678,7 @@ export default function CustomerDetailPage() {
   if (!customer) {
     return (
       <div className="container mx-auto py-6">
-        <div className="text-center py-12">Cliente no encontrado</div>
+        <div className="text-center py-12">{fetchError || "Cliente no encontrado"}</div>
       </div>
     );
   }

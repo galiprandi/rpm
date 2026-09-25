@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { unstable_cache } from "next/cache";
-import { withAdminDynamic, withPermissionDynamic } from "@/lib/api-middleware";
+import { withPermissionDynamic } from "@/lib/api-middleware";
 import { db } from "@/lib/db";
 import { customer, cashMovement, workOrder, directSale, creditNote } from "@/db/schema";
 import { eq, desc, and } from "drizzle-orm";
@@ -132,9 +132,9 @@ const getCustomerCached = (id: string) =>
     },
   );
 
-// GET /api/customers/[id] - Get customer by ID (requiere ADMIN)
+// GET /api/customers/[id] - Get customer by ID (requiere can_manage_customers)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const GET = withAdminDynamic(async (request: NextRequest, { params }: Params, _session) => {
+export const GET = withPermissionDynamic('can_manage_customers', async (request: NextRequest, { params }: Params, _session) => {
   try {
     const { id } = await params;
     const fetchCustomer = getCustomerCached(id);

@@ -42,6 +42,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useMemo, useCallback } from "react";
+import { useUI } from "@/components/ui/UIProvider";
 
 interface CartItem extends SelectedItem {
   totalPrice: number;
@@ -94,7 +95,9 @@ export function QuickSaleModal({
   const [paymentMethodId, setPaymentMethodId] = useState("");
   const [paymentAmount, setPaymentAmount] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [savingCustomer, setSavingCustomer] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { alert } = useUI();
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [priceLists, setPriceLists] = useState<PriceList[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -192,7 +195,8 @@ export function QuickSaleModal({
   };
 
   const createCustomer = async () => {
-    if (!newCustomerData.name || !newCustomerData.phone) return;
+    if (!newCustomerData.name || !newCustomerData.phone || savingCustomer) return;
+    setSavingCustomer(true);
     try {
       const res = await fetch("/api/customers", {
         method: "POST",
@@ -207,9 +211,23 @@ export function QuickSaleModal({
         setNewCustomerData({ name: "", phone: "", email: "" });
         setFoundCustomers([]);
         setCustomerSearch("");
+      } else {
+        const data = await res.json().catch(() => ({}));
+        await alert({
+          title: "Error",
+          description: data.error || "Error al crear cliente",
+          variant: "error",
+        });
       }
     } catch (err) {
       console.error("Error creating customer:", err);
+      await alert({
+        title: "Error",
+        description: "Error al crear cliente",
+        variant: "error",
+      });
+    } finally {
+      setSavingCustomer(false);
     }
   };
 
@@ -539,8 +557,16 @@ export function QuickSaleModal({
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <Button onClick={createCustomer} className="flex-1">
-                      Crear
+                    <Button
+                      onClick={createCustomer}
+                      className="flex-1"
+                      disabled={
+                        savingCustomer ||
+                        !newCustomerData.name ||
+                        !newCustomerData.phone
+                      }
+                    >
+                      {savingCustomer ? "Creando..." : "Crear"}
                     </Button>
                     <Button
                       variant="outline"
