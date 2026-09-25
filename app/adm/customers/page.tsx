@@ -19,8 +19,18 @@ export default async function CustomersPage() {
   const customers = await db.query.customer.findMany({
     limit: 50,
     with: {
-      vehicles: true,
-      workOrders: true,
+      vehicles: {
+        columns: {
+          id: true,
+          identifier: true,
+          category: true,
+        },
+      },
+      workOrders: {
+        columns: {
+          id: true,
+        },
+      },
     },
     orderBy: asc(customer.name),
   });

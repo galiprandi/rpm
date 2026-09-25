@@ -16,7 +16,7 @@
 
 import { db } from '@/lib/db';
 import { customer, vehicle } from '@/db/schema';
-import { eq, and, or, ilike, inArray, sql, desc, type SQL } from 'drizzle-orm';
+import { eq, and, or, ilike, inArray, sql, asc, type SQL } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { capitalizeText } from '@/lib/utils/format';
 
@@ -36,6 +36,8 @@ export interface Customer {
   balance: number;
   createdAt: Date;
   updatedAt: Date;
+  vehicles?: { id: string; identifier: string; category: string }[];
+  _count?: { workOrders: number };
 }
 
 export interface CreateCustomerInput {
@@ -136,8 +138,13 @@ export async function getCustomers(filters: CustomerFilters = {}): Promise<Custo
             category: true,
           },
         },
+        workOrders: {
+          columns: {
+            id: true,
+          },
+        },
       },
-      orderBy: desc(customer.createdAt),
+      orderBy: asc(customer.name),
       limit,
       offset,
     }),
@@ -147,7 +154,11 @@ export async function getCustomers(filters: CustomerFilters = {}): Promise<Custo
   ]);
 
   return {
-    customers: customers.map(transformCustomer),
+    customers: customers.map((c) => ({
+      ...transformCustomer(c),
+      vehicles: c.vehicles,
+      _count: { workOrders: (c.workOrders ?? []).length },
+    })),
     total: totalRows[0]?.count ?? 0,
     limit,
     offset,
