@@ -94,7 +94,7 @@ export default function CustomersClient({
   const [isCreating, setIsCreating] = useState(false);
   const [showOnlyWithBalance, setShowOnlyWithBalance] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const debouncedSearch = useDebounce(searchQuery, 300);
+  const debouncedSearch = useDebounce(searchQuery, 800);
 
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
