@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useCallback, useMemo, useRef, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
+import { useDebounce } from "@galiprandi/react-tools";
 import { Button } from "@/components/ui/button";
 import { Header, CrudAdmin, CrudStats, type StatItem } from "@/components/adm";
 import {
@@ -93,7 +94,7 @@ export default function CustomersClient({
   const [isCreating, setIsCreating] = useState(false);
   const [showOnlyWithBalance, setShowOnlyWithBalance] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const searchDebounceRef = useRef<NodeJS.Timeout | null>(null);
+  const debouncedSearch = useDebounce(searchQuery, 300);
 
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
@@ -180,24 +181,11 @@ export default function CustomersClient({
     }
   }, []);
 
-  // Server-side search with debounce — the list only loads the most recent
-  // 50 customers, so the table filter must query the API to find older ones.
-  const handleSearchChange = useCallback(
-    (value: string) => {
-      setSearchQuery(value);
-      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
-      searchDebounceRef.current = setTimeout(() => {
-        fetchCustomers(value || undefined);
-      }, 300);
-    },
-    [fetchCustomers],
-  );
-
+  // Server-side search — the list only loads the most recent 50 customers,
+  // so the table filter must query the API to find older ones.
   useEffect(() => {
-    return () => {
-      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
-    };
-  }, []);
+    fetchCustomers(debouncedSearch || undefined);
+  }, [debouncedSearch, fetchCustomers]);
 
   const customerFilterFn = useCallback<FilterFn<Customer>>((row, id, value) => {
     if (!value) return true;
@@ -505,7 +493,7 @@ export default function CustomersClient({
         filterFn={customerFilterFn}
         hasActiveFilters={showOnlyWithBalance || searchQuery !== ""}
         externalGlobalFilter={searchQuery}
-        onExternalGlobalFilterChange={handleSearchChange}
+        onExternalGlobalFilterChange={setSearchQuery}
         emptyIcon={
           <User className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
         }
