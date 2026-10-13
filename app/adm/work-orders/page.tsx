@@ -56,6 +56,7 @@ import {
   DragEndEvent,
   DragStartEvent,
   DragOverEvent,
+  DragCancelEvent,
 } from "@dnd-kit/core";
 import {
   useSortable,
@@ -63,6 +64,11 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import {
+  applyOptimisticStatus,
+  restoreStatus,
+  resolveDrop,
+} from "./dragHandlers";
 import { toast } from "sonner";
 import {
   Select,
@@ -998,14 +1004,9 @@ export default function WorkOrdersPage() {
       const overWO = over.data.current.wo;
 
       if (activeWO.status !== overWO.status) {
-        setWorkOrders((prev) => {
-          return prev.map((wo) => {
-            if (wo.id === activeId) {
-              return { ...wo, status: overWO.status };
-            }
-            return wo;
-          });
-        });
+        setWorkOrders((prev) =>
+          applyOptimisticStatus(prev, activeId as string, overWO.status),
+        );
       }
     }
 
@@ -1014,57 +1015,67 @@ export default function WorkOrdersPage() {
       const overStatusId = over.data.current.statusId;
 
       if (activeWO.status !== overStatusId) {
-        setWorkOrders((prev) => {
-          return prev.map((wo) => {
-            if (wo.id === activeId) {
-              return { ...wo, status: overStatusId };
-            }
-            return wo;
-          });
-        });
+        setWorkOrders((prev) =>
+          applyOptimisticStatus(prev, activeId as string, overStatusId),
+        );
       }
     }
+  };
+
+  const revertDrag = useCallback(
+    (woId: string) => {
+      if (dragOriginalStatus) {
+        setWorkOrders((prev) =>
+          restoreStatus(prev, woId, dragOriginalStatus),
+        );
+      }
+      setDragOriginalStatus(null);
+    },
+    [dragOriginalStatus],
+  );
+
+  const handleDragCancel = (event: DragCancelEvent) => {
+    setActiveId(null);
+    revertDrag(event.active.id as string);
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveId(null);
 
-    if (!over) return;
-
     const activeWO = active.data.current?.wo as WorkOrder | undefined;
-    if (!activeWO) return;
-
-    let newStatus = activeWO.status;
-
-    if (over.data.current?.type === "WorkOrder") {
-      newStatus = over.data.current.wo.status;
-    } else if (over.data.current?.type === "Column") {
-      newStatus = over.data.current.statusId;
+    if (!activeWO) {
+      setDragOriginalStatus(null);
+      return;
     }
 
-    // Find the current status in state (it might have been updated by handleDragOver)
-    const currentWOInState = workOrders.find((wo) => wo.id === activeWO.id);
-    const finalStatus = currentWOInState?.status || newStatus;
+    const drop = resolveDrop({
+      orders: workOrders,
+      activeId: activeWO.id,
+      originalStatus: dragOriginalStatus,
+      over,
+      currentStatus: workOrders.find((wo) => wo.id === activeWO.id)?.status,
+    });
 
-    // Compare against the original status captured at drag start,
-    // not activeWO.status which may have been mutated by the optimistic update in handleDragOver
-    if (finalStatus !== dragOriginalStatus) {
-      try {
-        const response = await fetch(`/api/work-orders/${activeWO.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status: finalStatus }),
-        });
-        if (!response.ok) throw new Error("Error al actualizar el estado");
-        toast.success(
-          `OT ${activeWO.vehicle.identifier} movida a ${STATUSES.find((s) => s.id === finalStatus)?.label}`,
-        );
-      } catch (e) {
-        console.error("Error updating status:", e);
-        toast.error("No se pudo actualizar el estado en el servidor");
-        fetchWorkOrders(); // Revert on error
-      }
+    if (drop.action === "revert") {
+      revertDrag(activeWO.id);
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/work-orders/${activeWO.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: drop.status }),
+      });
+      if (!response.ok) throw new Error("Error al actualizar el estado");
+      toast.success(
+        `OT ${activeWO.vehicle.identifier} movida a ${STATUSES.find((s) => s.id === drop.status)?.label}`,
+      );
+    } catch (e) {
+      console.error("Error updating status:", e);
+      toast.error("No se pudo actualizar el estado en el servidor");
+      fetchWorkOrders(); // Revert on error
     }
     setDragOriginalStatus(null);
   };
@@ -1423,6 +1434,7 @@ export default function WorkOrdersPage() {
               onDragStart={handleDragStart}
               onDragOver={handleDragOver}
               onDragEnd={handleDragEnd}
+              onDragCancel={handleDragCancel}
             >
               <div className="flex gap-1.5 h-full pb-2 px-1">
                 {workOrdersByStatus.map((status) => (
