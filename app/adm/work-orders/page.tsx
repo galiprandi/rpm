@@ -1043,9 +1043,12 @@ export default function WorkOrdersPage() {
     const { active, over } = event;
     setActiveId(null);
 
-    const activeWO = active.data.current?.wo as WorkOrder | undefined;
+    const activeId = active.id as string;
+    // The optimistic move may remount the sortable into another SortableContext,
+    // so active.data.current.wo can be missing at drop time — find it in state instead.
+    const activeWO = workOrders.find((wo) => wo.id === activeId);
     if (!activeWO) {
-      setDragOriginalStatus(null);
+      revertDrag(activeId);
       return;
     }
 
@@ -1054,7 +1057,7 @@ export default function WorkOrdersPage() {
       activeId: activeWO.id,
       originalStatus: dragOriginalStatus,
       over,
-      currentStatus: workOrders.find((wo) => wo.id === activeWO.id)?.status,
+      currentStatus: activeWO.status,
     });
 
     if (drop.action === "revert") {
