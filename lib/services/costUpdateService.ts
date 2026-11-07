@@ -7,7 +7,7 @@
 
 import { db } from '@/lib/db';
 import { product, priceList, priceListItem, costUpdateBatch, category, supplier } from '@/db/schema';
-import { eq, and, or, ilike, inArray, asc, desc, sql, type SQL } from 'drizzle-orm';
+import { eq, and, or, ilike, inArray, notInArray, asc, desc, sql, type SQL } from 'drizzle-orm';
 import { getProductBaseCost } from './priceListService';
 import { parseSearchQuery } from '@/lib/utils/searchQueryParser';
 import { calculateFinalPrice } from '@/lib/utils/rounding';
@@ -23,6 +23,7 @@ export interface CostUpdateFilters {
   categoryId?: string;
   search?: string;
   productIds?: string[];
+  excludedProductIds?: string[];
   priceListId?: string; // Target for the update
 }
 
@@ -120,6 +121,10 @@ function buildWhereClause(filters: CostUpdateFilters): SQL | undefined {
 
   if (filters.productIds && filters.productIds.length > 0) {
     conditions.push(inArray(product.id, filters.productIds));
+  }
+
+  if (filters.excludedProductIds && filters.excludedProductIds.length > 0) {
+    conditions.push(notInArray(product.id, filters.excludedProductIds));
   }
 
   if (filters.categoryId) {

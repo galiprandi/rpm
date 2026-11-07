@@ -30,6 +30,9 @@ export const POST = withPermission('can_edit_costs', async (request: NextRequest
     if (Array.isArray(body.filters?.productIds)) {
       filters.productIds = body.filters.productIds;
     }
+    if (Array.isArray(body.filters?.excludedProductIds)) {
+      filters.excludedProductIds = body.filters.excludedProductIds;
+    }
 
     // Validate adjustment
     if (!body.adjustment?.type || !VALID_ADJUSTMENT_TYPES.includes(body.adjustment.type)) {

@@ -44,6 +44,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatARS } from '@/lib/utils/format';
+import { buildApplyBody } from './buildApplyBody';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -282,23 +283,21 @@ export function CostUpdateDialog({ open, onClose, onSuccess }: CostUpdateDialogP
       const activeFilters = {
         ...filters,
         priceListId: updateTarget === 'PRICE_LIST' ? targetPriceListId : undefined,
-        // If we are applying, we need to respect exclusions
-        // For simplicity, if there are exclusions, we switch to specific productIds
-        productIds: preview?.items
-          .filter(item => !excludedProductIds.has(item.id))
-          .map(item => item.id) || Array.from(manualProductIds),
+        productIds: manualProductIds.size > 0 ? Array.from(manualProductIds) : undefined,
       };
 
       const response = await fetch('/api/cost-updates/apply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        body: JSON.stringify(buildApplyBody({
           filters: activeFilters,
           adjustment: {
             type: adjustmentType,
             value: Number(adjustmentValue),
           },
-        }),
+          excludedProductIds,
+          previewItems: preview?.items,
+        })),
       });
 
       if (!response.ok) {
@@ -752,6 +751,12 @@ export function CostUpdateDialog({ open, onClose, onSuccess }: CostUpdateDialogP
         <AlertTriangle className="w-3 h-3 text-orange-500 shrink-0" />
         <p>Desmarca los productos que NO quieras actualizar en este lote. Los cambios se aplicarán solo a los elementos seleccionados.</p>
       </div>
+
+      {(preview?.totalItems || 0) > (preview?.items?.length || 0) && (
+        <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+          Mostrando {preview?.items?.length} de {preview?.totalItems} productos. El ajuste se aplicará a todos los productos que coincidan con los filtros.
+        </p>
+      )}
     </div>
   );
 
