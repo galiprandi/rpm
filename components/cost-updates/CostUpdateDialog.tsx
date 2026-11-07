@@ -45,6 +45,7 @@ import {
 import { cn } from '@/lib/utils';
 import { formatARS } from '@/lib/utils/format';
 import { buildApplyBody } from './buildApplyBody';
+import { fetchAllPreviewItems } from './fetchAllPreviewItems';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -230,7 +231,7 @@ export function CostUpdateDialog({ open, onClose, onSuccess }: CostUpdateDialogP
   };
 
   // Load preview data
-  const loadPreview = async (page: number = 1) => {
+  const loadPreview = async () => {
     const isSetVal = adjustmentType === 'SET_VALUE';
     const val = Number(adjustmentValue);
     if (!adjustmentValue || (isSetVal ? (val < 0 || isNaN(val)) : val <= 0)) {
@@ -246,26 +247,31 @@ export function CostUpdateDialog({ open, onClose, onSuccess }: CostUpdateDialogP
         productIds: manualProductIds.size > 0 ? Array.from(manualProductIds) : undefined,
       };
 
-      const response = await fetch('/api/cost-updates/preview', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          filters: activeFilters,
-          adjustment: {
-            type: adjustmentType,
-            value: Number(adjustmentValue),
-          },
-          page,
-          pageSize: 100, // Show more in the new UX
-        }),
-      });
+      const postPreview = async (body: { page: number; pageSize: number }) => {
+        const response = await fetch('/api/cost-updates/preview', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            filters: activeFilters,
+            adjustment: {
+              type: adjustmentType,
+              value: Number(adjustmentValue),
+            },
+            ...body,
+          }),
+        });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Error al cargar preview');
-      }
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Error al cargar preview');
+        }
 
-      const data = await response.json();
+        return response.json();
+      };
+
+      // Fetch every page so the table shows (and can exclude across) the
+      // full filtered set — the API caps pageSize at 100.
+      const data = await fetchAllPreviewItems(postPreview, { pageSize: 100 });
       setPreview(data);
       // Reset exclusions when loading new preview
       setExcludedProductIds(new Set());
@@ -355,7 +361,7 @@ export function CostUpdateDialog({ open, onClose, onSuccess }: CostUpdateDialogP
       toast.error('Ingresa un valor de ajuste válido');
       return;
     }
-    loadPreview(1);
+    loadPreview();
     setCurrentStep('preview');
   };
 
