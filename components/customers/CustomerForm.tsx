@@ -305,6 +305,7 @@ export function CustomerForm({
     });
 
     setTimeout(() => {
+      if (typeof document === "undefined") return;
       const inputId = field === "phone" ? "customer-phone" : "customer-phone-alt";
       const el = document.getElementById(inputId) as HTMLInputElement;
       if (el) {
