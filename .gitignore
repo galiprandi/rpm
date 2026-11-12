@@ -58,3 +58,7 @@ next-env.d.ts
 backup_*.sql
 .envrc.local
 .impeccable/
+
+# browser automation artifacts
+.browser-profile/
+.playwright-cli/
