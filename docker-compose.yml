@@ -1,23 +1,14 @@
-version: '3.8'
-
 services:
-  postgres:
-    image: postgres:15
-    container_name: rpm-postgres
+  app:
+    build: .
     restart: unless-stopped
-    environment:
-      POSTGRES_DB: rpm_dev
-      POSTGRES_USER: rpm_user
-      POSTGRES_PASSWORD: rpm_password
+    env_file: .env
     ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U rpm_user -d rpm_dev"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      - "127.0.0.1:3000:3000"
 
-volumes:
-  postgres_data:
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate --config /etc/cloudflared/config.yml run
+    volumes:
+      - ./cloudflared:/etc/cloudflared:ro,z
