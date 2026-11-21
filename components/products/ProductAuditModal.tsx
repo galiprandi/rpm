@@ -6,7 +6,7 @@ import { DataTable } from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, TrendingUp, TrendingDown, Package } from 'lucide-react';
-import { type ColumnDef } from '@tanstack/react-table';
+import { type ColumnDef } from '@/lib/table-features';
 
 interface CostUpdateBatch {
   id: string;

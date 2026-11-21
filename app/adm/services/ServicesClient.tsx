@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { Header, CrudAdmin, CrudStats, type StatItem } from "@/components/adm";
 import { Wrench, Pencil, Trash2, Clock, List, Plus } from "lucide-react";
 import { PriceDisplay } from "@/components/ui/price-display";
-import { type ColumnDef } from "@tanstack/react-table";
+import { type ColumnDef } from "@/lib/table-features";
 import { ServiceDialog } from "@/components/services/ServiceDialog";
 import {
   Tooltip,

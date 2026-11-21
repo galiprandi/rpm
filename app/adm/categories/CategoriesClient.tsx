@@ -20,7 +20,7 @@ import {
   ArrowLeft,
   EyeOff,
 } from "lucide-react";
-import { type ColumnDef } from "@tanstack/react-table";
+import { type ColumnDef } from "@/lib/table-features";
 import {
   Tooltip,
   TooltipContent,

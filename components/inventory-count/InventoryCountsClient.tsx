@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Eye, Plus, ClipboardCheck, History, CheckCircle2, Clock } from 'lucide-react';
 import { CrudAdmin } from '@/components/adm/CrudAdmin';
 import { CrudStats } from '@/components/adm/CrudStats';
-import { ColumnDef } from '@tanstack/react-table';
+import { ColumnDef } from '@/lib/table-features';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface InventoryCountItem {

@@ -18,7 +18,7 @@ import {
   ArrowDownLeft,
 } from "lucide-react";
 import Link from "next/link";
-import { type ColumnDef, type FilterFn } from "@tanstack/react-table";
+import { type ColumnDef, type FilterFn } from "@/lib/table-features";
 import {
   getVehicleCategoryLabel,
   VEHICLE_CATEGORIES,

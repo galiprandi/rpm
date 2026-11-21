@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { useUI } from "@/components/ui/UIProvider";
 import { toast } from "sonner";
-import { ColumnDef } from "@tanstack/react-table";
+import { ColumnDef } from "@/lib/table-features";
 import { Badge } from "@/components/ui/badge";
 import {
   Tooltip,

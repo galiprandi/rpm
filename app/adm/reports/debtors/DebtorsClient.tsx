@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useUI } from "@/components/ui/UIProvider";
 import { DataTable } from "@/components/ui/data-table";
-import { type ColumnDef } from "@tanstack/react-table";
+import { type ColumnDef } from "@/lib/table-features";
 import {
   Select,
   SelectContent,

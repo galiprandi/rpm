@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DataTable } from '@/components/ui/data-table';
-import { type ColumnDef } from '@tanstack/react-table';
+import { type ColumnDef } from '@/lib/table-features';
 import { useUI } from '@/components/ui/UIProvider';
 import { Undo2, DollarSign, FileText, Receipt } from 'lucide-react';
 

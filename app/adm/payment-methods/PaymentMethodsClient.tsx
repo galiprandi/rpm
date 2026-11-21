@@ -8,7 +8,7 @@ import { ModalBase, ModalBaseFooter } from '@/components/ui/ModalBase';
 import { useUI } from '@/components/ui/UIProvider';
 import { toast } from 'sonner';
 import { Pencil, Trash2, Plus, CreditCard, CheckCircle2 } from 'lucide-react';
-import { type ColumnDef } from '@tanstack/react-table';
+import { type ColumnDef } from '@/lib/table-features';
 import { Header, CrudStats, type StatItem } from '@/components/adm';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';

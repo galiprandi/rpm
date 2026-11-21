@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { DataTable } from "@/components/ui/data-table";
-import { ColumnDef } from "@tanstack/react-table";
+import { ColumnDef } from "@/lib/table-features";
 import { Header } from "@/components/adm/Header";
 import { formatARS } from "@/lib/utils/format";
 import { Skeleton } from "@/components/ui/skeleton";

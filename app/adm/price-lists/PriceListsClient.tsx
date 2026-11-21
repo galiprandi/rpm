@@ -11,7 +11,7 @@ import { ProductAuditModal } from '@/components/products/ProductAuditModal';
 import { type PriceListFormData } from '@/components/price-lists/PriceListForm';
 import { Header, CrudAdmin, StatItem, CrudStats } from '@/components/adm';
 import { DollarSign, Pencil, Trash2, List, Percent, Layers, TrendingUp, History, Plus, GitBranch } from 'lucide-react';
-import { type ColumnDef } from '@tanstack/react-table';
+import { type ColumnDef } from '@/lib/table-features';
 import { toast } from 'sonner';
 import {
   Tooltip,

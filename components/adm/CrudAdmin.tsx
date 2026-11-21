@@ -6,7 +6,7 @@ import { Download, Plus, Package } from "lucide-react";
 import { ReactNode } from "react";
 import { CrudStats, StatItem } from "./CrudStats";
 import { DataTable } from "@/components/ui/data-table";
-import { type ColumnDef, type FilterFn } from "@tanstack/react-table";
+import { type ColumnDef, type FilterFn } from "@/lib/table-features";
 
 interface CrudAdminProps<T extends { id: string }> {
   title?: string;
