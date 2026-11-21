@@ -2,7 +2,12 @@ services:
   app:
     build: .
     restart: unless-stopped
-    env_file: .env
+    environment:
+      - NODE_ENV=production
+      - INFISICAL_CLIENT_ID=${INFISICAL_CLIENT_ID}
+      - INFISICAL_CLIENT_SECRET=${INFISICAL_CLIENT_SECRET}
+      - INFISICAL_PROJECT_ID=${INFISICAL_PROJECT_ID}
+      - INFISICAL_ENV=${INFISICAL_ENV:-dev}
     ports:
       - "127.0.0.1:3000:3000"
 

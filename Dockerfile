@@ -19,10 +19,14 @@ ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
     PORT=3000 \
     HOSTNAME=0.0.0.0
-RUN addgroup -S nodejs && adduser -S nextjs -G nodejs
+RUN addgroup -S nodejs && adduser -S nextjs -G nodejs \
+    && apk add --no-cache bash wget \
+    && wget -qO- 'https://artifacts-cli.infisical.com/setup.apk.sh' | sh \
+    && apk add --no-cache infisical
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --chmod=755 docker-entrypoint.sh ./
 USER nextjs
 EXPOSE 3000
-CMD ["node", "server.js"]
+CMD ["./docker-entrypoint.sh"]
