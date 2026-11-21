@@ -63,3 +63,4 @@ backup_*.sql
 .browser-profile/
 .playwright-cli/
 cloudflared/credentials.json
+package-lock.json
