@@ -62,3 +62,4 @@ backup_*.sql
 # browser automation artifacts
 .browser-profile/
 .playwright-cli/
+cloudflared/credentials.json

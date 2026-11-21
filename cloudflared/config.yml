@@ -1,0 +1,6 @@
+tunnel: 22f93375-4d70-49db-b44d-64bf86798fde
+credentials-file: /etc/cloudflared/credentials.json
+ingress:
+  - hostname: rpm.alitrio.com
+    service: http://app:3000
+  - service: http_status:404
