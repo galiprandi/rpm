@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { type ColumnDef } from '@tanstack/react-table';
+import { type ColumnDef } from '@/lib/table-features';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { useUI } from '@/components/ui/UIProvider';

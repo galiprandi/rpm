@@ -8,7 +8,7 @@ import { UserFormData } from '@/components/users/UserForm';
 import { useUI } from '@/components/ui/UIProvider';
 import { Header, CrudAdmin, CrudStats, type StatItem } from '@/components/adm';
 import { Users, Pencil, UserCog, Shield, Plus, CheckCircle2 } from 'lucide-react';
-import { type ColumnDef } from '@tanstack/react-table';
+import { type ColumnDef } from '@/lib/table-features';
 import {
   Tooltip,
   TooltipContent,

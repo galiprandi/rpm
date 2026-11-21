@@ -53,7 +53,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { type ColumnDef, type FilterFn } from "@tanstack/react-table";
+import { type ColumnDef, type FilterFn } from "@/lib/table-features";
 import { useRouter } from "next/navigation";
 import dayjs from "dayjs";
 import dayjsRelativeTime from "dayjs/plugin/relativeTime";

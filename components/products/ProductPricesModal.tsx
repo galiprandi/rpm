@@ -15,7 +15,7 @@ import { AlertTriangle, Pencil, Calculator } from 'lucide-react';
 import { useUser } from '@/components/ui/UserProvider';
 import { calculateMarginPercentage, applyRounding, type RoundingRule } from '@/lib/utils/rounding';
 import { DataTable } from '@/components/ui/data-table';
-import { ColumnDef } from '@tanstack/react-table';
+import { ColumnDef } from '@/lib/table-features';
 import {
   Tooltip,
   TooltipContent,

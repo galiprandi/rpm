@@ -1,23 +1,24 @@
 "use client";
 
-// React Compiler skips this component because useReactTable returns non-memoizable functions
+// React Compiler skips this component because useTable returns non-memoizable functions
 // This is expected behavior from TanStack Table - see: https://tanstack.com/table/latest/docs/faq
 "use no memo";
 
 import * as React from "react";
 import {
-  useReactTable,
-  getCoreRowModel,
-  getSortedRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
+  useTable,
   flexRender,
-  type ColumnDef,
   type SortingState,
   type ColumnFiltersState,
   type PaginationState,
-  type FilterFn,
+  type RowData,
+  type RowSelectionState,
 } from "@tanstack/react-table";
+import {
+  appTableFeatures,
+  type ColumnDef,
+  type FilterFn,
+} from "@/lib/table-features";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -51,7 +52,7 @@ interface DataTableAction {
   icon?: React.ComponentType<{ className?: string }>;
 }
 
-interface DataTableProps<TData> {
+interface DataTableProps<TData extends RowData> {
   data: TData[];
   columns: ColumnDef<TData>[];
   enableGlobalFilter?: boolean;
@@ -72,7 +73,7 @@ interface DataTableProps<TData> {
   rowSelection?: Record<string, boolean>;
   onRowSelectionStateChange?: (selection: Record<string, boolean>) => void;
 }
-export function DataTable<TData>({
+export function DataTable<TData extends RowData>({
   data,
   columns,
   enableGlobalFilter = false,
@@ -183,7 +184,8 @@ export function DataTable<TData>({
       ? onExternalGlobalFilterChange
       : setInternalGlobalFilter;
 
-  const table = useReactTable({
+  const table = useTable({
+    features: appTableFeatures,
     data,
     columns: allColumns,
     state: {
@@ -191,7 +193,7 @@ export function DataTable<TData>({
       globalFilter: enableGlobalFilter ? globalFilter : undefined,
       columnFilters,
       pagination,
-      rowSelection: rowSelectionValue,
+      rowSelection: rowSelectionValue as RowSelectionState,
     },
     // Prevent pagination from resetting to page 0 when the data array
     // reference changes (e.g. parent re-renders, modal open/close, state
@@ -207,10 +209,6 @@ export function DataTable<TData>({
     onPaginationChange: setPagination,
     onRowSelectionChange: setRowSelectionValue,
     globalFilterFn: filterFn,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
   });
 
   // Clamp pageIndex when filtered data shrinks below the current page
@@ -371,7 +369,7 @@ export function DataTable<TData>({
         <div className="text-sm text-muted-foreground">{footerPlaceholder}</div>
         <div className="flex items-center gap-4">
           <span className="text-sm text-muted-foreground">
-            Página {table.getState().pagination.pageIndex + 1} de{" "}
+            Página {table.state.pagination.pageIndex + 1} de{" "}
             {table.getPageCount()} · {table.getFilteredRowModel().rows.length}{" "}
             {table.getFilteredRowModel().rows.length === 1
               ? "registro"

@@ -26,7 +26,7 @@ import {
 import { AlertDialog as AlertDialogPrimitive } from 'radix-ui';
 import { formatARS } from '@/lib/utils/format';
 import { toast } from 'sonner';
-import { ColumnDef } from '@tanstack/react-table';
+import { ColumnDef } from '@/lib/table-features';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
