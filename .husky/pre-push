@@ -1,1 +1,6 @@
-pnpm test
+pnpm type-check
+
+changed=$(git diff --name-only origin/main...HEAD -- '*.ts' '*.tsx' | tr '\n' ' ')
+if [ -n "$changed" ]; then
+  pnpm vitest related $changed --passWithNoTests
+fi
