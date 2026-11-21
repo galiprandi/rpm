@@ -73,6 +73,17 @@ jobs:
     - name: Build
       run: pnpm build
 
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Scan for secrets
+      uses: gitleaks/gitleaks-action@v2
+
   security:
     runs-on: ubuntu-latest
     steps:
@@ -81,15 +92,18 @@ jobs:
       with:
         fetch-depth: 0
 
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        run_install: false
+
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '24.x'
-      
-    - name: Generate temporary package-lock
-      run: |
-        npm install --package-lock-only --legacy-peer-deps --ignore-scripts
-      
+
+    - name: Install dependencies
+      run: pnpm install --frozen-lockfile
+
     - name: Run security audit
-      run: |
-        npx audit-ci --high --package-manager npm --allowlist GHSA-mh99-v99m-4gvg --allowlist GHSA-4cwx-7wf7-3272 --allowlist GHSA-7p8r-x3mc-p8w7 --allowlist GHSA-mwp4-54f8-5fhr --allowlist GHSA-rgw5-rvv9-x895 --allowlist GHSA-rf6f-7fwh-wjgh --allowlist GHSA-5p4m-2wfm-xmqj --allowlist GHSA-2v37-7h3g-55p8
+      run: pnpm audit --audit-level=high

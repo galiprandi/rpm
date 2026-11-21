@@ -1,5 +1,5 @@
 import type { NextConfig } from "next";
-import { withSentryConfig } from "@sentry/nextjs";
+import { withSentryConfig } from "@sentry/nextjs/config";
 
 const nextConfig: NextConfig = {
   output: "standalone",
@@ -40,7 +40,4 @@ export default withSentryConfig(nextConfig, {
   sourcemaps: {
     disable: process.env.NODE_ENV !== "production",
   },
-
-  // Automatically tree-shake Sentry logger statements to reduce bundle size
-  disableLogger: true,
 });
